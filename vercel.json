@@ -1,0 +1,32 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "regions": ["hnd1"],
+  "env": {
+    "NEXT_PUBLIC_SUPABASE_URL": "@supabase_url",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "@supabase_anon_key",
+    "SUPABASE_SERVICE_ROLE_KEY": "@supabase_service_role_key",
+    "GOOGLE_APPLICATION_CREDENTIALS": "@google_application_credentials",
+    "GOOGLE_CLOUD_PROJECT_ID": "@google_cloud_project_id",
+    "ENABLE_OCR": "@enable_ocr"
+  },
+  "build": {
+    "env": {
+      "NODE_ENV": "production"
+    }
+  },
+  "functions": {
+    "app/api/ocr/pdf/route.ts": {
+      "maxDuration": 30
+    },
+    "app/api/import/freee/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/batch-import/route.ts": {
+      "maxDuration": 60
+    }
+  }
+}
