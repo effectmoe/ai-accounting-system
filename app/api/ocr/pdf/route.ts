@@ -29,6 +29,19 @@ export async function POST(request: NextRequest) {
       
       // 簡易的なレシート解析
       const text = pdfData.text;
+      
+      // テキストが空または非常に短い場合はスキャンPDFの可能性
+      if (!text || text.trim().length < 10) {
+        console.log('スキャンPDFを検出:', file.name);
+        return NextResponse.json(
+          { 
+            error: 'PDFファイルの解析中にエラーが発生しました。',
+            detail: 'このPDFはスキャンされた画像の可能性があります。現在、スキャンPDFの解析はサポートされていません。',
+            suggestion: 'PDFを画像（PNGまたはJPG）に変換してからアップロードしてください。'
+          },
+          { status: 422 }
+        );
+      }
       const result = parseReceiptText(text);
       
       // デバッグ情報を追加

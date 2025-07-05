@@ -300,7 +300,22 @@ export default function ChatInterface() {
           });
           
           if (!response.ok) {
-            throw new Error('PDF処理に失敗しました');
+            const errorData = await response.json();
+            if (errorData.detail && errorData.suggestion) {
+              // スキャンPDFのエラー
+              return {
+                content: `PDFファイルの解析中にエラーが発生しました。
+
+【エラー内容】
+${errorData.detail}
+
+【対処法】
+${errorData.suggestion}
+
+ファイルが正常であることを確認して、再度お試しください。`
+              };
+            }
+            throw new Error(errorData.error || 'PDF処理に失敗しました');
           }
           
           ocrResult = await response.json();
