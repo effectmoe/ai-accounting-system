@@ -287,7 +287,28 @@ export default function ChatInterface() {
     // 領収書・PDFのOCR処理
     if (file) {
       try {
-        const ocrResult = await ocrProcessor.processReceiptFile(file);
+        let ocrResult;
+        
+        // PDFの場合はサーバーサイドAPIを使用
+        if (file.type === 'application/pdf') {
+          const formData = new FormData();
+          formData.append('file', file);
+          
+          const response = await fetch('/api/ocr/pdf', {
+            method: 'POST',
+            body: formData
+          });
+          
+          if (!response.ok) {
+            throw new Error('PDF処理に失敗しました');
+          }
+          
+          ocrResult = await response.json();
+        } else {
+          // 画像の場合はクライアントサイドで処理（現状はモックデータ）
+          ocrResult = await ocrProcessor.processReceiptFile(file);
+        }
+        
         const journalEntry = await ocrProcessor.createJournalEntry(ocrResult, companyId);
         
         const fileTypeLabel = file.type === 'application/pdf' ? 'PDF文書' : '領収書';
