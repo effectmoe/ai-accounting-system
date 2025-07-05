@@ -35,6 +35,7 @@ export async function POST(request: NextRequest) {
       console.log('PDF解析結果:', {
         fileName: file.name,
         textLength: text.length,
+        textSample: text.substring(0, 200),
         parsedResult: result
       });
       
@@ -114,26 +115,61 @@ function parseReceiptText(text: string): {
     }
   }
   
-  // 金額の抽出
-  const amountPattern = /[合計|計|total]\s*[:：]?\s*[¥￥]?\s*(\d{1,3}(?:,\d{3})*)/gi;
-  const amountMatches = text.match(amountPattern);
-  if (amountMatches && amountMatches.length > 0) {
-    const amountStr = amountMatches[amountMatches.length - 1];
-    result.amount = parseInt(amountStr.replace(/[^\d]/g, ''));
+  // 金額の抽出（複数パターンに対応）
+  const amountPatterns = [
+    /[合計|計|total|Total|TOTAL]\s*[:：]?\s*[¥￥]?\s*(\d{1,3}(?:,\d{3})*)/gi,
+    /[¥￥]\s*(\d{1,3}(?:,\d{3})*)/g,
+    /\b(\d{1,3}(?:,\d{3})*)\s*円/g,
+    /金額\s*[:：]?\s*[¥￥]?\s*(\d{1,3}(?:,\d{3})*)/gi
+  ];
+  
+  let maxAmount = 0;
+  for (const pattern of amountPatterns) {
+    const matches = text.match(pattern);
+    if (matches) {
+      for (const match of matches) {
+        const amount = parseInt(match.replace(/[^\d]/g, ''));
+        if (amount > maxAmount) {
+          maxAmount = amount;
+        }
+      }
+    }
   }
   
-  // 税額の抽出
+  if (maxAmount > 0) {
+    result.amount = maxAmount;
+    // 消費税の自動計算（10%）
+    result.taxAmount = Math.floor(maxAmount * 0.1 / 1.1);
+  }
+  
+  // 税額の抽出（明示的に記載されている場合）
   const taxPattern = /(?:消費税|税)\s*(?:\(?\d+%\)?)?\s*[:：]?\s*[¥￥]?\s*(\d{1,3}(?:,\d{3})*)/gi;
   const taxMatches = text.match(taxPattern);
   if (taxMatches && taxMatches.length > 0) {
     const taxStr = taxMatches[0];
-    result.taxAmount = parseInt(taxStr.replace(/[^\d]/g, ''));
+    const taxAmount = parseInt(taxStr.replace(/[^\d]/g, ''));
+    if (taxAmount > 0) {
+      result.taxAmount = taxAmount;
+    }
   }
   
-  // 店舗名の抽出（最初の行を店舗名と仮定）
+  // 店舗名の抽出
   const lines = text.split('\n').filter(line => line.trim());
   if (lines.length > 0) {
-    result.vendor = lines[0].trim();
+    // 最初の意味のある行を店舗名とする
+    for (const line of lines) {
+      const trimmedLine = line.trim();
+      // 日付や金額ではない行を店舗名として採用
+      if (trimmedLine && !trimmedLine.match(/^\d/) && trimmedLine.length > 2) {
+        result.vendor = trimmedLine;
+        break;
+      }
+    }
+  }
+  
+  // ベンダ名が取得できなかった場合
+  if (!result.vendor) {
+    result.vendor = 'PDF文書';
   }
   
   return result;
