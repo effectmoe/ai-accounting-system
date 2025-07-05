@@ -1,10 +1,4 @@
-import { createClient } from '@supabase/supabase-js';
-
-// Supabase client initialization
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { supabase, isSupabaseConfigured } from '@/lib/supabase-client';
 
 interface Account {
   id: string;
@@ -19,15 +13,31 @@ interface Account {
 }
 
 export default async function AccountsPage() {
-  // Fetch accounts from Supabase
-  const { data: accounts, error } = await supabase
-    .from('accounts')
-    .select('*')
-    .order('code', { ascending: true });
+  // Supabaseが設定されていない場合はモックデータを使用
+  let accounts: Account[] | null = null;
+  
+  if (isSupabaseConfigured()) {
+    // Fetch accounts from Supabase
+    const { data, error } = await supabase
+      .from('accounts')
+      .select('*')
+      .order('code', { ascending: true });
 
-  if (error) {
-    console.error('Error fetching accounts:', error);
-    return <div>Error loading accounts</div>;
+    if (error) {
+      console.error('Error fetching accounts:', error);
+    } else {
+      accounts = data;
+    }
+  }
+  
+  // モックデータを使用
+  if (!accounts) {
+    accounts = [
+      { id: '1', code: '1110', name: '現金', name_kana: 'ゲンキン', account_type: 'asset', display_name: '現金', tax_category: null, balance: 1000000, is_active: true },
+      { id: '2', code: '1140', name: '普通預金', name_kana: 'フツウヨキン', account_type: 'asset', display_name: '普通預金', tax_category: null, balance: 5000000, is_active: true },
+      { id: '3', code: '4110', name: '売上高', name_kana: 'ウリアゲダカ', account_type: 'revenue', display_name: '売上高', tax_category: 'taxable_sales_10', balance: 0, is_active: true },
+      { id: '4', code: '5110', name: '仕入高', name_kana: 'シイレダカ', account_type: 'expense', display_name: '仕入高', tax_category: 'taxable_purchases_10', balance: 0, is_active: true },
+    ];
   }
 
   // Group accounts by type

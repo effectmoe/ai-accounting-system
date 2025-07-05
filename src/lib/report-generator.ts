@@ -1,11 +1,6 @@
-import { createClient } from '@supabase/supabase-js';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase-client';
 import { TaxCalculator } from './tax-calculator';
 import { calculateMonthlyTaxSummary } from './tax-utils';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 export interface SalesReport {
   period: {
@@ -96,6 +91,11 @@ export class ReportGenerator {
     startDate: string,
     endDate: string
   ): Promise<SalesReport> {
+    // Supabaseが設定されていない場合はモックデータを返す
+    if (!isSupabaseConfigured()) {
+      return this.getMockSalesReport(startDate, endDate);
+    }
+
     try {
       // 期間内の文書を取得
       const { data: documents, error } = await supabase
@@ -174,6 +174,11 @@ export class ReportGenerator {
     startDate: string,
     endDate: string
   ): Promise<JournalReport> {
+    // Supabaseが設定されていない場合はモックデータを返す
+    if (!isSupabaseConfigured()) {
+      return this.getMockJournalReport(startDate, endDate);
+    }
+
     try {
       // 期間内の仕訳を取得
       const { data: entries, error } = await supabase
@@ -244,6 +249,11 @@ export class ReportGenerator {
     startDate: string,
     endDate: string
   ): Promise<TaxReport> {
+    // Supabaseが設定されていない場合はモックデータを返す
+    if (!isSupabaseConfigured()) {
+      return this.getMockTaxReport(startDate, endDate);
+    }
+
     try {
       // 売上データを取得
       const { data: salesDocs, error: salesError } = await supabase
@@ -379,5 +389,81 @@ export class ReportGenerator {
       groups[key].push(item);
       return groups;
     }, {});
+  }
+
+  // モックデータメソッド
+  private static getMockSalesReport(startDate: string, endDate: string): SalesReport {
+    return {
+      period: { start: startDate, end: endDate },
+      summary: {
+        totalSales: 1500000,
+        totalTax: 150000,
+        documentCount: 25
+      },
+      byType: {
+        estimates: { count: 5, amount: 300000 },
+        invoices: { count: 10, amount: 800000 },
+        deliveryNotes: { count: 5, amount: 200000 },
+        receipts: { count: 5, amount: 200000 }
+      },
+      byStatus: {
+        draft: { count: 3, amount: 150000 },
+        sent: { count: 12, amount: 850000 },
+        paid: { count: 10, amount: 500000 }
+      },
+      byPartner: [
+        { partnerName: '株式会社サンプル', count: 5, amount: 500000 },
+        { partnerName: '合同会社テスト', count: 3, amount: 300000 },
+        { partnerName: '有限会社デモ', count: 2, amount: 200000 }
+      ],
+      monthlyTrend: [
+        { month: '2024-01', count: 8, amount: 500000 },
+        { month: '2024-02', count: 10, amount: 600000 },
+        { month: '2024-03', count: 7, amount: 400000 }
+      ]
+    };
+  }
+
+  private static getMockJournalReport(startDate: string, endDate: string): JournalReport {
+    return {
+      period: { start: startDate, end: endDate },
+      summary: {
+        totalEntries: 50,
+        totalDebit: 2500000,
+        totalCredit: 2500000
+      },
+      byAccount: [
+        { accountCode: '1110', accountName: '現金', debitAmount: 500000, creditAmount: 300000, balance: 200000 },
+        { accountCode: '4110', accountName: '売上高', debitAmount: 0, creditAmount: 1500000, balance: -1500000 },
+        { accountCode: '5110', accountName: '仕入高', debitAmount: 800000, creditAmount: 0, balance: 800000 }
+      ],
+      bySource: {
+        manual: { count: 20, amount: 1000000 },
+        ocr: { count: 15, amount: 750000 },
+        import: { count: 10, amount: 500000 },
+        document: { count: 5, amount: 250000 }
+      }
+    };
+  }
+
+  private static getMockTaxReport(startDate: string, endDate: string): TaxReport {
+    return {
+      period: { start: startDate, end: endDate },
+      consumption_tax: {
+        sales: {
+          standard_rate: { subtotal: 1000000, tax: 100000 },
+          reduced_rate: { subtotal: 200000, tax: 16000 },
+          export: { subtotal: 300000, tax: 0 },
+          total: { subtotal: 1500000, tax: 116000 }
+        },
+        purchases: {
+          standard_rate: { subtotal: 600000, tax: 60000 },
+          reduced_rate: { subtotal: 100000, tax: 8000 },
+          non_deductible: { subtotal: 50000, tax: 0 },
+          total: { subtotal: 750000, tax: 68000 }
+        },
+        payable_refundable: 48000
+      }
+    };
   }
 }

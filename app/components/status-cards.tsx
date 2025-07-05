@@ -1,12 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createClient } from '@supabase/supabase-js';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { supabase, isSupabaseConfigured } from '@/lib/supabase-client';
 
 interface StatusData {
   companies: number;
@@ -25,6 +20,17 @@ export default function StatusCards() {
 
   useEffect(() => {
     async function fetchStatus() {
+      if (!isSupabaseConfigured()) {
+        // モックデータを使用
+        setStatus({
+          companies: 3,
+          transactions: 156,
+          accounts: 24,
+          invoices: 45
+        });
+        return;
+      }
+
       try {
         // 会社数
         const { count: companiesCount } = await supabase
