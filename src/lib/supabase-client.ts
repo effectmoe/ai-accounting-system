@@ -20,7 +20,20 @@ export const supabase = createClient(
 
 // Supabaseが正しく設定されているかチェック
 export const isSupabaseConfigured = () => {
-  return !!(supabaseUrl && supabaseAnonKey && 
+  const configured = !!(supabaseUrl && supabaseAnonKey && 
     supabaseUrl !== DUMMY_URL && 
     supabaseAnonKey !== DUMMY_KEY);
+  
+  // デバッグ用ログ（本番環境では削除）
+  if (typeof window !== 'undefined') {
+    console.log('Supabase Config Check:', {
+      configured,
+      hasUrl: !!supabaseUrl,
+      hasKey: !!supabaseAnonKey,
+      urlNotDummy: supabaseUrl !== DUMMY_URL,
+      keyNotDummy: supabaseAnonKey !== DUMMY_KEY
+    });
+  }
+  
+  return configured;
 };
