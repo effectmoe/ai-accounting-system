@@ -56,7 +56,6 @@
     "mongodb": "^6.3.0",
     "next": "14.1.0",
     "openai": "^4.58.0",
-    "pdf-parse": "^1.1.1",
     "pdf2pic": "^3.2.0",
     "postcss": "^8.4.35",
     "react": "^18.2.0",
@@ -72,7 +71,6 @@
   },
   "devDependencies": {
     "@types/node": "^20.11.16",
-    "@types/pdf-parse": "^1.1.5",
     "@types/react": "^18.2.55",
     "@types/react-dom": "^18.2.18",
     "@types/uuid": "^9.0.8",
