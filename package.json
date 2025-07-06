@@ -70,9 +70,9 @@
     "zustand": "^4.5.0"
   },
   "devDependencies": {
-    "@types/node": "^20.11.16",
-    "@types/react": "^18.2.55",
-    "@types/react-dom": "^18.2.18",
+    "@types/node": "^20.19.4",
+    "@types/react": "^18.3.23",
+    "@types/react-dom": "^18.3.7",
     "@types/uuid": "^9.0.8",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
@@ -81,7 +81,7 @@
     "eslint": "^8.56.0",
     "eslint-config-next": "14.1.0",
     "tsx": "^4.7.0",
-    "typescript": "^5.3.3",
+    "typescript": "^5.8.3",
     "vitest": "^1.2.2"
   },
   "engines": {
