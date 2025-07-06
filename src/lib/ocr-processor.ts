@@ -189,29 +189,12 @@ export class OCRProcessor {
           return result;
         } catch (error) {
           console.error('GAS OCR API error:', error);
-          console.log('Falling back to pdf-parse');
+          console.log('PDF processing now handled by Google Drive OCR');
         }
       }
       
-      // サーバーサイドでのみpdf-parseを使用（フォールバック）
-      if (typeof window === 'undefined') {
-        try {
-          const pdfParse = (await import('pdf-parse')).default;
-          const pdfBuffer = Buffer.from(arrayBuffer);
-          const pdfData = await pdfParse(pdfBuffer);
-          
-          // 抽出したテキストを解析
-          const result = this.parseReceiptText(pdfData.text);
-          return {
-            text: pdfData.text,
-            confidence: 0.9, // PDFからのテキスト抽出は高い精度
-            ...result
-          };
-        } catch (error) {
-          console.error('PDF parsing error:', error);
-          // フォールバック: クライアントサイドまたはエラー時
-        }
-      }
+      // Google Drive OCRに移行したため、直接PDFパースは行わない
+      // PDFファイルはGoogle Drive経由でOCR処理される
       
       // クライアントサイドまたはサーバーサイドでエラーが発生した場合のモックデータ
       const fileName = pdfFile.name.toLowerCase();
