@@ -7,10 +7,11 @@
  */
 
 // 設定項目
-const SUPABASE_URL = 'SUPABASE_URLを設定'; // PropertiesService.getScriptProperties().getProperty('SUPABASE_URL');
-const SUPABASE_ANON_KEY = 'SUPABASE_ANON_KEYを設定'; // PropertiesService.getScriptProperties().getProperty('SUPABASE_ANON_KEY');
-const FOLDER_ID = '1dlWqaq_BX5wrcbn4P3LpSOmog2r_hi-9';
-const WEBHOOK_URL = 'VERCEL_WEBHOOK_URLを設定'; // クライアントへの通知用
+// スクリプトプロパティから設定を取得
+const SUPABASE_URL = PropertiesService.getScriptProperties().getProperty('SUPABASE_URL') || 'https://cjqwqvvxqvlufrvnmqtx.supabase.co';
+const SUPABASE_ANON_KEY = PropertiesService.getScriptProperties().getProperty('SUPABASE_ANON_KEY') || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqcXdxdnZ4cXZsdWZydm5tcXR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE0Mjg5NDcsImV4cCI6MjA1NzAwNDk0N30.1hCFMoJ6hJRtLLjzlCdNwLCiOpHkOdG-o8ZWJYN_Vho';
+const FOLDER_ID = PropertiesService.getScriptProperties().getProperty('FOLDER_ID') || '1dlWqaq_BX5wrcbn4P3LpSOmog2r_hi-9';
+const WEBHOOK_URL = PropertiesService.getScriptProperties().getProperty('WEBHOOK_URL') || 'https://accounting-automation-i3mnej3yv-effectmoes-projects.vercel.app/api/webhook/ocr';
 
 // OCR関数（記事の形式に従う）
 function ocr_(list) {
@@ -180,7 +181,7 @@ function notifyClient(data) {
 // Webhook設定関数
 function settings_(properties) {
   const expiration = 60; // 60分
-  const address = 'deploy_url'; // 後で実際のURLに変更
+  const address = PropertiesService.getScriptProperties().getProperty('WEBHOOK_URL') || 'https://accounting-automation-i3mnej3yv-effectmoes-projects.vercel.app/api/webhook/ocr';
   
   return {
     resource: {
@@ -193,6 +194,17 @@ function settings_(properties) {
       address
     }
   };
+}
+
+// doGet関数（Webアプリ用）
+function doGet(e) {
+  return ContentService
+    .createTextOutput(JSON.stringify({
+      status: 'OK',
+      message: 'AI会計OCR Web Appsが正常に動作しています',
+      version: '1.0.0'
+    }))
+    .setMimeType(ContentService.MimeType.JSON);
 }
 
 // doPost関数（Webhookエントリーポイント）
@@ -365,4 +377,56 @@ function testOCR() {
   const testFileId = 'YOUR_TEST_FILE_ID';
   const result = ocr_([testFileId]);
   console.log('テスト結果:', result);
+}
+
+// スクリプトプロパティを設定する関数
+function setupScriptProperties() {
+  const scriptProperties = PropertiesService.getScriptProperties();
+  
+  // 設定値を定義
+  const properties = {
+    'SUPABASE_URL': 'https://cjqwqvvxqvlufrvnmqtx.supabase.co',
+    'SUPABASE_ANON_KEY': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqcXdxdnZ4cXZsdWZydm5tcXR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE0Mjg5NDcsImV4cCI6MjA1NzAwNDk0N30.1hCFMoJ6hJRtLLjzlCdNwLCiOpHkOdG-o8ZWJYN_Vho',
+    'WEBHOOK_URL': 'https://accounting-automation-i3mnej3yv-effectmoes-projects.vercel.app/api/webhook/ocr',
+    'FOLDER_ID': '1dlWqaq_BX5wrcbn4P3LpSOmog2r_hi-9'
+  };
+  
+  // プロパティを設定
+  scriptProperties.setProperties(properties);
+  
+  console.log('スクリプトプロパティが設定されました');
+  
+  // 設定値を確認
+  const allProperties = scriptProperties.getProperties();
+  console.log('設定されたプロパティ:', allProperties);
+}
+
+// フォルダー変更を手動でチェックする関数
+function checkFolderChanges() {
+  try {
+    const folder = DriveApp.getFolderById(FOLDER_ID);
+    const files = folder.getFiles();
+    const fileIds = [];
+    
+    // 最新のファイルを取得（最大10件）
+    let count = 0;
+    while (files.hasNext() && count < 10) {
+      const file = files.next();
+      fileIds.push(file.getId());
+      count++;
+    }
+    
+    if (fileIds.length > 0) {
+      console.log(`${fileIds.length}個のファイルが見つかりました`);
+      const results = ocr_(fileIds);
+      console.log('OCR処理結果:', results);
+      return results;
+    } else {
+      console.log('処理対象のファイルがありません');
+      return { message: '処理対象のファイルがありません' };
+    }
+  } catch (error) {
+    console.error('フォルダーチェックエラー:', error);
+    return { error: error.toString() };
+  }
 }

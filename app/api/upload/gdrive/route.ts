@@ -85,7 +85,25 @@ export async function POST(request: NextRequest) {
 
     console.log('File uploaded to Google Drive:', response.data);
 
-    // WebhookでGASに通知する処理を後で追加
+    // GASのOCR処理を呼び出す
+    if (process.env.GAS_OCR_URL) {
+      try {
+        const gasResponse = await fetch(process.env.GAS_OCR_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            fileIds: [response.data.id]
+          }),
+        });
+        
+        const gasResult = await gasResponse.json();
+        console.log('GAS OCR処理結果:', gasResult);
+      } catch (error) {
+        console.error('GAS OCR呼び出しエラー:', error);
+      }
+    }
 
     return NextResponse.json({
       success: true,
