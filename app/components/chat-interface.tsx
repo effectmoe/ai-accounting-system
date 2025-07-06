@@ -320,6 +320,7 @@ ${errorData.detail ? `\n詳細: ${errorData.detail}` : ''}
           // OCR処理は非同期で実行されるため、仮のデータを返す
           ocrResult = {
             text: 'Google DriveでOCR処理中...',
+            confidence: 0,
             vendor: file.name.replace('.pdf', ''),
             date: new Date().toISOString().split('T')[0],
             amount: 0,

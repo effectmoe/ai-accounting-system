@@ -11,6 +11,7 @@ export interface OCRResult {
     unitPrice?: number;
     amount: number;
   }>;
+  message?: string; // OCR処理ステータスメッセージ
 }
 
 export class OCRProcessor {
