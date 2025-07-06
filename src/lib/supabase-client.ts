@@ -1,42 +1,8 @@
-import { createClient } from '@supabase/supabase-js';
+// Supabaseシングルトンクライアントを使用
+import { getSupabaseClient, isSupabaseConfigured as isConfigured } from '@/lib/supabase-singleton';
 
-// サーバーサイドとクライアントサイドで使い分ける
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-// 環境変数が設定されていない場合のダミー値
-const DUMMY_URL = 'https://dummy.supabase.co';
-const DUMMY_KEY = 'dummy-key';
-
-export const supabase = createClient(
-  supabaseUrl || DUMMY_URL,
-  supabaseAnonKey || DUMMY_KEY,
-  {
-    auth: {
-      persistSession: false
-    }
-  }
-);
-
-// Supabaseが正しく設定されているかチェック
-export const isSupabaseConfigured = () => {
-  const configured = !!(supabaseUrl && supabaseAnonKey && 
-    supabaseUrl !== DUMMY_URL && 
-    supabaseAnonKey !== DUMMY_KEY);
-  
-  // デバッグ用ログ（本番環境では削除）
-  if (typeof window !== 'undefined') {
-    console.log('Supabase Config Check:', {
-      configured,
-      hasUrl: !!supabaseUrl,
-      hasKey: !!supabaseAnonKey,
-      urlNotDummy: supabaseUrl !== DUMMY_URL,
-      keyNotDummy: supabaseAnonKey !== DUMMY_KEY
-    });
-  }
-  
-  return configured;
-};
+export const supabase = getSupabaseClient();
+export const isSupabaseConfigured = isConfigured;
 
 // データベーステーブルの型定義
 export interface Transaction {
