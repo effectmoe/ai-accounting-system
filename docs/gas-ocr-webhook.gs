@@ -8,8 +8,8 @@
 
 // 設定項目
 // スクリプトプロパティから設定を取得
-const SUPABASE_URL = PropertiesService.getScriptProperties().getProperty('SUPABASE_URL') || 'https://cjqwqvvxqvlufrvnmqtx.supabase.co';
-const SUPABASE_ANON_KEY = PropertiesService.getScriptProperties().getProperty('SUPABASE_ANON_KEY') || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqcXdxdnZ4cXZsdWZydm5tcXR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE0Mjg5NDcsImV4cCI6MjA1NzAwNDk0N30.1hCFMoJ6hJRtLLjzlCdNwLCiOpHkOdG-o8ZWJYN_Vho';
+const SUPABASE_URL = PropertiesService.getScriptProperties().getProperty('SUPABASE_URL') || 'https://clqpfmroqcnvyxdzadln.supabase.co';
+const SUPABASE_ANON_KEY = PropertiesService.getScriptProperties().getProperty('SUPABASE_ANON_KEY') || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNscXBmbXJvcWNudnl4ZHphZGxuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE2OTc3NDEsImV4cCI6MjA2NzI3Mzc0MX0.CN7Vk_-W7Pn09jvrlVyOlgyguxqgNLs3C-9Bf1UTdTA';
 const FOLDER_ID = PropertiesService.getScriptProperties().getProperty('FOLDER_ID') || '1dlWqaq_BX5wrcbn4P3LpSOmog2r_hi-9';
 const WEBHOOK_URL = PropertiesService.getScriptProperties().getProperty('WEBHOOK_URL') || 'https://accounting-automation-i3mnej3yv-effectmoes-projects.vercel.app/api/webhook/ocr';
 
@@ -385,8 +385,8 @@ function setupScriptProperties() {
   
   // 設定値を定義
   const properties = {
-    'SUPABASE_URL': 'https://cjqwqvvxqvlufrvnmqtx.supabase.co',
-    'SUPABASE_ANON_KEY': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNqcXdxdnZ4cXZsdWZydm5tcXR4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE0Mjg5NDcsImV4cCI6MjA1NzAwNDk0N30.1hCFMoJ6hJRtLLjzlCdNwLCiOpHkOdG-o8ZWJYN_Vho',
+    'SUPABASE_URL': 'https://clqpfmroqcnvyxdzadln.supabase.co',
+    'SUPABASE_ANON_KEY': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNscXBmbXJvcWNudnl4ZHphZGxuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE2OTc3NDEsImV4cCI6MjA2NzI3Mzc0MX0.CN7Vk_-W7Pn09jvrlVyOlgyguxqgNLs3C-9Bf1UTdTA',
     'WEBHOOK_URL': 'https://accounting-automation-i3mnej3yv-effectmoes-projects.vercel.app/api/webhook/ocr',
     'FOLDER_ID': '1dlWqaq_BX5wrcbn4P3LpSOmog2r_hi-9'
   };

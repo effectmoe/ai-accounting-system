@@ -7,12 +7,11 @@ export default function Navigation() {
   const pathname = usePathname();
   
   const navItems = [
-    { href: '/', label: 'ダッシュボード' },
+    { href: '/', label: 'AI会計アシスタント' },
+    { href: '/documents', label: '書類一覧' },
     { href: '/accounts', label: '勘定科目' },
-    { href: '/transactions', label: '取引' },
-    { href: '/invoices', label: '請求書' },
+    { href: '/journal', label: '仕訳帳' },
     { href: '/import', label: 'データインポート' },
-    { href: '/import/batch', label: 'バッチインポート' },
   ];
   
   return (

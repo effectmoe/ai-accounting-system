@@ -11,7 +11,7 @@
     }
   },
   "functions": {
-    "app/api/ocr/pdf/route.ts": {
+    "app/api/upload/gdrive/route.ts": {
       "maxDuration": 30
     },
     "app/api/import/freee/route.ts": {
