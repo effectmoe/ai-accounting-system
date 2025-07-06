@@ -289,28 +289,25 @@ export default function ChatInterface() {
       try {
         let ocrResult;
         
-        // PDFの場合はサーバーサイドAPIを使用
+        // PDFの場合はGoogle Drive経由でOCR処理
         if (file.type === 'application/pdf') {
           const formData = new FormData();
           formData.append('file', file);
           
-          const response = await fetch('/api/ocr/pdf', {
+          const response = await fetch('/api/upload/gdrive', {
             method: 'POST',
             body: formData
           });
           
           if (!response.ok) {
             const errorData = await response.json();
-            if (errorData.detail && errorData.suggestion) {
-              // スキャンPDFのエラー
+            if (errorData.error) {
               return {
-                content: `PDFファイルの解析中にエラーが発生しました。
+                content: `PDFファイルのアップロード中にエラーが発生しました。
 
 【エラー内容】
-${errorData.detail}
-
-【対処法】
-${errorData.suggestion}
+${errorData.error}
+${errorData.detail ? `\n詳細: ${errorData.detail}` : ''}
 
 ファイルが正常であることを確認して、再度お試しください。`
               };
@@ -318,15 +315,33 @@ ${errorData.suggestion}
             throw new Error(errorData.error || 'PDF処理に失敗しました');
           }
           
-          ocrResult = await response.json();
+          const uploadResult = await response.json();
+          
+          // OCR処理は非同期で実行されるため、仮のデータを返す
+          ocrResult = {
+            text: 'Google DriveでOCR処理中...',
+            vendor: file.name.replace('.pdf', ''),
+            date: new Date().toISOString().split('T')[0],
+            amount: 0,
+            taxAmount: 0,
+            items: [],
+            message: 'OCR処理はバックグラウンドで実行されています。処理が完了すると、書類一覧に表示されます。'
+          };
         } else {
           // 画像の場合はクライアントサイドで処理（現状はモックデータ）
           ocrResult = await ocrProcessor.processReceiptFile(file);
         }
         
-        const journalEntry = await ocrProcessor.createJournalEntry(ocrResult, companyId);
-        
         const fileTypeLabel = file.type === 'application/pdf' ? 'PDF文書' : '領収書';
+        
+        // OCR処理中のメッセージがある場合
+        if (ocrResult.message) {
+          return {
+            content: `${fileTypeLabel}をGoogle Driveにアップロードしました。\n\n${ocrResult.message}\n\n処理が完了したら、「書類一覧」メニューから確認できます。`
+          };
+        }
+        
+        const journalEntry = await ocrProcessor.createJournalEntry(ocrResult, companyId);
         
         return {
           content: `${fileTypeLabel}を解析しました。\n\n【解析結果】\n発行者: ${ocrResult.vendor}\n日付: ${ocrResult.date}\n金額: ¥${ocrResult.amount?.toLocaleString()}（税込）\n消費税: ¥${ocrResult.taxAmount?.toLocaleString()}\n\n【自動仕訳案】\n借方: ${journalEntry.debitAccount} ${journalEntry.amount}円\n貸方: ${journalEntry.creditAccount} ${journalEntry.amount}円\n摘要: ${journalEntry.description}\n\nこの内容で登録してよろしいですか？`,
