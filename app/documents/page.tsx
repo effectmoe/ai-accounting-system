@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { DocumentService, SavedDocument } from '@/services/document-service';
-import { FileText, Download, Eye, Send, CheckCircle, Calendar, Filter, Plus } from 'lucide-react';
+import { FileText, Download, Eye, Send, CheckCircle, Calendar, Filter, Plus, Upload, Paperclip } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
 const documentTypeLabels = {
   estimate: '見積書',
@@ -35,6 +36,8 @@ export default function DocumentsPage() {
   const router = useRouter();
   const [documents, setDocuments] = useState<SavedDocument[]>([]);
   const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [ocrProcessing, setOcrProcessing] = useState(false);
   const [filters, setFilters] = useState({
     documentType: '',
     status: '',
@@ -78,6 +81,50 @@ export default function DocumentsPage() {
     }
   };
 
+  const handleFileSelect = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // ファイルタイプチェック
+    if (!file.type.includes('pdf') && !file.type.includes('image')) {
+      toast.error('PDFまたは画像ファイルを選択してください');
+      return;
+    }
+
+    setUploading(true);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      // Google Driveにアップロード
+      const uploadResponse = await fetch('/api/upload/gdrive', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error('アップロードに失敗しました');
+      }
+
+      const uploadData = await uploadResponse.json();
+      toast.success('ファイルをアップロードしました。OCR処理を開始します...');
+      setOcrProcessing(true);
+
+      // OCR処理の完了を待つ（実際の実装では、WebSocketやポーリングを使用）
+      setTimeout(() => {
+        setOcrProcessing(false);
+        toast.success('OCR処理が完了しました');
+        loadDocuments(); // リストを更新
+      }, 5000);
+
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast.error(error instanceof Error ? error.message : 'アップロードに失敗しました');
+    } finally {
+      setUploading(false);
+    }
+  }, []);
+
   const totalPages = Math.ceil(totalCount / itemsPerPage);
 
   return (
@@ -86,16 +133,45 @@ export default function DocumentsPage() {
         {/* ヘッダー */}
         <div className="mb-8">
           <div className="flex justify-between items-center">
-            <h1 className="text-3xl font-bold text-gray-900">文書管理</h1>
-            <Link
-              href="/"
-              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              新規作成
-            </Link>
+            <h1 className="text-3xl font-bold text-gray-900">AI会計アシスタント</h1>
+            <div className="flex gap-3">
+              {/* ファイルアップロードボタン */}
+              <label className="relative inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 cursor-pointer">
+                <input
+                  type="file"
+                  className="sr-only"
+                  onChange={handleFileSelect}
+                  accept=".pdf,image/*"
+                  disabled={uploading || ocrProcessing}
+                />
+                <Paperclip className="h-4 w-4 mr-2" />
+                {uploading ? '処理中...' : 'PDFをアップロード'}
+              </label>
+              <Link
+                href="/"
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                新規作成
+              </Link>
+            </div>
           </div>
+          <p className="mt-2 text-sm text-gray-600">
+            自然な言葉で会計処理をお手伝いします
+          </p>
         </div>
+
+        {/* OCR処理中の表示 */}
+        {ocrProcessing && (
+          <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-center">
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600 mr-3"></div>
+              <p className="text-sm text-blue-800">
+                Google DriveでOCR処理中です。処理が完了するまでお待ちください...
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* フィルター */}
         <div className="bg-white rounded-lg shadow mb-6 p-4">

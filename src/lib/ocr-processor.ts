@@ -26,13 +26,34 @@ export class OCRProcessor {
   }
 
   async processImageFile(imageFile: File): Promise<OCRResult> {
-    // Google Cloud Vision APIが設定されているか確認
+    // GAS OCR APIが設定されているか確認
+    const isGasOcrConfigured = process.env.GAS_OCR_URL;
+    
+    // GAS OCR APIを使用（サーバーサイドでもクライアントサイドでも利用可能）
+    if (isGasOcrConfigured && process.env.ENABLE_OCR === 'true') {
+      try {
+        const { GASWebAppOCRProcessor } = await import('./ocr-processor-gas');
+        const gasOCR = new GASWebAppOCRProcessor();
+        
+        // FileをBufferに変換
+        const arrayBuffer = await imageFile.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
+        
+        const result = await gasOCR.processReceiptImage(buffer);
+        await gasOCR.close();
+        
+        return result;
+      } catch (error) {
+        console.error('GAS OCR API error:', error);
+        console.log('Falling back to mock data');
+      }
+    }
+    
+    // Google Cloud Vision APIが設定されているか確認（フォールバック）
     const isGoogleCloudConfigured = 
       process.env.GOOGLE_APPLICATION_CREDENTIALS || 
       process.env.GOOGLE_CLOUD_CREDENTIALS;
     
-    // Google Cloud Vision APIはクライアントサイドでは利用不可
-    // 本格運用時はサーバーサイドAPIエンドポイントを作成する
     if (typeof window === 'undefined' && isGoogleCloudConfigured && process.env.ENABLE_OCR === 'true') {
       // サーバーサイドでのみGoogle Cloud Vision APIを使用
       try {
@@ -151,7 +172,27 @@ export class OCRProcessor {
       // PDFからテキストを抽出
       const arrayBuffer = await pdfFile.arrayBuffer();
       
-      // サーバーサイドでのみpdf-parseを使用
+      // GAS OCR APIが設定されているか確認
+      const isGasOcrConfigured = process.env.GAS_OCR_URL;
+      
+      // GAS OCR APIを使用してPDFを処理
+      if (isGasOcrConfigured && process.env.ENABLE_OCR === 'true') {
+        try {
+          const { GASWebAppOCRProcessor } = await import('./ocr-processor-gas');
+          const gasOCR = new GASWebAppOCRProcessor();
+          
+          const buffer = Buffer.from(arrayBuffer);
+          const result = await gasOCR.processPDF(buffer);
+          await gasOCR.close();
+          
+          return result;
+        } catch (error) {
+          console.error('GAS OCR API error:', error);
+          console.log('Falling back to pdf-parse');
+        }
+      }
+      
+      // サーバーサイドでのみpdf-parseを使用（フォールバック）
       if (typeof window === 'undefined') {
         try {
           const pdfParse = (await import('pdf-parse')).default;

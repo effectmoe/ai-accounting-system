@@ -30,5 +30,5 @@
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules", "scripts.disabled", "src/agents.disabled", "src/workflows.disabled", "src/mastra.disabled", "*.disabled/**"]
+  "exclude": ["node_modules", "scripts.disabled", "src/agents.disabled", "src/workflows.disabled", "src/mastra.disabled", "*.disabled/**", "mcp-servers-official", "gas-mcp-server", "supabase-mcp-server"]
 }

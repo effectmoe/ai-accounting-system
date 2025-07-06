@@ -1,0 +1,32 @@
+{
+  "mcpServers": {
+    "filesystem": {},
+    "gas-mcp": {
+      "command": "node",
+      "args": ["/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/gas-mcp-server/dist/src/index.js"],
+      "env": {
+        "NODE_ENV": "production"
+      }
+    },
+    "gdrive": {
+      "command": "npx",
+      "args": ["-y", "@isaacphi/mcp-gdrive"],
+      "env": {
+        "CLIENT_ID": "YOUR_GDRIVE_CLIENT_ID_HERE",
+        "CLIENT_SECRET": "YOUR_GDRIVE_CLIENT_SECRET_HERE",
+        "GDRIVE_CREDS_DIR": "/Users/tonychustudio/.config/mcp-gdrive"
+      }
+    },
+    "supabase": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@supabase/mcp-server-supabase@latest",
+        "--project-ref=clqpfmroqcnvyxdzadln"
+      ],
+      "env": {
+        "SUPABASE_ACCESS_TOKEN": "YOUR_SUPABASE_PAT_HERE"
+      }
+    }
+  }
+}

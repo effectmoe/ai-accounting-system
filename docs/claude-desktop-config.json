@@ -1,0 +1,24 @@
+{
+  "mcpServers": {
+    "gas": {
+      "command": "node",
+      "args": [
+        "/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/gas-mcp-server/dist/index.js"
+      ],
+      "env": {
+        "GOOGLE_CREDENTIALS_PATH": "/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/gas-mcp-server/oauth-config.json"
+      }
+    },
+    "supabase": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@supabase/mcp-server-supabase@latest",
+        "--read-only"
+      ],
+      "env": {
+        "SUPABASE_ACCESS_TOKEN": "YOUR_PAT_HERE"
+      }
+    }
+  }
+}

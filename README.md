@@ -47,7 +47,9 @@ SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
 OPENAI_API_KEY=your_openai_key
 ANTHROPIC_API_KEY=your_anthropic_key
 
-# Google Cloud Vision (OCR)
+# Google Apps Script OCR
+GAS_OCR_URL=your_gas_ocr_web_app_url
+ENABLE_OCR=true
 GOOGLE_APPLICATION_CREDENTIALS=path/to/credentials.json
 
 # Mastra
