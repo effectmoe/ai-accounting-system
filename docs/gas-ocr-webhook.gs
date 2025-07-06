@@ -62,21 +62,32 @@ function performOCROnFile(fileId) {
       
       // PDFをGoogle Docsに変換（OCR実行）- Drive API v2を使用
       const resource = {
-        title: fileName + '_OCR_TEMP'
+        title: fileName + '_OCR_TEMP',
+        mimeType: 'application/vnd.google-apps.document'
       };
       
-      const docFile = Drive.Files.copy(resource, fileId, {
+      // Drive API v2でOCR実行
+      const copyOptions = {
         convert: true,
         ocr: true,
         ocrLanguage: 'ja'
-      });
+      };
+      
+      const docFile = Drive.Files.copy(resource, fileId, copyOptions);
+      
+      console.log('OCR変換結果:', docFile);
+      
+      // ファイルIDを取得
+      if (!docFile || !docFile.id) {
+        throw new Error('OCR変換に失敗しました');
+      }
       
       // 作成されたドキュメントからテキストを取得
       const doc = DocumentApp.openById(docFile.id);
       ocrText = doc.getBody().getText();
       
       // 一時ファイルを削除
-      DriveApp.getFileById(docFile.id).setTrashed(true);
+      Drive.Files.remove(docFile.id);
       
       console.log('OCRテキスト取得成功:', ocrText.substring(0, 200) + '...');
     } catch (error) {
