@@ -72,17 +72,6 @@ export default function DocumentsPage() {
     }
   }, [filters, currentPage, activeTab]);
 
-  // 10秒ごとに自動更新（ポーリング）
-  useEffect(() => {
-    if (activeTab === 'ocr') {
-      const interval = setInterval(() => {
-        console.log('OCRデータを自動更新中...');
-        loadOcrResults();
-      }, 10000); // 10秒ごと
-
-      return () => clearInterval(interval);
-    }
-  }, [activeTab]);
 
   // Supabaseリアルタイム通知の設定
   useEffect(() => {
