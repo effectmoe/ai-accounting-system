@@ -6,6 +6,17 @@ const nextConfig = {
     domains: ['localhost', 'supabase.co'],
   },
   experimental: {
+    // RSCのプリフェッチを制御
+    optimizePackageImports: ['@supabase/supabase-js'],
+  },
+  async redirects() {
+    return [
+      {
+        source: '/api/ocr/pdf',
+        destination: '/api/upload/gdrive',
+        permanent: true,
+      },
+    ];
   },
   async headers() {
     return [
