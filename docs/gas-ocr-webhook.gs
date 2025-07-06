@@ -228,20 +228,21 @@ function notifyClient(data) {
   }
 }
 
-// Webhook設定関数
+// Webhook設定関数（Google Drive変更通知用）
 function settings_(properties) {
-  const expiration = 60; // 60分
-  const address = PropertiesService.getScriptProperties().getProperty('WEBHOOK_URL') || 'https://accounting-automation-i3mnej3yv-effectmoes-projects.vercel.app/api/webhook/ocr';
+  const expiration = 24 * 60; // 24時間（最大値）
+  // 新しいデプロイメントURL
+  const deploymentUrl = 'https://script.google.com/macros/s/AKfycbwfaf1sYjKovaHIRp7zhVO7C5G9O_LFlQGsTddR8F4hrJ2TZf_enMOlubssihW_atqU/exec';
   
   return {
     resource: {
       id: Utilities.getUuid(),
       type: 'web_hook',
-      token: '',
+      token: 'ai-accounting-ocr-token', // セキュリティトークン
       expiration: `${new Date(
         Date.now() + 60 * expiration * 1000
       ).getTime()}`,
-      address
+      address: deploymentUrl // GAS WebアプリのURL
     }
   };
 }
@@ -257,29 +258,52 @@ function doGet(e) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
-// doPost関数（Webhookエントリーポイント）
+// doPost関数（Google Drive変更通知を受信）
 function doPost(e) {
   try {
-    const data = JSON.parse(e.postData.contents);
-    console.log('Webhook received:', data);
+    // リクエストの詳細をログ出力（デバッグ用）
+    console.log('受信したリクエスト:', {
+      parameters: e.parameter,
+      postData: e.postData,
+      queryString: e.queryString
+    });
     
-    // ファイルリストを取得
-    const fileIds = extractFileIds(data);
-    if (fileIds.length > 0) {
-      const results = ocr_(fileIds);
-      
+    // ヘッダー情報をチェック（e.parameterではなくe.parametersの可能性もある）
+    const headers = e.parameter || {};
+    const changeType = headers['X-Goog-Resource-State'] || 'change';
+    const channelId = headers['X-Goog-Channel-ID'];
+    const resourceId = headers['X-Goog-Resource-ID'];
+    
+    console.log('Drive変更通知の詳細:', {
+      changeType: changeType,
+      channelId: channelId,
+      resourceId: resourceId
+    });
+    
+    // 'sync'メッセージの場合は、チャンネル登録の確認のみ
+    if (changeType === 'sync') {
+      console.log('チャンネル登録が完了しました');
       return ContentService
-        .createTextOutput(JSON.stringify({
-          success: true,
-          results: results
-        }))
-        .setMimeType(ContentService.MimeType.JSON);
+        .createTextOutput('OK')
+        .setMimeType(ContentService.MimeType.TEXT);
     }
+    
+    // ファイル変更通知を受信した場合
+    console.log('ファイル変更を検出しました。OCR処理を開始します...');
+    
+    // 少し遅延を入れて、ファイルが完全にアップロードされるのを待つ
+    Utilities.sleep(2000);
+    
+    // 最新のファイルをチェックして処理
+    const results = checkAndProcessRecentFiles();
+    
+    console.log(`OCR処理完了: ${results.length}件のファイルを処理しました`);
     
     return ContentService
       .createTextOutput(JSON.stringify({
         success: true,
-        message: '処理対象ファイルがありません'
+        processed: results.length,
+        results: results
       }))
       .setMimeType(ContentService.MimeType.JSON);
       
@@ -353,14 +377,37 @@ function testLatestFileInFolder() {
   }
 }
 
-// Google Driveの変更通知からファイルIDを抽出
-function extractFileIds(data) {
-  // Google Driveの変更通知形式に応じて実装
-  // 仮実装
-  if (data.fileIds) {
-    return data.fileIds;
+// 最近追加されたファイルをチェックして処理
+function checkAndProcessRecentFiles() {
+  const folder = DriveApp.getFolderById(FOLDER_ID);
+  const now = new Date();
+  const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
+  const results = [];
+  
+  // フォルダ内のファイルを取得
+  const files = folder.getFiles();
+  
+  while (files.hasNext()) {
+    const file = files.next();
+    const createdDate = file.getDateCreated();
+    const mimeType = file.getMimeType();
+    
+    // 5分以内に作成されたPDFまたは画像ファイルを処理
+    if (createdDate > fiveMinutesAgo && 
+        (mimeType.includes('pdf') || mimeType.includes('image'))) {
+      
+      console.log('新しいファイルを検出:', file.getName(), 'ID:', file.getId());
+      
+      try {
+        const result = performOCROnFile(file.getId());
+        results.push(result);
+      } catch (error) {
+        console.error('OCR処理エラー:', error);
+      }
+    }
   }
-  return [];
+  
+  return results;
 }
 
 // ドキュメントタイプ分析関数（既存のものを流用）
@@ -515,12 +562,67 @@ function getOrCreateArchiveFolder(parentFolder, year, month) {
   return monthFolder;
 }
 
-// テスト関数
-function testOCR() {
-  // テスト用のファイルIDを指定
-  const testFileId = 'YOUR_TEST_FILE_ID';
-  const result = ocr_([testFileId]);
-  console.log('テスト結果:', result);
+// Supabase接続テスト
+function testSupabaseConnection() {
+  console.log('Supabase接続テスト開始');
+  
+  try {
+    // テストデータ
+    const testData = {
+      company_id: '11111111-1111-1111-1111-111111111111',
+      file_name: 'test_' + new Date().getTime() + '.pdf',
+      vendor_name: 'テスト店舗',
+      receipt_date: new Date().toISOString().split('T')[0],
+      total_amount: 1000,
+      tax_amount: 100,
+      status: 'completed',
+      confidence: 0.95,
+      extracted_text: 'これはテストデータです',
+      file_type: 'application/pdf'
+    };
+    
+    console.log('送信データ:', testData);
+    
+    // Supabaseに保存
+    const result = saveToSupabase(testData);
+    console.log('保存成功:', result);
+    
+    return result;
+  } catch (error) {
+    console.error('テストエラー:', error);
+    console.error('エラー詳細:', error.toString());
+    if (error.response) {
+      console.error('レスポンス:', error.response.getContentText());
+    }
+    throw error;
+  }
+}
+
+// OCR結果をSupabaseから取得して確認
+function checkSupabaseData() {
+  const url = `${SUPABASE_URL}/rest/v1/ocr_results?order=created_at.desc&limit=5`;
+  
+  try {
+    const response = UrlFetchApp.fetch(url, {
+      method: 'GET',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+      }
+    });
+    
+    const data = JSON.parse(response.getContentText());
+    console.log('最新のOCR結果:', data);
+    
+    data.forEach((item, index) => {
+      console.log(`${index + 1}. ${item.file_name} - ${item.vendor_name} - ¥${item.total_amount}`);
+    });
+    
+    return data;
+  } catch (error) {
+    console.error('データ取得エラー:', error);
+    throw error;
+  }
 }
 
 // スクリプトプロパティを設定する関数
@@ -573,4 +675,135 @@ function checkFolderChanges() {
     console.error('フォルダーチェックエラー:', error);
     return { error: error.toString() };
   }
+}
+
+// Google Drive変更通知チャンネルを設定
+function setupDriveWatch() {
+  try {
+    // 既存のチャンネルIDを取得（あれば）
+    const scriptProperties = PropertiesService.getScriptProperties();
+    const existingChannelId = scriptProperties.getProperty('DRIVE_CHANNEL_ID');
+    
+    // 既存のチャンネルがあれば停止
+    if (existingChannelId) {
+      try {
+        Drive.Channels.stop({
+          id: existingChannelId,
+          resourceId: scriptProperties.getProperty('DRIVE_RESOURCE_ID')
+        });
+        console.log('既存のチャンネルを停止しました');
+      } catch (e) {
+        console.log('既存チャンネルの停止エラー（無視）:', e);
+      }
+    }
+    
+    // Webhook設定を取得
+    const settings = settings_({});
+    
+    // 新しいチャンネルを作成
+    const channel = Drive.Files.watch({
+      id: settings.resource.id,
+      type: settings.resource.type,
+      address: settings.resource.address,
+      token: settings.resource.token,
+      expiration: settings.resource.expiration,
+      payload: true
+    }, FOLDER_ID);
+    
+    // チャンネル情報を保存
+    scriptProperties.setProperty('DRIVE_CHANNEL_ID', channel.id);
+    scriptProperties.setProperty('DRIVE_RESOURCE_ID', channel.resourceId);
+    scriptProperties.setProperty('DRIVE_CHANNEL_EXPIRATION', channel.expiration);
+    
+    console.log('Drive変更通知チャンネルが設定されました:', {
+      channelId: channel.id,
+      resourceId: channel.resourceId,
+      expiration: new Date(parseInt(channel.expiration))
+    });
+    
+    return channel;
+  } catch (error) {
+    console.error('Drive変更通知の設定エラー:', error);
+    throw error;
+  }
+}
+
+// 変更通知チャンネルを停止
+function stopDriveWatch() {
+  const scriptProperties = PropertiesService.getScriptProperties();
+  const channelId = scriptProperties.getProperty('DRIVE_CHANNEL_ID');
+  const resourceId = scriptProperties.getProperty('DRIVE_RESOURCE_ID');
+  
+  if (channelId && resourceId) {
+    try {
+      Drive.Channels.stop({
+        id: channelId,
+        resourceId: resourceId
+      });
+      
+      // プロパティをクリア
+      scriptProperties.deleteProperty('DRIVE_CHANNEL_ID');
+      scriptProperties.deleteProperty('DRIVE_RESOURCE_ID');
+      scriptProperties.deleteProperty('DRIVE_CHANNEL_EXPIRATION');
+      
+      console.log('Drive変更通知チャンネルを停止しました');
+    } catch (error) {
+      console.error('チャンネル停止エラー:', error);
+    }
+  } else {
+    console.log('停止するチャンネルがありません');
+  }
+}
+
+// チャンネルの有効期限を更新（23時間ごとに実行するトリガーを設定）
+function renewDriveWatch() {
+  console.log('Drive変更通知チャンネルを更新します');
+  setupDriveWatch();
+}
+
+// 自動更新トリガーを設定
+function setupRenewalTrigger() {
+  // 既存のトリガーを削除
+  const triggers = ScriptApp.getProjectTriggers();
+  triggers.forEach(trigger => {
+    if (trigger.getHandlerFunction() === 'renewDriveWatch') {
+      ScriptApp.deleteTrigger(trigger);
+    }
+  });
+  
+  // 23時間ごとに実行するトリガーを設定
+  ScriptApp.newTrigger('renewDriveWatch')
+    .timeBased()
+    .everyHours(23)
+    .create();
+    
+  console.log('チャンネル更新トリガーが設定されました（23時間ごと）');
+}
+
+// 既存の時間ベーストリガーを削除
+function removeTimeTriggers() {
+  const triggers = ScriptApp.getProjectTriggers();
+  let removed = 0;
+  
+  triggers.forEach(trigger => {
+    const handlerFunction = trigger.getHandlerFunction();
+    
+    // checkNewFilesAndProcess関数のトリガーを削除
+    if (handlerFunction === 'checkNewFilesAndProcess') {
+      ScriptApp.deleteTrigger(trigger);
+      console.log('削除したトリガー:', handlerFunction);
+      removed++;
+    }
+  });
+  
+  console.log(`${removed}個の時間ベーストリガーを削除しました`);
+  
+  // 現在のトリガーを確認
+  const remainingTriggers = ScriptApp.getProjectTriggers();
+  console.log('残りのトリガー数:', remainingTriggers.length);
+  
+  remainingTriggers.forEach(trigger => {
+    console.log('- 関数:', trigger.getHandlerFunction(), 
+                'タイプ:', trigger.getEventType());
+  });
 }

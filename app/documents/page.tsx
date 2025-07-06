@@ -4,8 +4,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { DocumentService, SavedDocument } from '@/services/document-service';
-import { FileText, Download, Eye, Send, CheckCircle, Calendar, Filter, Plus, Upload, Paperclip } from 'lucide-react';
+import { FileText, Download, Eye, Send, CheckCircle, Calendar, Filter, Plus, Upload, Paperclip, Bell } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { getSupabaseClient } from '@/lib/supabase-singleton';
 
 const documentTypeLabels = {
   estimate: '見積書',
@@ -32,9 +33,22 @@ const statusColors = {
   cancelled: 'bg-red-100 text-red-800'
 };
 
+interface OcrResult {
+  id: string;
+  file_name: string;
+  vendor_name: string;
+  receipt_date: string;
+  total_amount: number;
+  tax_amount: number;
+  status: string;
+  created_at: string;
+  extracted_text?: string;
+}
+
 export default function DocumentsPage() {
   const router = useRouter();
   const [documents, setDocuments] = useState<SavedDocument[]>([]);
+  const [ocrResults, setOcrResults] = useState<OcrResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [ocrProcessing, setOcrProcessing] = useState(false);
@@ -46,11 +60,60 @@ export default function DocumentsPage() {
   });
   const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
+  const [newOcrResults, setNewOcrResults] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState<'documents' | 'ocr'>('ocr');
   const itemsPerPage = 20;
 
   useEffect(() => {
-    loadDocuments();
-  }, [filters, currentPage]);
+    if (activeTab === 'documents') {
+      loadDocuments();
+    } else {
+      loadOcrResults();
+    }
+  }, [filters, currentPage, activeTab]);
+
+  // Supabaseリアルタイム通知の設定
+  useEffect(() => {
+    const supabase = getSupabaseClient();
+    
+    // OCR結果テーブルの変更を監視
+    const subscription = supabase
+      .channel('ocr_results_changes')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'ocr_results'
+      }, (payload) => {
+        console.log('新しいOCR結果:', payload);
+        
+        // トースト通知を表示
+        toast.success(
+          <div>
+            <div className="font-semibold">新しい書類が追加されました！</div>
+            <div className="text-sm mt-1">
+              {payload.new.vendor_name || 'OCR処理完了'} - ¥{payload.new.total_amount?.toLocaleString() || '0'}
+            </div>
+          </div>,
+          {
+            duration: 5000,
+            icon: '📄'
+          }
+        );
+        
+        // 新しい結果を追加
+        setNewOcrResults(prev => [...prev, payload.new]);
+        
+        // リストを再読み込み
+        if (activeTab === 'ocr') {
+          loadOcrResults();
+        }
+      })
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [activeTab]);
 
   const loadDocuments = async () => {
     setLoading(true);
@@ -69,6 +132,40 @@ export default function DocumentsPage() {
       setTotalCount(result.total);
     } catch (error) {
       console.error('Error loading documents:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadOcrResults = async () => {
+    setLoading(true);
+    try {
+      const supabase = getSupabaseClient();
+      const companyId = '11111111-1111-1111-1111-111111111111'; // デモ用
+      
+      // OCR結果を取得
+      const { data, error } = await supabase
+        .from('ocr_results')
+        .select('*')
+        .eq('company_id', companyId)
+        .order('created_at', { ascending: false })
+        .limit(itemsPerPage)
+        .range((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage - 1);
+      
+      if (error) throw error;
+      
+      setOcrResults(data || []);
+      
+      // 総数を取得
+      const { count } = await supabase
+        .from('ocr_results')
+        .select('*', { count: 'exact', head: true })
+        .eq('company_id', companyId);
+      
+      setTotalCount(count || 0);
+    } catch (error) {
+      console.error('Error loading OCR results:', error);
+      toast.error('OCR結果の読み込みに失敗しました');
     } finally {
       setLoading(false);
     }
@@ -133,7 +230,7 @@ export default function DocumentsPage() {
         {/* ヘッダー */}
         <div className="mb-8">
           <div className="flex justify-between items-center">
-            <h1 className="text-3xl font-bold text-gray-900">AI会計アシスタント</h1>
+            <h1 className="text-3xl font-bold text-gray-900">書類一覧</h1>
             <div className="flex gap-3">
               {/* ファイルアップロードボタン */}
               <label className="relative inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 cursor-pointer">
@@ -157,9 +254,29 @@ export default function DocumentsPage() {
             </div>
           </div>
           <p className="mt-2 text-sm text-gray-600">
-            自然な言葉で会計処理をお手伝いします
+            アップロードされた書類とOCR処理結果を管理します
           </p>
         </div>
+
+        {/* 新しいOCR結果の通知バナー */}
+        {newOcrResults.length > 0 && (
+          <div className="mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <Bell className="h-5 w-5 text-green-600 mr-3" />
+                <p className="text-sm text-green-800">
+                  {newOcrResults.length}件の新しい書類が処理されました
+                </p>
+              </div>
+              <button
+                onClick={() => setNewOcrResults([])}
+                className="text-green-600 hover:text-green-800"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* OCR処理中の表示 */}
         {ocrProcessing && (
@@ -172,6 +289,34 @@ export default function DocumentsPage() {
             </div>
           </div>
         )}
+
+        {/* タブ切り替え */}
+        <div className="bg-white rounded-lg shadow mb-6">
+          <div className="border-b border-gray-200">
+            <nav className="-mb-px flex space-x-8 px-6" aria-label="Tabs">
+              <button
+                onClick={() => setActiveTab('ocr')}
+                className={`py-3 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'ocr'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                OCR処理済み書類
+              </button>
+              <button
+                onClick={() => setActiveTab('documents')}
+                className={`py-3 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'documents'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                作成済み文書
+              </button>
+            </nav>
+          </div>
+        </div>
 
         {/* フィルター */}
         <div className="bg-white rounded-lg shadow mb-6 p-4">
@@ -241,6 +386,75 @@ export default function DocumentsPage() {
                 <span className="ml-2 text-gray-600">読み込み中...</span>
               </div>
             </div>
+          ) : activeTab === 'ocr' ? (
+            // OCR結果テーブル
+            ocrResults.length === 0 ? (
+              <div className="p-8 text-center">
+                <FileText className="mx-auto h-12 w-12 text-gray-400" />
+                <p className="mt-2 text-gray-600">OCR処理済みの書類がありません</p>
+              </div>
+            ) : (
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      ファイル名
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      ベンダー
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      日付
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      金額（税込）
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      消費税
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      ステータス
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      処理日時
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {ocrResults.map((result) => (
+                    <tr key={result.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {result.file_name}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {result.vendor_name || '-'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {result.receipt_date ? new Date(result.receipt_date).toLocaleDateString('ja-JP') : '-'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        ¥{result.total_amount?.toLocaleString() || '0'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        ¥{result.tax_amount?.toLocaleString() || '0'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                          result.status === 'completed' 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {result.status === 'completed' ? '処理済み' : '処理中'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {new Date(result.created_at).toLocaleString('ja-JP')}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )
           ) : documents.length === 0 ? (
             <div className="p-8 text-center">
               <FileText className="mx-auto h-12 w-12 text-gray-400" />
