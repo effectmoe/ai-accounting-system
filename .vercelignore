@@ -1,0 +1,35 @@
+# Vercel ignore file
+.git
+.next
+node_modules
+.env*.local
+*.log
+.DS_Store
+coverage
+.vscode
+.idea
+
+# MCP servers
+.mcp-servers/
+mcp-servers/
+*-mcp-server/
+
+# Test files
+test/
+tests/
+__tests__/
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Development files
+*.sql
+*.sh
+setup_*
+test_*
