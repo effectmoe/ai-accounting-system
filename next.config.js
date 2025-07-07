@@ -1,5 +1,39 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  transpilePackages: ['@mastra/core'],
+  webpack: (config, { isServer, webpack }) => {
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        _http_common: false,
+        http: false,
+        https: false,
+        stream: false,
+        zlib: false,
+        fs: false,
+        net: false,
+        tls: false,
+        child_process: false,
+      };
+    }
+    
+    // aiパッケージのtestディレクトリを無視
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@ai-sdk/provider-utils/test': false,
+      'ai/test': false,
+    };
+    
+    // webpack IgnorePluginを使用
+    config.plugins.push(
+      new webpack.IgnorePlugin({
+        resourceRegExp: /^.*\/test\/.*$/,
+        contextRegExp: /@ai-sdk|ai/,
+      })
+    );
+
+    return config;
+  },
   reactStrictMode: true,
   swcMinify: true,
   typescript: {

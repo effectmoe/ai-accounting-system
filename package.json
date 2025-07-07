@@ -3,6 +3,13 @@
   "version": "1.0.0",
   "description": "AI-driven accounting system automation with Mastra for Japanese tax compliance",
   "private": true,
+  "browser": {
+    "_http_common": false,
+    "http": false,
+    "https": false,
+    "stream": false,
+    "crypto": false
+  },
   "scripts": {
     "dev": "next dev",
     "build": "rm -rf .next && next build",
@@ -30,7 +37,17 @@
     "mcp:test": "tsx scripts/test-mcp-connection.ts",
     "mastra:daily": "tsx scripts/mastra-automation.ts daily",
     "mastra:monthly": "tsx scripts/mastra-automation.ts monthly",
-    "gas:auth": "tsx scripts/gas-auth.ts"
+    "gas:auth": "tsx scripts/gas-auth.ts",
+    "gas:deploy": "tsx scripts/gas-deploy.ts",
+    "gas:test": "tsx scripts/gas-test.ts",
+    "gas:update": "tsx scripts/gas-update.ts",
+    "gas:pull": "tsx scripts/gas-pull.ts",
+    "gas:deploy-ocr": "tsx src/scripts/manual-gas-deploy.ts",
+    "test:ocr-flow": "tsx src/scripts/test-ocr-flow.ts",
+    "gas:show-code": "tsx src/scripts/gas-code-replacement.ts",
+    "gas:update-direct": "tsx src/scripts/direct-gas-update.ts",
+    "test:integration": "tsx tests/integration-test.ts",
+    "test:integration:deploy": "DEPLOY_TEST=true tsx tests/integration-test.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.27.3",
@@ -53,6 +70,7 @@
     "date-fns-tz": "^2.0.0",
     "dotenv": "^16.4.1",
     "express": "^5.1.0",
+    "google-auth-library": "^9.15.1",
     "googleapis": "^150.0.1",
     "iconv-lite": "^0.6.3",
     "lucide-react": "^0.525.0",
@@ -66,6 +84,7 @@
     "react-hot-toast": "^2.5.2",
     "recharts": "^3.0.2",
     "sharp": "^0.33.2",
+    "supabase-mcp": "^1.5.0",
     "tailwindcss": "^3.4.1",
     "tailwindcss-animate": "^1.0.7",
     "typescript": "^5.8.3",
@@ -81,6 +100,7 @@
     "@vitest/ui": "^1.2.2",
     "eslint": "^8.56.0",
     "eslint-config-next": "14.1.0",
+    "null-loader": "^4.0.1",
     "tsx": "^4.7.0",
     "vitest": "^1.2.2"
   },
