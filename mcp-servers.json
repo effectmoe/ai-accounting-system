@@ -1,0 +1,68 @@
+{
+  "mcpServers": {
+    "ocr-server": {
+      "command": "npx",
+      "args": ["tsx", "./src/mcp-servers/ocr-mcp-server.ts"],
+      "env": {
+        "HANDWRITING_OCR_API_KEY": "",
+        "GOOGLE_CLOUD_API_KEY": "",
+        "GAS_OCR_URL": ""
+      }
+    },
+    "accounting-server": {
+      "command": "npx",
+      "args": ["tsx", "./src/mcp-servers/accounting-mcp-server.ts"],
+      "env": {
+        "DEEPSEEK_API_KEY": ""
+      }
+    },
+    "database-server": {
+      "command": "npx", 
+      "args": ["tsx", "./src/mcp-servers/database-mcp-server.ts"],
+      "env": {
+        "SUPABASE_URL": "",
+        "SUPABASE_SERVICE_ROLE_KEY": ""
+      }
+    },
+    "customer-server": {
+      "command": "npx",
+      "args": ["tsx", "./src/mcp-servers/customer-mcp-server.ts"],
+      "env": {
+        "SUPABASE_URL": "",
+        "SUPABASE_SERVICE_ROLE_KEY": ""
+      }
+    },
+    "product-server": {
+      "command": "npx",
+      "args": ["tsx", "./src/mcp-servers/product-mcp-server.ts"],
+      "env": {
+        "SUPABASE_URL": "",
+        "SUPABASE_SERVICE_ROLE_KEY": ""
+      }
+    },
+    "japan-tax-server": {
+      "command": "npx",
+      "args": ["tsx", "./src/mcp-servers/japan-tax-mcp-server.ts"],
+      "env": {
+        "DEEPSEEK_API_KEY": ""
+      }
+    },
+    "ui-server": {
+      "command": "npx",
+      "args": ["tsx", "./src/mcp-servers/ui-mcp-server.ts"],
+      "env": {
+        "LOVABLE_API_KEY": "",
+        "V0_API_KEY": "",
+        "ANTHROPIC_API_KEY": ""
+      }
+    },
+    "nlweb-server": {
+      "command": "npx",
+      "args": ["tsx", "./src/mcp-servers/nlweb-mcp-server.ts"],
+      "env": {
+        "NLWEB_API_KEY": "",
+        "PERPLEXITY_API_KEY": ""
+      }
+    }
+  }
+}

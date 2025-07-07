@@ -82,6 +82,18 @@ npm run mastra:start
 npm run mastra:api
 ```
 
+### 5. Google Apps Script統合の設定
+
+```bash
+# GAS認証（初回のみ）
+npm run gas:auth
+
+# 環境変数に以下を追加
+GAS_PROJECT_ID=your-script-id
+GAS_CLIENT_ID=your-client-id
+GAS_CLIENT_SECRET=your-client-secret
+```
+
 ## 使用方法
 
 ### エージェントの実行
@@ -110,6 +122,26 @@ npm run mastra:workflow compliance-reporting '{
   "period": {"startDate": "2024-01-01", "endDate": "2024-12-31"},
   "reportTypes": ["consumption_tax", "withholding_tax"]
 }'
+```
+
+### Google Apps Script (GAS) 操作
+
+```bash
+# GASプロジェクトをデプロイ
+npm run gas:deploy --directory ./gas-src --description "新機能追加"
+
+# GAS関数をテスト
+npm run gas:test doGet
+npm run gas:test processInvoice --params '["INV-001"]' --dev
+
+# GASコードを更新
+npm run gas:update --directory ./gas-src --backup --validate
+
+# GASプロジェクトをローカルにプル
+npm run gas:pull ./gas-backup
+
+# パフォーマンスベンチマーク
+npm run gas:test calculateTax --params '[100000, 0.1]' --benchmark 10
 ```
 
 ### API経由での利用
@@ -158,6 +190,18 @@ const invoice = await client.createInvoice({
 ### 5. Compliance Validator
 - 日本の税制への準拠性チェック
 - インボイス制度対応の検証
+
+### 6. GAS Deploy Agent
+- Google Apps Scriptプロジェクトのデプロイ管理
+- バージョン管理と自動デプロイ
+
+### 7. GAS Test Agent
+- Google Apps Script関数のテスト実行
+- パフォーマンスベンチマークとバリデーション
+
+### 8. GAS Update Agent
+- Google Apps Scriptコードの更新と同期
+- ローカル・リモート間のファイル管理
 
 ## ワークフロー一覧
 

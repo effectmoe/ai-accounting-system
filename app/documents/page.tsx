@@ -73,48 +73,79 @@ export default function DocumentsPage() {
   }, [filters, currentPage, activeTab]);
 
 
-  // Supabaseリアルタイム通知の設定
+  // ポーリングによる更新（リアルタイムが利用できるまでの一時的な対応）
   useEffect(() => {
-    const supabase = getSupabaseClient();
+    if (activeTab !== 'ocr') return;
     
-    // OCR結果テーブルの変更を監視
-    const subscription = supabase
-      .channel('ocr_results_changes')
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'ocr_results'
-      }, (payload) => {
-        console.log('新しいOCR結果:', payload);
-        
-        // トースト通知を表示
-        toast.success(
-          <div>
-            <div className="font-semibold">新しい書類が追加されました！</div>
-            <div className="text-sm mt-1">
-              {payload.new.vendor_name || 'OCR処理完了'} - ¥{payload.new.total_amount?.toLocaleString() || '0'}
-            </div>
-          </div>,
-          {
-            duration: 5000,
-            icon: '📄'
-          }
-        );
-        
-        // 新しい結果を追加
-        setNewOcrResults(prev => [...prev, payload.new]);
-        
-        // リストを再読み込み
-        if (activeTab === 'ocr') {
-          loadOcrResults();
-        }
-      })
-      .subscribe();
-
+    console.log('OCR結果のポーリングを開始...');
+    
+    // 初回読み込み
+    loadOcrResults();
+    
+    // 5秒ごとに更新をチェック
+    const intervalId = setInterval(() => {
+      loadOcrResultsSilently();
+    }, 5000);
+    
     return () => {
-      subscription.unsubscribe();
+      console.log('ポーリングを停止');
+      clearInterval(intervalId);
     };
   }, [activeTab]);
+  
+  // サイレント更新（UIをちらつかせない）
+  const loadOcrResultsSilently = async () => {
+    try {
+      const supabase = getSupabaseClient();
+      const companyId = '11111111-1111-1111-1111-111111111111';
+      
+      // 最新データを取得
+      const { data, error } = await supabase
+        .from('ocr_results')
+        .select('*')
+        .eq('company_id', companyId)
+        .order('created_at', { ascending: false })
+        .limit(itemsPerPage)
+        .range((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage - 1);
+      
+      if (error) return;
+      
+      // 新しいデータがある場合のみ更新
+      if (data && data.length > 0) {
+        const latestId = data[0].id;
+        const currentLatestId = ocrResults[0]?.id;
+        
+        if (latestId !== currentLatestId) {
+          // 新しいデータを検出
+          const newItems = data.filter(item => 
+            !ocrResults.find(existing => existing.id === item.id)
+          );
+          
+          if (newItems.length > 0) {
+            newItems.forEach(item => {
+              toast.success(
+                <div>
+                  <div className="font-semibold">新しい書類が追加されました！</div>
+                  <div className="text-sm mt-1">
+                    {item.vendor_name || 'OCR処理完了'} - ¥{item.total_amount?.toLocaleString() || '0'}
+                  </div>
+                </div>,
+                {
+                  duration: 5000,
+                  icon: '📄'
+                }
+              );
+            });
+            
+            setOcrResults(data);
+            setNewOcrResults(prev => [...prev, ...newItems]);
+          }
+        }
+      }
+    } catch (error) {
+      // サイレントに失敗（エラーログなし）
+    }
+  };
 
   const loadDocuments = async () => {
     setLoading(true);
