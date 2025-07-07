@@ -1,17 +1,5 @@
-/**
- * Google Apps Script - OCR処理とWebhook送信
- * 
- * 設定方法：
- * 1. Google Apps Scriptプロジェクトを作成
- * 2. このコードをコピー
- * 3. プロジェクト設定 > スクリプトプロパティに以下を追加：
- *    - WEBHOOK_URL: https://accounting-automation-l4rd0r8mn-effectmoes-projects.vercel.app/api/webhook/ocr
- * 4. デプロイ > 新しいデプロイ > ウェブアプリとして公開
- * 5. アクセス権限を「全員」に設定
- */
-
 // スクリプトプロパティから設定を取得
-const WEBHOOK_URL = PropertiesService.getScriptProperties().getProperty('WEBHOOK_URL');
+const WEBHOOK_URL = PropertiesService.getScriptProperties().getProperty('WEBHOOK_URL') || 'https://accounting-automation-1tyrdbbc0-effectmoes-projects.vercel.app/api/webhook/ocr';
 
 /**
  * HTTPリクエストを受け取る（ファイルアップロード時）
@@ -20,7 +8,6 @@ function doPost(e) {
   console.log('doPost開始:', new Date());
   
   try {
-    // リクエストデータを解析
     const data = JSON.parse(e.postData.contents);
     console.log('受信データ:', data);
     
@@ -128,7 +115,7 @@ function extractDocumentInfo(ocrText) {
   };
   
   // 店舗名・会社名の抽出
-  const storeNameMatch = ocrText.match(/(?:店|ストア|スーパー|マーケット|薬局|ドラッグ)[\s\S]{0,20}/);
+  const storeNameMatch = ocrText.match(/(?:店|ストア|スーパー|マーケット|薬局|ドラッグ|ローソン|セブン|ファミリーマート|ファミマ)[\s\S]{0,20}/);
   if (storeNameMatch) {
     info.storeName = storeNameMatch[0].trim();
     info.vendorName = info.storeName;
@@ -209,11 +196,6 @@ function extractDocumentInfo(ocrText) {
 function sendWebhook(data) {
   console.log('Webhook送信開始:', WEBHOOK_URL);
   
-  if (!WEBHOOK_URL) {
-    console.error('WEBHOOK_URLが設定されていません');
-    throw new Error('WEBHOOK_URLが設定されていません');
-  }
-  
   try {
     const options = {
       method: 'post',
@@ -241,55 +223,119 @@ function sendWebhook(data) {
 }
 
 /**
- * テスト用関数（直接実行可能）
+ * 初回セットアップ - Drive APIを有効化
  */
-function testOCR() {
-  // テスト用のファイルIDを設定
-  // ここに実際のファイルIDを入れてください！
-  const testFileId = 'YOUR_TEST_FILE_ID_HERE'; // ← ここを実際のファイルIDに変更
-  const testFileName = 'test-receipt.jpg';
-  
+function setupDriveAPI() {
   try {
-    const result = processOCR(testFileId, testFileName);
-    console.log('テスト結果:', result);
-    
-    // Webhookも送信してみる
-    sendWebhook(result);
-    console.log('Webhook送信完了！');
-    
+    DriveApp.getRootFolder();
+    console.log('✅ Drive API有効化完了');
+    return true;
   } catch (error) {
-    console.error('テストエラー:', error);
+    console.error('❌ Drive API有効化エラー:', error);
+    return false;
   }
 }
 
 /**
- * 簡単なテスト（Webhook送信のみ）
+ * テスト1: シンプルなWebhookテスト（ファイル不要）
  */
-function testWebhookOnly() {
+function test1_SimpleWebhook() {
+  console.log('=== シンプルWebhookテスト開始 ===');
+  
   const testData = {
-    fileId: 'test123',
-    fileName: 'test-receipt.jpg',
-    ocrText: 'テストレシート\n合計 1,000円\n2025/07/08',
+    fileId: 'test-' + new Date().getTime(),
+    fileName: 'テストレシート.jpg',
+    ocrText: 'ローソン\n2025年7月8日\n\n商品1 100円\n商品2 200円\n小計 300円\n消費税 30円\n合計 330円\n\nお預かり 500円\nお釣り 170円',
     documentInfo: {
-      vendorName: 'テスト店舗',
-      totalAmount: 1000,
-      receiptDate: '2025-07-08'
+      vendorName: 'ローソン',
+      storeName: 'ローソン',
+      receiptDate: '2025-07-08',
+      subtotalAmount: 300,
+      taxAmount: 30,
+      totalAmount: 330,
+      paymentAmount: 500,
+      changeAmount: 170
     },
     processedAt: new Date().toISOString()
   };
   
   try {
-    sendWebhook(testData);
-    console.log('テストWebhook送信成功！');
+    const result = sendWebhook(testData);
+    console.log('✅ Webhook送信成功！');
+    console.log('結果:', result);
+    console.log('\n本番環境でOCR結果タブを確認してください:');
+    console.log('https://accounting-automation-l4rd0r8mn-effectmoes-projects.vercel.app/documents');
   } catch (error) {
-    console.error('Webhook送信エラー:', error);
+    console.error('❌ Webhook送信失敗:', error);
   }
 }
 
 /**
- * Drive APIを有効化（初回のみ実行）
+ * テスト2: 実際のファイルでOCRテスト
  */
-function enableDriveAPI() {
-  // この関数を一度実行してDrive APIへのアクセス許可を取得
-  DriveApp.getRootFolder();
+function test2_RealFileOCR() {
+  console.log('=== 実ファイルOCRテスト開始 ===');
+  
+  // ここにファイルIDを入力してください
+  const fileId = 'ここに実際のファイルIDを入力'; // 例: '1abc123def456'
+  const fileName = 'test-receipt.jpg';
+  
+  if (fileId === 'ここに実際のファイルIDを入力') {
+    console.error('❌ エラー: ファイルIDを設定してください');
+    console.log('手順:');
+    console.log('1. Google Driveにレシート画像をアップロード');
+    console.log('2. ファイルを右クリック → リンクを取得');
+    console.log('3. URLの /d/ の後の部分がファイルID');
+    console.log('4. このスクリプトの fileId = の部分を更新');
+    return;
+  }
+  
+  try {
+    // Drive APIの確認
+    if (!setupDriveAPI()) {
+      console.error('Drive APIが有効化されていません');
+      return;
+    }
+    
+    // OCR実行
+    const result = processOCR(fileId, fileName);
+    console.log('✅ OCR処理成功！');
+    console.log('抽出されたテキスト:', result.ocrText);
+    console.log('抽出された情報:', result.documentInfo);
+    
+    // Webhookで送信
+    sendWebhook(result);
+    console.log('✅ Webhook送信成功！');
+    
+  } catch (error) {
+    console.error('❌ テスト失敗:', error);
+  }
+}
+
+/**
+ * ステータス確認
+ */
+function checkStatus() {
+  console.log('=== ステータス確認 ===');
+  
+  // Drive API
+  try {
+    DriveApp.getRootFolder();
+    console.log('✅ Drive API: 有効');
+  } catch (error) {
+    console.log('❌ Drive API: 無効（setupDriveAPI()を実行してください）');
+  }
+  
+  // Webhook URL
+  const webhookUrl = PropertiesService.getScriptProperties().getProperty('WEBHOOK_URL');
+  if (webhookUrl) {
+    console.log('✅ Webhook URL (プロパティ): ' + webhookUrl);
+  } else {
+    console.log('⚠️ Webhook URL: デフォルト値を使用');
+    console.log('  URL: ' + WEBHOOK_URL);
+  }
+  
+  console.log('\n使い方:');
+  console.log('1. test1_SimpleWebhook() - ファイル不要のテスト');
+  console.log('2. test2_RealFileOCR() - 実際のファイルでテスト（要ファイルID）');
 }

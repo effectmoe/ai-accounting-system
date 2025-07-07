@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/lib/supabase-singleton';
 
+// 認証を無効化
+export const runtime = 'edge';
+
 export async function POST(request: NextRequest) {
   try {
     const data = await request.json();
@@ -57,4 +60,16 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+// OPTIONSメソッドを追加（CORS対応）
+export async function OPTIONS(request: NextRequest) {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+    },
+  });
 }
