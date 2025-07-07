@@ -7,6 +7,7 @@ export async function POST(request: NextRequest) {
     console.log('Received request body:', JSON.stringify(body, null, 2));
     const {
       ocrResultId,
+      document_type = 'receipt',
       vendor_name = '',
       receipt_date = new Date().toISOString().split('T')[0],
       subtotal_amount = 0,
@@ -19,7 +20,7 @@ export async function POST(request: NextRequest) {
       store_phone = '',
       company_name = '',
       notes = '',
-      file_name = '領収書'
+      file_name = '文書'
     } = body;
 
     // サービスロールキーを使用してRLSをバイパス
@@ -66,12 +67,21 @@ export async function POST(request: NextRequest) {
       receipt_number ? `領収書番号: ${receipt_number}` : ''
     ].filter(n => n).join('\n');
 
-    // 保存するデータを準備
+    // 文書番号のプレフィックスを文書種別に応じて変更
+    const prefixMap = {
+      receipt: 'REC',
+      invoice: 'INV',
+      estimate: 'EST',
+      delivery_note: 'DLV'
+    };
+    const prefix = prefixMap[document_type as keyof typeof prefixMap] || 'DOC';
+
+    // 保存するデータを準備（存在するカラムのみ使用）
     const documentData = {
         company_id: companyId,
-        document_type: 'receipt',
-        type: 'receipt',  // 既存のtypeカラムにも値を設定
-        document_number: receipt_number || `REC-${new Date().getTime()}`,
+        document_type: document_type,
+        type: document_type,  // 既存のtypeカラムにも値を設定
+        document_number: receipt_number || `${prefix}-${new Date().getTime()}`,
         issue_date: receipt_date,
         partner_name: partnerName,
         partner_address: '',
@@ -126,13 +136,20 @@ export async function POST(request: NextRequest) {
 
     // OCR結果を更新
     if (ocrResultId) {
-      await supabase
+      const { error: updateError } = await supabase
         .from('ocr_results')
         .update({ 
           linked_document_id: savedDoc.id,
           status: 'processed'
         })
         .eq('id', ocrResultId);
+        
+      if (updateError) {
+        console.error('OCR result update error:', updateError);
+        // エラーがあってもレスポンスは成功として返す（文書は作成済みのため）
+      } else {
+        console.log('OCR result updated successfully:', ocrResultId);
+      }
     }
 
     // 勘定科目を推論（非同期で実行）
@@ -167,9 +184,17 @@ export async function POST(request: NextRequest) {
     }
     */
 
+    const documentTypeLabels = {
+      receipt: '領収書',
+      invoice: '請求書',
+      estimate: '見積書',
+      delivery_note: '納品書'
+    };
+    const label = documentTypeLabels[document_type as keyof typeof documentTypeLabels] || '文書';
+
     return NextResponse.json({
       id: savedDoc.id,
-      message: '領収書を作成しました（勘定科目を推論中...）'
+      message: `${label}を作成しました（勘定科目を推論中...）`
     });
 
   } catch (error) {
