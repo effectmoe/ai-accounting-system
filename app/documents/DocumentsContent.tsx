@@ -373,66 +373,85 @@ export default function DocumentsContent() {
                     <p className="mt-2 text-gray-600">OCR処理済みの書類がありません</p>
                   </div>
                 ) : (
-                  <div className="divide-y divide-gray-200">
-                    {ocrResults.map((result) => (
-                      <div key={result.id} className="p-6">
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1">
-                            <h3 className="text-lg font-medium text-gray-900">
+                  <div className="overflow-hidden">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            文書番号
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            種類
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            取引先
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            金額
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            発行日
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            ステータス
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            アクション
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {ocrResults.map((result) => (
+                          <tr key={result.id}>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                               {result.file_name}
-                            </h3>
-                            <div className="mt-2 grid grid-cols-2 gap-4 text-sm text-gray-600">
-                              <div>
-                                <span className="font-medium">ベンダー:</span> {result.vendor_name}
-                              </div>
-                              <div>
-                                <span className="font-medium">日付:</span> {result.receipt_date}
-                              </div>
-                              <div>
-                                <span className="font-medium">合計:</span> ¥{result.total_amount.toLocaleString()}
-                              </div>
-                              <div>
-                                <span className="font-medium">税額:</span> ¥{result.tax_amount.toLocaleString()}
-                              </div>
-                              {result.store_name && (
-                                <div>
-                                  <span className="font-medium">店舗名:</span> {result.store_name}
-                                </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                領収書
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {result.vendor_name}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              ¥{result.total_amount.toLocaleString()}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {new Date(result.receipt_date).toLocaleDateString('ja-JP')}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              {result.linked_document_id ? (
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                  確定済み
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                  未処理
+                                </span>
                               )}
-                              {result.receipt_number && (
-                                <div>
-                                  <span className="font-medium">領収書番号:</span> {result.receipt_number}
-                                </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                              {result.linked_document_id ? (
+                                <Link
+                                  href={`/documents/${result.linked_document_id}`}
+                                  className="text-blue-600 hover:text-blue-900"
+                                >
+                                  詳細
+                                </Link>
+                              ) : (
+                                <button
+                                  onClick={() => handleCreateDocument(result)}
+                                  className="text-white bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded-md text-sm"
+                                >
+                                  文書化
+                                </button>
                               )}
-                            </div>
-                            {result.notes && (
-                              <div className="mt-2 text-sm text-gray-600">
-                                <span className="font-medium">備考:</span> {result.notes}
-                              </div>
-                            )}
-                          </div>
-                          <div className="ml-4 flex flex-col space-y-2">
-                            {result.linked_document_id ? (
-                              <Link
-                                href={`/documents/${result.linked_document_id}`}
-                                className="inline-flex items-center px-3 py-1.5 border border-green-600 rounded-md text-sm font-medium text-green-600 bg-white hover:bg-green-50"
-                              >
-                                <FileCheck className="h-4 w-4 mr-1" />
-                                文書化済み
-                              </Link>
-                            ) : (
-                              <button
-                                onClick={() => handleCreateDocument(result)}
-                                className="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
-                              >
-                                <FileText className="h-4 w-4 mr-1" />
-                                文書化
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 )
               ) : (
