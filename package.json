@@ -18,6 +18,7 @@
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
+    "deploy:mastra": "tsx scripts/deploy-with-mastra.ts",
     "test:supabase": "node scripts/test-supabase.js",
     "db:migrate": "supabase db push",
     "db:reset": "supabase db reset",
