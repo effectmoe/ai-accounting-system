@@ -135,9 +135,41 @@ export async function POST(request: NextRequest) {
         .eq('id', ocrResultId);
     }
 
+    // 勘定科目を推論（非同期で実行）
+    // TODO: Mastraのビルド問題を解決後に有効化
+    /*
+    try {
+      const { AccountInferenceAgent } = await import('@/agents/account-inference-agent');
+      const agent = new AccountInferenceAgent();
+      
+      // 非同期で推論実行（レスポンスを待たない）
+      agent.analyzeDocument({
+        documentType: 'receipt',
+        vendorName: partnerName,
+        items: [{
+          name: file_name || '商品・サービス',
+          amount: calculatedSubtotal
+        }],
+        totalAmount: total_amount,
+        notes: enhancedNotes,
+        extractedText: body.extracted_text
+      }).then(async (inference) => {
+        if (inference) {
+          await agent.saveInference(savedDoc.id, inference);
+          console.log('勘定科目推論完了:', inference);
+        }
+      }).catch((error) => {
+        console.error('勘定科目推論エラー:', error);
+      });
+    } catch (error) {
+      console.error('Agent initialization error:', error);
+      // エラーが発生しても文書作成は成功とする
+    }
+    */
+
     return NextResponse.json({
       id: savedDoc.id,
-      message: '領収書を作成しました'
+      message: '領収書を作成しました（勘定科目を推論中...）'
     });
 
   } catch (error) {

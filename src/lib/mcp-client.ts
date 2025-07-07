@@ -1,83 +1,134 @@
-import { Client } from '@modelcontextprotocol/sdk/client/index.js';
-import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-import { spawn } from 'child_process';
+// MCP クライアントの統合管理
+export class McpClient {
+  private perplexityApiKey: string;
+  private webSearchEnabled: boolean;
 
-export interface MCPServerConfig {
-  command: string;
-  args: string[];
-  env?: Record<string, string>;
+  constructor() {
+    this.perplexityApiKey = process.env.PERPLEXITY_API_KEY || '';
+    this.webSearchEnabled = true;
+  }
+
+  // Perplexityを使用した高度な検索
+  async searchAccountingInfo(query: string): Promise<any> {
+    try {
+      const searchQuery = `日本の会計基準 税務処理 ${query} 勘定科目 仕訳 国税庁`;
+      
+      const response = await fetch('https://api.perplexity.ai/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${this.perplexityApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'pplx-70b-online',
+          messages: [
+            {
+              role: 'system',
+              content: 'あなたは日本の会計・税務の専門家です。最新の税法と会計基準に基づいて回答してください。'
+            },
+            {
+              role: 'user',
+              content: searchQuery
+            }
+          ],
+          temperature: 0.1,
+          max_tokens: 1000,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Perplexity API error: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return data.choices[0].message.content;
+    } catch (error) {
+      console.error('Perplexity search error:', error);
+      return null;
+    }
+  }
+
+  // 国税庁のガイドラインを検索
+  async searchTaxGuidelines(keyword: string): Promise<string> {
+    try {
+      // 実際にはMCPサーバー経由でWebスクレイピングや
+      // 国税庁APIを使用する想定
+      const guidelines = [
+        '接待交際費: 取引先との飲食費は5,000円以下なら会議費、超える場合は接待交際費',
+        '旅費交通費: 通勤費は非課税限度額まで、出張旅費は実費精算',
+        '消耗品費: 10万円未満の物品購入、使用可能期間が1年未満',
+        '広告宣伝費: 不特定多数への宣伝費用、特定顧客への贈答は接待交際費',
+      ];
+
+      return guidelines.join('\n');
+    } catch (error) {
+      console.error('Tax guidelines search error:', error);
+      return '';
+    }
+  }
+
+  // 業界別の勘定科目慣習を取得
+  async getIndustryPractices(industry: string, transactionType: string): Promise<string> {
+    try {
+      // 業界別の慣習データベースや外部APIから取得
+      const practices = {
+        'IT業界': {
+          'ソフトウェア購入': '無形固定資産またはソフトウェア費',
+          'クラウドサービス': '通信費または支払手数料',
+          '開発外注費': '外注費または業務委託費',
+        },
+        '飲食業': {
+          '食材仕入': '仕入高',
+          '厨房機器': '10万円以上なら器具備品、未満なら消耗品費',
+          '店舗改装': '修繕費または資本的支出',
+        },
+        '小売業': {
+          '商品仕入': '仕入高',
+          '包装資材': '荷造運賃または消耗品費',
+          '店舗賃料': '地代家賃',
+        },
+      };
+
+      return JSON.stringify(practices[industry] || {});
+    } catch (error) {
+      console.error('Industry practices search error:', error);
+      return '{}';
+    }
+  }
+
+  // 類似取引の勘定科目を検索
+  async searchSimilarTransactions(description: string, amount: number): Promise<any[]> {
+    try {
+      // 実際にはベクトル検索などで類似取引を検索
+      const { getSupabaseClient } = await import('@/lib/supabase-singleton');
+      const supabase = getSupabaseClient();
+      
+      const { data } = await supabase
+        .from('documents')
+        .select(`
+          *,
+          account_categories (
+            code,
+            name,
+            category_type
+          )
+        `)
+        .textSearch('notes', description)
+        .limit(5);
+
+      return data || [];
+    } catch (error) {
+      console.error('Similar transactions search error:', error);
+      return [];
+    }
+  }
 }
 
-export class MCPClientManager {
-  private clients: Map<string, Client> = new Map();
-  
-  async connectServer(name: string, config: MCPServerConfig) {
-    try {
-      console.log(`Connecting to ${name} MCP server...`);
-      
-      const transport = new StdioClientTransport({
-        command: config.command,
-        args: config.args,
-        env: {
-          ...process.env,
-          ...config.env
-        } as Record<string, string>
-      });
-      
-      const client = new Client({
-        name: `mastra-${name}`,
-        version: '1.0.0'
-      }, {
-        capabilities: {}
-      });
-      
-      await client.connect(transport);
-      this.clients.set(name, client);
-      
-      console.log(`Connected to ${name} MCP server successfully`);
-      return client;
-    } catch (error) {
-      console.error(`Failed to connect to ${name} MCP server:`, error);
-      throw error;
-    }
-  }
-  
-  async callTool(serverName: string, toolName: string, args: any) {
-    const client = this.clients.get(serverName);
-    if (!client) {
-      throw new Error(`MCP server ${serverName} not connected`);
-    }
-    
-    try {
-      const result = await client.callTool({
-        name: toolName,
-        arguments: args
-      });
-      
-      return result.content;
-    } catch (error) {
-      console.error(`Error calling tool ${toolName} on ${serverName}:`, error);
-      throw error;
-    }
-  }
-  
-  async disconnect(serverName: string) {
-    const client = this.clients.get(serverName);
-    if (client) {
-      await client.close();
-      this.clients.delete(serverName);
-      console.log(`Disconnected from ${serverName} MCP server`);
-    }
-  }
-  
-  async disconnectAll() {
-    for (const [name, client] of this.clients) {
-      await client.close();
-      console.log(`Disconnected from ${name} MCP server`);
-    }
-    this.clients.clear();
-  }
-}
+let mcpClientInstance: McpClient | null = null;
 
-// シングルトンインスタンス
-export const mcpManager = new MCPClientManager();
+export function getMcpClient(): McpClient {
+  if (!mcpClientInstance) {
+    mcpClientInstance = new McpClient();
+  }
+  return mcpClientInstance;
+}

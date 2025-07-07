@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { orchestrator } from '@/mastra-orchestrator';
+// import { orchestrator } from '@/mastra-orchestrator';
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,12 +13,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // NLPオーケストレーターで自然言語処理
-    const result = await orchestrator.processNaturalLanguage(input, context);
-
+    // 一時的にモックレスポンスを返す
     return NextResponse.json({
       success: true,
-      data: result,
+      data: {
+        action: 'mock_response',
+        message: 'NLP processing is temporarily disabled for production deployment',
+        input: input,
+      },
     });
   } catch (error) {
     console.error('NLP API Error:', error);
@@ -34,9 +36,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET() {
   try {
-    // ヘルスチェック
-    const healthStatus = await orchestrator.healthCheck();
-    
+    // ヘルスチェック（モック）
     return NextResponse.json({
       status: 'healthy',
       features: [
@@ -49,8 +49,13 @@ export async function GET() {
         'ui_generation',
         'nlweb_integration'
       ],
-      agents: healthStatus.agents,
-      nlpOrchestrator: healthStatus.nlpOrchestrator,
+      agents: {
+        status: 'mocked',
+        message: 'Agents are temporarily disabled for production deployment'
+      },
+      nlpOrchestrator: {
+        status: 'mocked'
+      },
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
