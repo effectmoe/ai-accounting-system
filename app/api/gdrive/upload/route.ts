@@ -60,6 +60,33 @@ export async function POST(request: NextRequest) {
       throw new Error('ファイルのアップロードに失敗しました');
     }
 
+    // GAS Webhookを呼び出してOCR処理を開始
+    const gasWebhookUrl = process.env.GAS_WEBHOOK_URL;
+    if (gasWebhookUrl) {
+      console.log('Calling GAS webhook:', gasWebhookUrl);
+      try {
+        const webhookResponse = await fetch(gasWebhookUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            fileId: driveResponse.data.id,
+            fileName: driveResponse.data.name,
+            uploadTime: new Date().toISOString(),
+          }),
+        });
+        
+        const webhookResult = await webhookResponse.text();
+        console.log('GAS webhook response:', webhookResult);
+      } catch (webhookError) {
+        console.error('GAS webhook error:', webhookError);
+        // Webhookエラーがあってもアップロードは成功として扱う
+      }
+    } else {
+      console.warn('GAS_WEBHOOK_URL is not configured');
+    }
+
     return NextResponse.json({
       success: true,
       fileId: driveResponse.data.id,
