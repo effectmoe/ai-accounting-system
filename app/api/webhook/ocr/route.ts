@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/lib/supabase-singleton';
 
-// 認証を無効化
-export const runtime = 'edge';
+// Node.js Runtimeを使用
+export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
   try {
