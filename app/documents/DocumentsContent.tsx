@@ -416,7 +416,7 @@ export default function DocumentsContent() {
                         {ocrResults.map((result) => (
                           <tr key={result.id}>
                             <td className="px-3 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                              {result.receipt_number || result.file_name.split('.')[0]}
+                              {result.receipt_number || (result.file_name ? result.file_name.split('.')[0] : '-')}
                             </td>
                             <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500">
                               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
@@ -427,26 +427,26 @@ export default function DocumentsContent() {
                               {result.vendor_name || result.store_name || result.company_name || '-'}
                             </td>
                             <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900">
-                              ¥{(result.subtotal_amount || (result.total_amount - result.tax_amount)).toLocaleString()}
+                              ¥{(result.subtotal_amount ?? ((result.total_amount ?? 0) - (result.tax_amount ?? 0))).toLocaleString()}
                             </td>
                             <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500">
-                              ¥{result.tax_amount.toLocaleString()}
+                              ¥{(result.tax_amount ?? 0).toLocaleString()}
                             </td>
                             <td className="px-3 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                              ¥{result.total_amount.toLocaleString()}
+                              ¥{(result.total_amount ?? 0).toLocaleString()}
                             </td>
                             <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500">
                               {result.payment_amount ? (
                                 <div>
-                                  <div>¥{result.payment_amount.toLocaleString()}</div>
+                                  <div>¥{(result.payment_amount ?? 0).toLocaleString()}</div>
                                   {result.change_amount ? (
-                                    <div className="text-xs">お釣り: ¥{result.change_amount.toLocaleString()}</div>
+                                    <div className="text-xs">お釣り: ¥{(result.change_amount ?? 0).toLocaleString()}</div>
                                   ) : null}
                                 </div>
                               ) : '-'}
                             </td>
                             <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {new Date(result.receipt_date).toLocaleDateString('ja-JP')}
+                              {result.receipt_date ? new Date(result.receipt_date).toLocaleDateString('ja-JP') : '-'}
                             </td>
                             <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900">
                               <span className="inline-flex items-center px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded">
@@ -529,15 +529,15 @@ export default function DocumentsContent() {
                               <div className="space-y-1">
                                 <div className="flex justify-between text-sm">
                                   <span className="text-gray-600">小計:</span>
-                                  <span className="font-medium">¥{doc.subtotal.toLocaleString()}</span>
+                                  <span className="font-medium">¥{(doc.subtotal ?? 0).toLocaleString()}</span>
                                 </div>
                                 <div className="flex justify-between text-sm">
                                   <span className="text-gray-600">消費税:</span>
-                                  <span>¥{doc.taxAmount.toLocaleString()}</span>
+                                  <span>¥{(doc.taxAmount ?? 0).toLocaleString()}</span>
                                 </div>
                                 <div className="flex justify-between text-sm font-semibold">
                                   <span>合計:</span>
-                                  <span className="text-lg">¥{doc.totalAmount.toLocaleString()}</span>
+                                  <span className="text-lg">¥{(doc.totalAmount ?? 0).toLocaleString()}</span>
                                 </div>
                               </div>
                             </div>
@@ -548,12 +548,12 @@ export default function DocumentsContent() {
                               <div className="space-y-1 text-sm">
                                 <div className="flex justify-between">
                                   <span className="text-gray-600">発行日:</span>
-                                  <span>{new Date(doc.issueDate).toLocaleDateString('ja-JP')}</span>
+                                  <span>{doc.issueDate ? new Date(doc.issueDate).toLocaleDateString('ja-JP') : '-'}</span>
                                 </div>
                                 {doc.dueDate && (
                                   <div className="flex justify-between">
                                     <span className="text-gray-600">支払期限:</span>
-                                    <span>{new Date(doc.dueDate).toLocaleDateString('ja-JP')}</span>
+                                    <span>{doc.dueDate ? new Date(doc.dueDate).toLocaleDateString('ja-JP') : '-'}</span>
                                   </div>
                                 )}
                               </div>
@@ -621,7 +621,7 @@ export default function DocumentsContent() {
                                 </div>
                               )}
                               <div className="text-xs text-gray-400 mt-1">
-                                作成: {new Date(doc.createdAt).toLocaleDateString('ja-JP')}
+                                作成: {doc.createdAt ? new Date(doc.createdAt).toLocaleDateString('ja-JP') : '-'}
                               </div>
                             </div>
                           </div>
