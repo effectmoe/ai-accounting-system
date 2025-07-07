@@ -21,5 +21,6 @@
     "app/api/batch-import/route.ts": {
       "maxDuration": 60
     }
-  }
+  },
+  "public": true
 }
