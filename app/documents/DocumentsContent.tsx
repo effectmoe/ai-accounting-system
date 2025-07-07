@@ -377,25 +377,37 @@ export default function DocumentsContent() {
                     <table className="min-w-full divide-y divide-gray-200">
                       <thead className="bg-gray-50">
                         <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             文書番号
                           </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             種類
                           </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             取引先
                           </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            金額
+                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            小計
                           </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            税額
+                          </th>
+                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            合計
+                          </th>
+                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            支払/お釣り
+                          </th>
+                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             発行日
                           </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            勘定科目
+                          </th>
+                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             ステータス
                           </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             アクション
                           </th>
                         </tr>
@@ -403,26 +415,47 @@ export default function DocumentsContent() {
                       <tbody className="bg-white divide-y divide-gray-200">
                         {ocrResults.map((result) => (
                           <tr key={result.id}>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                              {result.file_name}
+                            <td className="px-3 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                              {result.receipt_number || result.file_name.split('.')[0]}
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500">
                               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                                 領収書
                               </span>
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                              {result.vendor_name}
+                            <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {result.vendor_name || result.store_name || result.company_name || '-'}
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900">
+                              ¥{(result.subtotal_amount || (result.total_amount - result.tax_amount)).toLocaleString()}
+                            </td>
+                            <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500">
+                              ¥{result.tax_amount.toLocaleString()}
+                            </td>
+                            <td className="px-3 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                               ¥{result.total_amount.toLocaleString()}
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {result.payment_amount ? (
+                                <div>
+                                  <div>¥{result.payment_amount.toLocaleString()}</div>
+                                  {result.change_amount ? (
+                                    <div className="text-xs">お釣り: ¥{result.change_amount.toLocaleString()}</div>
+                                  ) : null}
+                                </div>
+                              ) : '-'}
+                            </td>
+                            <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500">
                               {new Date(result.receipt_date).toLocaleDateString('ja-JP')}
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
+                            <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900">
+                              <span className="inline-flex items-center px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded">
+                                未分類
+                              </span>
+                            </td>
+                            <td className="px-3 py-4 whitespace-nowrap">
                               {result.linked_document_id ? (
-                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
                                   文書化済み
                                 </span>
                               ) : (
@@ -431,7 +464,7 @@ export default function DocumentsContent() {
                                 </span>
                               )}
                             </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <td className="px-3 py-4 whitespace-nowrap text-sm font-medium">
                               {result.linked_document_id ? (
                                 <Link
                                   href={`/documents/${result.linked_document_id}`}
