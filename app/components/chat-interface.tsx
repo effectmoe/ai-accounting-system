@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { DocumentGenerator, generateDocumentHTML, DocumentData } from '@/lib/document-generator';
 import { OCRProcessor } from '@/lib/ocr-processor';
+import { processUserInput as nlpProcessUserInput } from '@/nlp-orchestrator-wrapper';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -280,9 +281,70 @@ export default function ChatInterface() {
     }
   };
 
-  // 処理関数
+  // NLPオーケストレーターを使用した処理関数
   async function processUserInput(text: string, file: File | null): Promise<{ content: string; documentData?: DocumentData; actions?: Message['actions'] }> {
     const companyId = '11111111-1111-1111-1111-111111111111'; // デモ用固定値
+    
+    // まずNLPオーケストレーターで自然言語処理を試行
+    if (!file && text.trim()) {
+      try {
+        const nlpResult = await nlpProcessUserInput(text, {
+          companyId,
+          userId: 'demo-user'
+        });
+        
+        if (nlpResult.success) {
+          // NLPオーケストレーターで処理成功
+          const actions: Message['actions'] = [];
+          
+          // 帳票生成の場合
+          if (nlpResult.intent.type === 'create_document' && nlpResult.result.documentData) {
+            actions.push(
+              {
+                label: 'PDFダウンロード',
+                action: 'download_pdf',
+                data: nlpResult.result.documentData
+              },
+              {
+                label: '保存',
+                action: 'save_document',
+                data: nlpResult.result.documentData
+              }
+            );
+          }
+          
+          // 提案がある場合はアクションとして追加
+          if (nlpResult.suggestions && nlpResult.suggestions.length > 0) {
+            // 最初の提案のみボタンとして表示
+            const suggestion = nlpResult.suggestions[0];
+            if (suggestion.includes('メール')) {
+              actions.push({
+                label: 'メール送信',
+                action: 'send_email',
+                data: nlpResult.result.documentData
+              });
+            }
+            if (suggestion.includes('PDF')) {
+              actions.push({
+                label: 'PDFとして保存',
+                action: 'download_pdf',
+                data: nlpResult.result.documentData
+              });
+            }
+          }
+          
+          return {
+            content: nlpResult.response + (nlpResult.suggestions.length > 0 ? 
+              '\n\n【提案】\n' + nlpResult.suggestions.join('\n') : ''),
+            documentData: nlpResult.result.documentData,
+            actions
+          };
+        }
+      } catch (error) {
+        console.warn('NLPオーケストレーターでの処理に失敗、従来処理にフォールバック:', error);
+        // フォールバックとして従来の処理を継続
+      }
+    }
     
     // 領収書・PDFのOCR処理
     if (file) {
@@ -419,9 +481,9 @@ ${errorData.detail ? `\n詳細: ${errorData.detail}` : ''}
       };
     }
 
-    // デフォルトレスポンス
+    // デフォルトレスポンス（自然言語での説明を追加）
     return {
-      content: `「${text}」について処理します。\n\n具体的にどのような処理をご希望ですか？\n・仕訳の作成\n・見積書/請求書/領収書の作成\n・取引の検索\n・レポートの作成`
+      content: `「${text}」について処理します。\n\n【利用できる機能】\n・自然言語での帳票作成\n  例：「ABC商事に100万円の請求書を作って」\n\n・仕訳の作成\n  例：「7/1にお客さんと飲みに行った3000円」\n\n・書類のOCR処理\n  例：領収書やPDFの画像をアップロード\n\n・データ分析\n  例：「先月の売上を教えて」\n\n・質問応答\n  例：「消費税の計算方法は？」\n\nより具体的な指示をお聞かせください。`
     };
   }
 

@@ -54,3 +54,32 @@ Thumbs.db
 # Supabase
 supabase/.branches
 supabase/.temp
+
+# backups
+backups/
+gas-src/
+playwright-mcp/
+
+# test files
+test-*.js
+update-*.js
+*_test.js
+*_realtime*.js
+check_*.js
+diagnose_*.js
+direct-*.js
+enable_*.js
+setup_*.js
+simple_*.js
+
+# SQL files
+*.sql
+
+# GAS files in root
+*.gs
+
+# MCP servers
+.mcp-servers/
+
+# Test environment files
+.env.test
