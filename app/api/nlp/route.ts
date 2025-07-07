@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { orchestrator } from '@/src/mastra-orchestrator';
+import { orchestrator } from '@/mastra-orchestrator';
 
 export async function POST(request: NextRequest) {
   try {

@@ -1,16 +1,13 @@
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseClient } from '@/lib/supabase-singleton';
 import { DocumentData } from '@/lib/document-generator';
 import { generatePDFBlob } from '@/lib/pdf-export';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+const supabase = getSupabaseClient();
 
 export interface SavedDocument extends DocumentData {
   id: string;
   companyId: string;
-  status: 'draft' | 'sent' | 'viewed' | 'accepted' | 'paid' | 'cancelled';
+  status: 'draft' | 'confirmed' | 'viewed' | 'accepted' | 'paid' | 'cancelled';
   createdAt: string;
   updatedAt: string;
   pdfUrl?: string;
@@ -258,6 +255,45 @@ export class DocumentService {
   }
 
   /**
+   * 文書を削除
+   */
+  static async deleteDocument(documentId: string): Promise<boolean> {
+    try {
+      // まず明細を削除
+      const { error: itemsError } = await supabase
+        .from('document_items')
+        .delete()
+        .eq('document_id', documentId);
+
+      if (itemsError) throw itemsError;
+
+      // 文書本体を削除
+      const { error: docError } = await supabase
+        .from('documents')
+        .delete()
+        .eq('id', documentId);
+
+      if (docError) throw docError;
+
+      // PDFも削除（存在する場合）
+      try {
+        const fileName = `documents/${documentId}/`;
+        await supabase.storage
+          .from('documents')
+          .remove([fileName]);
+      } catch (storageError) {
+        console.error('Error deleting PDF:', storageError);
+        // ストレージエラーは無視
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error deleting document:', error);
+      return false;
+    }
+  }
+
+  /**
    * データベースの結果をDocumentDataにマッピング
    */
   private static mapToDocumentData(dbDoc: any): SavedDocument {
@@ -282,9 +318,9 @@ export class DocumentService {
         taxRate: parseFloat(item.tax_rate),
         amount: parseFloat(item.amount)
       })) || [],
-      subtotal: parseFloat(dbDoc.subtotal),
-      tax: parseFloat(dbDoc.tax_amount),
-      total: parseFloat(dbDoc.total_amount),
+      subtotal: parseFloat(dbDoc.subtotal || '0'),
+      tax: parseFloat(dbDoc.tax_amount || '0'),
+      total: parseFloat(dbDoc.total_amount || '0'),
       notes: dbDoc.notes,
       paymentTerms: dbDoc.payment_terms,
       validUntil: dbDoc.valid_until,

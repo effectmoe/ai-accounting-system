@@ -55,7 +55,7 @@ async function updateGASProject() {
 
     // 2. 新しいコードを読み込み
     console.log('📖 新しいコードを読み込み中...');
-    const newCodePath = '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/gas-src/complete-ocr-system.gs';
+    const newCodePath = '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/gas-src/complete-ocr-system-fixed.gs';
     const newCode = fs.readFileSync(newCodePath, 'utf8');
 
     console.log(`📊 新しいコード: ${newCode.split('\n').length}行`);
@@ -123,7 +123,7 @@ async function updateGASProject() {
       const versionResult = await script.projects.versions.create({
         scriptId: SCRIPT_ID,
         requestBody: {
-          description: `AI会計OCRシステム v2.0.0 - ${new Date().toISOString()}`,
+          description: `AI会計OCRシステム v2.1.0 (修正版) - ${new Date().toISOString()}`,
         },
       });
       

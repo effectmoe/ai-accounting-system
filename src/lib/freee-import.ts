@@ -3,7 +3,7 @@ import { parse } from 'csv-parse/sync';
 import * as fs from 'fs/promises';
 import * as iconv from 'iconv-lite';
 import { z } from 'zod';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseClient } from '@/lib/supabase-singleton';
 
 // Freee Partner Schema
 const FreeePartnerSchema = z.object({
@@ -113,10 +113,14 @@ export interface ImportOptions {
 }
 
 export class FreeeImporter {
-  private supabase: ReturnType<typeof createClient>;
+  private supabase: ReturnType<typeof getSupabaseClient>;
   
-  constructor(supabaseUrl: string, supabaseKey: string) {
-    this.supabase = createClient(supabaseUrl, supabaseKey);
+  constructor(supabaseUrl?: string, supabaseKey?: string) {
+    // supabaseUrl と supabaseKey が提供された場合は警告を表示
+    if (supabaseUrl || supabaseKey) {
+      console.warn('FreeeImporter: supabaseUrl and supabaseKey parameters are deprecated. Using singleton instance.');
+    }
+    this.supabase = getSupabaseClient();
   }
   
   async importFile(filePath: string, options: ImportOptions) {

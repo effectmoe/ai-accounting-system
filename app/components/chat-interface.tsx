@@ -1,15 +1,12 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseClient } from '@/lib/supabase-singleton';
 import { DocumentGenerator, generateDocumentHTML, DocumentData } from '@/lib/document-generator';
 import { OCRProcessor } from '@/lib/ocr-processor';
 import { processUserInput as nlpProcessUserInput } from '@/nlp-orchestrator-wrapper';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+const supabase = getSupabaseClient();
 
 const documentGenerator = new DocumentGenerator();
 const ocrProcessor = new OCRProcessor();

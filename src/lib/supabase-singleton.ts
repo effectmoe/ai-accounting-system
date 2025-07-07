@@ -42,6 +42,8 @@ export const isSupabaseConfigured = () => {
       configured,
       hasUrl: !!supabaseUrl,
       hasKey: !!supabaseAnonKey,
+      url: supabaseUrl?.substring(0, 30) + '...',
+      keyPrefix: supabaseAnonKey?.substring(0, 20) + '...'
     });
   }
   

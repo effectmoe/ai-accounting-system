@@ -31,6 +31,12 @@ const nextConfig = {
         contextRegExp: /@ai-sdk|ai/,
       })
     );
+    
+    // aiモジュールのtestディレクトリを完全に除外
+    config.module.rules.push({
+      test: /node_modules\/(ai|@ai-sdk).*\/test\/.*/,
+      use: 'null-loader',
+    });
 
     return config;
   },

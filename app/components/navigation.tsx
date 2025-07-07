@@ -12,6 +12,8 @@ export default function Navigation() {
     { href: '/accounts', label: '勘定科目' },
     { href: '/journal', label: '仕訳帳' },
     { href: '/import', label: 'データインポート' },
+    { href: '/automation', label: '自動化管理' },
+    { href: '/mastra-admin', label: 'AAM管理' },
   ];
   
   return (
@@ -21,7 +23,7 @@ export default function Navigation() {
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <span className="text-white font-bold text-xl">
-                Mastra会計システム
+                AAM会計システム
               </span>
             </div>
             <div className="hidden md:block ml-10">
