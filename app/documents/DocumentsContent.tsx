@@ -93,6 +93,7 @@ export default function DocumentsContent() {
       const data = await response.json();
       
       if (data.success) {
+        console.log('Fetched OCR results:', data.data);
         setOcrResults(data.data || []);
         setTotalPages(Math.ceil((data.total || 0) / documentsPerPage));
       } else {
@@ -198,11 +199,9 @@ export default function DocumentsContent() {
             ? { ...ocr, linked_document_id: result.id, status: 'processed' }
             : ocr
         ));
-        // 少し遅延を入れてから更新（データベースの更新を待つ）
-        setTimeout(async () => {
-          await fetchOcrResults();
-          await fetchDocuments();
-        }, 1000);
+        // 文書一覧のみ更新（OCR結果はローカルステートを維持）
+        await fetchDocuments();
+        
       } else {
         console.error('Document creation error:', result);
         toast.error(result.error || '文書の作成に失敗しました');
@@ -258,16 +257,20 @@ export default function DocumentsContent() {
     }
   };
 
-  // 初回ロード
+  // 初回ロードのみ
   useEffect(() => {
     setLoading(true);
     
-    if (activeTab === 'ocr') {
-      fetchOcrResults().finally(() => setLoading(false));
-    } else {
-      fetchDocuments().finally(() => setLoading(false));
-    }
-  }, [activeTab, fetchOcrResults, fetchDocuments]);
+    // 初回ロード時のみ実行
+    fetchOcrResults();
+    fetchDocuments().finally(() => setLoading(false));
+  }, []); // 依存配列を空にして初回のみ実行
+  
+  // タブ切り替え時の処理（データの再取得はしない）
+  useEffect(() => {
+    // タブが変わってもデータは再取得しない
+    // すでに取得済みのデータを表示するだけ
+  }, [activeTab]);
 
   // フィルター変更時
   useEffect(() => {
@@ -544,20 +547,32 @@ export default function DocumentsContent() {
                             </div>
                           </details>
 
+
                           {/* アクション */}
                           <div className="pt-3 border-t border-gray-200">
                             {result.linked_document_id ? (
-                              <div className="flex items-center justify-between">
-                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                  <CheckCircle className="h-3 w-3 mr-0.5" />
-                                  文書化済
-                                </span>
-                                <Link
-                                  href={`/documents/${result.linked_document_id}`}
-                                  className="px-3 py-1.5 border border-gray-300 rounded-md text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    <CheckCircle className="h-3 w-3 mr-0.5" />
+                                    文書化済
+                                  </span>
+                                  {result.linked_document_id && (
+                                    <Link
+                                      href={`/documents/${result.linked_document_id}`}
+                                      className="px-3 py-1.5 border border-gray-300 rounded-md text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                                    >
+                                      詳細を見る
+                                    </Link>
+                                  )}
+                                </div>
+                                <button
+                                  onClick={() => handleDeleteOcrResult(result)}
+                                  className="block w-full px-3 py-2 border border-red-300 rounded-md text-sm font-medium text-red-700 bg-white hover:bg-red-50 transition-colors"
                                 >
-                                  詳細を見る
-                                </Link>
+                                  <Trash2 className="inline-block h-4 w-4 mr-1" />
+                                  削除
+                                </button>
                               </div>
                             ) : (
                               <div className="space-y-2">
@@ -584,6 +599,13 @@ export default function DocumentsContent() {
                                   className="block w-full px-3 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors"
                                 >
                                   文書化する
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteOcrResult(result)}
+                                  className="block w-full px-3 py-2 border border-red-300 rounded-md text-sm font-medium text-red-700 bg-white hover:bg-red-50 transition-colors"
+                                >
+                                  <Trash2 className="inline-block h-4 w-4 mr-1" />
+                                  削除
                                 </button>
                               </div>
                             )}

@@ -136,19 +136,23 @@ export async function POST(request: NextRequest) {
 
     // OCR結果を更新
     if (ocrResultId) {
-      const { error: updateError } = await supabase
+      const { error: updateError, data: updatedOcr } = await supabase
         .from('ocr_results')
         .update({ 
           linked_document_id: savedDoc.id,
           status: 'processed'
         })
-        .eq('id', ocrResultId);
+        .eq('id', ocrResultId)
+        .select()
+        .single();
         
       if (updateError) {
         console.error('OCR result update error:', updateError);
         // エラーがあってもレスポンスは成功として返す（文書は作成済みのため）
       } else {
-        console.log('OCR result updated successfully:', ocrResultId);
+        console.log('OCR result updated successfully:', ocrResultId, updatedOcr);
+        // 更新が確実に反映されるまで少し待つ
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
     }
 
