@@ -402,6 +402,9 @@ export default function DocumentsContent() {
                             発行日
                           </th>
                           <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            処理日時
+                          </th>
+                          <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             勘定科目
                           </th>
                           <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -447,6 +450,9 @@ export default function DocumentsContent() {
                             </td>
                             <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500">
                               {result.receipt_date ? new Date(result.receipt_date).toLocaleDateString('ja-JP') : '-'}
+                            </td>
+                            <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {result.created_at ? new Date(result.created_at).toLocaleString('ja-JP') : '-'}
                             </td>
                             <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900">
                               <span className="inline-flex items-center px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded">
