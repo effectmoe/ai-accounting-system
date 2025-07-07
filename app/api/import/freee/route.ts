@@ -28,9 +28,12 @@ export async function POST(request: NextRequest) {
 
     try {
       // インポート実行
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://clqpfmroqcnvyxdzadln.supabase.co';
+      const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+      
       const importer = new FreeeImporter(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
+        supabaseUrl,
+        supabaseServiceRoleKey
       );
 
       const result = await importer.importFile(tempPath, {
