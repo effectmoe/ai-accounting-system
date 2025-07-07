@@ -373,7 +373,7 @@ export default function DocumentsContent() {
                     <p className="mt-2 text-gray-600">OCR処理済みの書類がありません</p>
                   </div>
                 ) : (
-                  <div className="overflow-hidden">
+                  <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                       <thead className="bg-gray-50">
                         <tr>
@@ -415,8 +415,13 @@ export default function DocumentsContent() {
                       <tbody className="bg-white divide-y divide-gray-200">
                         {ocrResults.map((result) => (
                           <tr key={result.id}>
-                            <td className="px-3 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                              {result.receipt_number || (result.file_name ? result.file_name.split('.')[0] : '-')}
+                            <td className="px-3 py-4 whitespace-nowrap">
+                              <Link
+                                href={`/documents/${result.linked_document_id || result.id}`}
+                                className="text-sm font-medium text-blue-600 hover:text-blue-900"
+                              >
+                                {result.receipt_number || (result.file_name ? result.file_name.split('.')[0] : '-')}
+                              </Link>
                             </td>
                             <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500">
                               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
