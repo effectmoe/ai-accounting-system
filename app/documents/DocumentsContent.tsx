@@ -415,13 +415,8 @@ export default function DocumentsContent() {
                       <tbody className="bg-white divide-y divide-gray-200">
                         {ocrResults.map((result) => (
                           <tr key={result.id}>
-                            <td className="px-3 py-4 whitespace-nowrap">
-                              <Link
-                                href={`/documents/${result.linked_document_id || result.id}`}
-                                className="text-sm font-medium text-blue-600 hover:text-blue-900"
-                              >
-                                {result.receipt_number || (result.file_name ? result.file_name.split('.')[0] : '-')}
-                              </Link>
+                            <td className="px-3 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                              {result.receipt_number || (result.file_name ? result.file_name.split('.')[0] : '-')}
                             </td>
                             <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500">
                               <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
@@ -493,180 +488,87 @@ export default function DocumentsContent() {
                   </div>
                 )
               ) : (
-                // 作成済み文書（カード形式）
+                // 作成済み文書（テーブル形式）
                 documents.length === 0 ? (
                   <div className="p-8 text-center">
                     <FileText className="mx-auto h-12 w-12 text-gray-400" />
                     <p className="mt-2 text-gray-600">作成済みの文書がありません</p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-6">
-                    {documents.map((doc) => (
-                      <div key={doc.id} className="bg-white border border-gray-200 rounded-lg hover:shadow-md transition-shadow">
-                        <div className="p-4">
-                          {/* ヘッダー */}
-                          <div className="flex justify-between items-start mb-3">
-                            <div>
-                              <h3 className="text-lg font-semibold text-gray-900">
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            文書番号
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            種類
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            取引先
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            金額
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            発行日
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            ステータス
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            アクション
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {documents.map((doc) => (
+                          <tr key={doc.id}>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                              {doc.documentNumber}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                 {documentTypeLabels[doc.documentType as keyof typeof documentTypeLabels]}
-                              </h3>
-                              <p className="text-sm text-gray-500">{doc.documentNumber}</p>
-                            </div>
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[doc.status as keyof typeof statusColors]}`}>
-                              {statusLabels[doc.status as keyof typeof statusLabels]}
-                            </span>
-                          </div>
-
-                          {/* 詳細情報をグリッドで表示 */}
-                          <div className="space-y-4">
-                            {/* 取引先情報 */}
-                            <div>
-                              <h4 className="text-sm font-medium text-gray-500 mb-1">取引先</h4>
-                              <p className="text-sm text-gray-900">{doc.partnerName}</p>
-                              {doc.partnerAddress && (
-                                <p className="text-xs text-gray-600">{doc.partnerAddress}</p>
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              {doc.partnerName}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                              ¥{(doc.totalAmount ?? 0).toLocaleString()}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {doc.issueDate ? new Date(doc.issueDate).toLocaleDateString('ja-JP') : '-'}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[doc.status as keyof typeof statusColors]}`}>
+                                {statusLabels[doc.status as keyof typeof statusLabels]}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                              {doc.status === 'draft' && (
+                                <button
+                                  onClick={() => handleStatusUpdate(doc.id, 'confirmed')}
+                                  className="text-white bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded-md text-sm"
+                                >
+                                  確定する
+                                </button>
                               )}
-                            </div>
-
-                            {/* 金額情報 */}
-                            <div>
-                              <h4 className="text-sm font-medium text-gray-500 mb-1">金額</h4>
-                              <div className="space-y-1">
-                                <div className="flex justify-between text-sm">
-                                  <span className="text-gray-600">小計:</span>
-                                  <span className="font-medium">¥{(doc.subtotal ?? 0).toLocaleString()}</span>
-                                </div>
-                                <div className="flex justify-between text-sm">
-                                  <span className="text-gray-600">消費税:</span>
-                                  <span>¥{(doc.taxAmount ?? 0).toLocaleString()}</span>
-                                </div>
-                                <div className="flex justify-between text-sm font-semibold">
-                                  <span>合計:</span>
-                                  <span className="text-lg">¥{(doc.totalAmount ?? 0).toLocaleString()}</span>
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* 日付情報 */}
-                            <div>
-                              <h4 className="text-sm font-medium text-gray-500 mb-1">日付</h4>
-                              <div className="space-y-1 text-sm">
-                                <div className="flex justify-between">
-                                  <span className="text-gray-600">発行日:</span>
-                                  <span>{doc.issueDate ? new Date(doc.issueDate).toLocaleDateString('ja-JP') : '-'}</span>
-                                </div>
-                                {doc.dueDate && (
-                                  <div className="flex justify-between">
-                                    <span className="text-gray-600">支払期限:</span>
-                                    <span>{doc.dueDate ? new Date(doc.dueDate).toLocaleDateString('ja-JP') : '-'}</span>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-
-                            {/* 勘定科目 */}
-                            <div>
-                              <h4 className="text-sm font-medium text-gray-500 mb-2">勘定科目</h4>
-                              <div className="space-y-1">
-                                {doc.documentType === 'receipt' && (
-                                  <>
-                                    <div className="text-sm">
-                                      <span className="inline-block px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded">
-                                        交際費
-                                      </span>
-                                    </div>
-                                    <div className="text-xs text-gray-500">
-                                      一般管理費/接待交際費
-                                    </div>
-                                  </>
-                                )}
-                                {doc.documentType === 'invoice' && (
-                                  <>
-                                    <div className="text-sm">
-                                      <span className="inline-block px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded">
-                                        売上高
-                                      </span>
-                                    </div>
-                                    <div className="text-xs text-gray-500">
-                                      営業収益/売上高
-                                    </div>
-                                  </>
-                                )}
-                                {(doc.documentType === 'estimate' || doc.documentType === 'delivery_note') && (
-                                  <>
-                                    <div className="text-sm">
-                                      <span className="inline-block px-2 py-1 text-xs bg-green-100 text-green-700 rounded">
-                                        売掛金
-                                      </span>
-                                    </div>
-                                    <div className="text-xs text-gray-500">
-                                      流動資産/売掛金
-                                    </div>
-                                  </>
-                                )}
-                              </div>
-                            </div>
-
-                            {/* 明細・備考 */}
-                            <div>
-                              <h4 className="text-sm font-medium text-gray-500 mb-2">明細・備考</h4>
-                              {doc.items && doc.items.length > 0 && (
-                                <div className="mb-2">
-                                  <div className="text-sm text-gray-900">
-                                    {doc.items[0].name}
-                                    {doc.items.length > 1 && (
-                                      <span className="text-xs text-gray-500"> 他{doc.items.length - 1}件</span>
-                                    )}
-                                  </div>
-                                </div>
+                              {doc.status === 'confirmed' && (
+                                <button
+                                  onClick={() => handleStatusUpdate(doc.id, 'draft')}
+                                  className="text-gray-700 bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded-md text-sm"
+                                >
+                                  下書きに戻す
+                                </button>
                               )}
-                              {doc.notes && (
-                                <div className="text-xs text-gray-600 truncate" title={doc.notes}>
-                                  {doc.notes.length > 50 ? `${doc.notes.substring(0, 50)}...` : doc.notes}
-                                </div>
-                              )}
-                              <div className="text-xs text-gray-400 mt-1">
-                                作成: {doc.createdAt ? new Date(doc.createdAt).toLocaleDateString('ja-JP') : '-'}
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* アクションボタン */}
-                          <div className="mt-4 pt-4 border-t border-gray-100 flex justify-between items-center">
-                            <div className="flex space-x-2">
-                              <Link
-                                href={`/documents/${doc.id}`}
-                                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                              >
-                                詳細
-                              </Link>
-                              <Link
-                                href={`/documents/${doc.id}/edit`}
-                                className="text-gray-600 hover:text-gray-800 text-sm font-medium"
-                              >
-                                編集
-                              </Link>
-                            </div>
-                            {doc.status === 'draft' && (
-                              <button
-                                onClick={() => handleStatusUpdate(doc.id, 'confirmed')}
-                                className="inline-flex items-center px-3 py-1 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-                              >
-                                確定する
-                              </button>
-                            )}
-                            {doc.status === 'confirmed' && (
-                              <button
-                                onClick={() => handleStatusUpdate(doc.id, 'draft')}
-                                className="inline-flex items-center px-3 py-1 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
-                              >
-                                下書きに戻す
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 )
               )}
