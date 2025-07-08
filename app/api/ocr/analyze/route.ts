@@ -42,9 +42,14 @@ export async function POST(request: NextRequest) {
 
     // ファイルタイプを判定
     const fileName = file.name.toLowerCase();
+    const mimeType = file.type;
     let documentType = 'document';
     
-    if (fileName.includes('invoice') || fileName.includes('請求')) {
+    // PDFファイルの場合は、より包括的な分析を試みる
+    if (mimeType === 'application/pdf') {
+      // PDFは請求書として扱うことが多いため、デフォルトでinvoiceとして処理
+      documentType = 'invoice';
+    } else if (fileName.includes('invoice') || fileName.includes('請求')) {
       documentType = 'invoice';
     } else if (fileName.includes('receipt') || fileName.includes('領収')) {
       documentType = 'receipt';
@@ -55,12 +60,36 @@ export async function POST(request: NextRequest) {
     let analysisResult;
     
     try {
-      if (documentType === 'invoice') {
-        analysisResult = await formRecognizer.analyzeInvoice(buffer, file.name);
-      } else if (documentType === 'receipt') {
-        analysisResult = await formRecognizer.analyzeReceipt(buffer, file.name);
-      } else {
-        analysisResult = await formRecognizer.analyzeDocument(buffer, file.name);
+      // 最初に指定されたドキュメントタイプで分析を試みる
+      try {
+        if (documentType === 'invoice') {
+          analysisResult = await formRecognizer.analyzeInvoice(buffer, file.name);
+        } else if (documentType === 'receipt') {
+          analysisResult = await formRecognizer.analyzeReceipt(buffer, file.name);
+        } else {
+          analysisResult = await formRecognizer.analyzeDocument(buffer, file.name);
+        }
+      } catch (firstError) {
+        console.log(`Failed to analyze as ${documentType}, trying alternative methods...`);
+        
+        // PDFの場合、invoice → receipt → layout の順で試す
+        if (mimeType === 'application/pdf') {
+          if (documentType !== 'receipt') {
+            try {
+              analysisResult = await formRecognizer.analyzeReceipt(buffer, file.name);
+              console.log('Successfully analyzed as receipt');
+            } catch (e) {
+              // レイアウト分析にフォールバック
+              analysisResult = await formRecognizer.analyzeDocument(buffer, file.name);
+              console.log('Fallback to layout analysis');
+            }
+          } else {
+            // receiptで失敗した場合はlayout分析
+            analysisResult = await formRecognizer.analyzeDocument(buffer, file.name);
+          }
+        } else {
+          throw firstError;
+        }
       }
     } catch (error) {
       console.error('Azure Form Recognizer エラー:', error);
