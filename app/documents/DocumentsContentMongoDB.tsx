@@ -168,7 +168,8 @@ export default function DocumentsContentMongoDB() {
         body: JSON.stringify({
           companyId: doc.companyId || doc.company_id,
           ...journalEntry,
-          documentId: doc._id || doc.id
+          documentId: doc._id || doc.id,
+          vendorName: doc.vendor_name || doc.partner_name || doc.file_name
         })
       });
       
@@ -193,6 +194,34 @@ export default function DocumentsContentMongoDB() {
     } catch (error) {
       console.error('仕訳作成エラー:', error);
       toast.error('仕訳作成に失敗しました: ' + (error instanceof Error ? error.message : '不明なエラー'));
+    }
+  };
+
+  const handleEditDocument = (doc: any) => {
+    // TODO: 編集モーダルまたは編集ページへの遷移
+    toast.info('編集機能は現在開発中です');
+    console.log('Edit document:', doc);
+  };
+
+  const handleDeleteDocument = async (docId: string) => {
+    if (!confirm('この書類を削除してもよろしいですか？')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/documents/${docId}`, {
+        method: 'DELETE'
+      });
+
+      if (!response.ok) {
+        throw new Error('削除に失敗しました');
+      }
+
+      toast.success('書類を削除しました');
+      fetchDocuments();
+    } catch (error) {
+      console.error('削除エラー:', error);
+      toast.error('削除に失敗しました');
     }
   };
 
@@ -300,25 +329,38 @@ export default function DocumentsContentMongoDB() {
                 <div className="ml-8">
                   <div className="flex justify-between items-start mb-2">
                     <h3 className="font-semibold text-lg">
-                      {doc.vendor_name || doc.partner_name || 'Unknown'}
+                      {doc.vendor_name || doc.partner_name || doc.file_name || 'Unknown'}
                     </h3>
                     <span className={`text-xs px-2 py-1 rounded ${statusColors[doc.status] || 'bg-gray-100 text-gray-800'}`}>
                       {statusLabels[doc.status] || doc.status}
                     </span>
                   </div>
                   
-                  <p className="text-sm text-gray-600 mb-1">
-                    {documentTypeLabels[doc.document_type] || doc.document_type}
-                  </p>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-sm bg-gray-100 px-2 py-1 rounded">
+                      {documentTypeLabels[doc.document_type] || doc.document_type}
+                    </span>
+                    {doc.category && doc.category !== '未分類' && (
+                      <span className="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                        {doc.category}
+                      </span>
+                    )}
+                  </div>
                   
-                  {doc.file_name && (
-                    <p className="text-xs text-gray-500 mb-2">{doc.file_name}</p>
+                  {doc.document_number && (
+                    <p className="text-xs text-gray-500 mb-1">番号: {doc.document_number}</p>
+                  )}
+                  
+                  {doc.issue_date && (
+                    <p className="text-xs text-gray-500 mb-2">
+                      日付: {new Date(doc.issue_date).toLocaleDateString('ja-JP')}
+                    </p>
                   )}
                   
                   <div className="space-y-1">
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">小計</span>
-                      <span>¥{doc.subtotal?.toLocaleString() || 0}</span>
+                      <span>¥{(doc.total_amount - doc.tax_amount).toLocaleString() || 0}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">税額</span>
@@ -347,14 +389,22 @@ export default function DocumentsContentMongoDB() {
                   </div>
                   
                   <div className="mt-3 flex gap-2">
+                    {doc.document_type !== 'journal_entry' && (
+                      <button
+                        onClick={() => handleCreateJournalEntry(doc)}
+                        className="flex-1 bg-blue-600 text-white text-sm py-1 px-2 rounded hover:bg-blue-700"
+                      >
+                        文書化する
+                      </button>
+                    )}
                     <button
-                      onClick={() => handleCreateJournalEntry(doc)}
-                      className="flex-1 bg-blue-600 text-white text-sm py-1 px-2 rounded hover:bg-blue-700"
+                      onClick={() => handleEditDocument(doc)}
+                      className="bg-gray-600 text-white text-sm py-1 px-2 rounded hover:bg-gray-700"
                     >
-                      文書化する
+                      <Edit className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={() => toast.info('削除機能は実装中です')}
+                      onClick={() => handleDeleteDocument(doc.id)}
                       className="text-red-600 hover:text-red-800 p-1"
                     >
                       <Trash2 className="w-4 h-4" />

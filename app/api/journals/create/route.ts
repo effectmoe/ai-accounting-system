@@ -25,7 +25,8 @@ export async function POST(request: NextRequest) {
       taxAmount,
       taxRate,
       isTaxIncluded,
-      documentId
+      documentId,
+      vendorName // 元の会社名/店舗名を受け取る
     } = body;
 
     // 仕訳番号を生成（簡易版）
@@ -87,7 +88,7 @@ export async function POST(request: NextRequest) {
       fileName: `仕訳伝票_${journalNumber}`,
       status: 'confirmed',
       issueDate: new Date(date),
-      partnerName: debitAccount,
+      partnerName: vendorName || description.split(' - ')[0] || debitAccount,
       partnerAddress: '',
       totalAmount: amount,
       taxAmount: taxAmount || 0,

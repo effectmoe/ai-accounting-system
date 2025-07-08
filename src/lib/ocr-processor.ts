@@ -364,7 +364,8 @@ export class OCRProcessor {
     
     if (ocrResult.vendor) {
       const vendor = ocrResult.vendor.toLowerCase();
-      if (vendor.includes('タクシー') || vendor.includes('taxi')) {
+      if (vendor.includes('タクシー') || vendor.includes('taxi') || 
+          vendor.includes('駐車場') || vendor.includes('パーキング') || vendor.includes('parking')) {
         debitAccount = '旅費交通費';
       } else if (vendor.includes('コーヒー') || vendor.includes('カフェ') || vendor.includes('coffee')) {
         debitAccount = '会議費';
