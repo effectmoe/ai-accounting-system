@@ -19,6 +19,41 @@ interface EnvVariable {
 
 const envVariables: EnvVariable[] = [
   {
+    name: 'MONGODB_URI',
+    description: 'MongoDB接続URI (データベース接続用)',
+    required: true,
+    example: 'mongodb+srv://username:password@cluster.mongodb.net/dbname',
+    secure: true
+  },
+  {
+    name: 'NEXTAUTH_SECRET',
+    description: 'NextAuth認証用シークレット',
+    required: true,
+    example: 'ランダムな文字列（openssl rand -base64 32で生成）',
+    secure: true
+  },
+  {
+    name: 'NEXTAUTH_URL',
+    description: 'NextAuthのベースURL',
+    required: true,
+    example: 'https://accounting-automation.vercel.app',
+    secure: false
+  },
+  {
+    name: 'GOOGLE_CLIENT_ID',
+    description: 'Google OAuth2クライアントID',
+    required: true,
+    example: '123456789-abcdefg.apps.googleusercontent.com',
+    secure: false
+  },
+  {
+    name: 'GOOGLE_CLIENT_SECRET',
+    description: 'Google OAuth2クライアントシークレット',
+    required: true,
+    example: 'GOCSPX-xxxxxxxxxxxxxxxx',
+    secure: true
+  },
+  {
     name: 'DEEPSEEK_API_KEY',
     description: 'DeepSeek AI APIキー (Sequential Thinking用)',
     required: true,
@@ -95,13 +130,22 @@ function maskValue(value: string, secure: boolean): string {
 }
 
 // Vercelコマンドを実行
-function executeVercelCommand(args: string[]): Promise<void> {
+function executeVercelCommand(args: string[]): Promise<string> {
   return new Promise((resolve, reject) => {
-    const vercel = spawn('vercel', args, { stdio: 'inherit' });
+    let output = '';
+    const vercel = spawn('vercel', args);
+    
+    vercel.stdout.on('data', (data) => {
+      output += data.toString();
+    });
+    
+    vercel.stderr.on('data', (data) => {
+      output += data.toString();
+    });
     
     vercel.on('close', (code) => {
       if (code === 0) {
-        resolve();
+        resolve(output);
       } else {
         reject(new Error(`Vercel command failed with code ${code}`));
       }
@@ -122,27 +166,26 @@ async function main() {
   
   // Vercel CLIがインストールされているか確認
   try {
-    await executeVercelCommand(['--version']);
+    const version = await executeVercelCommand(['--version']);
+    console.log('✅ Vercel CLIが検出されました:', version.trim());
   } catch (error) {
     console.error('❌ Vercel CLIがインストールされていません。');
     console.log('\n以下のコマンドでインストールしてください:');
     console.log('npm i -g vercel\n');
+    rl.close();
     process.exit(1);
   }
-  
-  console.log('✅ Vercel CLIが検出されました。\n');
   
   // プロジェクトにリンクされているか確認
   const isLinked = await question('このプロジェクトはVercelにリンクされていますか？ (y/n): ');
   
   if (isLinked.toLowerCase() !== 'y') {
     console.log('\n📎 Vercelプロジェクトにリンクします...');
-    try {
-      await executeVercelCommand(['link']);
-    } catch (error) {
-      console.error('❌ プロジェクトのリンクに失敗しました。');
-      process.exit(1);
-    }
+    console.log('\n以下のコマンドを実行してプロジェクトをリンクしてください:');
+    console.log('vercel link\n');
+    console.log('リンクが完了したら、再度このスクリプトを実行してください。');
+    rl.close();
+    process.exit(0);
   }
   
   console.log('\n📝 環境変数を設定します。');

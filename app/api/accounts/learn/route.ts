@@ -5,6 +5,7 @@ const learningSystem = new AccountLearningSystem();
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('Learn API - MongoDB URI exists:', !!process.env.MONGODB_URI);
     const body = await request.json();
     const {
       companyId,
@@ -51,9 +52,26 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Account learning error:', error);
+    console.error('Error details:', {
+      name: error instanceof Error ? error.name : 'Unknown',
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    });
+    
+    let errorMessage = 'Failed to learn account mapping';
+    if (error instanceof Error) {
+      if (error.message.includes('MONGODB_URI')) {
+        errorMessage = 'データベース接続設定が不足しています';
+      } else if (error.message.includes('ECONNREFUSED')) {
+        errorMessage = 'データベースに接続できません';
+      } else {
+        errorMessage = error.message;
+      }
+    }
+    
     return NextResponse.json({
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to learn account mapping'
+      error: errorMessage
     }, { status: 500 });
   }
 }

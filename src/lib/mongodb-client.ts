@@ -5,7 +5,6 @@ const DB_NAME = 'accounting';
 
 // グローバルMongoClientインスタンス
 let client: MongoClient;
-let clientPromise: Promise<MongoClient>;
 
 // MongoDB URIを動的に取得する関数
 function getMongoDBUri(): string {
@@ -16,12 +15,20 @@ function getMongoDBUri(): string {
 function getClientPromise(): Promise<MongoClient> {
   if (!global._mongoClientPromise) {
     const uri = getMongoDBUri();
+    if (!uri) {
+      throw new Error('MONGODB_URI is not defined in environment variables');
+    }
     client = new MongoClient(uri, {
       maxPoolSize: 10,
       minPoolSize: 2,
       maxIdleTimeMS: 60000,
     });
-    global._mongoClientPromise = client.connect();
+    global._mongoClientPromise = client.connect().catch((error) => {
+      console.error('MongoDB connection error:', error);
+      // グローバル変数をクリアして再試行可能にする
+      global._mongoClientPromise = undefined;
+      throw error;
+    });
   }
   return global._mongoClientPromise;
 }
@@ -39,14 +46,15 @@ export async function getCollection<T = any>(collectionName: string): Promise<Co
 }
 
 // MongoClientのエクスポート
-export { clientPromise };
-export const mongoClient = client;
+export const clientPromise = getClientPromise();
+// mongoClientは非推奨 - clientPromiseを使用してください
+export const mongoClient = null as any;
 
 // トランザクション実行ヘルパー
 export async function withTransaction<T>(
   callback: (session: any) => Promise<T>
 ): Promise<T> {
-  const client = await clientPromise;
+  const client = await getClientPromise();
   const session = client.startSession();
 
   try {
@@ -260,9 +268,15 @@ export async function checkConnection(): Promise<boolean> {
   try {
     const client = await getClientPromise();
     await client.db('admin').command({ ping: 1 });
+    console.log('MongoDB connection successful');
     return true;
   } catch (error) {
     console.error('MongoDB connection check failed:', error);
+    if (error instanceof Error) {
+      console.error('Error name:', error.name);
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+    }
     return false;
   }
 }

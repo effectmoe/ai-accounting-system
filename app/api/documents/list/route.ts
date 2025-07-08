@@ -3,15 +3,8 @@ import { db } from '../../../../src/lib/mongodb-client';
 
 export async function GET(request: NextRequest) {
   try {
-    // 環境変数チェック
-    const useAzureMongoDB = process.env.USE_AZURE_MONGODB === 'true';
-    
-    if (!useAzureMongoDB) {
-      return NextResponse.json({
-        success: false,
-        error: 'This endpoint is only available when USE_AZURE_MONGODB is true'
-      }, { status: 400 });
-    }
+    // MongoDB接続確認
+    console.log('Documents list API - MongoDB URI exists:', !!process.env.MONGODB_URI);
 
     // クエリパラメータを取得
     const searchParams = request.nextUrl.searchParams;
@@ -87,9 +80,27 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error('Document list error:', error);
+    console.error('Error details:', {
+      name: error instanceof Error ? error.name : 'Unknown',
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    });
+    
+    // より詳細なエラーメッセージ
+    let errorMessage = '予期しないエラーが発生しました';
+    if (error instanceof Error) {
+      if (error.message.includes('MONGODB_URI')) {
+        errorMessage = 'データベース接続設定が不足しています';
+      } else if (error.message.includes('ECONNREFUSED')) {
+        errorMessage = 'データベースに接続できません';
+      } else {
+        errorMessage = error.message;
+      }
+    }
+    
     return NextResponse.json({
       success: false,
-      error: error instanceof Error ? error.message : '予期しないエラーが発生しました'
+      error: errorMessage
     }, { status: 500 });
   }
 }
