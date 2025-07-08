@@ -1,12 +1,12 @@
 import ImportForm from './components/import-form';
-import OCRUpload from './components/ocr-upload';
+// import OCRUpload from './components/ocr-upload';  // 旧システムは無効化
 import OCRUploadAzure from './components/ocr-upload-azure';
 
 export default function ImportPage() {
-  // サーバーサイドで環境変数を読み取り、適切なコンポーネントを選択
-  // Vercelではサーバーサイドの環境変数も使用可能
-  const useAzureMongoDB = process.env.USE_AZURE_MONGODB === 'true';
-  const OCRComponent = useAzureMongoDB ? OCRUploadAzure : OCRUpload;
+  // 強制的にAzureコンポーネントを使用
+  // const useAzureMongoDB = process.env.USE_AZURE_MONGODB === 'true';
+  // const OCRComponent = useAzureMongoDB ? OCRUploadAzure : OCRUpload;
+  const OCRComponent = OCRUploadAzure;  // 常にAzureを使用
   
   return (
     <div className="container mx-auto px-4 py-8">
@@ -19,11 +19,9 @@ export default function ImportPage() {
           <p className="text-gray-600 text-sm">
             画像をアップロードすると、AIが自動的に内容を読み取って会計データに変換します。
           </p>
-          {useAzureMongoDB && (
-            <p className="text-blue-600 text-sm mt-1">
-              ✨ Azure Form Recognizer + MongoDB GridFS を使用中
-            </p>
-          )}
+          <p className="text-blue-600 text-sm mt-1">
+            ✨ Azure Form Recognizer + MongoDB GridFS を使用中
+          </p>
         </div>
         
         <OCRComponent />
