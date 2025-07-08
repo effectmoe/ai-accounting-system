@@ -474,8 +474,24 @@ ${errorData.details ? `\n詳細: ${errorData.details}` : ''}
         const receiptDate = ocrResponse.receiptDate || actualDate;
         const actualConfidence = ocrResponse.confidence || 0.8;
         
+        // 信頼度の表示を改善
+        let confidenceDisplay = '';
+        if (actualConfidence >= 0.95) {
+          confidenceDisplay = '非常に高い（過去の学習データと一致）';
+        } else if (actualConfidence >= 0.8) {
+          confidenceDisplay = '高い';
+        } else if (actualConfidence >= 0.6) {
+          confidenceDisplay = '中程度';
+        } else {
+          confidenceDisplay = '低い（確認が必要）';
+        }
+        
+        // 日付が今日の場合は警告を追加
+        const today = new Date().toISOString().split('T')[0];
+        const dateWarning = receiptDate === today ? '\n⚠️ 日付がOCRで正しく読み取れていない可能性があります' : '';
+        
         return {
-          content: `${fileTypeLabel}を解析しました。\n\n【解析結果】\n発行者: ${vendorName}\n日付: ${receiptDate}\n時刻: ${new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}\n金額: ¥${ocrResult.amount?.toLocaleString()}（税込）\n消費税: ¥${ocrResult.taxAmount?.toLocaleString()}\n勘定科目: ${category}\n信頼度: ${(actualConfidence * 100).toFixed(1)}%\n\n【自動仕訳案】\n借方: ${category} ${ocrResult.amount}円\n貸方: 現金 ${ocrResult.amount}円\n摘要: ${vendorName} - 領収書`,
+          content: `${fileTypeLabel}の分析結果です。\n\n【基本情報】\n・店名/企業名: ${vendorName}\n・日付: ${receiptDate}${dateWarning}\n・金額: ¥${ocrResult.amount?.toLocaleString()}（税込）\n・消費税: ¥${ocrResult.taxAmount?.toLocaleString()}\n\n【AI判定結果】\n・勘定科目: ${category}\n・判定の確かさ: ${confidenceDisplay}\n\n【仕訳案】\n借方: ${category} ${ocrResult.amount}円\n貸方: 現金 ${ocrResult.amount}円\n摘要: ${vendorName}`,
           // actions: [{
           //   label: '仕訳を登録',
           //   action: 'confirm_journal',

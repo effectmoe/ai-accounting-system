@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getFormRecognizerService } from '../../../../src/lib/azure-form-recognizer';
 import { db } from '../../../../src/lib/mongodb-client';
 import { ObjectId } from 'mongodb';
+import { OCRDateExtractor } from '../../../../src/lib/ocr-date-extractor';
 
 // 金額文字列から数値を抽出する関数
 function extractAmount(value: any): number {
@@ -181,64 +182,27 @@ export async function POST(request: NextRequest) {
       console.log('Extracted amounts:', { totalAmount: totalAmountExtracted, taxAmount: taxAmountExtracted });
       
       // 日付を適切に解析
-      let documentDate = new Date();
+      let documentDate = null; // デフォルトをnullに
       let dateFound = false;
       
-      // extractedTextからレシート形式の日付を抽出
+      // OCRDateExtractorを使用して日付を抽出
       const extractedText = JSON.stringify(analysisResult.fields || {});
-      console.log('Extracted text for date search:', extractedText.substring(0, 500)); // デバッグ用に最初の500文字を表示
-      console.log('Full extracted text length:', extractedText.length);
+      console.log('OCR結果から日付を抽出中...');
       
-      // 日本語形式の日付パターン (例: 2025年07月08日, 2025/07/08, 2025-07-08)
-      const datePatterns = [
-        /(\d{4})[年\/\-](\d{1,2})[月\/\-](\d{1,2})日?/g,
-        /令和(\d+)年(\d{1,2})月(\d{1,2})日/g,
-        /R(\d+)\.(\d{1,2})\.(\d{1,2})/g,
-        // より柔軟なパターン
-        /(\d{4})年(\d{1,2})月(\d{1,2})/g,
-        /(\d{1,2})月(\d{1,2})日/g,  // 年なしパターン（現在年を仮定）
-        /(\d{4})\/(\d{1,2})\/(\d{1,2})/g,
-        /(\d{4})-(\d{1,2})-(\d{1,2})/g
-      ];
+      const dateExtraction = OCRDateExtractor.extractDate(extractedText);
       
-      for (const pattern of datePatterns) {
-        const matches = extractedText.matchAll(pattern);
-        for (const match of matches) {
-          try {
-            let year, month, day;
-            
-            if (match[0].includes('令和') || match[0].startsWith('R')) {
-              // 令和年号の場合 (令和7年 = 2025年)
-              year = 2018 + parseInt(match[1]);
-              month = match[2];
-              day = match[3];
-            } else if (match.length === 3 && !match[0].includes('年')) {
-              // 月日のみのパターン
-              year = new Date().getFullYear();  // 現在年を使用
-              month = match[1];
-              day = match[2];
-            } else {
-              year = match[1];
-              month = match[2];
-              day = match[3];
-            }
-            
-            const parsedDate = new Date(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`);
-            if (!isNaN(parsedDate.getTime()) && parsedDate.getFullYear() >= 2020 && parsedDate.getFullYear() <= 2030) {
-              documentDate = parsedDate;
-              dateFound = true;
-              console.log('Found date from pattern:', documentDate);
-              break;
-            }
-          } catch (e) {
-            console.log('Failed to parse date from pattern:', match[0]);
-          }
-        }
-        if (dateFound) break;
+      if (dateExtraction.date) {
+        documentDate = dateExtraction.date;
+        dateFound = true;
+        console.log(`日付抽出成功: ${documentDate.toISOString().split('T')[0]}`);  
+        console.log(`信頼度: ${dateExtraction.confidence}, パターン: ${dateExtraction.matchedPattern}`);
+      } else {
+        console.error('OCRDateExtractor: 日付を抽出できませんでした');
       }
       
       // パターンマッチで見つからない場合は、フィールドから探す
       if (!dateFound) {
+        console.log('日付パターンマッチ失敗 - フィールドから探索');
         const dateFields = [
           analysisResult.fields?.invoiceDate,
           analysisResult.fields?.transactionDate,
@@ -260,6 +224,7 @@ export async function POST(request: NextRequest) {
               const parsedDate = new Date(dateField);
               if (!isNaN(parsedDate.getTime())) {
                 documentDate = parsedDate;
+                dateFound = true;
                 console.log('Parsed date from field:', documentDate);
                 break;
               }
@@ -296,6 +261,25 @@ export async function POST(request: NextRequest) {
         category = '未分類'; // エラー時もデフォルト値を保持
       }
       
+      // 日付が見つからない場合の処理
+      if (!dateFound || !documentDate) {
+        console.error('エラー: レシートから日付を抽出できませんでした');
+        console.error('抽出されたテキスト:', extractedText.substring(0, 1000));
+        
+        // 日付が読み取れない場合はエラーを返す
+        return NextResponse.json({
+          success: false,
+          error: 'OCRで日付を読み取れませんでした。手動で入力してください。',
+          partialData: {
+            vendorName: vendorName,
+            totalAmount: totalAmountExtracted,
+            taxAmount: taxAmountExtracted,
+            category: category,
+            extractedFields: analysisResult.fields
+          }
+        }, { status: 422 });
+      }
+      
       const documentData = {
         companyId: companyId === 'default' ? '11111111-1111-1111-1111-111111111111' : companyId,
         fileName: file.name,
@@ -305,9 +289,9 @@ export async function POST(request: NextRequest) {
         vendorName: vendorName,
         totalAmount: totalAmountExtracted,
         taxAmount: taxAmountExtracted,
-        documentDate: documentDate,
-        issue_date: documentDate,  // 日付表示用
-        receipt_date: documentDate.toISOString().split('T')[0], // 領収書の日付
+        documentDate: documentDate || null,  // 日付がない場合はnull
+        issue_date: documentDate || null,  // 日付表示用
+        receipt_date: documentDate ? documentDate.toISOString().split('T')[0] : null, // 領収書の日付
         category: category,
         subcategory: null,
         extractedText: JSON.stringify(analysisResult.fields, null, 2),
@@ -346,7 +330,7 @@ export async function POST(request: NextRequest) {
     }
     
     // 日付のデフォルト値（MongoDocument保存セクションのスコープ外で使用）
-    let finalDocumentDate = new Date();
+    let finalDocumentDate = null; // デフォルトをnullに
     let finalVendorName = file.name.replace(/\.(pdf|png|jpg|jpeg)$/i, '');
     
     // 勘定科目とレスポンス用データを準備
@@ -369,49 +353,20 @@ export async function POST(request: NextRequest) {
                                 extractAmount(analysisResult.fields?.tax) || 
                                 extractAmount(analysisResult.fields?.customFields?.Tax) || 0;
       
-      // MongoDBセクションと同じ日付抽出ロジックを実行
+      // OCRDateExtractorを使用して日付を再抽出（レスポンス用）
       const extractedText = JSON.stringify(analysisResult.fields || {});
-      const datePatterns = [
-        /(\d{4})[年\/\-](\d{1,2})[月\/\-](\d{1,2})日?/g,
-        /令和(\d+)年(\d{1,2})月(\d{1,2})日/g,
-        /R(\d+)\.(\d{1,2})\.(\d{1,2})/g
-      ];
+      const responseDateExtraction = OCRDateExtractor.extractDate(extractedText);
       
-      let dateFound = false;
-      for (const pattern of datePatterns) {
-        const matches = extractedText.matchAll(pattern);
-        for (const match of matches) {
-          try {
-            let year, month, day;
-            
-            if (match[0].includes('令和') || match[0].startsWith('R')) {
-              year = 2018 + parseInt(match[1]);
-              month = match[2];
-              day = match[3];
-            } else {
-              year = match[1];
-              month = match[2];
-              day = match[3];
-            }
-            
-            const parsedDate = new Date(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`);
-            if (!isNaN(parsedDate.getTime()) && parsedDate.getFullYear() >= 2020 && parsedDate.getFullYear() <= 2030) {
-              finalDocumentDate = parsedDate;
-              dateFound = true;
-              break;
-            }
-          } catch (e) {
-            console.log('Failed to parse date from pattern:', match[0]);
-          }
-        }
-        if (dateFound) break;
+      if (responseDateExtraction.date) {
+        finalDocumentDate = responseDateExtraction.date;
+        console.log(`レスポンス用日付抽出成功: ${finalDocumentDate.toISOString().split('T')[0]}`);
       }
       
       const ocrResultForJournal = {
         vendor: finalVendorName,
         amount: totalAmountExtracted,
         taxAmount: taxAmountExtracted,
-        date: finalDocumentDate.toISOString().split('T')[0],
+        date: finalDocumentDate ? finalDocumentDate.toISOString().split('T')[0] : null,
         items: []
       };
       
@@ -438,8 +393,9 @@ export async function POST(request: NextRequest) {
       message: 'OCR処理が完了しました',
       // チャット画面で使用するための追加情報
       category: categoryForResponse,
-      receiptDate: finalDocumentDate.toISOString().split('T')[0],
-      vendorName: finalVendorName
+      receiptDate: finalDocumentDate ? finalDocumentDate.toISOString().split('T')[0] : null,
+      vendorName: finalVendorName,
+      dateExtracted: dateFound // 日付抽出の成否を追加
     });
 
   } catch (error) {
