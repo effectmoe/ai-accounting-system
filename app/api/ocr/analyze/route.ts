@@ -186,13 +186,19 @@ export async function POST(request: NextRequest) {
       
       // extractedTextからレシート形式の日付を抽出
       const extractedText = JSON.stringify(analysisResult.fields || {});
-      console.log('Searching for date in extracted text...');
+      console.log('Extracted text for date search:', extractedText.substring(0, 500)); // デバッグ用に最初の500文字を表示
+      console.log('Full extracted text length:', extractedText.length);
       
       // 日本語形式の日付パターン (例: 2025年07月08日, 2025/07/08, 2025-07-08)
       const datePatterns = [
         /(\d{4})[年\/\-](\d{1,2})[月\/\-](\d{1,2})日?/g,
         /令和(\d+)年(\d{1,2})月(\d{1,2})日/g,
-        /R(\d+)\.(\d{1,2})\.(\d{1,2})/g
+        /R(\d+)\.(\d{1,2})\.(\d{1,2})/g,
+        // より柔軟なパターン
+        /(\d{4})年(\d{1,2})月(\d{1,2})/g,
+        /(\d{1,2})月(\d{1,2})日/g,  // 年なしパターン（現在年を仮定）
+        /(\d{4})\/(\d{1,2})\/(\d{1,2})/g,
+        /(\d{4})-(\d{1,2})-(\d{1,2})/g
       ];
       
       for (const pattern of datePatterns) {
@@ -206,6 +212,11 @@ export async function POST(request: NextRequest) {
               year = 2018 + parseInt(match[1]);
               month = match[2];
               day = match[3];
+            } else if (match.length === 3 && !match[0].includes('年')) {
+              // 月日のみのパターン
+              year = new Date().getFullYear();  // 現在年を使用
+              month = match[1];
+              day = match[2];
             } else {
               year = match[1];
               month = match[2];
@@ -321,7 +332,17 @@ export async function POST(request: NextRequest) {
       
     } catch (error) {
       console.error('MongoDB document save error:', error);
-      // MongoDBへの保存に失敗しても続行
+      console.error('Error details:', {
+        name: error instanceof Error ? error.name : 'Unknown',
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      });
+      // MongoDBへの保存に失敗した場合、エラーを返す
+      return NextResponse.json({
+        success: false,
+        error: 'ドキュメントの保存に失敗しました',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      }, { status: 500 });
     }
     
     // 日付のデフォルト値（MongoDocument保存セクションのスコープ外で使用）
