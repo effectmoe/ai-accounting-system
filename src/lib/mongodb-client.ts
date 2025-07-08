@@ -8,16 +8,17 @@ let client: MongoClient;
 
 // MongoDB URIを動的に取得する関数
 function getMongoDBUri(): string {
-  return process.env.MONGODB_URI || 'mongodb://localhost:27017/accounting';
+  const uri = process.env.MONGODB_URI;
+  if (!uri) {
+    throw new Error('MONGODB_URI is not defined in environment variables');
+  }
+  return uri;
 }
 
 // Node.js環境でのMongoClient管理
 function getClientPromise(): Promise<MongoClient> {
   if (!global._mongoClientPromise) {
     const uri = getMongoDBUri();
-    if (!uri) {
-      throw new Error('MONGODB_URI is not defined in environment variables');
-    }
     
     console.log('MongoDB URI configured:', uri.replace(/\/\/[^:]*:[^@]*@/, '//***:***@')); // パスワードを隠してログ出力
     
@@ -25,8 +26,8 @@ function getClientPromise(): Promise<MongoClient> {
       maxPoolSize: 10,
       minPoolSize: 2,
       maxIdleTimeMS: 60000,
-      connectTimeoutMS: 30000,
-      serverSelectionTimeoutMS: 30000,
+      connectTimeoutMS: 60000, // Vercel環境では時間を長めに設定
+      serverSelectionTimeoutMS: 60000, // Vercel環境では時間を長めに設定
     });
     
     global._mongoClientPromise = client.connect().then((connectedClient) => {
@@ -317,7 +318,8 @@ export class DatabaseError extends Error {
 export async function checkConnection(): Promise<boolean> {
   try {
     const client = await getClientPromise();
-    await client.db('admin').command({ ping: 1 });
+    const db = client.db(DB_NAME);
+    await db.command({ ping: 1 });
     console.log('MongoDB connection successful');
     return true;
   } catch (error) {
@@ -351,3 +353,64 @@ export const Collections = {
 
 // データベースサービスのシングルトンインスタンス
 export const db = DatabaseService.getInstance();
+
+// Vercel環境対応のDatabaseServiceラッパー
+export class VercelDatabaseService extends DatabaseService {
+  private static instance: VercelDatabaseService;
+  
+  private constructor() {
+    super();
+  }
+  
+  static getInstance(): VercelDatabaseService {
+    if (!VercelDatabaseService.instance) {
+      VercelDatabaseService.instance = new VercelDatabaseService();
+    }
+    return VercelDatabaseService.instance;
+  }
+  
+  // MongoDB接続の検証とエラーハンドリングを強化
+  async validateConnection(): Promise<void> {
+    try {
+      const client = await getClientPromise();
+      const db = client.db(DB_NAME);
+      await db.command({ ping: 1 });
+      console.log('MongoDB connection validated successfully');
+    } catch (error) {
+      console.error('MongoDB connection validation failed:', error);
+      throw new DatabaseError(
+        `MongoDB connection validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        'CONNECTION_VALIDATION_ERROR'
+      );
+    }
+  }
+  
+  // 接続を確立してから操作を実行
+  async safeExecute<T>(operation: () => Promise<T>): Promise<T> {
+    try {
+      await this.validateConnection();
+      return await operation();
+    } catch (error) {
+      console.error('Safe execution failed:', error);
+      
+      // 接続エラーの場合は再試行
+      if (error instanceof DatabaseError && error.code === 'CONNECTION_VALIDATION_ERROR') {
+        console.log('Attempting to reconnect...');
+        global._mongoClientPromise = undefined; // 接続をリセット
+        
+        try {
+          await this.validateConnection();
+          return await operation();
+        } catch (retryError) {
+          console.error('Retry failed:', retryError);
+          throw retryError;
+        }
+      }
+      
+      throw error;
+    }
+  }
+}
+
+// Vercel環境用のエクスポート
+export const vercelDb = VercelDatabaseService.getInstance();
