@@ -17,12 +17,18 @@ function getMongoDBUri(): string {
 
 // Node.js環境でのMongoClient管理
 function getClientPromise(): Promise<MongoClient> {
-  if (!global._mongoClientPromise) {
+  // 既存の接続プロミスがある場合は、それが有効かチェック
+  if (global._mongoClientPromise) {
+    return global._mongoClientPromise;
+  }
+
+  try {
     const uri = getMongoDBUri();
     
     console.log('MongoDB URI configured:', uri.replace(/\/\/[^:]*:[^@]*@/, '//***:***@')); // パスワードを隠してログ出力
     
-    client = new MongoClient(uri, {
+    // 新しいクライアントを作成
+    const newClient = new MongoClient(uri, {
       maxPoolSize: 10,
       minPoolSize: 2,
       maxIdleTimeMS: 60000,
@@ -30,36 +36,64 @@ function getClientPromise(): Promise<MongoClient> {
       serverSelectionTimeoutMS: 60000, // Vercel環境では時間を長めに設定
     });
     
-    global._mongoClientPromise = client.connect().then((connectedClient) => {
-      console.log('MongoDB client connected successfully');
-      return connectedClient;
-    }).catch((error) => {
-      console.error('MongoDB connection error:', error);
-      console.error('Connection error details:', {
-        name: error.name,
-        message: error.message,
-        code: error.code,
-        stack: error.stack
+    // 接続プロミスを作成し、グローバル変数に保存
+    global._mongoClientPromise = newClient.connect()
+      .then((connectedClient) => {
+        console.log('MongoDB client connected successfully');
+        return connectedClient;
+      })
+      .catch((error) => {
+        console.error('MongoDB connection error:', error);
+        console.error('Connection error details:', {
+          name: error.name,
+          message: error.message,
+          code: error.code,
+          stack: error.stack
+        });
+        
+        // エラー時はグローバル変数をクリアして再試行可能にする
+        global._mongoClientPromise = undefined;
+        
+        throw new DatabaseError(
+          `MongoDB connection failed: ${error.message}`,
+          'CONNECTION_ERROR'
+        );
       });
-      // グローバル変数をクリアして再試行可能にする
-      global._mongoClientPromise = undefined;
-      throw new DatabaseError(
-        `MongoDB connection failed: ${error.message}`,
-        'CONNECTION_ERROR'
-      );
-    });
+    
+    return global._mongoClientPromise;
+  } catch (error) {
+    // URIの取得などで即座にエラーが発生した場合
+    console.error('MongoDB client initialization error:', error);
+    throw new DatabaseError(
+      `MongoDB client initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      'INITIALIZATION_ERROR'
+    );
   }
-  return global._mongoClientPromise;
 }
 
 // データベースインスタンスの取得
 export async function getDatabase(): Promise<Db> {
   try {
     const client = await getClientPromise();
+    if (!client) {
+      throw new Error('MongoDB client is null');
+    }
+    
     const db = client.db(DB_NAME);
     if (!db) {
       throw new Error('Database instance is null');
     }
+    
+    // 接続状態を確認
+    try {
+      await db.admin().ping();
+    } catch (pingError) {
+      console.error('Database ping failed:', pingError);
+      // グローバル変数をクリアして再接続を強制
+      global._mongoClientPromise = undefined;
+      throw new Error('Database connection is not active');
+    }
+    
     return db;
   } catch (error) {
     console.error('getDatabase error:', error);
@@ -318,7 +352,17 @@ export class DatabaseError extends Error {
 export async function checkConnection(): Promise<boolean> {
   try {
     const client = await getClientPromise();
+    if (!client) {
+      console.error('MongoDB client is null during connection check');
+      return false;
+    }
+    
     const db = client.db(DB_NAME);
+    if (!db) {
+      console.error('Database instance is null during connection check');
+      return false;
+    }
+    
     await db.command({ ping: 1 });
     console.log('MongoDB connection successful');
     return true;
@@ -329,6 +373,8 @@ export async function checkConnection(): Promise<boolean> {
       console.error('Error message:', error.message);
       console.error('Error stack:', error.stack);
     }
+    // 接続チェック失敗時はグローバル変数をクリア
+    global._mongoClientPromise = undefined;
     return false;
   }
 }
@@ -369,15 +415,51 @@ export class VercelDatabaseService extends DatabaseService {
     return VercelDatabaseService.instance;
   }
   
-  // createメソッドを完全に書き直し - validateConnectionやsafeExecuteを使わない
+  // createメソッドを完全に書き直し - getCollectionを使用（すでに接続管理が含まれている）
   async create<T>(collectionName: string, document: Omit<T, '_id'>): Promise<T> {
     try {
-      const client = await getClientPromise();
-      const db = client.db(DB_NAME);
-      await db.command({ ping: 1 });
-      return await super.create<T>(collectionName, document);
+      // getCollectionを使用（すでに接続管理が含まれている）
+      const collection = await getCollection<T>(collectionName);
+      if (!collection) {
+        throw new Error(`Collection ${collectionName} is null`);
+      }
+      
+      const now = new Date();
+      const doc = {
+        ...document,
+        createdAt: now,
+        updatedAt: now,
+      };
+      
+      const result = await collection.insertOne(doc as any);
+      if (!result || !result.insertedId) {
+        throw new Error('Insert operation failed - no inserted ID returned');
+      }
+      
+      return { ...doc, _id: result.insertedId } as T;
     } catch (error) {
-      throw new DatabaseError(`Failed to create: ${error instanceof Error ? error.message : 'Unknown error'}`, 'CREATE_ERROR');
+      console.error(`MongoDB create error in collection ${collectionName}:`, error);
+      console.error('Error details:', {
+        name: error instanceof Error ? error.name : 'Unknown',
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        collectionName,
+        documentKeys: Object.keys(document)
+      });
+      
+      // 接続エラーの場合はグローバル変数をクリア
+      if (error instanceof Error && (
+        error.message.includes('connection') || 
+        error.message.includes('client') ||
+        error.message.includes('null')
+      )) {
+        global._mongoClientPromise = undefined;
+      }
+      
+      throw new DatabaseError(
+        `Failed to create document in ${collectionName}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        'CREATE_ERROR'
+      );
     }
   }
 }
