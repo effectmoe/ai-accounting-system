@@ -21,7 +21,18 @@ export async function POST(request: NextRequest) {
       console.log('MongoDB処理を開始');
       
       // MongoDB接続確認
-      const mongoConnected = await checkConnection();
+      let mongoConnected = false;
+      try {
+        mongoConnected = await checkConnection();
+      } catch (connectionError) {
+        console.error('MongoDB接続チェックエラー:', connectionError);
+        return NextResponse.json({
+          success: false,
+          error: 'データベース接続チェックエラー',
+          details: connectionError instanceof Error ? connectionError.message : 'Unknown connection error'
+        }, { status: 500 });
+      }
+      
       if (!mongoConnected) {
         console.error('MongoDB接続に失敗しました');
         return NextResponse.json({
@@ -157,10 +168,17 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Webhook処理エラー:', error);
+    console.error('エラーの詳細:', {
+      name: error instanceof Error ? error.name : 'Unknown',
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    });
     return NextResponse.json(
       { 
         error: 'Webhook処理に失敗しました',
-        detail: error instanceof Error ? error.message : 'Unknown error'
+        detail: error instanceof Error ? error.message : 'Unknown error',
+        name: error instanceof Error ? error.name : 'Unknown',
+        timestamp: new Date().toISOString()
       },
       { status: 500 }
     );
