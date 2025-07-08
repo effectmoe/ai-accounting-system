@@ -1,6 +1,6 @@
 // スクリプトプロパティから設定を取得
-const WEBHOOK_URL = 'https://accounting-automation-op59qdc42-effectmoes-projects.vercel.app/api/webhook/ocr';
-const OCR_ANALYZE_URL = 'https://accounting-automation-op59qdc42-effectmoes-projects.vercel.app/api/ocr/analyze';
+const WEBHOOK_URL = 'https://accounting-automation-lpkraq1m6-effectmoes-projects.vercel.app/api/webhook/ocr';
+const OCR_ANALYZE_URL = 'https://accounting-automation-lpkraq1m6-effectmoes-projects.vercel.app/api/ocr/analyze';
 
 /**
  * HTTPリクエストを受け取る（ファイルアップロード時）

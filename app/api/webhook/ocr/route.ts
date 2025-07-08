@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/lib/supabase-singleton';
-import { db, checkConnection } from '../../../../src/lib/mongodb-client';
+import { vercelDb, checkConnection } from '../../../../src/lib/mongodb-client';
 import { ObjectId } from 'mongodb';
 
 // Node.js Runtimeを使用
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
       
       let savedOcrResult;
       try {
-        savedOcrResult = await db.create('ocr_results', ocrResult);
+        savedOcrResult = await vercelDb.create('ocr_results', ocrResult);
         console.log('OCR結果をMongoDBに保存しました:', savedOcrResult._id.toString());
       } catch (mongoError) {
         console.error('MongoDB OCR結果保存エラー:', mongoError);
@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
       };
       
       try {
-        const savedDocument = await db.create('documents', documentData);
+        const savedDocument = await vercelDb.create('documents', documentData);
         console.log('Document saved to MongoDB:', savedDocument._id.toString());
       } catch (mongoError) {
         console.error('MongoDB documents保存エラー:', mongoError);

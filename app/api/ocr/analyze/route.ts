@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import orchestrator from '../../../../src/mastra-orchestrator';
-import { db, vercelDb, checkConnection } from '../../../../src/lib/mongodb-client';
+import { vercelDb, checkConnection } from '../../../../src/lib/mongodb-client';
 import { ObjectId } from 'mongodb';
 import { OCRDateExtractor } from '../../../../src/lib/ocr-date-extractor';
 
@@ -23,7 +23,11 @@ export async function POST(request: NextRequest) {
     
     // MongoDB接続確認（Vercel環境対応）
     try {
-      await vercelDb.validateConnection();
+      console.log('MongoDB接続確認中... (Vercel環境)');
+      const connectionStatus = await checkConnection();
+      if (!connectionStatus) {
+        throw new Error('MongoDB connection check failed');
+      }
       console.log('MongoDB接続確認完了 (Vercel環境)');
     } catch (error) {
       console.error('MongoDB接続に失敗しました:', error);
@@ -121,9 +125,7 @@ export async function POST(request: NextRequest) {
       console.log('OCR結果をMongoDBに保存中...', JSON.stringify(ocrResult, null, 2));
       
       // Vercel環境対応の安全な実行
-      savedOcrResult = await vercelDb.safeExecute(async () => {
-        return await db.create('ocr_results', ocrResult);
-      });
+      savedOcrResult = await vercelDb.create('ocr_results', ocrResult);
       
       ocrResultId = savedOcrResult._id.toString();
       console.log('OCR結果をMongoDBに保存しました:', ocrResultId);
@@ -311,9 +313,7 @@ export async function POST(request: NextRequest) {
       let savedDocument;
       try {
         // Vercel環境対応の安全な実行
-        savedDocument = await vercelDb.safeExecute(async () => {
-          return await db.create('documents', documentData);
-        });
+        savedDocument = await vercelDb.create('documents', documentData);
         console.log('Document saved to MongoDB:', savedDocument._id.toString());
       } catch (mongoError) {
         console.error('MongoDB documents保存エラー:', mongoError);
