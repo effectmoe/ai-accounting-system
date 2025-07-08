@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { FileText, Download, Send, CheckCircle, Filter, Plus, Paperclip, Bell, Edit, FileCheck, Archive, Grid3X3, List, Trash2, Image } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import AccountCategoryEditor from './components/AccountCategoryEditor';
 
 const documentTypeLabels = {
   estimate: '見積書',
@@ -340,10 +341,17 @@ export default function DocumentsContentMongoDB() {
                     <span className="text-sm bg-gray-100 px-2 py-1 rounded">
                       {documentTypeLabels[doc.document_type] || doc.document_type}
                     </span>
-                    {doc.category && doc.category !== '未分類' && (
-                      <span className="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                        {doc.category}
-                      </span>
+                    {doc.ocr_status === 'completed' && (
+                      <AccountCategoryEditor
+                        documentId={doc.id}
+                        vendorName={doc.vendor_name || doc.partner_name || ''}
+                        currentCategory={doc.category || '未分類'}
+                        amount={doc.total_amount}
+                        onCategoryUpdate={(newCategory) => {
+                          // カテゴリー更新後の処理
+                          fetchDocuments();
+                        }}
+                      />
                     )}
                   </div>
                   

@@ -219,6 +219,27 @@ export class DatabaseService {
     };
     return await collection.find(searchFilter, options).toArray();
   }
+
+  /**
+   * 複数ドキュメントの削除
+   */
+  async deleteMany(collectionName: string, filter: any = {}): Promise<number> {
+    const collection = await getCollection(collectionName);
+    const result = await collection.deleteMany(filter);
+    return result.deletedCount;
+  }
+
+  /**
+   * 単一ドキュメントの検索
+   */
+  async findOne<T>(
+    collectionName: string,
+    filter: any = {},
+    options?: any
+  ): Promise<T | null> {
+    const collection = await getCollection<T>(collectionName);
+    return await collection.findOne(filter, options);
+  }
 }
 
 // グローバル型定義の拡張

@@ -362,6 +362,24 @@ export class OCRProcessor {
     let debitAccount = '接待交際費'; // デフォルト
     let taxRate = 0.10; // デフォルト10%
     
+    // まず学習システムから予測を試みる
+    try {
+      const { AccountLearningSystem } = await import('./account-learning-system');
+      const learningSystem = new AccountLearningSystem();
+      
+      const prediction = await learningSystem.predictAccountCategory(
+        accountId,
+        ocrResult.vendor || ''
+      );
+      
+      if (prediction && prediction.confidence >= 0.7) {
+        debitAccount = prediction.category;
+      }
+    } catch (error) {
+      console.log('Learning system prediction failed, using rule-based system');
+    }
+    
+    // 学習データがない場合はルールベースで判定
     if (ocrResult.vendor) {
       const vendor = ocrResult.vendor.toLowerCase();
       if (vendor.includes('タクシー') || vendor.includes('taxi') || 
