@@ -208,9 +208,12 @@ export default function DocumentsContentMongoDB() {
   };
 
   const handleEditDocument = (doc: any) => {
-    // TODO: 編集モーダルまたは編集ページへの遷移
-    toast.info('編集機能は現在開発中です');
-    console.log('Edit document:', doc);
+    // OCRドキュメントかどうかで編集ページを分ける
+    if (doc.ocr_status === 'completed') {
+      router.push(`/documents/ocr/${doc.id}/edit`);
+    } else {
+      router.push(`/documents/${doc.id}/edit`);
+    }
   };
 
   const handleDeleteDocument = async (docId: string) => {
