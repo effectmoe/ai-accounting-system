@@ -8,7 +8,7 @@
   "build": {
     "env": {
       "NODE_ENV": "production",
-      "FORCE_REBUILD": "2025-01-06-v2"
+      "FORCE_REBUILD": "2025-07-08-azure-fix"
     }
   },
   "functions": {
