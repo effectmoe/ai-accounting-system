@@ -20,6 +20,12 @@
     },
     "app/api/batch-import/route.ts": {
       "maxDuration": 60
+    },
+    "app/api/ocr/analyze/route.ts": {
+      "maxDuration": 30
+    },
+    "app/api/webhook/ocr/route.ts": {
+      "maxDuration": 30
     }
   },
   "public": true,

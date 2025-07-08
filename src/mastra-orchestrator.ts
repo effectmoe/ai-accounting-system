@@ -1,9 +1,14 @@
 import { Mastra } from '@mastra/core';
 import { createTool } from '@mastra/core';
 import { z } from 'zod';
+// 既存のエージェント（HandwritingOCR互換性のため保持）
 import { ocrAgent } from './agents/ocr-agent';
-import { accountingAgent } from './agents/accounting-agent';
 import { databaseAgent } from './agents/database-agent';
+// 新しいAzure/MongoDBエージェント
+import { ocrAgentAzure } from './agents/ocr-agent-azure';
+import { databaseAgentMongoDB } from './agents/database-agent-mongodb';
+// その他のエージェント
+import { accountingAgent } from './agents/accounting-agent';
 import { customerAgent } from './agents/customer-agent';
 import { productAgent } from './agents/product-agent';
 import { japanTaxAgent } from './agents/japan-tax-agent';
@@ -298,9 +303,23 @@ export class MastraOrchestrator {
 
   // Initialize all agents
   private initializeAgents() {
-    this.agents.set('ocr-agent', ocrAgent);
+    // 環境変数で新旧システムを切り替え
+    const useAzureMongoDB = process.env.USE_AZURE_MONGODB === 'true';
+    
+    if (useAzureMongoDB) {
+      // 新システム: Azure Form Recognizer + MongoDB
+      this.agents.set('ocr-agent', ocrAgentAzure);
+      this.agents.set('database-agent', databaseAgentMongoDB);
+      console.log('📌 Using Azure Form Recognizer + MongoDB');
+    } else {
+      // 既存システム: Google/GAS OCR + Supabase
+      this.agents.set('ocr-agent', ocrAgent);
+      this.agents.set('database-agent', databaseAgent);
+      console.log('📌 Using Legacy OCR + Supabase');
+    }
+    
+    // 共通エージェント
     this.agents.set('accounting-agent', accountingAgent);
-    this.agents.set('database-agent', databaseAgent);
     this.agents.set('customer-agent', customerAgent);
     this.agents.set('product-agent', productAgent);
     this.agents.set('japan-tax-agent', japanTaxAgent);
