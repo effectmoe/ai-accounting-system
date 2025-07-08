@@ -141,6 +141,53 @@ export async function POST(request: NextRequest) {
       // MongoDB保存に失敗してもOCR結果は返す
     }
 
+    // Supabaseのdocumentsテーブルにも保存（書類管理画面で表示するため）
+    try {
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      
+      if (supabaseUrl && supabaseKey) {
+        const supabase = createClient(supabaseUrl, supabaseKey);
+        
+        // OCR結果からドキュメントデータを作成
+        const documentData = {
+          company_id: companyId === 'default' ? '11111111-1111-1111-1111-111111111111' : companyId,
+          file_name: file.name,
+          file_type: file.type,
+          file_size: file.size,
+          vendor_name: analysisResult.fields?.vendorName || analysisResult.fields?.merchantName || file.name.replace(/\.(pdf|png|jpg|jpeg)$/i, ''),
+          total_amount: analysisResult.fields?.InvoiceTotal || analysisResult.fields?.totalAmount || analysisResult.fields?.total || 0,
+          tax_amount: analysisResult.fields?.taxAmount || analysisResult.fields?.tax || 0,
+          receipt_date: analysisResult.fields?.invoiceDate || analysisResult.fields?.transactionDate || new Date().toISOString().split('T')[0],
+          category: '未分類',
+          subcategory: null,
+          extracted_text: JSON.stringify(analysisResult.fields, null, 2),
+          confidence: analysisResult.confidence || 0,
+          ocr_status: 'completed',
+          ocr_result_id: ocrResultId,
+          gridfs_file_id: fileId,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        
+        const { data, error } = await supabase
+          .from('documents')
+          .insert(documentData)
+          .select()
+          .single();
+        
+        if (error) {
+          console.error('Supabase document save error:', error);
+        } else {
+          console.log('Document saved to Supabase:', data.id);
+        }
+      }
+    } catch (error) {
+      console.error('Supabase integration error:', error);
+      // Supabaseへの保存に失敗しても続行
+    }
+
     // レスポンスを返す
     return NextResponse.json({
       success: true,
