@@ -213,7 +213,7 @@ export default function OCRUpload() {
           
           <div className="flex justify-between items-center mt-6 pt-4 border-t">
             <button
-              onClick={clearResults}
+              onClick={() => setResults([])}
               className="px-4 py-2 text-gray-600 hover:text-gray-900"
             >
               結果をクリア
