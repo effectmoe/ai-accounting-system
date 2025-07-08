@@ -182,58 +182,110 @@ export async function POST(request: NextRequest) {
       
       // 日付を適切に解析
       let documentDate = new Date();
+      let dateFound = false;
       
-      // 日付フィールドの候補を確認
-      const dateFields = [
-        analysisResult.fields?.invoiceDate,
-        analysisResult.fields?.transactionDate,
-        analysisResult.fields?.InvoiceDate,
-        analysisResult.fields?.TransactionDate,
-        analysisResult.fields?.Date,
-        analysisResult.fields?.date,
-        analysisResult.fields?.customFields?.Date,
-        analysisResult.fields?.customFields?.InvoiceDate,
-        analysisResult.fields?.customFields?.TransactionDate
+      // extractedTextからレシート形式の日付を抽出
+      const extractedText = JSON.stringify(analysisResult.fields || {});
+      console.log('Searching for date in extracted text...');
+      
+      // 日本語形式の日付パターン (例: 2025年07月08日, 2025/07/08, 2025-07-08)
+      const datePatterns = [
+        /(\d{4})[年\/\-](\d{1,2})[月\/\-](\d{1,2})日?/g,
+        /令和(\d+)年(\d{1,2})月(\d{1,2})日/g,
+        /R(\d+)\.(\d{1,2})\.(\d{1,2})/g
       ];
       
-      console.log('Available date fields:', dateFields.filter(d => d));
-      
-      // 有効な日付を見つける
-      for (const dateField of dateFields) {
-        if (dateField) {
+      for (const pattern of datePatterns) {
+        const matches = extractedText.matchAll(pattern);
+        for (const match of matches) {
           try {
-            const parsedDate = new Date(dateField);
-            if (!isNaN(parsedDate.getTime())) {
+            let year, month, day;
+            
+            if (match[0].includes('令和') || match[0].startsWith('R')) {
+              // 令和年号の場合 (令和7年 = 2025年)
+              year = 2018 + parseInt(match[1]);
+              month = match[2];
+              day = match[3];
+            } else {
+              year = match[1];
+              month = match[2];
+              day = match[3];
+            }
+            
+            const parsedDate = new Date(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`);
+            if (!isNaN(parsedDate.getTime()) && parsedDate.getFullYear() >= 2020 && parsedDate.getFullYear() <= 2030) {
               documentDate = parsedDate;
-              console.log('Parsed date:', documentDate);
+              dateFound = true;
+              console.log('Found date from pattern:', documentDate);
               break;
             }
           } catch (e) {
-            console.log('Failed to parse date:', dateField);
+            console.log('Failed to parse date from pattern:', match[0]);
+          }
+        }
+        if (dateFound) break;
+      }
+      
+      // パターンマッチで見つからない場合は、フィールドから探す
+      if (!dateFound) {
+        const dateFields = [
+          analysisResult.fields?.invoiceDate,
+          analysisResult.fields?.transactionDate,
+          analysisResult.fields?.InvoiceDate,
+          analysisResult.fields?.TransactionDate,
+          analysisResult.fields?.Date,
+          analysisResult.fields?.date,
+          analysisResult.fields?.customFields?.Date,
+          analysisResult.fields?.customFields?.InvoiceDate,
+          analysisResult.fields?.customFields?.TransactionDate
+        ];
+        
+        console.log('Available date fields:', dateFields.filter(d => d));
+        
+        // 有効な日付を見つける
+        for (const dateField of dateFields) {
+          if (dateField) {
+            try {
+              const parsedDate = new Date(dateField);
+              if (!isNaN(parsedDate.getTime())) {
+                documentDate = parsedDate;
+                console.log('Parsed date from field:', documentDate);
+                break;
+              }
+            } catch (e) {
+              console.log('Failed to parse date:', dateField);
+            }
           }
         }
       }
-      
-      // OCRProcessorを使用して勘定科目を自動判定
-      const { OCRProcessor } = await import('../../../../src/lib/ocr-processor');
-      const ocrProcessor = new OCRProcessor();
       
       const vendorName = analysisResult.fields?.vendorName || analysisResult.fields?.merchantName || 
                         analysisResult.fields?.VendorName || analysisResult.fields?.MerchantName || 
                         file.name.replace(/\.(pdf|png|jpg|jpeg)$/i, '');
       
-      const ocrResultForJournal = {
-        vendor: vendorName,
-        amount: totalAmountExtracted,
-        taxAmount: taxAmountExtracted,
-        date: documentDate.toISOString().split('T')[0],
-        items: []
-      };
-      
-      const journalEntry = await ocrProcessor.createJournalEntry(
-        ocrResultForJournal,
-        companyId === 'default' ? '11111111-1111-1111-1111-111111111111' : companyId
-      );
+      // OCRProcessorを使用して勘定科目を自動判定
+      let category = '未分類';
+      try {
+        const { OCRProcessor } = await import('../../../../src/lib/ocr-processor');
+        const ocrProcessor = new OCRProcessor();
+        
+        const ocrResultForJournal = {
+          vendor: vendorName,
+          amount: totalAmountExtracted,
+          taxAmount: taxAmountExtracted,
+          date: documentDate.toISOString().split('T')[0],
+          items: []
+        };
+        
+        const journalEntry = await ocrProcessor.createJournalEntry(
+          ocrResultForJournal,
+          companyId === 'default' ? '11111111-1111-1111-1111-111111111111' : companyId
+        );
+        
+        category = journalEntry.debitAccount;
+      } catch (error) {
+        console.error('Category prediction error:', error);
+      }
       
       const documentData = {
         companyId: companyId === 'default' ? '11111111-1111-1111-1111-111111111111' : companyId,
@@ -247,10 +299,10 @@ export async function POST(request: NextRequest) {
         documentDate: documentDate,
         issue_date: documentDate,  // 日付表示用
         receipt_date: documentDate.toISOString().split('T')[0], // 領収書の日付
-        category: journalEntry.debitAccount, // 自動判定された勘定科目
+        category: category,
         subcategory: null,
         extractedText: JSON.stringify(analysisResult.fields, null, 2),
-        confidence: analysisResult.confidence || 0,
+        confidence: analysisResult.confidence || 0.8, // デフォルト80%
         ocrStatus: 'completed',
         ocrResultId: ocrResultId ? new ObjectId(ocrResultId) : null,
         gridfsFileId: fileId ? new ObjectId(fileId) : null,
@@ -280,10 +332,14 @@ export async function POST(request: NextRequest) {
       ocrResultId,
       fileId,
       documentType: analysisResult.documentType,
-      confidence: analysisResult.confidence,
+      confidence: analysisResult.confidence || 0.8,
       extractedData: analysisResult.fields || analysisResult.extractedData,
       processingTime: analysisResult.processingTime,
-      message: 'OCR処理が完了しました'
+      message: 'OCR処理が完了しました',
+      // チャット画面で使用するための追加情報
+      category: category,
+      receiptDate: documentDate.toISOString().split('T')[0],
+      vendorName: vendorName
     });
 
   } catch (error) {

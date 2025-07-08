@@ -64,10 +64,11 @@ export default function AccountCategoryEditor({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          companyId: '11111111-1111-1111-1111-111111111111', // デフォルトcompanyId
           vendorName,
           accountCategory: selectedCategory,
           amount,
-          documentType: 'receipt'
+          documentType: documentType || 'receipt'
         })
       });
 
