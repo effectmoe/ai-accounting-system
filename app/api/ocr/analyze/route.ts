@@ -336,6 +336,7 @@ export async function POST(request: NextRequest) {
     // 日付のデフォルト値（MongoDocument保存セクションのスコープ外で使用）
     let finalDocumentDate = null; // デフォルトをnullに
     let finalVendorName = file.name.replace(/\.(pdf|png|jpg|jpeg)$/i, '');
+    let finalDateFound = false; // レスポンス用のdateFound
     
     // 勘定科目とレスポンス用データを準備
     let categoryForResponse = '未分類';
@@ -363,6 +364,7 @@ export async function POST(request: NextRequest) {
       
       if (responseDateExtraction.date) {
         finalDocumentDate = responseDateExtraction.date;
+        finalDateFound = true;
         console.log(`レスポンス用日付抽出成功: ${finalDocumentDate.toISOString().split('T')[0]}`);
       }
       
@@ -399,7 +401,7 @@ export async function POST(request: NextRequest) {
       category: categoryForResponse,
       receiptDate: finalDocumentDate ? finalDocumentDate.toISOString().split('T')[0] : null,
       vendorName: finalVendorName,
-      dateExtracted: dateFound // 日付抽出の成否を追加
+      dateExtracted: finalDateFound // 日付抽出の成否を追加
     });
 
   } catch (error) {
