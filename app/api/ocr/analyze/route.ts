@@ -238,6 +238,10 @@ export async function POST(request: NextRequest) {
       const vendorName = analysisResult.fields?.vendorName || analysisResult.fields?.merchantName || 
                         analysisResult.fields?.VendorName || analysisResult.fields?.MerchantName || 
                         file.name.replace(/\.(pdf|png|jpg|jpeg)$/i, '');
+      
+      // 勘定科目をtryブロック外で宣言
+      let category = '未分類';
+      
       try {
         const { OCRProcessor } = await import('../../../../src/lib/ocr-processor');
         const ocrProcessor = new OCRProcessor();
@@ -258,7 +262,7 @@ export async function POST(request: NextRequest) {
         category = journalEntry.debitAccount;
       } catch (error) {
         console.error('Category prediction error:', error);
-        category = '未分類'; // エラー時もデフォルト値を保持
+        // categoryは既に初期化済み
       }
       
       // 日付が見つからない場合の処理
