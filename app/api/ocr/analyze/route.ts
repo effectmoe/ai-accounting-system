@@ -262,9 +262,6 @@ export async function POST(request: NextRequest) {
       const vendorName = analysisResult.fields?.vendorName || analysisResult.fields?.merchantName || 
                         analysisResult.fields?.VendorName || analysisResult.fields?.MerchantName || 
                         file.name.replace(/\.(pdf|png|jpg|jpeg)$/i, '');
-      
-      // OCRProcessorを使用して勘定科目を自動判定
-      let category = '未分類';
       try {
         const { OCRProcessor } = await import('../../../../src/lib/ocr-processor');
         const ocrProcessor = new OCRProcessor();
@@ -326,6 +323,87 @@ export async function POST(request: NextRequest) {
       console.error('MongoDB document save error:', error);
       // MongoDBへの保存に失敗しても続行
     }
+    
+    // 日付のデフォルト値（MongoDocument保存セクションのスコープ外で使用）
+    let finalDocumentDate = new Date();
+    let finalVendorName = file.name.replace(/\.(pdf|png|jpg|jpeg)$/i, '');
+    
+    // 勘定科目とレスポンス用データを準備
+    let categoryForResponse = '未分類';
+    try {
+      // MongoDB保存セクションで抽出したデータを再利用
+      const { OCRProcessor } = await import('../../../../src/lib/ocr-processor');
+      const ocrProcessor = new OCRProcessor();
+      
+      finalVendorName = analysisResult.fields?.vendorName || analysisResult.fields?.merchantName || 
+                       analysisResult.fields?.VendorName || analysisResult.fields?.MerchantName || 
+                       file.name.replace(/\.(pdf|png|jpg|jpeg)$/i, '');
+      
+      const totalAmountExtracted = extractAmount(analysisResult.fields?.InvoiceTotal) || 
+                                  extractAmount(analysisResult.fields?.totalAmount) || 
+                                  extractAmount(analysisResult.fields?.total) || 
+                                  extractAmount(analysisResult.fields?.customFields?.InvoiceTotal) || 0;
+      
+      const taxAmountExtracted = extractAmount(analysisResult.fields?.taxAmount) || 
+                                extractAmount(analysisResult.fields?.tax) || 
+                                extractAmount(analysisResult.fields?.customFields?.Tax) || 0;
+      
+      // MongoDBセクションと同じ日付抽出ロジックを実行
+      const extractedText = JSON.stringify(analysisResult.fields || {});
+      const datePatterns = [
+        /(\d{4})[年\/\-](\d{1,2})[月\/\-](\d{1,2})日?/g,
+        /令和(\d+)年(\d{1,2})月(\d{1,2})日/g,
+        /R(\d+)\.(\d{1,2})\.(\d{1,2})/g
+      ];
+      
+      let dateFound = false;
+      for (const pattern of datePatterns) {
+        const matches = extractedText.matchAll(pattern);
+        for (const match of matches) {
+          try {
+            let year, month, day;
+            
+            if (match[0].includes('令和') || match[0].startsWith('R')) {
+              year = 2018 + parseInt(match[1]);
+              month = match[2];
+              day = match[3];
+            } else {
+              year = match[1];
+              month = match[2];
+              day = match[3];
+            }
+            
+            const parsedDate = new Date(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`);
+            if (!isNaN(parsedDate.getTime()) && parsedDate.getFullYear() >= 2020 && parsedDate.getFullYear() <= 2030) {
+              finalDocumentDate = parsedDate;
+              dateFound = true;
+              break;
+            }
+          } catch (e) {
+            console.log('Failed to parse date from pattern:', match[0]);
+          }
+        }
+        if (dateFound) break;
+      }
+      
+      const ocrResultForJournal = {
+        vendor: finalVendorName,
+        amount: totalAmountExtracted,
+        taxAmount: taxAmountExtracted,
+        date: finalDocumentDate.toISOString().split('T')[0],
+        items: []
+      };
+      
+      const journalEntry = await ocrProcessor.createJournalEntry(
+        ocrResultForJournal,
+        companyId === 'default' ? '11111111-1111-1111-1111-111111111111' : companyId
+      );
+      
+      categoryForResponse = journalEntry.debitAccount;
+    } catch (error) {
+      console.error('Category prediction error:', error);
+      categoryForResponse = '未分類';
+    }
 
     // レスポンスを返す
     return NextResponse.json({
@@ -338,9 +416,9 @@ export async function POST(request: NextRequest) {
       processingTime: analysisResult.processingTime,
       message: 'OCR処理が完了しました',
       // チャット画面で使用するための追加情報
-      category: category,
-      receiptDate: documentDate.toISOString().split('T')[0],
-      vendorName: vendorName
+      category: categoryForResponse,
+      receiptDate: finalDocumentDate.toISOString().split('T')[0],
+      vendorName: finalVendorName
     });
 
   } catch (error) {
