@@ -1,12 +1,11 @@
-'use client';
-
 import ImportForm from './components/import-form';
 import OCRUpload from './components/ocr-upload';
 import OCRUploadAzure from './components/ocr-upload-azure';
 
 export default function ImportPage() {
-  // 環境変数に基づいてコンポーネントを選択
-  const useAzureMongoDB = process.env.NEXT_PUBLIC_USE_AZURE_MONGODB === 'true';
+  // サーバーサイドで環境変数を読み取り、適切なコンポーネントを選択
+  // Vercelではサーバーサイドの環境変数も使用可能
+  const useAzureMongoDB = process.env.USE_AZURE_MONGODB === 'true';
   const OCRComponent = useAzureMongoDB ? OCRUploadAzure : OCRUpload;
   
   return (

@@ -104,6 +104,7 @@
     "zustand": "^4.5.0"
   },
   "devDependencies": {
+    "@types/form-data": "^2.2.1",
     "@types/uuid": "^9.0.8",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
@@ -111,6 +112,7 @@
     "@vitest/ui": "^1.2.2",
     "eslint": "^8.56.0",
     "eslint-config-next": "14.1.0",
+    "form-data": "^4.0.3",
     "null-loader": "^4.0.1",
     "tsx": "^4.7.0",
     "vitest": "^1.2.2"

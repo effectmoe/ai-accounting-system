@@ -106,11 +106,19 @@ export class FormRecognizerService {
    */
   async analyzeReceipt(fileBuffer: Buffer, fileName: string): Promise<AnalysisResult> {
     try {
+      // ファイルサイズチェック
+      if (fileBuffer.length < 1024) {
+        console.warn(`File ${fileName} is very small (${fileBuffer.length} bytes), might cause issues`);
+      }
+
+      console.log(`Starting receipt analysis for ${fileName} (${fileBuffer.length} bytes)`);
+      
       const poller = await this.client.beginAnalyzeDocument(
         'prebuilt-receipt',
         fileBuffer,
         {
           locale: 'ja-JP',
+          contentType: 'application/octet-stream'
         }
       );
 
@@ -152,7 +160,25 @@ export class FormRecognizerService {
       return extractedData;
     } catch (error) {
       console.error('Receipt analysis error:', error);
-      throw new Error(`Failed to analyze receipt: ${error.message}`);
+      
+      // Azure固有のエラー情報を取得
+      if (error.response) {
+        console.error('Azure API Response:', {
+          status: error.response.status,
+          statusText: error.response.statusText,
+          headers: error.response.headers,
+        });
+        
+        if (error.response.status === 400) {
+          throw new Error('Invalid request: File may be too small or in an unsupported format. Minimum file size is typically 4KB for Azure Form Recognizer.');
+        } else if (error.response.status === 401) {
+          throw new Error('Authentication failed: Please check your Azure Form Recognizer API key.');
+        } else if (error.response.status === 404) {
+          throw new Error('Endpoint not found: Please check your Azure Form Recognizer endpoint URL.');
+        }
+      }
+      
+      throw new Error(`Failed to analyze receipt: ${error.message || 'Unknown error'}`);
     }
   }
 

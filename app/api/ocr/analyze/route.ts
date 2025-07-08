@@ -82,6 +82,7 @@ export async function POST(request: NextRequest) {
       });
     } catch (error) {
       console.error('GridFS保存エラー:', error);
+      console.error('Error details:', error instanceof Error ? error.stack : error);
       // GridFS保存に失敗してもOCR結果は返す
     }
 
@@ -107,6 +108,7 @@ export async function POST(request: NextRequest) {
       ocrResultId = ocrResult._id.toString();
     } catch (error) {
       console.error('MongoDB保存エラー:', error);
+      console.error('Error details:', error instanceof Error ? error.stack : error);
       // MongoDB保存に失敗してもOCR結果は返す
     }
 
