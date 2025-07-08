@@ -469,11 +469,13 @@ ${errorData.details ? `\n詳細: ${errorData.details}` : ''}
         }
         
         // Azure OCRの結果から勘定科目を取得（サーバーで判定済み）
-        const category = ocrResponse.category || ocrResponse.extractedData?.category || '未分類';
+        const category = ocrResponse.category || '未分類';
+        const vendorName = ocrResponse.vendorName || ocrResult.vendor;
+        const receiptDate = ocrResponse.receiptDate || actualDate;
         const actualConfidence = ocrResponse.confidence || 0.8;
         
         return {
-          content: `${fileTypeLabel}を解析しました。\n\n【解析結果】\n発行者: ${ocrResult.vendor}\n日付: ${actualDate}\n時刻: ${new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}\n金額: ¥${ocrResult.amount?.toLocaleString()}（税込）\n消費税: ¥${ocrResult.taxAmount?.toLocaleString()}\n勘定科目: ${category}\n信頼度: ${(actualConfidence * 100).toFixed(1)}%\n\n【自動仕訳案】\n借方: ${category} ${ocrResult.amount}円\n貸方: 現金 ${ocrResult.amount}円\n摘要: ${ocrResult.vendor} - 領収書`,
+          content: `${fileTypeLabel}を解析しました。\n\n【解析結果】\n発行者: ${vendorName}\n日付: ${receiptDate}\n時刻: ${new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}\n金額: ¥${ocrResult.amount?.toLocaleString()}（税込）\n消費税: ¥${ocrResult.taxAmount?.toLocaleString()}\n勘定科目: ${category}\n信頼度: ${(actualConfidence * 100).toFixed(1)}%\n\n【自動仕訳案】\n借方: ${category} ${ocrResult.amount}円\n貸方: 現金 ${ocrResult.amount}円\n摘要: ${vendorName} - 領収書`,
           // actions: [{
           //   label: '仕訳を登録',
           //   action: 'confirm_journal',

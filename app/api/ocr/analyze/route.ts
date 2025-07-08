@@ -285,6 +285,7 @@ export async function POST(request: NextRequest) {
         category = journalEntry.debitAccount;
       } catch (error) {
         console.error('Category prediction error:', error);
+        category = '未分類'; // エラー時もデフォルト値を保持
       }
       
       const documentData = {

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AccountLearningSystem } from '../../../../src/lib/account-learning-system';
-import { OpenAIClient, AzureKeyCredential } from '@azure/openai';
 
 const learningSystem = new AccountLearningSystem();
 
@@ -107,6 +106,9 @@ export async function POST(request: NextRequest) {
     // Azure OpenAIを使用した高度な分析（環境変数が設定されている場合のみ）
     if (process.env.AZURE_OPENAI_ENDPOINT && process.env.AZURE_OPENAI_KEY) {
       try {
+        // 動的インポート
+        const { OpenAIClient, AzureKeyCredential } = await import('@azure/openai');
+        
         const client = new OpenAIClient(
           process.env.AZURE_OPENAI_ENDPOINT,
           new AzureKeyCredential(process.env.AZURE_OPENAI_KEY)
@@ -180,9 +182,11 @@ JSONフォーマットで以下の形式で回答してください：
         console.error('Azure OpenAI error:', aiError);
         // AIエラーの場合は既存の判定を使用
       }
-    } else {
-      // Azure OpenAIが設定されていない場合の詳細分析
-      console.log('Azure OpenAI not configured, using enhanced rule-based analysis');
+    }
+    
+    // Azure OpenAIが設定されていない場合、または失敗した場合の詳細分析
+    if (!primarySuggestion || primarySuggestion.confidence < 0.7) {
+      console.log('Using enhanced rule-based analysis');
       
       // 複数のキーワードマッチによる詳細分析
       const detailedAnalysis = performDetailedAnalysis(searchText, vendorName, amount);
