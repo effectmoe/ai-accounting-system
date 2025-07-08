@@ -29,6 +29,33 @@ export async function POST(request: NextRequest) {
       vendorName // 元の会社名/店舗名を受け取る
     } = body;
 
+    // debitAccountが指定されていない場合、OCRProcessorで判定
+    let finalDebitAccount = debitAccount;
+    let finalCreditAccount = creditAccount || '現金';
+    let finalDescription = description;
+    
+    if (!debitAccount && vendorName) {
+      const { OCRProcessor } = await import('../../../../src/lib/ocr-processor');
+      const ocrProcessor = new OCRProcessor();
+      
+      const ocrResult = {
+        vendor: vendorName,
+        amount: amount || 0,
+        taxAmount: taxAmount || 0,
+        date: date || new Date().toISOString().split('T')[0],
+        items: []
+      };
+      
+      const journalEntry = await ocrProcessor.createJournalEntry(
+        ocrResult,
+        companyId || '11111111-1111-1111-1111-111111111111'
+      );
+      
+      finalDebitAccount = journalEntry.debitAccount;
+      finalCreditAccount = journalEntry.creditAccount;
+      finalDescription = journalEntry.description;
+    }
+
     // 仕訳番号を生成（簡易版）
     const journalCount = await db.count('journals', { companyId });
     const journalNumber = `J${new Date().getFullYear()}${String(journalCount + 1).padStart(5, '0')}`;
@@ -38,23 +65,23 @@ export async function POST(request: NextRequest) {
       companyId,
       journalNumber,
       entryDate: new Date(date),
-      description,
+      description: finalDescription,
       status: 'confirmed',
       sourceType: 'ocr',
       sourceDocumentId: documentId ? new ObjectId(documentId) : null,
       lines: [
         {
           accountCode: '605', // 仮の勘定科目コード
-          accountName: debitAccount,
+          accountName: finalDebitAccount,
           debitAmount: amount,
           creditAmount: 0,
-          taxRate,
-          taxAmount,
-          isTaxIncluded
+          taxRate: taxRate || 0.10,
+          taxAmount: taxAmount || 0,
+          isTaxIncluded: isTaxIncluded !== false
         },
         {
           accountCode: '100', // 仮の勘定科目コード（現金）
-          accountName: creditAccount,
+          accountName: finalCreditAccount,
           debitAmount: 0,
           creditAmount: amount,
           taxRate: 0,

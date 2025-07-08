@@ -147,30 +147,18 @@ export default function DocumentsContentMongoDB() {
 
   const handleCreateJournalEntry = async (doc: any) => {
     try {
-      // OCRProcessorをインポートして仕訳作成ロジックを使用
-      const { OCRProcessor } = await import('@/lib/ocr-processor');
-      const ocrProcessor = new OCRProcessor();
-      
-      // OCR結果から仕訳データを生成
-      const ocrResult = {
-        vendor: doc.vendorName || doc.vendor_name,
-        amount: doc.totalAmount || doc.total_amount || 0,
-        taxAmount: doc.taxAmount || doc.tax_amount || 0,
-        date: doc.documentDate || doc.document_date || new Date().toISOString().split('T')[0],
-        items: []
-      };
-      
-      const journalEntry = await ocrProcessor.createJournalEntry(ocrResult, doc.companyId || doc.company_id);
-      
-      // 仕訳作成APIを呼び出す
+      // 仕訳作成APIを呼び出す（サーバーサイドで処理）
       const response = await fetch('/api/journals/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           companyId: doc.companyId || doc.company_id,
-          ...journalEntry,
+          vendorName: doc.vendor_name || doc.partner_name || doc.file_name,
+          amount: doc.totalAmount || doc.total_amount || 0,
+          taxAmount: doc.taxAmount || doc.tax_amount || 0,
+          date: doc.documentDate || doc.document_date || new Date().toISOString().split('T')[0],
           documentId: doc._id || doc.id,
-          vendorName: doc.vendor_name || doc.partner_name || doc.file_name
+          description: `${doc.vendor_name || doc.partner_name || '店舗名不明'} - 領収書`
         })
       });
       
@@ -180,17 +168,25 @@ export default function DocumentsContentMongoDB() {
       
       const result = await response.json();
       
-      toast.success(`仕訳を作成しました\n借方: ${journalEntry.debitAccount} ¥${journalEntry.amount.toLocaleString()}\n貸方: ${journalEntry.creditAccount} ¥${journalEntry.amount.toLocaleString()}`);
-      
-      // ドキュメントのステータスを更新
-      await fetch(`/api/documents/${doc._id || doc.id}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'journalized' })
-      });
-      
-      // リストを更新
-      fetchDocuments();
+      if (result.success && result.journal) {
+        const journal = result.journal;
+        const debitLine = journal.lines?.[0];
+        const creditLine = journal.lines?.[1];
+        
+        toast.success(`仕訳を作成しました\n借方: ${debitLine?.accountName || '不明'} ¥${(doc.total_amount || 0).toLocaleString()}\n貸方: ${creditLine?.accountName || '現金'} ¥${(doc.total_amount || 0).toLocaleString()}`);
+        
+        // ドキュメントのステータスを更新
+        await fetch(`/api/documents/${doc._id || doc.id}/status`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'journalized' })
+        });
+        
+        // リストを更新
+        fetchDocuments();
+      } else {
+        throw new Error(result.error || '仕訳作成に失敗しました');
+      }
       
     } catch (error) {
       console.error('仕訳作成エラー:', error);
