@@ -373,13 +373,23 @@ export function getFormRecognizerService(): FormRecognizerService {
     const apiKey = process.env.AZURE_FORM_RECOGNIZER_KEY;
     
     if (!endpoint || !apiKey) {
-      throw new Error('Azure Form Recognizer configuration is missing');
+      console.error('Azure Form Recognizer configuration missing:', {
+        endpoint: endpoint ? 'Present' : 'Missing',
+        apiKey: apiKey ? 'Present' : 'Missing',
+      });
+      throw new Error('Azure Form Recognizer configuration is missing. Please check AZURE_FORM_RECOGNIZER_ENDPOINT and AZURE_FORM_RECOGNIZER_KEY environment variables.');
     }
     
-    formRecognizerInstance = new FormRecognizerService({
-      endpoint,
-      apiKey,
-    });
+    try {
+      formRecognizerInstance = new FormRecognizerService({
+        endpoint,
+        apiKey,
+      });
+      console.log('Azure Form Recognizer service initialized successfully');
+    } catch (error) {
+      console.error('Failed to initialize Azure Form Recognizer:', error);
+      throw new Error(`Failed to initialize Azure Form Recognizer: ${error.message}`);
+    }
   }
   
   return formRecognizerInstance;

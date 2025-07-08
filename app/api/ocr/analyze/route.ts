@@ -16,6 +16,14 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
+    // Azure Form Recognizer設定チェック
+    if (!process.env.AZURE_FORM_RECOGNIZER_ENDPOINT || !process.env.AZURE_FORM_RECOGNIZER_KEY) {
+      return NextResponse.json({
+        success: false,
+        error: 'Azure Form Recognizer configuration is missing'
+      }, { status: 500 });
+    }
+
     // フォームデータを取得
     const formData = await request.formData();
     const file = formData.get('file') as File;
@@ -58,7 +66,8 @@ export async function POST(request: NextRequest) {
       console.error('Azure Form Recognizer エラー:', error);
       return NextResponse.json({
         success: false,
-        error: 'OCR処理中にエラーが発生しました'
+        error: error instanceof Error ? error.message : 'OCR処理中にエラーが発生しました',
+        details: error instanceof Error ? error.stack : undefined
       }, { status: 500 });
     }
 
@@ -115,14 +124,45 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('API エラー:', error);
+    
+    // エラーメッセージの詳細を取得
+    let errorMessage = '予期しないエラーが発生しました';
+    let errorDetails = undefined;
+    
+    if (error instanceof Error) {
+      errorMessage = error.message;
+      errorDetails = error.stack;
+      
+      // MongoDBエラーの特定
+      if (error.message.includes('ECONNREFUSED') || error.message.includes('connect')) {
+        errorMessage = 'MongoDB接続エラー: データベースに接続できません';
+      }
+      // Azure Form Recognizerエラーの特定
+      else if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+        errorMessage = 'Azure Form Recognizer認証エラー: APIキーを確認してください';
+      }
+      else if (error.message.includes('404') || error.message.includes('Not Found')) {
+        errorMessage = 'Azure Form Recognizerエンドポイントエラー: エンドポイントURLを確認してください';
+      }
+    }
+    
     return NextResponse.json({
       success: false,
-      error: error instanceof Error ? error.message : '予期しないエラーが発生しました'
+      error: errorMessage,
+      details: process.env.NODE_ENV === 'development' ? errorDetails : undefined
     }, { status: 500 });
   }
 }
 
 export async function GET(request: NextRequest) {
+  // 環境変数の状態を確認（デバッグ用）
+  const config = {
+    useAzureMongoDB: process.env.USE_AZURE_MONGODB === 'true',
+    azureEndpoint: process.env.AZURE_FORM_RECOGNIZER_ENDPOINT ? 'Configured' : 'Missing',
+    azureKey: process.env.AZURE_FORM_RECOGNIZER_KEY ? 'Configured' : 'Missing',
+    mongoUri: process.env.MONGODB_URI ? 'Configured' : 'Missing',
+  };
+
   return NextResponse.json({
     message: 'OCR Analyze API (Azure Form Recognizer)',
     method: 'POST',
@@ -130,6 +170,10 @@ export async function GET(request: NextRequest) {
     fields: {
       file: 'required, PDF or image file',
       companyId: 'optional, company identifier'
-    }
+    },
+    configuration: config
   });
 }
+
+// Node.js Runtimeを使用（Edge Runtimeではファイル処理に制限があるため）
+export const runtime = 'nodejs';
