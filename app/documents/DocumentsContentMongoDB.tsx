@@ -198,9 +198,11 @@ export default function DocumentsContentMongoDB() {
 
   const filteredDocuments = documents.filter(doc => {
     if (activeTab === 'ocr') {
-      return doc.ocr_status === 'completed';
+      // OCRで処理されたドキュメント（仕訳伝票以外）
+      return doc.ocr_status === 'completed' && doc.document_type !== 'journal_entry';
     } else if (activeTab === 'created') {
-      return !doc.ocr_status;
+      // 手動作成されたドキュメントまたは仕訳伝票
+      return !doc.ocr_status || doc.document_type === 'journal_entry';
     }
     return true;
   });

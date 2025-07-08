@@ -84,6 +84,7 @@ export async function POST(request: NextRequest) {
       companyId,
       documentType: 'journal_entry',
       documentNumber: journalNumber,
+      fileName: `仕訳伝票_${journalNumber}`,
       status: 'confirmed',
       issueDate: new Date(date),
       partnerName: debitAccount,
