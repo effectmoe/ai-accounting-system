@@ -143,6 +143,58 @@ export default function DocumentsContentMongoDB() {
     }
   };
 
+  const handleCreateJournalEntry = async (doc: any) => {
+    try {
+      // OCRProcessorをインポートして仕訳作成ロジックを使用
+      const { OCRProcessor } = await import('@/lib/ocr-processor');
+      const ocrProcessor = new OCRProcessor();
+      
+      // OCR結果から仕訳データを生成
+      const ocrResult = {
+        vendor: doc.vendorName || doc.vendor_name,
+        amount: doc.totalAmount || doc.total_amount || 0,
+        taxAmount: doc.taxAmount || doc.tax_amount || 0,
+        date: doc.documentDate || doc.document_date || new Date().toISOString().split('T')[0],
+        items: []
+      };
+      
+      const journalEntry = await ocrProcessor.createJournalEntry(ocrResult, doc.companyId || doc.company_id);
+      
+      // 仕訳作成APIを呼び出す
+      const response = await fetch('/api/journals/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          companyId: doc.companyId || doc.company_id,
+          ...journalEntry,
+          documentId: doc._id || doc.id
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('仕訳作成に失敗しました');
+      }
+      
+      const result = await response.json();
+      
+      toast.success(`仕訳を作成しました\n借方: ${journalEntry.debitAccount} ¥${journalEntry.amount.toLocaleString()}\n貸方: ${journalEntry.creditAccount} ¥${journalEntry.amount.toLocaleString()}`);
+      
+      // ドキュメントのステータスを更新
+      await fetch(`/api/documents/${doc._id || doc.id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'journalized' })
+      });
+      
+      // リストを更新
+      fetchDocuments();
+      
+    } catch (error) {
+      console.error('仕訳作成エラー:', error);
+      toast.error('仕訳作成に失敗しました: ' + (error instanceof Error ? error.message : '不明なエラー'));
+    }
+  };
+
   const filteredDocuments = documents.filter(doc => {
     if (activeTab === 'ocr') {
       return doc.ocr_status === 'completed';
@@ -293,7 +345,7 @@ export default function DocumentsContentMongoDB() {
                   
                   <div className="mt-3 flex gap-2">
                     <button
-                      onClick={() => toast.info('文書化機能は実装中です')}
+                      onClick={() => handleCreateJournalEntry(doc)}
                       className="flex-1 bg-blue-600 text-white text-sm py-1 px-2 rounded hover:bg-blue-700"
                     >
                       文書化する

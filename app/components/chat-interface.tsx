@@ -382,12 +382,31 @@ ${errorData.details ? `\n詳細: ${errorData.details}` : ''}
           // Azure OCRの結果を整形
           const extractedData = ocrResponse.extractedData || {};
           
+          // customFieldsの値も含めて金額を抽出
+          let amount = extractedData.totalAmount || extractedData.total || extractedData.Total || 
+                      extractedData.TotalAmount || extractedData.InvoiceTotal || extractedData.invoiceTotal || 0;
+          
+          // customFieldsから金額を抽出
+          if (extractedData.customFields) {
+            if (extractedData.customFields.InvoiceTotal && !amount) {
+              const invoiceTotal = extractedData.customFields.InvoiceTotal;
+              if (typeof invoiceTotal === 'string' && invoiceTotal.includes('円')) {
+                const match = invoiceTotal.match(/[\d,]+/);
+                if (match) {
+                  amount = parseInt(match[0].replace(/,/g, ''));
+                }
+              } else if (typeof invoiceTotal === 'number') {
+                amount = invoiceTotal;
+              }
+            }
+          }
+          
           ocrResult = {
             text: JSON.stringify(extractedData, null, 2),
             confidence: ocrResponse.confidence || 0,
             vendor: extractedData.vendorName || extractedData.merchantName || extractedData.VendorName || file.name.replace(/\.(pdf|png|jpg|jpeg)$/i, ''),
             date: extractedData.invoiceDate || extractedData.transactionDate || extractedData.InvoiceDate || extractedData.TransactionDate || new Date().toISOString().split('T')[0],
-            amount: extractedData.totalAmount || extractedData.total || extractedData.Total || extractedData.TotalAmount || extractedData.InvoiceTotal || extractedData.invoiceTotal || 0,
+            amount: amount,
             taxAmount: extractedData.taxAmount || extractedData.tax || extractedData.Tax || extractedData.TotalTax || 0,
             items: extractedData.items || extractedData.Items || []
           };

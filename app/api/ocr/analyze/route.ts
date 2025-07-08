@@ -3,6 +3,19 @@ import { getFormRecognizerService } from '../../../../src/lib/azure-form-recogni
 import { db } from '../../../../src/lib/mongodb-client';
 import { ObjectId } from 'mongodb';
 
+// 金額文字列から数値を抽出する関数
+function extractAmount(value: any): number {
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') {
+    // "800円" → 800
+    const match = value.match(/[\d,]+/);
+    if (match) {
+      return parseInt(match[0].replace(/,/g, ''));
+    }
+  }
+  return 0;
+}
+
 export async function POST(request: NextRequest) {
   try {
     // 環境変数チェック
@@ -149,6 +162,21 @@ export async function POST(request: NextRequest) {
 
     // MongoDBのdocumentsコレクションに保存（書類管理画面で表示するため）
     try {
+      // 金額抽出のデバッグ
+      console.log('Raw fields data:', JSON.stringify(analysisResult.fields, null, 2));
+      console.log('customFields:', analysisResult.fields?.customFields);
+      
+      const totalAmountExtracted = extractAmount(analysisResult.fields?.InvoiceTotal) || 
+                                  extractAmount(analysisResult.fields?.totalAmount) || 
+                                  extractAmount(analysisResult.fields?.total) || 
+                                  extractAmount(analysisResult.fields?.customFields?.InvoiceTotal) || 0;
+      
+      const taxAmountExtracted = extractAmount(analysisResult.fields?.taxAmount) || 
+                                extractAmount(analysisResult.fields?.tax) || 
+                                extractAmount(analysisResult.fields?.customFields?.Tax) || 0;
+      
+      console.log('Extracted amounts:', { totalAmount: totalAmountExtracted, taxAmount: taxAmountExtracted });
+      
       const documentData = {
         companyId: companyId === 'default' ? '11111111-1111-1111-1111-111111111111' : companyId,
         fileName: file.name,
@@ -156,8 +184,8 @@ export async function POST(request: NextRequest) {
         fileSize: file.size,
         documentType: analysisResult.documentType || 'receipt',
         vendorName: analysisResult.fields?.vendorName || analysisResult.fields?.merchantName || file.name.replace(/\.(pdf|png|jpg|jpeg)$/i, ''),
-        totalAmount: analysisResult.fields?.InvoiceTotal || analysisResult.fields?.totalAmount || analysisResult.fields?.total || 0,
-        taxAmount: analysisResult.fields?.taxAmount || analysisResult.fields?.tax || 0,
+        totalAmount: totalAmountExtracted,
+        taxAmount: taxAmountExtracted,
         documentDate: analysisResult.fields?.invoiceDate || analysisResult.fields?.transactionDate || new Date(),
         category: '未分類',
         subcategory: null,

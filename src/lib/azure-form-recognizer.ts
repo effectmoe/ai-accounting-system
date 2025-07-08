@@ -77,9 +77,11 @@ export class FormRecognizerService {
           customerAddress: fields.CustomerAddress?.content,
           customerTaxId: fields.CustomerTaxId?.content,
           purchaseOrder: fields.PurchaseOrder?.content,
-          totalAmount: fields.TotalAmount?.value,
+          totalAmount: fields.TotalAmount?.value || fields.InvoiceTotal?.value,
           subTotal: fields.SubTotal?.value,
           totalTax: fields.TotalTax?.value,
+          // InvoiceTotalも含める（文字列の場合もあるため両方チェック）
+          InvoiceTotal: fields.InvoiceTotal?.content || fields.InvoiceTotal?.value,
           amountDue: fields.AmountDue?.value,
           previousUnpaidBalance: fields.PreviousUnpaidBalance?.value,
           billingAddress: fields.BillingAddress?.content,
@@ -341,6 +343,11 @@ export class FormRecognizerService {
       if (!standardFields.includes(key) && value) {
         customFields[key] = value.content || value.value;
       }
+    }
+    
+    // InvoiceTotalは重要なフィールドなので、標準フィールドとしても扱う
+    if (fields.InvoiceTotal) {
+      customFields.InvoiceTotal = fields.InvoiceTotal.content || fields.InvoiceTotal.value;
     }
     
     return customFields;
