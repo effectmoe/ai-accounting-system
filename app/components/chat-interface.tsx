@@ -435,7 +435,7 @@ ${errorData.details ? `\n詳細: ${errorData.details}` : ''}
         // OCR処理中のメッセージがある場合
         if (ocrResult.message) {
           return {
-            content: `${fileTypeLabel}を処理しました。\n\n${ocrResult.message}\n\n処理が完了したら、「書類一覧」メニューから確認できます。`
+            content: `${fileTypeLabel}を処理しました。処理が完了したら、「書類一覧」メニューから確認できます。`
           };
         }
         

@@ -87,7 +87,8 @@ export default function AccountCategoryEditor({
           amount,
           documentType: documentType || 'receipt',
           fileName,
-          extractedText
+          extractedText,
+          currentCategory: selectedCategory
         })
       });
 

@@ -33,11 +33,14 @@ export async function POST(request: NextRequest) {
       vendorName
     );
 
+    // 現在のカテゴリ情報を取得
+    const currentCategory = body.currentCategory;
+    
     // 基本的な勘定科目判定ロジック
     let primarySuggestion = {
-      category: '接待交際費',
-      confidence: 0.3,  // デフォルトの信頼度を下げる
-      reason: 'デフォルト分類'
+      category: currentCategory || '接待交際費',
+      confidence: currentCategory ? 0.5 : 0.3,  // 現在のカテゴリがある場合は信頼度を高める
+      reason: currentCategory ? '現在の分類' : 'デフォルト分類'
     };
 
     // 検索対象のテキストを結合

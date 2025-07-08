@@ -374,9 +374,9 @@ export default function DocumentsContentMongoDB() {
                     <p className="text-xs text-gray-500 mb-1">番号: {doc.document_number}</p>
                   )}
                   
-                  {doc.issue_date && (
+                  {(doc.receipt_date || doc.issue_date) && (
                     <p className="text-xs text-gray-500 mb-2">
-                      日付: {new Date(doc.issue_date).toLocaleDateString('ja-JP')}
+                      日付: {new Date(doc.receipt_date || doc.issue_date).toLocaleDateString('ja-JP')} {new Date(doc.receipt_date || doc.issue_date).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}
                     </p>
                   )}
                   
@@ -487,7 +487,7 @@ export default function DocumentsContentMongoDB() {
                     <td className="p-2 text-sm">{doc.document_number}</td>
                     <td className="p-2 text-sm">{documentTypeLabels[doc.document_type] || doc.document_type}</td>
                     <td className="p-2 text-sm">{doc.vendor_name || doc.partner_name}</td>
-                    <td className="p-2 text-sm">{new Date(doc.issue_date).toLocaleDateString('ja-JP')}</td>
+                    <td className="p-2 text-sm">{new Date(doc.receipt_date || doc.issue_date).toLocaleDateString('ja-JP')} {new Date(doc.receipt_date || doc.issue_date).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}</td>
                     <td className="p-2 text-sm">¥{doc.total_amount?.toLocaleString()}</td>
                     <td className="p-2">
                       <span className={`text-xs px-2 py-1 rounded ${statusColors[doc.status] || 'bg-gray-100 text-gray-800'}`}>

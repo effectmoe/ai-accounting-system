@@ -177,17 +177,51 @@ export async function POST(request: NextRequest) {
       
       console.log('Extracted amounts:', { totalAmount: totalAmountExtracted, taxAmount: taxAmountExtracted });
       
+      // 日付を適切に解析
+      let documentDate = new Date();
+      if (analysisResult.fields?.invoiceDate) {
+        documentDate = new Date(analysisResult.fields.invoiceDate);
+      } else if (analysisResult.fields?.transactionDate) {
+        documentDate = new Date(analysisResult.fields.transactionDate);
+      } else if (analysisResult.fields?.InvoiceDate) {
+        documentDate = new Date(analysisResult.fields.InvoiceDate);
+      } else if (analysisResult.fields?.TransactionDate) {
+        documentDate = new Date(analysisResult.fields.TransactionDate);
+      }
+      
+      // OCRProcessorを使用して勘定科目を自動判定
+      const { OCRProcessor } = await import('../../../../src/lib/ocr-processor');
+      const ocrProcessor = new OCRProcessor();
+      
+      const vendorName = analysisResult.fields?.vendorName || analysisResult.fields?.merchantName || 
+                        analysisResult.fields?.VendorName || analysisResult.fields?.MerchantName || 
+                        file.name.replace(/\.(pdf|png|jpg|jpeg)$/i, '');
+      
+      const ocrResultForJournal = {
+        vendor: vendorName,
+        amount: totalAmountExtracted,
+        taxAmount: taxAmountExtracted,
+        date: documentDate.toISOString().split('T')[0],
+        items: []
+      };
+      
+      const journalEntry = await ocrProcessor.createJournalEntry(
+        ocrResultForJournal,
+        companyId === 'default' ? '11111111-1111-1111-1111-111111111111' : companyId
+      );
+      
       const documentData = {
         companyId: companyId === 'default' ? '11111111-1111-1111-1111-111111111111' : companyId,
         fileName: file.name,
         fileType: file.type,
         fileSize: file.size,
         documentType: analysisResult.documentType || 'receipt',
-        vendorName: analysisResult.fields?.vendorName || analysisResult.fields?.merchantName || file.name.replace(/\.(pdf|png|jpg|jpeg)$/i, ''),
+        vendorName: vendorName,
         totalAmount: totalAmountExtracted,
         taxAmount: taxAmountExtracted,
-        documentDate: analysisResult.fields?.invoiceDate || analysisResult.fields?.transactionDate || new Date(),
-        category: '未分類',
+        documentDate: documentDate,
+        receiptDate: documentDate.toISOString().split('T')[0], // 領収書の日付
+        category: journalEntry.debitAccount, // 自動判定された勘定科目
         subcategory: null,
         extractedText: JSON.stringify(analysisResult.fields, null, 2),
         confidence: analysisResult.confidence || 0,
