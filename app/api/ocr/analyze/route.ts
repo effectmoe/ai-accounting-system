@@ -179,14 +179,36 @@ export async function POST(request: NextRequest) {
       
       // 日付を適切に解析
       let documentDate = new Date();
-      if (analysisResult.fields?.invoiceDate) {
-        documentDate = new Date(analysisResult.fields.invoiceDate);
-      } else if (analysisResult.fields?.transactionDate) {
-        documentDate = new Date(analysisResult.fields.transactionDate);
-      } else if (analysisResult.fields?.InvoiceDate) {
-        documentDate = new Date(analysisResult.fields.InvoiceDate);
-      } else if (analysisResult.fields?.TransactionDate) {
-        documentDate = new Date(analysisResult.fields.TransactionDate);
+      
+      // 日付フィールドの候補を確認
+      const dateFields = [
+        analysisResult.fields?.invoiceDate,
+        analysisResult.fields?.transactionDate,
+        analysisResult.fields?.InvoiceDate,
+        analysisResult.fields?.TransactionDate,
+        analysisResult.fields?.Date,
+        analysisResult.fields?.date,
+        analysisResult.fields?.customFields?.Date,
+        analysisResult.fields?.customFields?.InvoiceDate,
+        analysisResult.fields?.customFields?.TransactionDate
+      ];
+      
+      console.log('Available date fields:', dateFields.filter(d => d));
+      
+      // 有効な日付を見つける
+      for (const dateField of dateFields) {
+        if (dateField) {
+          try {
+            const parsedDate = new Date(dateField);
+            if (!isNaN(parsedDate.getTime())) {
+              documentDate = parsedDate;
+              console.log('Parsed date:', documentDate);
+              break;
+            }
+          } catch (e) {
+            console.log('Failed to parse date:', dateField);
+          }
+        }
       }
       
       // OCRProcessorを使用して勘定科目を自動判定
@@ -220,7 +242,8 @@ export async function POST(request: NextRequest) {
         totalAmount: totalAmountExtracted,
         taxAmount: taxAmountExtracted,
         documentDate: documentDate,
-        receiptDate: documentDate.toISOString().split('T')[0], // 領収書の日付
+        issue_date: documentDate,  // 日付表示用
+        receipt_date: documentDate.toISOString().split('T')[0], // 領収書の日付
         category: journalEntry.debitAccount, // 自動判定された勘定科目
         subcategory: null,
         extractedText: JSON.stringify(analysisResult.fields, null, 2),
