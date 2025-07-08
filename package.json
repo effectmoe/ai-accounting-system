@@ -59,6 +59,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.27.3",
     "@azure/ai-form-recognizer": "^5.1.0",
+    "@azure/openai": "^2.0.0",
     "@google-cloud/vision": "^4.3.0",
     "@mastra/core": "^0.10.10",
     "@modelcontextprotocol/sdk": "^1.15.0",
