@@ -410,6 +410,25 @@ export class VercelDatabaseService extends DatabaseService {
       throw error;
     }
   }
+
+  // createメソッドをsafeExecuteなしで直接実装
+  async create<T>(collectionName: string, document: Omit<T, '_id'>): Promise<T> {
+    try {
+      // 直接接続確認
+      const client = await getClientPromise();
+      const db = client.db(DB_NAME);
+      await db.command({ ping: 1 });
+      
+      // 親クラスのcreateメソッドを直接呼び出し
+      return await super.create<T>(collectionName, document);
+    } catch (error) {
+      console.error(`MongoDB create error in collection ${collectionName}:`, error);
+      throw new DatabaseError(
+        `Failed to create document in ${collectionName}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        'CREATE_ERROR'
+      );
+    }
+  }
 }
 
 // Vercel環境用のエクスポート
