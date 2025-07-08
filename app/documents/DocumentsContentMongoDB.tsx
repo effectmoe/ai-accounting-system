@@ -160,6 +160,12 @@ export default function DocumentsContentMongoDB() {
 
   const handleCreateJournalEntry = async (doc: any) => {
     try {
+      console.log('Creating journal entry for document:', {
+        id: doc.id,
+        category: doc.category,
+        vendor: doc.vendor_name
+      });
+      
       // 仕訳作成APIを呼び出す（サーバーサイドで処理）
       const response = await fetch('/api/journals/create', {
         method: 'POST',
@@ -169,9 +175,9 @@ export default function DocumentsContentMongoDB() {
           vendorName: doc.vendor_name || doc.partner_name || doc.file_name,
           amount: doc.totalAmount || doc.total_amount || 0,
           taxAmount: doc.taxAmount || doc.tax_amount || 0,
-          date: doc.documentDate || doc.document_date || new Date().toISOString().split('T')[0],
+          date: doc.receipt_date || doc.documentDate || doc.document_date || doc.issue_date || new Date().toISOString().split('T')[0],
           documentId: doc._id || doc.id,
-          debitAccount: doc.category, // 元のカテゴリを渡す
+          debitAccount: doc.category && doc.category !== '未分類' ? doc.category : null, // カテゴリが未分類でない場合のみ渡す
           description: `${doc.vendor_name || doc.partner_name || '店舗名不明'} - 領収書`
         })
       });
@@ -525,8 +531,9 @@ export default function DocumentsContentMongoDB() {
                           </a>
                         )}
                         <button 
-                          className="text-green-600 hover:text-green-800 p-1"
-                          title="ダウンロード"
+                          className="text-gray-400 cursor-not-allowed p-1"
+                          title="ダウンロード機能は準備中です"
+                          onClick={() => toast.info('ダウンロード機能は準備中です')}
                         >
                           <Download className="w-4 h-4" />
                         </button>

@@ -3,13 +3,11 @@
 import { useState, useRef, useEffect } from 'react';
 import { getSupabaseClient } from '@/lib/supabase-singleton';
 import { DocumentGenerator, generateDocumentHTML, DocumentData } from '@/lib/document-generator';
-import { OCRProcessor } from '@/lib/ocr-processor';
 import { processUserInput as nlpProcessUserInput } from '@/nlp-orchestrator-wrapper';
 
 const supabase = getSupabaseClient();
 
 const documentGenerator = new DocumentGenerator();
-const ocrProcessor = new OCRProcessor();
 
 interface Message {
   id: string;
@@ -439,10 +437,43 @@ ${errorData.details ? `\n詳細: ${errorData.details}` : ''}
           };
         }
         
-        const journalEntry = await ocrProcessor.createJournalEntry(ocrResult, companyId);
+        // Azure OCRの結果から日付を取得
+        let actualDate = new Date().toISOString().split('T')[0];
+        
+        // 日付フィールドの候補を確認
+        const dateFields = [
+          ocrResponse.extractedData?.invoiceDate,
+          ocrResponse.extractedData?.transactionDate,
+          ocrResponse.extractedData?.InvoiceDate,
+          ocrResponse.extractedData?.TransactionDate,
+          ocrResponse.extractedData?.Date,
+          ocrResponse.extractedData?.date,
+          ocrResponse.extractedData?.customFields?.Date,
+          ocrResponse.extractedData?.customFields?.InvoiceDate,
+          ocrResponse.extractedData?.customFields?.TransactionDate
+        ];
+        
+        // 有効な日付を見つける
+        for (const dateField of dateFields) {
+          if (dateField) {
+            try {
+              const parsedDate = new Date(dateField);
+              if (!isNaN(parsedDate.getTime())) {
+                actualDate = parsedDate.toISOString().split('T')[0];
+                break;
+              }
+            } catch (e) {
+              console.log('Failed to parse date:', dateField);
+            }
+          }
+        }
+        
+        // Azure OCRの結果から勘定科目を取得（サーバーで判定済み）
+        const category = ocrResponse.category || ocrResponse.extractedData?.category || '未分類';
+        const actualConfidence = ocrResponse.confidence || 0.8;
         
         return {
-          content: `${fileTypeLabel}を解析しました。\n\n【解析結果】\n発行者: ${ocrResult.vendor}\n日付: ${ocrResult.date}\n金額: ¥${ocrResult.amount?.toLocaleString()}（税込）\n消費税: ¥${ocrResult.taxAmount?.toLocaleString()}\n勘定科目: ${journalEntry.debitAccount}\n信頼度: ${(ocrResult.confidence * 100).toFixed(1)}%\n\n【自動仕訳案】\n借方: ${journalEntry.debitAccount} ${journalEntry.amount}円\n貸方: ${journalEntry.creditAccount} ${journalEntry.amount}円\n摘要: ${journalEntry.description}`,
+          content: `${fileTypeLabel}を解析しました。\n\n【解析結果】\n発行者: ${ocrResult.vendor}\n日付: ${actualDate}\n時刻: ${new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}\n金額: ¥${ocrResult.amount?.toLocaleString()}（税込）\n消費税: ¥${ocrResult.taxAmount?.toLocaleString()}\n勘定科目: ${category}\n信頼度: ${(actualConfidence * 100).toFixed(1)}%\n\n【自動仕訳案】\n借方: ${category} ${ocrResult.amount}円\n貸方: 現金 ${ocrResult.amount}円\n摘要: ${ocrResult.vendor} - 領収書`,
           // actions: [{
           //   label: '仕訳を登録',
           //   action: 'confirm_journal',

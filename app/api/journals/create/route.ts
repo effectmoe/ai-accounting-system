@@ -29,12 +29,32 @@ export async function POST(request: NextRequest) {
       vendorName // 元の会社名/店舗名を受け取る
     } = body;
 
-    // debitAccountが指定されていない場合、OCRProcessorで判定
+    // 元のドキュメント情報を取得（カテゴリと画像IDを引き継ぐため）
+    let sourceDocument = null;
+    if (documentId) {
+      try {
+        sourceDocument = await db.findOne('documents', { _id: new ObjectId(documentId) });
+        console.log('Source document:', {
+          id: sourceDocument?._id,
+          category: sourceDocument?.category,
+          gridfsFileId: sourceDocument?.gridfsFileId
+        });
+      } catch (e) {
+        console.error('Failed to fetch source document:', e);
+      }
+    }
+    
+    // debitAccountが指定されていない場合、元のドキュメントから取得するか、OCRProcessorで判定
     let finalDebitAccount = debitAccount;
     let finalCreditAccount = creditAccount || '現金';
     let finalDescription = description;
     
-    if (!debitAccount && vendorName) {
+    // まず元のドキュメントのカテゴリを優先
+    if (!debitAccount && sourceDocument?.category && sourceDocument.category !== '未分類') {
+      finalDebitAccount = sourceDocument.category;
+    }
+    // それでもない場合はOCRProcessorで判定
+    else if (!debitAccount && vendorName) {
       const { OCRProcessor } = await import('../../../../src/lib/ocr-processor');
       const ocrProcessor = new OCRProcessor();
       
@@ -121,8 +141,10 @@ export async function POST(request: NextRequest) {
       taxAmount: taxAmount || 0,
       subtotal: amount - (taxAmount || 0),
       notes: description,
+      category: finalDebitAccount, // 借方勘定科目を保存
       journalId: savedJournal._id,
       sourceDocumentId: documentId ? new ObjectId(documentId) : null,
+      gridfsFileId: sourceDocument?.gridfsFileId || null, // 元画像のIDを引き継ぐ
       createdAt: new Date(),
       updatedAt: new Date()
     };
