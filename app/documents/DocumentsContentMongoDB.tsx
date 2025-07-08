@@ -10,7 +10,8 @@ const documentTypeLabels = {
   estimate: '見積書',
   invoice: '請求書',
   delivery_note: '納品書',
-  receipt: '領収書'
+  receipt: '領収書',
+  journal_entry: '仕訳伝票'
 };
 
 const statusLabels = {

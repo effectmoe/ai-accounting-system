@@ -79,6 +79,27 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // 仕訳文書として documents コレクションにも保存
+    const journalDocument = {
+      companyId,
+      documentType: 'journal_entry',
+      documentNumber: journalNumber,
+      status: 'confirmed',
+      issueDate: new Date(date),
+      partnerName: debitAccount,
+      partnerAddress: '',
+      totalAmount: amount,
+      taxAmount: taxAmount || 0,
+      subtotal: amount - (taxAmount || 0),
+      notes: description,
+      journalId: savedJournal._id,
+      sourceDocumentId: documentId ? new ObjectId(documentId) : null,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+
+    await db.create('documents', journalDocument);
+
     return NextResponse.json({
       success: true,
       journal: {
