@@ -441,11 +441,8 @@ ${errorData.details ? `\n詳細: ${errorData.details}` : ''}
         
         const journalEntry = await ocrProcessor.createJournalEntry(ocrResult, companyId);
         
-        // デバッグ用：抽出されたデータを表示
-        const debugInfo = ocrResult.confidence > 0 ? `\n\n【OCR詳細データ】\n${ocrResult.text}` : '';
-        
         return {
-          content: `${fileTypeLabel}を解析しました。\n\n【解析結果】\n発行者: ${ocrResult.vendor}\n日付: ${ocrResult.date}\n金額: ¥${ocrResult.amount?.toLocaleString()}（税込）\n消費税: ¥${ocrResult.taxAmount?.toLocaleString()}\n信頼度: ${(ocrResult.confidence * 100).toFixed(1)}%\n\n【自動仕訳案】\n借方: ${journalEntry.debitAccount} ${journalEntry.amount}円\n貸方: ${journalEntry.creditAccount} ${journalEntry.amount}円\n摘要: ${journalEntry.description}${debugInfo}\n\n※ 仕訳機能は現在MongoDBへの移行中です。OCRデータはMongoDB GridFSに保存されました。`,
+          content: `${fileTypeLabel}を解析しました。\n\n【解析結果】\n発行者: ${ocrResult.vendor}\n日付: ${ocrResult.date}\n金額: ¥${ocrResult.amount?.toLocaleString()}（税込）\n消費税: ¥${ocrResult.taxAmount?.toLocaleString()}\n信頼度: ${(ocrResult.confidence * 100).toFixed(1)}%\n\n【自動仕訳案】\n借方: ${journalEntry.debitAccount} ${journalEntry.amount}円\n貸方: ${journalEntry.creditAccount} ${journalEntry.amount}円\n摘要: ${journalEntry.description}\n\n※ 仕訳機能は現在MongoDBへの移行中です。OCRデータはMongoDB GridFSに保存されました。`,
           // actions: [{
           //   label: '仕訳を登録',
           //   action: 'confirm_journal',
