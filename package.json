@@ -49,7 +49,8 @@
     "gas:show-code": "tsx src/scripts/gas-code-replacement.ts",
     "gas:update-direct": "tsx src/scripts/direct-gas-update.ts",
     "test:integration": "tsx tests/integration-test.ts",
-    "test:integration:deploy": "DEPLOY_TEST=true tsx tests/integration-test.ts"
+    "test:integration:deploy": "DEPLOY_TEST=true tsx tests/integration-test.ts",
+    "setup:vercel-env": "tsx scripts/setup-vercel-env.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.27.3",

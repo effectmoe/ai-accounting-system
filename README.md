@@ -9,6 +9,7 @@
 ## 主な機能
 
 - 🤖 **AIエージェント**: 税務計算、スキーマ設計、OCR処理、コンプライアンス検証
+- 🧠 **問題解決専門エージェント**: 7つのMCPサーバー統合による高度な問題解決
 - 📊 **ワークフロー自動化**: 会計処理、コンプライアンスレポート、請求書処理
 - 🗾 **日本税制対応**: 消費税（8%/10%）、適格請求書、源泉徴収税
 - 📱 **NLWeb統合**: 自然言語での会計データアクセス
@@ -197,9 +198,20 @@ const invoice = await client.createInvoice({
 
 ### 7. GAS Test Agent
 - Google Apps Script関数のテスト実行
-- パフォーマンスベンチマークとバリデーション
+- パフォーマンスベンチマーク
 
-### 8. GAS Update Agent
+### 8. Problem Solving Agent
+- 7つのMCPサーバーを統合した高度な問題解決
+- 統合されたMCPサーバー:
+  - **Perplexity**: 高度な検索と分析
+  - **Sequential Thinking**: 段階的な問題解決
+  - **Midscene**: ビジュアル解析とChrome拡張機能連携
+  - **Firecrawl**: Webスクレイピングとデータ抽出
+  - **DataForSEO**: SEO分析と競合調査
+  - **Playwright**: ブラウザ自動化とテスト
+  - **Filesystem**: ローカルファイルシステム操作
+
+### 9. GAS Update Agent
 - Google Apps Scriptコードの更新と同期
 - ローカル・リモート間のファイル管理
 

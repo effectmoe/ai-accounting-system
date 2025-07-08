@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import GitHubSection from './github-section';
+import ProblemSolvingSection from './problem-solving-section';
 
 interface AgentStatus {
   name: string;
@@ -72,6 +73,13 @@ export default function MastraAdminPage() {
           avgDuration: 450,
           lastRun: new Date(Date.now() - 60000).toISOString(),
         },
+        {
+          name: 'problem_solving',
+          totalRuns: 89,
+          successRate: 97.8,
+          avgDuration: 5500,
+          lastRun: new Date(Date.now() - 180000).toISOString(),
+        },
       ]);
 
       // 最近のログ（モックデータ）
@@ -114,7 +122,8 @@ export default function MastraAdminPage() {
       'gas-deploy-agent': 'GASデプロイエージェント',
       'gas-ocr-deploy-agent': 'GAS-OCRデプロイエージェント',
       'gas-test-agent': 'GASテストエージェント',
-      'gas-update-agent': 'GAS更新エージェント'
+      'gas-update-agent': 'GAS更新エージェント',
+      'problem-solving-agent': '問題解決専門エージェント'
     };
     return agentNames[agentName] || agentName;
   };
@@ -133,7 +142,8 @@ export default function MastraAdminPage() {
       'gas-deploy-agent': 'Google Apps Scriptのデプロイ管理',
       'gas-ocr-deploy-agent': 'GAS OCR機能のデプロイ・設定',
       'gas-test-agent': 'GASスクリプトのテスト実行',
-      'gas-update-agent': 'GASコードの更新・同期'
+      'gas-update-agent': 'GASコードの更新・同期',
+      'problem-solving-agent': '7つのMCPサーバー統合による高度な問題解決'
     };
     return descriptions[agentName] || '詳細不明';
   };
@@ -353,6 +363,9 @@ export default function MastraAdminPage() {
           </button>
         </div>
       </div>
+
+      {/* 問題解決専門エージェントセクション */}
+      <ProblemSolvingSection />
 
       {/* GitHub連携セクション */}
       <GitHubSection />

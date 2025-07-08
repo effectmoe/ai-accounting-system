@@ -1,5 +1,5 @@
 // スクリプトプロパティから設定を取得
-const WEBHOOK_URL = PropertiesService.getScriptProperties().getProperty('WEBHOOK_URL') || 'https://accounting-automation-1tyrdbbc0-effectmoes-projects.vercel.app/api/webhook/ocr';
+const WEBHOOK_URL = 'https://accounting-automation-3qnb4k3zk-effectmoes-projects.vercel.app/api/webhook/ocr';
 
 /**
  * HTTPリクエストを受け取る（ファイルアップロード時）
@@ -264,7 +264,7 @@ function test1_SimpleWebhook() {
     console.log('✅ Webhook送信成功！');
     console.log('結果:', result);
     console.log('\n本番環境でOCR結果タブを確認してください:');
-    console.log('https://accounting-automation-l4rd0r8mn-effectmoes-projects.vercel.app/documents');
+    console.log('https://accounting-automation-5h325mopj-effectmoes-projects.vercel.app/documents');
   } catch (error) {
     console.error('❌ Webhook送信失敗:', error);
   }
@@ -313,6 +313,15 @@ function test2_RealFileOCR() {
 }
 
 /**
+ * Webhook URLを更新
+ */
+function updateWebhookUrl() {
+  const newUrl = 'https://accounting-automation-5h325mopj-effectmoes-projects.vercel.app/api/webhook/ocr';
+  PropertiesService.getScriptProperties().setProperty('WEBHOOK_URL', newUrl);
+  console.log('✅ Webhook URL更新完了: ' + newUrl);
+}
+
+/**
  * ステータス確認
  */
 function checkStatus() {
@@ -336,6 +345,7 @@ function checkStatus() {
   }
   
   console.log('\n使い方:');
-  console.log('1. test1_SimpleWebhook() - ファイル不要のテスト');
-  console.log('2. test2_RealFileOCR() - 実際のファイルでテスト（要ファイルID）');
+  console.log('1. updateWebhookUrl() - Webhook URLを更新');
+  console.log('2. test1_SimpleWebhook() - ファイル不要のテスト');
+  console.log('3. test2_RealFileOCR() - 実際のファイルでテスト（要ファイルID）');
 }

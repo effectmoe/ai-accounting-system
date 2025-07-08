@@ -59,7 +59,8 @@ export async function GET() {
       'gas-deploy-agent',
       'gas-ocr-deploy-agent',
       'gas-test-agent',
-      'gas-update-agent'
+      'gas-update-agent',
+      'problem-solving-agent'
     ],
     llm: {
       provider: 'deepseek',

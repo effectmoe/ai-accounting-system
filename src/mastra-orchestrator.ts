@@ -9,6 +9,7 @@ import { productAgent } from './agents/product-agent';
 import { japanTaxAgent } from './agents/japan-tax-agent';
 import { uiAgent } from './agents/ui-agent';
 import { nlwebAgent } from './agents/nlweb-agent';
+import { problemSolvingAgent } from './agents/problem-solving-agent';
 import { nlpOrchestrator } from './nlp-orchestrator';
 
 // DeepSeek LLM Configuration
@@ -221,6 +222,77 @@ export class MastraOrchestrator {
           );
         },
       }),
+
+      // 問題解決ツール
+      solveProblem: createTool({
+        id: 'solve-problem',
+        description: 'Solve complex problems using problem-solving agent',
+        inputSchema: z.object({
+          problem: z.string(),
+          context: z.object({
+            domain: z.string().optional(),
+            constraints: z.array(z.string()).optional(),
+            previousAttempts: z.array(z.string()).optional(),
+          }).optional(),
+          requireVisualAnalysis: z.boolean().default(false),
+        }),
+        execute: async (input) => {
+          const agent = this.agents.get('problem-solving-agent');
+          return await agent.execute({ input });
+        },
+      }),
+
+      // Web検索ツール
+      webSearch: createTool({
+        id: 'web-search',
+        description: 'Search the web for information',
+        inputSchema: z.object({
+          query: z.string(),
+          searchType: z.enum(['general', 'technical', 'business', 'legal']).default('general'),
+          maxResults: z.number().default(5),
+          language: z.enum(['ja', 'en']).default('ja'),
+        }),
+        execute: async (input) => {
+          const agent = this.agents.get('problem-solving-agent');
+          return await agent.execute({
+            input: {
+              operation: 'web_search',
+              searchQuery: input.query,
+              searchOptions: {
+                type: input.searchType,
+                maxResults: input.maxResults,
+                language: input.language,
+              },
+            },
+          });
+        },
+      }),
+
+      // ビジュアル分析ツール
+      visualAnalysis: createTool({
+        id: 'visual-analysis',
+        description: 'Analyze visual data like charts, diagrams, or images',
+        inputSchema: z.object({
+          imageUrl: z.string().optional(),
+          imageData: z.string().optional(), // base64 encoded
+          analysisType: z.enum(['chart', 'diagram', 'general', 'ocr']).default('general'),
+          extractData: z.boolean().default(false),
+        }),
+        execute: async (input) => {
+          const agent = this.agents.get('problem-solving-agent');
+          return await agent.execute({
+            input: {
+              operation: 'visual_analysis',
+              visualData: {
+                url: input.imageUrl,
+                data: input.imageData,
+                type: input.analysisType,
+                extractData: input.extractData,
+              },
+            },
+          });
+        },
+      }),
     };
   }
 
@@ -234,6 +306,7 @@ export class MastraOrchestrator {
     this.agents.set('japan-tax-agent', japanTaxAgent);
     this.agents.set('ui-agent', uiAgent);
     this.agents.set('nlweb-agent', nlwebAgent);
+    this.agents.set('problem-solving-agent', problemSolvingAgent);
 
     console.log('✅ All agents initialized successfully');
   }
@@ -496,6 +569,147 @@ export class MastraOrchestrator {
   // Process natural language input (main interface)
   async processNaturalLanguage(input: string, context?: any) {
     return await nlpOrchestrator.processNaturalLanguage(input, context);
+  }
+
+  // Execute problem solving workflow
+  async executeProblemSolvingWorkflow(input: {
+    problem: string;
+    domain?: string;
+    requireWebSearch?: boolean;
+    requireVisualAnalysis?: boolean;
+    visualData?: any;
+    maxIterations?: number;
+  }) {
+    try {
+      console.log('🧩 Starting problem solving workflow:', input.problem);
+
+      const workflowContext = {
+        problem: input.problem,
+        domain: input.domain,
+        iterations: 0,
+        maxIterations: input.maxIterations || 3,
+        solutions: [],
+        searchResults: [],
+        visualAnalysis: null,
+      };
+
+      // Step 1: Initial problem analysis
+      const initialAnalysis = await this.agents.get('problem-solving-agent').execute({
+        input: {
+          problem: input.problem,
+          context: {
+            domain: input.domain,
+          },
+        },
+      });
+
+      workflowContext.solutions.push(initialAnalysis);
+
+      // Step 2: Web search if required
+      if (input.requireWebSearch || initialAnalysis.requiresMoreInfo) {
+        const searchQueries = initialAnalysis.searchQueries || [input.problem];
+        
+        for (const query of searchQueries) {
+          const searchResult = await this.agents.get('problem-solving-agent').execute({
+            input: {
+              operation: 'web_search',
+              searchQuery: query,
+              searchOptions: {
+                type: input.domain === 'technical' ? 'technical' : 'general',
+                maxResults: 5,
+                language: 'ja',
+              },
+            },
+          });
+
+          if (searchResult.success) {
+            workflowContext.searchResults.push(searchResult.data);
+          }
+        }
+      }
+
+      // Step 3: Visual analysis if required
+      if (input.requireVisualAnalysis && input.visualData) {
+        const visualResult = await this.agents.get('problem-solving-agent').execute({
+          input: {
+            operation: 'visual_analysis',
+            visualData: input.visualData,
+          },
+        });
+
+        if (visualResult.success) {
+          workflowContext.visualAnalysis = visualResult.data;
+        }
+      }
+
+      // Step 4: Enhanced problem solving with additional context
+      if (workflowContext.searchResults.length > 0 || workflowContext.visualAnalysis) {
+        const enhancedAnalysis = await this.agents.get('problem-solving-agent').execute({
+          input: {
+            problem: input.problem,
+            context: {
+              domain: input.domain,
+              searchResults: workflowContext.searchResults,
+              visualAnalysis: workflowContext.visualAnalysis,
+              previousSolutions: workflowContext.solutions,
+            },
+          },
+        });
+
+        workflowContext.solutions.push(enhancedAnalysis);
+      }
+
+      // Step 5: Generate final solution summary
+      const finalSolution = await this.agents.get('problem-solving-agent').execute({
+        input: {
+          operation: 'synthesize_solution',
+          problem: input.problem,
+          allSolutions: workflowContext.solutions,
+          searchResults: workflowContext.searchResults,
+          visualAnalysis: workflowContext.visualAnalysis,
+        },
+      });
+
+      // Step 6: Generate UI for solution presentation
+      const uiResult = await this.agents.get('ui-agent').execute({
+        operation: 'generate_component',
+        request: {
+          componentType: 'solution-presentation',
+          data: {
+            problem: input.problem,
+            solution: finalSolution,
+            searchResults: workflowContext.searchResults,
+            visualAnalysis: workflowContext.visualAnalysis,
+          },
+        },
+      });
+
+      return {
+        success: true,
+        workflow: 'problem_solving',
+        results: {
+          problem: input.problem,
+          finalSolution: finalSolution,
+          searchResults: workflowContext.searchResults,
+          visualAnalysis: workflowContext.visualAnalysis,
+          ui: uiResult,
+        },
+        summary: {
+          solutionFound: finalSolution.success,
+          confidence: finalSolution.confidence || 0,
+          searchesPerformed: workflowContext.searchResults.length,
+          hasVisualAnalysis: !!workflowContext.visualAnalysis,
+        },
+      };
+    } catch (error) {
+      console.error('❌ Problem solving workflow error:', error);
+      return {
+        success: false,
+        workflow: 'problem_solving',
+        error: error.message,
+        timestamp: new Date().toISOString(),
+      };
+    }
   }
 
   // Health check
