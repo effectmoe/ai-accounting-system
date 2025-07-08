@@ -46,6 +46,20 @@ export default function AccountCategoryEditor({
   // 勘定科目を学習
   const handleLearnCategory = async () => {
     try {
+      // まずドキュメントのカテゴリを更新
+      const updateResponse = await fetch(`/api/documents/${documentId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          category: selectedCategory
+        })
+      });
+
+      if (!updateResponse.ok) {
+        throw new Error('ドキュメントの更新に失敗しました');
+      }
+
+      // 次に学習システムに保存
       const response = await fetch('/api/accounts/learn', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -60,7 +74,7 @@ export default function AccountCategoryEditor({
       const data = await response.json();
       
       if (data.success) {
-        toast.success(data.message);
+        toast.success('勘定科目を更新し、学習しました');
         setIsEditing(false);
         
         if (onCategoryUpdate) {

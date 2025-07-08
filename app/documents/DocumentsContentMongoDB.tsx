@@ -72,7 +72,7 @@ export default function DocumentsContentMongoDB() {
   const searchParams = useSearchParams();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'all' | 'ocr' | 'created'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'ocr' | 'created'>('ocr');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [selectedDocuments, setSelectedDocuments] = useState<Set<string>>(new Set());
 
@@ -252,11 +252,15 @@ export default function DocumentsContentMongoDB() {
 
   const filteredDocuments = documents.filter(doc => {
     if (activeTab === 'ocr') {
-      // OCRで処理されたドキュメント（仕訳伝票以外）
-      return doc.ocr_status === 'completed' && doc.document_type !== 'journal_entry';
+      // OCRで処理されたが、まだ文書化されていないドキュメント
+      // journalIdがないものが未処理
+      return doc.ocr_status === 'completed' && 
+             doc.document_type !== 'journal_entry' && 
+             !doc.journalId;
     } else if (activeTab === 'created') {
-      // 手動作成されたドキュメントまたは仕訳伝票
-      return !doc.ocr_status || doc.document_type === 'journal_entry';
+      // 仕訳伝票、または文書化済み（journalIdを持つ）ドキュメント
+      return doc.document_type === 'journal_entry' || 
+             (doc.journalId && doc.journalId !== null);
     }
     return true;
   });
@@ -285,16 +289,10 @@ export default function DocumentsContentMongoDB() {
         <div className="flex justify-between items-center mb-4">
           <div className="flex gap-2">
             <button
-              onClick={() => setActiveTab('all')}
-              className={`px-4 py-2 rounded ${activeTab === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
-            >
-              すべて
-            </button>
-            <button
               onClick={() => setActiveTab('ocr')}
               className={`px-4 py-2 rounded ${activeTab === 'ocr' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
             >
-              OCR結果
+              OCR結果（未処理）
             </button>
             <button
               onClick={() => setActiveTab('created')}
