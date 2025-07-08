@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
 
       // OCR結果をMongoDBに保存
       const ocrResult = {
-        companyId: new ObjectId('11111111-1111-1111-1111-111111111111'),
+        companyId: '11111111-1111-1111-1111-111111111111',
         fileName: data.fileName,
         fileSize: 0, // GASからは不明
         mimeType: 'application/pdf', // デフォルト
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
         extractedText: data.ocrText || '',
         confidence: 0.8,
         ocrStatus: 'completed',
-        ocrResultId: savedOcrResult._id,
+        ocrResultId: savedOcrResult._id ? new ObjectId(savedOcrResult._id) : null,
         gridfsFileId: null,
         status: 'pending',
         createdAt: new Date(),
@@ -167,13 +167,24 @@ export async function POST(request: NextRequest) {
   }
 }
 
+// GETメソッドを追加（デバッグ用）
+export async function GET(request: NextRequest) {
+  return NextResponse.json({
+    endpoint: 'OCR Webhook',
+    method: 'POST',
+    useAzureMongoDB: process.env.USE_AZURE_MONGODB === 'true',
+    environment: process.env.NODE_ENV,
+    timestamp: new Date().toISOString()
+  });
+}
+
 // OPTIONSメソッドを追加（CORS対応）
 export async function OPTIONS(request: NextRequest) {
   return new NextResponse(null, {
     status: 200,
     headers: {
       'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type',
     },
   });
