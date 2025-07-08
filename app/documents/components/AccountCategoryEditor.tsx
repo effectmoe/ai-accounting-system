@@ -93,11 +93,17 @@ export default function AccountCategoryEditor({
   // 勘定科目を精査
   const handleAnalyzeCategory = async () => {
     setIsAnalyzing(true);
+    setAnalysisResult(null); // 前回の結果をクリア
+    
     try {
+      // 最低でも2秒は処理中表示を維持（実際に処理していることを示すため）
+      const startTime = Date.now();
+      
       const response = await fetch('/api/accounts/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          companyId: '11111111-1111-1111-1111-111111111111',
           vendorName,
           amount,
           documentType: documentType || 'receipt',
@@ -109,6 +115,12 @@ export default function AccountCategoryEditor({
 
       const data = await response.json();
       
+      // 最低2秒は待つ
+      const elapsedTime = Date.now() - startTime;
+      if (elapsedTime < 2000) {
+        await new Promise(resolve => setTimeout(resolve, 2000 - elapsedTime));
+      }
+      
       if (data.success) {
         setAnalysisResult(data.analysis);
         
@@ -119,7 +131,7 @@ export default function AccountCategoryEditor({
         
         toast.success('精査が完了しました');
       } else {
-        toast.error('精査に失敗しました');
+        toast.error('精査に失敗しました: ' + (data.error || '不明なエラー'));
       }
     } catch (error) {
       console.error('Analysis error:', error);

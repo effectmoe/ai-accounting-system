@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AccountLearningSystem } from '../../../../src/lib/account-learning-system';
+import { OpenAIClient, AzureKeyCredential } from '@azure/openai';
 
 const learningSystem = new AccountLearningSystem();
 
@@ -103,6 +104,96 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Azure OpenAIを使用した高度な分析（環境変数が設定されている場合のみ）
+    if (process.env.AZURE_OPENAI_ENDPOINT && process.env.AZURE_OPENAI_KEY) {
+      try {
+        const client = new OpenAIClient(
+          process.env.AZURE_OPENAI_ENDPOINT,
+          new AzureKeyCredential(process.env.AZURE_OPENAI_KEY)
+        );
+
+        const deploymentId = process.env.AZURE_OPENAI_DEPLOYMENT_ID || 'gpt-4';
+        
+        const prompt = `あなたは経理の専門家です。以下の情報から最適な勘定科目を判定してください。
+
+店舗名/ベンダー名: ${vendorName || '不明'}
+金額: ${amount ? `¥${amount.toLocaleString()}` : '不明'}
+説明: ${description || 'なし'}
+ファイル名: ${fileName || 'なし'}
+抽出されたテキスト（一部）: ${(extractedText || '').substring(0, 200)}
+
+以下の勘定科目から最も適切なものを選んでください：
+- 旅費交通費（タクシー、電車、駐車場など）
+- 会議費（少人数での飲食、カフェなど）
+- 接待交際費（顧客との飲食、接待など）
+- 消耗品費（事務用品、消耗品など）
+- 車両費（ガソリン、車両関連費用）
+- 新聞図書費（書籍、新聞、雑誌など）
+- 通信費（郵便、宅配、通信費など）
+- 水道光熱費（電気、ガス、水道など）
+- 地代家賃（家賃、駐車場代など）
+- 雑費（その他の経費）
+
+JSONフォーマットで以下の形式で回答してください：
+{
+  "category": "選択した勘定科目",
+  "confidence": 0.0-1.0の信頼度,
+  "reason": "判定理由",
+  "alternatives": [
+    {"category": "代替案1", "confidence": 0.0-1.0, "reason": "理由"},
+    {"category": "代替案2", "confidence": 0.0-1.0, "reason": "理由"}
+  ]
+}`;
+
+        const result = await client.getChatCompletions(deploymentId, [
+          { role: 'system', content: 'あなたは日本の会計基準に精通した経理の専門家です。' },
+          { role: 'user', content: prompt }
+        ], {
+          temperature: 0.3,
+          maxTokens: 500
+        });
+
+        const aiResponse = result.choices[0]?.message?.content;
+        if (aiResponse) {
+          try {
+            const aiAnalysis = JSON.parse(aiResponse);
+            
+            // AI分析結果を優先的に使用
+            if (aiAnalysis.category && aiAnalysis.confidence) {
+              primarySuggestion = {
+                category: aiAnalysis.category,
+                confidence: Math.min(aiAnalysis.confidence, 0.95), // 最大95%
+                reason: aiAnalysis.reason || 'AI分析による判定'
+              };
+
+              // AI提案の代替案を追加
+              if (aiAnalysis.alternatives && Array.isArray(aiAnalysis.alternatives)) {
+                alternatives.push(...aiAnalysis.alternatives.slice(0, 2));
+              }
+            }
+          } catch (parseError) {
+            console.error('AI response parsing error:', parseError);
+            // パースエラーの場合は既存の判定を使用
+          }
+        }
+      } catch (aiError) {
+        console.error('Azure OpenAI error:', aiError);
+        // AIエラーの場合は既存の判定を使用
+      }
+    } else {
+      // Azure OpenAIが設定されていない場合の詳細分析
+      console.log('Azure OpenAI not configured, using enhanced rule-based analysis');
+      
+      // 複数のキーワードマッチによる詳細分析
+      const detailedAnalysis = performDetailedAnalysis(searchText, vendorName, amount);
+      if (detailedAnalysis) {
+        primarySuggestion = detailedAnalysis.primary;
+        if (detailedAnalysis.alternatives) {
+          alternatives.push(...detailedAnalysis.alternatives);
+        }
+      }
+    }
+
     // 学習データがある場合は信頼度を調整
     if (learnedPrediction && learnedPrediction.confidence > 0.7) {
       if (learnedPrediction.category === primarySuggestion.category) {
@@ -198,6 +289,97 @@ function generateRecommendations(vendorName: string, amount?: number, descriptio
   }
   
   return recommendations;
+}
+
+// 詳細分析を実行
+function performDetailedAnalysis(searchText: string, vendorName: string, amount?: number): {
+  primary: { category: string; confidence: number; reason: string };
+  alternatives: Array<{ category: string; confidence: number; reason: string }>;
+} | null {
+  const matches: Array<{ category: string; confidence: number; reason: string; score: number }> = [];
+  
+  // 複合的なパターンマッチング
+  const patterns = [
+    {
+      category: '旅費交通費',
+      patterns: [
+        { keyword: 'タクシー', score: 10 },
+        { keyword: '駐車場', score: 10 },
+        { keyword: 'パーキング', score: 10 },
+        { keyword: 'jr', score: 9 },
+        { keyword: '電車', score: 9 },
+        { keyword: '新幹線', score: 10 },
+        { keyword: '空港', score: 9 },
+        { keyword: 'タイムズ', score: 10 },
+        { keyword: '三井のリパーク', score: 10 }
+      ]
+    },
+    {
+      category: '会議費',
+      patterns: [
+        { keyword: 'スターバックス', score: 10 },
+        { keyword: 'ドトール', score: 10 },
+        { keyword: 'タリーズ', score: 10 },
+        { keyword: 'カフェ', score: 8 },
+        { keyword: 'コーヒー', score: 7 },
+        { keyword: '喫茶', score: 7 }
+      ]
+    },
+    {
+      category: '接待交際費',
+      patterns: [
+        { keyword: 'レストラン', score: 9 },
+        { keyword: '居酒屋', score: 10 },
+        { keyword: 'ホテル', score: 8 },
+        { keyword: '料亭', score: 10 },
+        { keyword: '寿司', score: 8 },
+        { keyword: '焼肉', score: 8 },
+        { keyword: 'ダイニング', score: 7 }
+      ]
+    }
+  ];
+  
+  // パターンマッチングとスコアリング
+  for (const categoryPattern of patterns) {
+    let totalScore = 0;
+    const matchedKeywords: string[] = [];
+    
+    for (const pattern of categoryPattern.patterns) {
+      if (searchText.includes(pattern.keyword)) {
+        totalScore += pattern.score;
+        matchedKeywords.push(pattern.keyword);
+      }
+    }
+    
+    if (totalScore > 0) {
+      matches.push({
+        category: categoryPattern.category,
+        confidence: Math.min(totalScore / 10, 0.9),
+        reason: `キーワード「${matchedKeywords.join('、')}」による判定（スコア: ${totalScore}）`,
+        score: totalScore
+      });
+    }
+  }
+  
+  // スコアでソート
+  matches.sort((a, b) => b.score - a.score);
+  
+  if (matches.length === 0) {
+    return null;
+  }
+  
+  return {
+    primary: {
+      category: matches[0].category,
+      confidence: matches[0].confidence,
+      reason: matches[0].reason
+    },
+    alternatives: matches.slice(1, 3).map(m => ({
+      category: m.category,
+      confidence: m.confidence,
+      reason: m.reason
+    }))
+  };
 }
 
 export const runtime = 'nodejs';
