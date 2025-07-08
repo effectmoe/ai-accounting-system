@@ -47,13 +47,24 @@ export default function EditDocumentMongoDB() {
 
   const fetchDocument = async () => {
     try {
-      const response = await fetch(`/api/documents/list?documentId=${documentId}`);
+      // 単一ドキュメントを取得するためのAPIエンドポイントを作成するか、
+      // 一旦リストAPIを使用してIDでフィルタリング
+      const response = await fetch('/api/documents/list');
       const data = await response.json();
       
-      if (data.success && data.documents.length > 0) {
-        setDocument(data.documents[0]);
+      if (data.success) {
+        // documentIdと一致するドキュメントを探す
+        const foundDoc = data.documents.find((doc: Document) => 
+          doc._id === documentId || doc._id.toString() === documentId
+        );
+        
+        if (foundDoc) {
+          setDocument(foundDoc);
+        } else {
+          throw new Error('Document not found');
+        }
       } else {
-        throw new Error('Document not found');
+        throw new Error(data.error || 'Failed to fetch documents');
       }
     } catch (error) {
       console.error('Error fetching document:', error);

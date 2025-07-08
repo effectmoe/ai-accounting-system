@@ -8,16 +8,36 @@ export async function DELETE(
 ) {
   try {
     const { id } = params;
+    console.log('Delete request for document ID:', id);
 
-    if (!ObjectId.isValid(id)) {
+    // IDの検証をより柔軟に
+    if (!id || id.length === 0) {
       return NextResponse.json({
         success: false,
-        error: 'Invalid document ID'
+        error: 'Document ID is required'
+      }, { status: 400 });
+    }
+
+    // ObjectIDの検証
+    let isValidObjectId = false;
+    try {
+      // ObjectIDとして解析を試みる
+      if (ObjectId.isValid(id) && String(new ObjectId(id)) === id) {
+        isValidObjectId = true;
+      }
+    } catch (e) {
+      console.log('Not a valid ObjectId:', id);
+    }
+
+    if (!isValidObjectId) {
+      return NextResponse.json({
+        success: false,
+        error: `Invalid document ID format: ${id}`
       }, { status: 400 });
     }
 
     // まずドキュメントを取得してGridFS IDを確認
-    const document = await db.findOne('documents', id);
+    const document = await db.findOne('documents', { _id: new ObjectId(id) });
     
     if (!document) {
       return NextResponse.json({
@@ -39,7 +59,12 @@ export async function DELETE(
 
     // 関連する仕訳も削除（存在する場合）
     if (document.journalId) {
-      await db.delete('journals', document.journalId.toString());
+      try {
+        await db.delete('journals', document.journalId.toString());
+      } catch (error) {
+        console.error('Journal deletion error:', error);
+        // 仕訳削除エラーも無視して続行
+      }
     }
 
     // ドキュメントを削除
