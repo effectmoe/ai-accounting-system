@@ -463,13 +463,24 @@ export default function DocumentsContentMongoDB() {
                     </td>
                     <td className="p-2">
                       <div className="flex gap-1">
-                        <button className="text-blue-600 hover:text-blue-800 p-1">
+                        <button 
+                          onClick={() => handleEditDocument(doc)}
+                          className="text-blue-600 hover:text-blue-800 p-1"
+                          title="編集"
+                        >
                           <Edit className="w-4 h-4" />
                         </button>
-                        <button className="text-green-600 hover:text-green-800 p-1">
+                        <button 
+                          className="text-green-600 hover:text-green-800 p-1"
+                          title="ダウンロード"
+                        >
                           <Download className="w-4 h-4" />
                         </button>
-                        <button className="text-red-600 hover:text-red-800 p-1">
+                        <button 
+                          onClick={() => handleDeleteDocument(doc.id)}
+                          className="text-red-600 hover:text-red-800 p-1"
+                          title="削除"
+                        >
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
