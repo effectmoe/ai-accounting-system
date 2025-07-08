@@ -369,64 +369,15 @@ export class VercelDatabaseService extends DatabaseService {
     return VercelDatabaseService.instance;
   }
   
-  // MongoDB接続の検証とエラーハンドリングを強化
-  async validateConnection(): Promise<void> {
-    try {
-      const client = await getClientPromise();
-      const db = client.db(DB_NAME);
-      await db.command({ ping: 1 });
-      console.log('MongoDB connection validated successfully');
-    } catch (error) {
-      console.error('MongoDB connection validation failed:', error);
-      throw new DatabaseError(
-        `MongoDB connection validation failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        'CONNECTION_VALIDATION_ERROR'
-      );
-    }
-  }
-  
-  // 接続を確立してから操作を実行
-  async safeExecute<T>(operation: () => Promise<T>): Promise<T> {
-    try {
-      await this.validateConnection();
-      return await operation();
-    } catch (error) {
-      console.error('Safe execution failed:', error);
-      
-      // 接続エラーの場合は再試行
-      if (error instanceof DatabaseError && error.code === 'CONNECTION_VALIDATION_ERROR') {
-        console.log('Attempting to reconnect...');
-        global._mongoClientPromise = undefined; // 接続をリセット
-        
-        try {
-          await this.validateConnection();
-          return await operation();
-        } catch (retryError) {
-          console.error('Retry failed:', retryError);
-          throw retryError;
-        }
-      }
-      
-      throw error;
-    }
-  }
-
-  // createメソッドをsafeExecuteなしで直接実装
+  // createメソッドを完全に書き直し - validateConnectionやsafeExecuteを使わない
   async create<T>(collectionName: string, document: Omit<T, '_id'>): Promise<T> {
     try {
-      // 直接接続確認
       const client = await getClientPromise();
       const db = client.db(DB_NAME);
       await db.command({ ping: 1 });
-      
-      // 親クラスのcreateメソッドを直接呼び出し
       return await super.create<T>(collectionName, document);
     } catch (error) {
-      console.error(`MongoDB create error in collection ${collectionName}:`, error);
-      throw new DatabaseError(
-        `Failed to create document in ${collectionName}: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        'CREATE_ERROR'
-      );
+      throw new DatabaseError(`Failed to create: ${error instanceof Error ? error.message : 'Unknown error'}`, 'CREATE_ERROR');
     }
   }
 }
