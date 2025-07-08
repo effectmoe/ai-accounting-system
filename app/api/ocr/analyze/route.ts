@@ -29,6 +29,12 @@ export async function POST(request: NextRequest) {
     const file = formData.get('file') as File;
     const companyId = formData.get('companyId') as string || 'default';
     
+    console.log('OCR Analyze Request:', {
+      fileName: file?.name,
+      fileSize: file?.size,
+      companyId: companyId
+    });
+    
     if (!file) {
       return NextResponse.json({
         success: false,
@@ -119,7 +125,7 @@ export async function POST(request: NextRequest) {
     let ocrResultId: string | null = null;
     try {
       const ocrResult = await db.create('ocrResults', {
-        companyId: new ObjectId(companyId === 'default' ? new ObjectId() : companyId),
+        companyId: companyId === 'default' ? '11111111-1111-1111-1111-111111111111' : companyId,
         sourceFileId: fileId ? new ObjectId(fileId) : null,
         fileName: file.name,
         fileSize: file.size,
@@ -144,7 +150,7 @@ export async function POST(request: NextRequest) {
     // MongoDBのdocumentsコレクションに保存（書類管理画面で表示するため）
     try {
       const documentData = {
-        companyId: new ObjectId(companyId === 'default' ? new ObjectId() : companyId),
+        companyId: companyId === 'default' ? '11111111-1111-1111-1111-111111111111' : companyId,
         fileName: file.name,
         fileType: file.type,
         fileSize: file.size,
@@ -164,6 +170,13 @@ export async function POST(request: NextRequest) {
         createdAt: new Date(),
         updatedAt: new Date()
       };
+      
+      console.log('Saving document to MongoDB:', {
+        companyId: documentData.companyId,
+        fileName: documentData.fileName,
+        vendorName: documentData.vendorName,
+        totalAmount: documentData.totalAmount
+      });
       
       const savedDocument = await db.create('documents', documentData);
       console.log('Document saved to MongoDB:', savedDocument._id.toString());
