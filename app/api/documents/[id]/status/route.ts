@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '../../../../../../src/lib/mongodb-client';
+import { db } from '../../../../../src/lib/mongodb-client';
 import { ObjectId } from 'mongodb';
 
 export async function PATCH(
