@@ -1,5 +1,6 @@
 // スクリプトプロパティから設定を取得
 const WEBHOOK_URL = 'https://accounting-automation-3qnb4k3zk-effectmoes-projects.vercel.app/api/webhook/ocr';
+const OCR_ANALYZE_URL = 'https://accounting-automation-3qnb4k3zk-effectmoes-projects.vercel.app/api/ocr/analyze';
 
 /**
  * HTTPリクエストを受け取る（ファイルアップロード時）
@@ -17,11 +18,11 @@ function doPost(e) {
       throw new Error('fileIdまたはfileNameが不足しています');
     }
     
-    // OCR処理を実行
-    const ocrResult = processOCR(fileId, fileName);
+    // MongoDB OCR Analyzeエンドポイントに直接ファイルを送信
+    const ocrResult = sendFileToMongoDB(fileId, fileName);
     
-    // Webhookでデータを送信
-    sendWebhook(ocrResult);
+    // Webhookでデータを送信（バックアップ用）
+    // sendWebhook(ocrResult);
     
     return ContentService
       .createTextOutput(JSON.stringify({
@@ -218,6 +219,84 @@ function sendWebhook(data) {
     
   } catch (error) {
     console.error('Webhook送信エラー:', error);
+    throw error;
+  }
+}
+
+/**
+ * MongoDB OCR Analyzeエンドポイントに直接ファイルを送信
+ */
+function sendFileToMongoDB(fileId, fileName) {
+  console.log('MongoDB OCR Analyze送信開始:', fileId, fileName);
+  
+  try {
+    // Google DriveからファイルをBlobとして取得
+    const file = DriveApp.getFileById(fileId);
+    const blob = file.getBlob();
+    
+    // マルチパートフォームデータを作成
+    const boundary = '----WebKitFormBoundary' + Utilities.getUuid();
+    const payload = [];
+    
+    // ファイル部分
+    payload.push('--' + boundary);
+    payload.push('Content-Disposition: form-data; name="file"; filename="' + fileName + '"');
+    payload.push('Content-Type: ' + blob.getContentType());
+    payload.push('');
+    payload.push(blob.getBytes());
+    payload.push('');
+    
+    // companyId部分
+    payload.push('--' + boundary);
+    payload.push('Content-Disposition: form-data; name="companyId"');
+    payload.push('');
+    payload.push('default');
+    payload.push('');
+    
+    // 終了境界
+    payload.push('--' + boundary + '--');
+    
+    // バイナリデータを結合
+    const payloadBytes = [];
+    for (let i = 0; i < payload.length; i++) {
+      if (typeof payload[i] === 'string') {
+        payloadBytes.push(Utilities.newBlob(payload[i], 'text/plain').getBytes());
+      } else {
+        payloadBytes.push(payload[i]);
+      }
+    }
+    
+    // 結合したバイナリデータ
+    const combinedBytes = [];
+    for (let i = 0; i < payloadBytes.length; i++) {
+      const bytes = payloadBytes[i];
+      for (let j = 0; j < bytes.length; j++) {
+        combinedBytes.push(bytes[j]);
+      }
+    }
+    
+    const options = {
+      method: 'POST',
+      contentType: 'multipart/form-data; boundary=' + boundary,
+      payload: combinedBytes,
+      muteHttpExceptions: true
+    };
+    
+    console.log('MongoDB OCR Analyze送信中...');
+    const response = UrlFetchApp.fetch(OCR_ANALYZE_URL, options);
+    const responseCode = response.getResponseCode();
+    const responseText = response.getContentText();
+    
+    console.log('MongoDB OCR Analyze応答:', responseCode, responseText);
+    
+    if (responseCode !== 200) {
+      throw new Error(`MongoDB OCR Analyze失敗: ${responseCode} - ${responseText}`);
+    }
+    
+    return JSON.parse(responseText);
+    
+  } catch (error) {
+    console.error('MongoDB OCR Analyze送信エラー:', error);
     throw error;
   }
 }

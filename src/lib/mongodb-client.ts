@@ -18,16 +18,34 @@ function getClientPromise(): Promise<MongoClient> {
     if (!uri) {
       throw new Error('MONGODB_URI is not defined in environment variables');
     }
+    
+    console.log('MongoDB URI configured:', uri.replace(/\/\/[^:]*:[^@]*@/, '//***:***@')); // パスワードを隠してログ出力
+    
     client = new MongoClient(uri, {
       maxPoolSize: 10,
       minPoolSize: 2,
       maxIdleTimeMS: 60000,
+      connectTimeoutMS: 30000,
+      serverSelectionTimeoutMS: 30000,
     });
-    global._mongoClientPromise = client.connect().catch((error) => {
+    
+    global._mongoClientPromise = client.connect().then((connectedClient) => {
+      console.log('MongoDB client connected successfully');
+      return connectedClient;
+    }).catch((error) => {
       console.error('MongoDB connection error:', error);
+      console.error('Connection error details:', {
+        name: error.name,
+        message: error.message,
+        code: error.code,
+        stack: error.stack
+      });
       // グローバル変数をクリアして再試行可能にする
       global._mongoClientPromise = undefined;
-      throw error;
+      throw new DatabaseError(
+        `MongoDB connection failed: ${error.message}`,
+        'CONNECTION_ERROR'
+      );
     });
   }
   return global._mongoClientPromise;
@@ -35,14 +53,38 @@ function getClientPromise(): Promise<MongoClient> {
 
 // データベースインスタンスの取得
 export async function getDatabase(): Promise<Db> {
-  const client = await getClientPromise();
-  return client.db(DB_NAME);
+  try {
+    const client = await getClientPromise();
+    const db = client.db(DB_NAME);
+    if (!db) {
+      throw new Error('Database instance is null');
+    }
+    return db;
+  } catch (error) {
+    console.error('getDatabase error:', error);
+    throw new DatabaseError(
+      `Failed to get database instance: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      'DATABASE_ACCESS_ERROR'
+    );
+  }
 }
 
 // コレクションの取得
 export async function getCollection<T = any>(collectionName: string): Promise<Collection<T>> {
-  const db = await getDatabase();
-  return db.collection<T>(collectionName);
+  try {
+    const db = await getDatabase();
+    const collection = db.collection<T>(collectionName);
+    if (!collection) {
+      throw new Error(`Collection ${collectionName} is null`);
+    }
+    return collection;
+  } catch (error) {
+    console.error(`getCollection error for ${collectionName}:`, error);
+    throw new DatabaseError(
+      `Failed to get collection ${collectionName}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      'COLLECTION_ACCESS_ERROR'
+    );
+  }
 }
 
 // MongoClientのエクスポート
@@ -86,15 +128,23 @@ export class DatabaseService {
    * ドキュメントの作成
    */
   async create<T>(collectionName: string, document: Omit<T, '_id'>): Promise<T> {
-    const collection = await getCollection<T>(collectionName);
-    const now = new Date();
-    const doc = {
-      ...document,
-      createdAt: now,
-      updatedAt: now,
-    };
-    const result = await collection.insertOne(doc as any);
-    return { ...doc, _id: result.insertedId } as T;
+    try {
+      const collection = await getCollection<T>(collectionName);
+      const now = new Date();
+      const doc = {
+        ...document,
+        createdAt: now,
+        updatedAt: now,
+      };
+      const result = await collection.insertOne(doc as any);
+      return { ...doc, _id: result.insertedId } as T;
+    } catch (error) {
+      console.error(`MongoDB create error in collection ${collectionName}:`, error);
+      throw new DatabaseError(
+        `Failed to create document in ${collectionName}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        'CREATE_ERROR'
+      );
+    }
   }
 
   /**

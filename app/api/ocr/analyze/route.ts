@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import orchestrator from '../../../../src/mastra-orchestrator';
-import { db } from '../../../../src/lib/mongodb-client';
+import { db, checkConnection } from '../../../../src/lib/mongodb-client';
 import { ObjectId } from 'mongodb';
 import { OCRDateExtractor } from '../../../../src/lib/ocr-date-extractor';
 
@@ -20,6 +20,17 @@ function extractAmount(value: any): number {
 export async function POST(request: NextRequest) {
   try {
     console.log('OCR分析API - Mastraエージェントを使用します');
+    
+    // MongoDB接続確認
+    const mongoConnected = await checkConnection();
+    if (!mongoConnected) {
+      console.error('MongoDB接続に失敗しました');
+      return NextResponse.json({
+        success: false,
+        error: 'データベース接続エラー: MongoDBに接続できません'
+      }, { status: 500 });
+    }
+    console.log('MongoDB接続確認完了');
     // 環境変数チェック
     const useAzureMongoDB = process.env.USE_AZURE_MONGODB === 'true';
     
@@ -102,8 +113,32 @@ export async function POST(request: NextRequest) {
       updatedAt: new Date()
     };
     
-    const savedOcrResult = await db.create('ocr_results', ocrResult);
-    const ocrResultId = savedOcrResult._id.toString();
+    let savedOcrResult;
+    let ocrResultId;
+    try {
+      console.log('OCR結果をMongoDBに保存中...', JSON.stringify(ocrResult, null, 2));
+      console.log('db object:', db);
+      
+      if (!db) {
+        throw new Error('Database service is not initialized');
+      }
+      
+      savedOcrResult = await db.create('ocr_results', ocrResult);
+      ocrResultId = savedOcrResult._id.toString();
+      console.log('OCR結果をMongoDBに保存しました:', ocrResultId);
+    } catch (mongoError) {
+      console.error('MongoDB OCR結果保存エラー:', mongoError);
+      console.error('エラーの詳細:', {
+        name: mongoError instanceof Error ? mongoError.name : 'Unknown',
+        message: mongoError instanceof Error ? mongoError.message : 'Unknown error',
+        stack: mongoError instanceof Error ? mongoError.stack : undefined
+      });
+      return NextResponse.json({
+        success: false,
+        error: 'OCR結果の保存に失敗しました',
+        details: mongoError instanceof Error ? mongoError.message : 'Unknown MongoDB error'
+      }, { status: 500 });
+    }
     const fileId = sourceFileId;
 
     // 結果の検証
@@ -272,8 +307,14 @@ export async function POST(request: NextRequest) {
         totalAmount: documentData.totalAmount
       });
       
-      const savedDocument = await db.create('documents', documentData);
-      console.log('Document saved to MongoDB:', savedDocument._id.toString());
+      let savedDocument;
+      try {
+        savedDocument = await db.create('documents', documentData);
+        console.log('Document saved to MongoDB:', savedDocument._id.toString());
+      } catch (mongoError) {
+        console.error('MongoDB documents保存エラー:', mongoError);
+        throw new Error(`ドキュメントの保存に失敗しました: ${mongoError instanceof Error ? mongoError.message : 'Unknown error'}`);
+      }
       
     } catch (error) {
       console.error('MongoDB document save error:', error);
