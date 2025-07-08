@@ -137,8 +137,21 @@ export default function DocumentsContentMongoDB() {
     }
 
     try {
-      // TODO: MongoDB削除APIの実装
-      toast.error('削除機能は現在実装中です');
+      const deletePromises = Array.from(selectedDocuments).map(docId => 
+        fetch(`/api/documents/${docId}`, { method: 'DELETE' })
+      );
+      
+      const results = await Promise.all(deletePromises);
+      const failedDeletions = results.filter(r => !r.ok).length;
+      
+      if (failedDeletions > 0) {
+        toast.error(`${failedDeletions}件の削除に失敗しました`);
+      } else {
+        toast.success(`${selectedDocuments.size}件の書類を削除しました`);
+      }
+      
+      setSelectedDocuments(new Set());
+      fetchDocuments();
     } catch (error) {
       console.error('Error deleting documents:', error);
       toast.error('削除に失敗しました');
