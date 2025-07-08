@@ -189,12 +189,12 @@ export class OCRProcessor {
           return result;
         } catch (error) {
           console.error('GAS OCR API error:', error);
-          console.log('PDF processing now handled by Google Drive OCR');
+          console.log('PDF processing now handled by Azure Form Recognizer');
         }
       }
       
-      // Google Drive OCRに移行したため、直接PDFパースは行わない
-      // PDFファイルはGoogle Drive経由でOCR処理される
+      // Azure Form RecognizerでPDFを処理
+      // ファイルは/api/ocr/analyzeエンドポイントで処理される
       
       // クライアントサイドまたはサーバーサイドでエラーが発生した場合のモックデータ
       const fileName = pdfFile.name.toLowerCase();

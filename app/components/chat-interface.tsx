@@ -348,47 +348,51 @@ export default function ChatInterface() {
       try {
         let ocrResult;
         
-        // PDFの場合はGoogle Drive経由でOCR処理
-        if (file.type === 'application/pdf') {
-          const formData = new FormData();
-          formData.append('file', file);
-          
-          const response = await fetch('/api/upload/gdrive', {
-            method: 'POST',
-            body: formData
-          });
-          
-          if (!response.ok) {
-            const errorData = await response.json();
-            if (errorData.error) {
-              return {
-                content: `PDFファイルのアップロード中にエラーが発生しました。
+        // Azure Form Recognizerを使用してファイルを処理
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('companyId', companyId);
+        
+        const response = await fetch('/api/ocr/analyze', {
+          method: 'POST',
+          body: formData
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          if (errorData.error) {
+            return {
+              content: `ファイルのOCR処理中にエラーが発生しました。
 
 【エラー内容】
 ${errorData.error}
-${errorData.detail ? `\n詳細: ${errorData.detail}` : ''}
+${errorData.details ? `\n詳細: ${errorData.details}` : ''}
 
 ファイルが正常であることを確認して、再度お試しください。`
-              };
-            }
-            throw new Error(errorData.error || 'PDF処理に失敗しました');
+            };
           }
-          
-          const uploadResult = await response.json();
-          
-          // OCR処理は非同期で実行されるため、仮のデータを返す
+          throw new Error(errorData.error || 'OCR処理に失敗しました');
+        }
+        
+        const ocrResponse = await response.json();
+        
+        if (ocrResponse.success) {
+          // Azure OCRの結果を整形
           ocrResult = {
-            text: 'Google DriveでOCR処理中...',
-            confidence: 0,
-            vendor: file.name.replace('.pdf', ''),
-            date: new Date().toISOString().split('T')[0],
-            amount: 0,
-            taxAmount: 0,
-            items: [],
-            message: 'OCR処理はバックグラウンドで実行されています。処理が完了すると、書類一覧に表示されます。'
+            text: JSON.stringify(ocrResponse.extractedData, null, 2),
+            confidence: ocrResponse.confidence || 0,
+            vendor: ocrResponse.extractedData?.vendorName || ocrResponse.extractedData?.merchantName || file.name.replace(/\.(pdf|png|jpg|jpeg)$/i, ''),
+            date: ocrResponse.extractedData?.invoiceDate || ocrResponse.extractedData?.transactionDate || new Date().toISOString().split('T')[0],
+            amount: ocrResponse.extractedData?.totalAmount || ocrResponse.extractedData?.total || 0,
+            taxAmount: ocrResponse.extractedData?.taxAmount || ocrResponse.extractedData?.tax || 0,
+            items: ocrResponse.extractedData?.items || []
           };
+          
+          if (ocrResponse.fileId) {
+            ocrResult.message = 'ファイルはMongoDB GridFSに保存されました。';
+          }
         } else {
-          // 画像の場合はクライアントサイドで処理（現状はモックデータ）
+          // OCR処理が失敗した場合のフォールバック
           ocrResult = await ocrProcessor.processReceiptFile(file);
         }
         
@@ -397,7 +401,7 @@ ${errorData.detail ? `\n詳細: ${errorData.detail}` : ''}
         // OCR処理中のメッセージがある場合
         if (ocrResult.message) {
           return {
-            content: `${fileTypeLabel}をGoogle Driveにアップロードしました。\n\n${ocrResult.message}\n\n処理が完了したら、「書類一覧」メニューから確認できます。`
+            content: `${fileTypeLabel}を処理しました。\n\n${ocrResult.message}\n\n処理が完了したら、「書類一覧」メニューから確認できます。`
           };
         }
         
