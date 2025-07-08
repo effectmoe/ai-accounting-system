@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { FileText, Download, Send, CheckCircle, Filter, Plus, Paperclip, Bell, Edit, FileCheck, Archive, Grid3X3, List, Trash2, Image } from 'lucide-react';
+import { FileText, Download, Send, CheckCircle, Filter, Plus, Paperclip, Bell, Edit, FileCheck, Archive, Grid3X3, List, Trash2, Image, ExternalLink } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import AccountCategoryEditor from './components/AccountCategoryEditor';
 
@@ -343,6 +343,9 @@ export default function DocumentsContentMongoDB() {
                         vendorName={doc.vendor_name || doc.partner_name || ''}
                         currentCategory={doc.category || '未分類'}
                         amount={doc.total_amount}
+                        fileName={doc.file_name}
+                        extractedText={doc.extracted_text}
+                        documentType={doc.document_type}
                         onCategoryUpdate={(newCategory) => {
                           // カテゴリー更新後の処理
                           fetchDocuments();
@@ -390,6 +393,20 @@ export default function DocumentsContentMongoDB() {
                       )}
                       <span>処理: {new Date(doc.created_at).toLocaleDateString('ja-JP')}</span>
                     </div>
+                    {doc.gridfs_file_id && (
+                      <div className="mt-1">
+                        <a
+                          href={`/api/files/${doc.gridfs_file_id}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800"
+                        >
+                          <Image className="w-3 h-3" />
+                          <span>元画像を表示</span>
+                          <ExternalLink className="w-3 h-3" />
+                        </a>
+                      </div>
+                    )}
                   </div>
                   
                   <div className="mt-3 flex gap-2">
@@ -470,6 +487,17 @@ export default function DocumentsContentMongoDB() {
                         >
                           <Edit className="w-4 h-4" />
                         </button>
+                        {doc.gridfs_file_id && (
+                          <a
+                            href={`/api/files/${doc.gridfs_file_id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:text-blue-800 p-1"
+                            title="元画像を表示"
+                          >
+                            <Image className="w-4 h-4" />
+                          </a>
+                        )}
                         <button 
                           className="text-green-600 hover:text-green-800 p-1"
                           title="ダウンロード"

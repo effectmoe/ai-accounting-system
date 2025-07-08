@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '../../../../src/lib/mongodb-client';
-import { ObjectId } from 'mongodb';
+import { ObjectId, GridFSBucket } from 'mongodb';
 
 export async function DELETE(
   request: NextRequest,
@@ -16,15 +16,34 @@ export async function DELETE(
       }, { status: 400 });
     }
 
-    // ドキュメントを削除
-    const result = await db.delete('documents', id);
-
-    if (!result) {
+    // まずドキュメントを取得してGridFS IDを確認
+    const document = await db.findOne('documents', id);
+    
+    if (!document) {
       return NextResponse.json({
         success: false,
         error: 'Document not found'
       }, { status: 404 });
     }
+
+    // GridFSファイルも削除（存在する場合）
+    if (document.gridfs_file_id) {
+      try {
+        const bucket = new GridFSBucket(db.getDb(), { bucketName: 'uploads' });
+        await bucket.delete(new ObjectId(document.gridfs_file_id));
+      } catch (error) {
+        console.error('GridFS deletion error:', error);
+        // GridFS削除エラーは無視して続行
+      }
+    }
+
+    // 関連する仕訳も削除（存在する場合）
+    if (document.journalId) {
+      await db.delete('journals', document.journalId.toString());
+    }
+
+    // ドキュメントを削除
+    const result = await db.delete('documents', id);
 
     return NextResponse.json({
       success: true,

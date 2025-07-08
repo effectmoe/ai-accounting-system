@@ -11,6 +11,7 @@ export default function Navigation() {
     { href: '/documents', label: '書類一覧' },
     { href: '/accounts', label: '勘定科目' },
     { href: '/journal', label: '仕訳帳' },
+    { href: '/learning', label: 'AI学習管理' },
     { href: '/import', label: 'データインポート' },
     { href: '/automation', label: '自動化管理' },
     { href: '/mastra-admin', label: 'AAM管理' },

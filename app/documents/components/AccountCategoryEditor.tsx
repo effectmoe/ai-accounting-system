@@ -9,6 +9,9 @@ interface AccountCategoryEditorProps {
   vendorName: string;
   currentCategory?: string;
   amount?: number;
+  fileName?: string;
+  extractedText?: string;
+  documentType?: string;
   onCategoryUpdate?: (newCategory: string) => void;
 }
 
@@ -30,6 +33,9 @@ export default function AccountCategoryEditor({
   vendorName,
   currentCategory = '未分類',
   amount,
+  fileName,
+  extractedText,
+  documentType,
   onCategoryUpdate
 }: AccountCategoryEditorProps) {
   const [isEditing, setIsEditing] = useState(false);
@@ -79,7 +85,9 @@ export default function AccountCategoryEditor({
         body: JSON.stringify({
           vendorName,
           amount,
-          documentType: 'receipt'
+          documentType: documentType || 'receipt',
+          fileName,
+          extractedText
         })
       });
 

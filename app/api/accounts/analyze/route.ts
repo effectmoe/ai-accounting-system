@@ -16,13 +16,14 @@ export async function POST(request: NextRequest) {
       amount,
       description,
       documentType,
-      extractedText
+      extractedText,
+      fileName
     } = body;
 
-    if (!vendorName) {
+    if (!vendorName && !extractedText && !fileName) {
       return NextResponse.json({
         success: false,
-        error: 'vendorName is required'
+        error: 'At least one of vendorName, extractedText, or fileName is required'
       }, { status: 400 });
     }
 
@@ -35,11 +36,17 @@ export async function POST(request: NextRequest) {
     // 基本的な勘定科目判定ロジック
     let primarySuggestion = {
       category: '接待交際費',
-      confidence: 0.5,
+      confidence: 0.3,  // デフォルトの信頼度を下げる
       reason: 'デフォルト分類'
     };
 
-    const vendorLower = vendorName.toLowerCase();
+    // 検索対象のテキストを結合
+    const searchText = [
+      vendorName || '',
+      extractedText || '',
+      fileName || '',
+      description || ''
+    ].join(' ').toLowerCase();
 
     // キーワードベースの判定（拡張版）
     const categoryRules = [
@@ -82,11 +89,12 @@ export async function POST(request: NextRequest) {
 
     // ルールベースの判定
     for (const rule of categoryRules) {
-      if (rule.keywords.some(keyword => vendorLower.includes(keyword))) {
+      const matchedKeyword = rule.keywords.find(keyword => searchText.includes(keyword));
+      if (matchedKeyword) {
         primarySuggestion = {
           category: rule.category,
           confidence: rule.confidence,
-          reason: `キーワード「${rule.keywords.find(k => vendorLower.includes(k))}」による判定`
+          reason: `キーワード「${matchedKeyword}」による判定`
         };
         break;
       }
@@ -108,12 +116,12 @@ export async function POST(request: NextRequest) {
     const alternatives = categoryRules
       .filter(rule => 
         rule.category !== primarySuggestion.category &&
-        rule.keywords.some(keyword => vendorLower.includes(keyword))
+        rule.keywords.some(keyword => searchText.includes(keyword))
       )
       .map(rule => ({
         category: rule.category,
         confidence: rule.confidence * 0.7, // 代替案は信頼度を下げる
-        reason: `キーワード「${rule.keywords.find(k => vendorLower.includes(k))}」による代替案`
+        reason: `キーワード「${rule.keywords.find(k => searchText.includes(k))}」による代替案`
       }))
       .slice(0, 2); // 最大2つの代替案
 
@@ -130,9 +138,10 @@ export async function POST(request: NextRequest) {
       analysisDetails: {
         keywordsFound: categoryRules
           .flatMap(rule => rule.keywords)
-          .filter(keyword => vendorLower.includes(keyword)),
-        vendorType: detectVendorType(vendorName),
-        hasLearningData: !!learnedPrediction
+          .filter(keyword => searchText.includes(keyword)),
+        vendorType: detectVendorType(vendorName || ''),
+        hasLearningData: !!learnedPrediction,
+        searchText: searchText.substring(0, 200) // デバッグ用
       },
       recommendations: generateRecommendations(vendorName, amount, description)
     };
