@@ -1,0 +1,75 @@
+===============================================
+         INVOICE DOCUMENT
+===============================================
+
+Company: Test Corporation Ltd.
+Address: 1234 Business Park Avenue
+         Suite 500
+         Test City, TC 12345
+         United States
+
+Phone: +1 (555) 123-4567
+Email: billing@testcorp.com
+Website: www.testcorp.com
+
+===============================================
+           INVOICE DETAILS
+===============================================
+
+Invoice Number: INV-2025-0708-001
+Invoice Date: July 8, 2025
+Due Date: August 7, 2025
+
+Bill To:
+Customer Company Inc.
+Attn: Accounts Payable
+789 Customer Street
+Customer City, CC 67890
+United States
+
+===============================================
+           ITEMIZED CHARGES
+===============================================
+
+Item Description                    Quantity    Unit Price    Total
+-------------------------------------------------------------------
+Professional Services               10 hours    $150.00       $1,500.00
+Software Development                20 hours    $175.00       $3,500.00
+Project Management                  5 hours     $125.00       $625.00
+Technical Documentation             3 hours     $100.00       $300.00
+Quality Assurance Testing          8 hours     $140.00       $1,120.00
+
+-------------------------------------------------------------------
+                                    Subtotal:                 $7,045.00
+                                    Tax (10%):                $704.50
+                                    Total Due:                $7,749.50
+
+===============================================
+           PAYMENT INFORMATION
+===============================================
+
+Payment Terms: Net 30
+Accepted Payment Methods:
+- Bank Transfer
+- Check
+- Credit Card (3% processing fee applies)
+
+Bank Details:
+Bank Name: First National Bank
+Account Name: Test Corporation Ltd.
+Account Number: 123456789
+Routing Number: 987654321
+SWIFT Code: FNBAUS12
+
+===============================================
+           TERMS & CONDITIONS
+===============================================
+
+1. Payment is due within 30 days of invoice date
+2. Late payments subject to 1.5% monthly interest
+3. All services provided according to signed contract
+4. For questions, contact billing@testcorp.com
+
+Thank you for your business!
+
+===============================================
