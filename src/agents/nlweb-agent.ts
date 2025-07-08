@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { createAgent } from '@mastra/core';
+import { Agent } from '@mastra/core';
 import { spawn } from 'child_process';
 import path from 'path';
 
@@ -236,11 +236,15 @@ class NLWebMCPClient {
 }
 
 // NLWebエージェント定義
-export const nlwebAgent = createAgent({
+export const nlwebAgent = new Agent({
   id: 'nlweb-agent',
   name: 'NLWeb Framework Agent with MCP Integration',
   description: 'Generate and manage NLWeb-compliant websites',
-  
+  model: {
+    provider: 'OPENAI',
+    name: 'gpt-4',
+    toolChoice: 'auto',
+  },
   inputSchema: nlwebInputSchema,
   outputSchema: nlwebResultSchema,
   

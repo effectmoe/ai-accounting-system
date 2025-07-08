@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { ocrAgent } from './agents/ocr-agent';
 import { databaseAgent } from './agents/database-agent';
 // 新しいAzure/MongoDBエージェント
-import { ocrAgentAzure } from './agents/ocr-agent-azure';
+import { ocrAgent as ocrAgentAzure } from './agents/ocr-agent-azure';
 import { databaseAgentMongoDB } from './agents/database-agent-mongodb';
 // その他のエージェント
 import { accountingAgent } from './agents/accounting-agent';
@@ -59,13 +59,6 @@ export class MastraOrchestrator {
     this.mastra = new Mastra({
       llm: deepSeekConfig,
       tools: this.createTools(),
-      memory: {
-        provider: 'local',
-        config: {
-          persist: true,
-          namespace: 'accounting-automation',
-        },
-      },
     });
     this.initializeAgents();
   }

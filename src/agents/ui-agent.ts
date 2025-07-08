@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { createAgent } from '@mastra/core';
+import { Agent } from '@mastra/core';
 import { spawn } from 'child_process';
 import path from 'path';
 
@@ -251,11 +251,15 @@ class UIMCPClient {
 }
 
 // UIエージェント定義
-export const uiAgent = createAgent({
+export const uiAgent = new Agent({
   id: 'ui-agent',
   name: 'UI Generation Agent with MCP Integration',
   description: 'Generate user interface components and layouts',
-  
+  model: {
+    provider: 'OPENAI',
+    name: 'gpt-4',
+    toolChoice: 'auto',
+  },
   inputSchema: uiInputSchema,
   outputSchema: uiResultSchema,
   

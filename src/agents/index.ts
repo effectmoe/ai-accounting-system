@@ -4,7 +4,7 @@
 export { ocrAgent as ocrAgentAzure } from './ocr-agent-azure';
 
 // MongoDB データベースエージェント（新）
-export { databaseAgent as databaseAgentMongoDB } from './database-agent-mongodb';
+export { databaseAgentMongoDB } from './database-agent-mongodb';
 
 // 既存のエージェント（HandwritingOCR機能保持のため）
 export { ocrAgent } from './ocr-agent';

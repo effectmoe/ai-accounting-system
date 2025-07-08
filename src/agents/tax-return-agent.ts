@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { createAgent } from '@mastra/core';
+import { Agent } from '@mastra/core';
 import { supabase } from '../lib/supabase';
 
 // 確定申告関連のスキーマ定義
@@ -113,11 +113,15 @@ const TAX_CONSTANTS_2024 = {
   BUSINESS_TAX_EXEMPTION: 2900000,      // 事業税控除額
 };
 
-export const taxReturnAgent = createAgent({
+export const taxReturnAgent = new Agent({
   id: 'tax-return-agent',
   name: 'Tax Return Processing Agent',
   description: 'Handle Japanese tax return calculations and document generation',
-  
+  model: {
+    provider: 'OPENAI',
+    name: 'gpt-4',
+    toolChoice: 'auto',
+  },
   inputSchema: taxReturnInputSchema,
   outputSchema: taxReturnOutputSchema,
   

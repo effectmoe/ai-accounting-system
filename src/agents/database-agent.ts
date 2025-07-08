@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { createAgent } from '@mastra/core';
+import { Agent } from '@mastra/core';
 import { spawn } from 'child_process';
 import path from 'path';
 
@@ -205,11 +205,15 @@ class DatabaseMCPClient {
 }
 
 // データベースエージェント定義
-export const databaseAgent = createAgent({
+export const databaseAgent = new Agent({
   id: 'database-agent',
   name: 'Database Operations Agent with MCP Integration',
   description: 'Manage receipt and journal entry storage with Supabase and pgvector',
-  
+  model: {
+    provider: 'OPENAI',
+    name: 'gpt-4',
+    toolChoice: 'auto',
+  },
   inputSchema: databaseInputSchema,
   outputSchema: databaseResultSchema,
   

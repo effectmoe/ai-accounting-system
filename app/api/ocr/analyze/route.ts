@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getFormRecognizerService } from '../../../../src/lib/azure-form-recognizer';
+import orchestrator from '../../../../src/mastra-orchestrator';
 import { db } from '../../../../src/lib/mongodb-client';
 import { ObjectId } from 'mongodb';
 import { OCRDateExtractor } from '../../../../src/lib/ocr-date-extractor';
@@ -19,6 +19,7 @@ function extractAmount(value: any): number {
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('OCR分析API - Mastraエージェントを使用します');
     // 環境変数チェック
     const useAzureMongoDB = process.env.USE_AZURE_MONGODB === 'true';
     
@@ -30,11 +31,12 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Azure Form Recognizer設定チェック
-    if (!process.env.AZURE_FORM_RECOGNIZER_ENDPOINT || !process.env.AZURE_FORM_RECOGNIZER_KEY) {
+    // Mastraエージェントの確認
+    const availableAgents = orchestrator.getAvailableAgents();
+    if (!availableAgents.includes('ocr-agent')) {
       return NextResponse.json({
         success: false,
-        error: 'Azure Form Recognizer configuration is missing'
+        error: 'OCRエージェントが利用できません'
       }, { status: 500 });
     }
 
@@ -59,110 +61,63 @@ export async function POST(request: NextRequest) {
     // ファイルをBufferに変換
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
+    const fileBuffer = buffer.toString('base64');
 
-    // ファイルタイプを判定
-    const fileName = file.name.toLowerCase();
-    const mimeType = file.type;
-    let documentType = 'document';
+    // MastraエージェントでOCR処理
+    console.log('Mastra OCRエージェントで領収書を分析中...');
     
-    // PDFファイルの場合は、より包括的な分析を試みる
-    if (mimeType === 'application/pdf') {
-      // PDFは請求書として扱うことが多いため、デフォルトでinvoiceとして処理
-      documentType = 'invoice';
-    } else if (fileName.includes('invoice') || fileName.includes('請求')) {
-      documentType = 'invoice';
-    } else if (fileName.includes('receipt') || fileName.includes('領収')) {
-      documentType = 'receipt';
-    }
-
-    // Azure Form Recognizerでファイルを分析
+    // 直接Azure Form Recognizerサービスを使用
+    const { getFormRecognizerService } = await import('../../../../src/lib/azure-form-recognizer');
     const formRecognizer = getFormRecognizerService();
-    let analysisResult;
     
-    try {
-      // 最初に指定されたドキュメントタイプで分析を試みる
-      try {
-        if (documentType === 'invoice') {
-          analysisResult = await formRecognizer.analyzeInvoice(buffer, file.name);
-        } else if (documentType === 'receipt') {
-          analysisResult = await formRecognizer.analyzeReceipt(buffer, file.name);
-        } else {
-          analysisResult = await formRecognizer.analyzeDocument(buffer, file.name);
-        }
-      } catch (firstError) {
-        console.log(`Failed to analyze as ${documentType}, trying alternative methods...`);
-        
-        // PDFの場合、invoice → receipt → layout の順で試す
-        if (mimeType === 'application/pdf') {
-          if (documentType !== 'receipt') {
-            try {
-              analysisResult = await formRecognizer.analyzeReceipt(buffer, file.name);
-              console.log('Successfully analyzed as receipt');
-            } catch (e) {
-              // レイアウト分析にフォールバック
-              analysisResult = await formRecognizer.analyzeDocument(buffer, file.name);
-              console.log('Fallback to layout analysis');
-            }
-          } else {
-            // receiptで失敗した場合はlayout分析
-            analysisResult = await formRecognizer.analyzeDocument(buffer, file.name);
-          }
-        } else {
-          throw firstError;
-        }
-      }
-    } catch (error) {
-      console.error('Azure Form Recognizer エラー:', error);
+    const startTime = Date.now();
+    
+    // Azure Form Recognizerで分析
+    const analysisResult = await formRecognizer.analyzeReceipt(buffer, file.name);
+    
+    const processingTime = Date.now() - startTime;
+    
+    // GridFSにファイルを保存
+    const sourceFileId = await formRecognizer.saveToGridFS(
+      buffer,
+      file.name,
+      { companyId: companyId, uploadedAt: new Date().toISOString() }
+    );
+    
+    // OCR結果をMongoDBに保存
+    const ocrResult = {
+      companyId: new ObjectId(companyId === 'default' ? '11111111-1111-1111-1111-111111111111' : companyId),
+      sourceFileId: new ObjectId(sourceFileId),
+      fileName: file.name,
+      fileSize: buffer.length,
+      mimeType: file.type || (file.name.endsWith('.pdf') ? 'application/pdf' : 'image/jpeg'),
+      processedAt: new Date(),
+      processingTime,
+      documentType: 'receipt',
+      confidence: analysisResult.confidence,
+      status: 'completed',
+      extractedData: analysisResult.fields,
+      rawResult: analysisResult.rawResult,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    
+    const savedOcrResult = await db.create('ocr_results', ocrResult);
+    const ocrResultId = savedOcrResult._id.toString();
+    const fileId = sourceFileId;
+
+    // 結果の検証
+    if (!analysisResult || !analysisResult.fields) {
       return NextResponse.json({
         success: false,
-        error: error instanceof Error ? error.message : 'OCR処理中にエラーが発生しました',
-        details: error instanceof Error ? error.stack : undefined
+        error: 'OCR処理に失敗しました：フィールドを抽出できませんでした'
       }, { status: 500 });
     }
 
     // 分析結果の詳細をログ出力
     console.log('Analysis result fields:', JSON.stringify(analysisResult.fields, null, 2));
-    
-    // GridFSにファイルを保存
-    let fileId: string | null = null;
-    try {
-      fileId = await formRecognizer.saveToGridFS(buffer, file.name, {
-        companyId,
-        documentType,
-        uploadedAt: new Date(),
-        mimeType: file.type
-      });
-    } catch (error) {
-      console.error('GridFS保存エラー:', error);
-      console.error('Error details:', error instanceof Error ? error.stack : error);
-      // GridFS保存に失敗してもOCR結果は返す
-    }
-
-    // OCR結果をMongoDBに保存
-    let ocrResultId: string | null = null;
-    try {
-      const ocrResult = await db.create('ocrResults', {
-        companyId: companyId === 'default' ? '11111111-1111-1111-1111-111111111111' : companyId,
-        sourceFileId: fileId ? new ObjectId(fileId) : null,
-        fileName: file.name,
-        fileSize: file.size,
-        mimeType: file.type,
-        documentType: analysisResult.documentType,
-        status: 'completed',
-        confidence: analysisResult.confidence,
-        extractedData: analysisResult.fields || analysisResult.extractedData,
-        processedAt: new Date(),
-        processingDurationMs: analysisResult.processingTime,
-        createdAt: new Date(),
-        updatedAt: new Date()
-      });
-      
-      ocrResultId = ocrResult._id.toString();
-    } catch (error) {
-      console.error('MongoDB保存エラー:', error);
-      console.error('Error details:', error instanceof Error ? error.stack : error);
-      // MongoDB保存に失敗してもOCR結果は返す
-    }
+    console.log('OCR Result ID:', ocrResultId);
+    console.log('File ID:', fileId);
 
     // MongoDBのdocumentsコレクションに保存（書類管理画面で表示するため）
     try {
@@ -182,7 +137,7 @@ export async function POST(request: NextRequest) {
       console.log('Extracted amounts:', { totalAmount: totalAmountExtracted, taxAmount: taxAmountExtracted });
       
       // 日付を適切に解析
-      let documentDate = null; // デフォルトをnullに
+      let documentDate: Date | null = null; // デフォルトをnullに
       let dateFound = false;
       
       // OCRDateExtractorを使用して日付を抽出
@@ -259,7 +214,9 @@ export async function POST(request: NextRequest) {
           companyId === 'default' ? '11111111-1111-1111-1111-111111111111' : companyId
         );
         
-        category = journalEntry.debitAccount;
+        if (journalEntry && journalEntry.debitAccount) {
+          category = journalEntry.debitAccount;
+        }
       } catch (error) {
         console.error('Category prediction error:', error);
         // categoryは既に初期化済み
@@ -295,7 +252,7 @@ export async function POST(request: NextRequest) {
         taxAmount: taxAmountExtracted,
         documentDate: documentDate || null,  // 日付がない場合はnull
         issue_date: documentDate || null,  // 日付表示用
-        receipt_date: documentDate ? documentDate.toISOString().split('T')[0] : null, // 領収書の日付
+        receipt_date: documentDate && !isNaN(documentDate.getTime()) ? documentDate.toISOString().split('T')[0] : null, // 領収書の日付
         category: category,
         subcategory: null,
         extractedText: JSON.stringify(analysisResult.fields, null, 2),
@@ -334,7 +291,7 @@ export async function POST(request: NextRequest) {
     }
     
     // 日付のデフォルト値（MongoDocument保存セクションのスコープ外で使用）
-    let finalDocumentDate = null; // デフォルトをnullに
+    let finalDocumentDate: Date | null = null; // デフォルトをnullに
     let finalVendorName = file.name.replace(/\.(pdf|png|jpg|jpeg)$/i, '');
     let finalDateFound = false; // レスポンス用のdateFound
     
@@ -372,7 +329,7 @@ export async function POST(request: NextRequest) {
         vendor: finalVendorName,
         amount: totalAmountExtracted,
         taxAmount: taxAmountExtracted,
-        date: finalDocumentDate ? finalDocumentDate.toISOString().split('T')[0] : null,
+        date: finalDocumentDate && !isNaN(finalDocumentDate.getTime()) ? finalDocumentDate.toISOString().split('T')[0] : null,
         items: []
       };
       
@@ -381,7 +338,9 @@ export async function POST(request: NextRequest) {
         companyId === 'default' ? '11111111-1111-1111-1111-111111111111' : companyId
       );
       
-      categoryForResponse = journalEntry.debitAccount;
+      if (journalEntry && journalEntry.debitAccount) {
+        categoryForResponse = journalEntry.debitAccount;
+      }
     } catch (error) {
       console.error('Category prediction error:', error);
       categoryForResponse = '未分類';
@@ -399,7 +358,7 @@ export async function POST(request: NextRequest) {
       message: 'OCR処理が完了しました',
       // チャット画面で使用するための追加情報
       category: categoryForResponse,
-      receiptDate: finalDocumentDate ? finalDocumentDate.toISOString().split('T')[0] : null,
+      receiptDate: finalDocumentDate && !isNaN(finalDocumentDate.getTime()) ? finalDocumentDate.toISOString().split('T')[0] : null,
       vendorName: finalVendorName,
       dateExtracted: finalDateFound // 日付抽出の成否を追加
     });

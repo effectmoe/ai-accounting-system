@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { createAgent } from '@mastra/core';
+import { Agent } from '@mastra/core';
 import { spawn } from 'child_process';
 import path from 'path';
 
@@ -171,11 +171,15 @@ class AccountingMCPClient {
 }
 
 // 会計エージェント定義
-export const accountingAgent = createAgent({
+export const accountingAgent = new Agent({
   id: 'accounting-agent',
   name: 'Accounting Analysis Agent with MCP Integration',
   description: 'Analyze transactions, classify accounts, and create journal entries using accounting MCP server',
-  
+  model: {
+    provider: 'OPENAI',
+    name: 'gpt-4',
+    toolChoice: 'auto',
+  },
   inputSchema: accountingInputSchema,
   outputSchema: accountingResultSchema,
   

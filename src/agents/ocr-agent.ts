@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { createAgent } from '@mastra/core';
+import { Agent } from '@mastra/core';
 import { spawn } from 'child_process';
 import fs from 'fs';
 import path from 'path';
@@ -149,11 +149,15 @@ class OCRMCPClient {
 }
 
 // OCRエージェント定義
-export const ocrAgent = createAgent({
+export const ocrAgent = new Agent({
   id: 'ocr-agent',
   name: 'OCR Processing Agent with MCP Integration',
   description: 'Process documents using OCR via external MCP servers and extract structured data',
-  
+  model: {
+    provider: 'OPENAI',
+    name: 'gpt-4',
+    toolChoice: 'auto',
+  },
   inputSchema: ocrInputSchema,
   outputSchema: ocrResultSchema,
   

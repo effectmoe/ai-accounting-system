@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { createAgent } from '@mastra/core';
+import { Agent } from '@mastra/core';
 import { spawn } from 'child_process';
 import path from 'path';
 
@@ -220,11 +220,15 @@ class ProductMCPClient {
 }
 
 // 商品エージェント定義
-export const productAgent = createAgent({
+export const productAgent = new Agent({
   id: 'product-agent',
   name: 'Product Management Agent with MCP Integration',
   description: 'Manage product catalog and inventory',
-  
+  model: {
+    provider: 'OPENAI',
+    name: 'gpt-4',
+    toolChoice: 'auto',
+  },
   inputSchema: productInputSchema,
   outputSchema: productResultSchema,
   

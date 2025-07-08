@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { createAgent } from '@mastra/core';
+import { Agent } from '@mastra/core';
 import { spawn } from 'child_process';
 import path from 'path';
 
@@ -212,11 +212,15 @@ class JapanTaxMCPClient {
 }
 
 // 日本税務エージェント定義
-export const japanTaxAgent = createAgent({
+export const japanTaxAgent = new Agent({
   id: 'japan-tax-agent',
   name: 'Japan Tax Compliance Agent with MCP Integration',
   description: 'Handle Japanese tax calculations and compliance',
-  
+  model: {
+    provider: 'OPENAI',
+    name: 'gpt-4',
+    toolChoice: 'auto',
+  },
   inputSchema: taxInputSchema,
   outputSchema: taxResultSchema,
   

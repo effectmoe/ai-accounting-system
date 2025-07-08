@@ -9,7 +9,7 @@ import {
 import { ObjectId } from 'mongodb';
 
 // MongoDB データベースエージェント
-export const databaseAgent = new Agent({
+export const databaseAgentMongoDB = new Agent({
   id: 'database-agent',
   name: 'Database Agent',
   description: 'MongoDB データベース操作を管理するエージェント',

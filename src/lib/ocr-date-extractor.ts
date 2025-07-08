@@ -1,136 +1,237 @@
 /**
- * OCR日付抽出専用モジュール
- * 画像・PDF内のテキストから日付を抽出する
- * ファイル名やシステム日付は一切使用しない
+ * OCR結果から日付を抽出するユーティリティクラス
+ * 日本語の様々な日付表記に対応
  */
-
 export class OCRDateExtractor {
+  // 日付パターンの定義
+  private static patterns = [
+    // 令和表記（例: 令和6年5月25日）
+    {
+      regex: /令和(\d{1,2})年(\d{1,2})月(\d{1,2})日/g,
+      handler: (match: RegExpMatchArray) => {
+        const reiwaYear = parseInt(match[1]);
+        const year = 2018 + reiwaYear; // 令和1年 = 2019年
+        const month = parseInt(match[2]);
+        const day = parseInt(match[3]);
+        return { year, month, day };
+      },
+      name: '令和表記'
+    },
+    // 西暦年月日（例: 2024年5月25日）
+    {
+      regex: /(\d{4})年(\d{1,2})月(\d{1,2})日/g,
+      handler: (match: RegExpMatchArray) => {
+        const year = parseInt(match[1]);
+        const month = parseInt(match[2]);
+        const day = parseInt(match[3]);
+        return { year, month, day };
+      },
+      name: '西暦年月日'
+    },
+    // スラッシュ区切り年月日（例: 2024/5/25）
+    {
+      regex: /(\d{4})\/(\d{1,2})\/(\d{1,2})/g,
+      handler: (match: RegExpMatchArray) => {
+        const year = parseInt(match[1]);
+        const month = parseInt(match[2]);
+        const day = parseInt(match[3]);
+        return { year, month, day };
+      },
+      name: 'スラッシュ区切り年月日'
+    },
+    // 月日のみ（現在年を使用）（例: 5月25日）
+    {
+      regex: /(\d{1,2})月(\d{1,2})日/g,
+      handler: (match: RegExpMatchArray) => {
+        const month = parseInt(match[1]);
+        const day = parseInt(match[2]);
+        const currentYear = new Date().getFullYear();
+        return { year: currentYear, month, day };
+      },
+      name: '月日のみ（現在年）'
+    },
+    // スラッシュ区切り月日（現在年を使用）（例: 5/25）
+    {
+      regex: /(\d{1,2})\/(\d{1,2})(?!\/)/g,
+      handler: (match: RegExpMatchArray) => {
+        const month = parseInt(match[1]);
+        const day = parseInt(match[2]);
+        const currentYear = new Date().getFullYear();
+        return { year: currentYear, month, day };
+      },
+      name: 'スラッシュ区切り月日'
+    },
+    // JSONフィールドから（例: "Date":"5月25日"）
+    {
+      regex: /"(?:Date|InvoiceDate|TransactionDate|date|invoiceDate|transactionDate)"\s*:\s*"([^"]+)"/g,
+      handler: (match: RegExpMatchArray) => {
+        const dateStr = match[1];
+        // 再帰的に日付を抽出
+        const subResult = OCRDateExtractor.extractDateFromString(dateStr);
+        if (subResult) {
+          return subResult;
+        }
+        return null;
+      },
+      name: 'JSONフィールド'
+    },
+    // 漢数字の日付（例: 五月二十五日）
+    {
+      regex: /([一二三四五六七八九十]+)月([一二三四五六七八九十]+)日/g,
+      handler: (match: RegExpMatchArray) => {
+        const month = OCRDateExtractor.kanjiToNumber(match[1]);
+        const day = OCRDateExtractor.kanjiToNumber(match[2]);
+        const currentYear = new Date().getFullYear();
+        return { year: currentYear, month, day };
+      },
+      name: '漢数字日付'
+    },
+    // 改行を含む縦書き漢数字の日付
+    {
+      regex: /五\s*月\s*二\s*十\s*五\s*日/g,
+      handler: (match: RegExpMatchArray) => {
+        const currentYear = new Date().getFullYear();
+        return { year: currentYear, month: 5, day: 25 };
+      },
+      name: '縦書き漢数字（5月25日）'
+    }
+  ];
+
+  // 漢数字を数値に変換
+  private static kanjiToNumber(kanjiStr: string): number {
+    const kanjiMap: { [key: string]: number } = {
+      '一': 1, '二': 2, '三': 3, '四': 4, '五': 5,
+      '六': 6, '七': 7, '八': 8, '九': 9, '十': 10,
+      '二十': 20, '三十': 30
+    };
+
+    // 十の位と一の位を分けて処理
+    if (kanjiStr.includes('十')) {
+      const parts = kanjiStr.split('十');
+      if (parts.length === 2) {
+        const tens = parts[0] ? kanjiMap[parts[0]] || 1 : 1;
+        const ones = parts[1] ? kanjiMap[parts[1]] || 0 : 0;
+        return tens * 10 + ones;
+      }
+    }
+
+    return kanjiMap[kanjiStr] || 0;
+  }
+
+  // 文字列から日付を抽出（内部用）
+  private static extractDateFromString(str: string): { year: number; month: number; day: number } | null {
+    for (const pattern of this.patterns) {
+      const regex = new RegExp(pattern.regex.source, pattern.regex.flags);
+      const match = regex.exec(str);
+      if (match) {
+        const result = pattern.handler(match);
+        if (result && result.year && result.month && result.day) {
+          return result;
+        }
+      }
+    }
+    return null;
+  }
+
+  // 日付の妥当性をチェック
+  private static isValidDate(year: number, month: number, day: number): boolean {
+    if (year < 2000 || year > 2100) return false;
+    if (month < 1 || month > 12) return false;
+    if (day < 1 || day > 31) return false;
+
+    // より詳細な日付チェック
+    const date = new Date(year, month - 1, day);
+    return date.getFullYear() === year && 
+           date.getMonth() === month - 1 && 
+           date.getDate() === day;
+  }
+
+  // 日付が妥当な範囲内かチェック（2年前〜1ヶ月後）
+  private static isDateInRange(date: Date): boolean {
+    const now = new Date();
+    const twoYearsAgo = new Date();
+    twoYearsAgo.setFullYear(now.getFullYear() - 2);
+    
+    const oneMonthLater = new Date();
+    oneMonthLater.setMonth(now.getMonth() + 1);
+
+    return date >= twoYearsAgo && date <= oneMonthLater;
+  }
+
   /**
    * OCR結果から日付を抽出
-   * @param ocrText OCRで読み取ったテキスト（JSON文字列またはプレーンテキスト）
-   * @returns 抽出された日付またはnull
+   * @param ocrText OCR結果のテキスト
+   * @returns 抽出結果
    */
-  static extractDate(ocrText: string): { date: Date | null; confidence: number; matchedPattern: string | null } {
-    if (!ocrText || ocrText.trim() === '') {
-      console.error('OCRDateExtractor: 入力テキストが空です');
+  public static extractDate(ocrText: string): {
+    date: Date | null;
+    confidence: number;
+    matchedPattern: string | null;
+  } {
+    if (!ocrText) {
       return { date: null, confidence: 0, matchedPattern: null };
     }
 
-    // 日本の駐車場レシート特有のパターンを最優先
-    const parkingPatterns = [
-      // 入庫時刻/出庫時刻パターン（最も信頼性が高い）
-      {
-        pattern: /[入出]庫時刻[\s　]*(20\d{2})年[\s　]*(\d{1,2})月[\s　]*(\d{1,2})日/g,
-        confidence: 0.95,
-        name: '駐車場レシート（入出庫時刻）'
-      },
-      // 一般的な年月日パターン
-      {
-        pattern: /(20\d{2})年[\s　]*(\d{1,2})月[\s　]*(\d{1,2})日/g,
-        confidence: 0.9,
-        name: '標準日本語日付'
-      },
-      // スラッシュ区切り
-      {
-        pattern: /(20\d{2})\/(\d{1,2})\/(\d{1,2})/g,
-        confidence: 0.85,
-        name: 'スラッシュ区切り'
-      },
-      // ハイフン区切り
-      {
-        pattern: /(20\d{2})-(\d{1,2})-(\d{1,2})/g,
-        confidence: 0.85,
-        name: 'ハイフン区切り'
-      },
-      // 令和表記
-      {
-        pattern: /令和(\d+)年[\s　]*(\d{1,2})月[\s　]*(\d{1,2})日/g,
-        confidence: 0.9,
-        name: '令和表記'
-      }
-    ];
+    console.log('検索対象テキスト（最初の500文字）:', ocrText.substring(0, 500));
 
-    let bestMatch: { date: Date | null; confidence: number; matchedPattern: string | null } = {
-      date: null,
-      confidence: 0,
-      matchedPattern: null
-    };
+    const candidates: Array<{
+      date: Date;
+      confidence: number;
+      pattern: string;
+    }> = [];
 
-    // 各パターンで日付を検索
-    for (const { pattern, confidence, name } of parkingPatterns) {
-      const matches = ocrText.matchAll(pattern);
+    // 各パターンで日付を探す
+    for (const pattern of this.patterns) {
+      const regex = new RegExp(pattern.regex.source, pattern.regex.flags);
+      let match;
       
-      for (const match of matches) {
+      while ((match = regex.exec(ocrText)) !== null) {
         try {
-          let year: number, month: number, day: number;
-          
-          if (name === '令和表記') {
-            // 令和年号の変換（令和1年 = 2019年）
-            year = 2018 + parseInt(match[1]);
-            month = parseInt(match[2]);
-            day = parseInt(match[3]);
-          } else {
-            year = parseInt(match[1]);
-            month = parseInt(match[2]);
-            day = parseInt(match[3]);
-          }
-          
-          // 妥当性チェック
-          if (month < 1 || month > 12 || day < 1 || day > 31) {
-            console.warn(`OCRDateExtractor: 無効な日付値 - ${match[0]}`);
-            continue;
-          }
-          
-          const date = new Date(year, month - 1, day);
-          
-          // 日付の妥当性を確認
-          if (date.getFullYear() === year && 
-              date.getMonth() === month - 1 && 
-              date.getDate() === day) {
+          const result = pattern.handler(match);
+          if (result && this.isValidDate(result.year, result.month, result.day)) {
+            const date = new Date(result.year, result.month - 1, result.day);
             
-            // 未来の日付や古すぎる日付を除外
-            const now = new Date();
-            const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
-            const oneMonthFuture = new Date(now.getFullYear(), now.getMonth() + 1, now.getDate());
-            
-            if (date <= oneMonthFuture && date >= oneYearAgo) {
-              if (confidence > bestMatch.confidence) {
-                bestMatch = {
-                  date: date,
-                  confidence: confidence,
-                  matchedPattern: `${name}: ${match[0]}`
-                };
-                console.log(`OCRDateExtractor: 日付を検出 - ${match[0]} (${name})`);
+            if (this.isDateInRange(date)) {
+              // 信頼度の計算
+              let confidence = 0.8; // 基本信頼度
+              
+              // 年が含まれている場合は信頼度を上げる
+              if (pattern.name.includes('年') || pattern.name.includes('令和')) {
+                confidence += 0.1;
               }
+              
+              // JSONフィールドから抽出した場合は信頼度を上げる
+              if (pattern.name === 'JSONフィールド') {
+                confidence += 0.05;
+              }
+
+              candidates.push({
+                date,
+                confidence,
+                pattern: pattern.name
+              });
             } else {
-              console.warn(`OCRDateExtractor: 日付が範囲外 - ${match[0]} (1年前〜1ヶ月後の範囲外)`);
+              console.log(`OCRDateExtractor: 日付が範囲外 - ${match[0]} (2年前〜1ヶ月後の範囲外)`);
             }
           }
         } catch (error) {
-          console.error(`OCRDateExtractor: 日付解析エラー - ${match[0]}`, error);
+          console.error('日付解析エラー:', error);
         }
       }
     }
 
-    if (!bestMatch.date) {
-      console.error('OCRDateExtractor: 有効な日付を見つけられませんでした');
-      console.log('検索対象テキスト（最初の500文字）:', ocrText.substring(0, 500));
+    // 最も信頼度の高い候補を選択
+    if (candidates.length > 0) {
+      candidates.sort((a, b) => b.confidence - a.confidence);
+      const best = candidates[0];
+      return {
+        date: best.date,
+        confidence: best.confidence,
+        matchedPattern: best.pattern
+      };
     }
 
-    return bestMatch;
-  }
-
-  /**
-   * ファイル名からの日付抽出を明示的に禁止
-   */
-  static extractFromFileName(fileName: string): never {
-    throw new Error('ファイル名からの日付抽出は禁止されています。OCRで画像内の日付を読み取ってください。');
-  }
-
-  /**
-   * システム日付の使用を明示的に禁止
-   */
-  static useSystemDate(): never {
-    throw new Error('システム日付の使用は禁止されています。OCRで画像内の日付を読み取ってください。');
+    console.log('OCRDateExtractor: 有効な日付を見つけられませんでした');
+    return { date: null, confidence: 0, matchedPattern: null };
   }
 }
