@@ -403,7 +403,7 @@ ${errorData.details ? `\n詳細: ${errorData.details}` : ''}
           
           ocrResult = {
             text: JSON.stringify(extractedData, null, 2),
-            confidence: ocrResponse.confidence || 0,
+            confidence: ocrResponse.confidence || 0.8, // デフォルトは80%
             vendor: extractedData.vendorName || extractedData.merchantName || extractedData.VendorName || file.name.replace(/\.(pdf|png|jpg|jpeg)$/i, ''),
             date: extractedData.invoiceDate || extractedData.transactionDate || extractedData.InvoiceDate || extractedData.TransactionDate || new Date().toISOString().split('T')[0],
             amount: amount,

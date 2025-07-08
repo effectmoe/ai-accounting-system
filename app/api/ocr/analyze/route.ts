@@ -119,6 +119,9 @@ export async function POST(request: NextRequest) {
       }, { status: 500 });
     }
 
+    // 分析結果の詳細をログ出力
+    console.log('Analysis result fields:', JSON.stringify(analysisResult.fields, null, 2));
+    
     // GridFSにファイルを保存
     let fileId: string | null = null;
     try {

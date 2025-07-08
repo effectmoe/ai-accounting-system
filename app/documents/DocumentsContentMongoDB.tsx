@@ -171,6 +171,7 @@ export default function DocumentsContentMongoDB() {
           taxAmount: doc.taxAmount || doc.tax_amount || 0,
           date: doc.documentDate || doc.document_date || new Date().toISOString().split('T')[0],
           documentId: doc._id || doc.id,
+          debitAccount: doc.category, // 元のカテゴリを渡す
           description: `${doc.vendor_name || doc.partner_name || '店舗名不明'} - 領収書`
         })
       });
@@ -222,19 +223,30 @@ export default function DocumentsContentMongoDB() {
     }
 
     try {
+      console.log('Deleting document:', docId);
       const response = await fetch(`/api/documents/${docId}`, {
         method: 'DELETE'
       });
 
+      const responseText = await response.text();
+      console.log('Delete response:', response.status, responseText);
+
       if (!response.ok) {
-        throw new Error('削除に失敗しました');
+        let errorMessage = '削除に失敗しました';
+        try {
+          const errorData = JSON.parse(responseText);
+          errorMessage = errorData.error || errorMessage;
+        } catch (e) {
+          // JSONパースエラーは無視
+        }
+        throw new Error(errorMessage);
       }
 
       toast.success('書類を削除しました');
       fetchDocuments();
     } catch (error) {
       console.error('削除エラー:', error);
-      toast.error('削除に失敗しました');
+      toast.error(error instanceof Error ? error.message : '削除に失敗しました');
     }
   };
 
