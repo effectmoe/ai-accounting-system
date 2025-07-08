@@ -442,7 +442,7 @@ ${errorData.details ? `\n詳細: ${errorData.details}` : ''}
         const journalEntry = await ocrProcessor.createJournalEntry(ocrResult, companyId);
         
         return {
-          content: `${fileTypeLabel}を解析しました。\n\n【解析結果】\n発行者: ${ocrResult.vendor}\n日付: ${ocrResult.date}\n金額: ¥${ocrResult.amount?.toLocaleString()}（税込）\n消費税: ¥${ocrResult.taxAmount?.toLocaleString()}\n信頼度: ${(ocrResult.confidence * 100).toFixed(1)}%\n\n【自動仕訳案】\n借方: ${journalEntry.debitAccount} ${journalEntry.amount}円\n貸方: ${journalEntry.creditAccount} ${journalEntry.amount}円\n摘要: ${journalEntry.description}`,
+          content: `${fileTypeLabel}を解析しました。\n\n【解析結果】\n発行者: ${ocrResult.vendor}\n日付: ${ocrResult.date}\n金額: ¥${ocrResult.amount?.toLocaleString()}（税込）\n消費税: ¥${ocrResult.taxAmount?.toLocaleString()}\n勘定科目: ${journalEntry.debitAccount}\n信頼度: ${(ocrResult.confidence * 100).toFixed(1)}%\n\n【自動仕訳案】\n借方: ${journalEntry.debitAccount} ${journalEntry.amount}円\n貸方: ${journalEntry.creditAccount} ${journalEntry.amount}円\n摘要: ${journalEntry.description}`,
           // actions: [{
           //   label: '仕訳を登録',
           //   action: 'confirm_journal',
