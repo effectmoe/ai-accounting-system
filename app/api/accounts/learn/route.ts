@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { AccountLearningSystem } from '../../../../src/lib/account-learning-system';
+import { AccountLearningSystem } from '@/lib/account-learning-system';
 
 const learningSystem = new AccountLearningSystem();
 

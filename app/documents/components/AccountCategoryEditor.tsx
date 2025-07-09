@@ -82,7 +82,8 @@ export default function AccountCategoryEditor({
           onCategoryUpdate(selectedCategory);
         }
       } else {
-        toast.error('学習に失敗しました');
+        console.error('Learning failed:', data);
+        toast.error(`学習に失敗しました: ${data.error || '不明なエラー'}`);
       }
     } catch (error) {
       console.error('Learning error:', error);

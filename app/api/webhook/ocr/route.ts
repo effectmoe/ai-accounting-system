@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/lib/supabase-singleton';
-import { vercelDb, checkConnection } from '../../../../src/lib/mongodb-client';
+import { vercelDb, checkConnection } from '@/lib/mongodb-client';
 import { ObjectId } from 'mongodb';
 
 // Node.js Runtimeを使用

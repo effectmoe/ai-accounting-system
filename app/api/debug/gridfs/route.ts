@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDatabase } from '../../../../src/lib/mongodb-client';
+import { getDatabase } from '@/lib/mongodb-client';
 import { ObjectId } from 'mongodb';
 
 export async function GET(request: NextRequest) {

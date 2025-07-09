@@ -252,7 +252,7 @@ export class DatabaseService {
       { returnDocument: 'after' }
     );
 
-    return result.value;
+    return result ? result.value : null;
   }
 
   /**
@@ -409,6 +409,10 @@ export const Collections = {
   IMPORT_BATCHES: 'import_batches',
   ITEMS: 'items',
   TAGS: 'tags',
+  // 新規追加
+  CUSTOMERS: 'customers',
+  COMPANY_INFO: 'companyInfo',
+  BANK_ACCOUNTS: 'bankAccounts',
 } as const;
 
 // データベースサービスのシングルトンインスタンス

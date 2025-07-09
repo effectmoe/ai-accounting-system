@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '../../../../src/lib/mongodb-client';
+import { db } from '@/lib/mongodb-client';
 
 export async function GET(request: NextRequest) {
   try {
@@ -24,42 +24,43 @@ export async function GET(request: NextRequest) {
     const skip = (page - 1) * limit;
 
     // 学習データを取得
-    const learnings = await db.findMany('accountLearning', query, {
-      sort: { lastUsed: -1, usageCount: -1 },
+    const learnings = await db.find('accountLearningData', query, {
+      sort: { updatedAt: -1, 'metadata.useCount': -1 },
       skip,
       limit
     });
 
     // 総件数を取得
-    const total = await db.count('accountLearning', query);
+    const total = await db.count('accountLearningData', query);
 
     // 各学習データに統計情報を追加
-    const enrichedLearnings = learnings.map(learning => {
+    const enrichedLearnings = learnings.map((learning: any) => {
       // 信頼度スコアを計算（使用回数に基づく）
-      const confidenceScore = Math.min(0.5 + (learning.usageCount * 0.05), 0.99);
+      const useCount = learning.metadata?.useCount || 0;
+      const confidenceScore = Math.min(0.5 + (useCount * 0.05), 0.99);
       
       return {
         id: learning._id.toString(),
         vendorName: learning.vendorName,
         accountCategory: learning.accountCategory,
         patterns: learning.patterns || [],
-        usageCount: learning.usageCount || 0,
-        lastUsed: learning.lastUsed,
+        usageCount: useCount,
+        lastUsed: learning.metadata?.lastUsedAt || learning.metadata?.learnedAt || learning.createdAt,
         createdAt: learning.createdAt,
         updatedAt: learning.updatedAt,
-        confidenceScore,
+        confidenceScore: learning.confidence || confidenceScore,
         metadata: learning.metadata || {}
       };
     });
 
     // カテゴリ別の統計を集計
-    const categoryStats = await db.aggregate('accountLearning', [
+    const categoryStats = await db.aggregate('accountLearningData', [
       { $match: { companyId } },
       {
         $group: {
           _id: '$accountCategory',
           count: { $sum: 1 },
-          totalUsage: { $sum: '$usageCount' }
+          totalUsage: { $sum: { $ifNull: ['$metadata.useCount', 1] } }
         }
       },
       { $sort: { totalUsage: -1 } }

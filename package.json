@@ -54,7 +54,9 @@
     "setup:vercel-env": "tsx scripts/setup-vercel-env.ts",
     "setup:mongodb": "tsx scripts/mongodb-setup.ts",
     "migrate:supabase-to-mongodb": "tsx scripts/migrate-supabase-to-mongodb.ts",
-    "test:azure-mongodb": "tsx scripts/test-azure-mongodb.ts"
+    "test:azure-mongodb": "tsx scripts/test-azure-mongodb.ts",
+    "db:setup": "tsx scripts/setup-db.ts",
+    "db:setup:with-sample": "tsx scripts/setup-db.ts --sample-data"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.27.3",
@@ -64,7 +66,7 @@
     "@mastra/core": "^0.10.10",
     "@modelcontextprotocol/sdk": "^1.15.0",
     "@octokit/rest": "^22.0.0",
-    "@react-pdf/renderer": "^4.3.0",
+    "@react-pdf/renderer": "^3.1.14",
     "@supabase/supabase-js": "^2.50.3",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
@@ -75,6 +77,8 @@
     "@vercel/analytics": "^1.1.2",
     "autoprefixer": "^10.4.17",
     "chalk": "^5.4.1",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "cors": "^2.8.5",
     "csv-parse": "^5.6.0",
     "date-fns": "^2.30.0",
@@ -98,6 +102,7 @@
     "recharts": "^3.0.2",
     "sharp": "^0.33.2",
     "supabase-mcp": "^1.5.0",
+    "tailwind-merge": "^3.3.1",
     "tailwindcss": "^3.4.1",
     "tailwindcss-animate": "^1.0.7",
     "typescript": "^5.8.3",

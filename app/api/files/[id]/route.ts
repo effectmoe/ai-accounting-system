@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDatabase } from '../../../../src/lib/mongodb-client';
+import { getDatabase } from '@/lib/mongodb-client';
 import { ObjectId, GridFSBucket } from 'mongodb';
 
 interface RouteParams {
@@ -108,78 +108,60 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       length: file.length
     });
     
-    // ストリーミング読み込みをタイムアウト付きで実行
-    const downloadTimeout = 30000; // 30秒タイムアウト
-    const downloadStream = bucket.openDownloadStream(new ObjectId(fileId));
-    const chunks: Uint8Array[] = [];
+    // Determine content type from metadata or file extension
+    let contentType = file.metadata?.mimeType || file.metadata?.contentType || file.contentType || 'application/octet-stream';
     
-    return new Promise<NextResponse>((resolve, reject) => {
-      const timeoutId = setTimeout(() => {
+    // If content type is generic, try to determine from filename
+    if (contentType === 'application/octet-stream' && file.filename) {
+      const ext = file.filename.toLowerCase().split('.').pop();
+      const mimeTypes: Record<string, string> = {
+        'jpg': 'image/jpeg',
+        'jpeg': 'image/jpeg',
+        'png': 'image/png',
+        'gif': 'image/gif',
+        'pdf': 'application/pdf',
+        'doc': 'application/msword',
+        'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      };
+      contentType = mimeTypes[ext] || contentType;
+    }
+    
+    console.log('Serving file with content type:', contentType);
+    
+    // ストリーミングレスポンスを作成
+    const downloadStream = bucket.openDownloadStream(new ObjectId(fileId));
+    
+    // ReadableStreamを作成
+    const stream = new ReadableStream({
+      async start(controller) {
+        downloadStream.on('data', (chunk) => {
+          controller.enqueue(new Uint8Array(chunk));
+        });
+        
+        downloadStream.on('end', () => {
+          console.log('Stream ended successfully');
+          controller.close();
+        });
+        
+        downloadStream.on('error', (error) => {
+          console.error('Stream error:', error);
+          controller.error(error);
+        });
+      },
+      cancel() {
         downloadStream.destroy();
-        
-        if (isBrowserRequest) {
-          resolve(new NextResponse('File download timeout', { status: 504 }));
-        } else {
-          resolve(NextResponse.json({
-            success: false,
-            error: 'File download timeout'
-          }, { status: 504 }));
-        }
-      }, downloadTimeout);
-      
-      downloadStream.on('data', (chunk) => {
-        chunks.push(chunk);
-      });
-      
-      downloadStream.on('error', (error) => {
-        clearTimeout(timeoutId);
-        console.error('Download stream error:', error);
-        
-        if (isBrowserRequest) {
-          resolve(new NextResponse('Failed to download file', { status: 500 }));
-        } else {
-          resolve(NextResponse.json({
-            success: false,
-            error: 'Failed to download file'
-          }, { status: 500 }));
-        }
-      });
-      
-      downloadStream.on('end', () => {
-        clearTimeout(timeoutId);
-        const buffer = Buffer.concat(chunks);
-        console.log('File download completed, buffer size:', buffer.length);
-        
-        // Determine content type from metadata or file extension
-        let contentType = file.metadata?.mimeType || file.metadata?.contentType || file.contentType || 'application/octet-stream';
-        
-        // If content type is generic, try to determine from filename
-        if (contentType === 'application/octet-stream' && file.filename) {
-          const ext = file.filename.toLowerCase().split('.').pop();
-          const mimeTypes: Record<string, string> = {
-            'jpg': 'image/jpeg',
-            'jpeg': 'image/jpeg',
-            'png': 'image/png',
-            'gif': 'image/gif',
-            'pdf': 'application/pdf',
-            'doc': 'application/msword',
-            'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-          };
-          contentType = mimeTypes[ext] || contentType;
-        }
-        
-        console.log('Serving file with content type:', contentType);
-        
-        resolve(new NextResponse(buffer, {
-          status: 200,
-          headers: {
-            'Content-Type': contentType,
-            'Content-Length': buffer.length.toString(),
-            'Content-Disposition': `inline; filename="${file.filename}"`,
-            'Cache-Control': 'public, max-age=3600'
-          }
-        }));
-      });
+      }
+    });
+    
+    return new NextResponse(stream, {
+      status: 200,
+      headers: {
+        'Content-Type': contentType,
+        'Content-Length': file.length.toString(),
+        'Content-Disposition': `inline; filename="${encodeURIComponent(file.filename)}"`,
+        'Cache-Control': 'public, max-age=3600',
+        'X-Content-Type-Options': 'nosniff'
+      }
     });
 
   } catch (error) {

@@ -565,7 +565,7 @@ export default function DocumentsContentMongoDB() {
                     {doc.gridfs_file_id && (
                       <div className="mt-1">
                         <a
-                          href={`/api/files/${doc.gridfs_file_id}`}
+                          href={`/api/files/${doc.gridfs_file_id}/direct`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800"

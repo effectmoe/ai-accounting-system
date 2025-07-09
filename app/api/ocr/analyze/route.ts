@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import orchestrator from '../../../../src/mastra-orchestrator';
-import { getDatabase, DatabaseService } from '../../../../src/lib/mongodb-client';
+import orchestrator from '@/mastra-orchestrator';
+import { getDatabase, DatabaseService } from '@/lib/mongodb-client';
 import { ObjectId } from 'mongodb';
-import { OCRDateExtractor } from '../../../../src/lib/ocr-date-extractor';
+import { OCRDateExtractor } from '@/lib/ocr-date-extractor';
 
 // 金額文字列から数値を抽出する関数
 function extractAmount(value: any): number {

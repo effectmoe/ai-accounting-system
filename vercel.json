@@ -26,6 +26,27 @@
     },
     "app/api/webhook/ocr/route.ts": {
       "maxDuration": 30
+    },
+    "app/api/accounts/learn/route.ts": {
+      "maxDuration": 30
+    },
+    "app/api/accounts/analyze/route.ts": {
+      "maxDuration": 30
+    },
+    "app/api/documents/[id]/route.ts": {
+      "maxDuration": 30
+    },
+    "app/api/files/[id]/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/files/[id]/direct/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/invoices/analyze-chat/route.ts": {
+      "maxDuration": 30
+    },
+    "app/api/invoices/[id]/pdf/route.ts": {
+      "maxDuration": 30
     }
   },
   "public": true,

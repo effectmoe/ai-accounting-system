@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '../../../../src/lib/mongodb-client';
+import { db } from '@/lib/mongodb-client';
 import { ObjectId, GridFSBucket } from 'mongodb';
 
 export async function GET(
@@ -178,6 +178,16 @@ export async function PATCH(
       }, { status: 400 });
     }
 
+    // まずドキュメントが存在するか確認
+    const existingDoc = await db.findById('documents', id);
+    if (!existingDoc) {
+      console.log('Document not found for update:', id);
+      return NextResponse.json({
+        success: false,
+        error: 'Document not found'
+      }, { status: 404 });
+    }
+
     // ドキュメントを更新
     const result = await db.update('documents', id, {
       ...body,
@@ -187,10 +197,20 @@ export async function PATCH(
     console.log('Update result:', result);
 
     if (!result) {
+      // updateが失敗した場合でも、ドキュメントが存在することは確認済みなので
+      // 更新後のドキュメントを取得して返す
+      const updatedDoc = await db.findById('documents', id);
+      if (updatedDoc) {
+        return NextResponse.json({
+          success: true,
+          document: updatedDoc
+        });
+      }
+      
       return NextResponse.json({
         success: false,
-        error: 'Document not found'
-      }, { status: 404 });
+        error: 'Failed to update document'
+      }, { status: 500 });
     }
 
     return NextResponse.json({

@@ -9,12 +9,18 @@ export default function Navigation() {
   const navItems = [
     { href: '/', label: 'AI会計アシスタント' },
     { href: '/documents', label: '書類一覧' },
+    { href: '/customers', label: '顧客管理' },
     { href: '/accounts', label: '勘定科目' },
     { href: '/journal', label: '仕訳帳' },
     { href: '/learning', label: 'AI学習管理' },
     { href: '/import', label: 'データインポート' },
     { href: '/automation', label: '自動化管理' },
     { href: '/mastra-admin', label: 'AAM管理' },
+  ];
+  
+  const settingsItems = [
+    { href: '/settings/company', label: '自社情報' },
+    { href: '/settings/bank-accounts', label: '銀行口座' },
   ];
   
   return (
@@ -45,6 +51,34 @@ export default function Navigation() {
                     </Link>
                   );
                 })}
+                <div className="relative group">
+                  <button
+                    className={`px-3 py-2 rounded-md text-sm font-medium ${
+                      pathname.startsWith('/settings')
+                        ? 'bg-gray-900 text-white'
+                        : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                    }`}
+                  >
+                    設定
+                  </button>
+                  <div className="absolute z-10 hidden group-hover:block w-48 mt-2 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5">
+                    <div className="py-1">
+                      {settingsItems.map((item) => (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          className={`block px-4 py-2 text-sm ${
+                            pathname === item.href
+                              ? 'bg-gray-100 text-gray-900'
+                              : 'text-gray-700 hover:bg-gray-100'
+                          }`}
+                        >
+                          {item.label}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
