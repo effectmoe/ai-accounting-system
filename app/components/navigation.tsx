@@ -10,6 +10,7 @@ export default function Navigation() {
     { href: '/', label: 'AI会計アシスタント' },
     { href: '/documents', label: '書類一覧' },
     { href: '/customers', label: '顧客管理' },
+    { href: '/products', label: '商品管理' },
     { href: '/invoices', label: '請求書' },
     { href: '/accounts', label: '勘定科目' },
     { href: '/journal', label: '仕訳帳' },

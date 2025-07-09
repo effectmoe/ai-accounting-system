@@ -246,4 +246,31 @@ export interface CollectionTypes {
   companyInfo: CompanyInfo;
   bankAccounts: BankAccount;
   invoices: Invoice;
+  products: Product;
+}
+
+// 商品管理（productsコレクション）
+export interface Product extends BaseDocument {
+  // 基本情報
+  productName: string; // 商品名
+  productCode: string; // 商品コード（重複不可）
+  description?: string; // 商品説明
+  
+  // 価格・税率
+  unitPrice: number; // 単価
+  taxRate: number; // 税率（0.08, 0.10など）
+  
+  // 分類
+  category: string; // カテゴリ
+  
+  // 在庫
+  stockQuantity: number; // 在庫数
+  unit: string; // 単位（個、箱、本、台など）
+  
+  // 設定
+  isActive: boolean; // 有効フラグ
+  
+  // その他
+  notes?: string; // 備考
+  tags?: string[]; // タグ
 }
