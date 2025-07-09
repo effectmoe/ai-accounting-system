@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '../../../../src/lib/mongodb-client';
+import { getDatabase } from '../../../../src/lib/mongodb-client';
 import { ObjectId, GridFSBucket } from 'mongodb';
 
 interface RouteParams {
@@ -19,7 +19,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       }, { status: 400 });
     }
 
-    const bucket = new GridFSBucket(db.getDb(), { bucketName: 'uploads' });
+    const db = await getDatabase();
+    const bucket = new GridFSBucket(db, { bucketName: 'uploads' });
     
     // ファイルメタデータを取得
     const files = await bucket.find({ _id: new ObjectId(fileId) }).toArray();

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import orchestrator from '../../../../src/mastra-orchestrator';
-import { vercelDb, checkConnection } from '../../../../src/lib/mongodb-client';
+import { getDatabase, DatabaseService } from '../../../../src/lib/mongodb-client';
 import { ObjectId } from 'mongodb';
 import { OCRDateExtractor } from '../../../../src/lib/ocr-date-extractor';
 
@@ -24,10 +24,8 @@ export async function POST(request: NextRequest) {
     // MongoDB接続確認（Vercel環境対応）
     try {
       console.log('MongoDB接続確認中... (Vercel環境)');
-      const connectionStatus = await checkConnection();
-      if (!connectionStatus) {
-        throw new Error('MongoDB connection check failed');
-      }
+      const db = await getDatabase();
+      await db.admin().ping();
       console.log('MongoDB接続確認完了 (Vercel環境)');
     } catch (error) {
       console.error('MongoDB接続に失敗しました:', error);
@@ -125,7 +123,8 @@ export async function POST(request: NextRequest) {
       console.log('OCR結果をMongoDBに保存中...', JSON.stringify(ocrResult, null, 2));
       
       // Vercel環境対応の安全な実行
-      savedOcrResult = await vercelDb.create('ocr_results', ocrResult);
+      const dbService = DatabaseService.getInstance();
+      savedOcrResult = await dbService.create('ocr_results', ocrResult);
       
       ocrResultId = savedOcrResult._id.toString();
       console.log('OCR結果をMongoDBに保存しました:', ocrResultId);
@@ -237,16 +236,37 @@ export async function POST(request: NextRequest) {
       // より詳細なベンダー名をOCRテキストから抽出
       const vendorPatterns = [
         /タイムズ24株式会社/g,
-        /タイムズ.*?(?=\n|$)/g,
-        /株式会社.*?(?=\n|$)/g,
-        /[^\\n]*株式会社[^\\n]*/g
+        /タイムズ福岡/g,
+        /タイムズ.*?(?=\n|,|"|$)/g,
+        /株式会社.*?(?=\n|,|"|$)/g,
+        /[^\\n"]*株式会社[^\\n"]*/g
       ];
       
+      // OCRテキストから直接抽出を試行
+      const cleanedText = extractedText.replace(/[\\"\{\}]/g, ' ').replace(/\s+/g, ' ');
+      
       for (const pattern of vendorPatterns) {
-        const matches = extractedText.match(pattern);
-        if (matches && matches[0].length > vendorName.length) {
-          vendorName = matches[0].replace(/[\"\\]/g, '').trim();
+        const matches = cleanedText.match(pattern);
+        if (matches && matches[0].trim().length > vendorName.length) {
+          vendorName = matches[0].trim();
           break;
+        }
+      }
+      
+      // merchantNameフィールドからも抽出を試行
+      if (analysisResult.fields?.merchantName && typeof analysisResult.fields.merchantName === 'string') {
+        if (analysisResult.fields.merchantName.length > vendorName.length) {
+          vendorName = analysisResult.fields.merchantName;
+        }
+      }
+      
+      // 最終的にJSONのようなデータが混入していた場合はクリーンアップ
+      if (vendorName.includes('merchantPhoneNumber') || vendorName.includes('transactionDate')) {
+        // フォールバック：ファイル名から推測
+        if (file.name.toLowerCase().includes('times') || file.name.toLowerCase().includes('タイムズ')) {
+          vendorName = 'タイムズ';
+        } else {
+          vendorName = file.name.replace(/\.(pdf|png|jpg|jpeg)$/i, '');
         }
       }
       
@@ -375,7 +395,7 @@ export async function POST(request: NextRequest) {
       let savedDocument;
       try {
         // Vercel環境対応の安全な実行
-        savedDocument = await vercelDb.create('documents', documentData);
+        savedDocument = await dbService.create('documents', documentData);
         console.log('Document saved to MongoDB:', savedDocument._id.toString());
       } catch (mongoError) {
         console.error('MongoDB documents保存エラー:', mongoError);
