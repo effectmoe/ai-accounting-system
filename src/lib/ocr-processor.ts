@@ -384,15 +384,42 @@ export class OCRProcessor {
     // 学習データがない場合はルールベースで判定
     if (ocrResult.vendor) {
       const vendor = ocrResult.vendor.toLowerCase();
+      // 駐車場・交通関連
       if (vendor.includes('タクシー') || vendor.includes('taxi') || 
-          vendor.includes('駐車場') || vendor.includes('パーキング') || vendor.includes('parking')) {
+          vendor.includes('駐車場') || vendor.includes('パーキング') || vendor.includes('parking') ||
+          vendor.includes('times') || vendor.includes('タイムズ') || 
+          vendor.includes('コインパーキング') || vendor.includes('月極') ||
+          vendor.includes('jr') || vendor.includes('鉄道') || vendor.includes('バス') ||
+          vendor.includes('高速道路') || vendor.includes('etc') || vendor.includes('ガソリン')) {
         debitAccount = '旅費交通費';
-      } else if (vendor.includes('コーヒー') || vendor.includes('カフェ') || vendor.includes('coffee')) {
+      } 
+      // 会議・カフェ関連
+      else if (vendor.includes('コーヒー') || vendor.includes('カフェ') || vendor.includes('coffee') ||
+               vendor.includes('スターバックス') || vendor.includes('ドトール') || 
+               vendor.includes('タリーズ') || vendor.includes('喫茶')) {
         debitAccount = '会議費';
-      } else if (vendor.includes('レストラン') || vendor.includes('restaurant') || vendor.includes('食堂')) {
+      } 
+      // 飲食・接待関連
+      else if (vendor.includes('レストラン') || vendor.includes('restaurant') || 
+               vendor.includes('食堂') || vendor.includes('居酒屋') || vendor.includes('寿司') ||
+               vendor.includes('焼肉') || vendor.includes('中華') || vendor.includes('イタリアン') ||
+               vendor.includes('フレンチ') || vendor.includes('和食')) {
         debitAccount = '接待交際費';
-      } else if (vendor.includes('コンビニ') || vendor.includes('ローソン') || vendor.includes('セブン') || vendor.includes('ファミリーマート')) {
+      } 
+      // コンビニ・日用品関連
+      else if (vendor.includes('コンビニ') || vendor.includes('ローソン') || 
+               vendor.includes('セブン') || vendor.includes('ファミリーマート') ||
+               vendor.includes('ミニストップ') || vendor.includes('デイリー')) {
         debitAccount = '消耗品費';
+      }
+      // 事務用品・文具関連
+      else if (vendor.includes('文具') || vendor.includes('事務') || 
+               vendor.includes('コクヨ') || vendor.includes('アスクル')) {
+        debitAccount = '事務用品費';
+      }
+      // その他の一般的な経費はデフォルトで消耗品費に
+      else {
+        debitAccount = '消耗品費'; // デフォルトを接待交際費から消耗品費に変更
       }
     }
     
