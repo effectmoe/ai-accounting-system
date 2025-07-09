@@ -96,6 +96,52 @@ export class CompanyInfoService {
   }
 
   /**
+   * デフォルトの会社情報を取得（APIエンドポイント用）
+   */
+  async getCompanyInfo(): Promise<CompanyInfo | null> {
+    return await this.getDefaultCompanyInfo();
+  }
+
+  /**
+   * 会社情報を作成または更新
+   */
+  async upsertCompanyInfo(data: {
+    companyName: string;
+    postalCode: string;
+    address: string;
+    phone?: string | null;
+    email?: string | null;
+    registrationNumber?: string | null;
+    invoiceNumberFormat?: string | null;
+  }): Promise<CompanyInfo> {
+    const existing = await this.getDefaultCompanyInfo();
+    
+    const companyData: Omit<CompanyInfo, '_id' | 'createdAt' | 'updatedAt'> = {
+      companyName: data.companyName,
+      postalCode: data.postalCode,
+      // 住所を単一フィールドから分割
+      prefecture: data.address.split(' ')[0] || '',
+      city: data.address.split(' ')[1] || '',
+      address1: data.address.split(' ').slice(2).join(' ') || '',
+      address2: '',
+      phone: data.phone || '',
+      fax: '',
+      email: data.email || '',
+      registrationNumber: data.registrationNumber,
+      invoiceNumberFormat: data.invoiceNumberFormat,
+      isDefault: true,
+    };
+    
+    if (existing) {
+      // 更新
+      return await this.updateCompanyInfo(existing._id!.toString(), companyData) as CompanyInfo;
+    } else {
+      // 新規作成
+      return await this.createCompanyInfo(companyData);
+    }
+  }
+
+  /**
    * ロゴ画像URLを更新
    */
   async updateLogoUrl(id: string, logoUrl: string | null): Promise<CompanyInfo | null> {

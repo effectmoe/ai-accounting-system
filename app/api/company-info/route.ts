@@ -15,9 +15,21 @@ export async function GET(request: NextRequest) {
       });
     }
 
+    // フロントエンドが期待する形式に変換
+    const formattedInfo = companyInfo ? {
+      ...companyInfo,
+      name: companyInfo.companyName,
+      postal_code: companyInfo.postalCode,
+      address: `${companyInfo.prefecture || ''} ${companyInfo.city || ''} ${companyInfo.address1 || ''}`.trim(),
+      phone_number: companyInfo.phone,
+      email: companyInfo.email,
+      tax_number: companyInfo.registrationNumber,
+      invoice_prefix: companyInfo.invoiceNumberFormat,
+    } : null;
+
     return NextResponse.json({
       success: true,
-      company_info: companyInfo,
+      companyInfo: formattedInfo,
     });
   } catch (error) {
     console.error('Error fetching company info:', error);
@@ -73,9 +85,21 @@ export async function POST(request: NextRequest) {
       invoiceNumberFormat: body.invoice_number_format || null,
     });
 
+    // フロントエンドが期待する形式に変換
+    const formattedInfo = {
+      ...companyInfo,
+      name: companyInfo.companyName,
+      postal_code: companyInfo.postalCode,
+      address: `${companyInfo.prefecture || ''} ${companyInfo.city || ''} ${companyInfo.address1 || ''}`.trim(),
+      phone_number: companyInfo.phone,
+      email: companyInfo.email,
+      tax_number: companyInfo.registrationNumber,
+      invoice_prefix: companyInfo.invoiceNumberFormat,
+    };
+
     return NextResponse.json({
       success: true,
-      company_info: companyInfo,
+      company_info: formattedInfo,
       message: '会社情報を保存しました',
     });
   } catch (error) {
@@ -96,15 +120,40 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const companyInfoService = new CompanyInfoService();
 
-    // 会社情報を更新
-    const companyInfo = await companyInfoService.updateCompanyInfo({
-      companyName: body.company_name,
+    // バリデーション
+    const requiredFields = ['name', 'postal_code', 'address'];
+    for (const field of requiredFields) {
+      if (!body[field]) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: `${field}は必須です`,
+          },
+          { status: 400 }
+        );
+      }
+    }
+
+    // 郵便番号のバリデーション
+    if (!/^\d{3}-?\d{4}$/.test(body.postal_code)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: '郵便番号の形式が無効です（例: 123-4567）',
+        },
+        { status: 400 }
+      );
+    }
+
+    // 会社情報を更新または作成
+    const companyInfo = await companyInfoService.upsertCompanyInfo({
+      companyName: body.name,
       postalCode: body.postal_code,
       address: body.address,
-      phone: body.phone,
-      email: body.email,
-      registrationNumber: body.registration_number,
-      invoiceNumberFormat: body.invoice_number_format,
+      phone: body.phone_number || null,
+      email: body.email || null,
+      registrationNumber: body.tax_number || null,
+      invoiceNumberFormat: body.invoice_prefix || null,
     });
 
     if (!companyInfo) {
@@ -117,9 +166,21 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    // フロントエンドが期待する形式に変換
+    const formattedInfo = {
+      ...companyInfo,
+      name: companyInfo.companyName,
+      postal_code: companyInfo.postalCode,
+      address: `${companyInfo.prefecture || ''} ${companyInfo.city || ''} ${companyInfo.address1 || ''}`.trim(),
+      phone_number: companyInfo.phone,
+      email: companyInfo.email,
+      tax_number: companyInfo.registrationNumber,
+      invoice_prefix: companyInfo.invoiceNumberFormat,
+    };
+
     return NextResponse.json({
       success: true,
-      company_info: companyInfo,
+      company_info: formattedInfo,
       message: '会社情報を更新しました',
     });
   } catch (error) {
