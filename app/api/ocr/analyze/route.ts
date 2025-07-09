@@ -395,6 +395,7 @@ export async function POST(request: NextRequest) {
       let savedDocument;
       try {
         // Vercel環境対応の安全な実行
+        const dbService = DatabaseService.getInstance();
         savedDocument = await dbService.create('documents', documentData);
         console.log('Document saved to MongoDB:', savedDocument._id.toString());
       } catch (mongoError) {
