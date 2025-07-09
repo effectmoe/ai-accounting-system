@@ -23,13 +23,19 @@ export async function POST(request: NextRequest) {
       // MongoDB接続確認
       let mongoConnected = false;
       try {
+        console.log('Checking MongoDB connection...');
+        console.log('MONGODB_URI exists:', !!process.env.MONGODB_URI);
+        console.log('NODE_ENV:', process.env.NODE_ENV);
+        
         mongoConnected = await checkConnection();
       } catch (connectionError) {
         console.error('MongoDB接続チェックエラー:', connectionError);
+        console.error('Error stack:', connectionError instanceof Error ? connectionError.stack : 'No stack trace');
         return NextResponse.json({
           success: false,
           error: 'データベース接続チェックエラー',
-          details: connectionError instanceof Error ? connectionError.message : 'Unknown connection error'
+          details: connectionError instanceof Error ? connectionError.message : 'Unknown connection error',
+          stack: connectionError instanceof Error ? connectionError.stack : undefined
         }, { status: 500 });
       }
       

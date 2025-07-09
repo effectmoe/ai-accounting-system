@@ -10,8 +10,15 @@ let client: MongoClient;
 
 // MongoDB URIを動的に取得する関数
 function getMongoDBUri(): string {
-  const uri = process.env.MONGODB_URI;
+  const uri = process.env.MONGODB_URI || process.env.NEXT_PUBLIC_MONGODB_URI;
   if (!uri) {
+    console.error('Environment variables:', {
+      MONGODB_URI: !!process.env.MONGODB_URI,
+      NEXT_PUBLIC_MONGODB_URI: !!process.env.NEXT_PUBLIC_MONGODB_URI,
+      NODE_ENV: process.env.NODE_ENV,
+      VERCEL: process.env.VERCEL,
+      VERCEL_ENV: process.env.VERCEL_ENV
+    });
     throw new Error('MONGODB_URI is not defined in environment variables');
   }
   return uri;
@@ -55,9 +62,21 @@ function getClientPromise(): Promise<MongoClient> {
       .then(async (connectedClient) => {
         console.log('MongoDB client connected successfully');
         
+        // クライアントがnullでないことを確認
+        if (!connectedClient) {
+          throw new Error('Connected client is null - this should never happen');
+        }
+        
+        // グローバル変数にクライアントを保存
+        client = connectedClient;
+        
         // 接続直後に一度pingを実行して確認
         try {
-          await connectedClient.db(DB_NAME).admin().ping();
+          const testDb = connectedClient.db(DB_NAME);
+          if (!testDb) {
+            throw new Error(`Database ${DB_NAME} is null after connection`);
+          }
+          await testDb.admin().ping();
           console.log('MongoDB connection verified with ping');
         } catch (pingError) {
           console.error('Initial ping failed:', pingError);
@@ -105,14 +124,23 @@ export async function getDatabase(): Promise<Db> {
   for (let i = 0; i < maxRetries; i++) {
     try {
       // 接続を取得
-      const client = await getClientPromise();
-      if (!client) {
+      console.log(`Getting client promise (attempt ${i + 1})...`);
+      const clientFromPromise = await getClientPromise();
+      
+      // NULLチェックを強化
+      if (!clientFromPromise) {
+        console.error('Client from promise is null!');
         throw new Error('MongoDB client is null after connection');
       }
       
+      // clientオブジェクトのプロパティを確認
+      console.log('Client object type:', typeof clientFromPromise);
+      console.log('Client constructor name:', clientFromPromise?.constructor?.name);
+      
       // データベースインスタンスを取得
-      const db = client.db(DB_NAME);
+      const db = clientFromPromise.db(DB_NAME);
       if (!db) {
+        console.error('Database instance is null!');
         throw new Error('Database instance is null');
       }
       
@@ -434,13 +462,22 @@ export async function checkConnection(): Promise<boolean> {
     try {
       console.log(`MongoDB connection check (attempt ${attempt + 1}/${maxRetries})...`);
       
-      const client = await getClientPromise();
-      if (!client) {
+      // 環境変数を再確認
+      const mongoUri = process.env.MONGODB_URI;
+      if (!mongoUri) {
+        console.error('MONGODB_URI is not defined!');
+        throw new Error('MONGODB_URI environment variable is missing');
+      }
+      console.log('MONGODB_URI is defined (length:', mongoUri.length, ')');
+      
+      const clientFromPromise = await getClientPromise();
+      if (!clientFromPromise) {
         console.error('MongoDB client is null during connection check');
         throw new Error('Client is null');
       }
       
-      const db = client.db(DB_NAME);
+      console.log('Got client, checking database...');
+      const db = clientFromPromise.db(DB_NAME);
       if (!db) {
         console.error('Database instance is null during connection check');
         throw new Error('Database instance is null');
