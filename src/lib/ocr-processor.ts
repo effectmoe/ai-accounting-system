@@ -359,67 +359,80 @@ export class OCRProcessor {
     const description = `${ocrResult.vendor || '店舗名不明'} - ${ocrResult.items?.map(i => i.name).join(', ') || ''}`;
     
     // デフォルトの勘定科目を判定
-    let debitAccount = '接待交際費'; // デフォルト
+    let debitAccount = '消耗品費'; // デフォルト
     let taxRate = 0.10; // デフォルト10%
+    let aiReasoning = '';
     
-    // サーバーサイドでのみ学習システムから予測を試みる
-    if (typeof window === 'undefined') {
-      try {
-        const { AccountLearningSystem } = await import('./account-learning-system');
-        const learningSystem = new AccountLearningSystem();
+    // AIベースの勘定科目分類システムを使用
+    try {
+      const { AccountCategoryAI } = await import('./account-category-ai');
+      const categoryAI = new AccountCategoryAI();
+      
+      // AIによる高度な分析を実行
+      const prediction = await categoryAI.predictAccountCategory(ocrResult, accountId);
+      
+      if (prediction && prediction.confidence >= 0.6) {
+        debitAccount = prediction.category;
+        aiReasoning = prediction.reasoning;
         
-        const prediction = await learningSystem.predictAccountCategory(
-          accountId,
-          ocrResult.vendor || ''
-        );
-        
-        if (prediction && prediction.confidence >= 0.7) {
-          debitAccount = prediction.category;
+        // 税務関連のメモがあれば保存
+        if (prediction.taxNotes) {
+          console.log('Tax notes:', prediction.taxNotes);
         }
-      } catch (error) {
-        console.log('Learning system prediction failed, using rule-based system');
+        
+        // 使用したソースを記録
+        if (prediction.sources && prediction.sources.length > 0) {
+          console.log('Sources used:', prediction.sources.join(', '));
+        }
       }
-    }
-    
-    // 学習データがない場合はルールベースで判定
-    if (ocrResult.vendor) {
-      const vendor = ocrResult.vendor.toLowerCase();
-      // 駐車場・交通関連
-      if (vendor.includes('タクシー') || vendor.includes('taxi') || 
-          vendor.includes('駐車場') || vendor.includes('パーキング') || vendor.includes('parking') ||
-          vendor.includes('times') || vendor.includes('タイムズ') || 
-          vendor.includes('コインパーキング') || vendor.includes('月極') ||
-          vendor.includes('jr') || vendor.includes('鉄道') || vendor.includes('バス') ||
-          vendor.includes('高速道路') || vendor.includes('etc') || vendor.includes('ガソリン')) {
-        debitAccount = '旅費交通費';
-      } 
-      // 会議・カフェ関連
-      else if (vendor.includes('コーヒー') || vendor.includes('カフェ') || vendor.includes('coffee') ||
-               vendor.includes('スターバックス') || vendor.includes('ドトール') || 
-               vendor.includes('タリーズ') || vendor.includes('喫茶')) {
-        debitAccount = '会議費';
-      } 
-      // 飲食・接待関連
-      else if (vendor.includes('レストラン') || vendor.includes('restaurant') || 
-               vendor.includes('食堂') || vendor.includes('居酒屋') || vendor.includes('寿司') ||
-               vendor.includes('焼肉') || vendor.includes('中華') || vendor.includes('イタリアン') ||
-               vendor.includes('フレンチ') || vendor.includes('和食')) {
-        debitAccount = '接待交際費';
-      } 
-      // コンビニ・日用品関連
-      else if (vendor.includes('コンビニ') || vendor.includes('ローソン') || 
-               vendor.includes('セブン') || vendor.includes('ファミリーマート') ||
-               vendor.includes('ミニストップ') || vendor.includes('デイリー')) {
-        debitAccount = '消耗品費';
-      }
-      // 事務用品・文具関連
-      else if (vendor.includes('文具') || vendor.includes('事務') || 
-               vendor.includes('コクヨ') || vendor.includes('アスクル')) {
-        debitAccount = '事務用品費';
-      }
-      // その他の一般的な経費はデフォルトで消耗品費に
-      else {
-        debitAccount = '消耗品費'; // デフォルトを接待交際費から消耗品費に変更
+    } catch (error) {
+      console.error('AI category prediction failed:', error);
+      
+      // フォールバック: 従来のキーワードベースの判定
+      if (ocrResult.vendor) {
+        const vendor = ocrResult.vendor.toLowerCase();
+        
+        // より詳細なパターンマッチング
+        const text = ocrResult.text.toLowerCase();
+        
+        // 駐車場の高度な判定
+        if (vendor.includes('times') || vendor.includes('タイムズ') || 
+            vendor.includes('パーキング') || vendor.includes('駐車場') ||
+            (text.includes('入庫') && text.includes('出庫')) ||
+            (text.includes('駐車時間') && text.includes('駐車料金'))) {
+          debitAccount = '旅費交通費';
+          aiReasoning = '駐車場利用の特徴を検出（フォールバック処理）';
+        }
+        // その他の交通費
+        else if (vendor.includes('タクシー') || vendor.includes('taxi') || 
+                vendor.includes('jr') || vendor.includes('鉄道') || vendor.includes('バス') ||
+                vendor.includes('高速道路') || vendor.includes('etc') || vendor.includes('ガソリン')) {
+          debitAccount = '旅費交通費';
+        } 
+        // 会議・カフェ関連
+        else if (vendor.includes('コーヒー') || vendor.includes('カフェ') || vendor.includes('coffee') ||
+                 vendor.includes('スターバックス') || vendor.includes('ドトール') || 
+                 vendor.includes('タリーズ') || vendor.includes('喫茶')) {
+          debitAccount = '会議費';
+        } 
+        // 飲食・接待関連
+        else if (vendor.includes('レストラン') || vendor.includes('restaurant') || 
+                 vendor.includes('食堂') || vendor.includes('居酒屋') || vendor.includes('寿司') ||
+                 vendor.includes('焼肉') || vendor.includes('中華') || vendor.includes('イタリアン') ||
+                 vendor.includes('フレンチ') || vendor.includes('和食')) {
+          debitAccount = '接待交際費';
+        } 
+        // コンビニ・日用品関連
+        else if (vendor.includes('コンビニ') || vendor.includes('ローソン') || 
+                 vendor.includes('セブン') || vendor.includes('ファミリーマート') ||
+                 vendor.includes('ミニストップ') || vendor.includes('デイリー')) {
+          debitAccount = '消耗品費';
+        }
+        // 事務用品・文具関連
+        else if (vendor.includes('文具') || vendor.includes('事務') || 
+                 vendor.includes('コクヨ') || vendor.includes('アスクル')) {
+          debitAccount = '事務用品費';
+        }
       }
     }
     
