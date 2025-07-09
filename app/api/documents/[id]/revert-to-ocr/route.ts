@@ -32,13 +32,24 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     // 3. 元のOCRドキュメントを復元（hiddenFromListフラグを削除）
     if (sourceDocumentId) {
-      await db.update('documents', sourceDocumentId, {
+      // sourceDocumentIdをObjectIdに変換
+      const sourceObjectId = ObjectId.isValid(sourceDocumentId) 
+        ? new ObjectId(sourceDocumentId) 
+        : sourceDocumentId;
+      
+      console.log('Converting sourceDocumentId:', {
+        original: sourceDocumentId,
+        converted: sourceObjectId,
+        isValid: ObjectId.isValid(sourceDocumentId)
+      });
+      
+      await db.update('documents', sourceObjectId, {
         status: 'pending',
         journalId: null,
         hiddenFromList: false,
         updatedAt: new Date()
       });
-      console.log('Restored original OCR document:', sourceDocumentId);
+      console.log('Restored original OCR document:', sourceObjectId);
     }
 
     return NextResponse.json({

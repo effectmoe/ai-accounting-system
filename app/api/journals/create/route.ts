@@ -153,6 +153,16 @@ export async function POST(request: NextRequest) {
 
     await db.create('documents', journalDocument);
 
+    // 4. 元のOCRドキュメントを非表示にする（OCRリストから削除）
+    if (documentId) {
+      await db.update('documents', new ObjectId(documentId), {
+        hiddenFromList: true,
+        journalId: savedJournal._id,
+        updatedAt: new Date()
+      });
+      console.log('Hidden original OCR document:', documentId);
+    }
+
     return NextResponse.json({
       success: true,
       journal: {

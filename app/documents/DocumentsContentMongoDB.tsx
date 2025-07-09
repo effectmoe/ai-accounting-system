@@ -283,7 +283,7 @@ export default function DocumentsContentMongoDB() {
       console.log('Reverting to OCR:', {
         documentId: doc.id,
         journalId: doc.journalId,
-        sourceDocumentId: doc.sourceDocumentId
+        sourceDocumentId: doc.sourceDocumentId || doc.source_document_id
       });
 
       const response = await fetch(`/api/documents/${doc.id}/revert-to-ocr`, {
@@ -291,7 +291,7 @@ export default function DocumentsContentMongoDB() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           journalId: doc.journalId,
-          sourceDocumentId: doc.sourceDocumentId
+          sourceDocumentId: doc.sourceDocumentId || doc.source_document_id
         })
       });
 
@@ -318,10 +318,11 @@ export default function DocumentsContentMongoDB() {
   const filteredDocuments = documents.filter(doc => {
     if (activeTab === 'ocr') {
       // OCRで処理されたが、まだ文書化されていないドキュメント
-      // journalIdがないものが未処理
+      // journalIdがないものが未処理で、hiddenFromListがfalseまたは未設定のもの
       return doc.ocr_status === 'completed' && 
              doc.document_type !== 'journal_entry' && 
-             !doc.journalId;
+             !doc.journalId &&
+             !doc.hiddenFromList;
     } else if (activeTab === 'created') {
       // 仕訳伝票、または文書化済み（journalIdを持つ）ドキュメント
       return doc.document_type === 'journal_entry' || 
