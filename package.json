@@ -91,7 +91,6 @@
     "lucide-react": "^0.525.0",
     "mongodb": "^6.3.0",
     "next": "14.1.0",
-    "node-fetch": "^3.3.2",
     "openai": "^4.58.0",
     "pdf2pic": "^3.2.0",
     "postcss": "^8.4.35",
@@ -120,6 +119,7 @@
     "eslint": "^8.56.0",
     "eslint-config-next": "14.1.0",
     "form-data": "^4.0.3",
+    "node-fetch": "^2.7.0",
     "null-loader": "^4.0.1",
     "tsx": "^4.7.0",
     "vitest": "^1.2.2"

@@ -19,6 +19,7 @@ export async function GET(request: NextRequest) {
     if (search) {
       query.$or = [
         { name: { $regex: search, $options: 'i' } },
+        { companyName: { $regex: search, $options: 'i' } },
         { email: { $regex: search, $options: 'i' } },
         { company: { $regex: search, $options: 'i' } },
       ];
@@ -35,14 +36,16 @@ export async function GET(request: NextRequest) {
       .limit(limit)
       .toArray();
 
-    // MongoDBの_idをidに変換
+    // MongoDBの_idをidに変換、フィールド名を統一
     const formattedCustomers = customers.map(customer => ({
+      _id: customer._id.toString(),
       id: customer._id.toString(),
-      name: customer.name,
+      companyName: customer.companyName || customer.name || customer.company || '',
+      name: customer.name || customer.companyName || '',
       email: customer.email,
       phone: customer.phone || null,
       address: customer.address || null,
-      company: customer.company || null,
+      company: customer.company || customer.companyName || null,
       notes: customer.notes || null,
       created_at: customer.created_at,
       updated_at: customer.updated_at,
@@ -68,10 +71,11 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, email, phone, address, company, notes } = body;
+    const { name, companyName, email, phone, address, company, notes } = body;
 
     // 必須フィールドのチェック
-    if (!name || !email) {
+    const customerName = companyName || name;
+    if (!customerName || !email) {
       return NextResponse.json(
         { success: false, error: '顧客名とメールアドレスは必須です' },
         { status: 400 }
@@ -102,11 +106,12 @@ export async function POST(request: NextRequest) {
     // 新規顧客データの作成
     const now = new Date();
     const newCustomer = {
-      name,
+      name: name || companyName,
+      companyName: companyName || name,
       email,
       phone: phone || null,
       address: address || null,
-      company: company || null,
+      company: company || companyName || null,
       notes: notes || null,
       created_at: now,
       updated_at: now,
@@ -117,10 +122,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      customer: {
-        id: result.insertedId.toString(),
-        ...newCustomer,
-      },
+      _id: result.insertedId.toString(),
+      id: result.insertedId.toString(),
+      ...newCustomer,
     });
   } catch (error) {
     console.error('Error creating customer:', error);

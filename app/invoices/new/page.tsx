@@ -24,7 +24,8 @@ interface InvoiceItem {
 
 interface Customer {
   _id: string;
-  companyName: string;
+  companyName?: string;
+  name?: string;
 }
 
 export default function NewInvoicePage() {
@@ -67,10 +68,23 @@ export default function NewInvoicePage() {
       const response = await fetch('/api/customers');
       if (response.ok) {
         const data = await response.json();
-        setCustomers(data.customers || []);
+        console.log('Fetched customers:', data);
+        // データ構造に応じて顧客リストを設定
+        if (data.customers && Array.isArray(data.customers)) {
+          setCustomers(data.customers);
+        } else if (Array.isArray(data)) {
+          setCustomers(data);
+        } else {
+          console.error('Unexpected customer data format:', data);
+          setError('顧客データの取得に失敗しました');
+        }
+      } else {
+        console.error('Failed to fetch customers:', response.status);
+        setError('顧客データの取得に失敗しました');
       }
     } catch (error) {
       console.error('Failed to fetch customers:', error);
+      setError('顧客データの取得に失敗しました');
     }
   };
 
@@ -320,11 +334,17 @@ export default function NewInvoicePage() {
                     <SelectValue placeholder="既存顧客から選択" />
                   </SelectTrigger>
                   <SelectContent>
-                    {customers.map((customer) => (
-                      <SelectItem key={customer._id} value={customer._id}>
-                        {customer.companyName}
+                    {customers.length === 0 ? (
+                      <SelectItem value="" disabled>
+                        顧客が登録されていません
                       </SelectItem>
-                    ))}
+                    ) : (
+                      customers.map((customer) => (
+                        <SelectItem key={customer._id} value={customer._id}>
+                          {customer.companyName || customer.name || '名称未設定'}
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
               </div>
