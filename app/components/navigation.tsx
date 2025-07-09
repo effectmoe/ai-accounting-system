@@ -10,6 +10,7 @@ export default function Navigation() {
     { href: '/', label: 'AI会計アシスタント' },
     { href: '/documents', label: '書類一覧' },
     { href: '/customers', label: '顧客管理' },
+    { href: '/invoices', label: '請求書' },
     { href: '/accounts', label: '勘定科目' },
     { href: '/journal', label: '仕訳帳' },
     { href: '/learning', label: 'AI学習管理' },
@@ -57,11 +58,11 @@ export default function Navigation() {
                       pathname.startsWith('/settings')
                         ? 'bg-gray-900 text-white'
                         : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-                    }`}
+                    } focus:outline-none`}
                   >
                     設定
                   </button>
-                  <div className="absolute z-10 hidden group-hover:block w-48 mt-2 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5">
+                  <div className="absolute right-0 z-50 hidden group-hover:block w-48 mt-1 origin-top-right bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
                     <div className="py-1">
                       {settingsItems.map((item) => (
                         <Link
