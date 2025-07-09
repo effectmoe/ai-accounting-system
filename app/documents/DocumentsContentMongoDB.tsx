@@ -97,6 +97,8 @@ export default function DocumentsContentMongoDB() {
         console.log('Fetched documents:', data.documents);
         if (data.documents.length > 0) {
           console.log('First document sample:', data.documents[0]);
+          console.log('vendor_name value:', data.documents[0].vendor_name);
+          console.log('gridfs_file_id value:', data.documents[0].gridfs_file_id);
         }
         setDocuments(data.documents);
       } else {
@@ -374,7 +376,17 @@ export default function DocumentsContentMongoDB() {
                 <div className="ml-8">
                   <div className="flex justify-between items-start mb-2">
                     <h3 className="font-semibold text-lg">
-                      {doc.vendor_name || doc.partner_name || doc.file_name || 'Unknown'}
+                      {(() => {
+                        const displayName = doc.vendor_name || doc.partner_name || doc.file_name || 'Unknown';
+                        console.log('Document display name:', {
+                          id: doc.id,
+                          vendor_name: doc.vendor_name,
+                          partner_name: doc.partner_name,
+                          file_name: doc.file_name,
+                          displayName
+                        });
+                        return displayName;
+                      })()}
                     </h3>
                     <span className={`text-xs px-2 py-1 rounded ${statusColors[doc.status] || 'bg-gray-100 text-gray-800'}`}>
                       {statusLabels[doc.status] || doc.status}
@@ -448,9 +460,24 @@ export default function DocumentsContentMongoDB() {
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800"
-                          onClick={(e) => {
+                          onClick={async (e) => {
                             console.log('Clicking file link with ID:', doc.gridfs_file_id);
                             console.log('Full document data:', doc);
+                            
+                            // ファイルが存在するかチェック
+                            try {
+                              const response = await fetch(`/api/files/${doc.gridfs_file_id}`, { method: 'HEAD' });
+                              if (!response.ok) {
+                                e.preventDefault();
+                                toast.error('元画像ファイルが見つかりません（404エラー）');
+                                return;
+                              }
+                            } catch (error) {
+                              console.error('File check error:', error);
+                              e.preventDefault();
+                              toast.error('元画像ファイルへのアクセスに失敗しました');
+                              return;
+                            }
                           }}
                         >
                           <Image className="w-3 h-3" />
@@ -546,9 +573,24 @@ export default function DocumentsContentMongoDB() {
                             rel="noopener noreferrer"
                             className="text-blue-600 hover:text-blue-800 p-1"
                             title="元画像を表示"
-                            onClick={(e) => {
+                            onClick={async (e) => {
                               console.log('List view - Clicking file link with ID:', doc.gridfs_file_id);
                               console.log('List view - Full document data:', doc);
+                              
+                              // ファイルが存在するかチェック
+                              try {
+                                const response = await fetch(`/api/files/${doc.gridfs_file_id}`, { method: 'HEAD' });
+                                if (!response.ok) {
+                                  e.preventDefault();
+                                  toast.error('元画像ファイルが見つかりません（404エラー）');
+                                  return;
+                                }
+                              } catch (error) {
+                                console.error('File check error:', error);
+                                e.preventDefault();
+                                toast.error('元画像ファイルへのアクセスに失敗しました');
+                                return;
+                              }
                             }}
                           >
                             <Image className="w-4 h-4" />
