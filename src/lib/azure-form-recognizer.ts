@@ -1,6 +1,6 @@
 import { AzureKeyCredential, DocumentAnalysisClient } from '@azure/ai-form-recognizer';
 import { GridFSBucket } from 'mongodb';
-import { mongoClient } from './mongodb-client';
+import { getDatabase } from './mongodb-client';
 
 export interface FormRecognizerConfig {
   endpoint: string;
@@ -34,7 +34,7 @@ export class FormRecognizerService {
 
   private async getGridFsBucket(): Promise<GridFSBucket> {
     if (!this.gridFsBucket) {
-      const db = mongoClient.db('accounting');
+      const db = await getDatabase();
       this.gridFsBucket = new GridFSBucket(db);
     }
     return this.gridFsBucket;
