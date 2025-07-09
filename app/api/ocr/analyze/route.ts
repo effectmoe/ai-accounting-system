@@ -103,8 +103,8 @@ export async function POST(request: NextRequest) {
     
     // OCR結果をMongoDBに保存
     const ocrResult = {
-      companyId: new ObjectId(companyId === 'default' ? '11111111-1111-1111-1111-111111111111' : companyId),
-      sourceFileId: new ObjectId(sourceFileId),
+      companyId: companyId === 'default' ? '11111111-1111-1111-1111-111111111111' : companyId,
+      sourceFileId: sourceFileId,
       fileName: file.name,
       fileSize: buffer.length,
       mimeType: file.type || (file.name.endsWith('.pdf') ? 'application/pdf' : 'image/jpeg'),
@@ -296,8 +296,8 @@ export async function POST(request: NextRequest) {
         extractedText: JSON.stringify(analysisResult.fields, null, 2),
         confidence: analysisResult.confidence || 0.8, // デフォルト80%
         ocrStatus: 'completed',
-        ocrResultId: ocrResultId ? new ObjectId(ocrResultId) : null,
-        gridfsFileId: fileId ? new ObjectId(fileId) : null,
+        ocrResultId: ocrResultId || null,
+        gridfsFileId: fileId || null,
         status: 'pending',
         createdAt: new Date(),
         updatedAt: new Date()
