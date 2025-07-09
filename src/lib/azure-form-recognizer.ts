@@ -35,6 +35,7 @@ export class FormRecognizerService {
   private async getGridFsBucket(): Promise<GridFSBucket> {
     if (!this.gridFsBucket) {
       const db = await getDatabase();
+      // デフォルトのバケット名を使用（'fs'）
       this.gridFsBucket = new GridFSBucket(db);
     }
     return this.gridFsBucket;
@@ -104,7 +105,7 @@ export class FormRecognizerService {
   }
 
   /**
-   * 領収書の分析
+   * 領収書の分析（強化版：完全な会社名抽出）
    */
   async analyzeReceipt(fileBuffer: Buffer, fileName: string): Promise<AnalysisResult> {
     try {
@@ -115,7 +116,8 @@ export class FormRecognizerService {
 
       console.log(`Starting receipt analysis for ${fileName} (${fileBuffer.length} bytes)`);
       
-      const poller = await this.client.beginAnalyzeDocument(
+      // Step 1: prebuilt-receiptモデルで基本情報を抽出
+      const receiptPoller = await this.client.beginAnalyzeDocument(
         'prebuilt-receipt',
         fileBuffer,
         {
@@ -124,39 +126,66 @@ export class FormRecognizerService {
         }
       );
 
-      const result = await poller.pollUntilDone();
+      const receiptResult = await receiptPoller.pollUntilDone();
       
-      if (!result || !result.documents || result.documents.length === 0) {
+      if (!receiptResult || !receiptResult.documents || receiptResult.documents.length === 0) {
         throw new Error('No receipt data extracted');
       }
 
-      const document = result.documents[0];
-      const fields = document.fields || {};
+      const receiptDocument = receiptResult.documents[0];
+      const receiptFields = receiptDocument.fields || {};
+
+      // Step 2: prebuilt-layoutモデルで詳細なテキスト情報を抽出
+      console.log(`Starting layout analysis for enhanced company name extraction...`);
+      const layoutPoller = await this.client.beginAnalyzeDocument(
+        'prebuilt-layout',
+        fileBuffer,
+        {
+          locale: 'ja-JP',
+          contentType: 'application/octet-stream'
+        }
+      );
+
+      const layoutResult = await layoutPoller.pollUntilDone();
+      
+      // Step 3: レイアウト分析から完全な会社名を抽出
+      const enhancedMerchantName = this.extractEnhancedMerchantName(
+        layoutResult, 
+        receiptFields.MerchantName?.content
+      );
 
       const extractedData: AnalysisResult = {
         documentType: 'receipt',
-        confidence: document.confidence || 0,
+        confidence: receiptDocument.confidence || 0,
         fields: {
-          merchantName: fields.MerchantName?.content,
-          merchantAddress: fields.MerchantAddress?.content,
-          merchantPhoneNumber: fields.MerchantPhoneNumber?.content,
-          transactionDate: fields.TransactionDate?.content,
-          transactionTime: fields.TransactionTime?.content,
-          total: fields.Total?.value,
-          subtotal: fields.Subtotal?.value,
-          tax: fields.TotalTax?.value,
-          tip: fields.Tip?.value,
-          items: this.extractReceiptItems(fields.Items),
+          // 強化された会社名を使用
+          merchantName: enhancedMerchantName || receiptFields.MerchantName?.content,
+          merchantAddress: receiptFields.MerchantAddress?.content,
+          merchantPhoneNumber: receiptFields.MerchantPhoneNumber?.content,
+          transactionDate: receiptFields.TransactionDate?.content,
+          transactionTime: receiptFields.TransactionTime?.content,
+          total: receiptFields.Total?.value,
+          subtotal: receiptFields.Subtotal?.value,
+          tax: receiptFields.TotalTax?.value,
+          tip: receiptFields.Tip?.value,
+          items: this.extractReceiptItems(receiptFields.Items),
           // 日本特有のフィールド
-          receiptNumber: fields.ReceiptNumber?.content,
-          cashier: fields.Cashier?.content,
-          paymentMethod: fields.PaymentMethod?.content,
-          // カスタムフィールド
-          customFields: this.extractCustomFields(fields),
+          receiptNumber: receiptFields.ReceiptNumber?.content,
+          cashier: receiptFields.Cashier?.content,
+          paymentMethod: receiptFields.PaymentMethod?.content,
+          // カスタムフィールド（レイアウト分析結果も含む）
+          customFields: {
+            ...this.extractCustomFields(receiptFields),
+            layoutAnalysis: {
+              fullText: layoutResult.content,
+              paragraphs: layoutResult.paragraphs?.map(p => p.content),
+              lines: layoutResult.pages?.[0]?.lines?.map(l => l.content)
+            }
+          },
         },
-        tables: result.tables,
-        pages: result.pages,
-        rawResult: result,
+        tables: receiptResult.tables,
+        pages: receiptResult.pages,
+        rawResult: receiptResult,
       };
 
       return extractedData;
@@ -351,6 +380,136 @@ export class FormRecognizerService {
     }
     
     return customFields;
+  }
+
+  /**
+   * レイアウト分析から強化された会社名を抽出
+   */
+  private extractEnhancedMerchantName(layoutResult: any, originalMerchantName?: string): string | null {
+    try {
+      if (!layoutResult || !layoutResult.pages || layoutResult.pages.length === 0) {
+        return null;
+      }
+
+      const page = layoutResult.pages[0];
+      if (!page.lines || page.lines.length === 0) {
+        return null;
+      }
+
+      // 上部3行のテキストを解析対象とする（会社名は通常最上部に記載）
+      const topLines = page.lines.slice(0, 3).map(line => line.content);
+      
+      // 会社名候補を抽出するパターン（より厳密に）
+      const companyPatterns = [
+        // 株式会社パターン（単独）
+        /^(株式会社[^\s\d]{2,10})$/,
+        /^([^\s\d]{2,10}株式会社)$/,
+        // 有限会社パターン（単独）
+        /^(有限会社[^\s\d]{2,10})$/,
+        /^([^\s\d]{2,10}有限会社)$/,
+        // 企業名＋数字パターン（タイムズ24など）
+        /^([^\s]{2,8}(?:24|２４))$/,
+        // 元の会社名をベースに拡張（完全一致優先）
+        originalMerchantName ? new RegExp(`^(${originalMerchantName}[^\s]{0,10})$`) : null,
+        originalMerchantName ? new RegExp(`^([^\s]{0,10}${originalMerchantName}[^\s]{0,10})$`) : null,
+      ].filter(Boolean);
+
+      // 各行で会社名候補を検索
+      for (const line of topLines) {
+        const trimmedLine = line.trim();
+        
+        // 空行や明らかに会社名でない行をスキップ
+        if (!trimmedLine || 
+            trimmedLine.length < 2 || 
+            trimmedLine.length > 30 || // 長すぎる行は除外
+            /^\d+$/.test(trimmedLine) ||
+            /^[\d\-\s:：]+$/.test(trimmedLine) ||
+            /^[時間|日付|tel|phone|fax|email|営業|住所|address|〒|zip]/i.test(trimmedLine) ||
+            /[0-9]{4}/.test(trimmedLine) || // 4桁以上の数字を含む行は除外
+            /[a-zA-Z]{5,}/.test(trimmedLine) || // 長い英語文字列は除外
+            /[，。、！？]/.test(trimmedLine)) { // 句読点を含む行は除外
+          continue;
+        }
+
+        // パターンマッチング
+        for (const pattern of companyPatterns) {
+          const match = trimmedLine.match(pattern);
+          if (match && match[1]) {
+            const candidateName = match[1].trim();
+            
+            // 候補の品質チェック
+            if (this.isValidCompanyName(candidateName, originalMerchantName)) {
+              console.log(`Enhanced merchant name found: "${candidateName}" (from line: "${trimmedLine}")`);
+              return candidateName;
+            }
+          }
+        }
+      }
+
+      // パターンマッチングで見つからない場合、元の会社名を拡張
+      if (originalMerchantName) {
+        for (const line of topLines) {
+          const trimmedLine = line.trim();
+          
+          // 元の会社名を含む行を探す
+          if (trimmedLine.includes(originalMerchantName) && 
+              trimmedLine.length > originalMerchantName.length &&
+              trimmedLine.length <= 20 && // 適度な長さ
+              this.isValidCompanyName(trimmedLine, originalMerchantName)) {
+            console.log(`Enhanced merchant name from expansion: "${trimmedLine}"`);
+            return trimmedLine;
+          }
+        }
+      }
+
+      // 最終的に見つからない場合は元の会社名を返す
+      return originalMerchantName || null;
+    } catch (error) {
+      console.error('Error extracting enhanced merchant name:', error);
+      return originalMerchantName || null;
+    }
+  }
+
+  /**
+   * 会社名候補の妥当性をチェック
+   */
+  private isValidCompanyName(candidate: string, originalName?: string): boolean {
+    if (!candidate || candidate.length < 2 || candidate.length > 30) {
+      return false;
+    }
+
+    // 明らかに会社名でない文字列を除外
+    const invalidPatterns = [
+      /^[時間|日付|tel|phone|fax|email|url|http|www]/i,
+      /^[\d\-\s:：]+$/,
+      /^[営業|店舗|住所|address|〒|zip]/i,
+      /^[領収書|レシート|receipt]/i,
+      /^[ありがとう|thank|合計|total|税込|税抜]/i,
+      /[0-9]{4,}/, // 4桁以上の数字を含む場合は除外
+      /[a-zA-Z]{5,}/, // 長い英語文字列は除外
+      /[，。、！？]/, // 句読点を含む場合は除外
+      /^\d+$/, // 数字のみは除外
+      /^[A-Z]{2,}$/, // 大文字のみは除外
+      /^[T][0-9]+/, // T4010... のようなIDは除外
+      /^[n][0-9]+/, // n4010... のようなIDは除外
+      /^[#]+/, // ハッシュ記号から始まるものは除外
+      /出庫|入庫|駐車|時刻|分|料金|円|￥|税/, // 駐車場関連の詳細情報は除外
+      /登録|番号|精算|発券|No\./, // 管理番号系は除外
+    ];
+
+    for (const pattern of invalidPatterns) {
+      if (pattern.test(candidate)) {
+        return false;
+      }
+    }
+
+    // 元の会社名がある場合、それを含むか類似していることを確認
+    if (originalName && !candidate.includes(originalName) && originalName.length > 2) {
+      // 元の会社名と全く異なる場合は無効とする
+      return false;
+    }
+
+    return true;
   }
 
   /**

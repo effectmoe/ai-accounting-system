@@ -119,10 +119,12 @@ export async function POST(request: NextRequest) {
     const savedJournal = await db.create('journals', journalEntry);
 
     // 関連ドキュメントを更新（存在する場合）
+    // 重複表示を防ぐため、元のドキュメントを非表示にする
     if (documentId) {
       await db.update('documents', documentId, {
         status: 'journalized',
         journalId: savedJournal._id,
+        hiddenFromList: true, // 書類管理画面から非表示にする
         updatedAt: new Date()
       });
     }

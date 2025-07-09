@@ -274,6 +274,47 @@ export default function DocumentsContentMongoDB() {
     }
   };
 
+  const handleRevertToOCR = async (doc: any) => {
+    if (!confirm('この文書をOCR結果に戻してもよろしいですか？関連する仕訳伝票も削除されます。')) {
+      return;
+    }
+
+    try {
+      console.log('Reverting to OCR:', {
+        documentId: doc.id,
+        journalId: doc.journalId,
+        sourceDocumentId: doc.sourceDocumentId
+      });
+
+      const response = await fetch(`/api/documents/${doc.id}/revert-to-ocr`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          journalId: doc.journalId,
+          sourceDocumentId: doc.sourceDocumentId
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'OCR結果への復元に失敗しました');
+      }
+
+      const result = await response.json();
+      
+      if (result.success) {
+        toast.success('OCR結果に戻しました');
+        fetchDocuments();
+      } else {
+        throw new Error(result.error || 'OCR結果への復元に失敗しました');
+      }
+      
+    } catch (error) {
+      console.error('OCR復元エラー:', error);
+      toast.error(error instanceof Error ? error.message : 'OCR結果への復元に失敗しました');
+    }
+  };
+
   const filteredDocuments = documents.filter(doc => {
     if (activeTab === 'ocr') {
       // OCRで処理されたが、まだ文書化されていないドキュメント
@@ -444,6 +485,20 @@ export default function DocumentsContentMongoDB() {
                     <div>お釣り: -</div>
                   </div>
                   
+                  {/* 未分類フィールド：OCR詳細情報 */}
+                  {doc.extracted_text && (
+                    <div className="mt-3 pt-3 border-t">
+                      <details className="text-xs text-gray-500">
+                        <summary className="cursor-pointer text-gray-700 font-medium mb-2">OCR詳細情報</summary>
+                        <div className="bg-gray-50 p-2 rounded text-xs whitespace-pre-wrap max-h-32 overflow-y-auto">
+                          {typeof doc.extracted_text === 'string' 
+                            ? doc.extracted_text 
+                            : JSON.stringify(doc.extracted_text, null, 2)}
+                        </div>
+                      </details>
+                    </div>
+                  )}
+                  
                   <div className="mt-3 pt-3 border-t text-xs text-gray-500">
                     <div className="flex items-center gap-1">
                       {doc.category && (
@@ -495,6 +550,14 @@ export default function DocumentsContentMongoDB() {
                         className="flex-1 bg-blue-600 text-white text-sm py-1 px-2 rounded hover:bg-blue-700"
                       >
                         文書化する
+                      </button>
+                    )}
+                    {doc.document_type === 'journal_entry' && doc.journalId && (
+                      <button
+                        onClick={() => handleRevertToOCR(doc)}
+                        className="flex-1 bg-yellow-600 text-white text-sm py-1 px-2 rounded hover:bg-yellow-700"
+                      >
+                        OCR結果に戻す
                       </button>
                     )}
                     <button

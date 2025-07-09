@@ -22,7 +22,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     const db = await getDatabase();
-    const bucket = new GridFSBucket(db, { bucketName: 'uploads' });
+    // デフォルトのバケット名を使用（'fs'）
+    const bucket = new GridFSBucket(db);
     
     // ファイルメタデータを取得
     console.log('Searching for file with ObjectId:', fileId);

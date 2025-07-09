@@ -25,6 +25,9 @@ export async function GET(request: NextRequest) {
     if (status && status !== 'all') {
       filter.status = status;
     }
+    
+    // 重複表示防止：hiddenFromListがtrueのドキュメントを除外
+    filter.hiddenFromList = { $ne: true };
 
     // ドキュメントを取得
     const documents = await db.find('documents', filter, {
