@@ -1,29 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase-client';
+import { BankAccountService } from '@/services/bank-account.service';
 
 // GET: 銀行口座一覧取得
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createClient();
-
-    // TODO: 実際の実装では認証からcompany_idを取得
-    const companyId = '00000000-0000-0000-0000-000000000001'; // 仮のcompany_id
-
-    const { data: accounts, error } = await supabase
-      .from('bank_accounts')
-      .select('*')
-      .eq('company_id', companyId)
-      .eq('is_active', true)
-      .order('is_default', { ascending: false })
-      .order('created_at', { ascending: true });
-
-    if (error) {
-      throw error;
-    }
+    const bankAccountService = new BankAccountService();
+    const accounts = await bankAccountService.getAllBankAccounts();
 
     return NextResponse.json({
       success: true,
-      accounts: accounts || [],
+      accounts,
     });
   } catch (error) {
     console.error('Error fetching bank accounts:', error);
@@ -40,11 +26,8 @@ export async function GET(request: NextRequest) {
 // POST: 新規銀行口座追加
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createClient();
     const body = await request.json();
-
-    // TODO: 実際の実装では認証からcompany_idを取得
-    const companyId = '00000000-0000-0000-0000-000000000001'; // 仮のcompany_id
+    const bankAccountService = new BankAccountService();
 
     // バリデーション
     const requiredFields = ['bank_name', 'branch_name', 'account_type', 'account_number', 'account_holder'];
@@ -83,24 +66,15 @@ export async function POST(request: NextRequest) {
     }
 
     // 新規口座を作成
-    const { data: newAccount, error } = await supabase
-      .from('bank_accounts')
-      .insert({
-        company_id: companyId,
-        bank_name: body.bank_name,
-        branch_name: body.branch_name,
-        account_type: body.account_type,
-        account_number: body.account_number,
-        account_holder: body.account_holder,
-        is_default: body.is_default || false,
-        notes: body.notes || null,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      throw error;
-    }
+    const newAccount = await bankAccountService.createBankAccount({
+      bankName: body.bank_name,
+      branchName: body.branch_name,
+      accountType: body.account_type,
+      accountNumber: body.account_number,
+      accountHolder: body.account_holder,
+      isDefault: body.is_default || false,
+      notes: body.notes || null,
+    });
 
     return NextResponse.json({
       success: true,

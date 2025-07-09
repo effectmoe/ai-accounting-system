@@ -3,19 +3,32 @@ import { OpenAI } from 'openai';
 import { CustomerService } from '@/services/customer.service';
 import { z } from 'zod';
 
-// OpenAI クライアントの初期化
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || process.env.AZURE_OPENAI_API_KEY,
-  baseURL: process.env.AZURE_OPENAI_ENDPOINT 
-    ? `${process.env.AZURE_OPENAI_ENDPOINT}/openai/deployments/${process.env.AZURE_OPENAI_DEPLOYMENT_NAME}`
-    : undefined,
-  defaultQuery: process.env.AZURE_OPENAI_ENDPOINT 
-    ? { 'api-version': process.env.AZURE_OPENAI_API_VERSION || '2024-02-01' }
-    : undefined,
-  defaultHeaders: process.env.AZURE_OPENAI_ENDPOINT
-    ? { 'api-key': process.env.AZURE_OPENAI_API_KEY || '' }
-    : undefined,
-});
+// OpenAI クライアントの初期化を関数内に移動
+let openaiClient: OpenAI | null = null;
+
+function getOpenAIClient(): OpenAI {
+  if (!openaiClient) {
+    const apiKey = process.env.OPENAI_API_KEY || process.env.AZURE_OPENAI_API_KEY;
+    
+    if (!apiKey) {
+      throw new Error('OpenAI API key is not configured');
+    }
+    
+    openaiClient = new OpenAI({
+      apiKey,
+      baseURL: process.env.AZURE_OPENAI_ENDPOINT 
+        ? `${process.env.AZURE_OPENAI_ENDPOINT}/openai/deployments/${process.env.AZURE_OPENAI_DEPLOYMENT_NAME}`
+        : undefined,
+      defaultQuery: process.env.AZURE_OPENAI_ENDPOINT 
+        ? { 'api-version': process.env.AZURE_OPENAI_API_VERSION || '2024-02-01' }
+        : undefined,
+      defaultHeaders: process.env.AZURE_OPENAI_ENDPOINT
+        ? { 'api-key': process.env.AZURE_OPENAI_API_KEY || '' }
+        : undefined,
+    });
+  }
+  return openaiClient;
+}
 
 // レスポンススキーマ
 const InvoiceDataSchema = z.object({
@@ -82,6 +95,17 @@ export async function POST(request: NextRequest) {
 }`;
 
     // OpenAI APIを使用して会話を解析
+    let openai: OpenAI;
+    try {
+      openai = getOpenAIClient();
+    } catch (error) {
+      console.error('OpenAI client initialization error:', error);
+      return NextResponse.json(
+        { error: 'AI service is not configured. Please configure OpenAI API key.' },
+        { status: 503 }
+      );
+    }
+    
     const completion = await openai.chat.completions.create({
       model: process.env.AZURE_OPENAI_DEPLOYMENT_NAME || 'gpt-4',
       messages: [
