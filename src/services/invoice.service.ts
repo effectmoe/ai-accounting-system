@@ -66,7 +66,12 @@ export class InvoiceService {
       : await this.companyInfoService.getDefaultCompanyInfo();
     
     if (!companyInfo) {
-      throw new Error('Company info not found');
+      // デフォルトの自社情報を作成
+      const defaultCompanyInfo = await this.companyInfoService.ensureDefaultCompanyInfo();
+      if (!defaultCompanyInfo) {
+        throw new Error('Company info not found');
+      }
+      return await this.createInvoice({ ...invoice, companyInfoId: defaultCompanyInfo._id!.toString() });
     }
 
     // 銀行口座情報を取得（必要な場合）
@@ -75,6 +80,11 @@ export class InvoiceService {
       bankAccount = invoice.bankAccountId
         ? await this.bankAccountService.getBankAccountById(invoice.bankAccountId)
         : await this.bankAccountService.getDefaultBankAccount();
+      
+      // デフォルトの銀行口座が存在しない場合は作成
+      if (!bankAccount) {
+        bankAccount = await this.bankAccountService.ensureDefaultBankAccount();
+      }
     }
 
     // 請求書番号を生成
@@ -291,8 +301,12 @@ export class InvoiceService {
     let taxAmount = 0;
 
     for (const item of items) {
-      subtotal += item.amount;
-      taxAmount += item.taxAmount;
+      // amount（小計）とtaxAmount（税額）を集計
+      const itemAmount = item.amount || (item.quantity * item.unitPrice);
+      const itemTaxAmount = item.taxAmount || Math.round(itemAmount * item.taxRate);
+      
+      subtotal += itemAmount;
+      taxAmount += itemTaxAmount;
     }
 
     const totalAmount = subtotal + taxAmount;

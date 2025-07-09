@@ -128,7 +128,10 @@ export class CompanyInfoService {
       fax: '',
       email: data.email || '',
       registrationNumber: data.registrationNumber,
-      invoiceNumberFormat: data.invoiceNumberFormat,
+      representative: {
+        name: '代表者',
+        position: '代表取締役'
+      },
       isDefault: true,
     };
     

@@ -413,6 +413,7 @@ export const Collections = {
   CUSTOMERS: 'customers',
   COMPANY_INFO: 'companyInfo',
   BANK_ACCOUNTS: 'bankAccounts',
+  PRODUCTS: 'products',
 } as const;
 
 // データベースサービスのシングルトンインスタンス

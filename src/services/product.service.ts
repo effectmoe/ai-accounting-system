@@ -1,5 +1,5 @@
 import { ObjectId } from 'mongodb';
-import { DatabaseService } from '@/lib/mongodb-client';
+import { DatabaseService, Collections } from '@/lib/mongodb-client';
 import { Product } from '@/types/collections';
 
 export class ProductService {
@@ -16,7 +16,7 @@ export class ProductService {
     const now = new Date();
     
     // 商品コードの重複チェック
-    const existingProduct = await this.db.findOne<Product>('products', {
+    const existingProduct = await this.db.findOne<Product>(Collections.PRODUCTS, {
       productCode: productData.productCode
     });
     
@@ -30,7 +30,7 @@ export class ProductService {
       updatedAt: now
     };
 
-    const result = await this.db.create<Product>('products', product);
+    const result = await this.db.create<Product>(Collections.PRODUCTS, product);
     return result;
   }
 
@@ -62,7 +62,7 @@ export class ProductService {
       sort.createdAt = -1; // デフォルトは作成日の降順
     }
 
-    return await this.db.find<Product>('products', filter, {
+    return await this.db.find<Product>(Collections.PRODUCTS, filter, {
       sort,
       limit: options.limit,
       skip: options.skip
@@ -73,14 +73,14 @@ export class ProductService {
    * IDで商品を取得
    */
   async getProductById(id: string): Promise<Product | null> {
-    return await this.db.findById<Product>('products', id);
+    return await this.db.findById<Product>(Collections.PRODUCTS, id);
   }
 
   /**
    * 商品コードで商品を取得
    */
   async getProductByCode(productCode: string): Promise<Product | null> {
-    return await this.db.findOne<Product>('products', { productCode });
+    return await this.db.findOne<Product>(Collections.PRODUCTS, { productCode });
   }
 
   /**
@@ -91,7 +91,7 @@ export class ProductService {
     
     // 商品コードの重複チェック（自分以外で同じコードがないか）
     if (updateData.productCode) {
-      const existingProducts = await this.db.find<Product>('products', {
+      const existingProducts = await this.db.find<Product>(Collections.PRODUCTS, {
         productCode: updateData.productCode
       });
       
@@ -102,7 +102,7 @@ export class ProductService {
       }
     }
 
-    const result = await this.db.update<Product>('products', id, {
+    const result = await this.db.update<Product>(Collections.PRODUCTS, id, {
       ...updateData,
       updatedAt: now
     });
@@ -114,7 +114,7 @@ export class ProductService {
    * 商品を削除
    */
   async deleteProduct(id: string): Promise<boolean> {
-    return await this.db.delete('products', id);
+    return await this.db.delete(Collections.PRODUCTS, id);
   }
 
   /**
@@ -122,7 +122,7 @@ export class ProductService {
    */
   async searchProducts(query: string): Promise<Product[]> {
     // 簡単な実装：すべての商品を取得してフィルタリング
-    const allProducts = await this.db.find<Product>('products', {});
+    const allProducts = await this.db.find<Product>(Collections.PRODUCTS, {});
     return allProducts.filter(product => 
       product.productName.toLowerCase().includes(query.toLowerCase()) ||
       product.productCode.toLowerCase().includes(query.toLowerCase()) ||
@@ -135,7 +135,7 @@ export class ProductService {
    * カテゴリ一覧を取得
    */
   async getCategories(): Promise<string[]> {
-    const products = await this.db.find<Product>('products', {});
+    const products = await this.db.find<Product>(Collections.PRODUCTS, {});
     
     const categories = [...new Set(products.map(p => p.category).filter(Boolean))];
     return categories.sort();
@@ -184,6 +184,6 @@ export class ProductService {
       query.category = filter.category;
     }
 
-    return await this.db.countDocuments('products', query);
+    return await this.db.count(Collections.PRODUCTS, query);
   }
 }

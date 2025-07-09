@@ -281,31 +281,40 @@ export default function NewInvoicePage() {
       // 新規顧客の場合は先に作成
       let customerId = selectedCustomerId;
       if (!customerId && customerName) {
+        console.log('Creating new customer:', customerName);
         const customerResponse = await fetch('/api/customers', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ companyName: customerName }),
+          body: JSON.stringify({ 
+            companyName: customerName,
+            email: 'contact@example.com' // 仮のメールアドレス
+          }),
         });
         
         if (!customerResponse.ok) {
-          throw new Error('Failed to create customer');
+          const errorData = await customerResponse.json();
+          console.error('Customer creation failed:', errorData);
+          throw new Error(errorData.error || 'Failed to create customer');
         }
         
         const newCustomer = await customerResponse.json();
         customerId = newCustomer._id;
+        console.log('New customer created:', customerId);
       }
 
       // 請求書を作成
       const invoiceData = {
         customerId,
-        invoiceDate: new Date(invoiceDate),
-        dueDate: new Date(dueDate),
+        invoiceDate: invoiceDate,
+        dueDate: dueDate,
         items: items.filter(item => item.description), // 空の明細は除外
         notes,
         paymentMethod,
         isGeneratedByAI: !!aiConversationId,
         aiConversationId,
       };
+
+      console.log('Creating invoice with data:', invoiceData);
 
       const response = await fetch('/api/invoices', {
         method: 'POST',
@@ -314,14 +323,17 @@ export default function NewInvoicePage() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create invoice');
+        const errorData = await response.json();
+        console.error('Invoice creation failed:', errorData);
+        throw new Error(errorData.details || errorData.error || 'Failed to create invoice');
       }
 
       const invoice = await response.json();
+      console.log('Invoice created successfully:', invoice);
       router.push(`/invoices/${invoice._id}`);
     } catch (error) {
       console.error('Error saving invoice:', error);
-      setError('請求書の作成に失敗しました');
+      setError(error instanceof Error ? error.message : '請求書の作成に失敗しました');
     } finally {
       setIsLoading(false);
     }
