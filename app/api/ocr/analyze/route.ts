@@ -179,10 +179,10 @@ export async function POST(request: NextRequest) {
       let dateFound = false;
       
       // OCRDateExtractorを使用して日付を抽出
-      const extractedText = JSON.stringify(analysisResult.fields || {});
+      const extractedTextForDate = JSON.stringify(analysisResult.fields || {});
       console.log('OCR結果から日付を抽出中...');
       
-      const dateExtraction = OCRDateExtractor.extractDate(extractedText);
+      const dateExtraction = OCRDateExtractor.extractDate(extractedTextForDate);
       
       if (dateExtraction.date) {
         documentDate = dateExtraction.date;
