@@ -43,13 +43,17 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         isValid: ObjectId.isValid(sourceDocumentId)
       });
       
-      await db.update('documents', sourceObjectId, {
+      const updateResult = await db.update('documents', sourceObjectId, {
         status: 'pending',
         journalId: null,
         hiddenFromList: false,
         updatedAt: new Date()
       });
+      
+      console.log('Update result:', updateResult);
       console.log('Restored original OCR document:', sourceObjectId);
+    } else {
+      console.log('WARNING: No sourceDocumentId provided, cannot restore original OCR document');
     }
 
     return NextResponse.json({

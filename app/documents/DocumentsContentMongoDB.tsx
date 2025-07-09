@@ -167,38 +167,65 @@ export default function DocumentsContentMongoDB() {
 
   const handleCreateJournalEntry = async (doc: any) => {
     try {
-      console.log('Creating journal entry for document:', {
+      console.log('=== Creating journal entry ===');
+      console.log('Document data:', {
         id: doc.id,
         category: doc.category,
-        vendor: doc.vendor_name
+        vendor: doc.vendor_name,
+        amount: doc.total_amount,
+        date: doc.receipt_date || doc.issue_date,
+        full_doc: doc
       });
       
+      // ボタンを無効化して重複実行を防ぐ
+      const button = event?.target as HTMLButtonElement;
+      if (button) {
+        button.disabled = true;
+        button.textContent = '処理中...';
+      }
+      
       // 仕訳作成APIを呼び出す（サーバーサイドで処理）
+      const requestBody = {
+        companyId: doc.companyId || doc.company_id || '11111111-1111-1111-1111-111111111111',
+        vendorName: doc.vendor_name || doc.partner_name || doc.file_name || '不明な店舗',
+        amount: doc.totalAmount || doc.total_amount || 0,
+        taxAmount: doc.taxAmount || doc.tax_amount || 0,
+        date: doc.receipt_date || doc.documentDate || doc.document_date || doc.issue_date || new Date().toISOString().split('T')[0],
+        documentId: doc._id || doc.id,
+        debitAccount: doc.category && doc.category !== '未分類' ? doc.category : null,
+        description: `${doc.vendor_name || doc.partner_name || '店舗名不明'} - 領収書`
+      };
+      
+      console.log('Request body:', requestBody);
+      
       const response = await fetch('/api/journals/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          companyId: doc.companyId || doc.company_id,
-          vendorName: doc.vendor_name || doc.partner_name || doc.file_name,
-          amount: doc.totalAmount || doc.total_amount || 0,
-          taxAmount: doc.taxAmount || doc.tax_amount || 0,
-          date: doc.receipt_date || doc.documentDate || doc.document_date || doc.issue_date || new Date().toISOString().split('T')[0],
-          documentId: doc._id || doc.id,
-          debitAccount: doc.category && doc.category !== '未分類' ? doc.category : null, // カテゴリが未分類でない場合のみ渡す
-          description: `${doc.vendor_name || doc.partner_name || '店舗名不明'} - 領収書`
-        })
+        body: JSON.stringify(requestBody)
       });
       
+      console.log('Response status:', response.status);
+      
       if (!response.ok) {
-        throw new Error('仕訳作成に失敗しました');
+        const errorData = await response.json();
+        console.error('Journal creation failed:', errorData);
+        throw new Error(errorData.error || '仕訳作成に失敗しました');
       }
       
       const result = await response.json();
+      console.log('Journal creation response:', result);
       
       if (result.success && result.journal) {
         const journal = result.journal;
         const debitLine = journal.lines?.[0];
         const creditLine = journal.lines?.[1];
+        
+        console.log('Journal created successfully:', {
+          journalId: journal.id,
+          debitAccount: debitLine?.accountName,
+          creditAccount: creditLine?.accountName,
+          amount: doc.total_amount
+        });
         
         toast.success(`仕訳を作成しました\n借方: ${debitLine?.accountName || '不明'} ¥${(doc.total_amount || 0).toLocaleString()}\n貸方: ${creditLine?.accountName || '現金'} ¥${(doc.total_amount || 0).toLocaleString()}`);
         
@@ -216,8 +243,16 @@ export default function DocumentsContentMongoDB() {
       }
       
     } catch (error) {
-      console.error('仕訳作成エラー:', error);
+      console.error('=== Journal creation error ===');
+      console.error('Error details:', error);
       toast.error('仕訳作成に失敗しました: ' + (error instanceof Error ? error.message : '不明なエラー'));
+    } finally {
+      // ボタンを元に戻す
+      const button = event?.target as HTMLButtonElement;
+      if (button) {
+        button.disabled = false;
+        button.textContent = '文書化する';
+      }
     }
   };
 
@@ -280,30 +315,41 @@ export default function DocumentsContentMongoDB() {
     }
 
     try {
-      console.log('Reverting to OCR:', {
+      console.log('Reverting to OCR - Full document:', doc);
+      console.log('Reverting to OCR - Key fields:', {
         documentId: doc.id,
         journalId: doc.journalId,
-        sourceDocumentId: doc.sourceDocumentId || doc.source_document_id
+        sourceDocumentId: doc.sourceDocumentId || doc.source_document_id,
+        hasSourceDocumentId: !!(doc.sourceDocumentId || doc.source_document_id)
       });
+
+      const requestBody = {
+        journalId: doc.journalId,
+        sourceDocumentId: doc.sourceDocumentId || doc.source_document_id
+      };
+      
+      console.log('Revert request body:', requestBody);
 
       const response = await fetch(`/api/documents/${doc.id}/revert-to-ocr`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          journalId: doc.journalId,
-          sourceDocumentId: doc.sourceDocumentId || doc.source_document_id
-        })
+        body: JSON.stringify(requestBody)
       });
+
+      console.log('Revert response status:', response.status);
 
       if (!response.ok) {
         const errorData = await response.json();
+        console.error('Revert failed:', errorData);
         throw new Error(errorData.error || 'OCR結果への復元に失敗しました');
       }
 
       const result = await response.json();
+      console.log('Revert response:', result);
       
       if (result.success) {
         toast.success('OCR結果に戻しました');
+        console.log('Revert successful, refreshing documents...');
         fetchDocuments();
       } else {
         throw new Error(result.error || 'OCR結果への復元に失敗しました');
@@ -319,10 +365,21 @@ export default function DocumentsContentMongoDB() {
     if (activeTab === 'ocr') {
       // OCRで処理されたが、まだ文書化されていないドキュメント
       // journalIdがないものが未処理で、hiddenFromListがfalseまたは未設定のもの
-      return doc.ocr_status === 'completed' && 
+      const isOcrDoc = doc.ocr_status === 'completed' && 
              doc.document_type !== 'journal_entry' && 
              !doc.journalId &&
-             !doc.hiddenFromList;
+             doc.hiddenFromList !== true; // 明示的にtrueでない場合は表示
+      if (isOcrDoc) {
+        console.log('OCR document included in filter:', {
+          id: doc.id,
+          vendor_name: doc.vendor_name,
+          ocr_status: doc.ocr_status,
+          document_type: doc.document_type,
+          journalId: doc.journalId,
+          hiddenFromList: doc.hiddenFromList
+        });
+      }
+      return isOcrDoc;
     } else if (activeTab === 'created') {
       // 仕訳伝票、または文書化済み（journalIdを持つ）ドキュメント
       return doc.document_type === 'journal_entry' || 
@@ -547,7 +604,16 @@ export default function DocumentsContentMongoDB() {
                   <div className="mt-3 flex gap-2">
                     {doc.document_type !== 'journal_entry' && (
                       <button
-                        onClick={() => handleCreateJournalEntry(doc)}
+                        onClick={() => {
+                          console.log('文書化する button clicked - Document data:', {
+                            id: doc.id,
+                            document_type: doc.document_type,
+                            ocr_status: doc.ocr_status,
+                            journalId: doc.journalId,
+                            category: doc.category
+                          });
+                          handleCreateJournalEntry(doc);
+                        }}
                         className="flex-1 bg-blue-600 text-white text-sm py-1 px-2 rounded hover:bg-blue-700"
                       >
                         文書化する
@@ -555,7 +621,17 @@ export default function DocumentsContentMongoDB() {
                     )}
                     {doc.document_type === 'journal_entry' && doc.journalId && (
                       <button
-                        onClick={() => handleRevertToOCR(doc)}
+                        onClick={() => {
+                          console.log('OCR結果に戻す button clicked - Document data:', {
+                            id: doc.id,
+                            document_type: doc.document_type,
+                            journalId: doc.journalId,
+                            sourceDocumentId: doc.sourceDocumentId,
+                            source_document_id: doc.source_document_id,
+                            hasEitherSourceId: !!(doc.sourceDocumentId || doc.source_document_id)
+                          });
+                          handleRevertToOCR(doc);
+                        }}
                         className="flex-1 bg-yellow-600 text-white text-sm py-1 px-2 rounded hover:bg-yellow-700"
                       >
                         OCR結果に戻す

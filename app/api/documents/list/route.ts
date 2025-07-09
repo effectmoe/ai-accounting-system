@@ -39,6 +39,17 @@ export async function GET(request: NextRequest) {
     console.log('Raw documents from database:', documents.length);
     if (documents.length > 0) {
       console.log('First document raw data:', documents[0]);
+      // Check for journal entries specifically
+      const journalEntries = documents.filter(doc => doc.documentType === 'journal_entry');
+      if (journalEntries.length > 0) {
+        console.log('First journal entry raw data:', {
+          _id: journalEntries[0]._id,
+          documentType: journalEntries[0].documentType,
+          sourceDocumentId: journalEntries[0].sourceDocumentId,
+          journalId: journalEntries[0].journalId,
+          hiddenFromList: journalEntries[0].hiddenFromList
+        });
+      }
     }
 
     // Supabase形式に変換（既存のUIとの互換性のため）
@@ -72,7 +83,9 @@ export async function GET(request: NextRequest) {
       gridfs_file_id: doc.gridfsFileId?.toString() || doc.gridfs_file_id?.toString(),
       
       // 仕訳関連フィールド
-      journalId: doc.journalId?.toString()
+      journalId: doc.journalId?.toString(),
+      sourceDocumentId: doc.sourceDocumentId?.toString(),
+      source_document_id: doc.sourceDocumentId?.toString() // 互換性のため両方の形式で提供
     }));
 
     console.log('Formatted documents:', formattedDocuments.length);

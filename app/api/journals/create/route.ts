@@ -151,7 +151,12 @@ export async function POST(request: NextRequest) {
       updatedAt: new Date()
     };
 
-    await db.create('documents', journalDocument);
+    const savedJournalDocument = await db.create('documents', journalDocument);
+    console.log('Created journal document:', {
+      id: savedJournalDocument._id,
+      documentType: journalDocument.documentType,
+      sourceDocumentId: journalDocument.sourceDocumentId
+    });
 
     // 4. 元のOCRドキュメントを非表示にする（OCRリストから削除）
     if (documentId) {
