@@ -2,6 +2,82 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '../../../../src/lib/mongodb-client';
 import { ObjectId, GridFSBucket } from 'mongodb';
 
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const { id } = params;
+    console.log('Getting document with ID:', id);
+
+    if (!id || !ObjectId.isValid(id)) {
+      return NextResponse.json({
+        success: false,
+        error: 'Invalid document ID'
+      }, { status: 400 });
+    }
+
+    // ドキュメントを取得
+    const document = await db.findById('documents', id);
+    
+    if (!document) {
+      return NextResponse.json({
+        success: false,
+        error: 'Document not found'
+      }, { status: 404 });
+    }
+
+    // Supabase形式に変換（既存のUIとの互換性のため）
+    const formattedDocument = {
+      id: document._id.toString(),
+      _id: document._id.toString(),
+      company_id: document.companyId?.toString() || '11111111-1111-1111-1111-111111111111',
+      document_type: document.documentType || 'receipt',
+      document_number: document.documentNumber || `DOC-${document._id.toString().slice(-8)}`,
+      status: document.status || 'draft',
+      issue_date: document.issueDate || document.documentDate || document.createdAt,
+      partner_name: document.partnerName || document.vendorName || '不明',
+      partner_address: document.partnerAddress || '',
+      total_amount: document.totalAmount || 0,
+      tax_amount: document.taxAmount || 0,
+      subtotal: (document.totalAmount || 0) - (document.taxAmount || 0),
+      notes: document.notes || '',
+      created_at: document.createdAt,
+      updated_at: document.updatedAt,
+      
+      // OCR関連フィールド
+      file_name: document.fileName,
+      file_type: document.fileType,
+      file_size: document.fileSize,
+      vendor_name: document.vendorName,
+      receipt_date: document.documentDate,
+      category: document.category || '未分類',
+      extracted_text: document.extractedText,
+      confidence: document.confidence,
+      ocr_status: document.ocrStatus || 'completed',
+      ocr_result_id: document.ocrResultId?.toString(),
+      gridfs_file_id: document.gridfsFileId?.toString() || document.gridfs_file_id?.toString(),
+      
+      // 仕訳関連フィールド
+      journalId: document.journalId?.toString()
+    };
+
+    console.log('Formatted document:', formattedDocument);
+
+    return NextResponse.json({
+      success: true,
+      document: formattedDocument
+    });
+
+  } catch (error) {
+    console.error('Document fetch error:', error);
+    return NextResponse.json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to fetch document'
+    }, { status: 500 });
+  }
+}
+
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -91,6 +167,9 @@ export async function PATCH(
   try {
     const { id } = params;
     const body = await request.json();
+    
+    console.log('Updating document with ID:', id);
+    console.log('Update data:', body);
 
     if (!ObjectId.isValid(id)) {
       return NextResponse.json({
@@ -104,6 +183,8 @@ export async function PATCH(
       ...body,
       updatedAt: new Date()
     });
+
+    console.log('Update result:', result);
 
     if (!result) {
       return NextResponse.json({

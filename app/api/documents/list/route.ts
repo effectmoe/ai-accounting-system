@@ -33,6 +33,11 @@ export async function GET(request: NextRequest) {
       sort: { createdAt: -1 }
     });
 
+    console.log('Raw documents from database:', documents.length);
+    if (documents.length > 0) {
+      console.log('First document raw data:', documents[0]);
+    }
+
     // Supabase形式に変換（既存のUIとの互換性のため）
     const formattedDocuments = documents.map(doc => ({
       id: doc._id.toString(),
@@ -61,11 +66,16 @@ export async function GET(request: NextRequest) {
       confidence: doc.confidence,
       ocr_status: doc.ocrStatus || 'completed',
       ocr_result_id: doc.ocrResultId?.toString(),
-      gridfs_file_id: doc.gridfsFileId?.toString(),
+      gridfs_file_id: doc.gridfsFileId?.toString() || doc.gridfs_file_id?.toString(),
       
       // 仕訳関連フィールド
       journalId: doc.journalId?.toString()
     }));
+
+    console.log('Formatted documents:', formattedDocuments.length);
+    if (formattedDocuments.length > 0) {
+      console.log('First formatted document:', formattedDocuments[0]);
+    }
 
     // 総数を取得
     const totalCount = await db.count('documents', filter);

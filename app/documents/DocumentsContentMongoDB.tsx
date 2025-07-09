@@ -93,6 +93,11 @@ export default function DocumentsContentMongoDB() {
       const data = await response.json();
       
       if (data.success) {
+        // デバッグ用：取得したデータを確認
+        console.log('Fetched documents:', data.documents);
+        if (data.documents.length > 0) {
+          console.log('First document sample:', data.documents[0]);
+        }
         setDocuments(data.documents);
       } else {
         throw new Error(data.error || 'Failed to load documents');
@@ -215,10 +220,21 @@ export default function DocumentsContentMongoDB() {
   };
 
   const handleEditDocument = (doc: any) => {
+    // デバッグ用：編集ボタンクリック時の情報
+    console.log('Edit button clicked for document:', {
+      id: doc.id,
+      ocr_status: doc.ocr_status,
+      document_type: doc.document_type,
+      vendor_name: doc.vendor_name,
+      partner_name: doc.partner_name
+    });
+    
     // OCRドキュメントかどうかで編集ページを分ける
     if (doc.ocr_status === 'completed') {
+      console.log('Navigating to OCR edit page:', `/documents/ocr/${doc.id}/edit`);
       router.push(`/documents/ocr/${doc.id}/edit`);
     } else {
+      console.log('Navigating to standard edit page:', `/documents/${doc.id}/edit`);
       router.push(`/documents/${doc.id}/edit`);
     }
   };
@@ -432,6 +448,10 @@ export default function DocumentsContentMongoDB() {
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800"
+                          onClick={(e) => {
+                            console.log('Clicking file link with ID:', doc.gridfs_file_id);
+                            console.log('Full document data:', doc);
+                          }}
                         >
                           <Image className="w-3 h-3" />
                           <span>元画像を表示</span>
@@ -526,6 +546,10 @@ export default function DocumentsContentMongoDB() {
                             rel="noopener noreferrer"
                             className="text-blue-600 hover:text-blue-800 p-1"
                             title="元画像を表示"
+                            onClick={(e) => {
+                              console.log('List view - Clicking file link with ID:', doc.gridfs_file_id);
+                              console.log('List view - Full document data:', doc);
+                            }}
                           >
                             <Image className="w-4 h-4" />
                           </a>

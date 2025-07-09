@@ -11,8 +11,10 @@ interface RouteParams {
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const fileId = params.id;
+    console.log('File API called with ID:', fileId);
 
     if (!fileId || !ObjectId.isValid(fileId)) {
+      console.log('Invalid file ID:', fileId);
       return NextResponse.json({
         success: false,
         error: 'Invalid file ID'
@@ -23,9 +25,12 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const bucket = new GridFSBucket(db, { bucketName: 'uploads' });
     
     // ファイルメタデータを取得
+    console.log('Searching for file with ObjectId:', fileId);
     const files = await bucket.find({ _id: new ObjectId(fileId) }).toArray();
+    console.log('Found files:', files.length);
     
     if (files.length === 0) {
+      console.log('File not found in GridFS');
       return NextResponse.json({
         success: false,
         error: 'File not found'
@@ -33,6 +38,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     const file = files[0];
+    console.log('File found:', {
+      id: file._id,
+      filename: file.filename,
+      contentType: file.contentType,
+      length: file.length,
+      uploadDate: file.uploadDate
+    });
     
     // ファイルをストリームとして読み込む
     const downloadStream = bucket.openDownloadStream(new ObjectId(fileId));
@@ -53,9 +65,11 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       
       downloadStream.on('end', () => {
         const buffer = Buffer.concat(chunks);
+        console.log('File download completed, buffer size:', buffer.length);
         
         // Content-Typeを設定
         const contentType = file.metadata?.mimeType || file.contentType || 'application/octet-stream';
+        console.log('Content-Type:', contentType);
         
         resolve(new NextResponse(buffer, {
           status: 200,
