@@ -2,6 +2,8 @@ import { MongoClient, Db, Collection, ObjectId } from 'mongodb';
 
 // MongoDB接続設定
 const DB_NAME = 'accounting';
+const CONNECTION_TIMEOUT = 60000; // 60秒
+const RETRY_INTERVAL_BASE = 1000; // 1秒
 
 // グローバルMongoClientインスタンス
 let client: MongoClient;
@@ -17,14 +19,21 @@ function getMongoDBUri(): string {
 
 // Node.js環境でのMongoClient管理
 function getClientPromise(): Promise<MongoClient> {
-  // 既存の接続プロミスがある場合は、それが有効かチェック
+  // 既存の接続プロミスがある場合は、それを返す前に有効性をチェック
   if (global._mongoClientPromise) {
-    return global._mongoClientPromise;
+    // 既存のプロミスが解決されているか確認
+    return global._mongoClientPromise.catch((error) => {
+      console.error('Existing MongoDB connection promise failed:', error);
+      // 失敗したプロミスをクリアして新しい接続を試みる
+      global._mongoClientPromise = undefined;
+      return getClientPromise();
+    });
   }
 
   try {
     const uri = getMongoDBUri();
     
+    console.log('Creating new MongoDB connection...');
     console.log('MongoDB URI configured:', uri.replace(/\/\/[^:]*:[^@]*@/, '//***:***@')); // パスワードを隠してログ出力
     
     // 新しいクライアントを作成
@@ -34,12 +43,27 @@ function getClientPromise(): Promise<MongoClient> {
       maxIdleTimeMS: 60000,
       connectTimeoutMS: 60000, // Vercel環境では時間を長めに設定
       serverSelectionTimeoutMS: 60000, // Vercel環境では時間を長めに設定
+      // Vercel環境での接続安定性のための追加オプション
+      retryWrites: true,
+      retryReads: true,
+      socketTimeoutMS: 360000,
+      waitQueueTimeoutMS: 60000,
     });
     
     // 接続プロミスを作成し、グローバル変数に保存
     global._mongoClientPromise = newClient.connect()
-      .then((connectedClient) => {
+      .then(async (connectedClient) => {
         console.log('MongoDB client connected successfully');
+        
+        // 接続直後に一度pingを実行して確認
+        try {
+          await connectedClient.db(DB_NAME).admin().ping();
+          console.log('MongoDB connection verified with ping');
+        } catch (pingError) {
+          console.error('Initial ping failed:', pingError);
+          // pingが失敗しても接続は維持（後続の処理で再試行）
+        }
+        
         return connectedClient;
       })
       .catch((error) => {
@@ -64,6 +88,8 @@ function getClientPromise(): Promise<MongoClient> {
   } catch (error) {
     // URIの取得などで即座にエラーが発生した場合
     console.error('MongoDB client initialization error:', error);
+    // グローバル変数をクリア
+    global._mongoClientPromise = undefined;
     throw new DatabaseError(
       `MongoDB client initialization failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
       'INITIALIZATION_ERROR'
@@ -73,53 +99,105 @@ function getClientPromise(): Promise<MongoClient> {
 
 // データベースインスタンスの取得
 export async function getDatabase(): Promise<Db> {
-  try {
-    const client = await getClientPromise();
-    if (!client) {
-      throw new Error('MongoDB client is null');
-    }
-    
-    const db = client.db(DB_NAME);
-    if (!db) {
-      throw new Error('Database instance is null');
-    }
-    
-    // 接続状態を確認
+  const maxRetries = 3;
+  let lastError: Error | null = null;
+  
+  for (let i = 0; i < maxRetries; i++) {
     try {
-      await db.admin().ping();
-    } catch (pingError) {
-      console.error('Database ping failed:', pingError);
-      // グローバル変数をクリアして再接続を強制
-      global._mongoClientPromise = undefined;
-      throw new Error('Database connection is not active');
+      // 接続を取得
+      const client = await getClientPromise();
+      if (!client) {
+        throw new Error('MongoDB client is null after connection');
+      }
+      
+      // データベースインスタンスを取得
+      const db = client.db(DB_NAME);
+      if (!db) {
+        throw new Error('Database instance is null');
+      }
+      
+      // 接続が生きているか確認
+      try {
+        await db.admin().ping();
+        console.log(`MongoDB connection verified (attempt ${i + 1})`);
+        return db;
+      } catch (pingError) {
+        console.error(`Database ping failed (attempt ${i + 1}):`, pingError);
+        // 接続が切れている場合は再接続を試みる
+        global._mongoClientPromise = undefined;
+        if (i === maxRetries - 1) {
+          throw new Error(`Database connection is not active after ${maxRetries} attempts`);
+        }
+        // 少し待ってから再試行
+        await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+      }
+    } catch (error) {
+      console.error(`getDatabase error (attempt ${i + 1}):`, error);
+      lastError = error instanceof Error ? error : new Error('Unknown error');
+      
+      // 最後の試行でなければ、グローバル変数をクリアして再試行
+      if (i < maxRetries - 1) {
+        global._mongoClientPromise = undefined;
+        await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+      }
     }
-    
-    return db;
-  } catch (error) {
-    console.error('getDatabase error:', error);
-    throw new DatabaseError(
-      `Failed to get database instance: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      'DATABASE_ACCESS_ERROR'
-    );
   }
+  
+  // すべての試行が失敗した場合
+  throw new DatabaseError(
+    `Failed to get database instance after ${maxRetries} attempts: ${lastError?.message || 'Unknown error'}`,
+    'DATABASE_ACCESS_ERROR'
+  );
 }
 
-// コレクションの取得
+// コレクションの取得（リトライ機能付き）
 export async function getCollection<T = any>(collectionName: string): Promise<Collection<T>> {
-  try {
-    const db = await getDatabase();
-    const collection = db.collection<T>(collectionName);
-    if (!collection) {
-      throw new Error(`Collection ${collectionName} is null`);
+  const maxRetries = 3;
+  let lastError: Error | null = null;
+  
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      const db = await getDatabase();
+      if (!db) {
+        throw new Error('Database instance is null');
+      }
+      
+      const collection = db.collection<T>(collectionName);
+      if (!collection) {
+        throw new Error(`Collection ${collectionName} is null`);
+      }
+      
+      // コレクションが実際に使用可能か確認（簡単なカウントクエリを実行）
+      try {
+        await collection.estimatedDocumentCount();
+        console.log(`Collection ${collectionName} is accessible (attempt ${i + 1})`);
+        return collection;
+      } catch (testError) {
+        console.error(`Collection ${collectionName} test failed (attempt ${i + 1}):`, testError);
+        if (i === maxRetries - 1) {
+          throw testError;
+        }
+        // 接続をリセットして再試行
+        global._mongoClientPromise = undefined;
+        await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+      }
+    } catch (error) {
+      console.error(`getCollection error for ${collectionName} (attempt ${i + 1}):`, error);
+      lastError = error instanceof Error ? error : new Error('Unknown error');
+      
+      if (i < maxRetries - 1) {
+        // 接続をリセットして再試行
+        global._mongoClientPromise = undefined;
+        await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+      }
     }
-    return collection;
-  } catch (error) {
-    console.error(`getCollection error for ${collectionName}:`, error);
-    throw new DatabaseError(
-      `Failed to get collection ${collectionName}: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      'COLLECTION_ACCESS_ERROR'
-    );
   }
+  
+  // すべての試行が失敗した場合
+  throw new DatabaseError(
+    `Failed to get collection ${collectionName} after ${maxRetries} attempts: ${lastError?.message || 'Unknown error'}`,
+    'COLLECTION_ACCESS_ERROR'
+  );
 }
 
 // MongoClientのエクスポート
@@ -348,35 +426,55 @@ export class DatabaseError extends Error {
   }
 }
 
-// ヘルスチェック
+// ヘルスチェック（リトライ機能付き）
 export async function checkConnection(): Promise<boolean> {
-  try {
-    const client = await getClientPromise();
-    if (!client) {
-      console.error('MongoDB client is null during connection check');
-      return false;
+  const maxRetries = 3;
+  
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      console.log(`MongoDB connection check (attempt ${attempt + 1}/${maxRetries})...`);
+      
+      const client = await getClientPromise();
+      if (!client) {
+        console.error('MongoDB client is null during connection check');
+        throw new Error('Client is null');
+      }
+      
+      const db = client.db(DB_NAME);
+      if (!db) {
+        console.error('Database instance is null during connection check');
+        throw new Error('Database instance is null');
+      }
+      
+      await db.command({ ping: 1 });
+      console.log('MongoDB connection successful');
+      return true;
+      
+    } catch (error) {
+      console.error(`MongoDB connection check failed (attempt ${attempt + 1}):`, error);
+      if (error instanceof Error) {
+        console.error('Error details:', {
+          name: error.name,
+          message: error.message,
+          stack: error.stack,
+          attempt: attempt + 1
+        });
+      }
+      
+      // 接続チェック失敗時はグローバル変数をクリア
+      global._mongoClientPromise = undefined;
+      
+      // 最後の試行でない場合は待機してリトライ
+      if (attempt < maxRetries - 1) {
+        const waitTime = RETRY_INTERVAL_BASE * (attempt + 1);
+        console.log(`Waiting ${waitTime}ms before retry...`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+      }
     }
-    
-    const db = client.db(DB_NAME);
-    if (!db) {
-      console.error('Database instance is null during connection check');
-      return false;
-    }
-    
-    await db.command({ ping: 1 });
-    console.log('MongoDB connection successful');
-    return true;
-  } catch (error) {
-    console.error('MongoDB connection check failed:', error);
-    if (error instanceof Error) {
-      console.error('Error name:', error.name);
-      console.error('Error message:', error.message);
-      console.error('Error stack:', error.stack);
-    }
-    // 接続チェック失敗時はグローバル変数をクリア
-    global._mongoClientPromise = undefined;
-    return false;
   }
+  
+  console.error(`MongoDB connection check failed after ${maxRetries} attempts`);
+  return false;
 }
 
 // コレクション名の定数
@@ -417,50 +515,72 @@ export class VercelDatabaseService extends DatabaseService {
   
   // createメソッドを完全に書き直し - getCollectionを使用（すでに接続管理が含まれている）
   async create<T>(collectionName: string, document: Omit<T, '_id'>): Promise<T> {
-    try {
-      // getCollectionを使用（すでに接続管理が含まれている）
-      const collection = await getCollection<T>(collectionName);
-      if (!collection) {
-        throw new Error(`Collection ${collectionName} is null`);
+    const maxRetries = 3;
+    let lastError: Error | null = null;
+    
+    // リトライ処理
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        console.log(`Attempting to create document in ${collectionName} (attempt ${attempt + 1}/${maxRetries})`);
+        
+        // getCollectionを使用（すでに接続管理とリトライが含まれている）
+        const collection = await getCollection<T>(collectionName);
+        if (!collection) {
+          throw new Error(`Collection ${collectionName} is null after getCollection`);
+        }
+        
+        const now = new Date();
+        const doc = {
+          ...document,
+          createdAt: now,
+          updatedAt: now,
+        };
+        
+        console.log(`Inserting document into ${collectionName}...`);
+        const result = await collection.insertOne(doc as any);
+        
+        if (!result || !result.insertedId) {
+          throw new Error('Insert operation failed - no inserted ID returned');
+        }
+        
+        console.log(`Document created successfully in ${collectionName} with ID: ${result.insertedId}`);
+        return { ...doc, _id: result.insertedId } as T;
+        
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error('Unknown error');
+        console.error(`MongoDB create error in collection ${collectionName} (attempt ${attempt + 1}):`, error);
+        console.error('Error details:', {
+          name: lastError.name,
+          message: lastError.message,
+          stack: lastError.stack,
+          collectionName,
+          documentKeys: Object.keys(document),
+          attempt: attempt + 1
+        });
+        
+        // 接続エラーの場合はグローバル変数をクリア
+        if (lastError.message.includes('connection') || 
+            lastError.message.includes('client') ||
+            lastError.message.includes('null') ||
+            lastError.message.includes('Cannot read properties')) {
+          console.log('Clearing MongoDB connection cache due to connection error');
+          global._mongoClientPromise = undefined;
+        }
+        
+        // 最後の試行でない場合は待機してリトライ
+        if (attempt < maxRetries - 1) {
+          const waitTime = 1000 * (attempt + 1);
+          console.log(`Waiting ${waitTime}ms before retry...`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+        }
       }
-      
-      const now = new Date();
-      const doc = {
-        ...document,
-        createdAt: now,
-        updatedAt: now,
-      };
-      
-      const result = await collection.insertOne(doc as any);
-      if (!result || !result.insertedId) {
-        throw new Error('Insert operation failed - no inserted ID returned');
-      }
-      
-      return { ...doc, _id: result.insertedId } as T;
-    } catch (error) {
-      console.error(`MongoDB create error in collection ${collectionName}:`, error);
-      console.error('Error details:', {
-        name: error instanceof Error ? error.name : 'Unknown',
-        message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined,
-        collectionName,
-        documentKeys: Object.keys(document)
-      });
-      
-      // 接続エラーの場合はグローバル変数をクリア
-      if (error instanceof Error && (
-        error.message.includes('connection') || 
-        error.message.includes('client') ||
-        error.message.includes('null')
-      )) {
-        global._mongoClientPromise = undefined;
-      }
-      
-      throw new DatabaseError(
-        `Failed to create document in ${collectionName}: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        'CREATE_ERROR'
-      );
     }
+    
+    // すべての試行が失敗した場合
+    throw new DatabaseError(
+      `Failed to create document in ${collectionName} after ${maxRetries} attempts: ${lastError?.message || 'Unknown error'}`,
+      'CREATE_ERROR'
+    );
   }
 }
 
