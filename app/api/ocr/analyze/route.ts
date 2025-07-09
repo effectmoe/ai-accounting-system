@@ -228,36 +228,98 @@ export async function POST(request: NextRequest) {
         }
       }
       
-      const vendorName = analysisResult.fields?.vendorName || analysisResult.fields?.merchantName || 
-                        analysisResult.fields?.VendorName || analysisResult.fields?.MerchantName || 
-                        file.name.replace(/\.(pdf|png|jpg|jpeg)$/i, '');
+      // 完全なベンダー名を抽出（OCRテキスト全体から）
+      const extractedText = JSON.stringify(analysisResult.fields || {});
+      let vendorName = analysisResult.fields?.vendorName || analysisResult.fields?.merchantName || 
+                      analysisResult.fields?.VendorName || analysisResult.fields?.MerchantName || 
+                      file.name.replace(/\.(pdf|png|jpg|jpeg)$/i, '');
       
-      // 勘定科目をtryブロック外で宣言
+      // より詳細なベンダー名をOCRテキストから抽出
+      const vendorPatterns = [
+        /タイムズ24株式会社/g,
+        /タイムズ.*?(?=\n|$)/g,
+        /株式会社.*?(?=\n|$)/g,
+        /[^\\n]*株式会社[^\\n]*/g
+      ];
+      
+      for (const pattern of vendorPatterns) {
+        const matches = extractedText.match(pattern);
+        if (matches && matches[0].length > vendorName.length) {
+          vendorName = matches[0].replace(/[\"\\]/g, '').trim();
+          break;
+        }
+      }
+      
+      console.log('Extracted vendor name:', vendorName);
+      console.log('OCR extracted text sample:', extractedText.substring(0, 500));
+      
+      // 新しいAIベースの勘定科目分類システムを使用
       let category = '未分類';
       
       try {
-        const { OCRProcessor } = await import('../../../../src/lib/ocr-processor');
-        const ocrProcessor = new OCRProcessor();
+        const { AccountCategoryAI } = await import('../../../../src/lib/account-category-ai');
+        const categoryAI = new AccountCategoryAI();
         
-        const ocrResultForJournal = {
+        const ocrResultForAI = {
+          text: extractedText,
           vendor: vendorName,
           amount: totalAmountExtracted,
           taxAmount: taxAmountExtracted,
-          date: documentDate.toISOString().split('T')[0],
+          date: documentDate ? documentDate.toISOString().split('T')[0] : null,
           items: []
         };
         
-        const journalEntry = await ocrProcessor.createJournalEntry(
-          ocrResultForJournal,
+        console.log('Calling AI category prediction with:', {
+          vendor: vendorName,
+          amount: totalAmountExtracted,
+          textLength: extractedText.length
+        });
+        
+        const prediction = await categoryAI.predictAccountCategory(
+          ocrResultForAI,
           companyId === 'default' ? '11111111-1111-1111-1111-111111111111' : companyId
         );
         
-        if (journalEntry && journalEntry.debitAccount) {
-          category = journalEntry.debitAccount;
+        if (prediction && prediction.category) {
+          category = prediction.category;
+          console.log('AI prediction result:', {
+            category: prediction.category,
+            confidence: prediction.confidence,
+            reasoning: prediction.reasoning?.substring(0, 200)
+          });
+        } else {
+          console.warn('AI prediction returned null or invalid result');
         }
       } catch (error) {
-        console.error('Category prediction error:', error);
-        // categoryは既に初期化済み
+        console.error('AI Category prediction error:', error);
+        console.error('Error details:', {
+          message: error.message,
+          stack: error.stack
+        });
+        // フォールバック：古いシステムを使用
+        try {
+          const { OCRProcessor } = await import('../../../../src/lib/ocr-processor');
+          const ocrProcessor = new OCRProcessor();
+          
+          const ocrResultForJournal = {
+            vendor: vendorName,
+            amount: totalAmountExtracted,
+            taxAmount: taxAmountExtracted,
+            date: documentDate ? documentDate.toISOString().split('T')[0] : null,
+            items: []
+          };
+          
+          const journalEntry = await ocrProcessor.createJournalEntry(
+            ocrResultForJournal,
+            companyId === 'default' ? '11111111-1111-1111-1111-111111111111' : companyId
+          );
+          
+          if (journalEntry && journalEntry.debitAccount) {
+            category = journalEntry.debitAccount;
+          }
+        } catch (fallbackError) {
+          console.error('Fallback OCRProcessor also failed:', fallbackError);
+        }
       }
       
       // 日付が見つからない場合の処理
