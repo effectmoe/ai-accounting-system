@@ -103,6 +103,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // 代替候補を初期化
+    let alternatives: Array<{ category: string; confidence: number; reason: string }> = [];
+
     // Azure OpenAIを使用した高度な分析（環境変数が設定されている場合のみ）
     if (process.env.AZURE_OPENAI_ENDPOINT && process.env.AZURE_OPENAI_KEY) {
       try {
@@ -210,8 +213,8 @@ JSONフォーマットで以下の形式で回答してください：
       }
     }
 
-    // 代替候補を生成
-    const alternatives = categoryRules
+    // 代替候補を生成（既存の alternatives に追加）
+    const ruleBasedAlternatives = categoryRules
       .filter(rule => 
         rule.category !== primarySuggestion.category &&
         rule.keywords.some(keyword => searchText.includes(keyword))
@@ -222,6 +225,9 @@ JSONフォーマットで以下の形式で回答してください：
         reason: `キーワード「${rule.keywords.find(k => searchText.includes(k))}」による代替案`
       }))
       .slice(0, 2); // 最大2つの代替案
+    
+    // 既存の alternatives と結合
+    alternatives = [...alternatives, ...ruleBasedAlternatives].slice(0, 3); // 最大3つの代替案
 
     // 分析結果を構築
     const analysisResult = {

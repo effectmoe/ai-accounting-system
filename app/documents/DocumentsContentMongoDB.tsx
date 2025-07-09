@@ -229,12 +229,8 @@ export default function DocumentsContentMongoDB() {
         
         toast.success(`仕訳を作成しました\n借方: ${debitLine?.accountName || '不明'} ¥${(doc.total_amount || 0).toLocaleString()}\n貸方: ${creditLine?.accountName || '現金'} ¥${(doc.total_amount || 0).toLocaleString()}`);
         
-        // ドキュメントのステータスを更新
-        await fetch(`/api/documents/${doc._id || doc.id}/status`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: 'journalized' })
-        });
+        // ステータス更新は不要（仕訳作成時に自動的に処理される）
+        console.log('Journal created, refreshing document list...');
         
         // リストを更新
         fetchDocuments();
