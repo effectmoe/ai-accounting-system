@@ -506,7 +506,7 @@ export default function DocumentsContentMongoDB() {
                           {doc.category}
                         </span>
                       )}
-                      <span>処理: {new Date(doc.created_at).toLocaleDateString('ja-JP')}</span>
+                      <span>処理: {new Date(doc.created_at).toLocaleDateString('ja-JP')} {new Date(doc.created_at).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
                     {doc.gridfs_file_id && (
                       <div className="mt-1">
