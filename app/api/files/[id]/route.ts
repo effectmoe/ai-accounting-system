@@ -210,3 +210,4 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 }
 
 export const runtime = 'nodejs';
+export const maxDuration = 60; // 60秒のタイムアウト設定
