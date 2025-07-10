@@ -306,6 +306,38 @@ export async function POST(request: NextRequest) {
       let responseMessage = '';
       let quickReplies: Array<{text: string, value: string}> = [];
       
+      // 質問タイプの判定
+      const isYesNoQuestion = (message: string): boolean => {
+        return (
+          message.includes('よろしいですか') ||
+          message.includes('よろしいでしょうか') ||
+          message.includes('確定しても') ||
+          message.includes('確定しますか') ||
+          message.includes('ありますか？') ||
+          message.includes('ですか？')
+        );
+      };
+      
+      const isSpecificInfoRequest = (message: string): boolean => {
+        return (
+          message.includes('お知らせください') ||
+          message.includes('教えてください') ||
+          message.includes('入力してください') ||
+          message.includes('記載してください') ||
+          message.includes('お伝えください') ||
+          message.includes('お聞かせください')
+        );
+      };
+      
+      const isChoiceQuestion = (message: string): boolean => {
+        return (
+          message.includes('どの') ||
+          message.includes('どちら') ||
+          message.includes('選択') ||
+          message.includes('期間分')
+        );
+      };
+      
       // 「追加する項目や修正点はありますか？」への「はい」の応答を特別に処理
       if (lastAssistantQuestion.includes('追加する項目や修正点はありますか') && userSaidYes) {
         responseMessage = `どのような追加・修正をご希望ですか？`;
@@ -493,6 +525,12 @@ export async function POST(request: NextRequest) {
         }
       }
       
+      // クイックリプライの最終判定
+      // 具体的情報を求める質問の場合はクイックリプライを表示しない
+      if (isSpecificInfoRequest(responseMessage) && !isChoiceQuestion(responseMessage)) {
+        quickReplies = [];
+      }
+      
       // レスポンスの作成
       const response = {
         success: true,
@@ -614,19 +652,40 @@ export async function POST(request: NextRequest) {
           paymentMethod: currentInvoiceData?.paymentMethod || 'bank_transfer'
         };
         
+        // 質問タイプ判定関数（共通使用）
+        const isInfoRequest = (msg: string) => {
+          return msg.includes('お知らせください') || 
+                 msg.includes('教えてください') ||
+                 msg.includes('入力してください') ||
+                 msg.includes('記載してください');
+        };
+        
         // クイック返信の生成
         let quickReplies: Array<{text: string, value: string}> = [];
-        if (aiResponse.includes('確認') || aiResponse.includes('よろしい')) {
+        
+        // 具体的情報を求める場合はクイックリプライを表示しない
+        if (isInfoRequest(aiResponse)) {
+          quickReplies = [];
+        }
+        // Yes/No質問の場合
+        else if ((aiResponse.includes('確認') || aiResponse.includes('よろしい')) && 
+                 (aiResponse.includes('ですか') || aiResponse.includes('でしょうか'))) {
           quickReplies = [
             { text: 'はい（確定）', value: 'はい、この内容で確定します' },
             { text: 'いいえ（修正）', value: 'いいえ、修正したいです' }
           ];
-        } else if (aiResponse.includes('追加する項目') || aiResponse.includes('修正点')) {
+        }
+        // 追加・修正の有無を問う場合
+        else if ((aiResponse.includes('追加する項目') || aiResponse.includes('修正点')) && 
+                 aiResponse.includes('ありますか')) {
           quickReplies = [
             { text: 'はい（追加・修正あり）', value: '追加したい項目があります' },
             { text: 'いいえ（このまま確定）', value: 'このままで確定します' }
           ];
-        } else if (aiResponse.includes('期間') && amounts.some(a => a.isMonthly)) {
+        }
+        // 期間選択の場合（選択肢を提供）
+        else if (aiResponse.includes('期間') && amounts.some(a => a.isMonthly) && 
+                 (aiResponse.includes('どの') || aiResponse.includes('記載しますか'))) {
           const monthlyAmount = amounts.find(a => a.isMonthly)?.value || 0;
           quickReplies = [
             { text: '今月分のみ', value: `今月分のみ（${monthlyAmount.toLocaleString()}円）でお願いします` },

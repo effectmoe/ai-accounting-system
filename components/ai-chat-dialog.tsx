@@ -65,8 +65,7 @@ export default function AIChatDialog({
         timestamp: new Date(),
         quickReplies: mode === 'create'
           ? [
-              { text: '例を見る', value: '請求書の作成例を見せてください' },
-              { text: '前回と同じ', value: '前回と同じ顧客に請求書を作成したい' }
+              { text: '例を見る', value: '請求書の作成例を見せてください' }
             ]
           : [
               { text: '金額を変更', value: '金額を変更したいです' },
@@ -333,7 +332,7 @@ export default function AIChatDialog({
                 onKeyDown={handleKeyDown}
                 placeholder="例: 山田商事さんに、ウェブサイト制作費として50万円の請求書を作成してください"
                 disabled={isLoading}
-                className="flex-1"
+                className="flex-1 placeholder:text-gray-400"
               />
               <Button
                 onClick={(e) => {
