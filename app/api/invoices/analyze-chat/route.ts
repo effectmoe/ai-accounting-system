@@ -90,6 +90,11 @@ export async function POST(request: NextRequest) {
         customerName = customerMatch[1].replace(/さん$|様$/, '');
       }
       
+      // 既存データから顧客名を保持
+      if (!customerName && currentInvoiceData && currentInvoiceData.customerName) {
+        customerName = currentInvoiceData.customerName;
+      }
+      
       // 金額の抽出（複数の金額を検出）
       const amounts: Array<{value: number, isMonthly: boolean, description?: string}> = [];
       const amountMatches = conversation.matchAll(/(\d+)(万円|万|円)(?:\/月|[のの]月額)?/g);
@@ -280,16 +285,36 @@ export async function POST(request: NextRequest) {
       const userSaidNo = conversation.match(/いいえ|いらない|不要|必要ありません|必要ない|なし|無し|ない|ありません/i);
       const shortNegative = conversation.length < 20 && conversation.match(/ない|なし|不要|いらない|ありません/i);
       const userAskedQuestion = conversation.includes('？') || conversation.includes('?');
-      const userWantsToAdd = conversation.includes('追加') || conversation.includes('他に');
+      const userWantsToAdd = conversation.match(/追加|他に|オプション|付けて|つけて/i);
       const userConfused = conversation.match(/なんですか|何それ|どういうこと|分からない|わからない|説明/i);
       const userDenied = conversation.match(/作成しました？|してない|していません|やってない/i);
+      const userGivingInstruction = conversation.match(/して|してください|お願い|追加して|変更して/i);
       
       // 応答メッセージの生成
       let responseMessage = '';
       let quickReplies: Array<{text: string, value: string}> = [];
       
       // ユーザーの特定の反応に対する優先応答
-      if (userConfused) {
+      if (userWantsToAdd && (hasMonthlyFee || conversation.includes('保守') || conversation.includes('オプション'))) {
+        // 追加項目の指示がある場合
+        if (hasMonthlyFee && monthlyAmount) {
+          responseMessage = `承知いたしました。${monthlyAmount.value.toLocaleString()}円/月の保守料金を追加します。\n\n` +
+                          `請求書にはどの期間分を記載しますか？`;
+          quickReplies = [
+            { text: '今月分のみ', value: `今月分のみ（${monthlyAmount.value.toLocaleString()}円）でお願いします` },
+            { text: '3ヶ月分', value: `3ヶ月分（${(monthlyAmount.value * 3).toLocaleString()}円）でお願いします` },
+            { text: '6ヶ月分', value: `6ヶ月分（${(monthlyAmount.value * 6).toLocaleString()}円）でお願いします` },
+            { text: '年間契約', value: `年間契約（${(monthlyAmount.value * 12).toLocaleString()}円）でお願いします` }
+          ];
+        } else {
+          responseMessage = `承知いたしました。追加項目を請求書に反映します。\n\n` +
+                          `現在の内容を確認しました。他に追加したい項目はありますか？`;
+          quickReplies = [
+            { text: 'はい', value: '他にも追加項目があります' },
+            { text: 'いいえ', value: 'これで確定します' }
+          ];
+        }
+      } else if (userConfused) {
         responseMessage = `申し訳ございません。説明が不足していました。\n\n` +
                         `現在、${customerName && customerName !== '未設定顧客' ? customerName + '様への' : ''}請求書を作成中です。\n` +
                         `ご入力いただいた内容から、請求書に必要な情報を読み取っています。\n\n` +
@@ -385,6 +410,14 @@ export async function POST(request: NextRequest) {
           responseMessage = `承知いたしました。以下の変更を行いました：\n\n` +
                           changes.map(c => `・${c}`).join('\n') +
                           `\n\n他に変更したい部分はありますか？`;
+        } else if (userGivingInstruction) {
+          // 具体的な指示があるがパターンに合わない場合
+          responseMessage = `申し訳ございません。ご指示の内容を正しく理解できませんでした。\n\n` +
+                          `もう一度、以下のような形でお伝えいただけますか？\n` +
+                          `・「保守料金8000円を追加」\n` +
+                          `・「金額を60万円に変更」\n` +
+                          `・「支払期限を30日後に」\n\n` +
+                          `どのような変更をご希望ですか？`;
         } else {
           responseMessage = `申し訳ございません。変更内容を理解できませんでした。\n\n` +
                           `以下のような指示をお試しください：\n` +
