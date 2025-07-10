@@ -54,7 +54,13 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     console.log('Analyze chat request body:', body);
     
-    const { conversation } = body;
+    const { 
+      conversation, 
+      conversationHistory,
+      sessionId,
+      currentInvoiceData,
+      mode = 'create'
+    } = body;
     
     if (!conversation || typeof conversation !== 'string') {
       console.log('Invalid conversation data:', conversation);
@@ -65,6 +71,8 @@ export async function POST(request: NextRequest) {
     }
     
     console.log('Conversation to analyze:', conversation);
+    console.log('Session ID:', sessionId);
+    console.log('Mode:', mode);
 
     // OpenAI APIキーが設定されていない場合は、プレースホルダー実装を使用
     const apiKey = process.env.OPENAI_API_KEY || process.env.AZURE_OPENAI_API_KEY;
@@ -112,21 +120,45 @@ export async function POST(request: NextRequest) {
       const today = new Date();
       const dueDate = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
       
+      // 既存のデータとマージ
+      const mergedData = currentInvoiceData || {};
+      
       const invoiceData: InvoiceData = {
-        customerName,
+        customerName: customerName || mergedData.customerName || '未設定顧客',
         items: [{
-          description,
+          description: description || mergedData.items?.[0]?.description || '請求項目',
           quantity: 1,
-          unitPrice: amount,
-          amount: amount,
+          unitPrice: amount || mergedData.items?.[0]?.unitPrice || 10000,
+          amount: amount || mergedData.items?.[0]?.amount || 10000,
           taxRate: taxRate,
-          taxAmount: taxAmount
+          taxAmount: taxAmount || mergedData.items?.[0]?.taxAmount || 1000
         }],
-        invoiceDate: today.toISOString().split('T')[0],
-        dueDate: dueDate.toISOString().split('T')[0],
-        notes: `AI会話から作成: ${conversation.substring(0, 100)}...`,
-        paymentMethod: 'bank_transfer'
+        invoiceDate: mergedData.invoiceDate || today.toISOString().split('T')[0],
+        dueDate: mergedData.dueDate || dueDate.toISOString().split('T')[0],
+        notes: mergedData.notes || `AI会話から作成: ${conversation.substring(0, 100)}...`,
+        paymentMethod: mergedData.paymentMethod || 'bank_transfer'
       };
+      
+      // 応答メッセージの生成
+      let responseMessage = '';
+      if (mode === 'create') {
+        if (customerName && amount && description) {
+          responseMessage = `承知いたしました。${customerName}様への請求書を作成します。\n\n` +
+                          `内容：${description}\n` +
+                          `金額：¥${amount.toLocaleString()}（税込 ¥${(amount + taxAmount).toLocaleString()}）\n\n` +
+                          `他に追加したい項目はありますか？`;
+        } else {
+          const missing = [];
+          if (!customerName) missing.push('顧客名');
+          if (!amount) missing.push('金額');
+          if (!description) missing.push('請求内容');
+          responseMessage = `請求書作成に必要な情報が不足しています。\n\n` +
+                          `不足情報：${missing.join('、')}\n\n` +
+                          `例えば「山田商事様にウェブ制作費50万円」のようにお伝えください。`;
+        }
+      } else {
+        responseMessage = `請求書の内容を更新しました。\n\n他に変更したい部分はありますか？`;
+      }
       
       // 既存の顧客マッチング処理を続行
       let customerId: string | null = null;
@@ -156,6 +188,7 @@ export async function POST(request: NextRequest) {
       // レスポンスの作成
       const response = {
         success: true,
+        message: responseMessage,
         data: {
           customerId,
           customerName,
@@ -168,7 +201,7 @@ export async function POST(request: NextRequest) {
           taxAmount: invoiceData.items.reduce((sum, item) => sum + item.taxAmount, 0),
           totalAmount: invoiceData.items.reduce((sum, item) => sum + item.amount + item.taxAmount, 0),
         },
-        aiConversationId: Date.now().toString(),
+        aiConversationId: sessionId || Date.now().toString(),
       };
       
       return NextResponse.json(response);

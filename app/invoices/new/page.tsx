@@ -9,9 +9,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 // Selectコンポーネントは使用せず、ネイティブのselect要素を使用
-import { Loader2, Plus, Trash2, Sparkles } from 'lucide-react';
+import { Loader2, Plus, Trash2, Sparkles, MessageSquare } from 'lucide-react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
+import AIChatDialog from '@/app/components/ai-chat-dialog';
 
 interface InvoiceItem {
   description: string;
@@ -50,6 +51,7 @@ export default function NewInvoicePage() {
   // AI会話入力
   const [conversation, setConversation] = useState('');
   const [aiConversationId, setAiConversationId] = useState<string | null>(null);
+  const [showAIChat, setShowAIChat] = useState(false);
   
   // 顧客情報
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -132,7 +134,7 @@ export default function NewInvoicePage() {
     }
   };
 
-  // AI会話を解析
+  // AI会話を解析（旧バージョン - 互換性のため残す）
   const analyzeConversation = async () => {
     if (!conversation.trim()) {
       setError('会話内容を入力してください');
@@ -157,39 +159,8 @@ export default function NewInvoicePage() {
       
       // 解析結果を反映
       if (result.data) {
-        const { data } = result;
-        
-        // 顧客情報
-        if (data.customerId) {
-          setSelectedCustomerId(data.customerId);
-        } else if (data.customerName) {
-          setCustomerName(data.customerName);
-        }
-        
-        // 日付
-        if (data.invoiceDate) {
-          setInvoiceDate(format(new Date(data.invoiceDate), 'yyyy-MM-dd'));
-        }
-        if (data.dueDate) {
-          setDueDate(format(new Date(data.dueDate), 'yyyy-MM-dd'));
-        }
-        
-        // 明細
-        if (data.items && data.items.length > 0) {
-          setItems(data.items);
-        }
-        
-        // その他
-        if (data.notes) {
-          setNotes(data.notes);
-        }
-        if (data.paymentMethod) {
-          setPaymentMethod(data.paymentMethod);
-        }
-        
-        // AI会話ID
+        applyInvoiceData(result.data);
         setAiConversationId(result.aiConversationId);
-        
         setSuccessMessage('会話から請求内容を抽出しました。内容を確認してください。');
       }
     } catch (error) {
@@ -197,6 +168,45 @@ export default function NewInvoicePage() {
       setError('会話の解析に失敗しました');
     } finally {
       setIsAnalyzing(false);
+    }
+  };
+
+  // AIチャットダイアログからのデータを適用
+  const handleAIChatComplete = (invoiceData: any) => {
+    applyInvoiceData(invoiceData);
+    setAiConversationId(Date.now().toString());
+    setShowAIChat(false);
+    setSuccessMessage('AI会話から請求書データを作成しました。内容を確認してください。');
+  };
+
+  // 請求書データを適用する共通関数
+  const applyInvoiceData = (data: any) => {
+    // 顧客情報
+    if (data.customerId) {
+      setSelectedCustomerId(data.customerId);
+    } else if (data.customerName) {
+      setCustomerName(data.customerName);
+    }
+    
+    // 日付
+    if (data.invoiceDate) {
+      setInvoiceDate(format(new Date(data.invoiceDate), 'yyyy-MM-dd'));
+    }
+    if (data.dueDate) {
+      setDueDate(format(new Date(data.dueDate), 'yyyy-MM-dd'));
+    }
+    
+    // 明細
+    if (data.items && data.items.length > 0) {
+      setItems(data.items);
+    }
+    
+    // その他
+    if (data.notes) {
+      setNotes(data.notes);
+    }
+    if (data.paymentMethod) {
+      setPaymentMethod(data.paymentMethod);
     }
   };
 
@@ -355,30 +365,57 @@ export default function NewInvoicePage() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div>
-              <Label htmlFor="conversation">会話内容を入力</Label>
-              <Textarea
-                id="conversation"
-                value={conversation}
-                onChange={(e) => setConversation(e.target.value)}
-                placeholder="例：山田商事さんに、ウェブサイト制作費として50万円の請求書を作成してください。納期は今月末です。"
-                className="min-h-[120px]"
-              />
+            <div className="flex gap-4">
+              {/* 新しいチャット形式 */}
+              <Button
+                onClick={() => setShowAIChat(true)}
+                variant="default"
+                className="flex-1"
+              >
+                <MessageSquare className="mr-2 h-4 w-4" />
+                AIアシスタントと会話する
+              </Button>
+              
+              {/* 既存の一括解析（互換性のため残す） */}
+              <Button
+                onClick={() => setShowAIChat(false)}
+                variant="outline"
+                className="flex-1"
+              >
+                <Sparkles className="mr-2 h-4 w-4" />
+                テキスト一括解析
+              </Button>
             </div>
-            <Button
-              onClick={analyzeConversation}
-              disabled={isAnalyzing}
-              variant="secondary"
-            >
-              {isAnalyzing ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  解析中...
-                </>
-              ) : (
-                '会話を解析'
-              )}
-            </Button>
+            
+            {/* テキスト一括解析モード */}
+            {!showAIChat && (
+              <>
+                <div>
+                  <Label htmlFor="conversation">会話内容を入力</Label>
+                  <Textarea
+                    id="conversation"
+                    value={conversation}
+                    onChange={(e) => setConversation(e.target.value)}
+                    placeholder="例：山田商事さんに、ウェブサイト制作費として50万円の請求書を作成してください。納期は今月末です。"
+                    className="min-h-[120px]"
+                  />
+                </div>
+                <Button
+                  onClick={analyzeConversation}
+                  disabled={isAnalyzing}
+                  variant="secondary"
+                >
+                  {isAnalyzing ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      解析中...
+                    </>
+                  ) : (
+                    '会話を解析'
+                  )}
+                </Button>
+              </>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -669,6 +706,14 @@ export default function NewInvoicePage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* AIチャットダイアログ */}
+      <AIChatDialog
+        isOpen={showAIChat}
+        onClose={() => setShowAIChat(false)}
+        onComplete={handleAIChatComplete}
+        mode="create"
+      />
     </div>
   );
 }
