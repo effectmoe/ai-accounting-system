@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     }
     // それでもない場合はOCRProcessorで判定
     else if (!debitAccount && vendorName) {
-      const { OCRProcessor } = await import('../../../../src/lib/ocr-processor');
+      const { OCRProcessor } = await import('@/lib/ocr-processor');
       const ocrProcessor = new OCRProcessor();
       
       const ocrResult = {

@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
     // MongoDB接続テスト（新システムが有効な場合のみ）
     if (useAzureMongoDB === 'true' && mongoUri) {
       try {
-        const { checkConnection } = await import('../../../src/lib/mongodb-client');
+        const { checkConnection } = await import('@/lib/mongodb-client');
         const isMongoConnected = await checkConnection();
         status.services.mongodb = isMongoConnected ? 'healthy' : 'unhealthy';
       } catch (error) {

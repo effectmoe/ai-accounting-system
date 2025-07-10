@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
     console.log('Mastra OCRエージェントで領収書を分析中...');
     
     // 直接Azure Form Recognizerサービスを使用
-    const { getFormRecognizerService } = await import('../../../../src/lib/azure-form-recognizer');
+    const { getFormRecognizerService } = await import('@/lib/azure-form-recognizer');
     const formRecognizer = getFormRecognizerService();
     
     const startTime = Date.now();
@@ -277,7 +277,7 @@ export async function POST(request: NextRequest) {
       let category = '未分類';
       
       try {
-        const { AccountCategoryAI } = await import('../../../../src/lib/account-category-ai');
+        const { AccountCategoryAI } = await import('@/lib/account-category-ai');
         const categoryAI = new AccountCategoryAI();
         
         const ocrResultForAI = {
@@ -318,7 +318,7 @@ export async function POST(request: NextRequest) {
         });
         // フォールバック：古いシステムを使用
         try {
-          const { OCRProcessor } = await import('../../../../src/lib/ocr-processor');
+          const { OCRProcessor } = await import('@/lib/ocr-processor');
           const ocrProcessor = new OCRProcessor();
           
           const ocrResultForJournal = {
@@ -427,7 +427,7 @@ export async function POST(request: NextRequest) {
     let categoryForResponse = '未分類';
     try {
       // MongoDB保存セクションで抽出したデータを再利用
-      const { OCRProcessor } = await import('../../../../src/lib/ocr-processor');
+      const { OCRProcessor } = await import('@/lib/ocr-processor');
       const ocrProcessor = new OCRProcessor();
       
       finalVendorName = analysisResult.fields?.vendorName || analysisResult.fields?.merchantName || 

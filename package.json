@@ -65,6 +65,8 @@
     "@google-cloud/vision": "^4.3.0",
     "@mastra/core": "^0.10.10",
     "@modelcontextprotocol/sdk": "^1.15.0",
+    "@octokit/plugin-retry": "^8.0.1",
+    "@octokit/plugin-throttling": "^11.0.1",
     "@octokit/rest": "^22.0.0",
     "@radix-ui/react-label": "^2.1.7",
     "@radix-ui/react-scroll-area": "^1.2.9",
