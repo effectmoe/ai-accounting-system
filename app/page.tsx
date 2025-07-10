@@ -1,6 +1,3 @@
-// import ChatInterface from './components/chat-interface';
-// import StatusCards from './components/status-cards';
-// import RecentTransactions from './components/recent-transactions';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
