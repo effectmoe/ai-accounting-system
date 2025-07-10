@@ -168,12 +168,44 @@ export async function POST(request: NextRequest) {
       
       // ユーザーの入力内容を分析
       const userSaidYes = conversation.match(/はい|yes|お願い|それで|ok|オッケー|いいです/i);
+      const userSaidNo = conversation.match(/いいえ|いらない|不要|必要ありません|必要ない|なし|無し|ない|ありません/i);
+      const shortNegative = conversation.length < 20 && conversation.match(/ない|なし|不要|いらない|ありません/i);
       const userAskedQuestion = conversation.includes('？') || conversation.includes('?');
       const userWantsToAdd = conversation.includes('追加') || conversation.includes('他に');
+      const userConfused = conversation.match(/なんですか|何それ|どういうこと|分からない|わからない|説明/i);
+      const userDenied = conversation.match(/作成しました？|してない|していません|やってない/i);
       
       // 応答メッセージの生成
       let responseMessage = '';
-      if (mode === 'create') {
+      
+      // ユーザーの特定の反応に対する優先応答
+      if (userConfused) {
+        responseMessage = `申し訳ございません。説明が不足していました。\n\n` +
+                        `現在、${customerName && customerName !== '未設定顧客' ? customerName + '様への' : ''}請求書を作成中です。\n` +
+                        `ご入力いただいた内容から、請求書に必要な情報を読み取っています。\n\n` +
+                        `請求書を作成するために、以下の情報を教えてください：\n` +
+                        `・請求先（会社名や個人名）\n` +
+                        `・請求内容（サービスや商品名）\n` +
+                        `・金額`;
+      } else if (userDenied) {
+        responseMessage = `失礼いたしました。まだ請求書は作成されていません。\n\n` +
+                        `請求書を作成するために、以下の情報をお聞かせください：\n` +
+                        `・誰宛の請求書ですか？（会社名や個人名）\n` +
+                        `・何の請求ですか？（サービスや商品名）\n` +
+                        `・いくらですか？（金額）`;
+      } else if (userSaidNo || shortNegative) {
+        if (hasPreviousConversation && customerName && amount && description) {
+          responseMessage = `承知いたしました。\n\n` +
+                          `それでは、現在の内容で請求書を確定します：\n` +
+                          `・${customerName}様\n` +
+                          `・${description}\n` +
+                          `・¥${(amount + taxAmount).toLocaleString()}（税込）\n\n` +
+                          `この内容でよろしければ、下の「会話を終了して確定」ボタンをクリックしてください。`;
+        } else {
+          responseMessage = `承知いたしました。\n\n` +
+                          `他にご要望がございましたら、お申し付けください。`;
+        }
+      } else if (mode === 'create') {
         if (customerName && amount && description) {
           if (hasPreviousConversation) {
             // 2回目以降の会話では、別の応答パターンを使用
