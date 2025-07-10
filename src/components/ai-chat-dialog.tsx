@@ -170,7 +170,7 @@ export default function AIChatDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <Card className="w-full max-w-2xl h-[80vh] flex flex-col">
+      <Card className="w-full max-w-2xl h-[80vh] flex flex-col bg-white">
         {/* ヘッダー */}
         <div className="flex items-center justify-between p-4 border-b">
           <div className="flex items-center gap-2">
@@ -218,7 +218,7 @@ export default function AIChatDialog({
         )}
 
         {/* チャットメッセージエリア */}
-        <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
+        <ScrollArea className="flex-1 p-4 bg-white" ref={scrollAreaRef}>
           <div className="space-y-4">
             {messages.map(message => (
               <div
@@ -267,7 +267,7 @@ export default function AIChatDialog({
         </ScrollArea>
 
         {/* 入力エリア */}
-        <div className="p-4 border-t space-y-3">
+        <div className="p-4 border-t space-y-3 bg-white">
           <div className="flex gap-2">
             <Input
               ref={inputRef}
