@@ -32,18 +32,24 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
+    console.log('PUT /api/invoices/[id] - params:', params);
     const body = await request.json();
+    console.log('PUT /api/invoices/[id] - body:', body);
+    
     const invoiceService = new InvoiceService();
     
     // ステータス更新の場合
     if (body.status && Object.keys(body).length === 1) {
+      console.log('Updating invoice status:', params.id, body.status);
       const invoice = await invoiceService.updateInvoiceStatus(params.id, body.status as InvoiceStatus);
       if (!invoice) {
+        console.log('Invoice not found for status update:', params.id);
         return NextResponse.json(
           { error: 'Invoice not found' },
           { status: 404 }
         );
       }
+      console.log('Invoice status updated successfully');
       return NextResponse.json(invoice);
     }
     
@@ -75,8 +81,15 @@ export async function PUT(
     return NextResponse.json(invoice);
   } catch (error) {
     console.error('Error updating invoice:', error);
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    });
     return NextResponse.json(
-      { error: 'Failed to update invoice' },
+      { 
+        error: 'Failed to update invoice',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }
