@@ -267,13 +267,26 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
         return NextResponse.json(response);
       } catch (error) {
         console.error(`${usingDeepSeek ? 'DeepSeek' : 'OpenAI'} API error:`, error);
+        console.error('[DEBUG] Error details:', {
+          message: error instanceof Error ? error.message : 'Unknown error',
+          apiKeyExists: !!process.env.OPENAI_API_KEY,
+          apiKeyLength: process.env.OPENAI_API_KEY?.length || 0,
+          deepSeekApiKeyExists: !!process.env.DEEPSEEK_API_KEY,
+          deepSeekApiKeyLength: process.env.DEEPSEEK_API_KEY?.length || 0,
+          usingDeepSeek
+        });
         console.log(`${usingDeepSeek ? 'DeepSeek' : 'OpenAI'} API failed, falling back to placeholder implementation`);
         // フォールバック：プレースホルダー実装へ続く
       }
     }
     
     // プレースホルダー実装（AIが使えない場合のフォールバック）
-    console.log('Using placeholder implementation');
+    console.log('[DEBUG] Using placeholder implementation - AI models not available or failed');
+    console.log('[DEBUG] Environment check:', {
+      openAIKeyExists: !!process.env.OPENAI_API_KEY,
+      deepSeekKeyExists: !!process.env.DEEPSEEK_API_KEY,
+      nodeEnv: process.env.NODE_ENV
+    });
       
       // プレースホルダー実装：簡単なキーワードマッチング
       const conversationLower = conversation.toLowerCase();
@@ -413,28 +426,76 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
       // 既存のitemsがある場合は、それを基に更新
       let items = mergedData.items || [];
       
-      // メイン項目（制作費など）
-      if (!items[0]) {
-        items[0] = {
-          description: description || '請求項目',
-          quantity: 1,
-          unitPrice: amount || 0,
-          amount: amount || 0,
-          taxRate: taxRate,
-          taxAmount: taxAmount || 0
-        };
-      }
+      // デバッグログ追加
+      console.log('[DEBUG] Processing items:', {
+        existingItems: items.length,
+        hasDescription: !!description,
+        hasAmount: amount > 0,
+        hasMonthlyFee,
+        description,
+        amount
+      });
       
-      // 金額が0でない場合のみ更新（誤った値で上書きしない）
-      if (amount > 0 && items[0] && !hasMonthlyFee) {
-        items[0].unitPrice = amount;
-        items[0].amount = amount;
-        items[0].taxAmount = Math.round(amount * taxRate);
-      }
+      // 新しい項目を追加するかどうかの判定
+      const isNewItem = description && amount > 0 && !hasMonthlyFee;
+      const isAddingItem = message.toLowerCase().includes('追加') || 
+                          message.toLowerCase().includes('さらに') ||
+                          message.toLowerCase().includes('それと');
       
-      // 説明が有効な場合のみ更新
-      if (description && description !== '請求項目' && items[0]) {
-        items[0].description = description;
+      if (isNewItem) {
+        if (isAddingItem) {
+          // 「追加」の意図が明確な場合は、新規項目として追加
+          console.log('[DEBUG] Adding new item as requested');
+          items.push({
+            description: description,
+            quantity: 1,
+            unitPrice: amount,
+            amount: amount,
+            taxRate: taxRate,
+            taxAmount: Math.round(amount * taxRate)
+          });
+        } else if (items.length === 0) {
+          // itemsが空の場合は、最初の項目として追加
+          console.log('[DEBUG] Adding first item');
+          items.push({
+            description: description,
+            quantity: 1,
+            unitPrice: amount,
+            amount: amount,
+            taxRate: taxRate,
+            taxAmount: Math.round(amount * taxRate)
+          });
+        } else {
+          // 既存項目がある場合で、追加の意図が不明な場合は、
+          // 同じ種類の項目があるか確認
+          const existingIndex = items.findIndex(item => 
+            item.description.includes(description.split(' ')[0]) ||
+            description.includes(item.description.split(' ')[0])
+          );
+          
+          if (existingIndex >= 0) {
+            // 同じ種類の項目がある場合は更新
+            console.log('[DEBUG] Updating existing item at index:', existingIndex);
+            items[existingIndex] = {
+              ...items[existingIndex],
+              description: description,
+              unitPrice: amount,
+              amount: amount,
+              taxAmount: Math.round(amount * taxRate)
+            };
+          } else {
+            // 異なる種類の項目の場合は追加
+            console.log('[DEBUG] Adding as new item type');
+            items.push({
+              description: description,
+              quantity: 1,
+              unitPrice: amount,
+              amount: amount,
+              taxRate: taxRate,
+              taxAmount: Math.round(amount * taxRate)
+            });
+          }
+        }
       }
       
       // 月額料金がある場合は別項目として追加
