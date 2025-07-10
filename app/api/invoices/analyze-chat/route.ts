@@ -163,22 +163,46 @@ export async function POST(request: NextRequest) {
         paymentMethod: mergedData.paymentMethod || 'bank_transfer'
       };
       
+      // 会話履歴をチェックして、重複した応答を避ける
+      const hasPreviousConversation = conversationHistory && conversationHistory.length > 2; // 初回のウェルカムメッセージを除く
+      
+      // ユーザーの入力内容を分析
+      const userSaidYes = conversation.match(/はい|yes|お願い|それで|ok|オッケー|いいです/i);
+      const userAskedQuestion = conversation.includes('？') || conversation.includes('?');
+      const userWantsToAdd = conversation.includes('追加') || conversation.includes('他に');
+      
       // 応答メッセージの生成
       let responseMessage = '';
       if (mode === 'create') {
         if (customerName && amount && description) {
-          responseMessage = `承知いたしました。${customerName}様への請求書を作成します。\n\n` +
-                          `内容：${description}\n` +
-                          `金額：¥${amount.toLocaleString()}（税込 ¥${(amount + taxAmount).toLocaleString()}）\n\n` +
-                          `他に追加したい項目はありますか？`;
+          if (hasPreviousConversation) {
+            // 2回目以降の会話では、別の応答パターンを使用
+            const additionalOptions = [
+              `請求書の内容を確認しました。\n\n明細に追加する項目はありますか？`,
+              `${customerName}様への請求書（${description} ¥${amount.toLocaleString()}）を準備しています。\n\n支払期限や備考など、他に設定したい内容はありますか？`,
+              `了解しました。現在の内容：\n・${customerName}様\n・${description}\n・¥${(amount + taxAmount).toLocaleString()}（税込）\n\nこの内容で確定してもよろしいですか？`
+            ];
+            responseMessage = additionalOptions[Math.floor(conversationHistory.length / 2) % additionalOptions.length];
+          } else {
+            responseMessage = `承知いたしました。${customerName}様への請求書を作成します。\n\n` +
+                            `内容：${description}\n` +
+                            `金額：¥${amount.toLocaleString()}（税込 ¥${(amount + taxAmount).toLocaleString()}）\n\n` +
+                            `他に追加したい項目はありますか？`;
+          }
         } else {
           const missing = [];
-          if (!customerName) missing.push('顧客名');
-          if (!amount) missing.push('金額');
-          if (!description) missing.push('請求内容');
-          responseMessage = `請求書作成に必要な情報が不足しています。\n\n` +
-                          `不足情報：${missing.join('、')}\n\n` +
-                          `例えば「山田商事様にウェブ制作費50万円」のようにお伝えください。`;
+          if (!customerName || customerName === '未設定顧客') missing.push('顧客名');
+          if (!amount || amount === 10000) missing.push('金額');
+          if (!description || description === '請求項目') missing.push('請求内容');
+          
+          if (hasPreviousConversation) {
+            responseMessage = `もう少し詳しく教えていただけますか？\n\n` +
+                            `例：「山田商事」「ウェブ制作費」「50万円」など、具体的な内容をお知らせください。`;
+          } else {
+            responseMessage = `請求書作成に必要な情報が不足しています。\n\n` +
+                            `不足情報：${missing.join('、')}\n\n` +
+                            `例えば「山田商事様にウェブ制作費50万円」のようにお伝えください。`;
+          }
         }
       } else {
         // 編集モードのメッセージ
