@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
-import AIChatDialog from '@/app/components/ai-chat-dialog';
+import AIChatDialog from '@/components/ai-chat-dialog';
 
 interface Invoice {
   _id: string;

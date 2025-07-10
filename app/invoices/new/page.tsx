@@ -12,7 +12,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Plus, Trash2, Sparkles, MessageSquare } from 'lucide-react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
-import AIChatDialog from '@/app/components/ai-chat-dialog';
+import AIChatDialog from '@/components/ai-chat-dialog';
 
 interface InvoiceItem {
   description: string;
