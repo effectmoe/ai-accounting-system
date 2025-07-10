@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 // Selectコンポーネントは使用せず、ネイティブのselect要素を使用
-import { Loader2, Plus, Trash2, Sparkles, MessageSquare, ChevronDown, CheckCircle, FileText } from 'lucide-react';
+import { Loader2, Plus, Trash2, Sparkles, MessageSquare, ChevronDown, CheckCircle, FileText, Edit } from 'lucide-react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import AIChatDialog from '@/components/ai-chat-dialog';
@@ -54,6 +54,7 @@ function NewInvoiceContent() {
   const [showTextInput, setShowTextInput] = useState(false);
   const [aiConversationId, setAiConversationId] = useState<string | null>(null);
   const [showAIChat, setShowAIChat] = useState(false);
+  const [aiDataApplied, setAiDataApplied] = useState(false); // AI会話からデータが適用されたかどうか
   
   // 顧客情報
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -186,6 +187,7 @@ function NewInvoiceContent() {
     applyInvoiceData(invoiceData);
     setAiConversationId(Date.now().toString());
     setShowAIChat(false);
+    setAiDataApplied(true);
     setSuccessMessage('AI会話から請求書データを作成しました。内容を確認してください。');
   };
 
@@ -424,14 +426,59 @@ function NewInvoiceContent() {
       )}
       {successMessage && (
         <Alert className="mb-4">
-          <AlertDescription>{successMessage}</AlertDescription>
+          <AlertDescription className="space-y-3">
+            <p>{successMessage}</p>
+            {aiDataApplied && (
+              <div className="flex gap-3 mt-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowAIChat(true)}
+                  className="flex items-center gap-2"
+                >
+                  <MessageSquare className="h-4 w-4" />
+                  AI会話で修正
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setSuccessMessage('下のフォームで直接編集できます。');
+                    // フォーカスを最初の入力フィールドに移動
+                    setTimeout(() => {
+                      document.getElementById('customer')?.focus();
+                    }, 100);
+                  }}
+                  className="flex items-center gap-2"
+                >
+                  <Edit className="h-4 w-4" />
+                  手動で修正
+                </Button>
+              </div>
+            )}
+          </AlertDescription>
         </Alert>
       )}
 
       {/* 請求書フォーム */}
       <Card>
         <CardHeader>
-          <CardTitle>請求書情報</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>請求書情報</CardTitle>
+            {aiDataApplied && (
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowAIChat(true)}
+                  className="flex items-center gap-2"
+                >
+                  <MessageSquare className="h-4 w-4" />
+                  AI会話で修正
+                </Button>
+              </div>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
@@ -708,7 +755,19 @@ function NewInvoiceContent() {
         isOpen={showAIChat}
         onClose={() => setShowAIChat(false)}
         onComplete={handleAIChatComplete}
-        mode="create"
+        mode={aiDataApplied ? "edit" : "create"}
+        initialInvoiceData={aiDataApplied ? {
+          customerId: selectedCustomerId,
+          customerName: customerName || customers.find(c => c._id === selectedCustomerId)?.companyName,
+          items: items,
+          invoiceDate: invoiceDate,
+          dueDate: dueDate,
+          notes: notes,
+          paymentMethod: paymentMethod,
+          subtotal: calculateTotals().subtotal,
+          taxAmount: calculateTotals().taxAmount,
+          totalAmount: calculateTotals().totalAmount
+        } : undefined}
       />
     </div>
   );
