@@ -239,7 +239,7 @@ const companyInfo = {
 };
 
 // PDF文書コンポーネント
-export const DocumentPDF: React.FC<{ data: DocumentData }> = ({ data }) => (
+export const PDFDocument: React.FC<{ data: DocumentData }> = ({ data }) => (
   <Document>
     <Page size="A4" style={styles.page}>
       {/* QRコード（プレースホルダー） */}
@@ -311,14 +311,30 @@ export const DocumentPDF: React.FC<{ data: DocumentData }> = ({ data }) => (
             </Text>
           )}
           <View style={styles.companyInfo}>
-            <Text style={styles.companyName}>{companyInfo.name}</Text>
-            <Text style={{ fontSize: 9 }}>{companyInfo.postal}</Text>
-            <Text style={{ fontSize: 9 }}>{companyInfo.address}</Text>
-            <Text style={{ fontSize: 9 }}>{companyInfo.phone}</Text>
-            <Text style={{ fontSize: 9 }}>{companyInfo.email}</Text>
-            <Text style={{ fontSize: 9, marginTop: 3 }}>
-              登録番号: {companyInfo.registrationNumber}
-            </Text>
+            <Text style={styles.companyName}>{data.company?.name || companyInfo.name}</Text>
+            {data.company?.address && (
+              <Text style={{ fontSize: 9 }}>{data.company.address}</Text>
+            )}
+            {data.company?.phone && (
+              <Text style={{ fontSize: 9 }}>{data.company.phone}</Text>
+            )}
+            {data.company?.email && (
+              <Text style={{ fontSize: 9 }}>{data.company.email}</Text>
+            )}
+            {data.company?.registrationNumber && (
+              <Text style={{ fontSize: 9, marginTop: 3 }}>
+                登録番号: {data.company.registrationNumber}
+              </Text>
+            )}
+            {/* 社印 */}
+            {data.company?.sealImageUrl && (
+              <View style={{ marginTop: 10 }}>
+                <Image 
+                  src={data.company.sealImageUrl} 
+                  style={{ width: 60, height: 60 }}
+                />
+              </View>
+            )}
           </View>
         </View>
       </View>

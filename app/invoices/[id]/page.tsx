@@ -369,6 +369,16 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
                 {invoice.companySnapshot.invoiceRegistrationNumber && (
                   <p>登録番号: {invoice.companySnapshot.invoiceRegistrationNumber}</p>
                 )}
+                {/* 社印 */}
+                {(invoice.companySnapshot.sealImageUrl || invoice.companySnapshot.stampImage) && (
+                  <div className="mt-4">
+                    <img 
+                      src={invoice.companySnapshot.sealImageUrl || invoice.companySnapshot.stampImage} 
+                      alt="社印" 
+                      className="w-20 h-20 object-contain"
+                    />
+                  </div>
+                )}
               </div>
             </div>
           </div>

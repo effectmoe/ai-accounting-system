@@ -41,6 +41,15 @@ export interface DocumentData {
     deliveryDate?: string;
     deliveryLocation?: string;
   };
+  company?: { // 自社情報
+    name: string;
+    address?: string;
+    phone?: string;
+    email?: string;
+    registrationNumber?: string;
+    bankAccount?: string;
+    sealImageUrl?: string; // 社印画像URL
+  };
 }
 
 export class DocumentGenerator {
