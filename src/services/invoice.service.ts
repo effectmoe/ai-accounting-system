@@ -94,10 +94,10 @@ export class InvoiceService {
     const customerSnapshot: CustomerSnapshot = {
       companyName: customer.companyName,
       postalCode: customer.postalCode,
-      address: `${customer.prefecture}${customer.city}${customer.address1}${customer.address2 || ''}`,
+      address: `${customer.prefecture || ''}${customer.city || ''}${customer.address1 || ''}${customer.address2 || ''}`,
       phone: customer.phone,
       email: customer.email,
-      contactName: customer.contacts.find(c => c.isPrimary)?.name
+      contactName: customer.contacts?.find(c => c.isPrimary)?.name || customer.contactName
     };
 
     // 自社情報のスナップショットを作成
@@ -105,7 +105,7 @@ export class InvoiceService {
       companyName: companyInfo.companyName,
       invoiceRegistrationNumber: companyInfo.invoiceRegistrationNumber,
       postalCode: companyInfo.postalCode,
-      address: `${companyInfo.prefecture}${companyInfo.city}${companyInfo.address1}${companyInfo.address2 || ''}`,
+      address: `${companyInfo.prefecture || ''}${companyInfo.city || ''}${companyInfo.address1 || ''}${companyInfo.address2 || ''}`,
       phone: companyInfo.phone,
       email: companyInfo.email,
       logoUrl: companyInfo.logoUrl,

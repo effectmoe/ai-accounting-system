@@ -264,21 +264,13 @@ export default function NewInvoicePage() {
 
   // 請求書を保存
   const saveInvoice = async () => {
-    console.log('saveInvoice called');
-    console.log('Validation - selectedCustomerId:', selectedCustomerId);
-    console.log('Validation - customerName:', customerName);
-    
     if (!selectedCustomerId && !customerName) {
-      console.log('Validation failed: No customer selected or entered');
       setError('顧客を選択するか、顧客名を入力してください');
-      alert('顧客を選択するか、顧客名を入力してください');
       return;
     }
 
     if (items.length === 0 || items.every(item => !item.description)) {
-      console.log('Validation failed: No items');
       setError('少なくとも1つの明細を入力してください');
-      alert('少なくとも1つの明細を入力してください');
       return;
     }
 
@@ -661,13 +653,7 @@ export default function NewInvoicePage() {
                 キャンセル
               </Button>
               <Button
-                onClick={() => {
-                  console.log('Button clicked');
-                  console.log('selectedCustomerId:', selectedCustomerId);
-                  console.log('customerName:', customerName);
-                  console.log('items:', items);
-                  saveInvoice();
-                }}
+                onClick={saveInvoice}
                 disabled={isLoading}
               >
                 {isLoading ? (
