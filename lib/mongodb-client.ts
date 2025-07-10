@@ -1,5 +1,13 @@
 import { MongoClient, Db, Collection, ObjectId } from 'mongodb';
 
+// カスタムエラークラス
+export class DatabaseError extends Error {
+  constructor(message: string, public code: string) {
+    super(message);
+    this.name = 'DatabaseError';
+  }
+}
+
 // MongoDB接続設定
 const DB_NAME = 'accounting';
 
@@ -350,14 +358,6 @@ export class DatabaseService {
   }
 }
 
-
-// エラーハンドリング
-export class DatabaseError extends Error {
-  constructor(message: string, public code?: string) {
-    super(message);
-    this.name = 'DatabaseError';
-  }
-}
 
 // ヘルスチェック（シンプル化）
 export async function checkConnection(): Promise<boolean> {

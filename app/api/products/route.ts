@@ -23,16 +23,14 @@ export async function GET(request: NextRequest) {
     }
 
     // 通常の一覧取得
-    const products = await productService.getProducts({
-      isActive,
+    const result = await productService.searchProducts({
       category,
+      isActive,
       limit,
-      skip,
-      sortBy,
-      sortOrder
+      skip
     });
 
-    return NextResponse.json(products);
+    return NextResponse.json(result);
   } catch (error) {
     console.error('商品一覧取得エラー:', error);
     return NextResponse.json(
