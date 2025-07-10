@@ -91,6 +91,7 @@ export async function POST(request: NextRequest) {
     console.log('Conversation to analyze:', conversation);
     console.log('Session ID:', sessionId);
     console.log('Mode:', mode);
+    console.log('[DEBUG] Current invoice data received:', JSON.stringify(currentInvoiceData, null, 2));
 
     // DeepSeek APIを最優先で使用
     const deepseekApiKey = process.env.DEEPSEEK_API_KEY;
@@ -406,7 +407,15 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
       let monthlyPeriodConfirmed = false;
       let confirmedMonths = 1;
       
-      if (conversationHistory && conversationHistory.length > 0) {
+      // 現在の会話からも期間を確認
+      const currentMonthMatch = conversation.match(/(\d+)ヶ月|(\d+)か月/);
+      if (currentMonthMatch) {
+        confirmedMonths = parseInt(currentMonthMatch[1] || currentMonthMatch[2]);
+        monthlyPeriodConfirmed = true;
+        console.log('[DEBUG] Found month period in current conversation:', confirmedMonths);
+      }
+      
+      if (!monthlyPeriodConfirmed && conversationHistory && conversationHistory.length > 0) {
         const lastMessages = conversationHistory.slice(-4).map(m => m.content).join(' ');
         if (lastMessages.includes('年間') || lastMessages.includes('12ヶ月') || lastMessages.includes('12か月')) {
           confirmedMonths = 12;
@@ -424,23 +433,29 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
       }
       
       // 既存のitemsがある場合は、それを基に更新
-      let items = mergedData.items || [];
+      // currentInvoiceDataから既存のitemsを確実に取得
+      let items = [...(currentInvoiceData.items || [])];
       
       // デバッグログ追加
       console.log('[DEBUG] Processing items:', {
         existingItems: items.length,
+        currentInvoiceDataItems: currentInvoiceData.items?.length || 0,
         hasDescription: !!description,
         hasAmount: amount > 0,
         hasMonthlyFee,
         description,
-        amount
+        amount,
+        isStatusQuestion
       });
       
       // 新しい項目を追加するかどうかの判定
-      const isNewItem = description && amount > 0 && !hasMonthlyFee;
+      const isNewItem = description && amount > 0 && !hasMonthlyFee && !isStatusQuestion;
       const isAddingItem = conversation.toLowerCase().includes('追加') || 
                           conversation.toLowerCase().includes('さらに') ||
-                          conversation.toLowerCase().includes('それと');
+                          conversation.toLowerCase().includes('それと') ||
+                          conversation.toLowerCase().includes('他に') ||
+                          // 「はい」と答えて追加の意図がある場合
+                          (userSaidYes && lastAssistantQuestion.includes('追加'));
       
       if (isNewItem) {
         if (isAddingItem) {
@@ -500,6 +515,12 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
       
       // 月額料金がある場合は別項目として追加
       if (hasMonthlyFee && monthlyAmount) {
+        console.log('[DEBUG] Processing monthly fee:', {
+          monthlyAmount: monthlyAmount.value,
+          monthlyPeriodConfirmed,
+          confirmedMonths
+        });
+        
         // 保守料などの月額項目を探す
         let monthlyItemIndex = items.findIndex(item => 
           item.description.includes('保守') || 
@@ -509,7 +530,7 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
         
         if (monthlyItemIndex === -1) {
           // 新規追加
-          items.push({
+          const newItem = {
             description: monthlyPeriodConfirmed 
               ? `保守料（${confirmedMonths}ヶ月分）` 
               : '保守料（期間要確認）',
@@ -518,10 +539,12 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
             amount: monthlyAmount.value * (monthlyPeriodConfirmed ? confirmedMonths : 1),
             taxRate: taxRate,
             taxAmount: Math.round(monthlyAmount.value * (monthlyPeriodConfirmed ? confirmedMonths : 1) * taxRate)
-          });
+          };
+          console.log('[DEBUG] Adding new monthly item:', newItem);
+          items.push(newItem);
         } else {
           // 既存項目を更新
-          items[monthlyItemIndex] = {
+          const updatedItem = {
             ...items[monthlyItemIndex],
             description: monthlyPeriodConfirmed 
               ? `保守料（${confirmedMonths}ヶ月分）` 
@@ -531,8 +554,16 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
             amount: monthlyAmount.value * (monthlyPeriodConfirmed ? confirmedMonths : 1),
             taxAmount: Math.round(monthlyAmount.value * (monthlyPeriodConfirmed ? confirmedMonths : 1) * taxRate)
           };
+          console.log('[DEBUG] Updating monthly item at index', monthlyItemIndex, ':', updatedItem);
+          items[monthlyItemIndex] = updatedItem;
         }
       }
+      
+      // デバッグログ追加
+      console.log('[DEBUG] Final items before creating invoice:', {
+        itemsCount: items.length,
+        items: JSON.stringify(items, null, 2)
+      });
       
       const invoiceData: InvoiceData = {
         customerName: customerName || mergedData.customerName || '未設定顧客',
@@ -658,7 +689,7 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
       
       // 「追加する項目や修正点はありますか？」への「はい」の応答を特別に処理
       if (lastAssistantQuestion.includes('追加する項目や修正点はありますか') && userSaidYes) {
-        responseMessage = `どのような追加・修正をご希望ですか？`;
+        responseMessage = `どのような追加・修正をご希望ですか？\n\n具体的な内容を教えてください。例えば：\n・「保守契約を4ヶ月分追加してください」\n・「金額を変更したいです」\n・「支払期限を30日後に変更してください」`;
         quickReplies = [
           { text: '金額を変更', value: '金額を変更したいです' },
           { text: '明細を追加', value: '明細項目を追加したいです' },
@@ -775,6 +806,26 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
           responseMessage = `承知いたしました。\n\n` +
                           `他にご要望がございましたら、お申し付けください。`;
         }
+      } else if (monthlyPeriodConfirmed && confirmedMonths > 0) {
+        // 保守契約期間が指定された場合
+        if (currentInvoiceData && currentInvoiceData.items && currentInvoiceData.items.length > 0) {
+          const items = currentInvoiceData.items;
+          const subtotal = items.reduce((sum, item) => sum + (item.amount || 0), 0);
+          const totalTax = items.reduce((sum, item) => sum + (item.taxAmount || 0), 0);
+          const total = subtotal + totalTax;
+          
+          responseMessage = `承知いたしました。保守契約${confirmedMonths}ヶ月分を追加しました。\n\n` +
+                          `現在の請求書内容：\n` +
+                          items.map(item => 
+                            `・${item.description}：¥${item.amount.toLocaleString()}（税抜）`
+                          ).join('\n') +
+                          `\n\n合計：¥${total.toLocaleString()}（税込）\n\n` +
+                          `他に追加・修正したい項目はありますか？`;
+          quickReplies = [
+            { text: 'はい（追加・修正）', value: '修正したい項目があります' },
+            { text: 'いいえ（確定）', value: 'このまま確定します' }
+          ];
+        }
       } else if (hasMonthlyFee && !monthlyPeriodConfirmed && monthlyAmount) {
         // 月額料金の期間を明確化する必要がある
         responseMessage = `承知いたしました。${monthlyAmount.value.toLocaleString()}円の月額料金ですね。\n\n` +
@@ -782,38 +833,40 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
         quickReplies = [
           { text: '今月分のみ', value: `今月分のみ（${monthlyAmount.value.toLocaleString()}円）でお願いします` },
           { text: '3ヶ月分', value: `3ヶ月分（${(monthlyAmount.value * 3).toLocaleString()}円）でお願いします` },
+          { text: '4ヶ月分', value: `4ヶ月分（${(monthlyAmount.value * 4).toLocaleString()}円）でお願いします` },
           { text: '6ヶ月分', value: `6ヶ月分（${(monthlyAmount.value * 6).toLocaleString()}円）でお願いします` },
           { text: '年間契約', value: `年間契約（${(monthlyAmount.value * 12).toLocaleString()}円）でお願いします` }
         ];
       } else if (mode === 'create') {
-        if (customerName && amount && description) {
+        // 現在の請求書データの合計を計算
+        const currentSubtotal = items.reduce((sum, item) => sum + (item.amount || 0), 0);
+        const currentTaxAmount = items.reduce((sum, item) => sum + (item.taxAmount || 0), 0);
+        const currentTotal = currentSubtotal + currentTaxAmount;
+        
+        if (customerName && currentTotal > 0) {
           if (hasPreviousConversation) {
             // 2回目以降の会話では、別の応答パターンを使用
-            const additionalOptions = [
-              `請求書の内容を確認しました。\n\n明細に追加する項目や修正点はありますか？`,
-              `${customerName}様への請求書（${description} ¥${amount.toLocaleString()}）を準備しています。\n\n支払期限や備考など、他に設定したい内容はありますか？`,
-              `了解しました。現在の内容：\n・${customerName}様\n・${description}\n・¥${(amount + taxAmount).toLocaleString()}（税込）\n\n他に追加・修正したい項目はありますか？`
+            responseMessage = `現在の請求書内容：\n\n` +
+                            `【顧客】${customerName}様\n` +
+                            `【明細】\n` +
+                            items.map(item => 
+                              `・${item.description}：¥${item.amount.toLocaleString()}（税抜）`
+                            ).join('\n') +
+                            `\n【合計】¥${currentTotal.toLocaleString()}（税込）\n\n` +
+                            `他に追加・修正したい項目はありますか？`;
+            quickReplies = [
+              { text: 'はい（追加・修正あり）', value: '追加したい項目があります' },
+              { text: 'いいえ（このまま確定）', value: 'このままで確定します' }
             ];
-            const analysis = analyzeQuestionType(responseMessage);
-            if (analysis.isYesNoQuestion) {
-              quickReplies = [
-                { text: 'はい（追加・修正あり）', value: '追加したい項目があります' },
-                { text: 'いいえ（このまま確定）', value: 'このままで確定します' }
-              ];
-            }
-            responseMessage = additionalOptions[Math.floor(conversationHistory.length / 2) % additionalOptions.length];
           } else {
             responseMessage = `承知いたしました。${customerName}様への請求書を作成します。\n\n` +
                             `内容：${description}\n` +
                             `金額：¥${amount.toLocaleString()}（税込 ¥${(amount + taxAmount).toLocaleString()}）\n\n` +
                             `他に追加する項目や修正点はありますか？`;
-            const analysis = analyzeQuestionType(responseMessage);
-            if (analysis.isYesNoQuestion) {
-              quickReplies = [
-                { text: 'はい（追加・修正あり）', value: '追加したい項目があります' },
-                { text: 'いいえ（このまま確定）', value: 'このままで確定します' }
-              ];
-            }
+            quickReplies = [
+              { text: 'はい（追加・修正あり）', value: '追加したい項目があります' },
+              { text: 'いいえ（このまま確定）', value: 'このままで確定します' }
+            ];
           }
         } else {
           const missing = [];

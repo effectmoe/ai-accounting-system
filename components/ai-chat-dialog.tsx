@@ -56,6 +56,11 @@ export default function AIChatDialog({
   // 初期メッセージの設定
   useEffect(() => {
     if (isOpen && messages.length === 0) {
+      // セッション開始時は必ず新規データから開始
+      if (mode === 'create') {
+        setCurrentInvoiceData({});
+      }
+      
       const initialMessage: Message = {
         id: Date.now().toString(),
         role: 'assistant',
@@ -110,6 +115,13 @@ export default function AIChatDialog({
       }));
       conversationHistory.push({ role: 'user', content: userMessage.content });
 
+      console.log('[Frontend] Sending data to API:', {
+        conversation: userMessage.content,
+        currentInvoiceData,
+        sessionId,
+        mode
+      });
+      
       const response = await fetch('/api/invoices/analyze-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -127,6 +139,11 @@ export default function AIChatDialog({
       }
 
       const result = await response.json();
+      
+      console.log('[Frontend] Received response from API:', {
+        message: result.message,
+        data: result.data
+      });
 
       // AIの応答メッセージ
       const assistantMessage: Message = {
@@ -142,6 +159,7 @@ export default function AIChatDialog({
 
       // 請求書データを更新
       if (result.data) {
+        console.log('[Frontend] Updating invoice data:', result.data);
         setCurrentInvoiceData(result.data);
       }
 
@@ -197,6 +215,11 @@ export default function AIChatDialog({
             size="icon"
             onClick={(e) => {
               e.preventDefault();
+              // ダイアログを閉じる際にデータをリセット
+              setMessages([]);
+              setCurrentInvoiceData({});
+              setSessionId(null);
+              setError(null);
               onClose();
             }}
           >
@@ -360,6 +383,11 @@ export default function AIChatDialog({
               variant="outline"
               onClick={(e) => {
                 e.preventDefault();
+                // ダイアログを閉じる際にデータをリセット
+                setMessages([]);
+                setCurrentInvoiceData({});
+                setSessionId(null);
+                setError(null);
                 onClose();
               }}
             >
