@@ -438,9 +438,9 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
       
       // 新しい項目を追加するかどうかの判定
       const isNewItem = description && amount > 0 && !hasMonthlyFee;
-      const isAddingItem = message.toLowerCase().includes('追加') || 
-                          message.toLowerCase().includes('さらに') ||
-                          message.toLowerCase().includes('それと');
+      const isAddingItem = conversation.toLowerCase().includes('追加') || 
+                          conversation.toLowerCase().includes('さらに') ||
+                          conversation.toLowerCase().includes('それと');
       
       if (isNewItem) {
         if (isAddingItem) {
