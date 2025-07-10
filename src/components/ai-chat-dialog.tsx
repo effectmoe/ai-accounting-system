@@ -196,7 +196,10 @@ export default function AIChatDialog({
           <Button
             variant="ghost"
             size="icon"
-            onClick={onClose}
+            onClick={(e) => {
+              e.preventDefault();
+              onClose();
+            }}
           >
             <X className="h-4 w-4" />
           </Button>
@@ -268,7 +271,9 @@ export default function AIChatDialog({
                               key={index}
                               variant="outline"
                               size="sm"
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
                                 sendMessage(reply.value);
                               }}
                               disabled={isLoading}
@@ -331,7 +336,10 @@ export default function AIChatDialog({
                 className="flex-1"
               />
               <Button
-                onClick={sendMessage}
+                onClick={(e) => {
+                  e.preventDefault();
+                  sendMessage();
+                }}
                 disabled={!input.trim() || isLoading}
                 size="icon"
                 title="送信 (Enter)"
@@ -351,12 +359,18 @@ export default function AIChatDialog({
           <div className="flex justify-between">
             <Button
               variant="outline"
-              onClick={onClose}
+              onClick={(e) => {
+                e.preventDefault();
+                onClose();
+              }}
             >
               キャンセル
             </Button>
             <Button
-              onClick={completeConversation}
+              onClick={(e) => {
+                e.preventDefault();
+                completeConversation();
+              }}
               disabled={!currentInvoiceData || Object.keys(currentInvoiceData).length === 0}
             >
               <CheckCircle className="mr-2 h-4 w-4" />
