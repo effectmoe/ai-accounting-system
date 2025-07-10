@@ -361,11 +361,11 @@ export async function POST(request: NextRequest) {
             const additionalOptions = [
               `請求書の内容を確認しました。\n\n明細に追加する項目はありますか？`,
               `${customerName}様への請求書（${description} ¥${amount.toLocaleString()}）を準備しています。\n\n支払期限や備考など、他に設定したい内容はありますか？`,
-              `了解しました。現在の内容：\n・${customerName}様\n・${description}\n・¥${(amount + taxAmount).toLocaleString()}（税込）\n\nこの内容で確定してもよろしいですか？`;
+              `了解しました。現在の内容：\n・${customerName}様\n・${description}\n・¥${(amount + taxAmount).toLocaleString()}（税込）\n\nこの内容で確定してもよろしいですか？`
+            ];
             quickReplies = [
               { text: 'はい', value: 'はい、この内容で確定します' },
               { text: 'いいえ', value: 'もう少し修正したいです' }
-            ]
             ];
             responseMessage = additionalOptions[Math.floor(conversationHistory.length / 2) % additionalOptions.length];
           } else {
