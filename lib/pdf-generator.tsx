@@ -1,6 +1,6 @@
 import React from 'react';
 import { Document, Page, Text, View, StyleSheet, PDFViewer, Font, Image } from '@react-pdf/renderer';
-import { DocumentData } from './document-generator';
+import { DocumentData } from '@/lib/document-generator';
 
 // 日本語フォントの登録（Noto Sans JPを使用）
 Font.register({

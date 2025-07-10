@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDatabase } from '@/lib/mongodb-client';
 import { ObjectId } from 'mongodb';
 import ReactPDF from '@react-pdf/renderer';
-import { PDFDocument } from '@/src/lib/pdf-generator';
+import { PDFDocument } from '@/lib/pdf-generator';
 import React from 'react';
 
 export async function GET(
