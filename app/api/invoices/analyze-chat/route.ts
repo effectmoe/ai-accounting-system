@@ -51,14 +51,20 @@ type InvoiceData = z.infer<typeof InvoiceDataSchema>;
 
 export async function POST(request: NextRequest) {
   try {
-    const { conversation } = await request.json();
+    const body = await request.json();
+    console.log('Analyze chat request body:', body);
+    
+    const { conversation } = body;
     
     if (!conversation || typeof conversation !== 'string') {
+      console.log('Invalid conversation data:', conversation);
       return NextResponse.json(
         { error: 'Conversation text is required' },
         { status: 400 }
       );
     }
+    
+    console.log('Conversation to analyze:', conversation);
 
     // OpenAI APIキーが設定されていない場合は、プレースホルダー実装を使用
     const apiKey = process.env.OPENAI_API_KEY || process.env.AZURE_OPENAI_API_KEY;
@@ -78,12 +84,15 @@ export async function POST(request: NextRequest) {
       
       // 金額の抽出
       let amount = 0;
-      const amountMatch = conversation.match(/(\d+)(?:万円|円)/);
+      const amountMatch = conversation.match(/(\d+)(万円|万|円)/);
       if (amountMatch) {
-        amount = amountMatch[1].includes('万') ? 
-          parseInt(amountMatch[1]) * 10000 : 
-          parseInt(amountMatch[1]);
+        const numStr = amountMatch[1];
+        const unit = amountMatch[2];
+        amount = (unit === '万円' || unit === '万') ? 
+          parseInt(numStr) * 10000 : 
+          parseInt(numStr);
       }
+      console.log('Extracted amount:', amount);
       
       // 品目の抽出（「〜費」「〜料」「〜代」など）
       let description = '';
@@ -123,15 +132,24 @@ export async function POST(request: NextRequest) {
       let customerId: string | null = null;
       
       if (customerName && customerName !== '未設定顧客') {
-        const customerService = new CustomerService();
-        const searchResult = await customerService.searchCustomers({ 
-          query: customerName,
-          limit: 1 
-        });
-        
-        if (searchResult.customers.length > 0) {
-          customerId = searchResult.customers[0]._id!.toString();
-          customerName = searchResult.customers[0].companyName;
+        try {
+          const customerService = new CustomerService();
+          const searchResult = await customerService.getCustomers({ 
+            limit: 100
+          });
+          
+          // 顧客名で部分一致検索
+          const matchedCustomers = searchResult.customers.filter(c => 
+            c.companyName.includes(customerName) || 
+            (c.contactName && c.contactName.includes(customerName))
+          );
+          
+          if (matchedCustomers.length > 0) {
+            customerId = matchedCustomers[0]._id!.toString();
+            customerName = matchedCustomers[0].companyName;
+          }
+        } catch (err) {
+          console.error('Customer search error:', err);
         }
       }
       
@@ -236,15 +254,24 @@ export async function POST(request: NextRequest) {
     let customerName = invoiceData.customerName;
     
     if (customerName) {
-      const customerService = new CustomerService();
-      const searchResult = await customerService.searchCustomers({ 
-        query: customerName,
-        limit: 1 
-      });
-      
-      if (searchResult.customers.length > 0) {
-        customerId = searchResult.customers[0]._id!.toString();
-        customerName = searchResult.customers[0].companyName;
+      try {
+        const customerService = new CustomerService();
+        const searchResult = await customerService.getCustomers({ 
+          limit: 100
+        });
+        
+        // 顧客名で部分一致検索
+        const matchedCustomers = searchResult.customers.filter(c => 
+          c.companyName.includes(customerName) || 
+          (c.contactName && c.contactName.includes(customerName))
+        );
+        
+        if (matchedCustomers.length > 0) {
+          customerId = matchedCustomers[0]._id!.toString();
+          customerName = matchedCustomers[0].companyName;
+        }
+      } catch (err) {
+        console.error('Customer search error:', err);
       }
     }
 
@@ -279,8 +306,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(response);
   } catch (error) {
     console.error('Error analyzing conversation:', error);
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    });
     return NextResponse.json(
-      { error: 'Failed to analyze conversation' },
+      { 
+        error: 'Failed to analyze conversation',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }
