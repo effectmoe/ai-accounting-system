@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { OpenAI } from 'openai';
 import { CustomerService } from '@/services/customer.service';
 import { z } from 'zod';
+import { format } from 'date-fns';
 
 // AI クライアントの初期化
 let openaiClient: OpenAI | null = null;
@@ -663,39 +664,26 @@ export async function POST(request: NextRequest) {
       const usingDeepSeek = hasDeepSeek;
       console.log(`Using ${usingDeepSeek ? 'DeepSeek' : 'OpenAI'} API for conversation analysis`);
       
-      // プロンプトの作成
-      const systemPrompt = `あなたは請求書作成のためのAIアシスタントです。
-与えられた会話から請求書に必要な情報を抽出してください。
+      // 現在の日付を取得
+      const today = new Date();
+      const invoiceDate = format(today, 'yyyy-MM-dd');
+      const dueDate = format(new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd');
 
-以下の情報を抽出してください：
-1. 顧客名または会社名
-2. 請求項目（品目、数量、単価、金額）
-3. 請求日（明記されていない場合は今日の日付）
-4. 支払期限（明記されていない場合は請求日から30日後）
-5. 備考やメモ
-6. 支払方法（明記されていない場合は銀行振込）
+      // 自然な対話のためのプロンプト
+      const systemPrompt = `あなたは請求書作成を支援するAIアシスタントです。
+ユーザーとの自然な会話を通じて、請求書に必要な情報を段階的に収集してください。
 
-税率は日本の消費税10%として計算してください。
-金額が明記されていない場合は、数量×単価で計算してください。
+現在の請求書データ：
+${JSON.stringify(currentInvoiceData || {}, null, 2)}
 
-出力は以下のJSON形式で返してください：
-{
-  "customerName": "顧客名",
-  "items": [
-    {
-      "description": "品目説明",
-      "quantity": 数量,
-      "unitPrice": 単価,
-      "amount": 金額（税抜）,
-      "taxRate": 0.1,
-      "taxAmount": 消費税額
-    }
-  ],
-  "invoiceDate": "YYYY-MM-DD",
-  "dueDate": "YYYY-MM-DD",
-  "notes": "備考",
-  "paymentMethod": "bank_transfer"
-}`;
+重要なルール：
+1. 自然で親しみやすい日本語で応答してください
+2. 既存データがある場合は保持し、新しい項目は追加してください
+3. 必要な情報が不足している場合は質問してください
+4. 確認が必要な場合は「よろしいですか？」と聞いてください
+5. 今日の日付: ${invoiceDate}、支払期限: ${dueDate}です
+
+応答は簡潔で分かりやすくしてください。`;
 
       try {
         // DeepSeekを優先使用、利用できない場合はOpenAI
@@ -704,86 +692,113 @@ export async function POST(request: NextRequest) {
           ? 'deepseek-chat' 
           : (process.env.AZURE_OPENAI_DEPLOYMENT_NAME || 'gpt-4');
         
+        // 会話履歴を含むメッセージを構築
+        const messages = [{ role: 'system' as const, content: systemPrompt }];
+        
+        // 会話履歴を追加
+        if (conversationHistory && conversationHistory.length > 0) {
+          conversationHistory.forEach(msg => {
+            messages.push({
+              role: msg.role as 'user' | 'assistant',
+              content: msg.content
+            });
+          });
+        }
+        
+        // 最新のユーザー入力を追加
+        messages.push({ role: 'user' as const, content: conversation });
+
         const completion = await aiClient.chat.completions.create({
           model: modelName,
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: conversation }
-          ],
-          temperature: 0.3,
-          response_format: { type: 'json_object' },
+          messages: messages,
+          temperature: 0.7,
+          max_tokens: 500
         });
 
-        const content = completion.choices[0]?.message?.content;
-        if (!content) {
-          throw new Error('No response from AI');
-        }
-
-        // レスポンスをパース
-        let invoiceData: InvoiceData;
-        try {
-          const parsed = JSON.parse(content);
-          invoiceData = InvoiceDataSchema.parse(parsed);
-        } catch (error) {
-          console.error('Failed to parse AI response:', error);
-          return NextResponse.json(
-            { error: 'Failed to parse invoice data from conversation' },
-            { status: 500 }
-          );
-        }
-
-        // 顧客名から既存顧客をマッチング
-        let customerId: string | null = null;
-        let customerName = invoiceData.customerName;
+        const aiResponse = completion.choices[0]?.message?.content || '';
         
-        if (customerName) {
-          try {
-            const customerService = new CustomerService();
-            const searchResult = await customerService.getCustomers({ 
-              limit: 100
+        // 会話から請求書データを抽出（シンプルなパターンマッチング）
+        const conversationLower = conversation.toLowerCase();
+        
+        // 既存データをベースに更新
+        let updatedData = { ...currentInvoiceData };
+        
+        // 顧客名の抽出
+        const customerMatch = conversation.match(/([^、。\s]+(?:会社|株式会社|商事|さん|様))/);
+        if (customerMatch && !updatedData.customerName) {
+          updatedData.customerName = customerMatch[1].replace(/さん$|様$/, '');
+        }
+        
+        // 金額と項目の抽出
+        const amountMatch = conversation.match(/(\d+)万円|(\d+)円/);
+        const itemMatch = conversation.match(/(制作|開発|保守|メンテナンス|サポート|コンサル)/);
+        
+        if (amountMatch && itemMatch) {
+          const amount = amountMatch[1] ? parseInt(amountMatch[1]) * 10000 : parseInt(amountMatch[2]);
+          const description = conversation.includes('制作') ? 'ウェブサイト制作費' :
+                            conversation.includes('保守') ? '保守・メンテナンス費' :
+                            conversation.includes('サポート') ? 'サポート費' : '請求項目';
+          
+          // 既存のitemsに追加（上書きしない）
+          if (!updatedData.items) {
+            updatedData.items = [];
+          }
+          
+          // 同じ項目がなければ追加
+          const exists = updatedData.items.some(item => item.description === description);
+          if (!exists) {
+            updatedData.items.push({
+              description,
+              quantity: 1,
+              unitPrice: amount,
+              amount: amount,
+              taxRate: 0.1,
+              taxAmount: Math.round(amount * 0.1)
             });
-            
-            // 顧客名で部分一致検索
-            const matchedCustomers = searchResult.customers.filter(c => 
-              c.companyName.includes(customerName) || 
-              (c.contactName && c.contactName.includes(customerName))
-            );
-            
-            if (matchedCustomers.length > 0) {
-              customerId = matchedCustomers[0]._id!.toString();
-              customerName = matchedCustomers[0].companyName;
-            }
-          } catch (err) {
-            console.error('Customer search error:', err);
           }
         }
-
-        // 日付の処理
-        const today = new Date();
-        const invoiceDate = invoiceData.invoiceDate 
-          ? new Date(invoiceData.invoiceDate) 
-          : today;
         
-        const dueDate = invoiceData.dueDate 
-          ? new Date(invoiceData.dueDate)
-          : new Date(invoiceDate.getTime() + 30 * 24 * 60 * 60 * 1000); // 30日後
+        // 日付設定
+        if (!updatedData.invoiceDate) {
+          updatedData.invoiceDate = invoiceDate;
+        }
+        if (!updatedData.dueDate) {
+          updatedData.dueDate = dueDate;
+        }
+        
+        // 備考に振込先情報を追加
+        if (!updatedData.notes || !updatedData.notes.includes('振込先')) {
+          updatedData.notes = `お振込先：三井住友銀行 渋谷支店 普通預金 1234567 カブシキガイシャトニーチュウ
+お支払期限：${dueDate}
+※振込手数料はお客様負担でお願いいたします`;
+        }
+        
+        // paymentMethod設定
+        if (!updatedData.paymentMethod) {
+          updatedData.paymentMethod = 'bank_transfer';
+        }
 
+        // 合計計算
+        const subtotal = updatedData.items ? updatedData.items.reduce((sum, item) => sum + (item.amount || 0), 0) : 0;
+        const taxAmount = updatedData.items ? updatedData.items.reduce((sum, item) => sum + (item.taxAmount || 0), 0) : 0;
+        const totalAmount = subtotal + taxAmount;
         // レスポンスの作成
         const response = {
           success: true,
+          message: aiResponse,
           data: {
-            customerId,
-            customerName,
-            items: invoiceData.items,
-            invoiceDate: invoiceDate.toISOString(),
-            dueDate: dueDate.toISOString(),
-            notes: invoiceData.notes,
-            paymentMethod: invoiceData.paymentMethod,
-            subtotal: invoiceData.items.reduce((sum, item) => sum + item.amount, 0),
-            taxAmount: invoiceData.items.reduce((sum, item) => sum + item.taxAmount, 0),
-            totalAmount: invoiceData.items.reduce((sum, item) => sum + item.amount + item.taxAmount, 0),
+            customerId: null,
+            customerName: updatedData.customerName || '',
+            items: updatedData.items || [],
+            invoiceDate: updatedData.invoiceDate,
+            dueDate: updatedData.dueDate,
+            notes: updatedData.notes || '',
+            paymentMethod: updatedData.paymentMethod || 'bank_transfer',
+            subtotal,
+            taxAmount,
+            totalAmount,
           },
-          aiConversationId: Date.now().toString(), // 簡易的な会話ID
+          aiConversationId: sessionId || Date.now().toString(),
         };
 
         return NextResponse.json(response);
