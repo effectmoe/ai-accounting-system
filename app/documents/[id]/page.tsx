@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Download, Edit, Send, Trash2, Eye, FileText } from 'lucide-react';
-import { getSupabaseClient } from '@/lib/supabase-singleton';
+import { getSupabaseClient } from '../../../lib/supabase-singleton';
 import { toast } from 'react-hot-toast';
 
 interface Document {

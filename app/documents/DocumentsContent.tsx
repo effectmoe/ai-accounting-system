@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { DocumentService, SavedDocument } from '@/services/document-service';
 import { FileText, Download, Send, CheckCircle, Filter, Plus, Paperclip, Bell, Edit, FileCheck, Archive, Grid3X3, List, Trash2, Image } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import { getSupabaseClient, isSupabaseConfigured } from '@/lib/supabase-singleton';
+import { getSupabaseClient, isSupabaseConfigured } from '../../lib/supabase-singleton';
 
 const documentTypeLabels = {
   estimate: '見積書',
