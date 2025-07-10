@@ -117,11 +117,17 @@ export async function POST(request: NextRequest) {
       // プレースホルダー実装：簡単なキーワードマッチング
       const conversationLower = conversation.toLowerCase();
       
+      // 状況確認の質問かどうかを判定（早期に判定）
+      const isStatusQuestion = conversation.match(/どういう状況|状況は|どうなって|進捗|今の状態|現在の内容/i);
+      
       // 顧客名の抽出（「〜さん」「〜会社」「〜株式会社」など）
       let customerName = '';
-      const customerMatch = conversation.match(/([^、。\s]+(?:会社|株式会社|さん|様))/);
-      if (customerMatch) {
-        customerName = customerMatch[1].replace(/さん$|様$/, '');
+      // 状況確認の質問でない場合のみ新しい顧客名を抽出
+      if (!isStatusQuestion) {
+        const customerMatch = conversation.match(/([^、。\s]+(?:会社|株式会社|さん|様))/);
+        if (customerMatch) {
+          customerName = customerMatch[1].replace(/さん$|様$/, '');
+        }
       }
       
       // 既存データから顧客名を保持
@@ -161,9 +167,12 @@ export async function POST(request: NextRequest) {
       
       // 品目の抽出（「〜費」「〜料」「〜代」など）
       let description = '';
-      const itemMatch = conversation.match(/([^、。\s]+(?:費|料|代|制作|開発|サービス|業務|作業))/);
-      if (itemMatch) {
-        description = itemMatch[0];
+      // 状況確認の質問でない場合のみ新しい品目を抽出
+      if (!isStatusQuestion) {
+        const itemMatch = conversation.match(/([^、。\s]+(?:費|料|代|制作|開発|サービス|業務|作業))/);
+        if (itemMatch) {
+          description = itemMatch[0];
+        }
       }
       
       // 既存データとのマージ（会話履歴から累積的に情報を保持）
@@ -175,7 +184,8 @@ export async function POST(request: NextRequest) {
         if (!description && currentInvoiceData.items && currentInvoiceData.items[0]) {
           description = currentInvoiceData.items[0].description;
         }
-        if (!amount && currentInvoiceData.items && currentInvoiceData.items[0]) {
+        // 状況確認の質問の場合は既存の金額を保持
+        if ((!amount || isStatusQuestion) && currentInvoiceData.items && currentInvoiceData.items[0]) {
           amount = currentInvoiceData.items[0].unitPrice || currentInvoiceData.items[0].amount;
         }
       }
@@ -478,6 +488,37 @@ export async function POST(request: NextRequest) {
             { text: 'はい', value: '他にも追加項目があります' },
             { text: 'いいえ', value: 'これで確定します' }
           ];
+        }
+      } else if (isStatusQuestion) {
+        // 状況確認の質問への応答
+        if (currentInvoiceData && currentInvoiceData.items && currentInvoiceData.items.length > 0) {
+          const items = currentInvoiceData.items;
+          const subtotal = items.reduce((sum, item) => sum + (item.amount || 0), 0);
+          const totalTax = items.reduce((sum, item) => sum + (item.taxAmount || 0), 0);
+          const total = subtotal + totalTax;
+          
+          responseMessage = `現在の請求書の内容は以下の通りです：\n\n` +
+                          `【顧客情報】\n` +
+                          `・${currentInvoiceData.customerName || '未設定'}様\n\n` +
+                          `【請求明細】\n` +
+                          items.map(item => 
+                            `・${item.description}：¥${item.amount.toLocaleString()}（税抜）`
+                          ).join('\n') +
+                          `\n\n【金額情報】\n` +
+                          `・小計：¥${subtotal.toLocaleString()}\n` +
+                          `・消費税：¥${totalTax.toLocaleString()}\n` +
+                          `・合計：¥${total.toLocaleString()}\n\n` +
+                          `追加や修正したい項目はありますか？`;
+          quickReplies = [
+            { text: 'はい（追加・修正）', value: '修正したい項目があります' },
+            { text: 'いいえ（確定）', value: 'このまま確定します' }
+          ];
+        } else {
+          responseMessage = `まだ請求書の情報が入力されていません。\n\n` +
+                          `請求書を作成するために必要な情報を教えてください：\n` +
+                          `・顧客名（会社名や個人名）\n` +
+                          `・請求内容（サービスや商品名）\n` +
+                          `・金額`;
         }
       } else if (userConfused) {
         responseMessage = `請求書作成に必要な情報を教えてください。（顧客名、請求内容、金額など）`;
