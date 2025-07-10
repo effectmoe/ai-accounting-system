@@ -281,8 +281,9 @@ export async function POST(request: NextRequest) {
       const hasPreviousConversation = conversationHistory && conversationHistory.length > 2; // 初回のウェルカムメッセージを除く
       
       // ユーザーの入力内容を分析
-      const userSaidYes = conversation.match(/はい|yes|お願い|それで|ok|オッケー|いいです/i);
+      const userSaidYes = conversation.match(/はい|yes|お願い|それで|ok|オッケー|いいです|確定/i);
       const userSaidNo = conversation.match(/いいえ|いらない|不要|必要ありません|必要ない|なし|無し|ない|ありません/i);
+      const userWantsToModify = conversation.match(/修正|変更|直したい|編集/i);
       const shortNegative = conversation.length < 20 && conversation.match(/ない|なし|不要|いらない|ありません/i);
       const userAskedQuestion = conversation.includes('？') || conversation.includes('?');
       const userWantsToAdd = conversation.match(/追加|他に|オプション|付けて|つけて/i);
@@ -295,7 +296,21 @@ export async function POST(request: NextRequest) {
       let quickReplies: Array<{text: string, value: string}> = [];
       
       // ユーザーの特定の反応に対する優先応答
-      if (userWantsToAdd && (hasMonthlyFee || conversation.includes('保守') || conversation.includes('オプション'))) {
+      if (userWantsToModify) {
+        // 修正したいという意図がある場合
+        responseMessage = `承知いたしました。どの部分を修正したいですか？\n\n` +
+                        `現在の内容：\n` +
+                        (customerName && customerName !== '未設定顧客' ? `・顧客：${customerName}様\n` : '') +
+                        (description && description !== '請求項目' ? `・品目：${description}\n` : '') +
+                        (amount > 0 ? `・金額：¥${amount.toLocaleString()}（税込 ¥${(amount + taxAmount).toLocaleString()}）\n` : '') +
+                        `\n修正したい項目を教えてください。`;
+        quickReplies = [
+          { text: '金額を変更', value: '金額を変更したいです' },
+          { text: '品目を変更', value: '品目を変更したいです' },
+          { text: '顧客を変更', value: '顧客を変更したいです' },
+          { text: '明細を追加', value: '明細を追加したいです' }
+        ];
+      } else if (userWantsToAdd && (hasMonthlyFee || conversation.includes('保守') || conversation.includes('オプション'))) {
         // 追加項目の指示がある場合
         if (hasMonthlyFee && monthlyAmount) {
           responseMessage = `承知いたしました。${monthlyAmount.value.toLocaleString()}円/月の保守料金を追加します。\n\n` +
@@ -328,6 +343,15 @@ export async function POST(request: NextRequest) {
                         `・誰宛の請求書ですか？（会社名や個人名）\n` +
                         `・何の請求ですか？（サービスや商品名）\n` +
                         `・いくらですか？（金額）`;
+      } else if (userSaidYes && conversation.includes('確定')) {
+        // 確定の意図が明確な場合
+        if (customerName && amount && description) {
+          responseMessage = `承知いたしました。以下の内容で請求書を確定します。\n\n` +
+                          `・${customerName}様\n` +
+                          `・${description}\n` +
+                          `・¥${(amount + taxAmount).toLocaleString()}（税込）\n\n` +
+                          `下の「会話を終了して確定」ボタンをクリックして、請求書を作成してください。`;
+        }
       } else if (userSaidNo || shortNegative) {
         if (hasPreviousConversation && customerName && amount && description) {
           responseMessage = `承知いたしました。\n\n` +
