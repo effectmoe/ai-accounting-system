@@ -109,10 +109,49 @@ export default function InvoicesPage() {
     <div className="container mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">請求書一覧</h1>
-        <Button onClick={() => router.push('/invoices/new')}>
-          <Plus className="mr-2 h-4 w-4" />
-          新規作成
-        </Button>
+      </div>
+
+      {/* 請求書作成オプション */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <Card className="border-2 border-blue-100 bg-gradient-to-br from-blue-50/50 to-purple-50/50 hover:shadow-lg transition-all cursor-pointer"
+              onClick={() => router.push('/invoices/new?mode=ai')}>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-blue-700">
+              <Sparkles className="h-5 w-5" />
+              AIアシスタントで作成
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-gray-600 mb-3">
+              会話形式で簡単に請求書を作成できます。
+              顧客名、金額、内容を伝えるだけ。
+            </p>
+            <div className="flex items-center text-blue-600">
+              <span className="text-sm font-medium">始める</span>
+              <Plus className="ml-1 h-4 w-4" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="hover:shadow-lg transition-all cursor-pointer"
+              onClick={() => router.push('/invoices/new?mode=manual')}>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-gray-700">
+              <FileText className="h-5 w-5" />
+              手動で作成
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-gray-600 mb-3">
+              フォームに直接入力して請求書を作成します。
+              詳細な設定が可能です。
+            </p>
+            <div className="flex items-center text-gray-600">
+              <span className="text-sm font-medium">フォームを開く</span>
+              <Plus className="ml-1 h-4 w-4" />
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* フィルター */}

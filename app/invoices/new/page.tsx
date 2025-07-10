@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 // Selectコンポーネントは使用せず、ネイティブのselect要素を使用
-import { Loader2, Plus, Trash2, Sparkles, MessageSquare, ChevronDown } from 'lucide-react';
+import { Loader2, Plus, Trash2, Sparkles, MessageSquare, ChevronDown, CheckCircle, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import AIChatDialog from '@/components/ai-chat-dialog';
@@ -43,6 +43,7 @@ interface Product {
 
 export default function NewInvoicePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -83,6 +84,14 @@ export default function NewInvoicePage() {
     fetchCustomers();
     fetchProducts();
   }, []);
+
+  // URLパラメータに基づいてAIチャットを自動的に開く
+  useEffect(() => {
+    const mode = searchParams.get('mode');
+    if (mode === 'ai') {
+      setShowAIChat(true);
+    }
+  }, [searchParams]);
 
   const fetchCustomers = async () => {
     try {
@@ -356,71 +365,56 @@ export default function NewInvoicePage() {
     <div className="container mx-auto p-6 max-w-6xl">
       <h1 className="text-3xl font-bold mb-6">請求書作成</h1>
 
-      {/* AI会話から作成 */}
-      <Card className="mb-6 border-2 border-blue-100 bg-gradient-to-br from-blue-50/50 to-purple-50/50">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-blue-600" />
-            AI会話から作成
-          </CardTitle>
-          <p className="text-sm text-gray-600 mt-1">
-            AIアシスタントと会話しながら、請求書を簡単に作成できます
-          </p>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {/* メインのAI会話ボタン */}
-            <Button
-              onClick={() => setShowAIChat(true)}
-              size="lg"
-              className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white"
-            >
-              <MessageSquare className="mr-2 h-5 w-5" />
-              AIアシスタントと会話する
-            </Button>
-            
-            {/* 会話内容入力フィールド（代替手段として小さく表示） */}
-            <div className="relative">
-              <button
-                onClick={() => setShowTextInput(!showTextInput)}
-                className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
-              >
-                <span>または、会話内容を直接入力する</span>
-                <ChevronDown className={`h-4 w-4 transition-transform ${showTextInput ? 'rotate-180' : ''}`} />
-              </button>
-              
-              {showTextInput && (
-                <div className="mt-3 space-y-3 animate-slide-up">
-                  <Textarea
-                    value={conversation}
-                    onChange={(e) => setConversation(e.target.value)}
-                    placeholder="例：山田商事さんに、ウェブサイト制作費として50万円の請求書を作成してください。納期は今月末です。"
-                    className="min-h-[100px]"
-                  />
-                  <Button
-                    onClick={analyzeConversation}
-                    disabled={isAnalyzing || !conversation.trim()}
-                    variant="outline"
-                    className="w-full"
-                  >
-                    {isAnalyzing ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        解析中...
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="mr-2 h-4 w-4" />
-                        テキストを一括解析
-                      </>
-                    )}
-                  </Button>
-                </div>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* 作成方法の選択 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <Card className={`border-2 transition-all cursor-pointer ${
+          showAIChat ? 'border-blue-300 shadow-lg bg-blue-50/20' : 'border-blue-100 hover:shadow-md'
+        }`}
+          onClick={() => !showAIChat && setShowAIChat(true)}>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-blue-700">
+              <Sparkles className="h-5 w-5" />
+              AIアシスタントで作成
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-gray-600">
+              会話形式で簡単に請求書を作成。
+              顧客名、金額、内容を伝えるだけ。
+            </p>
+            {showAIChat && (
+              <div className="mt-3 flex items-center gap-2 text-blue-600 text-sm">
+                <CheckCircle className="h-4 w-4" />
+                <span>選択中</span>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className={`border-2 transition-all cursor-pointer ${
+          !showAIChat ? 'border-gray-300 shadow-lg bg-gray-50/20' : 'border-gray-200 hover:shadow-md'
+        }`}
+          onClick={() => showAIChat && setShowAIChat(false)}>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-gray-700">
+              <FileText className="h-5 w-5" />
+              フォームで手動作成
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-gray-600">
+              下のフォームに直接入力。
+              詳細な設定が可能です。
+            </p>
+            {!showAIChat && (
+              <div className="mt-3 flex items-center gap-2 text-gray-600 text-sm">
+                <CheckCircle className="h-4 w-4" />
+                <span>選択中</span>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
       {/* エラーとメッセージ */}
       {error && (
