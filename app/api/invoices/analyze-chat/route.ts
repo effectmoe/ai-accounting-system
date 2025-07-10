@@ -13,13 +13,22 @@ function getDeepSeekClient(): OpenAI {
     const apiKey = process.env.DEEPSEEK_API_KEY;
     
     if (!apiKey) {
+      console.error('[DeepSeek] API key is not configured');
       throw new Error('DeepSeek API key is not configured');
     }
     
-    deepseekClient = new OpenAI({
-      apiKey,
-      baseURL: 'https://api.deepseek.com',
-    });
+    console.log('[DeepSeek] Initializing client with API key length:', apiKey.length);
+    
+    try {
+      deepseekClient = new OpenAI({
+        apiKey,
+        baseURL: 'https://api.deepseek.com',
+      });
+      console.log('[DeepSeek] Client initialized successfully');
+    } catch (error) {
+      console.error('[DeepSeek] Failed to initialize client:', error);
+      throw error;
+    }
   }
   return deepseekClient;
 }
@@ -69,6 +78,8 @@ type InvoiceData = z.infer<typeof InvoiceDataSchema>;
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('[API Start] analyze-chat endpoint called');
+    
     const body = await request.json();
     console.log('Analyze chat request body:', body);
     
@@ -146,11 +157,15 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
 応答は簡潔で分かりやすくしてください。`;
 
       try {
+        console.log('[AI] Starting AI client initialization', { usingDeepSeek });
+        
         // DeepSeekを優先使用、利用できない場合はOpenAI
         const aiClient = usingDeepSeek ? getDeepSeekClient() : getOpenAIClient();
         const modelName = usingDeepSeek 
           ? 'deepseek-chat' 
           : (process.env.AZURE_OPENAI_DEPLOYMENT_NAME || 'gpt-4');
+        
+        console.log('[AI] AI client initialized successfully', { modelName });
         
         // 会話履歴を含むメッセージを構築
         const messages = [{ role: 'system' as const, content: systemPrompt }];
@@ -170,15 +185,25 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
 
         console.log('Sending to AI with messages:', messages.length);
 
-        const completion = await aiClient.chat.completions.create({
-          model: modelName,
-          messages: messages,
-          temperature: 0.7,
-          max_tokens: 500
-        });
+        try {
+          const completion = await aiClient.chat.completions.create({
+            model: modelName,
+            messages: messages,
+            temperature: 0.7,
+            max_tokens: 500
+          });
 
-        const aiResponse = completion.choices[0]?.message?.content || '';
-        console.log('AI Response:', aiResponse);
+          const aiResponse = completion.choices[0]?.message?.content || '';
+          console.log('AI Response:', aiResponse);
+        } catch (apiError) {
+          console.error('[AI] API call failed:', {
+            error: apiError instanceof Error ? apiError.message : 'Unknown error',
+            stack: apiError instanceof Error ? apiError.stack : undefined,
+            model: modelName,
+            usingDeepSeek
+          });
+          throw apiError;
+        }
         
         // 会話から請求書データを抽出（シンプルなパターンマッチング）
         const conversationLower = conversation.toLowerCase();
@@ -976,12 +1001,26 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
     console.error('Error analyzing conversation:', error);
     console.error('Error details:', {
       message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined
+      stack: error instanceof Error ? error.stack : undefined,
+      type: error?.constructor?.name,
+      env: {
+        hasDeepSeekKey: !!process.env.DEEPSEEK_API_KEY,
+        deepSeekKeyLength: process.env.DEEPSEEK_API_KEY?.length || 0,
+        hasOpenAIKey: !!process.env.OPENAI_API_KEY,
+        hasAzureKey: !!process.env.AZURE_OPENAI_API_KEY
+      }
     });
+    
+    // 開発環境でのみ詳細なエラー情報を返す
+    const isDevelopment = process.env.NODE_ENV === 'development';
+    
     return NextResponse.json(
       { 
         error: 'Failed to analyze conversation',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: isDevelopment 
+          ? error instanceof Error ? error.message : 'Unknown error'
+          : 'Internal server error',
+        type: isDevelopment ? error?.constructor?.name : undefined
       },
       { status: 500 }
     );
