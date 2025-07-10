@@ -70,7 +70,22 @@ export async function PUT(
     }
     
     // 通常の更新
-    const invoice = await invoiceService.updateInvoice(params.id, body);
+    console.log('Updating invoice with data:', body);
+    
+    // 請求書データの整形（AI編集から来る場合）
+    const updateData: any = {};
+    
+    if (body.customerId) updateData.customerId = body.customerId;
+    if (body.invoiceDate) updateData.invoiceDate = new Date(body.invoiceDate);
+    if (body.dueDate) updateData.dueDate = new Date(body.dueDate);
+    if (body.items) updateData.items = body.items;
+    if (body.notes !== undefined) updateData.notes = body.notes;
+    if (body.paymentMethod) updateData.paymentMethod = body.paymentMethod;
+    if (body.subtotal !== undefined) updateData.subtotal = body.subtotal;
+    if (body.taxAmount !== undefined) updateData.taxAmount = body.taxAmount;
+    if (body.totalAmount !== undefined) updateData.totalAmount = body.totalAmount;
+    
+    const invoice = await invoiceService.updateInvoice(params.id, updateData);
     if (!invoice) {
       return NextResponse.json(
         { error: 'Invoice not found' },

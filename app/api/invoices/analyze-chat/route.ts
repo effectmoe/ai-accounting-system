@@ -123,15 +123,39 @@ export async function POST(request: NextRequest) {
       // 既存のデータとマージ
       const mergedData = currentInvoiceData || {};
       
+      // 編集モードの場合は、既存データを優先して使用
+      if (mode === 'edit' && mergedData.items) {
+        // 金額変更の指示があった場合
+        if (conversation.includes('金額') && amount) {
+          mergedData.items[0].unitPrice = amount;
+          mergedData.items[0].amount = amount;
+          mergedData.items[0].taxAmount = Math.round(amount * taxRate);
+        }
+        // 品目変更の指示があった場合
+        if (conversation.includes('品目') && description) {
+          mergedData.items[0].description = description;
+        }
+        // 支払期限変更の指示があった場合
+        if (conversation.includes('支払') || conversation.includes('期限')) {
+          const dueDateMatch = conversation.match(/(\d+)日/);
+          if (dueDateMatch) {
+            const days = parseInt(dueDateMatch[1]);
+            const newDueDate = new Date();
+            newDueDate.setDate(newDueDate.getDate() + days);
+            mergedData.dueDate = newDueDate.toISOString().split('T')[0];
+          }
+        }
+      }
+      
       const invoiceData: InvoiceData = {
         customerName: customerName || mergedData.customerName || '未設定顧客',
-        items: [{
-          description: description || mergedData.items?.[0]?.description || '請求項目',
+        items: mergedData.items || [{
+          description: description || '請求項目',
           quantity: 1,
-          unitPrice: amount || mergedData.items?.[0]?.unitPrice || 10000,
-          amount: amount || mergedData.items?.[0]?.amount || 10000,
+          unitPrice: amount || 10000,
+          amount: amount || 10000,
           taxRate: taxRate,
-          taxAmount: taxAmount || mergedData.items?.[0]?.taxAmount || 1000
+          taxAmount: taxAmount || 1000
         }],
         invoiceDate: mergedData.invoiceDate || today.toISOString().split('T')[0],
         dueDate: mergedData.dueDate || dueDate.toISOString().split('T')[0],
@@ -157,7 +181,30 @@ export async function POST(request: NextRequest) {
                           `例えば「山田商事様にウェブ制作費50万円」のようにお伝えください。`;
         }
       } else {
-        responseMessage = `請求書の内容を更新しました。\n\n他に変更したい部分はありますか？`;
+        // 編集モードのメッセージ
+        const changes = [];
+        if (conversation.includes('金額') && amount) {
+          changes.push(`金額を¥${amount.toLocaleString()}に変更`);
+        }
+        if (conversation.includes('品目') && description) {
+          changes.push(`品目を「${description}」に変更`);
+        }
+        if (conversation.includes('支払') || conversation.includes('期限')) {
+          changes.push('支払期限を変更');
+        }
+        
+        if (changes.length > 0) {
+          responseMessage = `承知いたしました。以下の変更を行いました：\n\n` +
+                          changes.map(c => `・${c}`).join('\n') +
+                          `\n\n他に変更したい部分はありますか？`;
+        } else {
+          responseMessage = `申し訳ございません。変更内容を理解できませんでした。\n\n` +
+                          `以下のような指示をお試しください：\n` +
+                          `・「金額を60万円に変更してください」\n` +
+                          `・「品目をコンサルティング費に変更」\n` +
+                          `・「支払期限を30日後に」\n` +
+                          `・「備考に〇〇を追加」`;
+        }
       }
       
       // 既存の顧客マッチング処理を続行

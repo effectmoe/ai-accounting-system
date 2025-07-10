@@ -18,10 +18,12 @@ import {
   Sparkles,
   Loader2,
   Eye,
-  X
+  X,
+  MessageSquare
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
+import AIChatDialog from '@/app/components/ai-chat-dialog';
 
 interface Invoice {
   _id: string;
@@ -104,6 +106,7 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
   const [error, setError] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
   const [showPdfPreview, setShowPdfPreview] = useState(false);
+  const [showAIChat, setShowAIChat] = useState(false);
 
   useEffect(() => {
     fetchInvoice();
@@ -172,6 +175,41 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
     }
   };
 
+  // AI編集完了時の処理
+  const handleAIEditComplete = async (updatedData: any) => {
+    setIsUpdating(true);
+    try {
+      // 請求書を更新
+      const response = await fetch(`/api/invoices/${params.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedData),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to update invoice');
+      }
+      
+      const updatedInvoice = await response.json();
+      setInvoice(updatedInvoice);
+      setShowAIChat(false);
+      
+      // 成功メッセージ表示（一時的）
+      const tempError = error;
+      setError(null);
+      setTimeout(() => {
+        if (!error || error === null) {
+          setError(tempError);
+        }
+      }, 3000);
+    } catch (error) {
+      console.error('Error updating invoice:', error);
+      setError('請求書の更新に失敗しました');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="container mx-auto p-6 flex justify-center items-center h-screen">
@@ -227,15 +265,13 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
           </Button>
           {invoice.status === 'draft' && (
             <>
-              {/* 編集機能は今後実装予定
               <Button
                 variant="outline"
-                onClick={() => router.push(`/invoices/${invoice._id}/edit`)}
+                onClick={() => setShowAIChat(true)}
               >
-                <Edit className="mr-2 h-4 w-4" />
-                編集
+                <MessageSquare className="mr-2 h-4 w-4" />
+                AI編集
               </Button>
-              */}
               <Button
                 onClick={() => updateStatus('sent')}
                 disabled={isUpdating}
@@ -471,6 +507,35 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
             </div>
           </div>
         </div>
+      )}
+
+      {/* AI編集ダイアログ */}
+      {invoice && (
+        <AIChatDialog
+          isOpen={showAIChat}
+          onClose={() => setShowAIChat(false)}
+          onComplete={handleAIEditComplete}
+          initialInvoiceData={{
+            customerId: invoice.customerId,
+            customerName: invoice.customerSnapshot?.companyName,
+            invoiceDate: invoice.invoiceDate,
+            dueDate: invoice.dueDate,
+            items: invoice.items.map(item => ({
+              description: item.description,
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              amount: item.amount,
+              taxRate: item.taxRate,
+              taxAmount: item.taxAmount
+            })),
+            notes: invoice.notes,
+            paymentMethod: invoice.paymentMethod,
+            subtotal: invoice.subtotal,
+            taxAmount: invoice.taxAmount,
+            totalAmount: invoice.totalAmount
+          }}
+          mode="edit"
+        />
       )}
     </div>
   );
