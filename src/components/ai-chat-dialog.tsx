@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -159,8 +160,8 @@ export default function AIChatDialog({
   };
 
   // エンターキーで送信
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey && !isLoading && input.trim()) {
       e.preventDefault();
       sendMessage();
     }
@@ -218,7 +219,7 @@ export default function AIChatDialog({
         )}
 
         {/* チャットメッセージエリア */}
-        <ScrollArea className="flex-1 p-4 bg-white" ref={scrollAreaRef}>
+        <ScrollArea className="flex-1 p-4 bg-gray-50" ref={scrollAreaRef}>
           <div className="space-y-4">
             {messages.map(message => (
               <div
@@ -268,23 +269,40 @@ export default function AIChatDialog({
 
         {/* 入力エリア */}
         <div className="p-4 border-t space-y-3 bg-white">
-          <div className="flex gap-2">
-            <Input
-              ref={inputRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="メッセージを入力..."
-              disabled={isLoading}
-              className="flex-1"
-            />
-            <Button
-              onClick={sendMessage}
-              disabled={!input.trim() || isLoading}
-              size="icon"
-            >
-              <Send className="h-4 w-4" />
-            </Button>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="chat-input" className="text-sm text-gray-600 flex items-center gap-2">
+                <MessageSquare className="h-4 w-4" />
+                AIアシスタントに質問や指示を入力してください
+              </Label>
+              <span className="text-xs text-gray-500">Enterで送信</span>
+            </div>
+            <div className="flex gap-2">
+              <Input
+                id="chat-input"
+                ref={inputRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="例: 山田商事さんに、ウェブサイト制作費として50万円の請求書を作成してください"
+                disabled={isLoading}
+                className="flex-1"
+              />
+              <Button
+                onClick={sendMessage}
+                disabled={!input.trim() || isLoading}
+                size="icon"
+                title="送信 (Enter)"
+              >
+                <Send className="h-4 w-4" />
+              </Button>
+            </div>
+            {isLoading && (
+              <p className="text-xs text-gray-500 flex items-center gap-1">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                AIが応答を生成中...
+              </p>
+            )}
           </div>
           
           {/* アクションボタン */}
