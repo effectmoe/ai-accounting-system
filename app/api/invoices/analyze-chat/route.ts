@@ -109,10 +109,24 @@ export async function POST(request: NextRequest) {
         description = itemMatch[0];
       }
       
-      // デフォルト値の設定
+      // 既存データとのマージ（会話履歴から累積的に情報を保持）
+      if (currentInvoiceData) {
+        // 既存のデータを優先し、新しい情報で上書き
+        if (!customerName && currentInvoiceData.customerName) {
+          customerName = currentInvoiceData.customerName;
+        }
+        if (!description && currentInvoiceData.items && currentInvoiceData.items[0]) {
+          description = currentInvoiceData.items[0].description;
+        }
+        if (!amount && currentInvoiceData.items && currentInvoiceData.items[0]) {
+          amount = currentInvoiceData.items[0].unitPrice || currentInvoiceData.items[0].amount;
+        }
+      }
+      
+      // デフォルト値の設定（既存データからも取得できなかった場合のみ）
       if (!customerName) customerName = '未設定顧客';
       if (!description) description = '請求項目';
-      if (!amount) amount = 10000;
+      if (!amount) amount = 0; // デフォルトを0に変更して、誤った金額を避ける
       
       const taxRate = 0.1;
       const taxAmount = Math.round(amount * taxRate);
@@ -147,19 +161,34 @@ export async function POST(request: NextRequest) {
         }
       }
       
+      // 既存のitemsがある場合は、それを基に更新
+      let items = mergedData.items || [{
+        description: description || '請求項目',
+        quantity: 1,
+        unitPrice: amount || 0,
+        amount: amount || 0,
+        taxRate: taxRate,
+        taxAmount: taxAmount || 0
+      }];
+      
+      // 金額が0でない場合のみ更新（誤った値で上書きしない）
+      if (amount > 0 && items[0]) {
+        items[0].unitPrice = amount;
+        items[0].amount = amount;
+        items[0].taxAmount = Math.round(amount * taxRate);
+      }
+      
+      // 説明が有効な場合のみ更新
+      if (description && description !== '請求項目' && items[0]) {
+        items[0].description = description;
+      }
+      
       const invoiceData: InvoiceData = {
         customerName: customerName || mergedData.customerName || '未設定顧客',
-        items: mergedData.items || [{
-          description: description || '請求項目',
-          quantity: 1,
-          unitPrice: amount || 10000,
-          amount: amount || 10000,
-          taxRate: taxRate,
-          taxAmount: taxAmount || 1000
-        }],
+        items: items,
         invoiceDate: mergedData.invoiceDate || today.toISOString().split('T')[0],
         dueDate: mergedData.dueDate || dueDate.toISOString().split('T')[0],
-        notes: mergedData.notes || `AI会話から作成: ${conversation.substring(0, 100)}...`,
+        notes: mergedData.notes || `AI会話から作成`,
         paymentMethod: mergedData.paymentMethod || 'bank_transfer'
       };
       
