@@ -227,6 +227,7 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
           </Button>
           {invoice.status === 'draft' && (
             <>
+              {/* 編集機能は今後実装予定
               <Button
                 variant="outline"
                 onClick={() => router.push(`/invoices/${invoice._id}/edit`)}
@@ -234,6 +235,7 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
                 <Edit className="mr-2 h-4 w-4" />
                 編集
               </Button>
+              */}
               <Button
                 onClick={() => updateStatus('sent')}
                 disabled={isUpdating}
