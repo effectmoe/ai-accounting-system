@@ -60,6 +60,103 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // OpenAI APIキーが設定されていない場合は、プレースホルダー実装を使用
+    const apiKey = process.env.OPENAI_API_KEY || process.env.AZURE_OPENAI_API_KEY;
+    
+    if (!apiKey) {
+      console.log('OpenAI API key not configured, using placeholder implementation');
+      
+      // プレースホルダー実装：簡単なキーワードマッチング
+      const conversationLower = conversation.toLowerCase();
+      
+      // 顧客名の抽出（「〜さん」「〜会社」「〜株式会社」など）
+      let customerName = '';
+      const customerMatch = conversation.match(/([^、。\s]+(?:会社|株式会社|さん|様))/);
+      if (customerMatch) {
+        customerName = customerMatch[1].replace(/さん$|様$/, '');
+      }
+      
+      // 金額の抽出
+      let amount = 0;
+      const amountMatch = conversation.match(/(\d+)(?:万円|円)/);
+      if (amountMatch) {
+        amount = amountMatch[1].includes('万') ? 
+          parseInt(amountMatch[1]) * 10000 : 
+          parseInt(amountMatch[1]);
+      }
+      
+      // 品目の抽出（「〜費」「〜料」「〜代」など）
+      let description = '';
+      const itemMatch = conversation.match(/([^、。\s]+(?:費|料|代|制作|開発|サービス|業務|作業))/);
+      if (itemMatch) {
+        description = itemMatch[0];
+      }
+      
+      // デフォルト値の設定
+      if (!customerName) customerName = '未設定顧客';
+      if (!description) description = '請求項目';
+      if (!amount) amount = 10000;
+      
+      const taxRate = 0.1;
+      const taxAmount = Math.round(amount * taxRate);
+      
+      const today = new Date();
+      const dueDate = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
+      
+      const invoiceData: InvoiceData = {
+        customerName,
+        items: [{
+          description,
+          quantity: 1,
+          unitPrice: amount,
+          amount: amount,
+          taxRate: taxRate,
+          taxAmount: taxAmount
+        }],
+        invoiceDate: today.toISOString().split('T')[0],
+        dueDate: dueDate.toISOString().split('T')[0],
+        notes: `AI会話から作成: ${conversation.substring(0, 100)}...`,
+        paymentMethod: 'bank_transfer'
+      };
+      
+      // 既存の顧客マッチング処理を続行
+      let customerId: string | null = null;
+      
+      if (customerName && customerName !== '未設定顧客') {
+        const customerService = new CustomerService();
+        const searchResult = await customerService.searchCustomers({ 
+          query: customerName,
+          limit: 1 
+        });
+        
+        if (searchResult.customers.length > 0) {
+          customerId = searchResult.customers[0]._id!.toString();
+          customerName = searchResult.customers[0].companyName;
+        }
+      }
+      
+      // レスポンスの作成
+      const response = {
+        success: true,
+        data: {
+          customerId,
+          customerName,
+          items: invoiceData.items,
+          invoiceDate: invoiceData.invoiceDate,
+          dueDate: invoiceData.dueDate,
+          notes: invoiceData.notes,
+          paymentMethod: invoiceData.paymentMethod,
+          subtotal: invoiceData.items.reduce((sum, item) => sum + item.amount, 0),
+          taxAmount: invoiceData.items.reduce((sum, item) => sum + item.taxAmount, 0),
+          totalAmount: invoiceData.items.reduce((sum, item) => sum + item.amount + item.taxAmount, 0),
+        },
+        aiConversationId: Date.now().toString(),
+      };
+      
+      return NextResponse.json(response);
+    }
+
+    // OpenAI APIを使用する場合の既存コード
     // プロンプトの作成
     const systemPrompt = `あなたは請求書作成のためのAIアシスタントです。
 与えられた会話から請求書に必要な情報を抽出してください。
