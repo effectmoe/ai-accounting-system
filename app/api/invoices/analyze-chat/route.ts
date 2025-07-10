@@ -90,17 +90,35 @@ export async function POST(request: NextRequest) {
         customerName = customerMatch[1].replace(/さん$|様$/, '');
       }
       
-      // 金額の抽出
-      let amount = 0;
-      const amountMatch = conversation.match(/(\d+)(万円|万|円)/);
-      if (amountMatch) {
-        const numStr = amountMatch[1];
-        const unit = amountMatch[2];
-        amount = (unit === '万円' || unit === '万') ? 
+      // 金額の抽出（複数の金額を検出）
+      const amounts: Array<{value: number, isMonthly: boolean, description?: string}> = [];
+      const amountMatches = conversation.matchAll(/(\d+)(万円|万|円)(?:\/月|[のの]月額)?/g);
+      
+      for (const match of amountMatches) {
+        const numStr = match[1];
+        const unit = match[2];
+        const value = (unit === '万円' || unit === '万') ? 
           parseInt(numStr) * 10000 : 
           parseInt(numStr);
+        
+        // 月額かどうかを判定
+        const isMonthly = conversation.includes(`${match[0]}/月`) || 
+                         conversation.includes(`月額${match[0]}`) ||
+                         conversation.includes(`${match[0]}の月額`);
+        
+        amounts.push({ value, isMonthly });
       }
-      console.log('Extracted amount:', amount);
+      
+      // メインの金額（最大値を採用）
+      let amount = amounts.length > 0 ? Math.max(...amounts.map(a => a.value)) : 0;
+      
+      // 月額料金があるかチェック
+      const monthlyAmount = amounts.find(a => a.isMonthly);
+      const hasMonthlyFee = !!monthlyAmount;
+      
+      console.log('Extracted amounts:', amounts);
+      console.log('Main amount:', amount);
+      console.log('Monthly amount:', monthlyAmount);
       
       // 品目の抽出（「〜費」「〜料」「〜代」など）
       let description = '';
@@ -161,18 +179,44 @@ export async function POST(request: NextRequest) {
         }
       }
       
+      // 会話履歴から月額料金の期間が確定しているかチェック
+      let monthlyPeriodConfirmed = false;
+      let confirmedMonths = 1;
+      
+      if (conversationHistory && conversationHistory.length > 0) {
+        const lastMessages = conversationHistory.slice(-4).map(m => m.content).join(' ');
+        if (lastMessages.includes('年間') || lastMessages.includes('12ヶ月') || lastMessages.includes('12か月')) {
+          confirmedMonths = 12;
+          monthlyPeriodConfirmed = true;
+        } else if (lastMessages.match(/(\d+)ヶ月|(\d+)か月/)) {
+          const monthMatch = lastMessages.match(/(\d+)ヶ月|(\d+)か月/);
+          if (monthMatch) {
+            confirmedMonths = parseInt(monthMatch[1] || monthMatch[2]);
+            monthlyPeriodConfirmed = true;
+          }
+        } else if (lastMessages.includes('今月分') || lastMessages.includes('初月')) {
+          confirmedMonths = 1;
+          monthlyPeriodConfirmed = true;
+        }
+      }
+      
       // 既存のitemsがある場合は、それを基に更新
-      let items = mergedData.items || [{
-        description: description || '請求項目',
-        quantity: 1,
-        unitPrice: amount || 0,
-        amount: amount || 0,
-        taxRate: taxRate,
-        taxAmount: taxAmount || 0
-      }];
+      let items = mergedData.items || [];
+      
+      // メイン項目（制作費など）
+      if (!items[0]) {
+        items[0] = {
+          description: description || '請求項目',
+          quantity: 1,
+          unitPrice: amount || 0,
+          amount: amount || 0,
+          taxRate: taxRate,
+          taxAmount: taxAmount || 0
+        };
+      }
       
       // 金額が0でない場合のみ更新（誤った値で上書きしない）
-      if (amount > 0 && items[0]) {
+      if (amount > 0 && items[0] && !hasMonthlyFee) {
         items[0].unitPrice = amount;
         items[0].amount = amount;
         items[0].taxAmount = Math.round(amount * taxRate);
@@ -181,6 +225,42 @@ export async function POST(request: NextRequest) {
       // 説明が有効な場合のみ更新
       if (description && description !== '請求項目' && items[0]) {
         items[0].description = description;
+      }
+      
+      // 月額料金がある場合は別項目として追加
+      if (hasMonthlyFee && monthlyAmount) {
+        // 保守料などの月額項目を探す
+        let monthlyItemIndex = items.findIndex(item => 
+          item.description.includes('保守') || 
+          item.description.includes('月額') ||
+          item.description.includes('サポート')
+        );
+        
+        if (monthlyItemIndex === -1) {
+          // 新規追加
+          items.push({
+            description: monthlyPeriodConfirmed 
+              ? `保守料（${confirmedMonths}ヶ月分）` 
+              : '保守料（期間要確認）',
+            quantity: monthlyPeriodConfirmed ? confirmedMonths : 1,
+            unitPrice: monthlyAmount.value,
+            amount: monthlyAmount.value * (monthlyPeriodConfirmed ? confirmedMonths : 1),
+            taxRate: taxRate,
+            taxAmount: Math.round(monthlyAmount.value * (monthlyPeriodConfirmed ? confirmedMonths : 1) * taxRate)
+          });
+        } else {
+          // 既存項目を更新
+          items[monthlyItemIndex] = {
+            ...items[monthlyItemIndex],
+            description: monthlyPeriodConfirmed 
+              ? `保守料（${confirmedMonths}ヶ月分）` 
+              : '保守料（期間要確認）',
+            quantity: monthlyPeriodConfirmed ? confirmedMonths : 1,
+            unitPrice: monthlyAmount.value,
+            amount: monthlyAmount.value * (monthlyPeriodConfirmed ? confirmedMonths : 1),
+            taxAmount: Math.round(monthlyAmount.value * (monthlyPeriodConfirmed ? confirmedMonths : 1) * taxRate)
+          };
+        }
       }
       
       const invoiceData: InvoiceData = {
@@ -234,6 +314,15 @@ export async function POST(request: NextRequest) {
           responseMessage = `承知いたしました。\n\n` +
                           `他にご要望がございましたら、お申し付けください。`;
         }
+      } else if (hasMonthlyFee && !monthlyPeriodConfirmed && monthlyAmount) {
+        // 月額料金の期間を明確化する必要がある
+        responseMessage = `承知いたしました。${monthlyAmount.value.toLocaleString()}円の月額料金ですね。\n\n` +
+                        `請求書にはどの期間分を記載しますか？\n` +
+                        `・今月分のみ（${monthlyAmount.value.toLocaleString()}円）\n` +
+                        `・3ヶ月分（${(monthlyAmount.value * 3).toLocaleString()}円）\n` +
+                        `・6ヶ月分（${(monthlyAmount.value * 6).toLocaleString()}円）\n` +
+                        `・年間契約（${(monthlyAmount.value * 12).toLocaleString()}円）\n\n` +
+                        `例：「年間契約でお願いします」「今月分だけで」など`;
       } else if (mode === 'create') {
         if (customerName && amount && description) {
           if (hasPreviousConversation) {
@@ -329,9 +418,9 @@ export async function POST(request: NextRequest) {
           dueDate: invoiceData.dueDate,
           notes: invoiceData.notes,
           paymentMethod: invoiceData.paymentMethod,
-          subtotal: invoiceData.items.reduce((sum, item) => sum + item.amount, 0),
-          taxAmount: invoiceData.items.reduce((sum, item) => sum + item.taxAmount, 0),
-          totalAmount: invoiceData.items.reduce((sum, item) => sum + item.amount + item.taxAmount, 0),
+          subtotal: invoiceData.items.reduce((sum, item) => sum + (item.amount || 0), 0),
+          taxAmount: invoiceData.items.reduce((sum, item) => sum + (item.taxAmount || 0), 0),
+          totalAmount: invoiceData.items.reduce((sum, item) => sum + (item.amount || 0) + (item.taxAmount || 0), 0),
         },
         aiConversationId: sessionId || Date.now().toString(),
       };
