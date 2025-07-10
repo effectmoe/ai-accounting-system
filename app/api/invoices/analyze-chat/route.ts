@@ -18,6 +18,7 @@ function getDeepSeekClient(): OpenAI {
     }
     
     console.log('[DeepSeek] Initializing client with API key length:', apiKey.length);
+    console.log('[DeepSeek] API key prefix:', apiKey.substring(0, 10) + '...');
     
     try {
       deepseekClient = new OpenAI({
@@ -117,10 +118,11 @@ export async function POST(request: NextRequest) {
     // 利用可能なAIサービスをチェック（DeepSeek最優先）
     const hasDeepSeek = !!deepseekApiKey;
     let hasOpenAI = false;
+    let aiResponse = ''; // AIレスポンスを格納する変数
     
-    if (!hasDeepSeek && openaiApiKey) {
+    // OpenAI APIキーの有効性をチェック（フォールバック用）
+    if (openaiApiKey) {
       try {
-        // OpenAI APIキーの有効性をテスト（DeepSeekが利用できない場合のフォールバック）
         getOpenAIClient();
         hasOpenAI = true;
       } catch (error) {
@@ -193,16 +195,41 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
             max_tokens: 500
           });
 
-          const aiResponse = completion.choices[0]?.message?.content || '';
+          aiResponse = completion.choices[0]?.message?.content || '';
           console.log('AI Response:', aiResponse);
         } catch (apiError) {
           console.error('[AI] API call failed:', {
             error: apiError instanceof Error ? apiError.message : 'Unknown error',
             stack: apiError instanceof Error ? apiError.stack : undefined,
             model: modelName,
-            usingDeepSeek
+            usingDeepSeek,
+            responseStatus: apiError instanceof Error && 'response' in apiError ? (apiError as any).response?.status : undefined,
+            responseData: apiError instanceof Error && 'response' in apiError ? (apiError as any).response?.data : undefined
           });
-          throw apiError;
+          
+          // DeepSeekが失敗した場合、OpenAIを試す
+          if (usingDeepSeek && hasOpenAI) {
+            console.log('[AI] DeepSeek failed, trying OpenAI as fallback');
+            try {
+              const openaiClient = getOpenAIClient();
+              const openaiModel = process.env.AZURE_OPENAI_DEPLOYMENT_NAME || 'gpt-4';
+              const openaiCompletion = await openaiClient.chat.completions.create({
+                model: openaiModel,
+                messages: messages,
+                temperature: 0.7,
+                max_tokens: 500
+              });
+              aiResponse = openaiCompletion.choices[0]?.message?.content || '';
+              console.log('[AI] OpenAI fallback successful');
+            } catch (openaiError) {
+              console.error('[AI] OpenAI fallback also failed:', openaiError);
+              // 両方失敗した場合はパターンマッチングに進む
+              console.log('Both AI services failed, falling back to pattern matching logic');
+            }
+          } else {
+            // APIエラーの場合はフォールバックロジックに進む
+            console.log('Falling back to pattern matching logic due to API error');
+          }
         }
         
         // 会話から請求書データを抽出（シンプルなパターンマッチング）
@@ -976,10 +1003,13 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
         ];
       }
       
+      // AIレスポンスがある場合は優先的に使用
+      const finalMessage = aiResponse || responseMessage;
+      
       // レスポンスの作成
       const response = {
         success: true,
-        message: responseMessage,
+        message: finalMessage,
         quickReplies: quickReplies.length > 0 ? quickReplies : undefined,
         data: {
           customerId,
@@ -1007,20 +1037,34 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
         hasDeepSeekKey: !!process.env.DEEPSEEK_API_KEY,
         deepSeekKeyLength: process.env.DEEPSEEK_API_KEY?.length || 0,
         hasOpenAIKey: !!process.env.OPENAI_API_KEY,
-        hasAzureKey: !!process.env.AZURE_OPENAI_API_KEY
+        hasAzureKey: !!process.env.AZURE_OPENAI_API_KEY,
+        nodeEnv: process.env.NODE_ENV,
+        vercelEnv: process.env.VERCEL_ENV
       }
     });
     
-    // 開発環境でのみ詳細なエラー情報を返す
+    // 開発環境または本番環境のデバッグ用
     const isDevelopment = process.env.NODE_ENV === 'development';
+    const isVercelProduction = process.env.VERCEL_ENV === 'production';
     
     return NextResponse.json(
       { 
         error: 'Failed to analyze conversation',
-        details: isDevelopment 
-          ? error instanceof Error ? error.message : 'Unknown error'
-          : 'Internal server error',
-        type: isDevelopment ? error?.constructor?.name : undefined
+        details: error instanceof Error ? error.message : 'Unknown error',
+        type: error?.constructor?.name,
+        // 一時的にデバッグ情報を追加
+        debug: {
+          hasKeys: {
+            deepseek: !!process.env.DEEPSEEK_API_KEY,
+            openai: !!process.env.OPENAI_API_KEY,
+            azure: !!process.env.AZURE_OPENAI_API_KEY
+          },
+          environment: {
+            nodeEnv: process.env.NODE_ENV,
+            vercelEnv: process.env.VERCEL_ENV
+          },
+          timestamp: new Date().toISOString()
+        }
       },
       { status: 500 }
     );
