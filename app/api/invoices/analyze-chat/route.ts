@@ -74,11 +74,13 @@ export async function POST(request: NextRequest) {
     console.log('Session ID:', sessionId);
     console.log('Mode:', mode);
 
-    // OpenAI APIキーが設定されていない場合は、プレースホルダー実装を使用
-    const apiKey = process.env.OPENAI_API_KEY || process.env.AZURE_OPENAI_API_KEY;
+    // AI APIキーの確認（OpenAI または DeepSeek）
+    const openaiApiKey = process.env.OPENAI_API_KEY || process.env.AZURE_OPENAI_API_KEY;
+    const deepseekApiKey = process.env.DEEPSEEK_API_KEY;
+    const useDeepSeek = !openaiApiKey && deepseekApiKey;
     
-    if (!apiKey) {
-      console.log('OpenAI API key not configured, using placeholder implementation');
+    if (!openaiApiKey && !deepseekApiKey) {
+      console.log('No AI API key configured, using placeholder implementation');
       
       // プレースホルダー実装：簡単なキーワードマッチング
       const conversationLower = conversation.toLowerCase();
@@ -499,8 +501,149 @@ export async function POST(request: NextRequest) {
       
       return NextResponse.json(response);
     }
+    
+    // DeepSeek APIを使用する場合
+    if (useDeepSeek) {
+      try {
+        console.log('Using DeepSeek API for conversation');
+        
+        // 会話履歴を含むプロンプトを構築
+        const messages = [
+          {
+            role: 'system',
+            content: `あなたは請求書作成を支援する優秀なAIアシスタントです。
+            
+重要なルール：
+1. ユーザーとの自然な会話を通じて、請求書に必要な情報を収集してください
+2. 現在の請求書データ: ${JSON.stringify(currentInvoiceData || {})}
+3. モード: ${mode === 'create' ? '新規作成' : '編集'}
+4. 必要な情報：顧客名、請求項目、金額、期日など
+5. ユーザーの意図を正確に理解し、適切に応答してください
+6. 確認が必要な場合は、選択肢を提示してください
+7. 月額料金が言及された場合は、期間を確認してください
 
-    // OpenAI APIを使用する場合の既存コード
+応答は簡潔で分かりやすく、プロフェッショナルにしてください。`
+          }
+        ];
+        
+        // 会話履歴を追加
+        if (conversationHistory && conversationHistory.length > 0) {
+          conversationHistory.forEach(msg => {
+            messages.push({
+              role: msg.role as 'user' | 'assistant',
+              content: msg.content
+            });
+          });
+        }
+        
+        // 最新のユーザー入力を追加
+        messages.push({
+          role: 'user',
+          content: conversation
+        });
+        
+        // DeepSeek APIを呼び出し
+        const deepseekResponse = await fetch('https://api.deepseek.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${deepseekApiKey}`
+          },
+          body: JSON.stringify({
+            model: 'deepseek-chat',
+            messages: messages,
+            temperature: 0.7,
+            max_tokens: 500
+          })
+        });
+        
+        if (!deepseekResponse.ok) {
+          throw new Error(`DeepSeek API error: ${deepseekResponse.status}`);
+        }
+        
+        const deepseekResult = await deepseekResponse.json();
+        const aiResponse = deepseekResult.choices[0]?.message?.content || '';
+        
+        // AI応答から請求書データを抽出（既存のロジックを使用）
+        const conversationLower = conversation.toLowerCase();
+        let customerName = currentInvoiceData?.customerName || '';
+        const customerMatch = conversation.match(/([^、。\s]+(?:会社|株式会社|さん|様))/);
+        if (customerMatch) {
+          customerName = customerMatch[1].replace(/さん$|様$/, '');
+        }
+        
+        // 金額の抽出
+        const amounts: Array<{value: number, isMonthly: boolean}> = [];
+        const amountMatches = conversation.matchAll(/(\d+)(万円|万|円)(?:\/月|[のの]月額)?/g);
+        for (const match of amountMatches) {
+          const numStr = match[1];
+          const unit = match[2];
+          const value = (unit === '万円' || unit === '万') ? parseInt(numStr) * 10000 : parseInt(numStr);
+          const isMonthly = conversation.includes(`${match[0]}/月`) || conversation.includes(`月額${match[0]}`);
+          amounts.push({ value, isMonthly });
+        }
+        
+        // 請求書データの更新
+        const invoiceData = {
+          customerName: customerName || currentInvoiceData?.customerName || '',
+          items: currentInvoiceData?.items || [{
+            description: '請求項目',
+            quantity: 1,
+            unitPrice: amounts[0]?.value || 0,
+            amount: amounts[0]?.value || 0,
+            taxRate: 0.1,
+            taxAmount: Math.round((amounts[0]?.value || 0) * 0.1)
+          }],
+          invoiceDate: currentInvoiceData?.invoiceDate || new Date().toISOString().split('T')[0],
+          dueDate: currentInvoiceData?.dueDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          notes: currentInvoiceData?.notes || '',
+          paymentMethod: currentInvoiceData?.paymentMethod || 'bank_transfer'
+        };
+        
+        // クイック返信の生成
+        let quickReplies: Array<{text: string, value: string}> = [];
+        if (aiResponse.includes('確認') || aiResponse.includes('よろしい')) {
+          quickReplies = [
+            { text: 'はい', value: 'はい、その通りです' },
+            { text: 'いいえ', value: 'いいえ、修正したいです' }
+          ];
+        } else if (aiResponse.includes('期間') && amounts.some(a => a.isMonthly)) {
+          const monthlyAmount = amounts.find(a => a.isMonthly)?.value || 0;
+          quickReplies = [
+            { text: '今月分のみ', value: `今月分のみ（${monthlyAmount.toLocaleString()}円）でお願いします` },
+            { text: '3ヶ月分', value: `3ヶ月分（${(monthlyAmount * 3).toLocaleString()}円）でお願いします` },
+            { text: '6ヶ月分', value: `6ヶ月分（${(monthlyAmount * 6).toLocaleString()}円）でお願いします` },
+            { text: '年間契約', value: `年間契約（${(monthlyAmount * 12).toLocaleString()}円）でお願いします` }
+          ];
+        }
+        
+        return NextResponse.json({
+          success: true,
+          message: aiResponse,
+          quickReplies: quickReplies.length > 0 ? quickReplies : undefined,
+          data: {
+            customerId: null,
+            customerName: invoiceData.customerName,
+            items: invoiceData.items,
+            invoiceDate: invoiceData.invoiceDate,
+            dueDate: invoiceData.dueDate,
+            notes: invoiceData.notes,
+            paymentMethod: invoiceData.paymentMethod,
+            subtotal: invoiceData.items.reduce((sum, item) => sum + (item.amount || 0), 0),
+            taxAmount: invoiceData.items.reduce((sum, item) => sum + (item.taxAmount || 0), 0),
+            totalAmount: invoiceData.items.reduce((sum, item) => sum + (item.amount || 0) + (item.taxAmount || 0), 0),
+          },
+          aiConversationId: sessionId || Date.now().toString(),
+        });
+        
+      } catch (error) {
+        console.error('DeepSeek API error:', error);
+        // フォールバックとしてプレースホルダー実装を使用
+        console.log('Falling back to placeholder implementation');
+      }
+    }
+
+    // OpenAI APIを使用する場合（既存のコードを保持）
     // プロンプトの作成
     const systemPrompt = `あなたは請求書作成のためのAIアシスタントです。
 与えられた会話から請求書に必要な情報を抽出してください。
