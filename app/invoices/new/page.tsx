@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 // Selectコンポーネントは使用せず、ネイティブのselect要素を使用
-import { Loader2, Plus, Trash2, Sparkles, MessageSquare } from 'lucide-react';
+import { Loader2, Plus, Trash2, Sparkles, MessageSquare, ChevronDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import AIChatDialog from '@/components/ai-chat-dialog';
@@ -50,6 +50,7 @@ export default function NewInvoicePage() {
   
   // AI会話入力
   const [conversation, setConversation] = useState('');
+  const [showTextInput, setShowTextInput] = useState(false);
   const [aiConversationId, setAiConversationId] = useState<string | null>(null);
   const [showAIChat, setShowAIChat] = useState(false);
   
@@ -355,67 +356,68 @@ export default function NewInvoicePage() {
     <div className="container mx-auto p-6 max-w-6xl">
       <h1 className="text-3xl font-bold mb-6">請求書作成</h1>
 
-      {/* AI会話入力 */}
-      <Card className="mb-6">
+      {/* AI会話から作成 */}
+      <Card className="mb-6 border-2 border-blue-100 bg-gradient-to-br from-blue-50/50 to-purple-50/50">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5" />
+            <Sparkles className="h-5 w-5 text-blue-600" />
             AI会話から作成
           </CardTitle>
+          <p className="text-sm text-gray-600 mt-1">
+            AIアシスタントと会話しながら、請求書を簡単に作成できます
+          </p>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div className="flex gap-4">
-              {/* 新しいチャット形式 */}
-              <Button
-                onClick={() => setShowAIChat(true)}
-                variant="default"
-                className="flex-1"
-              >
-                <MessageSquare className="mr-2 h-4 w-4" />
-                AIアシスタントと会話する
-              </Button>
-              
-              {/* 既存の一括解析（互換性のため残す） */}
-              <Button
-                onClick={() => setShowAIChat(false)}
-                variant="outline"
-                className="flex-1"
-              >
-                <Sparkles className="mr-2 h-4 w-4" />
-                テキスト一括解析
-              </Button>
-            </div>
+            {/* メインのAI会話ボタン */}
+            <Button
+              onClick={() => setShowAIChat(true)}
+              size="lg"
+              className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white"
+            >
+              <MessageSquare className="mr-2 h-5 w-5" />
+              AIアシスタントと会話する
+            </Button>
             
-            {/* テキスト一括解析モード */}
-            {!showAIChat && (
-              <>
-                <div>
-                  <Label htmlFor="conversation">会話内容を入力</Label>
+            {/* 会話内容入力フィールド（代替手段として小さく表示） */}
+            <div className="relative">
+              <button
+                onClick={() => setShowTextInput(!showTextInput)}
+                className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
+              >
+                <span>または、会話内容を直接入力する</span>
+                <ChevronDown className={`h-4 w-4 transition-transform ${showTextInput ? 'rotate-180' : ''}`} />
+              </button>
+              
+              {showTextInput && (
+                <div className="mt-3 space-y-3 animate-slide-up">
                   <Textarea
-                    id="conversation"
                     value={conversation}
                     onChange={(e) => setConversation(e.target.value)}
                     placeholder="例：山田商事さんに、ウェブサイト制作費として50万円の請求書を作成してください。納期は今月末です。"
-                    className="min-h-[120px]"
+                    className="min-h-[100px]"
                   />
+                  <Button
+                    onClick={analyzeConversation}
+                    disabled={isAnalyzing || !conversation.trim()}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    {isAnalyzing ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        解析中...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="mr-2 h-4 w-4" />
+                        テキストを一括解析
+                      </>
+                    )}
+                  </Button>
                 </div>
-                <Button
-                  onClick={analyzeConversation}
-                  disabled={isAnalyzing}
-                  variant="secondary"
-                >
-                  {isAnalyzing ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      解析中...
-                    </>
-                  ) : (
-                    '会話を解析'
-                  )}
-                </Button>
-              </>
-            )}
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
