@@ -136,12 +136,22 @@ function NewInvoiceContent() {
       const response = await fetch('/api/products?isActive=true');
       if (response.ok) {
         const data = await response.json();
-        setProducts(data);
+        console.log('Products data:', data);
+        // データ構造に応じて商品リストを設定
+        if (data.products && Array.isArray(data.products)) {
+          setProducts(data.products);
+        } else if (Array.isArray(data)) {
+          setProducts(data);
+        } else {
+          console.error('Unexpected product data format:', data);
+          setProducts([]);
+        }
       } else {
         console.error('Failed to fetch products:', response.status);
       }
     } catch (error) {
       console.error('Failed to fetch products:', error);
+      setProducts([]);
     }
   };
 
