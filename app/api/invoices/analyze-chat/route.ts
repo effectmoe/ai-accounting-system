@@ -96,6 +96,12 @@ export async function POST(request: NextRequest) {
     const deepseekApiKey = process.env.DEEPSEEK_API_KEY;
     const openaiApiKey = process.env.OPENAI_API_KEY || process.env.AZURE_OPENAI_API_KEY;
     
+    console.log('API Keys status:', {
+      hasDeepSeekKey: !!deepseekApiKey,
+      hasOpenAIKey: !!openaiApiKey,
+      deepseekKeyLength: deepseekApiKey?.length || 0
+    });
+    
     // 利用可能なAIサービスをチェック（DeepSeek最優先）
     const hasDeepSeek = !!deepseekApiKey;
     let hasOpenAI = false;
@@ -111,8 +117,163 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    if (!hasDeepSeek && !hasOpenAI) {
-      console.log('No AI API key configured, using placeholder implementation');
+    // AI APIを使用する場合（DeepSeek最優先、OpenAIはフォールバック）
+    if (hasDeepSeek || hasOpenAI) {
+      const usingDeepSeek = hasDeepSeek;
+      console.log(`Using ${usingDeepSeek ? 'DeepSeek' : 'OpenAI'} API for conversation analysis`);
+      
+      // 現在の日付を取得
+      const today = new Date();
+      const invoiceDate = format(today, 'yyyy-MM-dd');
+      const dueDate = format(new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd');
+
+      // 自然な対話のためのプロンプト
+      const systemPrompt = `あなたは請求書作成を支援するAIアシスタントです。
+ユーザーとの自然な会話を通じて、請求書に必要な情報を段階的に収集してください。
+
+現在の請求書データ：
+${JSON.stringify(currentInvoiceData || {}, null, 2)}
+
+重要なルール：
+1. 自然で親しみやすい日本語で応答してください
+2. 既存データがある場合は保持し、新しい項目は追加してください
+3. 必要な情報が不足している場合は質問してください
+4. 確認が必要な場合は「よろしいですか？」と聞いてください
+5. 今日の日付: ${invoiceDate}、支払期限: ${dueDate}です
+6. ユーザーが「今の状況は？」と聞いた場合は、現在の請求書データを分かりやすく説明してください
+
+応答は簡潔で分かりやすくしてください。`;
+
+      try {
+        // DeepSeekを優先使用、利用できない場合はOpenAI
+        const aiClient = usingDeepSeek ? getDeepSeekClient() : getOpenAIClient();
+        const modelName = usingDeepSeek 
+          ? 'deepseek-chat' 
+          : (process.env.AZURE_OPENAI_DEPLOYMENT_NAME || 'gpt-4');
+        
+        // 会話履歴を含むメッセージを構築
+        const messages = [{ role: 'system' as const, content: systemPrompt }];
+        
+        // 会話履歴を追加
+        if (conversationHistory && conversationHistory.length > 0) {
+          conversationHistory.forEach(msg => {
+            messages.push({
+              role: msg.role as 'user' | 'assistant',
+              content: msg.content
+            });
+          });
+        }
+        
+        // 最新のユーザー入力を追加
+        messages.push({ role: 'user' as const, content: conversation });
+
+        console.log('Sending to AI with messages:', messages.length);
+
+        const completion = await aiClient.chat.completions.create({
+          model: modelName,
+          messages: messages,
+          temperature: 0.7,
+          max_tokens: 500
+        });
+
+        const aiResponse = completion.choices[0]?.message?.content || '';
+        console.log('AI Response:', aiResponse);
+        
+        // 会話から請求書データを抽出（シンプルなパターンマッチング）
+        const conversationLower = conversation.toLowerCase();
+        
+        // 既存データをベースに更新
+        let updatedData = { ...currentInvoiceData };
+        
+        // 顧客名の抽出
+        const customerMatch = conversation.match(/([^、。\s]+(?:会社|株式会社|商事|さん|様))/);
+        if (customerMatch && !updatedData.customerName) {
+          updatedData.customerName = customerMatch[1].replace(/さん$|様$/, '');
+        }
+        
+        // 金額と項目の抽出
+        const amountMatch = conversation.match(/(\d+)万円|(\d+)円/);
+        const itemMatch = conversation.match(/(制作|開発|保守|メンテナンス|サポート|コンサル)/);
+        
+        if (amountMatch && itemMatch) {
+          const amount = amountMatch[1] ? parseInt(amountMatch[1]) * 10000 : parseInt(amountMatch[2]);
+          const description = conversation.includes('制作') ? 'ウェブサイト制作費' :
+                            conversation.includes('保守') ? '保守・メンテナンス費' :
+                            conversation.includes('サポート') ? 'サポート費' : '請求項目';
+          
+          // 既存のitemsに追加（上書きしない）
+          if (!updatedData.items) {
+            updatedData.items = [];
+          }
+          
+          // 同じ項目がなければ追加
+          const exists = updatedData.items.some(item => item.description === description);
+          if (!exists) {
+            updatedData.items.push({
+              description,
+              quantity: 1,
+              unitPrice: amount,
+              amount: amount,
+              taxRate: 0.1,
+              taxAmount: Math.round(amount * 0.1)
+            });
+          }
+        }
+        
+        // 日付設定
+        if (!updatedData.invoiceDate) {
+          updatedData.invoiceDate = invoiceDate;
+        }
+        if (!updatedData.dueDate) {
+          updatedData.dueDate = dueDate;
+        }
+        
+        // 備考に振込先情報を追加
+        if (!updatedData.notes || !updatedData.notes.includes('振込先')) {
+          updatedData.notes = `お振込先：三井住友銀行 渋谷支店 普通預金 1234567 カブシキガイシャトニーチュウ
+お支払期限：${dueDate}
+※振込手数料はお客様負担でお願いいたします`;
+        }
+        
+        // paymentMethod設定
+        if (!updatedData.paymentMethod) {
+          updatedData.paymentMethod = 'bank_transfer';
+        }
+
+        // 合計計算
+        const subtotal = updatedData.items ? updatedData.items.reduce((sum, item) => sum + (item.amount || 0), 0) : 0;
+        const taxAmount = updatedData.items ? updatedData.items.reduce((sum, item) => sum + (item.taxAmount || 0), 0) : 0;
+        const totalAmount = subtotal + taxAmount;
+        
+        // レスポンスの作成
+        const response = {
+          success: true,
+          message: aiResponse,
+          data: {
+            customerId: null,
+            customerName: updatedData.customerName || '',
+            items: updatedData.items || [],
+            invoiceDate: updatedData.invoiceDate,
+            dueDate: updatedData.dueDate,
+            notes: updatedData.notes || '',
+            paymentMethod: updatedData.paymentMethod || 'bank_transfer',
+            subtotal,
+            taxAmount,
+            totalAmount,
+          },
+          aiConversationId: sessionId || Date.now().toString(),
+        };
+
+        return NextResponse.json(response);
+      } catch (error) {
+        console.error(`${usingDeepSeek ? 'DeepSeek' : 'OpenAI'} API error:`, error);
+        console.log(`${usingDeepSeek ? 'DeepSeek' : 'OpenAI'} API failed, falling back to placeholder implementation`);
+        // フォールバック：プレースホルダー実装へ続く
+      }
+    }
+    
+    // プレースホルダー実装（AIが使えない場合のフォールバック）
+    console.log('Using placeholder implementation');
       
       // プレースホルダー実装：簡単なキーワードマッチング
       const conversationLower = conversation.toLowerCase();
@@ -697,248 +858,6 @@ export async function POST(request: NextRequest) {
       };
       
       return NextResponse.json(response);
-    }
-    
-
-    // AI APIを使用する場合（DeepSeek最優先、OpenAIはフォールバック）
-    if (hasDeepSeek || hasOpenAI) {
-      const usingDeepSeek = hasDeepSeek;
-      console.log(`Using ${usingDeepSeek ? 'DeepSeek' : 'OpenAI'} API for conversation analysis`);
-      
-      // 現在の日付を取得
-      const today = new Date();
-      const invoiceDate = format(today, 'yyyy-MM-dd');
-      const dueDate = format(new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd');
-
-      // 自然な対話のためのプロンプト
-      const systemPrompt = `あなたは請求書作成を支援するAIアシスタントです。
-ユーザーとの自然な会話を通じて、請求書に必要な情報を段階的に収集してください。
-
-現在の請求書データ：
-${JSON.stringify(currentInvoiceData || {}, null, 2)}
-
-重要なルール：
-1. 自然で親しみやすい日本語で応答してください
-2. 既存データがある場合は保持し、新しい項目は追加してください
-3. 必要な情報が不足している場合は質問してください
-4. 確認が必要な場合は「よろしいですか？」と聞いてください
-5. 今日の日付: ${invoiceDate}、支払期限: ${dueDate}です
-
-応答は簡潔で分かりやすくしてください。`;
-
-      try {
-        // DeepSeekを優先使用、利用できない場合はOpenAI
-        const aiClient = usingDeepSeek ? getDeepSeekClient() : getOpenAIClient();
-        const modelName = usingDeepSeek 
-          ? 'deepseek-chat' 
-          : (process.env.AZURE_OPENAI_DEPLOYMENT_NAME || 'gpt-4');
-        
-        // 会話履歴を含むメッセージを構築
-        const messages = [{ role: 'system' as const, content: systemPrompt }];
-        
-        // 会話履歴を追加
-        if (conversationHistory && conversationHistory.length > 0) {
-          conversationHistory.forEach(msg => {
-            messages.push({
-              role: msg.role as 'user' | 'assistant',
-              content: msg.content
-            });
-          });
-        }
-        
-        // 最新のユーザー入力を追加
-        messages.push({ role: 'user' as const, content: conversation });
-
-        const completion = await aiClient.chat.completions.create({
-          model: modelName,
-          messages: messages,
-          temperature: 0.7,
-          max_tokens: 500
-        });
-
-        const aiResponse = completion.choices[0]?.message?.content || '';
-        
-        // 会話から請求書データを抽出（シンプルなパターンマッチング）
-        const conversationLower = conversation.toLowerCase();
-        
-        // 既存データをベースに更新
-        let updatedData = { ...currentInvoiceData };
-        
-        // 顧客名の抽出
-        const customerMatch = conversation.match(/([^、。\s]+(?:会社|株式会社|商事|さん|様))/);
-        if (customerMatch && !updatedData.customerName) {
-          updatedData.customerName = customerMatch[1].replace(/さん$|様$/, '');
-        }
-        
-        // 金額と項目の抽出
-        const amountMatch = conversation.match(/(\d+)万円|(\d+)円/);
-        const itemMatch = conversation.match(/(制作|開発|保守|メンテナンス|サポート|コンサル)/);
-        
-        if (amountMatch && itemMatch) {
-          const amount = amountMatch[1] ? parseInt(amountMatch[1]) * 10000 : parseInt(amountMatch[2]);
-          const description = conversation.includes('制作') ? 'ウェブサイト制作費' :
-                            conversation.includes('保守') ? '保守・メンテナンス費' :
-                            conversation.includes('サポート') ? 'サポート費' : '請求項目';
-          
-          // 既存のitemsに追加（上書きしない）
-          if (!updatedData.items) {
-            updatedData.items = [];
-          }
-          
-          // 同じ項目がなければ追加
-          const exists = updatedData.items.some(item => item.description === description);
-          if (!exists) {
-            updatedData.items.push({
-              description,
-              quantity: 1,
-              unitPrice: amount,
-              amount: amount,
-              taxRate: 0.1,
-              taxAmount: Math.round(amount * 0.1)
-            });
-          }
-        }
-        
-        // 日付設定
-        if (!updatedData.invoiceDate) {
-          updatedData.invoiceDate = invoiceDate;
-        }
-        if (!updatedData.dueDate) {
-          updatedData.dueDate = dueDate;
-        }
-        
-        // 備考に振込先情報を追加
-        if (!updatedData.notes || !updatedData.notes.includes('振込先')) {
-          updatedData.notes = `お振込先：三井住友銀行 渋谷支店 普通預金 1234567 カブシキガイシャトニーチュウ
-お支払期限：${dueDate}
-※振込手数料はお客様負担でお願いいたします`;
-        }
-        
-        // paymentMethod設定
-        if (!updatedData.paymentMethod) {
-          updatedData.paymentMethod = 'bank_transfer';
-        }
-
-        // 合計計算
-        const subtotal = updatedData.items ? updatedData.items.reduce((sum, item) => sum + (item.amount || 0), 0) : 0;
-        const taxAmount = updatedData.items ? updatedData.items.reduce((sum, item) => sum + (item.taxAmount || 0), 0) : 0;
-        const totalAmount = subtotal + taxAmount;
-        // レスポンスの作成
-        const response = {
-          success: true,
-          message: aiResponse,
-          data: {
-            customerId: null,
-            customerName: updatedData.customerName || '',
-            items: updatedData.items || [],
-            invoiceDate: updatedData.invoiceDate,
-            dueDate: updatedData.dueDate,
-            notes: updatedData.notes || '',
-            paymentMethod: updatedData.paymentMethod || 'bank_transfer',
-            subtotal,
-            taxAmount,
-            totalAmount,
-          },
-          aiConversationId: sessionId || Date.now().toString(),
-        };
-
-        return NextResponse.json(response);
-      } catch (error) {
-        console.error(`${usingDeepSeek ? 'DeepSeek' : 'OpenAI'} API error:`, error);
-        console.log(`${usingDeepSeek ? 'DeepSeek' : 'OpenAI'} API failed, falling back to placeholder implementation`);
-        // フォールバック：プレースホルダー実装へ
-      }
-    }
-
-    // フォールバック：プレースホルダー実装を使用
-    console.log('Using placeholder implementation as fallback');
-    
-    // 簡単なキーワードマッチング（既存のプレースホルダーロジックを再利用）
-    const conversationLower = conversation.toLowerCase();
-    
-    // 顧客名の抽出
-    let customerName = '';
-    const customerMatch = conversation.match(/([^、。\s]+(?:会社|株式会社|さん|様))/);
-    if (customerMatch) {
-      customerName = customerMatch[1].replace(/さん$|様$/, '');
-    }
-    
-    // 既存データから顧客名を保持
-    if (!customerName && currentInvoiceData && currentInvoiceData.customerName) {
-      customerName = currentInvoiceData.customerName;
-    }
-    
-    // 金額の抽出
-    const amounts: Array<{value: number, isMonthly: boolean}> = [];
-    const amountMatches = conversation.matchAll(/(\d+)(万円|万|円)(?:\/月|[のの]月額)?/g);
-    
-    for (const match of amountMatches) {
-      const numStr = match[1];
-      const unit = match[2];
-      const value = (unit === '万円' || unit === '万') ? 
-        parseInt(numStr) * 10000 : 
-        parseInt(numStr);
-      
-      const isMonthly = conversation.includes(`${match[0]}/月`) || 
-                       conversation.includes(`月額${match[0]}`) ||
-                       conversation.includes(`${match[0]}の月額`);
-      
-      amounts.push({ value, isMonthly });
-    }
-    
-    let amount = amounts.length > 0 ? Math.max(...amounts.map(a => a.value)) : 0;
-    
-    // 品目の抽出
-    let description = '';
-    const itemMatch = conversation.match(/([^、。\s]+(?:費|料|代|制作|開発|サービス|業務|作業))/);
-    if (itemMatch) {
-      description = itemMatch[0];
-    }
-    
-    // デフォルト値の設定
-    if (!customerName) customerName = '未設定顧客';
-    if (!description) description = '請求項目';
-    if (!amount) amount = 0;
-    
-    const taxRate = 0.1;
-    const taxAmount = Math.round(amount * taxRate);
-    
-    const today = new Date();
-    const dueDate = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
-    
-    const fallbackInvoiceData = {
-      customerName,
-      items: [{
-        description,
-        quantity: 1,
-        unitPrice: amount,
-        amount: amount,
-        taxRate: taxRate,
-        taxAmount: taxAmount
-      }],
-      invoiceDate: today.toISOString().split('T')[0],
-      dueDate: dueDate.toISOString().split('T')[0],
-      notes: 'AI会話から作成',
-      paymentMethod: 'bank_transfer' as const
-    };
-
-    return NextResponse.json({
-      success: true,
-      message: `承知いたしました。${customerName}様への請求書を作成します。\n\n内容：${description}\n金額：¥${amount.toLocaleString()}（税込 ¥${(amount + taxAmount).toLocaleString()}）\n\n他に追加する項目や修正点はありますか？`,
-      data: {
-        customerId: null,
-        customerName: fallbackInvoiceData.customerName,
-        items: fallbackInvoiceData.items,
-        invoiceDate: fallbackInvoiceData.invoiceDate,
-        dueDate: fallbackInvoiceData.dueDate,
-        notes: fallbackInvoiceData.notes,
-        paymentMethod: fallbackInvoiceData.paymentMethod,
-        subtotal: fallbackInvoiceData.items.reduce((sum, item) => sum + (item.amount || 0), 0),
-        taxAmount: fallbackInvoiceData.items.reduce((sum, item) => sum + (item.taxAmount || 0), 0),
-        totalAmount: fallbackInvoiceData.items.reduce((sum, item) => sum + (item.amount || 0) + (item.taxAmount || 0), 0),
-      },
-      aiConversationId: sessionId || Date.now().toString(),
-    });
   } catch (error) {
     console.error('Error analyzing conversation:', error);
     console.error('Error details:', {
