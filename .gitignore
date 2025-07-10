@@ -80,6 +80,8 @@ simple_*.js
 
 # MCP servers
 .mcp-servers/
+src/mcp-servers/external/
+mcp-chrome-server/
 
 # Test environment files
 .env.test

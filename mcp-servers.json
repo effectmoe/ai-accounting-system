@@ -63,6 +63,21 @@
         "NLWEB_API_KEY": "",
         "PERPLEXITY_API_KEY": ""
       }
+    },
+    "github-server": {
+      "command": "npx",
+      "args": ["tsx", "./src/mcp-servers/github-mcp-wrapper.ts"],
+      "env": {
+        "GITHUB_TOKEN": ""
+      }
+    },
+    "vercel-server": {
+      "command": "npx",
+      "args": ["tsx", "./src/mcp-servers/vercel-mcp-wrapper.ts"],
+      "env": {
+        "VERCEL_TOKEN": "",
+        "VERCEL_TEAM_ID": ""
+      }
     }
   }
 }

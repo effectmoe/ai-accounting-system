@@ -56,7 +56,8 @@
     "migrate:supabase-to-mongodb": "tsx scripts/migrate-supabase-to-mongodb.ts",
     "test:azure-mongodb": "tsx scripts/test-azure-mongodb.ts",
     "db:setup": "tsx scripts/setup-db.ts",
-    "db:setup:with-sample": "tsx scripts/setup-db.ts --sample-data"
+    "db:setup:with-sample": "tsx scripts/setup-db.ts --sample-data",
+    "mcp:setup": "tsx scripts/setup-mcp-servers.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.27.3",

@@ -283,8 +283,8 @@ export async function POST(request: NextRequest) {
       const hasPreviousConversation = conversationHistory && conversationHistory.length > 2; // 初回のウェルカムメッセージを除く
       
       // ユーザーの入力内容を分析
-      const userSaidYes = conversation.match(/はい|yes|お願い|それで|ok|オッケー|いいです|確定/i);
-      const userSaidNo = conversation.match(/いいえ|いらない|不要|必要ありません|必要ない|なし|無し|ない|ありません/i);
+      const userSaidYes = conversation.match(/^(はい|yes|お願い|それで|ok|オッケー|いいです|確定)$/i);
+      const userSaidNo = conversation.match(/^(いいえ|いらない|不要|必要ありません|必要ない|なし|無し|ない|ありません)$/i);
       const userWantsToModify = conversation.match(/修正|変更|直したい|編集/i);
       const shortNegative = conversation.length < 20 && conversation.match(/ない|なし|不要|いらない|ありません/i);
       const userAskedQuestion = conversation.includes('？') || conversation.includes('?');
@@ -293,19 +293,49 @@ export async function POST(request: NextRequest) {
       const userDenied = conversation.match(/作成しました？|してない|していません|やってない/i);
       const userGivingInstruction = conversation.match(/して|してください|お願い|追加して|変更して/i);
       
+      // 直前の質問を分析（会話履歴から）
+      let lastAssistantQuestion = '';
+      if (conversationHistory && conversationHistory.length > 0) {
+        const lastAssistantMessage = [...conversationHistory].reverse().find(m => m.role === 'assistant');
+        if (lastAssistantMessage) {
+          lastAssistantQuestion = lastAssistantMessage.content;
+        }
+      }
+      
       // 応答メッセージの生成
       let responseMessage = '';
       let quickReplies: Array<{text: string, value: string}> = [];
       
+      // 「追加する項目や修正点はありますか？」への「はい」の応答を特別に処理
+      if (lastAssistantQuestion.includes('追加する項目や修正点はありますか') && userSaidYes) {
+        responseMessage = `どのような追加・修正をご希望ですか？`;
+        quickReplies = [
+          { text: '金額を変更', value: '金額を変更したいです' },
+          { text: '明細を追加', value: '明細項目を追加したいです' },
+          { text: '支払期限を変更', value: '支払期限を変更したいです' },
+          { text: '備考を追加', value: '備考欄に追記したいです' }
+        ];
+      }
+      // 「追加する項目や修正点はありますか？」への「いいえ」の応答
+      else if (lastAssistantQuestion.includes('追加する項目や修正点はありますか') && userSaidNo) {
+        if (customerName && amount && description) {
+          responseMessage = `承知いたしました。それでは、以下の内容で請求書を確定します。\n\n` +
+                          `【請求書内容】\n` +
+                          `・顧客名：${customerName}様\n` +
+                          `・請求項目：${description}\n` +
+                          `・請求金額：¥${amount.toLocaleString()}（税抜）\n` +
+                          `・消費税額：¥${taxAmount.toLocaleString()}\n` +
+                          `・合計金額：¥${(amount + taxAmount).toLocaleString()}\n` +
+                          `・請求日：${invoiceData.invoiceDate}\n` +
+                          `・支払期限：${invoiceData.dueDate}\n\n` +
+                          `下の「会話を終了して確定」ボタンをクリックして、請求書を作成してください。`;
+        }
+      }
       // ユーザーの特定の反応に対する優先応答
+      else
       if (userWantsToModify) {
         // 修正したいという意図がある場合
-        responseMessage = `承知いたしました。どの部分を修正したいですか？\n\n` +
-                        `現在の内容：\n` +
-                        (customerName && customerName !== '未設定顧客' ? `・顧客：${customerName}様\n` : '') +
-                        (description && description !== '請求項目' ? `・品目：${description}\n` : '') +
-                        (amount > 0 ? `・金額：¥${amount.toLocaleString()}（税込 ¥${(amount + taxAmount).toLocaleString()}）\n` : '') +
-                        `\n修正したい項目を教えてください。`;
+        responseMessage = `どの部分を修正したいですか？`;
         quickReplies = [
           { text: '金額を変更', value: '金額を変更したいです' },
           { text: '品目を変更', value: '品目を変更したいです' },
@@ -332,13 +362,7 @@ export async function POST(request: NextRequest) {
           ];
         }
       } else if (userConfused) {
-        responseMessage = `申し訳ございません。説明が不足していました。\n\n` +
-                        `現在、${customerName && customerName !== '未設定顧客' ? customerName + '様への' : ''}請求書を作成中です。\n` +
-                        `ご入力いただいた内容から、請求書に必要な情報を読み取っています。\n\n` +
-                        `請求書を作成するために、以下の情報を教えてください：\n` +
-                        `・請求先（会社名や個人名）\n` +
-                        `・請求内容（サービスや商品名）\n` +
-                        `・金額`;
+        responseMessage = `請求書作成に必要な情報を教えてください。（顧客名、請求内容、金額など）`;
       } else if (userDenied) {
         responseMessage = `失礼いたしました。まだ請求書は作成されていません。\n\n` +
                         `請求書を作成するために、以下の情報をお聞かせください：\n` +
@@ -385,23 +409,23 @@ export async function POST(request: NextRequest) {
           if (hasPreviousConversation) {
             // 2回目以降の会話では、別の応答パターンを使用
             const additionalOptions = [
-              `請求書の内容を確認しました。\n\n明細に追加する項目はありますか？`,
+              `請求書の内容を確認しました。\n\n明細に追加する項目や修正点はありますか？`,
               `${customerName}様への請求書（${description} ¥${amount.toLocaleString()}）を準備しています。\n\n支払期限や備考など、他に設定したい内容はありますか？`,
-              `了解しました。現在の内容：\n・${customerName}様\n・${description}\n・¥${(amount + taxAmount).toLocaleString()}（税込）\n\nこの内容で確定してもよろしいですか？`
+              `了解しました。現在の内容：\n・${customerName}様\n・${description}\n・¥${(amount + taxAmount).toLocaleString()}（税込）\n\n他に追加・修正したい項目はありますか？`
             ];
             quickReplies = [
-              { text: 'はい', value: 'はい、この内容で確定します' },
-              { text: 'いいえ', value: 'もう少し修正したいです' }
+              { text: 'はい（追加・修正あり）', value: '追加したい項目があります' },
+              { text: 'いいえ（このまま確定）', value: 'このままで確定します' }
             ];
             responseMessage = additionalOptions[Math.floor(conversationHistory.length / 2) % additionalOptions.length];
           } else {
             responseMessage = `承知いたしました。${customerName}様への請求書を作成します。\n\n` +
                             `内容：${description}\n` +
                             `金額：¥${amount.toLocaleString()}（税込 ¥${(amount + taxAmount).toLocaleString()}）\n\n` +
-                            `他に追加したい項目はありますか？`;
+                            `他に追加する項目や修正点はありますか？`;
             quickReplies = [
-              { text: 'はい', value: '追加項目があります' },
-              { text: 'いいえ', value: 'これで確定します' }
+              { text: 'はい（追加・修正あり）', value: '追加したい項目があります' },
+              { text: 'いいえ（このまま確定）', value: 'このままで確定します' }
             ];
           }
         } else {
@@ -438,19 +462,9 @@ export async function POST(request: NextRequest) {
                           `\n\n他に変更したい部分はありますか？`;
         } else if (userGivingInstruction) {
           // 具体的な指示があるがパターンに合わない場合
-          responseMessage = `申し訳ございません。ご指示の内容を正しく理解できませんでした。\n\n` +
-                          `もう一度、以下のような形でお伝えいただけますか？\n` +
-                          `・「保守料金8000円を追加」\n` +
-                          `・「金額を60万円に変更」\n` +
-                          `・「支払期限を30日後に」\n\n` +
-                          `どのような変更をご希望ですか？`;
+          responseMessage = `ご指示の内容を正しく理解できませんでした。もう一度お伝えいただけますか？`;
         } else {
-          responseMessage = `申し訳ございません。変更内容を理解できませんでした。\n\n` +
-                          `以下のような指示をお試しください：\n` +
-                          `・「金額を60万円に変更してください」\n` +
-                          `・「品目をコンサルティング費に変更」\n` +
-                          `・「支払期限を30日後に」\n` +
-                          `・「備考に〇〇を追加」`;
+          responseMessage = `変更内容を理解できませんでした。もう一度お伝えいただけますか？`;
         }
       }
       
@@ -604,8 +618,13 @@ export async function POST(request: NextRequest) {
         let quickReplies: Array<{text: string, value: string}> = [];
         if (aiResponse.includes('確認') || aiResponse.includes('よろしい')) {
           quickReplies = [
-            { text: 'はい', value: 'はい、その通りです' },
-            { text: 'いいえ', value: 'いいえ、修正したいです' }
+            { text: 'はい（確定）', value: 'はい、この内容で確定します' },
+            { text: 'いいえ（修正）', value: 'いいえ、修正したいです' }
+          ];
+        } else if (aiResponse.includes('追加する項目') || aiResponse.includes('修正点')) {
+          quickReplies = [
+            { text: 'はい（追加・修正あり）', value: '追加したい項目があります' },
+            { text: 'いいえ（このまま確定）', value: 'このままで確定します' }
           ];
         } else if (aiResponse.includes('期間') && amounts.some(a => a.isMonthly)) {
           const monthlyAmount = amounts.find(a => a.isMonthly)?.value || 0;
