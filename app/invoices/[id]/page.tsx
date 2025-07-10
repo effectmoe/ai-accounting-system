@@ -220,7 +220,7 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
           </Button>
           <Button
             variant="outline"
-            onClick={() => window.open(`/api/invoices/${invoice._id}/pdf`, '_blank')}
+            onClick={() => window.open(`/api/invoices/${invoice._id}/pdf?download=true`, '_blank')}
           >
             <Download className="mr-2 h-4 w-4" />
             PDF
@@ -461,7 +461,7 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
               </Button>
               <Button
                 onClick={() => {
-                  window.open(`/api/invoices/${invoice._id}/pdf`, '_blank');
+                  window.open(`/api/invoices/${invoice._id}/pdf?download=true`, '_blank');
                   setShowPdfPreview(false);
                 }}
               >

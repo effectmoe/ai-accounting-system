@@ -98,11 +98,17 @@ export async function GET(
     `;
 
     // HTMLをPDF代わりに返す（一時的な対応）
+    // URLクエリパラメータでダウンロードモードを判定
+    const url = new URL(request.url);
+    const isDownload = url.searchParams.get('download') === 'true';
+    
     return new NextResponse(htmlContent, {
       status: 200,
       headers: {
         'Content-Type': 'text/html; charset=utf-8',
-        'Content-Disposition': `inline; filename="${invoice.invoiceNumber}.html"`,
+        'Content-Disposition': isDownload 
+          ? `attachment; filename="${invoice.invoiceNumber}.html"`
+          : `inline; filename="${invoice.invoiceNumber}.html"`,
       },
     });
   } catch (error) {
