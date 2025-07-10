@@ -3,8 +3,25 @@ import { OpenAI } from 'openai';
 import { CustomerService } from '@/services/customer.service';
 import { z } from 'zod';
 
-// OpenAI クライアントの初期化を関数内に移動
+// AI クライアントの初期化
 let openaiClient: OpenAI | null = null;
+let deepseekClient: OpenAI | null = null;
+
+function getDeepSeekClient(): OpenAI {
+  if (!deepseekClient) {
+    const apiKey = process.env.DEEPSEEK_API_KEY;
+    
+    if (!apiKey) {
+      throw new Error('DeepSeek API key is not configured');
+    }
+    
+    deepseekClient = new OpenAI({
+      apiKey,
+      baseURL: 'https://api.deepseek.com',
+    });
+  }
+  return deepseekClient;
+}
 
 function getOpenAIClient(): OpenAI {
   if (!openaiClient) {
@@ -74,25 +91,26 @@ export async function POST(request: NextRequest) {
     console.log('Session ID:', sessionId);
     console.log('Mode:', mode);
 
-    // AI APIキーの確認（OpenAI または DeepSeek）
-    const openaiApiKey = process.env.OPENAI_API_KEY || process.env.AZURE_OPENAI_API_KEY;
+    // DeepSeek APIを最優先で使用
     const deepseekApiKey = process.env.DEEPSEEK_API_KEY;
-    const useDeepSeek = !openaiApiKey && deepseekApiKey;
+    const openaiApiKey = process.env.OPENAI_API_KEY || process.env.AZURE_OPENAI_API_KEY;
     
-    // まず、有効なAPIキーがあるかチェック
-    let useOpenAI = false;
-    try {
-      if (openaiApiKey) {
-        // OpenAI APIキーの有効性をテスト（実際にクライアントを作成してみる）
+    // 利用可能なAIサービスをチェック（DeepSeek最優先）
+    const hasDeepSeek = !!deepseekApiKey;
+    let hasOpenAI = false;
+    
+    if (!hasDeepSeek && openaiApiKey) {
+      try {
+        // OpenAI APIキーの有効性をテスト（DeepSeekが利用できない場合のフォールバック）
         getOpenAIClient();
-        useOpenAI = true;
+        hasOpenAI = true;
+      } catch (error) {
+        console.log('OpenAI API key is invalid or not configured properly');
+        hasOpenAI = false;
       }
-    } catch (error) {
-      console.log('OpenAI API key is invalid or not configured properly, using placeholder implementation');
-      useOpenAI = false;
     }
     
-    if (!useOpenAI && !deepseekApiKey) {
+    if (!hasDeepSeek && !hasOpenAI) {
       console.log('No AI API key configured, using placeholder implementation');
       
       // プレースホルダー実装：簡単なキーワードマッチング
@@ -798,9 +816,10 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // OpenAI APIを使用する場合（有効なAPIキーがある場合のみ）
-    if (useOpenAI) {
-      console.log('Using OpenAI API for conversation analysis');
+    // AI APIを使用する場合（DeepSeek最優先、OpenAIはフォールバック）
+    if (hasDeepSeek || hasOpenAI) {
+      const usingDeepSeek = hasDeepSeek;
+      console.log(`Using ${usingDeepSeek ? 'DeepSeek' : 'OpenAI'} API for conversation analysis`);
       
       // プロンプトの作成
       const systemPrompt = `あなたは請求書作成のためのAIアシスタントです。
@@ -837,10 +856,14 @@ export async function POST(request: NextRequest) {
 }`;
 
       try {
-        const openai = getOpenAIClient();
+        // DeepSeekを優先使用、利用できない場合はOpenAI
+        const aiClient = usingDeepSeek ? getDeepSeekClient() : getOpenAIClient();
+        const modelName = usingDeepSeek 
+          ? 'deepseek-chat' 
+          : (process.env.AZURE_OPENAI_DEPLOYMENT_NAME || 'gpt-4');
         
-        const completion = await openai.chat.completions.create({
-          model: process.env.AZURE_OPENAI_DEPLOYMENT_NAME || 'gpt-4',
+        const completion = await aiClient.chat.completions.create({
+          model: modelName,
           messages: [
             { role: 'system', content: systemPrompt },
             { role: 'user', content: conversation }
@@ -923,8 +946,8 @@ export async function POST(request: NextRequest) {
 
         return NextResponse.json(response);
       } catch (error) {
-        console.error('OpenAI API error:', error);
-        console.log('OpenAI API failed, falling back to placeholder implementation');
+        console.error(`${usingDeepSeek ? 'DeepSeek' : 'OpenAI'} API error:`, error);
+        console.log(`${usingDeepSeek ? 'DeepSeek' : 'OpenAI'} API failed, falling back to placeholder implementation`);
         // フォールバック：プレースホルダー実装へ
       }
     }
