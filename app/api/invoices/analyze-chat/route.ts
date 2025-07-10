@@ -286,6 +286,7 @@ export async function POST(request: NextRequest) {
       
       // 応答メッセージの生成
       let responseMessage = '';
+      let quickReplies: Array<{text: string, value: string}> = [];
       
       // ユーザーの特定の反応に対する優先応答
       if (userConfused) {
@@ -310,6 +311,10 @@ export async function POST(request: NextRequest) {
                           `・${description}\n` +
                           `・¥${(amount + taxAmount).toLocaleString()}（税込）\n\n` +
                           `この内容でよろしければ、下の「会話を終了して確定」ボタンをクリックしてください。`;
+        quickReplies = [
+          { text: '確定', value: '請求書を確定してください' },
+          { text: '変更する', value: 'もう少し修正したいです' }
+        ];
         } else {
           responseMessage = `承知いたしました。\n\n` +
                           `他にご要望がございましたら、お申し付けください。`;
@@ -317,12 +322,13 @@ export async function POST(request: NextRequest) {
       } else if (hasMonthlyFee && !monthlyPeriodConfirmed && monthlyAmount) {
         // 月額料金の期間を明確化する必要がある
         responseMessage = `承知いたしました。${monthlyAmount.value.toLocaleString()}円の月額料金ですね。\n\n` +
-                        `請求書にはどの期間分を記載しますか？\n` +
-                        `・今月分のみ（${monthlyAmount.value.toLocaleString()}円）\n` +
-                        `・3ヶ月分（${(monthlyAmount.value * 3).toLocaleString()}円）\n` +
-                        `・6ヶ月分（${(monthlyAmount.value * 6).toLocaleString()}円）\n` +
-                        `・年間契約（${(monthlyAmount.value * 12).toLocaleString()}円）\n\n` +
-                        `例：「年間契約でお願いします」「今月分だけで」など`;
+                        `請求書にはどの期間分を記載しますか？`;
+        quickReplies = [
+          { text: '今月分のみ', value: `今月分のみ（${monthlyAmount.value.toLocaleString()}円）でお願いします` },
+          { text: '3ヶ月分', value: `3ヶ月分（${(monthlyAmount.value * 3).toLocaleString()}円）でお願いします` },
+          { text: '6ヶ月分', value: `6ヶ月分（${(monthlyAmount.value * 6).toLocaleString()}円）でお願いします` },
+          { text: '年間契約', value: `年間契約（${(monthlyAmount.value * 12).toLocaleString()}円）でお願いします` }
+        ];
       } else if (mode === 'create') {
         if (customerName && amount && description) {
           if (hasPreviousConversation) {
@@ -330,7 +336,11 @@ export async function POST(request: NextRequest) {
             const additionalOptions = [
               `請求書の内容を確認しました。\n\n明細に追加する項目はありますか？`,
               `${customerName}様への請求書（${description} ¥${amount.toLocaleString()}）を準備しています。\n\n支払期限や備考など、他に設定したい内容はありますか？`,
-              `了解しました。現在の内容：\n・${customerName}様\n・${description}\n・¥${(amount + taxAmount).toLocaleString()}（税込）\n\nこの内容で確定してもよろしいですか？`
+              `了解しました。現在の内容：\n・${customerName}様\n・${description}\n・¥${(amount + taxAmount).toLocaleString()}（税込）\n\nこの内容で確定してもよろしいですか？`;
+            quickReplies = [
+              { text: 'はい', value: 'はい、この内容で確定します' },
+              { text: 'いいえ', value: 'もう少し修正したいです' }
+            ]
             ];
             responseMessage = additionalOptions[Math.floor(conversationHistory.length / 2) % additionalOptions.length];
           } else {
@@ -338,6 +348,10 @@ export async function POST(request: NextRequest) {
                             `内容：${description}\n` +
                             `金額：¥${amount.toLocaleString()}（税込 ¥${(amount + taxAmount).toLocaleString()}）\n\n` +
                             `他に追加したい項目はありますか？`;
+            quickReplies = [
+              { text: 'はい', value: '追加項目があります' },
+              { text: 'いいえ', value: 'これで確定します' }
+            ];
           }
         } else {
           const missing = [];
@@ -410,6 +424,7 @@ export async function POST(request: NextRequest) {
       const response = {
         success: true,
         message: responseMessage,
+        quickReplies: quickReplies.length > 0 ? quickReplies : undefined,
         data: {
           customerId,
           customerName,

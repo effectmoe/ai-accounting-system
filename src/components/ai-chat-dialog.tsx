@@ -26,6 +26,7 @@ interface Message {
   content: string;
   timestamp: Date;
   invoiceData?: any; // 抽出された請求書データ
+  quickReplies?: Array<{ text: string; value: string }>; // クイック返信オプション
 }
 
 interface AIChatDialogProps {
@@ -61,7 +62,17 @@ export default function AIChatDialog({
         content: mode === 'create' 
           ? 'こんにちは！請求書作成をお手伝いします。\n\n例えば以下のような内容を教えてください：\n- 顧客名（〇〇会社様）\n- 請求内容（ウェブサイト制作費など）\n- 金額（50万円など）\n- 納期や支払期限\n\nどのような請求書を作成しますか？'
           : 'こんにちは！請求書の編集をお手伝いします。\n\nどの部分を変更したいですか？例えば：\n- 金額の変更\n- 明細の追加・削除\n- 支払期限の変更\n- 備考の追加\n\nお気軽にお申し付けください。',
-        timestamp: new Date()
+        timestamp: new Date(),
+        quickReplies: mode === 'create'
+          ? [
+              { text: '例を見る', value: '請求書の作成例を見せてください' },
+              { text: '前回と同じ', value: '前回と同じ顧客に請求書を作成したい' }
+            ]
+          : [
+              { text: '金額を変更', value: '金額を変更したいです' },
+              { text: '明細を追加', value: '明細を追加したいです' },
+              { text: '支払期限を変更', value: '支払期限を変更したいです' }
+            ]
       };
       setMessages([initialMessage]);
       setSessionId(Date.now().toString());
@@ -76,13 +87,14 @@ export default function AIChatDialog({
   }, [messages]);
 
   // メッセージ送信処理
-  const sendMessage = async () => {
-    if (!input.trim() || isLoading) return;
+  const sendMessage = async (customInput?: string) => {
+    const messageText = customInput || input.trim();
+    if (!messageText || isLoading) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
-      content: input.trim(),
+      content: messageText,
       timestamp: new Date()
     };
 
@@ -123,7 +135,8 @@ export default function AIChatDialog({
         role: 'assistant',
         content: result.message || '請求書データを更新しました。',
         timestamp: new Date(),
-        invoiceData: result.data
+        invoiceData: result.data,
+        quickReplies: result.quickReplies
       };
 
       setMessages(prev => [...prev, assistantMessage]);
@@ -234,18 +247,47 @@ export default function AIChatDialog({
                   </div>
                 )}
                 <div
-                  className={`max-w-[80%] rounded-lg p-3 ${
+                  className={`max-w-[80%] ${
                     message.role === 'user'
-                      ? 'bg-gray-900 text-white'
-                      : 'bg-gray-100 text-gray-900'
+                      ? 'bg-gray-900 text-white rounded-lg p-3'
+                      : ''
                   }`}
                 >
-                  <p className="whitespace-pre-wrap">{message.content}</p>
-                  <p className={`text-xs mt-1 ${
-                    message.role === 'user' ? 'text-gray-400' : 'text-gray-500'
-                  }`}>
-                    {format(message.timestamp, 'HH:mm', { locale: ja })}
-                  </p>
+                  {message.role === 'assistant' ? (
+                    <div className="space-y-2">
+                      <div className="bg-gray-100 text-gray-900 rounded-lg p-3">
+                        <p className="whitespace-pre-wrap">{message.content}</p>
+                        <p className="text-xs mt-1 text-gray-500">
+                          {format(message.timestamp, 'HH:mm', { locale: ja })}
+                        </p>
+                      </div>
+                      {message.quickReplies && message.quickReplies.length > 0 && (
+                        <div className="flex flex-wrap gap-2">
+                          {message.quickReplies.map((reply, index) => (
+                            <Button
+                              key={index}
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                sendMessage(reply.value);
+                              }}
+                              disabled={isLoading}
+                              className="text-sm"
+                            >
+                              {reply.text}
+                            </Button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <>
+                      <p className="whitespace-pre-wrap">{message.content}</p>
+                      <p className="text-xs mt-1 text-gray-400">
+                        {format(message.timestamp, 'HH:mm', { locale: ja })}
+                      </p>
+                    </>
+                  )}
                 </div>
                 {message.role === 'user' && (
                   <div className="w-8 h-8 rounded-full bg-gray-900 flex items-center justify-center flex-shrink-0">
