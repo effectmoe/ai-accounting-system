@@ -30,6 +30,7 @@ interface Customer {
   _id: string;
   companyName?: string;
   name?: string;
+  company?: string; // 追加: 古いデータ形式に対応
 }
 
 interface Product {
@@ -115,11 +116,15 @@ function NewInvoiceContent() {
           console.log('Setting customers from data.customers:', data.customers);
           // 有効な顧客データのみをフィルタリング
           const validCustomers = data.customers.filter((c: any) => c && c._id);
+          console.log('First customer structure:', validCustomers[0]);
+          console.log('Valid customers:', validCustomers);
           setCustomers(validCustomers);
         } else if (Array.isArray(data)) {
           console.log('Setting customers from array:', data);
           // 有効な顧客データのみをフィルタリング
           const validCustomers = data.filter((c: any) => c && c._id);
+          console.log('First customer structure from array:', validCustomers[0]);
+          console.log('Valid customers:', validCustomers);
           setCustomers(validCustomers);
         } else {
           console.error('Unexpected customer data format:', data);
@@ -664,11 +669,18 @@ function NewInvoiceContent() {
                         顧客が登録されていません
                       </option>
                     ) : (
-                      customers.filter(customer => customer && customer._id).map((customer) => (
-                        <option key={customer._id} value={customer._id}>
-                          {customer.companyName || customer.name || '名称未設定'}
-                        </option>
-                      ))
+                      customers.filter(customer => customer && customer._id).map((customer) => {
+                        // 顧客データの存在確認とフィールドの安全な参照
+                        const displayName = customer?.companyName || 
+                                          (customer as any)?.name || 
+                                          (customer as any)?.company || 
+                                          '名称未設定';
+                        return (
+                          <option key={customer._id} value={customer._id}>
+                            {displayName}
+                          </option>
+                        );
+                      })
                     )}
                   </select>
                 </div>
@@ -954,7 +966,11 @@ function NewInvoiceContent() {
         mode={aiDataApplied ? "edit" : "create"}
         initialInvoiceData={aiDataApplied ? {
           customerId: selectedCustomerId,
-          customerName: customerName || customers.find(c => c && c._id === selectedCustomerId)?.companyName || '',
+          customerName: customerName || 
+                       customers.find(c => c && c._id === selectedCustomerId)?.companyName || 
+                       (customers.find(c => c && c._id === selectedCustomerId) as any)?.name || 
+                       (customers.find(c => c && c._id === selectedCustomerId) as any)?.company || 
+                       '',
           items: items,
           invoiceDate: invoiceDate,
           dueDate: dueDate,
