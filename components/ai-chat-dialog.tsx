@@ -15,7 +15,8 @@ import {
   CheckCircle,
   AlertCircle,
   MessageSquare,
-  X
+  X,
+  Download
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
@@ -259,6 +260,65 @@ export default function AIChatDialog({
     }
   };
 
+  // 会話ログをダウンロード
+  const downloadConversationLog = () => {
+    // 会話ログを整形
+    let logContent = `AI請求書${mode === 'create' ? '作成' : '編集'}アシスタント 会話ログ\n`;
+    logContent += `=============================================\n`;
+    logContent += `ダウンロード日時: ${format(new Date(), 'yyyy年MM月dd日 HH:mm:ss', { locale: ja })}\n`;
+    logContent += `=============================================\n\n`;
+
+    messages.forEach((message) => {
+      const timestamp = format(message.timestamp, 'yyyy/MM/dd HH:mm:ss', { locale: ja });
+      const speaker = message.role === 'user' ? 'ユーザー' : 'AIアシスタント';
+      
+      logContent += `[${timestamp}] ${speaker}\n`;
+      logContent += `${message.content}\n`;
+      logContent += `---------------------------------------------\n\n`;
+    });
+
+    // 現在の請求書データも追記
+    if (currentInvoiceData && (currentInvoiceData.customerName || (currentInvoiceData.items && currentInvoiceData.items.length > 0))) {
+      logContent += `\n=============================================\n`;
+      logContent += `作成された請求書データ\n`;
+      logContent += `=============================================\n\n`;
+      
+      if (currentInvoiceData.customerName) {
+        logContent += `顧客名: ${currentInvoiceData.customerName}\n`;
+      }
+      
+      if (currentInvoiceData.items && currentInvoiceData.items.length > 0) {
+        logContent += `\n明細:\n`;
+        currentInvoiceData.items.forEach((item: any, index: number) => {
+          logContent += `${index + 1}. ${item.description}\n`;
+          logContent += `   数量: ${item.quantity} ${item.unit || ''}\n`;
+          logContent += `   単価: ¥${item.unitPrice.toLocaleString()}\n`;
+          logContent += `   小計: ¥${item.amount.toLocaleString()}\n`;
+          logContent += `   税額: ¥${item.taxAmount.toLocaleString()}\n`;
+          logContent += `   合計: ¥${(item.amount + item.taxAmount).toLocaleString()}\n\n`;
+        });
+      }
+      
+      if (currentInvoiceData.subtotal !== undefined) {
+        logContent += `\n小計: ¥${currentInvoiceData.subtotal.toLocaleString()}\n`;
+        logContent += `税額: ¥${currentInvoiceData.taxAmount.toLocaleString()}\n`;
+        logContent += `合計: ¥${currentInvoiceData.totalAmount.toLocaleString()}\n`;
+      }
+    }
+
+    // ダウンロード処理
+    const blob = new Blob([logContent], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const filename = `請求書${mode === 'create' ? '作成' : '編集'}_会話ログ_${format(new Date(), 'yyyyMMdd_HHmmss')}.txt`;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   // エンターキーで送信
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey && !isLoading && input.trim()) {
@@ -463,20 +523,34 @@ export default function AIChatDialog({
           
           {/* アクションボタン */}
           <div className="flex justify-between">
-            <Button
-              variant="outline"
-              onClick={(e) => {
-                e.preventDefault();
-                // ダイアログを閉じる際にデータをリセット
-                setMessages([]);
-                setCurrentInvoiceData({ items: [], subtotal: 0, taxAmount: 0, totalAmount: 0 });
-                setSessionId(null);
-                setError(null);
-                onClose();
-              }}
-            >
-              キャンセル
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={(e) => {
+                  e.preventDefault();
+                  // ダイアログを閉じる際にデータをリセット
+                  setMessages([]);
+                  setCurrentInvoiceData({ items: [], subtotal: 0, taxAmount: 0, totalAmount: 0 });
+                  setSessionId(null);
+                  setError(null);
+                  onClose();
+                }}
+              >
+                キャンセル
+              </Button>
+              <Button
+                variant="outline"
+                onClick={(e) => {
+                  e.preventDefault();
+                  downloadConversationLog();
+                }}
+                disabled={messages.length <= 1} // 初期メッセージのみの場合は無効
+                title="会話ログをダウンロード"
+              >
+                <Download className="mr-2 h-4 w-4" />
+                ログ
+              </Button>
+            </div>
             <Button
               onClick={(e) => {
                 e.preventDefault();
