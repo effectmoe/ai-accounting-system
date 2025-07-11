@@ -31,6 +31,7 @@ interface Customer {
   companyName?: string;
   name?: string;
   company?: string; // 追加: 古いデータ形式に対応
+  [key: string]: any; // その他のプロパティに対応
 }
 
 interface Product {
@@ -109,27 +110,56 @@ function NewInvoiceContent() {
         console.log('Fetched data:', data);
         console.log('Data type:', typeof data);
         console.log('Is array:', Array.isArray(data));
-        console.log('Has customers property:', data.hasOwnProperty('customers'));
+        console.log('Has customers property:', data && typeof data === 'object' && 'customers' in data);
         
         // データ構造に応じて顧客リストを設定
+        let rawCustomers: any[] = [];
+        
         if (data.customers && Array.isArray(data.customers)) {
           console.log('Setting customers from data.customers:', data.customers);
-          // 有効な顧客データのみをフィルタリング
-          const validCustomers = data.customers.filter((c: any) => c && c._id);
-          console.log('First customer structure:', validCustomers[0]);
-          console.log('Valid customers:', validCustomers);
-          setCustomers(validCustomers);
+          rawCustomers = data.customers;
         } else if (Array.isArray(data)) {
           console.log('Setting customers from array:', data);
-          // 有効な顧客データのみをフィルタリング
-          const validCustomers = data.filter((c: any) => c && c._id);
-          console.log('First customer structure from array:', validCustomers[0]);
-          console.log('Valid customers:', validCustomers);
-          setCustomers(validCustomers);
+          rawCustomers = data;
         } else {
           console.error('Unexpected customer data format:', data);
           setError('顧客データの取得に失敗しました');
+          setCustomers([]);
+          return;
         }
+        
+        // 有効な顧客データのみをフィルタリング（より厳密なチェック）
+        const validCustomers = rawCustomers.filter((c: any) => {
+          // nullやundefinedをチェック
+          if (!c || typeof c !== 'object') {
+            console.warn('Invalid customer data:', c);
+            return false;
+          }
+          
+          // _idプロパティの存在をチェック
+          if (!('_id' in c) || !c._id) {
+            console.warn('Customer missing _id:', c);
+            return false;
+          }
+          
+          // 少なくとも1つの名前フィールドが存在することを確認
+          const hasName = ('companyName' in c && c.companyName) ||
+                         ('name' in c && c.name) ||
+                         ('company' in c && c.company);
+          
+          if (!hasName) {
+            console.warn('Customer missing name fields:', c);
+          }
+          
+          return true;
+        });
+        
+        console.log('Valid customers count:', validCustomers.length);
+        if (validCustomers.length > 0) {
+          console.log('First valid customer structure:', validCustomers[0]);
+        }
+        
+        setCustomers(validCustomers);
       } else {
         console.error('Failed to fetch customers:', response.status);
         const errorText = await response.text();
@@ -150,14 +180,24 @@ function NewInvoiceContent() {
         const data = await response.json();
         console.log('Products data:', data);
         // データ構造に応じて商品リストを設定
+        let rawProducts: any[] = [];
+        
         if (data.products && Array.isArray(data.products)) {
-          setProducts(data.products);
+          rawProducts = data.products;
         } else if (Array.isArray(data)) {
-          setProducts(data);
+          rawProducts = data;
         } else {
           console.error('Unexpected product data format:', data);
           setProducts([]);
+          return;
         }
+        
+        // 有効な商品データのみをフィルタリング
+        const validProducts = rawProducts.filter((p: any) => {
+          return p && typeof p === 'object' && '_id' in p && p._id && p.productName;
+        });
+        
+        setProducts(validProducts);
       } else {
         console.error('Failed to fetch products:', response.status);
       }
@@ -420,8 +460,8 @@ function NewInvoiceContent() {
 
   // 商品選択時の処理
   const selectProduct = (index: number, productId: string) => {
-    const product = products.find(p => p._id === productId);
-    if (product) {
+    const product = products.find(p => p && p._id === productId);
+    if (product && product.productName) {
       const newItems = [...items];
       newItems[index] = {
         ...newItems[index],
@@ -669,18 +709,32 @@ function NewInvoiceContent() {
                         顧客が登録されていません
                       </option>
                     ) : (
-                      customers.filter(customer => customer && customer._id).map((customer) => {
-                        // 顧客データの存在確認とフィールドの安全な参照
-                        const displayName = customer?.companyName || 
-                                          (customer as any)?.name || 
-                                          (customer as any)?.company || 
-                                          '名称未設定';
-                        return (
-                          <option key={customer._id} value={customer._id}>
-                            {displayName}
-                          </option>
-                        );
-                      })
+                      customers
+                        .filter(customer => {
+                          // 厳密なチェック: customerが存在し、_idプロパティを持っていることを確認
+                          return customer && typeof customer === 'object' && '_id' in customer && customer._id;
+                        })
+                        .map((customer) => {
+                          // 顧客データの存在確認とフィールドの安全な参照
+                          let displayName = '名称未設定';
+                          
+                          // 複数のフィールド名に対応（優先順位順）
+                          if (customer && typeof customer === 'object') {
+                            if ('companyName' in customer && customer.companyName) {
+                              displayName = customer.companyName;
+                            } else if ('name' in customer && (customer as any).name) {
+                              displayName = (customer as any).name;
+                            } else if ('company' in customer && (customer as any).company) {
+                              displayName = (customer as any).company;
+                            }
+                          }
+                          
+                          return (
+                            <option key={customer._id} value={customer._id}>
+                              {displayName}
+                            </option>
+                          );
+                        })
                     )}
                   </select>
                 </div>
@@ -752,7 +806,9 @@ function NewInvoiceContent() {
               
               {/* 明細行 */}
               <div className="space-y-3 border-x border-b border-gray-200 rounded-b-lg p-3">
-                {items.map((item, index) => (
+                {items
+                  .filter((item, index) => item !== undefined && item !== null)
+                  .map((item, index) => (
                   <div key={index} className="bg-white p-4 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors">
                     {/* メイン行 */}
                     <div className="grid grid-cols-12 gap-4 items-center mb-3">
@@ -771,11 +827,13 @@ function NewInvoiceContent() {
                             className="flex-1 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                           >
                             <option value="">商品マスターから選択...</option>
-                            {products.map((product) => (
-                              <option key={product._id} value={product._id}>
-                                {product.productName} (¥{product.unitPrice.toLocaleString()})
-                              </option>
-                            ))}
+                            {products
+                              .filter(product => product && product._id)
+                              .map((product) => (
+                                <option key={product._id} value={product._id}>
+                                  {product.productName || '商品名未設定'} (¥{(product.unitPrice || 0).toLocaleString()})
+                                </option>
+                              ))}
                           </select>
                           <Input
                             placeholder="品目名を入力"
@@ -966,11 +1024,20 @@ function NewInvoiceContent() {
         mode={aiDataApplied ? "edit" : "create"}
         initialInvoiceData={aiDataApplied ? {
           customerId: selectedCustomerId,
-          customerName: customerName || 
-                       customers.find(c => c && c._id === selectedCustomerId)?.companyName || 
-                       (customers.find(c => c && c._id === selectedCustomerId) as any)?.name || 
-                       (customers.find(c => c && c._id === selectedCustomerId) as any)?.company || 
-                       '',
+          customerName: customerName || (() => {
+            const customer = customers.find(c => c && c._id === selectedCustomerId);
+            if (!customer) return '';
+            
+            // 安全にプロパティにアクセス
+            if ('companyName' in customer && customer.companyName) {
+              return customer.companyName;
+            } else if ('name' in customer && (customer as any).name) {
+              return (customer as any).name;
+            } else if ('company' in customer && (customer as any).company) {
+              return (customer as any).company;
+            }
+            return '';
+          })(),
           items: items,
           invoiceDate: invoiceDate,
           dueDate: dueDate,

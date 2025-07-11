@@ -230,7 +230,9 @@ export default function InvoicesPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {invoices.map((invoice) => (
+                  {invoices
+                    .filter(invoice => invoice && invoice._id)
+                    .map((invoice) => (
                     <TableRow
                       key={invoice._id}
                       className="cursor-pointer hover:bg-gray-50"
@@ -239,7 +241,7 @@ export default function InvoicesPage() {
                       <TableCell className="font-medium">
                         {invoice.invoiceNumber}
                       </TableCell>
-                      <TableCell>{invoice.customerSnapshot.companyName}</TableCell>
+                      <TableCell>{invoice.customerSnapshot?.companyName || '顧客名未設定'}</TableCell>
                       <TableCell>
                         {format(new Date(invoice.invoiceDate), 'yyyy/MM/dd', { locale: ja })}
                       </TableCell>
