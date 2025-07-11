@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { OpenAI } from 'openai';
 import { CustomerService } from '@/services/customer.service';
 import { BankAccountService } from '@/services/bank-account.service';
+import { CompanyInfoService } from '@/services/company-info.service';
 import { z } from 'zod';
 import { format } from 'date-fns';
+import { calculateDueDate, getPaymentTermsDescription } from '@/utils/payment-terms';
 
 // AI クライアントの初期化
 let openaiClient: OpenAI | null = null;
@@ -153,10 +155,26 @@ export async function POST(request: NextRequest) {
       const usingDeepSeek = hasDeepSeek;
       console.log(`Using ${usingDeepSeek ? 'DeepSeek' : 'OpenAI'} API for conversation analysis`);
       
+      // 会社情報から支払い条件を取得
+      let paymentTerms = '';
+      let companyInvoiceNotes = '';
+      try {
+        const companyInfoService = new CompanyInfoService();
+        const companyInfo = await companyInfoService.getCompanyInfo();
+        if (companyInfo) {
+          paymentTerms = companyInfo.paymentTerms || '';
+          companyInvoiceNotes = companyInfo.invoiceNotes || '';
+        }
+      } catch (error) {
+        console.error('Error fetching company info:', error);
+      }
+
       // 現在の日付を取得
       const today = new Date();
       const invoiceDate = format(today, 'yyyy-MM-dd');
-      const dueDate = format(new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd');
+      // 支払い条件に基づいて支払期限を計算
+      const calculatedDueDate = calculateDueDate(today, paymentTerms);
+      const dueDate = format(calculatedDueDate, 'yyyy-MM-dd');
 
       // 自然な対話のためのプロンプト
       const systemPrompt = `あなたは請求書作成を支援するAIアシスタントです。
@@ -165,12 +183,16 @@ export async function POST(request: NextRequest) {
 現在の請求書データ：
 ${JSON.stringify(currentInvoiceData || {}, null, 2)}
 
+会社の支払い条件設定：
+- 支払い条件: ${paymentTerms || '設定なし（デフォルト: 30日後）'}
+- 計算された支払期限: ${dueDate}
+
 重要なルール：
 1. 自然で親しみやすい日本語で応答してください
 2. 既存データがある場合は保持し、新しい項目は追加してください
 3. 必要な情報が不足している場合は質問してください
 4. 確認が必要な場合は「よろしいですか？」と聞いてください
-5. 今日の日付: ${invoiceDate}、支払期限: ${dueDate}です
+5. 今日の日付: ${invoiceDate}、支払期限: ${dueDate}（支払い条件: ${paymentTerms || 'デフォルト30日後'}）です
 6. ユーザーが「今の状況は？」と聞いた場合は、現在の請求書データを分かりやすく説明してください
 7. 請求書が完成したら「下の『会話を終了して確定』ボタンをクリックして、請求書を作成してください。」と案内してください
 8. PDFダウンロードについては言及しないでください（請求書作成後に別画面で可能になります）
@@ -316,13 +338,34 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
           // エラーが発生しても処理は続行
         }
         
-        // 備考に振込先情報を追加
+        // 備考に支払い条件と振込先情報を追加
         if (!updatedData.notes) {
-          if (bankAccountInfo) {
-            updatedData.notes = `${bankAccountInfo}お支払期限：${dueDate}\n※振込手数料はお客様負担でお願いいたします`;
-          } else {
-            updatedData.notes = `お支払期限：${dueDate}\n※振込先情報は別途お知らせいたします。\n※振込手数料はお客様負担でお願いいたします`;
+          let notesContent = '';
+          
+          // 支払い条件を追加
+          if (paymentTerms) {
+            notesContent += `【支払い条件】\n${paymentTerms}\n\n`;
           }
+          
+          // 会社の請求書備考を追加
+          if (companyInvoiceNotes) {
+            notesContent += `${companyInvoiceNotes}\n\n`;
+          }
+          
+          // 振込先情報を追加
+          if (bankAccountInfo) {
+            notesContent += bankAccountInfo;
+          }
+          
+          // 支払期限を追加
+          notesContent += `お支払期限：${dueDate}\n`;
+          
+          // 振込手数料について
+          if (!notesContent.includes('振込手数料')) {
+            notesContent += '※振込手数料はお客様負担でお願いいたします';
+          }
+          
+          updatedData.notes = notesContent.trim();
         }
         
         // paymentMethod設定
@@ -483,8 +526,23 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
       const taxRate = 0.1;
       const taxAmount = Math.round(amount * taxRate);
       
+      // 会社情報から支払い条件を取得（プレースホルダー実装用）
+      let paymentTermsForPlaceholder = '';
+      let companyInvoiceNotesForPlaceholder = '';
+      try {
+        const companyInfoService = new CompanyInfoService();
+        const companyInfo = await companyInfoService.getCompanyInfo();
+        if (companyInfo) {
+          paymentTermsForPlaceholder = companyInfo.paymentTerms || '';
+          companyInvoiceNotesForPlaceholder = companyInfo.invoiceNotes || '';
+        }
+      } catch (error) {
+        console.error('Error fetching company info for placeholder:', error);
+      }
+
       const today = new Date();
-      const dueDate = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
+      const calculatedDueDateForPlaceholder = calculateDueDate(today, paymentTermsForPlaceholder);
+      const dueDate = calculatedDueDateForPlaceholder;
       
       // 既存のデータとマージ
       const mergedData = currentInvoiceData || {};
@@ -706,7 +764,24 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
       }
       
       // 備考欄の作成
-      let notes = bankAccountInfo;
+      let notes = '';
+      
+      // 支払い条件を追加
+      if (paymentTermsForPlaceholder) {
+        notes += `【支払い条件】\n${paymentTermsForPlaceholder}\n\n`;
+      }
+      
+      // 会社の請求書備考を追加
+      if (companyInvoiceNotesForPlaceholder) {
+        notes += `${companyInvoiceNotesForPlaceholder}\n\n`;
+      }
+      
+      // 振込先情報を追加
+      if (bankAccountInfo) {
+        notes += bankAccountInfo;
+      }
+      
+      // 既存の備考またはデフォルトメッセージを追加
       if (mergedData.notes) {
         notes += mergedData.notes;
       } else {

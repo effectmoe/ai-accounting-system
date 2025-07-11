@@ -13,6 +13,7 @@ import { Loader2, Plus, Trash2, Sparkles, MessageSquare, ChevronDown, CheckCircl
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import AIChatDialog from '@/components/ai-chat-dialog';
+import { calculateDueDate } from '@/utils/payment-terms';
 
 interface InvoiceItem {
   description: string;
@@ -162,6 +163,7 @@ function NewInvoiceContent() {
     try {
       let defaultNotes = '';
       let hasSetNotes = false;
+      let paymentTerms = '';
       
       // 自社情報から請求書設定を取得
       const companyResponse = await fetch('/api/company-info');
@@ -170,8 +172,13 @@ function NewInvoiceContent() {
         if (companyData.success && companyData.companyInfo) {
           // 支払い条件のデフォルトを設定
           if (companyData.companyInfo.payment_terms) {
+            paymentTerms = companyData.companyInfo.payment_terms;
             // payment_termsをnotesにも含める
-            defaultNotes = companyData.companyInfo.payment_terms + '\n\n';
+            defaultNotes = `【支払い条件】\n${paymentTerms}\n\n`;
+            
+            // 支払い条件に基づいて支払期限を計算
+            const calculatedDueDate = calculateDueDate(new Date(), paymentTerms);
+            setDueDate(format(calculatedDueDate, 'yyyy-MM-dd'));
           }
           
           // 請求書備考のデフォルトを追加
