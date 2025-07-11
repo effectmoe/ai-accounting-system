@@ -16,9 +16,15 @@ interface Invoice {
   _id: string;
   invoiceNumber: string;
   invoiceDate: string;
+  issueDate?: string;
   dueDate: string;
-  customerSnapshot: {
-    companyName: string;
+  customer?: {
+    companyName?: string;
+    name?: string;
+    company?: string;
+  };
+  customerSnapshot?: {
+    companyName?: string;
   };
   totalAmount: number;
   status: string;
@@ -241,9 +247,15 @@ export default function InvoicesPage() {
                       <TableCell className="font-medium">
                         {invoice.invoiceNumber}
                       </TableCell>
-                      <TableCell>{invoice.customerSnapshot?.companyName || '顧客名未設定'}</TableCell>
                       <TableCell>
-                        {format(new Date(invoice.invoiceDate), 'yyyy/MM/dd', { locale: ja })}
+                        {invoice.customer?.companyName || 
+                         invoice.customer?.name || 
+                         invoice.customer?.company || 
+                         invoice.customerSnapshot?.companyName || 
+                         '顧客名未設定'}
+                      </TableCell>
+                      <TableCell>
+                        {format(new Date(invoice.issueDate || invoice.invoiceDate), 'yyyy/MM/dd', { locale: ja })}
                       </TableCell>
                       <TableCell>
                         {format(new Date(invoice.dueDate), 'yyyy/MM/dd', { locale: ja })}
