@@ -23,6 +23,8 @@ export interface CompanyInfo {
   logoImage?: string;
   stampImage?: string;
   representative?: string;
+  establishedDate?: string;
+  capital?: number;
   createdAt?: Date;
   updatedAt?: Date;
 }

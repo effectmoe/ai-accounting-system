@@ -15,7 +15,7 @@ interface CompanyInfo {
   website?: string;
   representative: string;
   established_date?: string;
-  capital?: number;
+  capital?: number | string;
   fiscal_year_end?: string;
   tax_number?: string;
   logo_image?: string;
@@ -98,7 +98,12 @@ export default function SettingsPage() {
       
       const data = await response.json();
       if (data.success && data.companyInfo) {
-        setCompanyInfo(data.companyInfo);
+        // 資本金が数値の場合は文字列に変換（入力フィールド用）
+        const formattedInfo = {
+          ...data.companyInfo,
+          capital: data.companyInfo.capital ? String(data.companyInfo.capital) : ''
+        };
+        setCompanyInfo(formattedInfo);
       }
     } catch (error) {
       console.error('Error fetching company info:', error);
@@ -143,10 +148,16 @@ export default function SettingsPage() {
     setSaving(true);
 
     try {
+      // 資本金を数値に変換してから送信
+      const dataToSubmit = {
+        ...companyInfo,
+        capital: companyInfo.capital ? Number(companyInfo.capital) : null
+      };
+      
       const response = await fetch('/api/company-info', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(companyInfo),
+        body: JSON.stringify(dataToSubmit),
       });
 
       if (!response.ok) throw new Error('Failed to update company info');
