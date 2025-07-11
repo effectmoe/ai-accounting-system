@@ -261,7 +261,7 @@ export default function InvoicesPage() {
                         {format(new Date(invoice.dueDate), 'yyyy/MM/dd', { locale: ja })}
                       </TableCell>
                       <TableCell className="text-right">
-                        ¥{invoice.totalAmount.toLocaleString()}
+                        ¥{(invoice.totalAmount || 0).toLocaleString()}
                       </TableCell>
                       <TableCell>{getStatusBadge(invoice.status)}</TableCell>
                       <TableCell>
