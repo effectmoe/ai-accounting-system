@@ -55,13 +55,33 @@ export async function POST(request: NextRequest) {
     // 請求書番号を生成（body.invoiceNumberが指定されていない場合）
     const invoiceNumber = body.invoiceNumber || await invoiceService.generateInvoiceNumber();
     
+    // invoiceDateを除外してinvoiceDataを作成
+    const { invoiceDate, ...restBody } = body;
+    
     const invoiceData = {
-      ...body,
+      ...restBody,
       invoiceNumber,
       items: processedItems,
-      invoiceDate: new Date(body.invoiceDate),
+      issueDate: new Date(invoiceDate), // フロントエンドのinvoiceDateをissueDateに変換
       dueDate: new Date(body.dueDate),
+      status: body.status || 'unpaid', // デフォルトステータスを設定
+      subtotal: 0, // 後で計算
+      taxAmount: 0, // 後で計算
+      totalAmount: 0, // 後で計算
     };
+    
+    // 合計金額を計算
+    let subtotal = 0;
+    let taxAmount = 0;
+    
+    processedItems.forEach((item: any) => {
+      subtotal += item.amount || 0;
+      taxAmount += item.taxAmount || 0;
+    });
+    
+    invoiceData.subtotal = subtotal;
+    invoiceData.taxAmount = taxAmount;
+    invoiceData.totalAmount = subtotal + taxAmount;
     
     console.log('Processed invoice data:', JSON.stringify(invoiceData, null, 2));
     

@@ -345,6 +345,51 @@ function NewInvoiceContent() {
     setItems(items.filter((_, i) => i !== index));
   };
 
+  // 商品を商品マスターに登録
+  const registerToProductMaster = async (index: number) => {
+    const item = items[index];
+    if (!item.description || item.unitPrice <= 0) {
+      setError('商品名と単価を入力してください');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          productName: item.description,
+          unitPrice: item.unitPrice,
+          taxRate: item.taxRate,
+          unit: item.unit || '個',
+          category: 'その他',
+          isActive: true,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('商品の登録に失敗しました');
+      }
+
+      const newProduct = await response.json();
+      
+      // 商品リストを再読み込み
+      const productsResponse = await fetch('/api/products');
+      if (productsResponse.ok) {
+        const data = await productsResponse.json();
+        setProducts(data.products || []);
+      }
+      
+      // 登録した商品を選択状態にする
+      updateItem(index, 'productId', newProduct._id);
+      
+      setSuccessMessage(`「${item.description}」を商品マスターに登録しました`);
+    } catch (error) {
+      console.error('Error registering product:', error);
+      setError('商品の登録に失敗しました');
+    }
+  };
+
   // 明細行を更新
   const updateItem = (index: number, field: keyof InvoiceItem, value: any) => {
     const newItems = [...items];
@@ -691,32 +736,48 @@ function NewInvoiceContent() {
                   <div key={index} className="bg-white p-4 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors">
                     {/* メイン行 */}
                     <div className="grid grid-cols-12 gap-4 items-center mb-3">
-                      <div className="col-span-5 space-y-2">
-                        <select
-                          value={item.productId || ''}
-                          onChange={(e) => {
-                            const productId = e.target.value;
-                            if (productId) {
-                              selectProduct(index, productId);
-                            } else {
-                              updateItem(index, 'productId', '');
-                            }
-                          }}
-                          className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                        >
-                          <option value="">商品マスターから選択...</option>
-                          {products.map((product) => (
-                            <option key={product._id} value={product._id}>
-                              {product.productName} (¥{product.unitPrice.toLocaleString()})
-                            </option>
-                          ))}
-                        </select>
-                        <Input
-                          placeholder="品目名を入力"
-                          value={item.description}
-                          onChange={(e) => updateItem(index, 'description', e.target.value)}
-                          className="w-full"
-                        />
+                      <div className="col-span-5">
+                        <div className="flex items-center gap-2">
+                          <select
+                            value={item.productId || ''}
+                            onChange={(e) => {
+                              const productId = e.target.value;
+                              if (productId) {
+                                selectProduct(index, productId);
+                              } else {
+                                updateItem(index, 'productId', '');
+                              }
+                            }}
+                            className="flex-1 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          >
+                            <option value="">商品マスターから選択...</option>
+                            {products.map((product) => (
+                              <option key={product._id} value={product._id}>
+                                {product.productName} (¥{product.unitPrice.toLocaleString()})
+                              </option>
+                            ))}
+                          </select>
+                          <Input
+                            placeholder="品目名を入力"
+                            value={item.description}
+                            onChange={(e) => updateItem(index, 'description', e.target.value)}
+                            className="flex-1"
+                          />
+                          {/* 商品マスター登録ボタン - AIが作成した新しい商品の場合のみ表示 */}
+                          {!item.productId && item.description && item.unitPrice > 0 && (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() => registerToProductMaster(index)}
+                              className="whitespace-nowrap"
+                              title="この商品を商品マスターに登録"
+                            >
+                              <Plus className="h-3 w-3 mr-1" />
+                              登録
+                            </Button>
+                          )}
+                        </div>
                       </div>
                       <div className="col-span-1">
                         <Input
