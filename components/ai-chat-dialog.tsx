@@ -165,6 +165,12 @@ export default function AIChatDialog({
       // 請求書データを更新
       if (result.data) {
         console.log('[Frontend] Updating invoice data:', result.data);
+        console.log('[Frontend] Data details:', {
+          items: result.data.items,
+          subtotal: result.data.subtotal,
+          taxAmount: result.data.taxAmount,
+          totalAmount: result.data.totalAmount
+        });
         setCurrentInvoiceData(result.data);
       }
 
@@ -188,6 +194,13 @@ export default function AIChatDialog({
   // 会話を完了して請求書データを確定
   const completeConversation = () => {
     if (currentInvoiceData && Object.keys(currentInvoiceData).length > 0) {
+      console.log('[Frontend] Completing conversation with data:', currentInvoiceData);
+      console.log('[Frontend] Final data details:', {
+        items: currentInvoiceData.items,
+        subtotal: currentInvoiceData.subtotal,
+        taxAmount: currentInvoiceData.taxAmount,
+        totalAmount: currentInvoiceData.totalAmount
+      });
       onComplete(currentInvoiceData);
     } else {
       setError('請求書データがまだ作成されていません。');
@@ -254,9 +267,18 @@ export default function AIChatDialog({
               {currentInvoiceData.items && currentInvoiceData.items.length > 0 && (
                 <p>明細: {currentInvoiceData.items.map((item: any) => item.description).join(', ')}</p>
               )}
-              {currentInvoiceData.totalAmount && (
-                <p>合計: ¥{currentInvoiceData.totalAmount.toLocaleString()}</p>
-              )}
+              {(() => {
+                // 合計金額を正しく計算
+                const subtotal = currentInvoiceData.subtotal || 
+                  (currentInvoiceData.items ? currentInvoiceData.items.reduce((sum: number, item: any) => sum + (item.amount || 0), 0) : 0);
+                const taxAmount = currentInvoiceData.taxAmount || 
+                  (currentInvoiceData.items ? currentInvoiceData.items.reduce((sum: number, item: any) => sum + (item.taxAmount || 0), 0) : 0);
+                const totalAmount = currentInvoiceData.totalAmount || (subtotal + taxAmount);
+                
+                return totalAmount > 0 && (
+                  <p>合計: ¥{totalAmount.toLocaleString()}（税込）</p>
+                );
+              })()}
             </div>
           </div>
         )}

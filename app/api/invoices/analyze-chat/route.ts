@@ -335,6 +335,19 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
         const taxAmount = updatedData.items ? updatedData.items.reduce((sum, item) => sum + (item.taxAmount || 0), 0) : 0;
         const totalAmount = subtotal + taxAmount;
         
+        // デバッグログ
+        console.log('[API/AI] Updated data before response:', {
+          items: updatedData.items,
+          subtotal,
+          taxAmount,
+          totalAmount,
+          itemsDetail: updatedData.items?.map(item => ({
+            description: item.description,
+            amount: item.amount,
+            taxAmount: item.taxAmount
+          }))
+        });
+        
         // レスポンスの作成
         const response = {
           success: true,
@@ -1090,6 +1103,22 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
       const finalMessage = aiResponse || responseMessage;
       
       // レスポンスの作成
+      const subtotal = invoiceData.items.reduce((sum, item) => sum + (item.amount || 0), 0);
+      const taxAmount = invoiceData.items.reduce((sum, item) => sum + (item.taxAmount || 0), 0);
+      const totalAmount = subtotal + taxAmount;
+      
+      console.log('[API] Response data calculation:', {
+        items: invoiceData.items,
+        subtotal,
+        taxAmount,
+        totalAmount,
+        itemsDetail: invoiceData.items.map(item => ({
+          description: item.description,
+          amount: item.amount,
+          taxAmount: item.taxAmount
+        }))
+      });
+      
       const response = {
         success: true,
         message: finalMessage,
@@ -1102,9 +1131,9 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
           dueDate: invoiceData.dueDate,
           notes: invoiceData.notes,
           paymentMethod: invoiceData.paymentMethod,
-          subtotal: invoiceData.items.reduce((sum, item) => sum + (item.amount || 0), 0),
-          taxAmount: invoiceData.items.reduce((sum, item) => sum + (item.taxAmount || 0), 0),
-          totalAmount: invoiceData.items.reduce((sum, item) => sum + (item.amount || 0) + (item.taxAmount || 0), 0),
+          subtotal,
+          taxAmount,
+          totalAmount,
         },
         aiConversationId: sessionId || Date.now().toString(),
       };

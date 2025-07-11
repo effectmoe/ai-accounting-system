@@ -255,6 +255,13 @@ function NewInvoiceContent() {
 
   // AIチャットダイアログからのデータを適用
   const handleAIChatComplete = (invoiceData: any) => {
+    console.log('[InvoiceNew] Received data from AI chat:', invoiceData);
+    console.log('[InvoiceNew] Data details:', {
+      items: invoiceData.items,
+      subtotal: invoiceData.subtotal,
+      taxAmount: invoiceData.taxAmount,
+      totalAmount: invoiceData.totalAmount
+    });
     applyInvoiceData(invoiceData);
     setAiConversationId(Date.now().toString());
     setShowAIChat(false);
