@@ -23,7 +23,7 @@ function getDeepSeekClient(): OpenAI {
     try {
       deepseekClient = new OpenAI({
         apiKey,
-        baseURL: 'https://api.deepseek.com',
+        baseURL: 'https://api.deepseek.com/v1',
       });
       console.log('[DeepSeek] Client initialized successfully');
     } catch (error) {

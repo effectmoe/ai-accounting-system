@@ -3,6 +3,31 @@ import { OpenAI } from 'openai';
 
 export async function GET() {
   try {
+    // ネットワーク接続テスト
+    let networkTest = { success: false, error: '' };
+    try {
+      const testResponse = await fetch('https://api.deepseek.com/v1/models', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${process.env.DEEPSEEK_API_KEY || ''}`,
+        },
+      });
+      networkTest = {
+        success: testResponse.ok,
+        status: testResponse.status,
+        statusText: testResponse.statusText,
+        headers: Object.fromEntries(testResponse.headers.entries()),
+      };
+      if (!testResponse.ok) {
+        const errorText = await testResponse.text();
+        networkTest.error = errorText;
+      }
+    } catch (error) {
+      networkTest = {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
     // 環境変数の確認
     const deepseekApiKey = process.env.DEEPSEEK_API_KEY;
     const openaiApiKey = process.env.OPENAI_API_KEY;
@@ -24,7 +49,7 @@ export async function GET() {
       try {
         const deepseekClient = new OpenAI({
           apiKey: deepseekApiKey,
-          baseURL: 'https://api.deepseek.com',
+          baseURL: 'https://api.deepseek.com/v1',
         });
         
         // 簡単なテストリクエスト
@@ -45,6 +70,14 @@ export async function GET() {
           success: false,
           error: error instanceof Error ? error.message : 'Unknown error',
           model: 'deepseek-chat',
+          errorDetails: error instanceof Error ? {
+            name: error.name,
+            message: error.message,
+            stack: error.stack?.split('\n').slice(0, 5).join('\n'),
+            cause: error.cause,
+            code: (error as any).code,
+            response: (error as any).response?.data,
+          } : null,
         };
       }
     }
@@ -53,6 +86,7 @@ export async function GET() {
       status: 'ok',
       timestamp: new Date().toISOString(),
       environment: envStatus,
+      networkTest: networkTest,
       deepseekTest: deepseekTestResult,
     });
   } catch (error) {
