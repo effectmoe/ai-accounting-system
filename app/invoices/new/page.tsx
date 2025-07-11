@@ -113,10 +113,14 @@ function NewInvoiceContent() {
         // データ構造に応じて顧客リストを設定
         if (data.customers && Array.isArray(data.customers)) {
           console.log('Setting customers from data.customers:', data.customers);
-          setCustomers(data.customers);
+          // 有効な顧客データのみをフィルタリング
+          const validCustomers = data.customers.filter((c: any) => c && c._id);
+          setCustomers(validCustomers);
         } else if (Array.isArray(data)) {
           console.log('Setting customers from array:', data);
-          setCustomers(data);
+          // 有効な顧客データのみをフィルタリング
+          const validCustomers = data.filter((c: any) => c && c._id);
+          setCustomers(validCustomers);
         } else {
           console.error('Unexpected customer data format:', data);
           setError('顧客データの取得に失敗しました');
@@ -656,7 +660,7 @@ function NewInvoiceContent() {
                         顧客が登録されていません
                       </option>
                     ) : (
-                      customers.map((customer) => (
+                      customers.filter(customer => customer && customer._id).map((customer) => (
                         <option key={customer._id} value={customer._id}>
                           {customer.companyName || customer.name || '名称未設定'}
                         </option>
@@ -946,7 +950,7 @@ function NewInvoiceContent() {
         mode={aiDataApplied ? "edit" : "create"}
         initialInvoiceData={aiDataApplied ? {
           customerId: selectedCustomerId,
-          customerName: customerName || customers.find(c => c._id === selectedCustomerId)?.companyName,
+          customerName: customerName || customers.find(c => c && c._id === selectedCustomerId)?.companyName || '',
           items: items,
           invoiceDate: invoiceDate,
           dueDate: dueDate,
