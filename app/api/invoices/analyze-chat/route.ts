@@ -1104,13 +1104,13 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
       
       // レスポンスの作成
       const subtotal = invoiceData.items.reduce((sum, item) => sum + (item.amount || 0), 0);
-      const taxAmount = invoiceData.items.reduce((sum, item) => sum + (item.taxAmount || 0), 0);
-      const totalAmount = subtotal + taxAmount;
+      const totalTaxAmount = invoiceData.items.reduce((sum, item) => sum + (item.taxAmount || 0), 0);
+      const totalAmount = subtotal + totalTaxAmount;
       
       console.log('[API] Response data calculation:', {
         items: invoiceData.items,
         subtotal,
-        taxAmount,
+        totalTaxAmount,
         totalAmount,
         itemsDetail: invoiceData.items.map(item => ({
           description: item.description,
@@ -1132,7 +1132,7 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
           notes: invoiceData.notes,
           paymentMethod: invoiceData.paymentMethod,
           subtotal,
-          taxAmount,
+          totalTaxAmount,
           totalAmount,
         },
         aiConversationId: sessionId || Date.now().toString(),
