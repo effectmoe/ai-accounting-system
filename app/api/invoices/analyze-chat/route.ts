@@ -306,6 +306,7 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
           console.log('[AI] Processing AI response for data extraction');
           console.log('[AI] Current invoice data before update:', JSON.stringify(currentInvoiceData, null, 2));
           console.log('[AI] User conversation:', conversation);
+          console.log('[AI] Current items count:', currentInvoiceData?.items?.length || 0);
           
           // 削除指示の検出 - 明確に削除を指示している場合のみ
           const isDeleteRequest = conversation.includes('削除') || conversation.includes('除外') || conversation.includes('取り消');
@@ -324,6 +325,14 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
           const isMaintenanceAddition = isMaintenanceRequest && conversation.includes('追加');
           
           const isAmountUpdateRequest = isMaintenanceAmountUpdate || isMaintenanceAddition;
+          
+          console.log('[AI] Conditions:', {
+            isDeleteRequest,
+            isMaintenanceRequest,
+            isMaintenanceAmountUpdate,
+            isMaintenanceAddition,
+            isAmountUpdateRequest
+          });
           
           if (isDeleteRequest) {
             console.log('[AI] Delete request detected');
@@ -346,17 +355,19 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
             console.log('[AI] Is maintenance amount update:', isMaintenanceAmountUpdate);
             
             // システム保守料の金額更新処理
-            // 金額の抽出 - より正確なパターンマッチング
-            const amountMatch = conversation.match(/(\d{1,3}(?:,\d{3})*)\s*円/);
+            // 金額の抽出 - カンマ区切りと連続した数字の両方に対応
+            const amountMatch = conversation.match(/(\d{1,3}(?:,\d{3})*|\d+)\s*円/);
             let newAmount = 8000; // デフォルト値（1ヶ月分）
             
             if (amountMatch) {
               const numStr = amountMatch[1].replace(/,/g, '');
               newAmount = parseInt(numStr);
               console.log('[AI] Amount match found:', amountMatch[0]);
+              console.log('[AI] Captured string:', amountMatch[1]);
               console.log('[AI] Extracted amount:', newAmount);
             } else {
-              console.log('[AI] No specific amount found, using default 8000円 for 1 month');
+              console.log('[AI] No specific amount found in conversation:', conversation);
+              console.log('[AI] Using default 8000円 for 1 month');
             }
             
             // 「追加」の場合は新規項目として追加、それ以外は既存項目を更新
