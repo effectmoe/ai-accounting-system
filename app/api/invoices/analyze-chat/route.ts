@@ -123,6 +123,18 @@ export async function POST(request: NextRequest) {
     console.log('Session ID:', sessionId);
     console.log('Mode:', mode);
     console.log('[DEBUG] Current invoice data received:', JSON.stringify(currentInvoiceData, null, 2));
+    
+    // 重要：currentInvoiceDataのitemsを確認
+    if (currentInvoiceData && currentInvoiceData.items) {
+      console.log('[DEBUG] Current items count:', currentInvoiceData.items.length);
+      currentInvoiceData.items.forEach((item, index) => {
+        console.log(`[DEBUG] Item ${index + 1}:`, {
+          description: item.description,
+          amount: item.amount,
+          taxAmount: item.taxAmount
+        });
+      });
+    }
 
     // DeepSeek APIを最優先で使用
     const deepseekApiKey = process.env.DEEPSEEK_API_KEY;
@@ -289,46 +301,102 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
         
         if (aiResponse) {
           console.log('[AI] Processing AI response for data extraction');
+          console.log('[AI] Current invoice data before update:', JSON.stringify(currentInvoiceData, null, 2));
+          console.log('[AI] User conversation:', conversation);
           
-          // AIの応答からデータを抽出するために、シンプルなパターンマッチングを使用
-          // 顧客名の抽出
-          const customerMatch = conversation.match(/([^に]+)(?:さん|様)?に/); 
-          if (customerMatch && !updatedData.customerName) {
-            updatedData.customerName = customerMatch[1].replace(/さん|様/g, '').trim();
-          }
+          // 削除指示の検出
+          const isDeleteRequest = conversation.includes('削除') || conversation.includes('除外') || conversation.includes('取り消');
+          const isAmountUpdateRequest = conversation.includes('だけ') || conversation.includes('のみ') || conversation.includes('1分月') || 
+                                       conversation.includes('1ヶ月') || conversation.includes('１ヶ月') || conversation.includes('1ケ月') ||
+                                       conversation.includes('1か月') || conversation.includes('１か月') || conversation.includes('1カ月');
           
-          // 金額と項目の抽出
-          const amountMatches = conversation.matchAll(/(\d+)(?:万円|万|円)/g);
-          const itemMatches = conversation.matchAll(/([^、。\s]+)(?:費|代|料金|の請求)/g);
-          
-          const amounts = Array.from(amountMatches);
-          const items = Array.from(itemMatches);
-          
-          if (amounts.length > 0 && (!updatedData.items || updatedData.items.length === 0)) {
-            updatedData.items = [];
-            
-            amounts.forEach((match, index) => {
-              const amountValue = match[2] === '万円' || match[2] === '万' ? 
-                parseInt(match[1]) * 10000 : parseInt(match[1]);
+          if (isDeleteRequest) {
+            console.log('[AI] Delete request detected');
+            // 削除対象の特定
+            if (conversation.includes('システム保守料') || conversation.includes('保守料')) {
+              // 保守料金を削除
+              if (updatedData.items && updatedData.items.length > 0) {
+                updatedData.items = updatedData.items.filter(item => 
+                  !item.description.includes('保守') && !item.description.includes('システム保守料')
+                );
+                console.log('[AI] Removed maintenance items, remaining items:', updatedData.items);
+              }
+            }
+          } else if (isAmountUpdateRequest) {
+            console.log('[AI] Amount update request detected');
+            // 金額の更新（1ヶ月分のみなど）
+            const amountMatch = conversation.match(/(\d+(?:,\d{3})*|\d+)(?:円|万円?)/);
+            if (amountMatch) {
+              const numStr = amountMatch[1].replace(/,/g, '');
+              const unit = amountMatch[2];
+              const newAmount = (unit === '万円' || unit === '万') ? 
+                parseInt(numStr) * 10000 : parseInt(numStr);
               
-              // 対応する項目名を取得
-              let description = '請求項目';
-              if (items[index]) {
-                description = items[index][1].replace(/費$|代$|料金$|の請求$/g, '') + '費';
+              console.log('[AI] Extracted amount:', newAmount, 'from:', amountMatch[0]);
+              
+              // 保守料金の項目を探して更新
+              if (updatedData.items && updatedData.items.length > 0) {
+                updatedData.items = updatedData.items.map(item => {
+                  if (item.description.includes('保守') || item.description.includes('システム保守料')) {
+                    console.log('[AI] Updating maintenance item amount from', item.amount, 'to', newAmount);
+                    return {
+                      ...item,
+                      description: 'システム保守料（1ヶ月分）',
+                      unitPrice: newAmount,
+                      amount: newAmount,
+                      taxAmount: Math.round(newAmount * 0.1)
+                    };
+                  }
+                  return item;
+                });
+              }
+            }
+          } else {
+            // 通常の追加・更新処理
+            // 顧客名の抽出
+            const customerMatch = conversation.match(/([^に]+)(?:さん|様)?に/); 
+            if (customerMatch && !updatedData.customerName) {
+              updatedData.customerName = customerMatch[1].replace(/さん|様/g, '').trim();
+            }
+            
+            // 金額と項目の抽出
+            const amountMatches = conversation.matchAll(/(\d+)(?:万円|万|円)/g);
+            const itemMatches = conversation.matchAll(/([^、。\s]+)(?:費|代|料金|の請求)/g);
+            
+            const amounts = Array.from(amountMatches);
+            const items = Array.from(itemMatches);
+            
+            if (amounts.length > 0) {
+              // 既存のitemsがある場合は追加、ない場合は新規作成
+              if (!updatedData.items) {
+                updatedData.items = [];
               }
               
-              updatedData.items.push({
-                description: description,
-                quantity: 1,
-                unitPrice: amountValue,
-                amount: amountValue,
-                taxRate: 0.1,
-                taxAmount: Math.round(amountValue * 0.1)
+              amounts.forEach((match, index) => {
+                const amountValue = match[2] === '万円' || match[2] === '万' ? 
+                  parseInt(match[1]) * 10000 : parseInt(match[1]);
+                
+                // 対応する項目名を取得
+                let description = '請求項目';
+                if (items[index]) {
+                  description = items[index][1].replace(/費$|代$|料金$|の請求$/g, '') + '費';
+                }
+                
+                // 新しい項目として追加（重複チェックはしない）
+                updatedData.items.push({
+                  description: description,
+                  quantity: 1,
+                  unitPrice: amountValue,
+                  amount: amountValue,
+                  taxRate: 0.1,
+                  taxAmount: Math.round(amountValue * 0.1)
+                });
               });
-            });
+            }
           }
           
           extractedData = updatedData;
+          console.log('[AI] Updated data after processing:', JSON.stringify(updatedData, null, 2));
         }
         
         // フォールバック処理
