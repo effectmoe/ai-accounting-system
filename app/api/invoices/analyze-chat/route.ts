@@ -247,15 +247,17 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
         console.log('Sending to AI with messages:', messages.length);
 
         try {
+          let modelName = 'unknown';
           if (usingDeepSeek) {
             // DeepSeek APIを直接呼び出す
+            modelName = 'deepseek-chat';
             const deepseekResponse = await callDeepSeekAPI(messages, 0.7, 500);
             aiResponse = deepseekResponse.choices?.[0]?.message?.content || '';
             console.log('[DeepSeek] Response:', aiResponse);
           } else {
             // OpenAI APIを使用
             const aiClient = getOpenAIClient();
-            const modelName = process.env.AZURE_OPENAI_DEPLOYMENT_NAME || 'gpt-4';
+            modelName = process.env.AZURE_OPENAI_DEPLOYMENT_NAME || 'gpt-4';
             const completion = await aiClient.chat.completions.create({
               model: modelName,
               messages: messages as any,
@@ -269,7 +271,7 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
           console.error('[AI] API call failed:', {
             error: apiError instanceof Error ? apiError.message : 'Unknown error',
             stack: apiError instanceof Error ? apiError.stack : undefined,
-            model: modelName,
+            model: usingDeepSeek ? 'deepseek-chat' : (process.env.AZURE_OPENAI_DEPLOYMENT_NAME || 'gpt-4'),
             usingDeepSeek,
             responseStatus: apiError instanceof Error && 'response' in apiError ? (apiError as any).response?.status : undefined,
             responseData: apiError instanceof Error && 'response' in apiError ? (apiError as any).response?.data : undefined
@@ -563,7 +565,7 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
       }
       
       // 既存の顧客マッチング処理
-      let customerId: string | null = null;
+      let matchedCustomerId: string | null = null;
       
       if (customerName && customerName !== '未設定顧客') {
         try {
@@ -579,13 +581,20 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
           );
           
           if (matchedCustomers.length > 0) {
-            customerId = matchedCustomers[0]._id!.toString();
+            matchedCustomerId = matchedCustomers[0]._id!.toString();
             customerName = matchedCustomers[0].companyName;
           }
         } catch (err) {
           console.error('Customer search error:', err);
         }
       }
+      
+      // 質問タイプを分析する関数
+      const analyzeQuestionType = (message: string): {
+        hasMultipleQuestions: boolean;
+        isInfoRequest: boolean;
+        isYesNoQuestion: boolean;
+        isChoiceQuestion: boolean;
         shouldShowQuickReplies: boolean;
       } => {
         // 複数質問の検出
@@ -666,269 +675,12 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
         };
       };
       
-      // 「追加する項目や修正点はありますか？」への「はい」の応答を特別に処理
-      if (lastAssistantQuestion.includes('追加する項目や修正点はありますか') && userSaidYes) {
-        responseMessage = `どのような追加・修正をご希望ですか？\n\n具体的な内容を教えてください。例えば：\n・「保守契約を4ヶ月分追加してください」\n・「金額を変更したいです」\n・「支払期限を30日後に変更してください」\n・「別の顧客への請求書を作成してください」`;
-        quickReplies = [
-          { text: '金額を変更', value: '金額を変更したいです' },
-          { text: '明細を追加', value: '明細項目を追加したいです' },
-          { text: '支払期限を変更', value: '支払期限を変更したいです' },
-          { text: '備考を追加', value: '備考欄に追記したいです' }
-        ];
-      }
-      // 「追加する項目や修正点はありますか？」への「いいえ」の応答
-      else if (lastAssistantQuestion.includes('追加する項目や修正点はありますか') && userSaidNo) {
-        if (customerName && amount && description) {
-          responseMessage = `承知いたしました。それでは、以下の内容で請求書を確定します。\n\n` +
-                          `【請求書内容】\n` +
-                          `・顧客名：${customerName}様\n` +
-                          `・請求項目：${description}\n` +
-                          `・請求金額：¥${amount.toLocaleString()}（税抜）\n` +
-                          `・消費税額：¥${taxAmount.toLocaleString()}\n` +
-                          `・合計金額：¥${(amount + taxAmount).toLocaleString()}\n` +
-                          `・請求日：${invoiceData.invoiceDate}\n` +
-                          `・支払期限：${invoiceData.dueDate}\n\n` +
-                          `下の「会話を終了して確定」ボタンをクリックして、請求書を作成してください。`;
-        }
-      }
-      // ユーザーの特定の反応に対する優先応答
-      else
-      if (userWantsToModify) {
-        // 修正したいという意図がある場合
-        responseMessage = `どの部分を修正したいですか？`;
-        quickReplies = [
-          { text: '金額を変更', value: '金額を変更したいです' },
-          { text: '品目を変更', value: '品目を変更したいです' },
-          { text: '顧客を変更', value: '顧客を変更したいです' },
-          { text: '明細を追加', value: '明細を追加したいです' }
-        ];
-      } else if (userWantsToAdd && (hasMonthlyFee || conversation.includes('保守') || conversation.includes('オプション'))) {
-        // 追加項目の指示がある場合
-        if (hasMonthlyFee && monthlyAmount) {
-          responseMessage = `承知いたしました。${monthlyAmount.value.toLocaleString()}円/月の保守料金を追加します。\n\n` +
-                          `請求書にはどの期間分を記載しますか？`;
-          quickReplies = [
-            { text: '今月分のみ', value: `今月分のみ（${monthlyAmount.value.toLocaleString()}円）でお願いします` },
-            { text: '3ヶ月分', value: `3ヶ月分（${(monthlyAmount.value * 3).toLocaleString()}円）でお願いします` },
-            { text: '6ヶ月分', value: `6ヶ月分（${(monthlyAmount.value * 6).toLocaleString()}円）でお願いします` },
-            { text: '年間契約', value: `年間契約（${(monthlyAmount.value * 12).toLocaleString()}円）でお願いします` }
-          ];
-        } else {
-          responseMessage = `承知いたしました。追加項目を請求書に反映します。\n\n` +
-                          `現在の内容を確認しました。他に追加したい項目はありますか？`;
-          quickReplies = [
-            { text: 'はい', value: '他にも追加項目があります' },
-            { text: 'いいえ', value: 'これで確定します' }
-          ];
-        }
-      } else if (isStatusQuestion) {
-        // 状況確認の質問への応答
-        if (currentInvoiceData && currentInvoiceData.items && currentInvoiceData.items.length > 0) {
-          const items = currentInvoiceData.items;
-          const subtotal = items.reduce((sum, item) => sum + (item.amount || 0), 0);
-          const totalTax = items.reduce((sum, item) => sum + (item.taxAmount || 0), 0);
-          const total = subtotal + totalTax;
-          
-          responseMessage = `現在の請求書の内容は以下の通りです：\n\n` +
-                          `【顧客情報】\n` +
-                          `・${currentInvoiceData.customerName || '未設定'}様\n\n` +
-                          `【請求明細】\n` +
-                          items.map(item => 
-                            `・${item.description}：¥${item.amount.toLocaleString()}（税抜）`
-                          ).join('\n') +
-                          `\n\n【金額情報】\n` +
-                          `・小計：¥${subtotal.toLocaleString()}\n` +
-                          `・消費税：¥${totalTax.toLocaleString()}\n` +
-                          `・合計：¥${total.toLocaleString()}\n\n` +
-                          `追加や修正したい項目はありますか？`;
-          quickReplies = [
-            { text: 'はい（追加・修正）', value: '修正したい項目があります' },
-            { text: 'いいえ（確定）', value: 'このまま確定します' }
-          ];
-        } else {
-          responseMessage = `まだ請求書の情報が入力されていません。\n\n` +
-                          `請求書を作成するために必要な情報を教えてください：\n` +
-                          `・顧客名（会社名や個人名）\n` +
-                          `・請求内容（サービスや商品名）\n` +
-                          `・金額`;
-        }
-      } else if (userConfused) {
-        responseMessage = `請求書作成に必要な情報を教えてください。（顧客名、請求内容、金額など）`;
-      } else if (userDenied) {
-        responseMessage = `失礼いたしました。まだ請求書は作成されていません。\n\n` +
-                        `請求書を作成するために、以下の情報をお聞かせください：\n` +
-                        `・誰宛の請求書ですか？（会社名や個人名）\n` +
-                        `・何の請求ですか？（サービスや商品名）\n` +
-                        `・いくらですか？（金額）`;
-      } else if (userSaidYes && conversation.includes('確定')) {
-        // 確定の意図が明確な場合
-        if (customerName && amount && description) {
-          responseMessage = `承知いたしました。以下の内容で請求書を確定します。\n\n` +
-                          `・${customerName}様\n` +
-                          `・${description}\n` +
-                          `・¥${(amount + taxAmount).toLocaleString()}（税込）\n\n` +
-                          `下の「会話を終了して確定」ボタンをクリックして、請求書を作成してください。`;
-        }
-      } else if (userSaidNo || shortNegative) {
-        if (hasPreviousConversation && customerName && amount && description) {
-          responseMessage = `承知いたしました。\n\n` +
-                          `それでは、現在の内容で請求書を確定します：\n` +
-                          `・${customerName}様\n` +
-                          `・${description}\n` +
-                          `・¥${(amount + taxAmount).toLocaleString()}（税込）\n\n` +
-                          `この内容でよろしければ、下の「会話を終了して確定」ボタンをクリックしてください。`;
-        quickReplies = [
-          { text: '確定', value: '請求書を確定してください' },
-          { text: '変更する', value: 'もう少し修正したいです' }
-        ];
-        } else {
-          responseMessage = `承知いたしました。\n\n` +
-                          `他にご要望がございましたら、お申し付けください。`;
-        }
-      } else if (monthlyPeriodConfirmed && confirmedMonths > 0) {
-        // 保守契約期間が指定された場合
-        if (currentInvoiceData && currentInvoiceData.items && currentInvoiceData.items.length > 0) {
-          const items = currentInvoiceData.items;
-          const subtotal = items.reduce((sum, item) => sum + (item.amount || 0), 0);
-          const totalTax = items.reduce((sum, item) => sum + (item.taxAmount || 0), 0);
-          const total = subtotal + totalTax;
-          
-          responseMessage = `承知いたしました。保守契約${confirmedMonths}ヶ月分を追加しました。\n\n` +
-                          `現在の請求書内容：\n` +
-                          items.map(item => 
-                            `・${item.description}：¥${item.amount.toLocaleString()}（税抜）`
-                          ).join('\n') +
-                          `\n\n合計：¥${total.toLocaleString()}（税込）\n\n` +
-                          `他に追加・修正したい項目はありますか？`;
-          quickReplies = [
-            { text: 'はい（追加・修正）', value: '修正したい項目があります' },
-            { text: 'いいえ（確定）', value: 'このまま確定します' }
-          ];
-        }
-      } else if (hasMonthlyFee && !monthlyPeriodConfirmed && monthlyAmount) {
-        // 月額料金の期間を明確化する必要がある
-        responseMessage = `承知いたしました。${monthlyAmount.value.toLocaleString()}円の月額料金ですね。\n\n` +
-                        `請求書にはどの期間分を記載しますか？`;
-        quickReplies = [
-          { text: '今月分のみ', value: `今月分のみ（${monthlyAmount.value.toLocaleString()}円）でお願いします` },
-          { text: '3ヶ月分', value: `3ヶ月分（${(monthlyAmount.value * 3).toLocaleString()}円）でお願いします` },
-          { text: '4ヶ月分', value: `4ヶ月分（${(monthlyAmount.value * 4).toLocaleString()}円）でお願いします` },
-          { text: '6ヶ月分', value: `6ヶ月分（${(monthlyAmount.value * 6).toLocaleString()}円）でお願いします` },
-          { text: '年間契約', value: `年間契約（${(monthlyAmount.value * 12).toLocaleString()}円）でお願いします` }
-        ];
-      } else if (mode === 'create') {
-        // 現在の請求書データの合計を計算
-        const currentSubtotal = items.reduce((sum, item) => sum + (item.amount || 0), 0);
-        const currentTaxAmount = items.reduce((sum, item) => sum + (item.taxAmount || 0), 0);
-        const currentTotal = currentSubtotal + currentTaxAmount;
-        
-        if (customerName && currentTotal > 0) {
-          if (hasPreviousConversation) {
-            // 2回目以降の会話では、別の応答パターンを使用
-            responseMessage = `現在の請求書内容：\n\n` +
-                            `【顧客】${customerName}様\n` +
-                            `【明細】\n` +
-                            items.map(item => 
-                              `・${item.description}：¥${item.amount.toLocaleString()}（税抜）`
-                            ).join('\n') +
-                            `\n【合計】¥${currentTotal.toLocaleString()}（税込）\n\n` +
-                            `他に追加・修正したい項目はありますか？`;
-            quickReplies = [
-              { text: 'はい（追加・修正あり）', value: '追加したい項目があります' },
-              { text: 'いいえ（このまま確定）', value: 'このままで確定します' }
-            ];
-          } else {
-            responseMessage = `承知いたしました。${customerName}様への請求書を作成します。\n\n` +
-                            `内容：${description}\n` +
-                            `金額：¥${amount.toLocaleString()}（税込 ¥${(amount + taxAmount).toLocaleString()}）\n\n` +
-                            `他に追加する項目や修正点はありますか？`;
-            quickReplies = [
-              { text: 'はい（追加・修正あり）', value: '追加したい項目があります' },
-              { text: 'いいえ（このまま確定）', value: 'このままで確定します' }
-            ];
-          }
-        } else {
-          const missing = [];
-          if (!customerName || customerName === '未設定顧客') missing.push('顧客名');
-          if (!amount || amount === 10000) missing.push('金額');
-          if (!description || description === '請求項目') missing.push('請求内容');
-          
-          if (hasPreviousConversation) {
-            responseMessage = `もう少し詳しく教えていただけますか？\n\n` +
-                            `例：「山田商事」「ウェブ制作費」「50万円」など、具体的な内容をお知らせください。`;
-          } else {
-            responseMessage = `請求書作成に必要な情報が不足しています。\n\n` +
-                            `不足情報：${missing.join('、')}\n\n` +
-                            `例えば「山田商事様にウェブ制作費50万円」のようにお伝えください。`;
-          }
-        }
-      } else {
-        // 編集モードのメッセージ
-        const changes = [];
-        if (conversation.includes('金額') && amount) {
-          changes.push(`金額を¥${amount.toLocaleString()}に変更`);
-        }
-        if (conversation.includes('品目') && description) {
-          changes.push(`品目を「${description}」に変更`);
-        }
-        if (conversation.includes('支払') || conversation.includes('期限')) {
-          changes.push('支払期限を変更');
-        }
-        
-        if (changes.length > 0) {
-          responseMessage = `承知いたしました。以下の変更を行いました：\n\n` +
-                          changes.map(c => `・${c}`).join('\n') +
-                          `\n\n他に変更したい部分はありますか？`;
-        } else if (userGivingInstruction) {
-          // 具体的な指示があるがパターンに合わない場合
-          responseMessage = `ご指示の内容を正しく理解できませんでした。もう一度お伝えいただけますか？`;
-        } else {
-          responseMessage = `変更内容を理解できませんでした。もう一度お伝えいただけますか？`;
-        }
-      }
+      // プレースホルダー実装のデフォルトメッセージ設定
+      // responseMessageとquickRepliesは既に上で定義されている
       
-      // 既存の顧客マッチング処理を続行
-      let customerId: string | null = null;
-      
-      if (customerName && customerName !== '未設定顧客') {
-        try {
-          const customerService = new CustomerService();
-          const searchResult = await customerService.getCustomers({ 
-            limit: 100
-          });
-          
-          // 顧客名で部分一致検索
-          const matchedCustomers = searchResult.customers.filter(c => 
-            c.companyName.includes(customerName) || 
-            (c.contactName && c.contactName.includes(customerName))
-          );
-          
-          if (matchedCustomers.length > 0) {
-            customerId = matchedCustomers[0]._id!.toString();
-            customerName = matchedCustomers[0].companyName;
-          }
-        } catch (err) {
-          console.error('Customer search error:', err);
-        }
-      }
-      
-      // クイックリプライの最終判定
-      const questionAnalysis = analyzeQuestionType(responseMessage);
-      
-      // デフォルトでボタンを表示しない（保守的アプローチ）
-      if (!questionAnalysis.shouldShowQuickReplies) {
-        quickReplies = [];
-      }
-      
-      // 特別なケース：「追加する項目や修正点はありますか？」への「はい」の応答
-      // これは明確にYes/No質問なのでボタンを表示
-      if (lastAssistantQuestion.includes('追加する項目や修正点はありますか') && 
-          quickReplies.length === 0) {
-        quickReplies = [
-          { text: 'はい（追加・修正あり）', value: '追加したい項目があります' },
-          { text: 'いいえ（このまま確定）', value: 'このままで確定します' }
-        ];
-      }
+      // 既存の顧客マッチング処理は上で実行済み
+      // matchedCustomerIdをcustomerIdとして使用
+      const customerId = matchedCustomerId;
       
       // AIレスポンスがある場合は優先的に使用
       const finalMessage = aiResponse || responseMessage;
