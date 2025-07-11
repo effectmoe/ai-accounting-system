@@ -149,10 +149,23 @@ export default function SettingsPage() {
 
     try {
       // 資本金を数値に変換してから送信
+      const capitalValue = companyInfo.capital ? 
+        (typeof companyInfo.capital === 'string' ? 
+          (companyInfo.capital.trim() === '' ? null : Number(companyInfo.capital)) : 
+          companyInfo.capital
+        ) : null;
+      
       const dataToSubmit = {
         ...companyInfo,
-        capital: companyInfo.capital ? Number(companyInfo.capital) : null
+        capital: capitalValue
       };
+      
+      // デバッグログ
+      console.log('Submitting company info:', {
+        ...dataToSubmit,
+        logo_image: dataToSubmit.logo_image ? '[BASE64_IMAGE]' : null,
+        stamp_image: dataToSubmit.stamp_image ? '[BASE64_IMAGE]' : null,
+      });
       
       const response = await fetch('/api/company-info', {
         method: 'PUT',
@@ -160,17 +173,23 @@ export default function SettingsPage() {
         body: JSON.stringify(dataToSubmit),
       });
 
-      if (!response.ok) throw new Error('Failed to update company info');
+      const responseData = await response.json();
+      console.log('Response from server:', responseData);
 
-      const data = await response.json();
-      if (data.success) {
+      if (!response.ok) {
+        throw new Error(responseData.error || 'Failed to update company info');
+      }
+
+      if (responseData.success) {
         toast.success('自社情報を更新しました');
+        // 保存成功後、データを再取得して最新の状態を反映
+        await fetchCompanyInfo();
       } else {
-        throw new Error(data.error || '更新に失敗しました');
+        throw new Error(responseData.error || '更新に失敗しました');
       }
     } catch (error) {
       console.error('Error updating company info:', error);
-      toast.error('自社情報の更新に失敗しました');
+      toast.error(error instanceof Error ? error.message : '自社情報の更新に失敗しました');
     } finally {
       setSaving(false);
     }

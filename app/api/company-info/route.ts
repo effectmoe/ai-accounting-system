@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
       ...companyInfo,
       name: companyInfo.companyName,
       postal_code: companyInfo.postalCode,
-      address: `${companyInfo.prefecture || ''} ${companyInfo.city || ''} ${companyInfo.address1 || ''}`.trim(),
+      address: companyInfo.address1 || `${companyInfo.prefecture || ''} ${companyInfo.city || ''} ${companyInfo.address1 || ''}`.trim() || '',
       phone_number: companyInfo.phone,
       fax_number: companyInfo.fax,
       email: companyInfo.email,
@@ -36,6 +36,12 @@ export async function GET(request: NextRequest) {
       logo_image: companyInfo.logoImage,
       stamp_image: companyInfo.stampImage,
     } : null;
+
+    console.log('GET response - Key fields:', {
+      established_date: formattedInfo?.established_date,
+      capital: formattedInfo?.capital,
+      fiscal_year_end: formattedInfo?.fiscal_year_end,
+    });
 
     return NextResponse.json({
       success: true,
@@ -100,7 +106,7 @@ export async function POST(request: NextRequest) {
       ...companyInfo,
       name: companyInfo.companyName,
       postal_code: companyInfo.postalCode,
-      address: `${companyInfo.prefecture || ''} ${companyInfo.city || ''} ${companyInfo.address1 || ''}`.trim(),
+      address: companyInfo.address1 || `${companyInfo.prefecture || ''} ${companyInfo.city || ''} ${companyInfo.address1 || ''}`.trim() || '',
       phone_number: companyInfo.phone,
       email: companyInfo.email,
       tax_number: companyInfo.registrationNumber,
@@ -162,11 +168,22 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    // デバッグログ
+    console.log('PUT request body:', {
+      ...body,
+      logo_image: body.logo_image ? '[BASE64_IMAGE]' : null,
+      stamp_image: body.stamp_image ? '[BASE64_IMAGE]' : null,
+    });
+
     // 会社情報を更新または作成
-    const companyInfo = await companyInfoService.upsertCompanyInfo({
+    const updateData = {
       companyName: body.name,
       postalCode: body.postal_code,
-      address: body.address,
+      // addressは単一フィールドとして保存（後で分割処理を実装可能）
+      address1: body.address,
+      prefecture: '', // 必要に応じて住所から抽出
+      city: '', // 必要に応じて住所から抽出
+      address2: '', // 必要に応じて追加
       phone: body.phone_number || null,
       fax: body.fax_number || null,
       email: body.email || null,
@@ -182,7 +199,15 @@ export async function PUT(request: NextRequest) {
       invoiceNotes: body.invoice_notes || null,
       logoImage: body.logo_image || null,
       stampImage: body.stamp_image || null,
+    };
+
+    console.log('Prepared update data:', {
+      ...updateData,
+      logoImage: updateData.logoImage ? '[BASE64_IMAGE]' : null,
+      stampImage: updateData.stampImage ? '[BASE64_IMAGE]' : null,
     });
+
+    const companyInfo = await companyInfoService.upsertCompanyInfo(updateData);
 
     if (!companyInfo) {
       return NextResponse.json(
@@ -199,7 +224,7 @@ export async function PUT(request: NextRequest) {
       ...companyInfo,
       name: companyInfo.companyName,
       postal_code: companyInfo.postalCode,
-      address: `${companyInfo.prefecture || ''} ${companyInfo.city || ''} ${companyInfo.address1 || ''}`.trim(),
+      address: companyInfo.address1 || `${companyInfo.prefecture || ''} ${companyInfo.city || ''} ${companyInfo.address1 || ''}`.trim() || '',
       phone_number: companyInfo.phone,
       fax_number: companyInfo.fax,
       email: companyInfo.email,

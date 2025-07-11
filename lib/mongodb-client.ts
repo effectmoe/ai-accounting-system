@@ -246,21 +246,41 @@ export class DatabaseService {
     id: string | ObjectId,
     update: Partial<T>
   ): Promise<T | null> {
-    const collection = await getCollection<T>(collectionName);
-    const objectId = typeof id === 'string' ? new ObjectId(id) : id;
-    
-    const result = await collection.findOneAndUpdate(
-      { _id: objectId } as any,
-      {
-        $set: {
-          ...update,
-          updatedAt: new Date(),
+    try {
+      const collection = await getCollection<T>(collectionName);
+      const objectId = typeof id === 'string' ? new ObjectId(id) : id;
+      
+      // _idフィールドを除外
+      const { _id, ...updateData } = update as any;
+      
+      console.log(`Updating document in ${collectionName} with ID: ${objectId}`);
+      console.log('Update data keys:', Object.keys(updateData));
+      
+      const result = await collection.findOneAndUpdate(
+        { _id: objectId } as any,
+        {
+          $set: {
+            ...updateData,
+            updatedAt: new Date(),
+          },
         },
-      },
-      { returnDocument: 'after' }
-    );
+        { returnDocument: 'after' }
+      );
 
-    return result ? result.value : null;
+      if (!result) {
+        console.error(`No document found with ID ${objectId} in collection ${collectionName}`);
+        return null;
+      }
+
+      console.log(`Document updated successfully in ${collectionName}`);
+      return result.value;
+    } catch (error) {
+      console.error(`MongoDB update error in collection ${collectionName}:`, error);
+      throw new DatabaseError(
+        `Failed to update document in ${collectionName}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        'UPDATE_ERROR'
+      );
+    }
   }
 
   /**

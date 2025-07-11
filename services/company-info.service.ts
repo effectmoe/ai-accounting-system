@@ -50,25 +50,46 @@ export class CompanyInfoService {
    */
   async upsertCompanyInfo(companyData: Omit<CompanyInfo, '_id' | 'createdAt' | 'updatedAt'>): Promise<CompanyInfo> {
     try {
+      console.log('upsertCompanyInfo called with data:', {
+        ...companyData,
+        logoImage: companyData.logoImage ? '[BASE64_IMAGE]' : null,
+        stampImage: companyData.stampImage ? '[BASE64_IMAGE]' : null,
+      });
+
       // 既存の会社情報を取得
       const existingInfo = await this.getCompanyInfo();
+      console.log('Existing company info found:', !!existingInfo);
 
       if (existingInfo && existingInfo._id) {
         // 更新
+        console.log('Updating existing company info with ID:', existingInfo._id);
+        
+        // _idフィールドを除外して更新データを準備
+        const { _id, createdAt, updatedAt, ...updateData } = { ...companyData } as any;
+        console.log('Update data prepared:', {
+          ...updateData,
+          logoImage: updateData.logoImage ? '[BASE64_IMAGE]' : null,
+          stampImage: updateData.stampImage ? '[BASE64_IMAGE]' : null,
+        });
+        
         const updated = await db.update<CompanyInfo>(
           this.collectionName,
           existingInfo._id,
-          companyData
+          updateData
         );
         
         if (!updated) {
           throw new Error('会社情報の更新に失敗しました');
         }
         
+        console.log('Company info updated successfully');
         return updated;
       } else {
         // 新規作成
-        return await db.create<CompanyInfo>(this.collectionName, companyData);
+        console.log('Creating new company info');
+        const created = await db.create<CompanyInfo>(this.collectionName, companyData);
+        console.log('Company info created successfully');
+        return created;
       }
     } catch (error) {
       console.error('Error in upsertCompanyInfo:', error);
