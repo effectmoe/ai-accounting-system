@@ -197,6 +197,32 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
 7. 請求書が完成したら「下の『会話を終了して確定』ボタンをクリックして、請求書を作成してください。」と案内してください
 8. PDFダウンロードについては言及しないでください（請求書作成後に別画面で可能になります）
 
+会話から情報を抽出する際の重要事項：
+- ユーザーは様々な日本語表現を使います（「〜として」「〜の名目で」「〜代として」「〜費用」など）
+- 金額は「8万円」「80000円」「8万」などの形式で示されます
+- 「8万円でシステム構築をお願い」「構築費用として8万」など、どんな表現でも理解してください
+- 品目名は文脈から適切に生成してください（「システム構築」→「システム構築費」など）
+- 複数の項目がある場合は、それぞれを個別に抽出してください
+
+必ず以下のJSON形式で構造化データも返してください：
+{
+  "extractedData": {
+    "customerName": "抽出した顧客名",
+    "items": [
+      {
+        "description": "品目名",
+        "quantity": 1,
+        "unitPrice": 金額,
+        "amount": 金額,
+        "taxRate": 0.1,
+        "taxAmount": 消費税額
+      }
+    ],
+    "hasNewItems": true/false,
+    "isAddingToExisting": true/false
+  }
+}
+
 応答は簡潔で分かりやすくしてください。`;
 
       try {
@@ -274,45 +300,65 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
           }
         }
         
-        // 会話から請求書データを抽出（シンプルなパターンマッチング）
-        const conversationLower = conversation.toLowerCase();
-        
-        // 既存データをベースに更新
+        // AIレスポンスからJSONデータを抽出
+        let extractedData = null;
         let updatedData = { ...currentInvoiceData };
         
-        // 顧客名の抽出
-        const customerMatch = conversation.match(/([^、。\s]+(?:会社|株式会社|商事|さん|様))/);
-        if (customerMatch && !updatedData.customerName) {
-          updatedData.customerName = customerMatch[1].replace(/さん$|様$/, '');
+        if (aiResponse) {
+          // AIレスポンスからJSON部分を抽出
+          const jsonMatch = aiResponse.match(/\{[\s\S]*"extractedData"[\s\S]*\}/);
+          if (jsonMatch) {
+            try {
+              const jsonData = JSON.parse(jsonMatch[0]);
+              extractedData = jsonData.extractedData;
+              console.log('[AI] Extracted data from AI response:', extractedData);
+              
+              // AIが抽出したデータを使用
+              if (extractedData) {
+                if (extractedData.customerName) {
+                  updatedData.customerName = extractedData.customerName;
+                }
+                
+                if (extractedData.items && extractedData.items.length > 0) {
+                  // 新しい項目を追加するか、既存のデータを更新するか判断
+                  if (extractedData.isAddingToExisting && updatedData.items) {
+                    // 既存のitemsに追加
+                    updatedData.items = [...updatedData.items, ...extractedData.items];
+                  } else if (extractedData.hasNewItems) {
+                    // 新しいitemsで置き換え
+                    updatedData.items = extractedData.items;
+                  } else if (!updatedData.items || updatedData.items.length === 0) {
+                    // itemsが空の場合は新規作成
+                    updatedData.items = extractedData.items;
+                  }
+                }
+              }
+            } catch (jsonError) {
+              console.error('[AI] Failed to parse JSON from AI response:', jsonError);
+            }
+          }
         }
         
-        // 金額と項目の抽出
-        const amountMatch = conversation.match(/(\d+)万円|(\d+)円/);
-        const itemMatch = conversation.match(/(制作|開発|保守|メンテナンス|サポート|コンサル)/);
-        
-        if (amountMatch && itemMatch) {
-          const amount = amountMatch[1] ? parseInt(amountMatch[1]) * 10000 : parseInt(amountMatch[2]);
-          const description = conversation.includes('制作') ? 'ウェブサイト制作費' :
-                            conversation.includes('保守') ? '保守・メンテナンス費' :
-                            conversation.includes('サポート') ? 'サポート費' :
-                            conversation.includes('構築') ? 'システム構築費' : '請求項目';
+        // AIがデータを抽出できなかった場合のみ、最小限のフォールバック処理
+        if (!extractedData || (!extractedData.customerName && !extractedData.items)) {
+          console.log('[AI] No structured data extracted, using minimal fallback');
           
-          // 既存のitemsに追加（上書きしない）
-          if (!updatedData.items) {
-            updatedData.items = [];
-          }
-          
-          // 同じ項目がなければ追加
-          const exists = updatedData.items.some(item => item.description === description);
-          if (!exists) {
-            updatedData.items.push({
-              description,
-              quantity: 1,
-              unitPrice: amount,
-              amount: amount,
-              taxRate: 0.1,
-              taxAmount: Math.round(amount * 0.1)
-            });
+          // 金額の抽出のみ（数値のみを抽出するシンプルな処理）
+          const amountMatch = conversation.match(/(\d+)万円|(\d+)円/);
+          if (amountMatch) {
+            const amount = amountMatch[1] ? parseInt(amountMatch[1]) * 10000 : parseInt(amountMatch[2]);
+            
+            // AIが理解できなかった場合の最小限の項目作成
+            if (!updatedData.items || updatedData.items.length === 0) {
+              updatedData.items = [{
+                description: '請求項目',
+                quantity: 1,
+                unitPrice: amount,
+                amount: amount,
+                taxRate: 0.1,
+                taxAmount: Math.round(amount * 0.1)
+              }];
+            }
           }
         }
         
@@ -427,442 +473,119 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
       }
     }
     
-    // プレースホルダー実装（AIが使えない場合のフォールバック）
-    console.log('[DEBUG] Using placeholder implementation - AI models not available or failed');
+    // プレースホルダー実装（AIが使えない場合の最小限のフォールバック）
+    console.log('[DEBUG] Using minimal placeholder implementation - AI models not available or failed');
     console.log('[DEBUG] Environment check:', {
       openAIKeyExists: !!process.env.OPENAI_API_KEY,
       deepSeekKeyExists: !!process.env.DEEPSEEK_API_KEY,
       nodeEnv: process.env.NODE_ENV
     });
       
-      // プレースホルダー実装：簡単なキーワードマッチング
+      // 最小限の数値抽出のみ実装
       const conversationLower = conversation.toLowerCase();
       
-      // 状況確認の質問かどうかを判定（早期に判定）
-      const isStatusQuestion = conversation.match(/どういう状況|状況は|どうなって|進捗|今の状態|現在の内容/i);
+      // 既存データから顧客名を保持
+      let customerName = currentInvoiceData?.customerName || '';
       
-      // 顧客名の抽出（「〜さん」「〜会社」「〜株式会社」など）
-      let customerName = '';
-      let isNewCustomer = false;
-      
-      // 状況確認の質問でない場合のみ新しい顧客名を抽出
-      if (!isStatusQuestion) {
-        const customerMatch = conversation.match(/([^、。\s]+(?:会社|株式会社|商事|さん|様))/);
-        if (customerMatch) {
-          const extractedCustomer = customerMatch[1].replace(/さん$|様$/, '');
-          // 既存の顧客名と異なる場合は新しい顧客とみなす
-          if (currentInvoiceData && currentInvoiceData.customerName && 
-              currentInvoiceData.customerName !== extractedCustomer) {
-            isNewCustomer = true;
-            console.log('[Placeholder] New customer detected:', extractedCustomer, 'different from', currentInvoiceData.customerName);
-          }
-          customerName = extractedCustomer;
-        }
-      }
-      
-      // 追加の指示（「追加」「さらに」など）がある場合は、新しい顧客とみなさない
-      if (conversation.toLowerCase().includes('追加') || 
-          conversation.toLowerCase().includes('さらに') ||
-          conversation.toLowerCase().includes('それと') ||
-          conversation.toLowerCase().includes('他に')) {
-        isNewCustomer = false;
-        console.log('[Placeholder] Addition instruction detected, not treating as new customer');
-      }
-      
-      // 既存データから顧客名を保持（新しい顧客名が抽出されなかった場合のみ）
-      if (!customerName && currentInvoiceData && currentInvoiceData.customerName) {
-        customerName = currentInvoiceData.customerName;
-      }
-      
-      // 金額の抽出（複数の金額を検出）
-      const amounts: Array<{value: number, isMonthly: boolean, description?: string}> = [];
-      const amountMatches = conversation.matchAll(/(\d+)(万円|万|円)(?:\/月|[のの]月額)?/g);
-      
-      for (const match of amountMatches) {
-        const numStr = match[1];
-        const unit = match[2];
-        const value = (unit === '万円' || unit === '万') ? 
+      // 金額の抽出（シンプルな数値抽出のみ）
+      let amount = 0;
+      const amountMatch = conversation.match(/(\d+)(万円|万|円)/);
+      if (amountMatch) {
+        const numStr = amountMatch[1];
+        const unit = amountMatch[2];
+        amount = (unit === '万円' || unit === '万') ? 
           parseInt(numStr) * 10000 : 
           parseInt(numStr);
-        
-        // 月額かどうかを判定
-        const isMonthly = conversation.includes(`${match[0]}/月`) || 
-                         conversation.includes(`月額${match[0]}`) ||
-                         conversation.includes(`${match[0]}の月額`);
-        
-        amounts.push({ value, isMonthly });
       }
       
-      // メインの金額（最大値を採用）
-      let amount = amounts.length > 0 ? Math.max(...amounts.map(a => a.value)) : 0;
+      console.log('[Placeholder] Minimal extraction:', {
+        conversation,
+        amount,
+        customerName
+      });
       
-      // 月額料金があるかチェック
-      const monthlyAmount = amounts.find(a => a.isMonthly);
-      const hasMonthlyFee = !!monthlyAmount;
-      
-      console.log('[Placeholder] Conversation:', conversation);
-      console.log('[Placeholder] Current invoice data:', JSON.stringify(currentInvoiceData, null, 2));
-      console.log('[Placeholder] Extracted amounts:', amounts);
-      console.log('[Placeholder] Main amount:', amount);
-      console.log('[Placeholder] Monthly amount:', monthlyAmount);
-      
-      // 品目の抽出（「〜費」「〜料」「〜代」など）
-      let description = '';
-      // 状況確認の質問でない場合のみ新しい品目を抽出
-      if (!isStatusQuestion) {
-        // 「として」パターンを優先的にチェック
-        // 「〜として」の前の部分を品目として抽出
-        const asMatch = conversation.match(/([^、。\s]+)(?:として|の名目で)/);
-        if (asMatch) {
-          description = asMatch[1];
-          console.log('[Placeholder] Extracted description from "として" pattern:', description);
-        } else {
-          const itemMatch = conversation.match(/([^、。\s]+(?:費|料|代|制作|開発|サービス|業務|作業|構築))/);
-          if (itemMatch) {
-            description = itemMatch[0];
-          }
-        }
-      }
-      
-      // 既存データとのマージ（会話履歴から累積的に情報を保持）
-      if (currentInvoiceData) {
-        // 既存のデータを優先し、新しい情報で上書き
-        if (!customerName && currentInvoiceData.customerName) {
-          customerName = currentInvoiceData.customerName;
-        }
-        if (!description && currentInvoiceData.items && currentInvoiceData.items[0]) {
-          console.log('[DEBUG] No description extracted, using existing:', currentInvoiceData.items[0].description);
-          description = currentInvoiceData.items[0].description;
-        }
-        // 状況確認の質問の場合は既存の金額を保持
-        if ((!amount || isStatusQuestion) && currentInvoiceData.items && currentInvoiceData.items[0]) {
-          amount = currentInvoiceData.items[0].unitPrice || currentInvoiceData.items[0].amount;
-        }
-      }
-      
-      // 顧客名が取得できない場合は、既存のcurrentInvoiceDataから取得（重要）
-      if (!customerName && currentInvoiceData && currentInvoiceData.customerName) {
-        customerName = currentInvoiceData.customerName;
-        console.log('[Placeholder] Using existing customer name:', customerName);
-      }
-      
-      // デフォルト値の設定（既存データからも取得できなかった場合のみ）
-      if (!customerName) customerName = '未設定顧客';
-      if (!description) description = '請求項目';
-      if (!amount) amount = 0; // デフォルトを0に変更して、誤った金額を避ける
-      
+      // 最小限のデータ作成
       const taxRate = 0.1;
       const taxAmount = Math.round(amount * taxRate);
-      
-      // 会社情報から支払い条件を取得（プレースホルダー実装用）
-      let paymentTermsForPlaceholder = '';
-      let companyInvoiceNotesForPlaceholder = '';
-      try {
-        const companyInfoService = new CompanyInfoService();
-        const companyInfo = await companyInfoService.getCompanyInfo();
-        if (companyInfo) {
-          paymentTermsForPlaceholder = companyInfo.paymentTerms || '';
-          companyInvoiceNotesForPlaceholder = companyInfo.invoiceNotes || '';
-        }
-      } catch (error) {
-        console.error('Error fetching company info for placeholder:', error);
-      }
-
       const today = new Date();
-      const calculatedDueDateForPlaceholder = calculateDueDate(today, paymentTermsForPlaceholder);
-      const dueDate = calculatedDueDateForPlaceholder;
+      const dueDate = new Date();
+      dueDate.setDate(today.getDate() + 30); // デフォルト30日後
       
-      // 既存のデータとマージ
-      const mergedData = currentInvoiceData || {};
+      // 既存のitemsまたは最小限の新規作成
+      let items = currentInvoiceData?.items || [];
       
-      // 編集モードの場合は、既存データを優先して使用
-      if (mode === 'edit' && mergedData.items) {
-        // 金額変更の指示があった場合
-        if (conversation.includes('金額') && amount) {
-          mergedData.items[0].unitPrice = amount;
-          mergedData.items[0].amount = amount;
-          mergedData.items[0].taxAmount = Math.round(amount * taxRate);
-        }
-        // 品目変更の指示があった場合
-        if (conversation.includes('品目') && description) {
-          mergedData.items[0].description = description;
-        }
-        // 支払期限変更の指示があった場合
-        if (conversation.includes('支払') || conversation.includes('期限')) {
-          const dueDateMatch = conversation.match(/(\d+)日/);
-          if (dueDateMatch) {
-            const days = parseInt(dueDateMatch[1]);
-            const newDueDate = new Date();
-            newDueDate.setDate(newDueDate.getDate() + days);
-            mergedData.dueDate = newDueDate.toISOString().split('T')[0];
-          }
-        }
-      }
-      
-      // 会話履歴から月額料金の期間が確定しているかチェック
-      let monthlyPeriodConfirmed = false;
-      let confirmedMonths = 1;
-      
-      // 現在の会話からも期間を確認
-      const currentMonthMatch = conversation.match(/(\d+)ヶ月|(\d+)か月/);
-      if (currentMonthMatch) {
-        confirmedMonths = parseInt(currentMonthMatch[1] || currentMonthMatch[2]);
-        monthlyPeriodConfirmed = true;
-        console.log('[DEBUG] Found month period in current conversation:', confirmedMonths);
-      }
-      
-      if (!monthlyPeriodConfirmed && conversationHistory && conversationHistory.length > 0) {
-        const lastMessages = conversationHistory.slice(-4).map(m => m.content).join(' ');
-        if (lastMessages.includes('年間') || lastMessages.includes('12ヶ月') || lastMessages.includes('12か月')) {
-          confirmedMonths = 12;
-          monthlyPeriodConfirmed = true;
-        } else if (lastMessages.match(/(\d+)ヶ月|(\d+)か月/)) {
-          const monthMatch = lastMessages.match(/(\d+)ヶ月|(\d+)か月/);
-          if (monthMatch) {
-            confirmedMonths = parseInt(monthMatch[1] || monthMatch[2]);
-            monthlyPeriodConfirmed = true;
-          }
-        } else if (lastMessages.includes('今月分') || lastMessages.includes('初月')) {
-          confirmedMonths = 1;
-          monthlyPeriodConfirmed = true;
-        }
-      }
-      
-      // 既存のitemsがある場合は、それを基に更新
-      // currentInvoiceDataから既存のitemsを確実に取得
-      let items = currentInvoiceData && currentInvoiceData.items ? [...currentInvoiceData.items] : [];
-      
-      // デバッグログ追加
-      console.log('[DEBUG] Processing items:', {
-        existingItems: items.length,
-        currentInvoiceDataItems: currentInvoiceData?.items?.length || 0,
-        hasDescription: !!description,
-        hasAmount: amount > 0,
-        hasMonthlyFee,
-        description,
-        amount,
-        isStatusQuestion,
-        customerName,
-        isNewCustomer
-      });
-      
-      // 新しい項目を追加するかどうかの判定
-      const isNewItem = description && amount > 0 && !hasMonthlyFee && !isStatusQuestion;
-      const isAddingItem = conversation.toLowerCase().includes('追加') || 
-                          conversation.toLowerCase().includes('さらに') ||
-                          conversation.toLowerCase().includes('それと') ||
-                          conversation.toLowerCase().includes('他に') ||
-                          // 「はい」と答えて追加の意図がある場合
-                          (userSaidYes && lastAssistantQuestion && (
-                            lastAssistantQuestion.includes('追加') || 
-                            lastAssistantQuestion.includes('他に') ||
-                            lastAssistantQuestion.includes('修正')
-                          ));
-      
-      if (isNewItem) {
-        // 新しい顧客の場合は、既存のitemsをクリアして新規作成
-        // ただし、顧客名が同じ場合は既存データを保持
-        if (isNewCustomer && customerName !== currentInvoiceData?.customerName) {
-          console.log('[DEBUG] New customer detected, creating new invoice');
+      // 金額が抽出された場合のみ項目を作成/更新
+      if (amount > 0) {
+        if (items.length === 0) {
+          // 新規作成
           items = [{
-            description: description,
+            description: '請求項目',
             quantity: 1,
             unitPrice: amount,
             amount: amount,
             taxRate: taxRate,
-            taxAmount: Math.round(amount * taxRate)
+            taxAmount: taxAmount
           }];
-        } else if (isAddingItem) {
-          // 「追加」の意図が明確な場合は、新規項目として追加
-          console.log('[DEBUG] Adding new item as requested');
-          items.push({
-            description: description,
-            quantity: 1,
+        } else {
+          // 既存の最初の項目を更新
+          items[0] = {
+            ...items[0],
             unitPrice: amount,
             amount: amount,
-            taxRate: taxRate,
-            taxAmount: Math.round(amount * taxRate)
-          });
-        } else if (items.length === 0) {
-          // itemsが空の場合は、最初の項目として追加
-          console.log('[DEBUG] Adding first item');
-          items.push({
-            description: description,
-            quantity: 1,
-            unitPrice: amount,
-            amount: amount,
-            taxRate: taxRate,
-            taxAmount: Math.round(amount * taxRate)
-          });
-        } else {
-          // 既存項目がある場合で、追加の意図が不明な場合は、
-          // 同じ種類の項目があるか確認
-          const existingIndex = items.findIndex(item => 
-            item.description.includes(description.split(' ')[0]) ||
-            description.includes(item.description.split(' ')[0])
-          );
-          
-          if (existingIndex >= 0) {
-            // 同じ種類の項目がある場合は更新
-            console.log('[DEBUG] Updating existing item at index:', existingIndex);
-            items[existingIndex] = {
-              ...items[existingIndex],
-              description: description,
-              unitPrice: amount,
-              amount: amount,
-              taxAmount: Math.round(amount * taxRate)
-            };
-          } else {
-            // 異なる種類の項目の場合は追加
-            console.log('[DEBUG] Adding as new item type');
-            items.push({
-              description: description,
-              quantity: 1,
-              unitPrice: amount,
-              amount: amount,
-              taxRate: taxRate,
-              taxAmount: Math.round(amount * taxRate)
-            });
-          }
-        }
-      }
-      
-      // 月額料金がある場合は別項目として追加
-      if (hasMonthlyFee && monthlyAmount) {
-        console.log('[DEBUG] Processing monthly fee:', {
-          monthlyAmount: monthlyAmount.value,
-          monthlyPeriodConfirmed,
-          confirmedMonths,
-          existingItemsCount: items.length
-        });
-        
-        // 保守料などの月額項目を探す
-        let monthlyItemIndex = items.findIndex(item => 
-          item.description.includes('保守') || 
-          item.description.includes('月額') ||
-          item.description.includes('サポート') ||
-          item.description.includes('メンテナンス')
-        );
-        
-        if (monthlyItemIndex === -1) {
-          // 新規追加
-          const newItem = {
-            description: monthlyPeriodConfirmed 
-              ? `保守・メンテナンス費（${confirmedMonths}ヶ月分）` 
-              : '保守・メンテナンス費',
-            quantity: monthlyPeriodConfirmed ? confirmedMonths : 1,
-            unitPrice: monthlyAmount.value,
-            amount: monthlyAmount.value * (monthlyPeriodConfirmed ? confirmedMonths : 1),
-            taxRate: taxRate,
-            taxAmount: Math.round(monthlyAmount.value * (monthlyPeriodConfirmed ? confirmedMonths : 1) * taxRate)
+            taxAmount: taxAmount
           };
-          console.log('[DEBUG] Adding new monthly item:', newItem);
-          items.push(newItem);
-        } else {
-          // 既存項目を更新
-          const updatedItem = {
-            ...items[monthlyItemIndex],
-            description: monthlyPeriodConfirmed 
-              ? `保守・メンテナンス費（${confirmedMonths}ヶ月分）` 
-              : '保守・メンテナンス費',
-            quantity: monthlyPeriodConfirmed ? confirmedMonths : 1,
-            unitPrice: monthlyAmount.value,
-            amount: monthlyAmount.value * (monthlyPeriodConfirmed ? confirmedMonths : 1),
-            taxAmount: Math.round(monthlyAmount.value * (monthlyPeriodConfirmed ? confirmedMonths : 1) * taxRate)
-          };
-          console.log('[DEBUG] Updating monthly item at index', monthlyItemIndex, ':', updatedItem);
-          items[monthlyItemIndex] = updatedItem;
         }
       }
       
-      // デバッグログ追加
-      console.log('[DEBUG] Final items before creating invoice:', {
-        itemsCount: items.length,
-        items: JSON.stringify(items, null, 2)
-      });
-      
-      // デフォルトの銀行口座情報を取得
-      let bankAccountInfo = '';
-      try {
-        const bankAccountService = new BankAccountService();
-        const defaultAccount = await bankAccountService.getDefaultAccount();
-        
-        if (defaultAccount) {
-          const accountTypeText = defaultAccount.accountType === 'checking' ? '当座預金' : '普通預金';
-          bankAccountInfo = `振込先：\n${defaultAccount.bankName} ${defaultAccount.branchName}\n${accountTypeText} ${defaultAccount.accountNumber}\n口座名義：${defaultAccount.accountHolder}\n\n`;
-        }
-      } catch (error) {
-        console.error('Error fetching bank account:', error);
-        // エラーが発生しても処理は続行
-      }
-      
-      // 備考欄の作成
-      let notes = '';
-      
-      // 支払い条件を追加
-      if (paymentTermsForPlaceholder) {
-        notes += `【支払い条件】\n${paymentTermsForPlaceholder}\n\n`;
-      }
-      
-      // 会社の請求書備考を追加
-      if (companyInvoiceNotesForPlaceholder) {
-        notes += `${companyInvoiceNotesForPlaceholder}\n\n`;
-      }
-      
-      // 振込先情報を追加
-      if (bankAccountInfo) {
-        notes += bankAccountInfo;
-      }
-      
-      // 既存の備考またはデフォルトメッセージを追加
-      if (mergedData.notes) {
-        notes += mergedData.notes;
-      } else {
-        notes += 'AI会話から作成';
-      }
-      
+      // 最小限の請求書データ作成
       const invoiceData: InvoiceData = {
-        customerName: customerName || mergedData.customerName || '未設定顧客',
+        customerName: customerName || '未設定顧客',
         items: items,
-        invoiceDate: mergedData.invoiceDate || today.toISOString().split('T')[0],
-        dueDate: mergedData.dueDate || dueDate.toISOString().split('T')[0],
-        notes: notes,
-        paymentMethod: mergedData.paymentMethod || 'bank_transfer'
+        invoiceDate: currentInvoiceData?.invoiceDate || today.toISOString().split('T')[0],
+        dueDate: currentInvoiceData?.dueDate || dueDate.toISOString().split('T')[0],
+        notes: currentInvoiceData?.notes || 'AI会話から作成',
+        paymentMethod: currentInvoiceData?.paymentMethod || 'bank_transfer'
       };
       
-      // 会話履歴をチェックして、重複した応答を避ける
-      const hasPreviousConversation = conversationHistory && conversationHistory.length > 2; // 初回のウェルカムメッセージを除く
-      
-      // ユーザーの入力内容を分析
-      const userSaidYes = conversation.match(/^(はい|yes|お願い|それで|ok|オッケー|いいです|確定)$/i);
-      const userSaidNo = conversation.match(/^(いいえ|いらない|不要|必要ありません|必要ない|なし|無し|ない|ありません)$/i);
-      const userWantsToModify = conversation.match(/修正|変更|直したい|編集/i);
-      const shortNegative = conversation.length < 20 && conversation.match(/ない|なし|不要|いらない|ありません/i);
-      const userAskedQuestion = conversation.includes('？') || conversation.includes('?');
-      const userWantsToAdd = conversation.match(/追加|他に|オプション|付けて|つけて/i);
-      const userConfused = conversation.match(/なんですか|何それ|どういうこと|分からない|わからない|説明/i);
-      const userDenied = conversation.match(/作成しました？|してない|していません|やってない/i);
-      const userGivingInstruction = conversation.match(/して|してください|お願い|追加して|変更して/i);
-      
-      // 直前の質問を分析（会話履歴から）
-      let lastAssistantQuestion = '';
-      if (conversationHistory && conversationHistory.length > 0) {
-        const lastAssistantMessage = [...conversationHistory].reverse().find(m => m.role === 'assistant');
-        if (lastAssistantMessage) {
-          lastAssistantQuestion = lastAssistantMessage.content;
-        }
-      }
-      
-      // 応答メッセージの生成
+      // 最小限の応答メッセージ生成
       let responseMessage = '';
       let quickReplies: Array<{text: string, value: string}> = [];
       
-      // 質問タイプの判定（包括的なパターン対応）
-      const analyzeQuestionType = (message: string): {
-        hasMultipleQuestions: boolean;
-        isInfoRequest: boolean;
-        isYesNoQuestion: boolean;
-        isChoiceQuestion: boolean;
+      // プレースホルダー実装の場合は最小限のメッセージ
+      if (customerName && amount > 0) {
+        responseMessage = `以下の内容で請求書を作成します：\n\n` +
+                        `・顧客名：${customerName}様\n` +
+                        `・金額：¥${(amount + taxAmount).toLocaleString()}（税込）\n\n` +
+                        `よろしければ、下の「会話を終了して確定」ボタンをクリックしてください。`;
+      } else {
+        responseMessage = `請求書作成に必要な情報をお知らせください。\n\n` +
+                        `例：「田中商事に50万円の請求書」`;
+      }
+      
+      // 既存の顧客マッチング処理
+      let customerId: string | null = null;
+      
+      if (customerName && customerName !== '未設定顧客') {
+        try {
+          const customerService = new CustomerService();
+          const searchResult = await customerService.getCustomers({ 
+            limit: 100
+          });
+          
+          // 顧客名で部分一致検索
+          const matchedCustomers = searchResult.customers.filter(c => 
+            c.companyName.includes(customerName) || 
+            (c.contactName && c.contactName.includes(customerName))
+          );
+          
+          if (matchedCustomers.length > 0) {
+            customerId = matchedCustomers[0]._id!.toString();
+            customerName = matchedCustomers[0].companyName;
+          }
+        } catch (err) {
+          console.error('Customer search error:', err);
+        }
+      }
         shouldShowQuickReplies: boolean;
       } => {
         // 複数質問の検出
