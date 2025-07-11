@@ -176,6 +176,21 @@ export default function AIChatDialog({
           customerName: result.data.customerName
         });
         
+        // 各項目の詳細をログ出力
+        if (result.data.items && result.data.items.length > 0) {
+          console.log('[Frontend] Items detail:');
+          result.data.items.forEach((item, index) => {
+            console.log(`[Frontend] Item ${index}:`, {
+              description: item.description,
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              amount: item.amount,
+              taxAmount: item.taxAmount,
+              total: item.amount + item.taxAmount
+            });
+          });
+        }
+        
         // データが正しく設定されているか確認
         if (result.data.items && result.data.items.length > 0) {
           console.log('[Frontend] Items detected, updating currentInvoiceData');
@@ -186,15 +201,25 @@ export default function AIChatDialog({
         
         // 完全なデータ構造で更新（既存データとマージ）
         setCurrentInvoiceData(prev => {
+          console.log('[Frontend] Previous state:', prev);
+          
+          // itemsの更新は、バックエンドが明示的に送信した場合のみ行う
+          // バックエンドは常に完全な更新後のitemsを送信するので、そのまま使用する
           const newData = {
             ...prev,
             ...result.data,
-            items: result.data.items || prev.items || [],
-            subtotal: result.data.subtotal || 0,
-            taxAmount: result.data.taxAmount || result.data.totalTaxAmount || 0,
-            totalAmount: result.data.totalAmount || 0
+            // itemsは常にバックエンドから送られたものを使用
+            items: result.data.items !== undefined ? result.data.items : prev.items || [],
+            subtotal: result.data.subtotal !== undefined ? result.data.subtotal : prev.subtotal || 0,
+            taxAmount: result.data.taxAmount !== undefined ? result.data.taxAmount : (result.data.totalTaxAmount !== undefined ? result.data.totalTaxAmount : prev.taxAmount || 0),
+            totalAmount: result.data.totalAmount !== undefined ? result.data.totalAmount : prev.totalAmount || 0
           };
           console.log('[Frontend] New state will be:', newData);
+          console.log('[Frontend] Items update:', {
+            prevItemsCount: prev.items?.length || 0,
+            newItemsCount: newData.items?.length || 0,
+            items: newData.items
+          });
           return newData;
         });
       } else {

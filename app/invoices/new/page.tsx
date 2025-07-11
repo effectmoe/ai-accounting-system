@@ -269,6 +269,22 @@ function NewInvoiceContent() {
       taxAmount: invoiceData.taxAmount,
       totalAmount: invoiceData.totalAmount
     });
+    
+    // 各項目の詳細をログ出力
+    if (invoiceData.items && invoiceData.items.length > 0) {
+      console.log('[InvoiceNew] Items received:');
+      invoiceData.items.forEach((item: any, index: number) => {
+        console.log(`[InvoiceNew] Item ${index}:`, {
+          description: item.description,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          amount: item.amount,
+          taxAmount: item.taxAmount,
+          total: item.amount + item.taxAmount
+        });
+      });
+    }
+    
     applyInvoiceData(invoiceData);
     setAiConversationId(Date.now().toString());
     setShowAIChat(false);
@@ -570,92 +586,112 @@ function NewInvoiceContent() {
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
-            {/* 顧客情報 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="customer">顧客選択</Label>
-                <select
-                  id="customer"
-                  value={selectedCustomerId}
-                  onChange={(e) => {
-                    console.log('Selected customer ID:', e.target.value);
-                    setSelectedCustomerId(e.target.value);
-                    // 既存顧客を選択した場合、新規顧客名をクリア
-                    if (e.target.value) {
-                      setCustomerName('');
-                    }
-                  }}
-                  className="flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <option value="">既存顧客から選択...</option>
-                  {customers.length === 0 ? (
-                    <option value="" disabled>
-                      顧客が登録されていません
-                    </option>
-                  ) : (
-                    customers.map((customer) => (
-                      <option key={customer._id} value={customer._id}>
-                        {customer.companyName || customer.name || '名称未設定'}
+            {/* 顧客情報セクション */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900 pb-2 border-b border-gray-200">顧客情報</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="customer" className="text-sm font-medium text-gray-700 mb-1 block">既存顧客から選択</Label>
+                  <select
+                    id="customer"
+                    value={selectedCustomerId}
+                    onChange={(e) => {
+                      console.log('Selected customer ID:', e.target.value);
+                      setSelectedCustomerId(e.target.value);
+                      // 既存顧客を選択した場合、新規顧客名をクリア
+                      if (e.target.value) {
+                        setCustomerName('');
+                      }
+                    }}
+                    className="flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <option value="">既存顧客から選択...</option>
+                    {customers.length === 0 ? (
+                      <option value="" disabled>
+                        顧客が登録されていません
                       </option>
-                    ))
-                  )}
-                </select>
-              </div>
-              <div>
-                <Label htmlFor="customerName">新規顧客名</Label>
-                <Input
-                  id="customerName"
-                  value={customerName}
-                  onChange={(e) => {
-                    setCustomerName(e.target.value);
-                    // 新規顧客名を入力した場合、既存顧客選択をクリア
-                    if (e.target.value) {
-                      setSelectedCustomerId('');
-                    }
-                  }}
-                  placeholder="新規顧客の場合は入力"
-                  disabled={!!selectedCustomerId}
-                />
+                    ) : (
+                      customers.map((customer) => (
+                        <option key={customer._id} value={customer._id}>
+                          {customer.companyName || customer.name || '名称未設定'}
+                        </option>
+                      ))
+                    )}
+                  </select>
+                </div>
+                <div>
+                  <Label htmlFor="customerName" className="text-sm font-medium text-gray-700 mb-1 block">または新規顧客名を入力</Label>
+                  <Input
+                    id="customerName"
+                    value={customerName}
+                    onChange={(e) => {
+                      setCustomerName(e.target.value);
+                      // 新規顧客名を入力した場合、既存顧客選択をクリア
+                      if (e.target.value) {
+                        setSelectedCustomerId('');
+                      }
+                    }}
+                    placeholder="新規顧客の場合は入力"
+                    disabled={!!selectedCustomerId}
+                  />
+                </div>
               </div>
             </div>
 
-            {/* 日付情報 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="invoiceDate">請求日</Label>
-                <Input
-                  id="invoiceDate"
-                  type="date"
-                  value={invoiceDate}
-                  onChange={(e) => setInvoiceDate(e.target.value)}
-                />
-              </div>
-              <div>
-                <Label htmlFor="dueDate">支払期限</Label>
-                <Input
-                  id="dueDate"
-                  type="date"
-                  value={dueDate}
-                  onChange={(e) => setDueDate(e.target.value)}
-                />
+            {/* 日付情報セクション */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900 pb-2 border-b border-gray-200">請求日・支払期限</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="invoiceDate" className="text-sm font-medium text-gray-700 mb-1 block">請求日</Label>
+                  <Input
+                    id="invoiceDate"
+                    type="date"
+                    value={invoiceDate}
+                    onChange={(e) => setInvoiceDate(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="dueDate" className="text-sm font-medium text-gray-700 mb-1 block">支払期限</Label>
+                  <Input
+                    id="dueDate"
+                    type="date"
+                    value={dueDate}
+                    onChange={(e) => setDueDate(e.target.value)}
+                  />
+                </div>
               </div>
             </div>
 
             {/* 明細 */}
-            <div>
-              <div className="flex justify-between items-center mb-2">
-                <Label>明細</Label>
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <Label className="text-lg font-semibold">請求明細</Label>
                 <Button type="button" size="sm" variant="outline" onClick={addItem}>
                   <Plus className="h-4 w-4 mr-1" />
                   明細追加
                 </Button>
               </div>
-              <div className="space-y-2">
+              
+              {/* ヘッダー行 */}
+              <div className="bg-gray-100 p-3 rounded-t-lg border border-gray-200">
+                <div className="grid grid-cols-12 gap-4 text-sm font-medium text-gray-700">
+                  <div className="col-span-5">品目・商品</div>
+                  <div className="col-span-1 text-center">数量</div>
+                  <div className="col-span-1 text-center">単位</div>
+                  <div className="col-span-2 text-right">単価</div>
+                  <div className="col-span-2 text-right">金額（税込）</div>
+                  <div className="col-span-1"></div>
+                </div>
+              </div>
+              
+              {/* 明細行 */}
+              <div className="space-y-3 border-x border-b border-gray-200 rounded-b-lg p-3">
                 {items.map((item, index) => (
-                  <div key={index} className="space-y-2">
-                    {/* 商品選択行 */}
-                    <div className="grid grid-cols-12 gap-2 items-center">
-                      <div className="col-span-4">
+                  <div key={index} className="bg-white p-4 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors">
+                    {/* メイン行 */}
+                    <div className="grid grid-cols-12 gap-4 items-center mb-3">
+                      <div className="col-span-5 space-y-2">
                         <select
                           value={item.productId || ''}
                           onChange={(e) => {
@@ -666,147 +702,150 @@ function NewInvoiceContent() {
                               updateItem(index, 'productId', '');
                             }
                           }}
-                          className="flex h-9 w-full rounded-md border border-gray-200 bg-white px-3 py-1 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                         >
-                          <option value="">商品を選択...</option>
+                          <option value="">商品マスターから選択...</option>
                           {products.map((product) => (
                             <option key={product._id} value={product._id}>
                               {product.productName} (¥{product.unitPrice.toLocaleString()})
                             </option>
                           ))}
                         </select>
-                      </div>
-                      <div className="col-span-3">
                         <Input
-                          placeholder="品目（または上記から選択）"
+                          placeholder="品目名を入力"
                           value={item.description}
                           onChange={(e) => updateItem(index, 'description', e.target.value)}
-                        />
-                      </div>
-                      <div className="col-span-2">
-                        <Input
-                          type="number"
-                          placeholder="数量"
-                          value={item.quantity}
-                          onChange={(e) => updateItem(index, 'quantity', parseFloat(e.target.value) || 0)}
-                        />
-                      </div>
-                      <div className="col-span-2">
-                        <Input
-                          placeholder="単位"
-                          value={item.unit || ''}
-                          onChange={(e) => updateItem(index, 'unit', e.target.value)}
+                          className="w-full"
                         />
                       </div>
                       <div className="col-span-1">
+                        <Input
+                          type="number"
+                          placeholder="1"
+                          value={item.quantity}
+                          onChange={(e) => updateItem(index, 'quantity', parseFloat(e.target.value) || 0)}
+                          className="text-center"
+                        />
+                      </div>
+                      <div className="col-span-1">
+                        <Input
+                          placeholder="個"
+                          value={item.unit || ''}
+                          onChange={(e) => updateItem(index, 'unit', e.target.value)}
+                          className="text-center"
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">¥</span>
+                          <Input
+                            type="number"
+                            placeholder="0"
+                            value={item.unitPrice}
+                            onChange={(e) => updateItem(index, 'unitPrice', parseFloat(e.target.value) || 0)}
+                            className="pl-8 text-right"
+                          />
+                        </div>
+                      </div>
+                      <div className="col-span-2">
+                        <div className="text-right font-medium text-lg">
+                          ¥{(item.amount + item.taxAmount).toLocaleString()}
+                        </div>
+                      </div>
+                      <div className="col-span-1 text-center">
                         <Button
                           type="button"
                           size="icon"
                           variant="ghost"
                           onClick={() => removeItem(index)}
                           disabled={items.length === 1}
+                          className="hover:bg-red-50 hover:text-red-600"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
                     </div>
                     
-                    {/* 価格設定行 */}
-                    <div className="grid grid-cols-12 gap-2 items-center">
-                      <div className="col-span-2">
-                        <Input
-                          type="number"
-                          placeholder="単価"
-                          value={item.unitPrice}
-                          onChange={(e) => updateItem(index, 'unitPrice', parseFloat(e.target.value) || 0)}
-                        />
-                      </div>
-                      <div className="col-span-2">
+                    {/* 詳細行 */}
+                    <div className="grid grid-cols-12 gap-4 items-center pt-3 border-t border-gray-100">
+                      <div className="col-span-5 flex items-center gap-2 text-sm text-gray-600">
+                        <span>消費税率:</span>
                         <select
                           value={item.taxRate}
                           onChange={(e) => updateItem(index, 'taxRate', parseFloat(e.target.value))}
-                          className="flex h-9 w-full rounded-md border border-gray-200 bg-white px-3 py-1 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                          className="rounded-md border border-gray-200 bg-white px-2 py-1 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                         >
                           <option value={0.10}>10%</option>
-                          <option value={0.08}>8%</option>
+                          <option value={0.08}>8%（軽減税率）</option>
                           <option value={0.00}>0%（非課税）</option>
                         </select>
                       </div>
-                      <div className="col-span-2">
-                        <Input
-                          type="number"
-                          placeholder="小計"
-                          value={item.amount}
-                          readOnly
-                          className="bg-gray-50"
-                        />
+                      <div className="col-span-7 flex justify-end items-center gap-6 text-sm">
+                        <div className="flex items-center gap-2">
+                          <span className="text-gray-600">小計:</span>
+                          <span className="font-medium">¥{item.amount.toLocaleString()}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-gray-600">消費税:</span>
+                          <span className="font-medium">¥{item.taxAmount.toLocaleString()}</span>
+                        </div>
                       </div>
-                      <div className="col-span-2">
-                        <Input
-                          type="number"
-                          placeholder="税額"
-                          value={item.taxAmount}
-                          readOnly
-                          className="bg-gray-50"
-                        />
-                      </div>
-                      <div className="col-span-2">
-                        <Input
-                          type="number"
-                          placeholder="合計"
-                          value={item.amount + item.taxAmount}
-                          readOnly
-                          className="bg-gray-50 font-medium"
-                        />
-                      </div>
-                      <div className="col-span-2"></div>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* 合計金額 */}
-            <div className="bg-gray-50 p-4 rounded-lg">
-              <div className="space-y-2 text-right">
-                <div className="flex justify-end items-center gap-4">
-                  <span>小計:</span>
-                  <span className="font-medium">¥{totals.subtotal.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-end items-center gap-4">
-                  <span>消費税:</span>
-                  <span className="font-medium">¥{totals.taxAmount.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-end items-center gap-4 text-lg font-bold">
-                  <span>合計:</span>
-                  <span>¥{totals.totalAmount.toLocaleString()}</span>
+            {/* 合計金額セクション */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900 pb-2 border-b border-gray-200">合計金額</h3>
+              <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-700">小計:</span>
+                    <span className="text-lg font-medium">¥{totals.subtotal.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-700">消費税:</span>
+                    <span className="text-lg font-medium">¥{totals.taxAmount.toLocaleString()}</span>
+                  </div>
+                  <div className="border-t border-blue-200 pt-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xl font-bold text-gray-900">請求金額合計:</span>
+                      <span className="text-2xl font-bold text-blue-600">¥{totals.totalAmount.toLocaleString()}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* その他 */}
+            {/* その他情報セクション */}
             <div className="space-y-4">
-              <div>
-                <Label htmlFor="paymentMethod">支払方法</Label>
-                <select
-                  id="paymentMethod"
-                  value={paymentMethod}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
-                  className="flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <option value="bank_transfer">銀行振込</option>
-                  <option value="credit_card">クレジットカード</option>
-                  <option value="cash">現金</option>
-                  <option value="other">その他</option>
-                </select>
+              <h3 className="text-lg font-semibold text-gray-900 pb-2 border-b border-gray-200">その他情報</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="paymentMethod" className="text-sm font-medium text-gray-700 mb-1 block">支払方法</Label>
+                  <select
+                    id="paymentMethod"
+                    value={paymentMethod}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                    className="flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <option value="bank_transfer">銀行振込</option>
+                    <option value="credit_card">クレジットカード</option>
+                    <option value="cash">現金</option>
+                    <option value="other">その他</option>
+                  </select>
+                </div>
               </div>
               <div>
-                <Label htmlFor="notes">備考</Label>
+                <Label htmlFor="notes" className="text-sm font-medium text-gray-700 mb-1 block">備考</Label>
                 <Textarea
                   id="notes"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  placeholder="備考やメモを入力"
+                  placeholder="支払い条件、振込先情報、その他の注意事項など"
+                  rows={4}
                 />
               </div>
             </div>

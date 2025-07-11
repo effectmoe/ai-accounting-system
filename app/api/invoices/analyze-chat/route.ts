@@ -312,6 +312,7 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
           
           if (isDeleteRequest) {
             console.log('[AI] Delete request detected');
+            console.log('[AI] Original items before deletion:', JSON.stringify(updatedData.items, null, 2));
             // 削除対象の特定
             if (conversation.includes('システム保守料') || conversation.includes('保守料')) {
               // 保守料金を削除
@@ -319,37 +320,48 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
                 updatedData.items = updatedData.items.filter(item => 
                   !item.description.includes('保守') && !item.description.includes('システム保守料')
                 );
-                console.log('[AI] Removed maintenance items, remaining items:', updatedData.items);
+                console.log('[AI] Removed maintenance items, remaining items:', JSON.stringify(updatedData.items, null, 2));
               }
             }
           } else if (isAmountUpdateRequest) {
             console.log('[AI] Amount update request detected');
-            // 金額の更新（1ヶ月分のみなど）
-            const amountMatch = conversation.match(/(\d+(?:,\d{3})*|\d+)(?:円|万円?)/);
+            console.log('[AI] Conversation text:', conversation);
+            console.log('[AI] Original items before update:', JSON.stringify(updatedData.items, null, 2));
+            
+            // 金額の更新（1ヶ月分のみなど）- より幅広いパターンにマッチ
+            // スペースを許容し、円の文字も含めて正確にマッチ
+            const amountMatch = conversation.match(/(\d{1,3}(?:,\d{3})*|\d+)\s*(円|万円|万)/);
             if (amountMatch) {
               const numStr = amountMatch[1].replace(/,/g, '');
               const unit = amountMatch[2];
               const newAmount = (unit === '万円' || unit === '万') ? 
                 parseInt(numStr) * 10000 : parseInt(numStr);
               
+              console.log('[AI] Amount match found:', amountMatch[0]);
               console.log('[AI] Extracted amount:', newAmount, 'from:', amountMatch[0]);
               
               // 保守料金の項目を探して更新
               if (updatedData.items && updatedData.items.length > 0) {
                 updatedData.items = updatedData.items.map(item => {
+                  console.log('[AI] Checking item:', item.description);
                   if (item.description.includes('保守') || item.description.includes('システム保守料')) {
+                    console.log('[AI] Found maintenance item to update');
                     console.log('[AI] Updating maintenance item amount from', item.amount, 'to', newAmount);
                     return {
                       ...item,
                       description: 'システム保守料（1ヶ月分）',
                       unitPrice: newAmount,
                       amount: newAmount,
-                      taxAmount: Math.round(newAmount * 0.1)
+                      taxAmount: Math.round(newAmount * 0.1),
+                      quantity: 1
                     };
                   }
                   return item;
                 });
+                console.log('[AI] Items after update:', JSON.stringify(updatedData.items, null, 2));
               }
+            } else {
+              console.log('[AI] No amount match found in conversation');
             }
           } else {
             // 通常の追加・更新処理
@@ -359,8 +371,8 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
               updatedData.customerName = customerMatch[1].replace(/さん|様/g, '').trim();
             }
             
-            // 金額と項目の抽出
-            const amountMatches = conversation.matchAll(/(\d+)(?:万円|万|円)/g);
+            // 金額と項目の抽出（カンマ付き数値にも対応）
+            const amountMatches = conversation.matchAll(/(\d{1,3}(?:,\d{3})*|\d+)(?:万円|万|円)/g);
             const itemMatches = conversation.matchAll(/([^、。\s]+)(?:費|代|料金|の請求)/g);
             
             const amounts = Array.from(amountMatches);
@@ -373,8 +385,13 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
               }
               
               amounts.forEach((match, index) => {
-                const amountValue = match[2] === '万円' || match[2] === '万' ? 
-                  parseInt(match[1]) * 10000 : parseInt(match[1]);
+                // カンマを除去して数値に変換
+                const numStr = match[1].replace(/,/g, '');
+                const unit = match[2];
+                const amountValue = (unit === '万円' || unit === '万') ? 
+                  parseInt(numStr) * 10000 : parseInt(numStr);
+                
+                console.log('[AI] Parsed amount:', match[0], '→', amountValue);
                 
                 // 対応する項目名を取得
                 let description = '請求項目';
@@ -403,10 +420,12 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
         if (!extractedData || (!extractedData.customerName && (!extractedData.items || extractedData.items.length === 0))) {
           console.log('[AI] Using fallback extraction');
           
-          // 金額の抽出のみ（数値のみを抽出するシンプルな処理）
-          const amountMatch = conversation.match(/(\d+)万円|(\d+)円/);
+          // 金額の抽出のみ（カンマ付き数値にも対応）
+          const amountMatch = conversation.match(/(\d{1,3}(?:,\d{3})*|\d+)(?:万円|万)|(\d{1,3}(?:,\d{3})*|\d+)円/);
           if (amountMatch) {
-            const amount = amountMatch[1] ? parseInt(amountMatch[1]) * 10000 : parseInt(amountMatch[2]);
+            const numStr1 = amountMatch[1] ? amountMatch[1].replace(/,/g, '') : '';
+            const numStr2 = amountMatch[2] ? amountMatch[2].replace(/,/g, '') : '';
+            const amount = amountMatch[1] ? parseInt(numStr1) * 10000 : parseInt(numStr2);
             
             // AIが理解できなかった場合の最小限の項目作成
             if (!updatedData.items || updatedData.items.length === 0) {
@@ -527,6 +546,8 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
           aiConversationId: sessionId || Date.now().toString(),
         };
 
+        console.log('[API] Final response being sent:', JSON.stringify(response, null, 2));
+        
         return NextResponse.json(response);
       } catch (error) {
         console.error(`${usingDeepSeek ? 'DeepSeek' : 'OpenAI'} API error:`, error);
@@ -557,11 +578,11 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
       // 既存データから顧客名を保持
       let customerName = currentInvoiceData?.customerName || '';
       
-      // 金額の抽出（シンプルな数値抽出のみ）
+      // 金額の抽出（カンマ付き数値にも対応）
       let amount = 0;
-      const amountMatch = conversation.match(/(\d+)(万円|万|円)/);
+      const amountMatch = conversation.match(/(\d{1,3}(?:,\d{3})*|\d+)(万円|万|円)/);
       if (amountMatch) {
-        const numStr = amountMatch[1];
+        const numStr = amountMatch[1].replace(/,/g, '');
         const unit = amountMatch[2];
         amount = (unit === '万円' || unit === '万') ? 
           parseInt(numStr) * 10000 : 

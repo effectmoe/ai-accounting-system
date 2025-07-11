@@ -387,61 +387,68 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
 
           {/* 明細 */}
           <div>
-            <h3 className="font-semibold mb-4">明細</h3>
-            <table className="w-full">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left py-2">品目</th>
-                  <th className="text-right py-2">数量</th>
-                  <th className="text-right py-2">単価</th>
-                  <th className="text-right py-2">金額</th>
-                  <th className="text-right py-2">消費税</th>
-                </tr>
-              </thead>
-              <tbody>
-                {invoice.items.map((item, index) => (
-                  <tr key={index} className="border-b">
-                    <td className="py-2">{item.description}</td>
-                    <td className="text-right py-2">{item.quantity}</td>
-                    <td className="text-right py-2">¥{item.unitPrice.toLocaleString()}</td>
-                    <td className="text-right py-2">¥{item.amount.toLocaleString()}</td>
-                    <td className="text-right py-2">¥{item.taxAmount.toLocaleString()}</td>
+            <h3 className="text-lg font-semibold mb-4">請求明細</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="text-left py-3 px-4 font-medium text-gray-700 border border-gray-200">品目</th>
+                    <th className="text-center py-3 px-4 font-medium text-gray-700 border border-gray-200 w-24">数量</th>
+                    <th className="text-right py-3 px-4 font-medium text-gray-700 border border-gray-200 w-32">単価</th>
+                    <th className="text-right py-3 px-4 font-medium text-gray-700 border border-gray-200 w-32">小計</th>
+                    <th className="text-right py-3 px-4 font-medium text-gray-700 border border-gray-200 w-32">消費税</th>
+                    <th className="text-right py-3 px-4 font-medium text-gray-700 border border-gray-200 w-40">金額（税込）</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {invoice.items.map((item, index) => (
+                    <tr key={index} className="hover:bg-gray-50">
+                      <td className="py-3 px-4 border border-gray-200">{item.description}</td>
+                      <td className="text-center py-3 px-4 border border-gray-200">{item.quantity}</td>
+                      <td className="text-right py-3 px-4 border border-gray-200 font-mono">¥{item.unitPrice.toLocaleString()}</td>
+                      <td className="text-right py-3 px-4 border border-gray-200 font-mono">¥{item.amount.toLocaleString()}</td>
+                      <td className="text-right py-3 px-4 border border-gray-200 font-mono text-sm text-gray-600">¥{item.taxAmount.toLocaleString()}</td>
+                      <td className="text-right py-3 px-4 border border-gray-200 font-medium">¥{(item.amount + item.taxAmount).toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
 
           <Separator className="my-6" />
 
           {/* 合計 */}
           <div className="flex justify-end">
-            <div className="space-y-2 text-right">
-              <div className="flex justify-between gap-8">
-                <span>小計:</span>
-                <span>¥{invoice.subtotal.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between gap-8">
-                <span>消費税:</span>
-                <span>¥{invoice.taxAmount.toLocaleString()}</span>
-              </div>
-              <Separator className="my-2" />
-              <div className="flex justify-between gap-8 text-lg font-bold">
-                <span>合計:</span>
-                <span>¥{invoice.totalAmount.toLocaleString()}</span>
-              </div>
-              {invoice.paidAmount > 0 && invoice.paidAmount < invoice.totalAmount && (
-                <>
-                  <div className="flex justify-between gap-8 text-sm text-gray-600">
-                    <span>支払済み:</span>
-                    <span>¥{invoice.paidAmount.toLocaleString()}</span>
+            <div className="bg-gray-50 p-6 rounded-lg border border-gray-200 min-w-[300px]">
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-700">小計:</span>
+                  <span className="text-lg font-mono">¥{invoice.subtotal.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-700">消費税:</span>
+                  <span className="text-lg font-mono">¥{invoice.taxAmount.toLocaleString()}</span>
+                </div>
+                <div className="border-t border-gray-300 pt-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xl font-bold text-gray-900">請求金額合計:</span>
+                    <span className="text-2xl font-bold text-blue-600">¥{invoice.totalAmount.toLocaleString()}</span>
                   </div>
-                  <div className="flex justify-between gap-8 font-medium">
-                    <span>残額:</span>
-                    <span>¥{(invoice.totalAmount - invoice.paidAmount).toLocaleString()}</span>
+                </div>
+                {invoice.paidAmount > 0 && invoice.paidAmount < invoice.totalAmount && (
+                  <div className="border-t border-gray-300 pt-3 space-y-2">
+                    <div className="flex justify-between items-center text-sm">
+                      <span className="text-gray-600">支払済み:</span>
+                      <span className="font-mono text-green-600">¥{invoice.paidAmount.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium text-gray-900">残額:</span>
+                      <span className="text-lg font-bold text-red-600">¥{(invoice.totalAmount - invoice.paidAmount).toLocaleString()}</span>
+                    </div>
                   </div>
-                </>
-              )}
+                )}
+              </div>
             </div>
           </div>
 
