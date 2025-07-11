@@ -78,12 +78,14 @@ function NewInvoiceContent() {
     productId: '',
   }]);
   const [notes, setNotes] = useState('');
+  const [defaultBankInfo, setDefaultBankInfo] = useState<string>('');
   const [paymentMethod, setPaymentMethod] = useState('bank_transfer');
 
   // 顧客・商品一覧を取得
   useEffect(() => {
     fetchCustomers();
     fetchProducts();
+    fetchDefaultBankInfo();
   }, []);
 
   // URLパラメータに基づいてAIチャットを自動的に開く
@@ -152,6 +154,43 @@ function NewInvoiceContent() {
     } catch (error) {
       console.error('Failed to fetch products:', error);
       setProducts([]);
+    }
+  };
+
+  // デフォルト銀行口座情報を取得
+  const fetchDefaultBankInfo = async () => {
+    try {
+      // 銀行口座情報を取得
+      const bankResponse = await fetch('/api/bank-accounts');
+      if (bankResponse.ok) {
+        const bankData = await bankResponse.json();
+        console.log('Bank data:', bankData);
+        
+        if (bankData.success && bankData.accounts && Array.isArray(bankData.accounts)) {
+          const defaultAccount = bankData.accounts.find(account => account.is_default);
+          
+          if (defaultAccount) {
+            // デフォルト銀行口座情報を備考に設定
+            const bankInfo = `【振込先】\n${defaultAccount.bank_name} ${defaultAccount.branch_name}\n${defaultAccount.account_type}口座 ${defaultAccount.account_number}\n口座名義: ${defaultAccount.account_holder}`;
+            setDefaultBankInfo(bankInfo);
+            setNotes(bankInfo);
+          }
+        }
+      }
+
+      // 自社情報から請求書の備考デフォルトを取得
+      const companyResponse = await fetch('/api/company-info');
+      if (companyResponse.ok) {
+        const companyData = await companyResponse.json();
+        if (companyData.success && companyData.companyInfo) {
+          if (companyData.companyInfo.invoice_notes && !defaultBankInfo) {
+            // 銀行口座情報がない場合は会社のデフォルト備考を使用
+            setNotes(companyData.companyInfo.invoice_notes);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch default bank info:', error);
     }
   };
 
@@ -226,6 +265,9 @@ function NewInvoiceContent() {
     // その他
     if (data.notes) {
       setNotes(data.notes);
+    } else if (defaultBankInfo) {
+      // AI会話で備考が指定されていない場合は、デフォルト銀行口座情報を使用
+      setNotes(defaultBankInfo);
     }
     if (data.paymentMethod) {
       setPaymentMethod(data.paymentMethod);
