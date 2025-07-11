@@ -294,7 +294,8 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
           const amount = amountMatch[1] ? parseInt(amountMatch[1]) * 10000 : parseInt(amountMatch[2]);
           const description = conversation.includes('制作') ? 'ウェブサイト制作費' :
                             conversation.includes('保守') ? '保守・メンテナンス費' :
-                            conversation.includes('サポート') ? 'サポート費' : '請求項目';
+                            conversation.includes('サポート') ? 'サポート費' :
+                            conversation.includes('構築') ? 'システム構築費' : '請求項目';
           
           // 既存のitemsに追加（上書きしない）
           if (!updatedData.items) {
@@ -510,12 +511,13 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
       // 状況確認の質問でない場合のみ新しい品目を抽出
       if (!isStatusQuestion) {
         // 「として」パターンを優先的にチェック
-        const asMatch = conversation.match(/(?:として|の名目で)([^、。\s]+)/);
+        // 「〜として」の前の部分を品目として抽出
+        const asMatch = conversation.match(/([^、。\s]+)(?:として|の名目で)/);
         if (asMatch) {
           description = asMatch[1];
           console.log('[Placeholder] Extracted description from "として" pattern:', description);
         } else {
-          const itemMatch = conversation.match(/([^、。\s]+(?:費|料|代|制作|開発|サービス|業務|作業))/);
+          const itemMatch = conversation.match(/([^、。\s]+(?:費|料|代|制作|開発|サービス|業務|作業|構築))/);
           if (itemMatch) {
             description = itemMatch[0];
           }
@@ -529,6 +531,7 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
           customerName = currentInvoiceData.customerName;
         }
         if (!description && currentInvoiceData.items && currentInvoiceData.items[0]) {
+          console.log('[DEBUG] No description extracted, using existing:', currentInvoiceData.items[0].description);
           description = currentInvoiceData.items[0].description;
         }
         // 状況確認の質問の場合は既存の金額を保持
