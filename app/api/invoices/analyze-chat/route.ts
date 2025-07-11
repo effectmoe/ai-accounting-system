@@ -297,7 +297,10 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
         
         // AIレスポンスからデータを抽出
         let extractedData = null;
-        let updatedData = { ...currentInvoiceData };
+        let updatedData = { 
+          ...currentInvoiceData,
+          items: currentInvoiceData?.items ? [...currentInvoiceData.items] : []
+        };
         
         if (aiResponse) {
           console.log('[AI] Processing AI response for data extraction');
@@ -307,15 +310,20 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
           // 削除指示の検出 - 明確に削除を指示している場合のみ
           const isDeleteRequest = conversation.includes('削除') || conversation.includes('除外') || conversation.includes('取り消');
           
-          // 金額更新の検出 - システム保守料の期間変更を含む
-          const isMaintenanceAmountUpdate = (
-            (conversation.includes('システム保守') || conversation.includes('保守料')) &&
-            (conversation.includes('1ヶ月') || conversation.includes('１ヶ月') || conversation.includes('1ケ月') ||
-             conversation.includes('1か月') || conversation.includes('１か月') || conversation.includes('1カ月') ||
-             conversation.includes('一ヶ月') || conversation.includes('一か月') || conversation.includes('ひと月'))
+          // 金額更新の検出 - システム保守料の期間変更・追加を含む
+          const isMaintenanceRequest = (
+            conversation.includes('システム保守') || conversation.includes('保守料金') || conversation.includes('保守料')
           );
           
-          const isAmountUpdateRequest = isMaintenanceAmountUpdate;
+          const isMaintenanceAmountUpdate = isMaintenanceRequest && (
+            conversation.includes('1ヶ月') || conversation.includes('１ヶ月') || conversation.includes('1ケ月') ||
+            conversation.includes('1か月') || conversation.includes('１か月') || conversation.includes('1カ月') ||
+            conversation.includes('一ヶ月') || conversation.includes('一か月') || conversation.includes('ひと月')
+          );
+          
+          const isMaintenanceAddition = isMaintenanceRequest && conversation.includes('追加');
+          
+          const isAmountUpdateRequest = isMaintenanceAmountUpdate || isMaintenanceAddition;
           
           if (isDeleteRequest) {
             console.log('[AI] Delete request detected');
@@ -388,7 +396,7 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
             }
             
             // 金額と項目の抽出（カンマ付き数値にも対応）
-            const amountMatches = conversation.matchAll(/(\d{1,3}(?:,\d{3})*|\d+)(?:万円|万|円)/g);
+            const amountMatches = conversation.matchAll(/(\d{1,3}(?:,\d{3})*|\d+)(万円|万|円)/g);
             const itemMatches = conversation.matchAll(/([^、。\s]+)(?:費|代|料金|の請求)/g);
             
             const amounts = Array.from(amountMatches);
@@ -439,11 +447,12 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
           console.log('[AI] Using fallback extraction');
           
           // 金額の抽出のみ（カンマ付き数値にも対応）
-          const amountMatch = conversation.match(/(\d{1,3}(?:,\d{3})*|\d+)(?:万円|万)|(\d{1,3}(?:,\d{3})*|\d+)円/);
+          const amountMatch = conversation.match(/(\d{1,3}(?:,\d{3})*|\d+)(万円|万|円)/);
           if (amountMatch) {
-            const numStr1 = amountMatch[1] ? amountMatch[1].replace(/,/g, '') : '';
-            const numStr2 = amountMatch[2] ? amountMatch[2].replace(/,/g, '') : '';
-            const amount = amountMatch[1] ? parseInt(numStr1) * 10000 : parseInt(numStr2);
+            const numStr = amountMatch[1].replace(/,/g, '');
+            const unit = amountMatch[2];
+            const amount = (unit === '万円' || unit === '万') ? 
+              parseInt(numStr) * 10000 : parseInt(numStr);
             
             // AIが理解できなかった場合の最小限の項目作成
             if (!updatedData.items || updatedData.items.length === 0) {
