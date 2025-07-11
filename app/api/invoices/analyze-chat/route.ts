@@ -205,17 +205,27 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
 3. 必要な情報が不足している場合は質問してください
 4. 確認が必要な場合は「よろしいですか？」と聞いてください
 5. 今日の日付: ${invoiceDate}、支払期限: ${dueDate}（支払い条件: ${paymentTerms || 'デフォルト30日後'}）です
-6. ユーザーが「今の状況は？」と聞いた場合は、現在の請求書データを分かりやすく説明してください
-7. 請求書が完成したら「下の『会話を終了して確定』ボタンをクリックして、請求書を作成してください。」と案内してください
-8. PDFダウンロードについては言及しないでください（請求書作成後に別画面で可能になります）
+6. 請求書が完成したら「下の『会話を終了して確定』ボタンをクリックして、請求書を作成してください。」と案内してください
+7. PDFダウンロードについては言及しないでください（請求書作成後に別画面で可能になります）
 
-会話から情報を抽出する際の重要事項：
-- ユーザーは様々な日本語表現を使います（「〜として」「〜の名目で」「〜代として」「〜費用」など）
-- 金額は「8万円」「80000円」「8万」などの形式で示されます
-- 「8万円でシステム構築をお願い」「構築費用として8万」など、どんな表現でも理解してください
-- 品目名は文脈から適切に生成してください（「システム構築」→「システム構築費」など）
-- 複数の項目がある場合は、それぞれを個別に抽出してください
+【重要】請求内容を説明する際の形式：
+請求項目がある場合は、必ず以下の形式で記載してください：
 
+現在の請求内容：
+1. [項目名]：[金額]円
+2. [項目名]：[金額]円
+（必要に応じて3, 4, 5...と続ける）
+
+合計金額は[金額]円（税抜）で、消費税10%を加えると[金額]円になります。
+
+例：
+現在の請求内容：
+1. システム構築費：1,200,000円
+2. システム保守料（年間契約・12ヶ月分）：96,000円
+
+合計金額は1,296,000円（税抜）で、消費税10%を加えると1,425,600円になります。
+
+この形式を必ず守って、ユーザーに分かりやすく請求内容を伝えてください。
 応答は自然な日本語の会話で行ってください。技術的な詳細やJSONなどは表示しないでください。`;
 
       try {
@@ -304,212 +314,80 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
         
         if (aiResponse) {
           console.log('[AI] Processing AI response for data extraction');
-          console.log('[AI] Current invoice data before update:', JSON.stringify(currentInvoiceData, null, 2));
-          console.log('[AI] User conversation:', conversation);
-          console.log('[AI] Current items count:', currentInvoiceData?.items?.length || 0);
+          console.log('[AI] AI Response:', aiResponse);
           
-          // 削除指示の検出 - 明確に削除を指示している場合のみ
-          const isDeleteRequest = conversation.includes('削除') || conversation.includes('除外') || conversation.includes('取り消');
+          // シンプルなキーワードベースの抽出
+          const lines = aiResponse.split('\n');
+          const newItems = [];
+          let foundItemList = false;
           
-          // 金額更新の検出 - システム保守料の期間変更・追加を含む
-          const isMaintenanceRequest = (
-            conversation.includes('システム保守') || conversation.includes('保守料金') || conversation.includes('保守料')
-          );
-          
-          const isMaintenanceAmountUpdate = isMaintenanceRequest && (
-            conversation.includes('1ヶ月') || conversation.includes('１ヶ月') || conversation.includes('1ケ月') ||
-            conversation.includes('1か月') || conversation.includes('１か月') || conversation.includes('1カ月') ||
-            conversation.includes('一ヶ月') || conversation.includes('一か月') || conversation.includes('ひと月')
-          );
-          
-          const isMaintenanceAddition = isMaintenanceRequest && conversation.includes('追加');
-          
-          const isAmountUpdateRequest = isMaintenanceAmountUpdate || isMaintenanceAddition;
-          
-          console.log('[AI] Conditions:', {
-            isDeleteRequest,
-            isMaintenanceRequest,
-            isMaintenanceAmountUpdate,
-            isMaintenanceAddition,
-            isAmountUpdateRequest
-          });
-          
-          if (isDeleteRequest) {
-            console.log('[AI] Delete request detected');
-            console.log('[AI] Original items before deletion:', JSON.stringify(updatedData.items, null, 2));
-            // 削除対象の特定
-            if (conversation.includes('システム保守料') || conversation.includes('保守料')) {
-              // 保守料金を削除
-              if (updatedData.items && updatedData.items.length > 0) {
-                updatedData.items = updatedData.items.filter(item => 
-                  !item.description.includes('保守') && !item.description.includes('システム保守料')
-                );
-                console.log('[AI] Removed maintenance items, remaining items:', JSON.stringify(updatedData.items, null, 2));
-              }
-            }
-          } else if (isAmountUpdateRequest) {
-            console.log('[AI] Maintenance amount update/addition request detected');
-            console.log('[AI] Conversation text:', conversation);
-            console.log('[AI] Original items before update:', JSON.stringify(updatedData.items, null, 2));
-            console.log('[AI] Is maintenance addition:', isMaintenanceAddition);
-            console.log('[AI] Is maintenance amount update:', isMaintenanceAmountUpdate);
-            
-            // システム保守料の金額更新処理
-            // 金額の抽出 - カンマ区切りと連続した数字の両方に対応
-            const amountMatch = conversation.match(/(\d{1,3}(?:,\d{3})*|\d+)\s*円/);
-            let newAmount = 8000; // デフォルト値（1ヶ月分）
-            
-            if (amountMatch) {
-              const numStr = amountMatch[1].replace(/,/g, '');
-              newAmount = parseInt(numStr);
-              console.log('[AI] Amount match found:', amountMatch[0]);
-              console.log('[AI] Captured string:', amountMatch[1]);
-              console.log('[AI] Extracted amount:', newAmount);
-            } else {
-              console.log('[AI] No specific amount found in conversation:', conversation);
-              console.log('[AI] Using default 8000円 for 1 month');
-            }
-            
-            // 「追加」の場合は新規項目として追加、それ以外は既存項目を更新
-            if (isMaintenanceAddition) {
-              console.log('[AI] Adding new maintenance item');
-              // 既存のitemsがない場合は初期化
-              if (!updatedData.items) {
-                updatedData.items = [];
-              }
-              
-              // 新しい保守料金項目を追加
-              updatedData.items.push({
-                description: 'システム保守料（月額）',
-                quantity: 1,
-                unitPrice: newAmount,
-                amount: newAmount,
-                taxRate: 0.1,
-                taxAmount: Math.floor(newAmount * 0.1)
-              });
-              
-              console.log('[AI] Added new maintenance item');
-              console.log('[AI] Items after addition:', JSON.stringify(updatedData.items, null, 2));
-              console.log('[AI] Total items count:', updatedData.items.length);
-            } else {
-              // 既存の保守料金の項目を探して更新（他の項目は保持）
-              if (updatedData.items && updatedData.items.length > 0) {
-                let maintenanceUpdated = false;
-                updatedData.items = updatedData.items.map(item => {
-                  console.log('[AI] Checking item:', item.description);
-                  if (item.description.includes('保守') || item.description.includes('システム保守料')) {
-                    console.log('[AI] Found maintenance item to update');
-                    console.log('[AI] Updating maintenance item amount from', item.amount, 'to', newAmount);
-                    maintenanceUpdated = true;
-                    return {
-                      ...item,
-                      description: 'システム保守料（1ヶ月分）',
-                      unitPrice: newAmount,
-                      amount: newAmount,
-                      taxAmount: Math.floor(newAmount * 0.1), // Math.floorを使用して確実に800円になるように
-                      quantity: 1
-                    };
-                  }
-                  // 他の項目はそのまま保持
-                  return item;
-                });
-                
-                if (!maintenanceUpdated) {
-                  console.log('[AI] No maintenance item found to update');
-                }
-                console.log('[AI] Items after update:', JSON.stringify(updatedData.items, null, 2));
-                console.log('[AI] Total items count:', updatedData.items.length);
-              } else {
-                console.log('[AI] No items to update');
-              }
-            }
-          } else {
-            // 通常の追加・更新処理
-            // 顧客名の抽出
-            const customerMatch = conversation.match(/([^に]+)(?:さん|様)?に/); 
-            if (customerMatch && !updatedData.customerName) {
+          // 顧客名の抽出（最初の会話から）
+          if (!updatedData.customerName && conversation) {
+            const customerMatch = conversation.match(/([^に]+)(?:さん|様)?に/);
+            if (customerMatch) {
               updatedData.customerName = customerMatch[1].replace(/さん|様/g, '').trim();
-            }
-            
-            // 金額と項目の抽出（カンマ付き数値にも対応）
-            const amountMatches = conversation.matchAll(/(\d{1,3}(?:,\d{3})*|\d+)(万円|万|円)/g);
-            const itemMatches = conversation.matchAll(/([^、。\s]+)(?:費|代|料金|の請求)/g);
-            
-            const amounts = Array.from(amountMatches);
-            const items = Array.from(itemMatches);
-            
-            if (amounts.length > 0) {
-              // 既存のitemsがある場合は追加、ない場合は新規作成
-              if (!updatedData.items) {
-                updatedData.items = [];
-              }
-              
-              amounts.forEach((match, index) => {
-                // カンマを除去して数値に変換
-                const numStr = match[1].replace(/,/g, '');
-                const unit = match[2];
-                const amountValue = (unit === '万円' || unit === '万') ? 
-                  parseInt(numStr) * 10000 : parseInt(numStr);
-                
-                console.log('[AI] Parsed amount:', match[0], '→', amountValue);
-                
-                // 対応する項目名を取得
-                let description = '請求項目';
-                if (items[index]) {
-                  description = items[index][1].replace(/費$|代$|料金$|の請求$/g, '') + '費';
-                }
-                
-                // 新しい項目として追加（重複チェックはしない）
-                updatedData.items.push({
-                  description: description,
-                  quantity: 1,
-                  unitPrice: amountValue,
-                  amount: amountValue,
-                  taxRate: 0.1,
-                  taxAmount: Math.floor(amountValue * 0.1)
-                });
-              });
+              console.log('[AI] Extracted customer name:', updatedData.customerName);
             }
           }
           
-          // extractedDataに更新されたデータを設定
-          extractedData = updatedData;
-          console.log('[AI] Updated data after processing:', JSON.stringify(updatedData, null, 2));
-          console.log('[AI] ExtractedData set to:', JSON.stringify(extractedData, null, 2));
-        }
-        
-        // フォールバック処理
-        if (!extractedData || (!extractedData.customerName && (!extractedData.items || extractedData.items.length === 0))) {
-          console.log('[AI] Using fallback extraction');
-          
-          // 金額の抽出のみ（カンマ付き数値にも対応）
-          const amountMatch = conversation.match(/(\d{1,3}(?:,\d{3})*|\d+)(万円|万|円)/);
-          if (amountMatch) {
-            const numStr = amountMatch[1].replace(/,/g, '');
-            const unit = amountMatch[2];
-            const amount = (unit === '万円' || unit === '万') ? 
-              parseInt(numStr) * 10000 : parseInt(numStr);
-            
-            // AIが理解できなかった場合の最小限の項目作成
-            if (!updatedData.items || updatedData.items.length === 0) {
-              updatedData.items = [{
-                description: '請求項目',
+          // 番号付き項目を探す（例：1. システム構築費：1,200,000円）
+          for (const line of lines) {
+            const itemMatch = line.match(/^(\d+)\.\s*([^：]+)：\s*([\d,]+)円/);
+            if (itemMatch) {
+              foundItemList = true;
+              const itemNumber = parseInt(itemMatch[1]);
+              const description = itemMatch[2].trim();
+              const amount = parseInt(itemMatch[3].replace(/,/g, ''));
+              
+              console.log(`[AI] Found item ${itemNumber}: ${description} = ${amount}円`);
+              
+              newItems.push({
+                description: description,
                 quantity: 1,
                 unitPrice: amount,
                 amount: amount,
                 taxRate: 0.1,
                 taxAmount: Math.floor(amount * 0.1)
-              }];
+              });
             }
           }
+          
+          // 合計金額の確認（税込み）
+          let totalWithTax = null;
+          for (const line of lines) {
+            const totalMatch = line.match(/合計金額は[\d,]+円（税抜）で、消費税10%を加えると([\d,]+)円/);
+            if (totalMatch) {
+              totalWithTax = parseInt(totalMatch[1].replace(/,/g, ''));
+              console.log('[AI] Found total with tax:', totalWithTax);
+              break;
+            }
+          }
+          
+          // 項目が見つかった場合は、既存の項目を置き換える
+          if (foundItemList && newItems.length > 0) {
+            updatedData.items = newItems;
+            console.log('[AI] Updated items from AI response:', JSON.stringify(newItems, null, 2));
+          }
+          
+          // extractedDataに更新されたデータを設定
+          extractedData = updatedData;
+          console.log('[AI] Final extracted data:', JSON.stringify(extractedData, null, 2));
+        }
+        
+        // フォールバック処理 - AIが番号付き項目を出力しなかった場合
+        if (!extractedData || !extractedData.items || extractedData.items.length === 0) {
+          console.log('[AI] No items found in AI response, keeping current data');
+          extractedData = currentInvoiceData || {};
         }
         
         // 日付設定
-        if (!updatedData.invoiceDate) {
-          updatedData.invoiceDate = invoiceDate;
-        }
-        if (!updatedData.dueDate) {
-          updatedData.dueDate = dueDate;
+        if (extractedData) {
+          if (!extractedData.invoiceDate) {
+            extractedData.invoiceDate = invoiceDate;
+          }
+          if (!extractedData.dueDate) {
+            extractedData.dueDate = dueDate;
+          }
         }
         
         // デフォルトの銀行口座情報を取得
