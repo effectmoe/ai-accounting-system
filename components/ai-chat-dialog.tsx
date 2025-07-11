@@ -49,7 +49,7 @@ export default function AIChatDialog({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [currentInvoiceData, setCurrentInvoiceData] = useState<any>(mode === 'create' ? { items: [] } : (initialInvoiceData || { items: [] }));
+  const [currentInvoiceData, setCurrentInvoiceData] = useState<any>(mode === 'create' ? { items: [], subtotal: 0, taxAmount: 0, totalAmount: 0 } : (initialInvoiceData || { items: [], subtotal: 0, taxAmount: 0, totalAmount: 0 }));
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -58,10 +58,8 @@ export default function AIChatDialog({
     if (isOpen) {
       // ダイアログが開かれた時は常にメッセージをリセット
       if (messages.length === 0) {
-        // セッション開始時は必ず新規データから開始
-        if (mode === 'create') {
-          setCurrentInvoiceData({ items: [] });
-        } else if (mode === 'edit' && initialInvoiceData) {
+        // セッション開始時のデータ設定（リセットしない）
+        if (mode === 'edit' && initialInvoiceData) {
           setCurrentInvoiceData(initialInvoiceData);
         }
       
@@ -94,6 +92,11 @@ export default function AIChatDialog({
       scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
     }
   }, [messages]);
+
+  // currentInvoiceDataの変更を監視
+  useEffect(() => {
+    console.log('[Frontend] currentInvoiceData changed:', currentInvoiceData);
+  }, [currentInvoiceData]);
 
   // メッセージ送信処理
   const sendMessage = async (customInput?: string) => {
@@ -181,10 +184,19 @@ export default function AIChatDialog({
           console.log('[Frontend] Customer name detected:', result.data.customerName);
         }
         
-        setCurrentInvoiceData(result.data);
-        
-        // 状態が更新されたか確認
-        console.log('[Frontend] currentInvoiceData after update will be:', result.data);
+        // 完全なデータ構造で更新（既存データとマージ）
+        setCurrentInvoiceData(prev => {
+          const newData = {
+            ...prev,
+            ...result.data,
+            items: result.data.items || prev.items || [],
+            subtotal: result.data.subtotal || 0,
+            taxAmount: result.data.taxAmount || result.data.totalTaxAmount || 0,
+            totalAmount: result.data.totalAmount || 0
+          };
+          console.log('[Frontend] New state will be:', newData);
+          return newData;
+        });
       } else {
         console.log('[Frontend] No data in result, not updating currentInvoiceData');
       }
@@ -208,7 +220,7 @@ export default function AIChatDialog({
 
   // 会話を完了して請求書データを確定
   const completeConversation = () => {
-    if (currentInvoiceData && Object.keys(currentInvoiceData).length > 0) {
+    if (currentInvoiceData && (currentInvoiceData.customerName || (currentInvoiceData.items && currentInvoiceData.items.length > 0))) {
       console.log('[Frontend] Completing conversation with data:', currentInvoiceData);
       console.log('[Frontend] Final data details:', {
         items: currentInvoiceData.items,
@@ -250,7 +262,7 @@ export default function AIChatDialog({
               e.preventDefault();
               // ダイアログを閉じる際にデータをリセット
               setMessages([]);
-              setCurrentInvoiceData({});
+              setCurrentInvoiceData({ items: [], subtotal: 0, taxAmount: 0, totalAmount: 0 });
               setSessionId(null);
               setError(null);
               onClose();
@@ -272,8 +284,8 @@ export default function AIChatDialog({
         {currentInvoiceData && (
           currentInvoiceData.customerName || 
           (currentInvoiceData.items && currentInvoiceData.items.length > 0) ||
-          currentInvoiceData.subtotal > 0 ||
-          currentInvoiceData.totalAmount > 0
+          (currentInvoiceData.subtotal && currentInvoiceData.subtotal > 0) ||
+          (currentInvoiceData.totalAmount && currentInvoiceData.totalAmount > 0)
         ) && (
           <div className="mx-4 mt-4 p-3 bg-blue-50 rounded-lg">
             <div className="flex items-center gap-2 mb-2">
@@ -288,16 +300,16 @@ export default function AIChatDialog({
                 <p>明細: {currentInvoiceData.items.map((item: any) => item.description).join(', ')}</p>
               )}
               {(() => {
-                // 合計金額を正しく計算（itemsが空の場合でも、subtotalやtotalAmountがあれば表示）
-                const subtotal = currentInvoiceData.subtotal || 
-                  (currentInvoiceData.items ? currentInvoiceData.items.reduce((sum: number, item: any) => sum + (item.amount || 0), 0) : 0);
-                const taxAmount = currentInvoiceData.taxAmount || 
-                  (currentInvoiceData.items ? currentInvoiceData.items.reduce((sum: number, item: any) => sum + (item.taxAmount || 0), 0) : 0);
-                const totalAmount = currentInvoiceData.totalAmount || (subtotal + taxAmount);
+                // 合計金額を正しく計算
+                const subtotal = currentInvoiceData.subtotal || 0;
+                const taxAmount = currentInvoiceData.taxAmount || 0;
+                const totalAmount = currentInvoiceData.totalAmount || 0;
                 
-                return totalAmount > 0 && (
+                console.log('[Frontend] Display calculation:', { subtotal, taxAmount, totalAmount });
+                
+                return totalAmount > 0 ? (
                   <p>合計: ¥{totalAmount.toLocaleString()}（税込）</p>
-                );
+                ) : null;
               })()}
             </div>
           </div>
@@ -432,7 +444,7 @@ export default function AIChatDialog({
                 e.preventDefault();
                 // ダイアログを閉じる際にデータをリセット
                 setMessages([]);
-                setCurrentInvoiceData({ items: [] });
+                setCurrentInvoiceData({ items: [], subtotal: 0, taxAmount: 0, totalAmount: 0 });
                 setSessionId(null);
                 setError(null);
                 onClose();
@@ -445,7 +457,7 @@ export default function AIChatDialog({
                 e.preventDefault();
                 completeConversation();
               }}
-              disabled={!currentInvoiceData || Object.keys(currentInvoiceData).length === 0}
+              disabled={!currentInvoiceData || (!currentInvoiceData.customerName && (!currentInvoiceData.items || currentInvoiceData.items.length === 0))}
             >
               <CheckCircle className="mr-2 h-4 w-4" />
               会話を終了して確定

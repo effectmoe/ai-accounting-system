@@ -1237,7 +1237,7 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
           notes: invoiceData.notes,
           paymentMethod: invoiceData.paymentMethod,
           subtotal,
-          totalTaxAmount,
+          taxAmount: totalTaxAmount,
           totalAmount,
         },
         aiConversationId: sessionId || Date.now().toString(),
