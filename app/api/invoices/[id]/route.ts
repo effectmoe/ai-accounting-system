@@ -8,7 +8,7 @@ export async function GET(
 ) {
   try {
     const invoiceService = new InvoiceService();
-    const invoice = await invoiceService.getInvoiceById(params.id);
+    const invoice = await invoiceService.getInvoice(params.id);
     
     if (!invoice) {
       return NextResponse.json(
@@ -17,7 +17,41 @@ export async function GET(
       );
     }
     
-    return NextResponse.json(invoice);
+    // 顧客情報とデータ構造を整形
+    const formattedInvoice = {
+      ...invoice,
+      invoiceDate: invoice.issueDate, // フロントエンドの期待する形式に合わせる
+      customerSnapshot: invoice.customer ? {
+        companyName: invoice.customer.companyName || invoice.customer.name || '',
+        address: [
+          invoice.customer.postalCode ? `〒${invoice.customer.postalCode}` : '',
+          invoice.customer.prefecture || '',
+          invoice.customer.city || '',
+          invoice.customer.address1 || '',
+          invoice.customer.address2 || ''
+        ].filter(Boolean).join(' '),
+        phone: invoice.customer.phone,
+        email: invoice.customer.email,
+        contactName: invoice.customer.contacts?.[0]?.name
+      } : {
+        companyName: '顧客情報なし',
+        address: '',
+      },
+      companySnapshot: {
+        companyName: 'AAM Accounting',
+        address: '',
+        invoiceRegistrationNumber: '',
+        bankAccount: invoice.bankAccount ? {
+          bankName: invoice.bankAccount.bankName,
+          branchName: invoice.bankAccount.branchName,
+          accountType: invoice.bankAccount.accountType,
+          accountNumber: invoice.bankAccount.accountNumber,
+          accountHolder: invoice.bankAccount.accountName
+        } : undefined
+      }
+    };
+    
+    return NextResponse.json(formattedInvoice);
   } catch (error) {
     console.error('Error fetching invoice:', error);
     return NextResponse.json(
