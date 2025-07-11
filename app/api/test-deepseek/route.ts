@@ -21,6 +21,9 @@ export async function GET() {
       if (!testResponse.ok) {
         const errorText = await testResponse.text();
         networkTest.error = errorText;
+      } else {
+        const data = await testResponse.json();
+        networkTest.data = data;
       }
     } catch (error) {
       networkTest = {
@@ -45,7 +48,39 @@ export async function GET() {
 
     // DeepSeek APIをテスト
     let deepseekTestResult = { success: false, error: '', model: '' };
+    let directApiTestResult = { success: false, error: '', data: null };
+    
     if (deepseekApiKey) {
+      // 直接APIコールテスト
+      try {
+        const directResponse = await fetch('https://api.deepseek.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${deepseekApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'deepseek-chat',
+            messages: [{ role: 'user', content: 'Say hello' }],
+            max_tokens: 10,
+          }),
+        });
+        
+        directApiTestResult = {
+          success: directResponse.ok,
+          status: directResponse.status,
+          statusText: directResponse.statusText,
+          data: await directResponse.json(),
+        };
+      } catch (error) {
+        directApiTestResult = {
+          success: false,
+          error: error instanceof Error ? error.message : 'Unknown error',
+          data: null,
+        };
+      }
+      
+      // OpenAI SDK経由のテスト
       try {
         const deepseekClient = new OpenAI({
           apiKey: deepseekApiKey,
@@ -87,6 +122,7 @@ export async function GET() {
       timestamp: new Date().toISOString(),
       environment: envStatus,
       networkTest: networkTest,
+      directApiTest: directApiTestResult,
       deepseekTest: deepseekTestResult,
     });
   } catch (error) {
