@@ -354,7 +354,7 @@ function NewInvoiceContent() {
     if (field === 'quantity' || field === 'unitPrice' || field === 'taxRate') {
       const item = newItems[index];
       item.amount = item.quantity * item.unitPrice;
-      item.taxAmount = Math.round(item.amount * item.taxRate);
+      item.taxAmount = Math.floor(item.amount * item.taxRate);
     }
     
     setItems(newItems);
@@ -373,7 +373,7 @@ function NewInvoiceContent() {
         taxRate: product.taxRate,
         unit: product.unit,
         amount: newItems[index].quantity * product.unitPrice,
-        taxAmount: Math.round(newItems[index].quantity * product.unitPrice * product.taxRate),
+        taxAmount: Math.floor(newItems[index].quantity * product.unitPrice * product.taxRate),
       };
       setItems(newItems);
     }

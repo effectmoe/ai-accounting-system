@@ -304,11 +304,18 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
           console.log('[AI] Current invoice data before update:', JSON.stringify(currentInvoiceData, null, 2));
           console.log('[AI] User conversation:', conversation);
           
-          // 削除指示の検出
+          // 削除指示の検出 - 明確に削除を指示している場合のみ
           const isDeleteRequest = conversation.includes('削除') || conversation.includes('除外') || conversation.includes('取り消');
-          const isAmountUpdateRequest = conversation.includes('だけ') || conversation.includes('のみ') || conversation.includes('1分月') || 
-                                       conversation.includes('1ヶ月') || conversation.includes('１ヶ月') || conversation.includes('1ケ月') ||
-                                       conversation.includes('1か月') || conversation.includes('１か月') || conversation.includes('1カ月');
+          
+          // 金額更新の検出 - システム保守料の期間変更を含む
+          const isMaintenanceAmountUpdate = (
+            (conversation.includes('システム保守') || conversation.includes('保守料')) &&
+            (conversation.includes('1ヶ月') || conversation.includes('１ヶ月') || conversation.includes('1ケ月') ||
+             conversation.includes('1か月') || conversation.includes('１か月') || conversation.includes('1カ月') ||
+             conversation.includes('一ヶ月') || conversation.includes('一か月') || conversation.includes('ひと月'))
+          );
+          
+          const isAmountUpdateRequest = isMaintenanceAmountUpdate;
           
           if (isDeleteRequest) {
             console.log('[AI] Delete request detected');
@@ -324,44 +331,53 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
               }
             }
           } else if (isAmountUpdateRequest) {
-            console.log('[AI] Amount update request detected');
+            console.log('[AI] Maintenance amount update request detected');
             console.log('[AI] Conversation text:', conversation);
             console.log('[AI] Original items before update:', JSON.stringify(updatedData.items, null, 2));
             
-            // 金額の更新（1ヶ月分のみなど）- より幅広いパターンにマッチ
-            // スペースを許容し、円の文字も含めて正確にマッチ
-            const amountMatch = conversation.match(/(\d{1,3}(?:,\d{3})*|\d+)\s*(円|万円|万)/);
+            // システム保守料の金額更新処理
+            // 金額の抽出 - より正確なパターンマッチング
+            const amountMatch = conversation.match(/(\d{1,3}(?:,\d{3})*)\s*円/);
+            let newAmount = 8000; // デフォルト値（1ヶ月分）
+            
             if (amountMatch) {
               const numStr = amountMatch[1].replace(/,/g, '');
-              const unit = amountMatch[2];
-              const newAmount = (unit === '万円' || unit === '万') ? 
-                parseInt(numStr) * 10000 : parseInt(numStr);
-              
+              newAmount = parseInt(numStr);
               console.log('[AI] Amount match found:', amountMatch[0]);
-              console.log('[AI] Extracted amount:', newAmount, 'from:', amountMatch[0]);
-              
-              // 保守料金の項目を探して更新
-              if (updatedData.items && updatedData.items.length > 0) {
-                updatedData.items = updatedData.items.map(item => {
-                  console.log('[AI] Checking item:', item.description);
-                  if (item.description.includes('保守') || item.description.includes('システム保守料')) {
-                    console.log('[AI] Found maintenance item to update');
-                    console.log('[AI] Updating maintenance item amount from', item.amount, 'to', newAmount);
-                    return {
-                      ...item,
-                      description: 'システム保守料（1ヶ月分）',
-                      unitPrice: newAmount,
-                      amount: newAmount,
-                      taxAmount: Math.round(newAmount * 0.1),
-                      quantity: 1
-                    };
-                  }
-                  return item;
-                });
-                console.log('[AI] Items after update:', JSON.stringify(updatedData.items, null, 2));
-              }
+              console.log('[AI] Extracted amount:', newAmount);
             } else {
-              console.log('[AI] No amount match found in conversation');
+              console.log('[AI] No specific amount found, using default 8000円 for 1 month');
+            }
+            
+            // 保守料金の項目を探して更新（他の項目は保持）
+            if (updatedData.items && updatedData.items.length > 0) {
+              let maintenanceUpdated = false;
+              updatedData.items = updatedData.items.map(item => {
+                console.log('[AI] Checking item:', item.description);
+                if (item.description.includes('保守') || item.description.includes('システム保守料')) {
+                  console.log('[AI] Found maintenance item to update');
+                  console.log('[AI] Updating maintenance item amount from', item.amount, 'to', newAmount);
+                  maintenanceUpdated = true;
+                  return {
+                    ...item,
+                    description: 'システム保守料（1ヶ月分）',
+                    unitPrice: newAmount,
+                    amount: newAmount,
+                    taxAmount: Math.floor(newAmount * 0.1), // Math.floorを使用して確実に800円になるように
+                    quantity: 1
+                  };
+                }
+                // 他の項目はそのまま保持
+                return item;
+              });
+              
+              if (!maintenanceUpdated) {
+                console.log('[AI] No maintenance item found to update');
+              }
+              console.log('[AI] Items after update:', JSON.stringify(updatedData.items, null, 2));
+              console.log('[AI] Total items count:', updatedData.items.length);
+            } else {
+              console.log('[AI] No items to update');
             }
           } else {
             // 通常の追加・更新処理
@@ -406,14 +422,16 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
                   unitPrice: amountValue,
                   amount: amountValue,
                   taxRate: 0.1,
-                  taxAmount: Math.round(amountValue * 0.1)
+                  taxAmount: Math.floor(amountValue * 0.1)
                 });
               });
             }
           }
           
+          // extractedDataに更新されたデータを設定
           extractedData = updatedData;
           console.log('[AI] Updated data after processing:', JSON.stringify(updatedData, null, 2));
+          console.log('[AI] ExtractedData set to:', JSON.stringify(extractedData, null, 2));
         }
         
         // フォールバック処理
@@ -435,7 +453,7 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
                 unitPrice: amount,
                 amount: amount,
                 taxRate: 0.1,
-                taxAmount: Math.round(amount * 0.1)
+                taxAmount: Math.floor(amount * 0.1)
               }];
             }
           }
@@ -499,18 +517,20 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
           updatedData.paymentMethod = 'bank_transfer';
         }
 
-        // 合計計算
-        const subtotal = updatedData.items ? updatedData.items.reduce((sum, item) => sum + (item.amount || 0), 0) : 0;
-        const taxAmount = updatedData.items ? updatedData.items.reduce((sum, item) => sum + (item.taxAmount || 0), 0) : 0;
+        // 合計計算 - extractedDataまたはupdatedDataのいずれかから正しいitemsを取得
+        const finalData = extractedData || updatedData;
+        const subtotal = finalData.items ? finalData.items.reduce((sum, item) => sum + (item.amount || 0), 0) : 0;
+        const taxAmount = finalData.items ? finalData.items.reduce((sum, item) => sum + (item.taxAmount || 0), 0) : 0;
         const totalAmount = subtotal + taxAmount;
         
         // デバッグログ
-        console.log('[API/AI] Updated data before response:', {
-          items: updatedData.items,
+        console.log('[API/AI] Final data before response:', {
+          finalDataSource: extractedData ? 'extractedData' : 'updatedData',
+          items: finalData.items,
           subtotal,
           taxAmount,
           totalAmount,
-          itemsDetail: updatedData.items?.map(item => ({
+          itemsDetail: finalData.items?.map(item => ({
             description: item.description,
             amount: item.amount,
             taxAmount: item.taxAmount
@@ -533,12 +553,12 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
           message: cleanMessage,
           data: {
             customerId: null,
-            customerName: updatedData.customerName || '',
-            items: updatedData.items || [],
-            invoiceDate: updatedData.invoiceDate,
-            dueDate: updatedData.dueDate,
-            notes: updatedData.notes || '',
-            paymentMethod: updatedData.paymentMethod || 'bank_transfer',
+            customerName: finalData.customerName || '',
+            items: finalData.items || [],
+            invoiceDate: finalData.invoiceDate,
+            dueDate: finalData.dueDate,
+            notes: finalData.notes || '',
+            paymentMethod: finalData.paymentMethod || 'bank_transfer',
             subtotal,
             taxAmount,
             totalAmount,
@@ -547,6 +567,9 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
         };
 
         console.log('[API] Final response being sent:', JSON.stringify(response, null, 2));
+        console.log('[API] Response items count:', response.data.items?.length || 0);
+        console.log('[API] Response subtotal:', response.data.subtotal);
+        console.log('[API] Response total:', response.data.totalAmount);
         
         return NextResponse.json(response);
       } catch (error) {
@@ -597,7 +620,7 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
       
       // 最小限のデータ作成
       const taxRate = 0.1;
-      const taxAmount = Math.round(amount * taxRate);
+      const taxAmount = Math.floor(amount * taxRate);
       const today = new Date();
       const dueDate = new Date();
       dueDate.setDate(today.getDate() + 30); // デフォルト30日後
