@@ -6,32 +6,48 @@ import { format } from 'date-fns';
 
 // AI クライアントの初期化
 let openaiClient: OpenAI | null = null;
-let deepseekClient: OpenAI | null = null;
 
-function getDeepSeekClient(): OpenAI {
-  if (!deepseekClient) {
-    const apiKey = process.env.DEEPSEEK_API_KEY;
-    
-    if (!apiKey) {
-      console.error('[DeepSeek] API key is not configured');
-      throw new Error('DeepSeek API key is not configured');
-    }
-    
-    console.log('[DeepSeek] Initializing client with API key length:', apiKey.length);
-    console.log('[DeepSeek] API key prefix:', apiKey.substring(0, 10) + '...');
-    
-    try {
-      deepseekClient = new OpenAI({
-        apiKey,
-        baseURL: 'https://api.deepseek.com/v1',
-      });
-      console.log('[DeepSeek] Client initialized successfully');
-    } catch (error) {
-      console.error('[DeepSeek] Failed to initialize client:', error);
-      throw error;
-    }
+// DeepSeek APIを直接呼び出す関数
+async function callDeepSeekAPI(messages: Array<{role: string, content: string}>, temperature: number = 0.7, maxTokens: number = 500) {
+  const apiKey = process.env.DEEPSEEK_API_KEY;
+  
+  if (!apiKey) {
+    console.error('[DeepSeek] API key is not configured');
+    throw new Error('DeepSeek API key is not configured');
   }
-  return deepseekClient;
+  
+  console.log('[DeepSeek] Calling API with fetch');
+  console.log('[DeepSeek] API key length:', apiKey.length);
+  console.log('[DeepSeek] API key prefix:', apiKey.substring(0, 10) + '...');
+  
+  try {
+    const response = await fetch('https://api.deepseek.com/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'deepseek-chat',
+        messages: messages,
+        temperature: temperature,
+        max_tokens: maxTokens
+      })
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[DeepSeek] API error:', response.status, errorText);
+      throw new Error(`DeepSeek API error: ${response.status} - ${errorText}`);
+    }
+    
+    const data = await response.json();
+    console.log('[DeepSeek] API response received');
+    return data;
+  } catch (error) {
+    console.error('[DeepSeek] Fetch error:', error);
+    throw error;
+  }
 }
 
 function getOpenAIClient(): OpenAI {
@@ -159,44 +175,45 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
 応答は簡潔で分かりやすくしてください。`;
 
       try {
-        console.log('[AI] Starting AI client initialization', { usingDeepSeek });
-        
-        // DeepSeekを優先使用、利用できない場合はOpenAI
-        const aiClient = usingDeepSeek ? getDeepSeekClient() : getOpenAIClient();
-        const modelName = usingDeepSeek 
-          ? 'deepseek-chat' 
-          : (process.env.AZURE_OPENAI_DEPLOYMENT_NAME || 'gpt-4');
-        
-        console.log('[AI] AI client initialized successfully', { modelName });
+        console.log('[AI] Starting AI processing', { usingDeepSeek });
         
         // 会話履歴を含むメッセージを構築
-        const messages = [{ role: 'system' as const, content: systemPrompt }];
+        const messages = [{ role: 'system', content: systemPrompt }];
         
         // 会話履歴を追加
         if (conversationHistory && conversationHistory.length > 0) {
           conversationHistory.forEach(msg => {
             messages.push({
-              role: msg.role as 'user' | 'assistant',
+              role: msg.role as string,
               content: msg.content
             });
           });
         }
         
         // 最新のユーザー入力を追加
-        messages.push({ role: 'user' as const, content: conversation });
+        messages.push({ role: 'user', content: conversation });
 
         console.log('Sending to AI with messages:', messages.length);
 
         try {
-          const completion = await aiClient.chat.completions.create({
-            model: modelName,
-            messages: messages,
-            temperature: 0.7,
-            max_tokens: 500
-          });
-
-          aiResponse = completion.choices[0]?.message?.content || '';
-          console.log('AI Response:', aiResponse);
+          if (usingDeepSeek) {
+            // DeepSeek APIを直接呼び出す
+            const deepseekResponse = await callDeepSeekAPI(messages, 0.7, 500);
+            aiResponse = deepseekResponse.choices?.[0]?.message?.content || '';
+            console.log('[DeepSeek] Response:', aiResponse);
+          } else {
+            // OpenAI APIを使用
+            const aiClient = getOpenAIClient();
+            const modelName = process.env.AZURE_OPENAI_DEPLOYMENT_NAME || 'gpt-4';
+            const completion = await aiClient.chat.completions.create({
+              model: modelName,
+              messages: messages as any,
+              temperature: 0.7,
+              max_tokens: 500
+            });
+            aiResponse = completion.choices[0]?.message?.content || '';
+            console.log('[OpenAI] Response:', aiResponse);
+          }
         } catch (apiError) {
           console.error('[AI] API call failed:', {
             error: apiError instanceof Error ? apiError.message : 'Unknown error',
@@ -215,7 +232,7 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
               const openaiModel = process.env.AZURE_OPENAI_DEPLOYMENT_NAME || 'gpt-4';
               const openaiCompletion = await openaiClient.chat.completions.create({
                 model: openaiModel,
-                messages: messages,
+                messages: messages as any,
                 temperature: 0.7,
                 max_tokens: 500
               });
