@@ -299,11 +299,28 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
           updatedData.dueDate = dueDate;
         }
         
+        // デフォルトの銀行口座情報を取得
+        let bankAccountInfo = '';
+        try {
+          const bankAccountService = new BankAccountService();
+          const defaultAccount = await bankAccountService.getDefaultAccount();
+          
+          if (defaultAccount) {
+            const accountTypeText = defaultAccount.accountType === 'checking' ? '当座預金' : '普通預金';
+            bankAccountInfo = `お振込先：\n${defaultAccount.bankName} ${defaultAccount.branchName}\n${accountTypeText} ${defaultAccount.accountNumber}\n口座名義：${defaultAccount.accountHolder}\n\n`;
+          }
+        } catch (error) {
+          console.error('Error fetching bank account:', error);
+          // エラーが発生しても処理は続行
+        }
+        
         // 備考に振込先情報を追加
-        if (!updatedData.notes || !updatedData.notes.includes('振込先')) {
-          updatedData.notes = `お振込先：三井住友銀行 渋谷支店 普通預金 1234567 カブシキガイシャトニーチュウ
-お支払期限：${dueDate}
-※振込手数料はお客様負担でお願いいたします`;
+        if (!updatedData.notes) {
+          if (bankAccountInfo) {
+            updatedData.notes = `${bankAccountInfo}お支払期限：${dueDate}\n※振込手数料はお客様負担でお願いいたします`;
+          } else {
+            updatedData.notes = `お支払期限：${dueDate}\n※振込先情報は別途お知らせいたします。\n※振込手数料はお客様負担でお願いいたします`;
+          }
         }
         
         // paymentMethod設定
