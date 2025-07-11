@@ -554,29 +554,47 @@ export default function SettingsPage() {
                 </div>
 
                 <div>
-                  <label htmlFor="fiscal_year_end" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     決算期
                   </label>
-                  <input
-                    type="date"
-                    id="fiscal_year_end"
-                    name="fiscal_year_end"
-                    value={companyInfo.fiscal_year_end || ''}
-                    onChange={(e) => {
-                      const date = e.target.value;
-                      if (date) {
-                        // 日付から月日のみを抽出して保存（例：3月31日）
-                        const d = new Date(date);
-                        const month = d.getMonth() + 1;
-                        const day = d.getDate();
+                  <div className="flex gap-2 items-center">
+                    <select
+                      value={companyInfo.fiscal_year_end ? parseInt(companyInfo.fiscal_year_end.match(/(\d+)月/)?.[1] || '3') : ''}
+                      onChange={(e) => {
+                        const month = e.target.value;
+                        const currentFiscalYearEnd = companyInfo.fiscal_year_end || '3月31日';
+                        const day = currentFiscalYearEnd.match(/(\d+)日/)?.[1] || '31';
                         const formattedDate = `${month}月${day}日`;
                         setCompanyInfo(prev => ({ ...prev, fiscal_year_end: formattedDate }));
-                      } else {
-                        handleCompanyChange(e);
-                      }
-                    }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+                      }}
+                      className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">月を選択</option>
+                      {[...Array(12)].map((_, i) => (
+                        <option key={i + 1} value={i + 1}>
+                          {i + 1}月
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      value={companyInfo.fiscal_year_end ? parseInt(companyInfo.fiscal_year_end.match(/(\d+)日/)?.[1] || '31') : ''}
+                      onChange={(e) => {
+                        const day = e.target.value;
+                        const currentFiscalYearEnd = companyInfo.fiscal_year_end || '3月31日';
+                        const month = currentFiscalYearEnd.match(/(\d+)月/)?.[1] || '3';
+                        const formattedDate = `${month}月${day}日`;
+                        setCompanyInfo(prev => ({ ...prev, fiscal_year_end: formattedDate }));
+                      }}
+                      className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">日を選択</option>
+                      {[...Array(31)].map((_, i) => (
+                        <option key={i + 1} value={i + 1}>
+                          {i + 1}日
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                   {companyInfo.fiscal_year_end && (
                     <p className="mt-1 text-sm text-gray-600">
                       決算期: {companyInfo.fiscal_year_end}
