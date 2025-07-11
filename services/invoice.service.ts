@@ -3,6 +3,7 @@ import { ObjectId } from 'mongodb';
 import { Invoice, InvoiceStatus, InvoiceItem, Customer, BankAccount } from '@/types/collections';
 import { generatePDF } from '@/lib/pdf-generator';
 import { DocumentData } from '@/lib/document-generator';
+import { CompanyInfoService } from './company-info.service';
 
 export interface InvoiceSearchParams {
   customerId?: string;
@@ -287,8 +288,12 @@ export class InvoiceService {
    */
   async generateInvoiceNumber(format?: string): Promise<string> {
     try {
-      // デフォルトフォーマット
-      const invoiceFormat = format || 'INV-{YYYY}{MM}{DD}-{SEQ}';
+      // 会社情報から請求書番号プレフィックスを取得
+      const companyInfoService = new CompanyInfoService();
+      const companyInfo = await companyInfoService.getCompanyInfo();
+      
+      // プレフィックスを取得（設定がない場合はINV-をデフォルト）
+      const prefix = companyInfo?.invoicePrefix || 'INV-';
       
       const now = new Date();
       const year = now.getFullYear().toString();
@@ -310,6 +315,9 @@ export class InvoiceService {
       });
       
       const seq = (invoiceCount + 1).toString().padStart(3, '0');
+      
+      // プレフィックスを使用してフォーマット
+      const invoiceFormat = format || `${prefix}{YYYY}{MM}{DD}-{SEQ}`;
       
       // フォーマットに従って請求書番号を生成
       const invoiceNumber = invoiceFormat

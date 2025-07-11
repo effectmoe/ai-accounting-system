@@ -52,8 +52,12 @@ export async function POST(request: NextRequest) {
       sortOrder: 0
     }));
     
+    // 請求書番号を生成（body.invoiceNumberが指定されていない場合）
+    const invoiceNumber = body.invoiceNumber || await invoiceService.generateInvoiceNumber();
+    
     const invoiceData = {
       ...body,
+      invoiceNumber,
       items: processedItems,
       invoiceDate: new Date(body.invoiceDate),
       dueDate: new Date(body.dueDate),
@@ -61,22 +65,13 @@ export async function POST(request: NextRequest) {
     
     console.log('Processed invoice data:', JSON.stringify(invoiceData, null, 2));
     
-    // AI会話からの作成の場合
+    // AI会話からの作成の場合も含めて、追加のデータをセット
     if (body.isGeneratedByAI && body.aiConversationId) {
-      const invoice = await invoiceService.createInvoiceFromAIConversation({
-        customerId: body.customerId,
-        items: processedItems,
-        dueDate: new Date(body.dueDate),
-        aiConversationId: body.aiConversationId,
-        notes: body.notes,
-        paymentMethod: body.paymentMethod,
-      });
-      
-      console.log('AI Invoice created:', invoice);
-      return NextResponse.json(invoice);
+      invoiceData.isGeneratedByAI = true;
+      invoiceData.aiConversationId = body.aiConversationId;
     }
     
-    // 通常の作成
+    // 請求書を作成
     const invoice = await invoiceService.createInvoice(invoiceData);
     console.log('Invoice created:', invoice);
     return NextResponse.json(invoice);

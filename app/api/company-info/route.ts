@@ -24,7 +24,14 @@ export async function GET(request: NextRequest) {
       phone_number: companyInfo.phone,
       email: companyInfo.email,
       tax_number: companyInfo.registrationNumber,
-      invoice_prefix: companyInfo.invoiceNumberFormat,
+      invoice_prefix: companyInfo.invoicePrefix || companyInfo.invoiceNumberFormat,
+      representative: companyInfo.representative,
+      website: companyInfo.website,
+      fiscal_year_end: companyInfo.fiscalYearEnd,
+      payment_terms: companyInfo.paymentTerms,
+      invoice_notes: companyInfo.invoiceNotes,
+      logo_image: companyInfo.logoImage,
+      stamp_image: companyInfo.stampImage,
     } : null;
 
     return NextResponse.json({
@@ -94,7 +101,14 @@ export async function POST(request: NextRequest) {
       phone_number: companyInfo.phone,
       email: companyInfo.email,
       tax_number: companyInfo.registrationNumber,
-      invoice_prefix: companyInfo.invoiceNumberFormat,
+      invoice_prefix: companyInfo.invoicePrefix || companyInfo.invoiceNumberFormat,
+      representative: companyInfo.representative,
+      website: companyInfo.website,
+      fiscal_year_end: companyInfo.fiscalYearEnd,
+      payment_terms: companyInfo.paymentTerms,
+      invoice_notes: companyInfo.invoiceNotes,
+      logo_image: companyInfo.logoImage,
+      stamp_image: companyInfo.stampImage,
     };
 
     return NextResponse.json({
@@ -154,6 +168,14 @@ export async function PUT(request: NextRequest) {
       email: body.email || null,
       registrationNumber: body.tax_number || null,
       invoiceNumberFormat: body.invoice_prefix || null,
+      representative: body.representative || null,
+      website: body.website || null,
+      fiscalYearEnd: body.fiscal_year_end || null,
+      invoicePrefix: body.invoice_prefix || null,
+      paymentTerms: body.payment_terms || null,
+      invoiceNotes: body.invoice_notes || null,
+      logoImage: body.logo_image || null,
+      stampImage: body.stamp_image || null,
     });
 
     if (!companyInfo) {
@@ -175,7 +197,14 @@ export async function PUT(request: NextRequest) {
       phone_number: companyInfo.phone,
       email: companyInfo.email,
       tax_number: companyInfo.registrationNumber,
-      invoice_prefix: companyInfo.invoiceNumberFormat,
+      invoice_prefix: companyInfo.invoicePrefix || companyInfo.invoiceNumberFormat,
+      representative: companyInfo.representative,
+      website: companyInfo.website,
+      fiscal_year_end: companyInfo.fiscalYearEnd,
+      payment_terms: companyInfo.paymentTerms,
+      invoice_notes: companyInfo.invoiceNotes,
+      logo_image: companyInfo.logoImage,
+      stamp_image: companyInfo.stampImage,
     };
 
     return NextResponse.json({

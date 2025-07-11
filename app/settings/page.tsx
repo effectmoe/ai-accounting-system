@@ -558,14 +558,30 @@ export default function SettingsPage() {
                     決算期
                   </label>
                   <input
-                    type="text"
+                    type="date"
                     id="fiscal_year_end"
                     name="fiscal_year_end"
                     value={companyInfo.fiscal_year_end || ''}
-                    onChange={handleCompanyChange}
-                    placeholder="3月31日"
+                    onChange={(e) => {
+                      const date = e.target.value;
+                      if (date) {
+                        // 日付から月日のみを抽出して保存（例：3月31日）
+                        const d = new Date(date);
+                        const month = d.getMonth() + 1;
+                        const day = d.getDate();
+                        const formattedDate = `${month}月${day}日`;
+                        setCompanyInfo(prev => ({ ...prev, fiscal_year_end: formattedDate }));
+                      } else {
+                        handleCompanyChange(e);
+                      }
+                    }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
+                  {companyInfo.fiscal_year_end && (
+                    <p className="mt-1 text-sm text-gray-600">
+                      決算期: {companyInfo.fiscal_year_end}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>

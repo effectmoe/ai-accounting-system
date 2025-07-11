@@ -157,9 +157,31 @@ function NewInvoiceContent() {
     }
   };
 
-  // デフォルト銀行口座情報を取得
+  // デフォルト銀行口座情報と請求書設定を取得
   const fetchDefaultBankInfo = async () => {
     try {
+      let defaultNotes = '';
+      let hasSetNotes = false;
+      
+      // 自社情報から請求書設定を取得
+      const companyResponse = await fetch('/api/company-info');
+      if (companyResponse.ok) {
+        const companyData = await companyResponse.json();
+        if (companyData.success && companyData.companyInfo) {
+          // 支払い条件のデフォルトを設定
+          if (companyData.companyInfo.payment_terms) {
+            // payment_termsをnotesにも含める
+            defaultNotes = companyData.companyInfo.payment_terms + '\n\n';
+          }
+          
+          // 請求書備考のデフォルトを追加
+          if (companyData.companyInfo.invoice_notes) {
+            defaultNotes += companyData.companyInfo.invoice_notes;
+            hasSetNotes = true;
+          }
+        }
+      }
+      
       // 銀行口座情報を取得
       const bankResponse = await fetch('/api/bank-accounts');
       if (bankResponse.ok) {
@@ -170,24 +192,24 @@ function NewInvoiceContent() {
           const defaultAccount = bankData.accounts.find(account => account.is_default);
           
           if (defaultAccount) {
-            // デフォルト銀行口座情報を備考に設定
+            // デフォルト銀行口座情報を備考に追加
             const bankInfo = `【振込先】\n${defaultAccount.bank_name} ${defaultAccount.branch_name}\n${defaultAccount.account_type}口座 ${defaultAccount.account_number}\n口座名義: ${defaultAccount.account_holder}`;
             setDefaultBankInfo(bankInfo);
-            setNotes(bankInfo);
+            
+            // 既存の備考に銀行情報を追加
+            if (defaultNotes) {
+              setNotes(defaultNotes + '\n\n' + bankInfo);
+            } else {
+              setNotes(bankInfo);
+            }
+            hasSetNotes = true;
           }
         }
       }
-
-      // 自社情報から請求書の備考デフォルトを取得
-      const companyResponse = await fetch('/api/company-info');
-      if (companyResponse.ok) {
-        const companyData = await companyResponse.json();
-        if (companyData.success && companyData.companyInfo) {
-          if (companyData.companyInfo.invoice_notes && !defaultBankInfo) {
-            // 銀行口座情報がない場合は会社のデフォルト備考を使用
-            setNotes(companyData.companyInfo.invoice_notes);
-          }
-        }
+      
+      // まだ備考が設定されていない場合は、収集したデフォルト値を設定
+      if (!hasSetNotes && defaultNotes) {
+        setNotes(defaultNotes);
       }
     } catch (error) {
       console.error('Failed to fetch default bank info:', error);

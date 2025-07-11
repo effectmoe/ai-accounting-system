@@ -16,7 +16,13 @@ export interface CompanyInfo {
   website?: string;
   fiscalYearEnd?: string;
   invoiceNumberFormat?: string;
+  invoicePrefix?: string;
+  paymentTerms?: string;
+  invoiceNotes?: string;
   logoUrl?: string;
+  logoImage?: string;
+  stampImage?: string;
+  representative?: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
