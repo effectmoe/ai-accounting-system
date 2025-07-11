@@ -204,26 +204,7 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
 - 品目名は文脈から適切に生成してください（「システム構築」→「システム構築費」など）
 - 複数の項目がある場合は、それぞれを個別に抽出してください
 
-必ず以下のJSON形式で構造化データも返してください：
-{
-  "extractedData": {
-    "customerName": "抽出した顧客名",
-    "items": [
-      {
-        "description": "品目名",
-        "quantity": 1,
-        "unitPrice": 金額,
-        "amount": 金額,
-        "taxRate": 0.1,
-        "taxAmount": 消費税額
-      }
-    ],
-    "hasNewItems": true/false,
-    "isAddingToExisting": true/false
-  }
-}
-
-応答は簡潔で分かりやすくしてください。`;
+応答は自然な日本語の会話で行ってください。技術的な詳細やJSONなどは表示しないでください。`;
 
       try {
         console.log('[AI] Starting AI processing', { usingDeepSeek });
@@ -253,7 +234,7 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
             modelName = 'deepseek-chat';
             const deepseekResponse = await callDeepSeekAPI(messages, 0.7, 500);
             aiResponse = deepseekResponse.choices?.[0]?.message?.content || '';
-            console.log('[DeepSeek] Response:', aiResponse);
+            console.log('[DeepSeek] Response received');
           } else {
             // OpenAI APIを使用
             const aiClient = getOpenAIClient();
@@ -265,7 +246,7 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
               max_tokens: 500
             });
             aiResponse = completion.choices[0]?.message?.content || '';
-            console.log('[OpenAI] Response:', aiResponse);
+            console.log('[OpenAI] Response received');
           }
         } catch (apiError) {
           console.error('[AI] API call failed:', {
@@ -302,48 +283,57 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
           }
         }
         
-        // AIレスポンスからJSONデータを抽出
+        // AIレスポンスからデータを抽出
         let extractedData = null;
         let updatedData = { ...currentInvoiceData };
         
         if (aiResponse) {
-          // AIレスポンスからJSON部分を抽出
-          const jsonMatch = aiResponse.match(/\{[\s\S]*"extractedData"[\s\S]*\}/);
-          if (jsonMatch) {
-            try {
-              const jsonData = JSON.parse(jsonMatch[0]);
-              extractedData = jsonData.extractedData;
-              console.log('[AI] Extracted data from AI response:', extractedData);
-              
-              // AIが抽出したデータを使用
-              if (extractedData) {
-                if (extractedData.customerName) {
-                  updatedData.customerName = extractedData.customerName;
-                }
-                
-                if (extractedData.items && extractedData.items.length > 0) {
-                  // 新しい項目を追加するか、既存のデータを更新するか判断
-                  if (extractedData.isAddingToExisting && updatedData.items) {
-                    // 既存のitemsに追加
-                    updatedData.items = [...updatedData.items, ...extractedData.items];
-                  } else if (extractedData.hasNewItems) {
-                    // 新しいitemsで置き換え
-                    updatedData.items = extractedData.items;
-                  } else if (!updatedData.items || updatedData.items.length === 0) {
-                    // itemsが空の場合は新規作成
-                    updatedData.items = extractedData.items;
-                  }
-                }
-              }
-            } catch (jsonError) {
-              console.error('[AI] Failed to parse JSON from AI response:', jsonError);
-            }
+          console.log('[AI] Processing AI response for data extraction');
+          
+          // AIの応答からデータを抽出するために、シンプルなパターンマッチングを使用
+          // 顧客名の抽出
+          const customerMatch = conversation.match(/([^に]+)(?:さん|様)?に/); 
+          if (customerMatch && !updatedData.customerName) {
+            updatedData.customerName = customerMatch[1].replace(/さん|様/g, '').trim();
           }
+          
+          // 金額と項目の抽出
+          const amountMatches = conversation.matchAll(/(\d+)(?:万円|万|円)/g);
+          const itemMatches = conversation.matchAll(/([^、。\s]+)(?:費|代|料金|の請求)/g);
+          
+          const amounts = Array.from(amountMatches);
+          const items = Array.from(itemMatches);
+          
+          if (amounts.length > 0 && (!updatedData.items || updatedData.items.length === 0)) {
+            updatedData.items = [];
+            
+            amounts.forEach((match, index) => {
+              const amountValue = match[2] === '万円' || match[2] === '万' ? 
+                parseInt(match[1]) * 10000 : parseInt(match[1]);
+              
+              // 対応する項目名を取得
+              let description = '請求項目';
+              if (items[index]) {
+                description = items[index][1].replace(/費$|代$|料金$|の請求$/g, '') + '費';
+              }
+              
+              updatedData.items.push({
+                description: description,
+                quantity: 1,
+                unitPrice: amountValue,
+                amount: amountValue,
+                taxRate: 0.1,
+                taxAmount: Math.round(amountValue * 0.1)
+              });
+            });
+          }
+          
+          extractedData = updatedData;
         }
         
-        // AIがデータを抽出できなかった場合のみ、最小限のフォールバック処理
-        if (!extractedData || (!extractedData.customerName && !extractedData.items)) {
-          console.log('[AI] No structured data extracted, using minimal fallback');
+        // フォールバック処理
+        if (!extractedData || (!extractedData.customerName && (!extractedData.items || extractedData.items.length === 0))) {
+          console.log('[AI] Using fallback extraction');
           
           // 金額の抽出のみ（数値のみを抽出するシンプルな処理）
           const amountMatch = conversation.match(/(\d+)万円|(\d+)円/);
@@ -441,9 +431,19 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
         });
         
         // レスポンスの作成
+        // AIの応答からJSONやコードを除去して、自然な日本語のみを抽出
+        let cleanMessage = aiResponse;
+        // JSONブロックを除去
+        cleanMessage = cleanMessage.replace(/```json[\s\S]*?```/g, '');
+        cleanMessage = cleanMessage.replace(/\{[\s\S]*?"extractedData"[\s\S]*?\}/g, '');
+        // コードブロックを除去
+        cleanMessage = cleanMessage.replace(/```[\s\S]*?```/g, '');
+        // 連続する改行を1つに
+        cleanMessage = cleanMessage.replace(/\n\n+/g, '\n\n').trim();
+        
         const response = {
           success: true,
-          message: aiResponse,
+          message: cleanMessage,
           data: {
             customerId: null,
             customerName: updatedData.customerName || '',
