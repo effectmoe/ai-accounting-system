@@ -459,6 +459,15 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
         }
       }
       
+      // 追加の指示（「追加」「さらに」など）がある場合は、新しい顧客とみなさない
+      if (conversation.toLowerCase().includes('追加') || 
+          conversation.toLowerCase().includes('さらに') ||
+          conversation.toLowerCase().includes('それと') ||
+          conversation.toLowerCase().includes('他に')) {
+        isNewCustomer = false;
+        console.log('[Placeholder] Addition instruction detected, not treating as new customer');
+      }
+      
       // 既存データから顧客名を保持（新しい顧客名が抽出されなかった場合のみ）
       if (!customerName && currentInvoiceData && currentInvoiceData.customerName) {
         customerName = currentInvoiceData.customerName;
@@ -526,6 +535,12 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
         if ((!amount || isStatusQuestion) && currentInvoiceData.items && currentInvoiceData.items[0]) {
           amount = currentInvoiceData.items[0].unitPrice || currentInvoiceData.items[0].amount;
         }
+      }
+      
+      // 顧客名が取得できない場合は、既存のcurrentInvoiceDataから取得（重要）
+      if (!customerName && currentInvoiceData && currentInvoiceData.customerName) {
+        customerName = currentInvoiceData.customerName;
+        console.log('[Placeholder] Using existing customer name:', customerName);
       }
       
       // デフォルト値の設定（既存データからも取得できなかった場合のみ）
@@ -612,18 +627,20 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
       
       // 既存のitemsがある場合は、それを基に更新
       // currentInvoiceDataから既存のitemsを確実に取得
-      let items = [...(currentInvoiceData.items || [])];
+      let items = currentInvoiceData && currentInvoiceData.items ? [...currentInvoiceData.items] : [];
       
       // デバッグログ追加
       console.log('[DEBUG] Processing items:', {
         existingItems: items.length,
-        currentInvoiceDataItems: currentInvoiceData.items?.length || 0,
+        currentInvoiceDataItems: currentInvoiceData?.items?.length || 0,
         hasDescription: !!description,
         hasAmount: amount > 0,
         hasMonthlyFee,
         description,
         amount,
-        isStatusQuestion
+        isStatusQuestion,
+        customerName,
+        isNewCustomer
       });
       
       // 新しい項目を追加するかどうかの判定
@@ -641,7 +658,8 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
       
       if (isNewItem) {
         // 新しい顧客の場合は、既存のitemsをクリアして新規作成
-        if (isNewCustomer) {
+        // ただし、顧客名が同じ場合は既存データを保持
+        if (isNewCustomer && customerName !== currentInvoiceData?.customerName) {
           console.log('[DEBUG] New customer detected, creating new invoice');
           items = [{
             description: description,
@@ -711,22 +729,24 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
         console.log('[DEBUG] Processing monthly fee:', {
           monthlyAmount: monthlyAmount.value,
           monthlyPeriodConfirmed,
-          confirmedMonths
+          confirmedMonths,
+          existingItemsCount: items.length
         });
         
         // 保守料などの月額項目を探す
         let monthlyItemIndex = items.findIndex(item => 
           item.description.includes('保守') || 
           item.description.includes('月額') ||
-          item.description.includes('サポート')
+          item.description.includes('サポート') ||
+          item.description.includes('メンテナンス')
         );
         
         if (monthlyItemIndex === -1) {
           // 新規追加
           const newItem = {
             description: monthlyPeriodConfirmed 
-              ? `保守料（${confirmedMonths}ヶ月分）` 
-              : '保守料（期間要確認）',
+              ? `保守・メンテナンス費（${confirmedMonths}ヶ月分）` 
+              : '保守・メンテナンス費',
             quantity: monthlyPeriodConfirmed ? confirmedMonths : 1,
             unitPrice: monthlyAmount.value,
             amount: monthlyAmount.value * (monthlyPeriodConfirmed ? confirmedMonths : 1),
@@ -740,8 +760,8 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
           const updatedItem = {
             ...items[monthlyItemIndex],
             description: monthlyPeriodConfirmed 
-              ? `保守料（${confirmedMonths}ヶ月分）` 
-              : '保守料（期間要確認）',
+              ? `保守・メンテナンス費（${confirmedMonths}ヶ月分）` 
+              : '保守・メンテナンス費',
             quantity: monthlyPeriodConfirmed ? confirmedMonths : 1,
             unitPrice: monthlyAmount.value,
             amount: monthlyAmount.value * (monthlyPeriodConfirmed ? confirmedMonths : 1),

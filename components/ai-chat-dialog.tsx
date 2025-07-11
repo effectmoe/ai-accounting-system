@@ -169,9 +169,24 @@ export default function AIChatDialog({
           items: result.data.items,
           subtotal: result.data.subtotal,
           taxAmount: result.data.taxAmount,
-          totalAmount: result.data.totalAmount
+          totalAmount: result.data.totalAmount,
+          customerName: result.data.customerName
         });
+        
+        // データが正しく設定されているか確認
+        if (result.data.items && result.data.items.length > 0) {
+          console.log('[Frontend] Items detected, updating currentInvoiceData');
+        }
+        if (result.data.customerName) {
+          console.log('[Frontend] Customer name detected:', result.data.customerName);
+        }
+        
         setCurrentInvoiceData(result.data);
+        
+        // 状態が更新されたか確認
+        console.log('[Frontend] currentInvoiceData after update will be:', result.data);
+      } else {
+        console.log('[Frontend] No data in result, not updating currentInvoiceData');
       }
 
     } catch (error) {
@@ -254,7 +269,12 @@ export default function AIChatDialog({
         )}
 
         {/* 現在の請求書データプレビュー */}
-        {currentInvoiceData && (currentInvoiceData.customerName || (currentInvoiceData.items && currentInvoiceData.items.length > 0)) && (
+        {currentInvoiceData && (
+          currentInvoiceData.customerName || 
+          (currentInvoiceData.items && currentInvoiceData.items.length > 0) ||
+          currentInvoiceData.subtotal > 0 ||
+          currentInvoiceData.totalAmount > 0
+        ) && (
           <div className="mx-4 mt-4 p-3 bg-blue-50 rounded-lg">
             <div className="flex items-center gap-2 mb-2">
               <CheckCircle className="h-4 w-4 text-blue-600" />
@@ -268,14 +288,11 @@ export default function AIChatDialog({
                 <p>明細: {currentInvoiceData.items.map((item: any) => item.description).join(', ')}</p>
               )}
               {(() => {
-                // 合計金額を正しく計算（itemsが空の場合は表示しない）
-                if (!currentInvoiceData.items || currentInvoiceData.items.length === 0) {
-                  return null;
-                }
+                // 合計金額を正しく計算（itemsが空の場合でも、subtotalやtotalAmountがあれば表示）
                 const subtotal = currentInvoiceData.subtotal || 
-                  currentInvoiceData.items.reduce((sum: number, item: any) => sum + (item.amount || 0), 0);
+                  (currentInvoiceData.items ? currentInvoiceData.items.reduce((sum: number, item: any) => sum + (item.amount || 0), 0) : 0);
                 const taxAmount = currentInvoiceData.taxAmount || 
-                  currentInvoiceData.items.reduce((sum: number, item: any) => sum + (item.taxAmount || 0), 0);
+                  (currentInvoiceData.items ? currentInvoiceData.items.reduce((sum: number, item: any) => sum + (item.taxAmount || 0), 0) : 0);
                 const totalAmount = currentInvoiceData.totalAmount || (subtotal + taxAmount);
                 
                 return totalAmount > 0 && (
