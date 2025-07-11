@@ -339,9 +339,11 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
               }
             }
           } else if (isAmountUpdateRequest) {
-            console.log('[AI] Maintenance amount update request detected');
+            console.log('[AI] Maintenance amount update/addition request detected');
             console.log('[AI] Conversation text:', conversation);
             console.log('[AI] Original items before update:', JSON.stringify(updatedData.items, null, 2));
+            console.log('[AI] Is maintenance addition:', isMaintenanceAddition);
+            console.log('[AI] Is maintenance amount update:', isMaintenanceAmountUpdate);
             
             // システム保守料の金額更新処理
             // 金額の抽出 - より正確なパターンマッチング
@@ -357,35 +359,58 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
               console.log('[AI] No specific amount found, using default 8000円 for 1 month');
             }
             
-            // 保守料金の項目を探して更新（他の項目は保持）
-            if (updatedData.items && updatedData.items.length > 0) {
-              let maintenanceUpdated = false;
-              updatedData.items = updatedData.items.map(item => {
-                console.log('[AI] Checking item:', item.description);
-                if (item.description.includes('保守') || item.description.includes('システム保守料')) {
-                  console.log('[AI] Found maintenance item to update');
-                  console.log('[AI] Updating maintenance item amount from', item.amount, 'to', newAmount);
-                  maintenanceUpdated = true;
-                  return {
-                    ...item,
-                    description: 'システム保守料（1ヶ月分）',
-                    unitPrice: newAmount,
-                    amount: newAmount,
-                    taxAmount: Math.floor(newAmount * 0.1), // Math.floorを使用して確実に800円になるように
-                    quantity: 1
-                  };
-                }
-                // 他の項目はそのまま保持
-                return item;
+            // 「追加」の場合は新規項目として追加、それ以外は既存項目を更新
+            if (isMaintenanceAddition) {
+              console.log('[AI] Adding new maintenance item');
+              // 既存のitemsがない場合は初期化
+              if (!updatedData.items) {
+                updatedData.items = [];
+              }
+              
+              // 新しい保守料金項目を追加
+              updatedData.items.push({
+                description: 'システム保守料（月額）',
+                quantity: 1,
+                unitPrice: newAmount,
+                amount: newAmount,
+                taxRate: 0.1,
+                taxAmount: Math.floor(newAmount * 0.1)
               });
               
-              if (!maintenanceUpdated) {
-                console.log('[AI] No maintenance item found to update');
-              }
-              console.log('[AI] Items after update:', JSON.stringify(updatedData.items, null, 2));
+              console.log('[AI] Added new maintenance item');
+              console.log('[AI] Items after addition:', JSON.stringify(updatedData.items, null, 2));
               console.log('[AI] Total items count:', updatedData.items.length);
             } else {
-              console.log('[AI] No items to update');
+              // 既存の保守料金の項目を探して更新（他の項目は保持）
+              if (updatedData.items && updatedData.items.length > 0) {
+                let maintenanceUpdated = false;
+                updatedData.items = updatedData.items.map(item => {
+                  console.log('[AI] Checking item:', item.description);
+                  if (item.description.includes('保守') || item.description.includes('システム保守料')) {
+                    console.log('[AI] Found maintenance item to update');
+                    console.log('[AI] Updating maintenance item amount from', item.amount, 'to', newAmount);
+                    maintenanceUpdated = true;
+                    return {
+                      ...item,
+                      description: 'システム保守料（1ヶ月分）',
+                      unitPrice: newAmount,
+                      amount: newAmount,
+                      taxAmount: Math.floor(newAmount * 0.1), // Math.floorを使用して確実に800円になるように
+                      quantity: 1
+                    };
+                  }
+                  // 他の項目はそのまま保持
+                  return item;
+                });
+                
+                if (!maintenanceUpdated) {
+                  console.log('[AI] No maintenance item found to update');
+                }
+                console.log('[AI] Items after update:', JSON.stringify(updatedData.items, null, 2));
+                console.log('[AI] Total items count:', updatedData.items.length);
+              } else {
+                console.log('[AI] No items to update');
+              }
             }
           } else {
             // 通常の追加・更新処理
