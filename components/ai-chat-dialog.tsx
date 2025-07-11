@@ -49,39 +49,44 @@ export default function AIChatDialog({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [currentInvoiceData, setCurrentInvoiceData] = useState<any>(initialInvoiceData || {});
+  const [currentInvoiceData, setCurrentInvoiceData] = useState<any>(mode === 'create' ? {} : (initialInvoiceData || {}));
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // 初期メッセージの設定
   useEffect(() => {
-    if (isOpen && messages.length === 0) {
-      // セッション開始時は必ず新規データから開始
-      if (mode === 'create') {
-        setCurrentInvoiceData({});
-      }
+    if (isOpen) {
+      // ダイアログが開かれた時は常にメッセージをリセット
+      if (messages.length === 0) {
+        // セッション開始時は必ず新規データから開始
+        if (mode === 'create') {
+          setCurrentInvoiceData({});
+        } else if (mode === 'edit' && initialInvoiceData) {
+          setCurrentInvoiceData(initialInvoiceData);
+        }
       
-      const initialMessage: Message = {
-        id: Date.now().toString(),
-        role: 'assistant',
-        content: mode === 'create' 
-          ? 'こんにちは！請求書作成をお手伝いします。\n\n例えば以下のような内容を教えてください：\n- 顧客名（〇〇会社様）\n- 請求内容（ウェブサイト制作費など）\n- 金額（50万円など）\n- 納期や支払期限\n\nどのような請求書を作成しますか？'
-          : 'こんにちは！請求書の編集をお手伝いします。\n\nどの部分を変更したいですか？例えば：\n- 金額の変更\n- 明細の追加・削除\n- 支払期限の変更\n- 備考の追加\n\nお気軽にお申し付けください。',
-        timestamp: new Date(),
-        quickReplies: mode === 'create'
-          ? [
-              { text: '例を見る', value: '請求書の作成例を見せてください' }
-            ]
-          : [
-              { text: '金額を変更', value: '金額を変更したいです' },
-              { text: '明細を追加', value: '明細を追加したいです' },
-              { text: '支払期限を変更', value: '支払期限を変更したいです' }
-            ]
-      };
-      setMessages([initialMessage]);
-      setSessionId(Date.now().toString());
+        const initialMessage: Message = {
+          id: Date.now().toString(),
+          role: 'assistant',
+          content: mode === 'create' 
+            ? 'こんにちは！請求書作成をお手伝いします。\n\n例えば以下のような内容を教えてください：\n- 顧客名（〇〇会社様）\n- 請求内容（ウェブサイト制作費など）\n- 金額（50万円など）\n- 納期や支払期限\n\nどのような請求書を作成しますか？'
+            : 'こんにちは！請求書の編集をお手伝いします。\n\nどの部分を変更したいですか？例えば：\n- 金額の変更\n- 明細の追加・削除\n- 支払期限の変更\n- 備考の追加\n\nお気軽にお申し付けください。',
+          timestamp: new Date(),
+          quickReplies: mode === 'create'
+            ? [
+                { text: '例を見る', value: '請求書の作成例を見せてください' }
+              ]
+            : [
+                { text: '金額を変更', value: '金額を変更したいです' },
+                { text: '明細を追加', value: '明細を追加したいです' },
+                { text: '支払期限を変更', value: '支払期限を変更したいです' }
+              ]
+        };
+        setMessages([initialMessage]);
+        setSessionId(Date.now().toString());
+      }
     }
-  }, [isOpen, mode]);
+  }, [isOpen, mode, initialInvoiceData]);
 
   // メッセージが追加されたらスクロール
   useEffect(() => {
