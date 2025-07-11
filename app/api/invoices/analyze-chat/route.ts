@@ -446,13 +446,14 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
       
       // 状況確認の質問でない場合のみ新しい顧客名を抽出
       if (!isStatusQuestion) {
-        const customerMatch = conversation.match(/([^、。\s]+(?:会社|株式会社|さん|様))/);
+        const customerMatch = conversation.match(/([^、。\s]+(?:会社|株式会社|商事|さん|様))/);
         if (customerMatch) {
           const extractedCustomer = customerMatch[1].replace(/さん$|様$/, '');
           // 既存の顧客名と異なる場合は新しい顧客とみなす
           if (currentInvoiceData && currentInvoiceData.customerName && 
               currentInvoiceData.customerName !== extractedCustomer) {
             isNewCustomer = true;
+            console.log('[Placeholder] New customer detected:', extractedCustomer, 'different from', currentInvoiceData.customerName);
           }
           customerName = extractedCustomer;
         }
@@ -489,17 +490,26 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
       const monthlyAmount = amounts.find(a => a.isMonthly);
       const hasMonthlyFee = !!monthlyAmount;
       
-      console.log('Extracted amounts:', amounts);
-      console.log('Main amount:', amount);
-      console.log('Monthly amount:', monthlyAmount);
+      console.log('[Placeholder] Conversation:', conversation);
+      console.log('[Placeholder] Current invoice data:', JSON.stringify(currentInvoiceData, null, 2));
+      console.log('[Placeholder] Extracted amounts:', amounts);
+      console.log('[Placeholder] Main amount:', amount);
+      console.log('[Placeholder] Monthly amount:', monthlyAmount);
       
       // 品目の抽出（「〜費」「〜料」「〜代」など）
       let description = '';
       // 状況確認の質問でない場合のみ新しい品目を抽出
       if (!isStatusQuestion) {
-        const itemMatch = conversation.match(/([^、。\s]+(?:費|料|代|制作|開発|サービス|業務|作業))/);
-        if (itemMatch) {
-          description = itemMatch[0];
+        // 「として」パターンを優先的にチェック
+        const asMatch = conversation.match(/(?:として|の名目で)([^、。\s]+)/);
+        if (asMatch) {
+          description = asMatch[1];
+          console.log('[Placeholder] Extracted description from "として" pattern:', description);
+        } else {
+          const itemMatch = conversation.match(/([^、。\s]+(?:費|料|代|制作|開発|サービス|業務|作業))/);
+          if (itemMatch) {
+            description = itemMatch[0];
+          }
         }
       }
       
@@ -1200,8 +1210,8 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
         quickReplies: quickReplies.length > 0 ? quickReplies : undefined,
         data: {
           customerId,
-          customerName,
-          items: invoiceData.items,
+          customerName: invoiceData.customerName,
+          items: invoiceData.items || [],
           invoiceDate: invoiceData.invoiceDate,
           dueDate: invoiceData.dueDate,
           notes: invoiceData.notes,

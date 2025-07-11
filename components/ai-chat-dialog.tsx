@@ -49,7 +49,7 @@ export default function AIChatDialog({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [currentInvoiceData, setCurrentInvoiceData] = useState<any>(mode === 'create' ? {} : (initialInvoiceData || {}));
+  const [currentInvoiceData, setCurrentInvoiceData] = useState<any>(mode === 'create' ? { items: [] } : (initialInvoiceData || { items: [] }));
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -60,7 +60,7 @@ export default function AIChatDialog({
       if (messages.length === 0) {
         // セッション開始時は必ず新規データから開始
         if (mode === 'create') {
-          setCurrentInvoiceData({});
+          setCurrentInvoiceData({ items: [] });
         } else if (mode === 'edit' && initialInvoiceData) {
           setCurrentInvoiceData(initialInvoiceData);
         }
@@ -254,7 +254,7 @@ export default function AIChatDialog({
         )}
 
         {/* 現在の請求書データプレビュー */}
-        {currentInvoiceData && Object.keys(currentInvoiceData).length > 0 && (
+        {currentInvoiceData && (currentInvoiceData.customerName || (currentInvoiceData.items && currentInvoiceData.items.length > 0)) && (
           <div className="mx-4 mt-4 p-3 bg-blue-50 rounded-lg">
             <div className="flex items-center gap-2 mb-2">
               <CheckCircle className="h-4 w-4 text-blue-600" />
@@ -268,11 +268,14 @@ export default function AIChatDialog({
                 <p>明細: {currentInvoiceData.items.map((item: any) => item.description).join(', ')}</p>
               )}
               {(() => {
-                // 合計金額を正しく計算
+                // 合計金額を正しく計算（itemsが空の場合は表示しない）
+                if (!currentInvoiceData.items || currentInvoiceData.items.length === 0) {
+                  return null;
+                }
                 const subtotal = currentInvoiceData.subtotal || 
-                  (currentInvoiceData.items ? currentInvoiceData.items.reduce((sum: number, item: any) => sum + (item.amount || 0), 0) : 0);
+                  currentInvoiceData.items.reduce((sum: number, item: any) => sum + (item.amount || 0), 0);
                 const taxAmount = currentInvoiceData.taxAmount || 
-                  (currentInvoiceData.items ? currentInvoiceData.items.reduce((sum: number, item: any) => sum + (item.taxAmount || 0), 0) : 0);
+                  currentInvoiceData.items.reduce((sum: number, item: any) => sum + (item.taxAmount || 0), 0);
                 const totalAmount = currentInvoiceData.totalAmount || (subtotal + taxAmount);
                 
                 return totalAmount > 0 && (
@@ -412,7 +415,7 @@ export default function AIChatDialog({
                 e.preventDefault();
                 // ダイアログを閉じる際にデータをリセット
                 setMessages([]);
-                setCurrentInvoiceData({});
+                setCurrentInvoiceData({ items: [] });
                 setSessionId(null);
                 setError(null);
                 onClose();
