@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { OpenAI } from 'openai';
 import { CustomerService } from '@/services/customer.service';
+import { BankAccountService } from '@/services/bank-account.service';
 import { z } from 'zod';
 import { format } from 'date-fns';
 
@@ -366,15 +367,23 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
       
       // 顧客名の抽出（「〜さん」「〜会社」「〜株式会社」など）
       let customerName = '';
+      let isNewCustomer = false;
+      
       // 状況確認の質問でない場合のみ新しい顧客名を抽出
       if (!isStatusQuestion) {
         const customerMatch = conversation.match(/([^、。\s]+(?:会社|株式会社|さん|様))/);
         if (customerMatch) {
-          customerName = customerMatch[1].replace(/さん$|様$/, '');
+          const extractedCustomer = customerMatch[1].replace(/さん$|様$/, '');
+          // 既存の顧客名と異なる場合は新しい顧客とみなす
+          if (currentInvoiceData && currentInvoiceData.customerName && 
+              currentInvoiceData.customerName !== extractedCustomer) {
+            isNewCustomer = true;
+          }
+          customerName = extractedCustomer;
         }
       }
       
-      // 既存データから顧客名を保持
+      // 既存データから顧客名を保持（新しい顧客名が抽出されなかった場合のみ）
       if (!customerName && currentInvoiceData && currentInvoiceData.customerName) {
         customerName = currentInvoiceData.customerName;
       }
@@ -524,10 +533,25 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
                           conversation.toLowerCase().includes('それと') ||
                           conversation.toLowerCase().includes('他に') ||
                           // 「はい」と答えて追加の意図がある場合
-                          (userSaidYes && lastAssistantQuestion.includes('追加'));
+                          (userSaidYes && lastAssistantQuestion && (
+                            lastAssistantQuestion.includes('追加') || 
+                            lastAssistantQuestion.includes('他に') ||
+                            lastAssistantQuestion.includes('修正')
+                          ));
       
       if (isNewItem) {
-        if (isAddingItem) {
+        // 新しい顧客の場合は、既存のitemsをクリアして新規作成
+        if (isNewCustomer) {
+          console.log('[DEBUG] New customer detected, creating new invoice');
+          items = [{
+            description: description,
+            quantity: 1,
+            unitPrice: amount,
+            amount: amount,
+            taxRate: taxRate,
+            taxAmount: Math.round(amount * taxRate)
+          }];
+        } else if (isAddingItem) {
           // 「追加」の意図が明確な場合は、新規項目として追加
           console.log('[DEBUG] Adding new item as requested');
           items.push({
@@ -634,12 +658,35 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
         items: JSON.stringify(items, null, 2)
       });
       
+      // デフォルトの銀行口座情報を取得
+      let bankAccountInfo = '';
+      try {
+        const bankAccountService = new BankAccountService();
+        const defaultAccount = await bankAccountService.getDefaultAccount();
+        
+        if (defaultAccount) {
+          const accountTypeText = defaultAccount.accountType === 'checking' ? '当座預金' : '普通預金';
+          bankAccountInfo = `振込先：\n${defaultAccount.bankName} ${defaultAccount.branchName}\n${accountTypeText} ${defaultAccount.accountNumber}\n口座名義：${defaultAccount.accountHolder}\n\n`;
+        }
+      } catch (error) {
+        console.error('Error fetching bank account:', error);
+        // エラーが発生しても処理は続行
+      }
+      
+      // 備考欄の作成
+      let notes = bankAccountInfo;
+      if (mergedData.notes) {
+        notes += mergedData.notes;
+      } else {
+        notes += 'AI会話から作成';
+      }
+      
       const invoiceData: InvoiceData = {
         customerName: customerName || mergedData.customerName || '未設定顧客',
         items: items,
         invoiceDate: mergedData.invoiceDate || today.toISOString().split('T')[0],
         dueDate: mergedData.dueDate || dueDate.toISOString().split('T')[0],
-        notes: mergedData.notes || `AI会話から作成`,
+        notes: notes,
         paymentMethod: mergedData.paymentMethod || 'bank_transfer'
       };
       
@@ -758,7 +805,7 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
       
       // 「追加する項目や修正点はありますか？」への「はい」の応答を特別に処理
       if (lastAssistantQuestion.includes('追加する項目や修正点はありますか') && userSaidYes) {
-        responseMessage = `どのような追加・修正をご希望ですか？\n\n具体的な内容を教えてください。例えば：\n・「保守契約を4ヶ月分追加してください」\n・「金額を変更したいです」\n・「支払期限を30日後に変更してください」`;
+        responseMessage = `どのような追加・修正をご希望ですか？\n\n具体的な内容を教えてください。例えば：\n・「保守契約を4ヶ月分追加してください」\n・「金額を変更したいです」\n・「支払期限を30日後に変更してください」\n・「別の顧客への請求書を作成してください」`;
         quickReplies = [
           { text: '金額を変更', value: '金額を変更したいです' },
           { text: '明細を追加', value: '明細項目を追加したいです' },
