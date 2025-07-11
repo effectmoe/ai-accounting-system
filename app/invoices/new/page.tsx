@@ -358,39 +358,43 @@ function NewInvoiceContent() {
     }
 
     try {
+      // 商品コードを自動生成（タイムスタンプベース）
+      const productCode = `PROD-${Date.now()}`;
+      
       const response = await fetch('/api/products', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          productCode: productCode,  // 必須: 商品コードを追加
           productName: item.description,
           unitPrice: item.unitPrice,
           taxRate: item.taxRate,
           unit: item.unit || '個',
           category: 'その他',
+          stockQuantity: 0,  // 必須: 在庫数を追加（デフォルト0）
           isActive: true,
         }),
       });
 
       if (!response.ok) {
-        throw new Error('商品の登録に失敗しました');
+        const errorData = await response.json();
+        throw new Error(errorData.error || '商品の登録に失敗しました');
       }
 
       const newProduct = await response.json();
       
       // 商品リストを再読み込み
-      const productsResponse = await fetch('/api/products');
-      if (productsResponse.ok) {
-        const data = await productsResponse.json();
-        setProducts(data.products || []);
-      }
+      await fetchProducts();
       
       // 登録した商品を選択状態にする
       updateItem(index, 'productId', newProduct._id);
       
       setSuccessMessage(`「${item.description}」を商品マスターに登録しました`);
+      // エラーメッセージをクリア
+      setError(null);
     } catch (error) {
       console.error('Error registering product:', error);
-      setError('商品の登録に失敗しました');
+      setError(error instanceof Error ? error.message : '商品の登録に失敗しました');
     }
   };
 
