@@ -26,7 +26,7 @@ export async function GET(
     const pdfData = {
       documentType: 'invoice' as const,
       invoiceNumber: invoice.invoiceNumber,
-      issueDate: invoice.issueDate || invoice.invoiceDate,
+      issueDate: invoice.issueDate || invoice.invoiceDate || new Date(),
       dueDate: invoice.dueDate,
       partner: {
         name: invoice.customer?.companyName || invoice.customer?.name || '',
@@ -41,19 +41,19 @@ export async function GET(
         email: invoice.customer?.email || ''
       },
       items: invoice.items.map((item: any) => ({
-        name: item.itemName || item.description || '',
-        description: item.itemName || item.description || '',
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
+        name: item.description || item.itemName || '',
+        description: item.description || item.itemName || '',
+        quantity: item.quantity || 0,
+        unitPrice: item.unitPrice || 0,
         taxRate: item.taxRate || 0.1,
-        amount: item.amount,
-        taxAmount: item.taxAmount || Math.round(item.amount * (item.taxRate || 0.1))
+        amount: item.amount || 0,
+        taxAmount: item.taxAmount || Math.round((item.amount || 0) * (item.taxRate || 0.1))
       })),
-      subtotal: invoice.subtotal,
-      tax: invoice.taxAmount,
-      taxAmount: invoice.taxAmount,
-      total: invoice.totalAmount,
-      totalAmount: invoice.totalAmount,
+      subtotal: invoice.subtotal || 0,
+      tax: invoice.taxAmount || 0,
+      taxAmount: invoice.taxAmount || 0,
+      total: invoice.totalAmount || 0,
+      totalAmount: invoice.totalAmount || 0,
       notes: invoice.notes || '',
       paymentTerms: invoice.paymentTerms || '銀行振込',
       company: {
@@ -174,19 +174,19 @@ export async function GET(
       ${invoice.items.map((item: any) => `
         <tr>
           <td>${item.itemName || item.description || ''}</td>
-          <td class="amount">${item.quantity}</td>
-          <td class="amount">¥${item.unitPrice.toLocaleString()}</td>
-          <td class="amount">¥${item.amount.toLocaleString()}</td>
-          <td class="amount">¥${item.taxAmount.toLocaleString()}</td>
+          <td class="amount">${item.quantity || 0}</td>
+          <td class="amount">¥${(item.unitPrice || 0).toLocaleString()}</td>
+          <td class="amount">¥${(item.amount || 0).toLocaleString()}</td>
+          <td class="amount">¥${(item.taxAmount || 0).toLocaleString()}</td>
         </tr>
       `).join('')}
     </tbody>
   </table>
 
   <div class="total-section">
-    <p>小計: ¥${invoice.subtotal.toLocaleString()}</p>
-    <p>消費税: ¥${invoice.taxAmount.toLocaleString()}</p>
-    <p class="total-row">合計: ¥${invoice.totalAmount.toLocaleString()}</p>
+    <p>小計: ¥${(invoice.subtotal || 0).toLocaleString()}</p>
+    <p>消費税: ¥${(invoice.taxAmount || 0).toLocaleString()}</p>
+    <p class="total-row">合計: ¥${(invoice.totalAmount || 0).toLocaleString()}</p>
   </div>
 
   ${invoice.notes ? `<p>備考: ${invoice.notes}</p>` : ''}
@@ -209,8 +209,23 @@ export async function GET(
     }
   } catch (error) {
     console.error('PDF generation error:', error);
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    
+    // 詳細なエラー情報を返す
+    if (error instanceof Error) {
+      return NextResponse.json(
+        { 
+          error: 'Failed to generate PDF', 
+          message: error.message,
+          stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+          type: error.name
+        },
+        { status: 500 }
+      );
+    }
+    
     return NextResponse.json(
-      { error: 'Failed to generate PDF', details: error instanceof Error ? error.message : 'Unknown error' },
+      { error: 'Failed to generate PDF', details: 'Unknown error' },
       { status: 500 }
     );
   }
