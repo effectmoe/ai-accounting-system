@@ -288,13 +288,19 @@ export class DatabaseService {
         { returnDocument: 'after' }
       );
 
+      console.log(`[MongoDB] findOneAndUpdate raw result:`, result);
+      console.log(`[MongoDB] findOneAndUpdate result type:`, typeof result);
+      console.log(`[MongoDB] findOneAndUpdate result keys:`, result ? Object.keys(result) : 'null');
+
+      // MongoDB driver v6では、結果が直接ドキュメントを返す
       if (!result) {
         console.error(`No document found with ID ${objectId} in collection ${collectionName}`);
         return null;
       }
 
       console.log(`Document updated successfully in ${collectionName}`);
-      return result.value;
+      console.log(`Updated document ID: ${result._id?.toString()}`);
+      return result;
     } catch (error) {
       console.error(`MongoDB update error in collection ${collectionName}:`, error);
       throw new DatabaseError(

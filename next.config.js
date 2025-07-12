@@ -32,7 +32,7 @@ const nextConfig = {
       })
     );
     
-    // aiモジュールのtestディレクトリを完全に除外
+    // aiモジュールのtestディレクトリを完全に除圄
     config.module.rules.push({
       test: /node_modules\/(ai|@ai-sdk).*\/test\/.*/,
       use: 'null-loader',

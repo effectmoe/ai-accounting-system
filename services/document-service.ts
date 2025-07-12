@@ -1,6 +1,5 @@
 import { db, Collections } from '@/lib/mongodb-client';
 import { ObjectId } from 'mongodb';
-import { generatePDF } from '@/lib/pdf-generator';
 import { DocumentData } from '@/lib/document-generator';
 
 export interface Document {
@@ -157,41 +156,8 @@ export class DocumentService {
     }
   }
 
-  /**
-   * PDFを生成
-   */
-  async generatePDF(id: string): Promise<Buffer> {
-    try {
-      const document = await this.getDocument(id);
-      if (!document) {
-        throw new Error('ドキュメントが見つかりません');
-      }
-
-      // DocumentからDocumentDataフォーマットに変換
-      const documentData: DocumentData = {
-        documentNumber: document.documentNumber,
-        type: document.documentType,
-        date: document.issueDate.toISOString(),
-        vendor: document.customerName ? { name: document.customerName } : undefined,
-        items: document.items.map(item => ({
-          description: item.description,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          amount: item.amount,
-          taxRate: item.taxRate,
-        })),
-        subtotal: document.subtotal,
-        tax: document.taxAmount,
-        total: document.totalAmount,
-        notes: document.notes,
-      };
-
-      return await generatePDF(documentData);
-    } catch (error) {
-      console.error('Error in generatePDF:', error);
-      throw new Error('PDF生成に失敗しました');
-    }
-  }
+  // PDF generation functionality has been removed
+  // Use appropriate routes for PDF generation instead
 
   /**
    * OCR結果IDでドキュメントを検索

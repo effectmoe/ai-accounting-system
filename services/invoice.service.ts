@@ -1,8 +1,6 @@
 import { db, Collections } from '@/lib/mongodb-client';
 import { ObjectId } from 'mongodb';
 import { Invoice, InvoiceStatus, InvoiceItem, Customer, BankAccount } from '@/types/collections';
-import { generatePDF } from '@/lib/pdf-generator';
-import { DocumentData } from '@/lib/document-generator';
 import { CompanyInfoService } from './company-info.service';
 
 export interface InvoiceSearchParams {
@@ -358,55 +356,45 @@ export class InvoiceService {
     }
   }
 
+  // PDF generation is now handled by the PDF route
+  // Use /api/invoices/[id]/pdf endpoint instead
+
   /**
-   * PDFを生成
+   * 支払いを記録
    */
-  async generatePDF(id: string): Promise<Buffer> {
+  async recordPayment(id: string, paidAmount: number, paymentDate: Date): Promise<Invoice | null> {
     try {
       const invoice = await this.getInvoice(id);
       if (!invoice) {
-        throw new Error('請求書が見つかりません');
+        return null;
       }
 
-      // InvoiceからDocumentDataフォーマットに変換
-      const documentData: DocumentData = {
-        documentNumber: invoice.invoiceNumber,
-        type: 'invoice',
-        date: invoice.issueDate.toISOString(),
-        vendor: invoice.customer ? {
-          name: invoice.customer.companyName,
-          address: [
-            invoice.customer.postalCode ? `〒${invoice.customer.postalCode}` : '',
-            invoice.customer.prefecture || '',
-            invoice.customer.city || '',
-            invoice.customer.address1 || '',
-            invoice.customer.address2 || ''
-          ].filter(Boolean).join(' ')
-        } : undefined,
-        items: invoice.items.map(item => ({
-          description: item.itemName,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice,
-          amount: item.amount,
-          taxRate: item.taxRate,
-        })),
-        subtotal: invoice.subtotal,
-        tax: invoice.taxAmount,
-        total: invoice.totalAmount,
-        notes: invoice.notes,
-        bankAccount: invoice.bankAccount ? {
-          bankName: invoice.bankAccount.bankName,
-          branchName: invoice.bankAccount.branchName,
-          accountType: invoice.bankAccount.accountType === 'checking' ? '普通' : '当座',
-          accountNumber: invoice.bankAccount.accountNumber,
-          accountName: invoice.bankAccount.accountName,
-        } : undefined,
+      const updateData: Partial<Invoice> = {
+        status: 'paid',
+        paidDate: paymentDate,
+        paidAmount: paidAmount
       };
 
-      return await generatePDF(documentData);
+      return await this.updateInvoice(id, updateData);
     } catch (error) {
-      console.error('Error in generatePDF:', error);
-      throw new Error('PDF生成に失敗しました');
+      console.error('Error in recordPayment:', error);
+      throw new Error('支払い記録の更新に失敗しました');
+    }
+  }
+
+  /**
+   * 請求書をキャンセル
+   */
+  async cancelInvoice(id: string): Promise<Invoice | null> {
+    try {
+      const updateData: Partial<Invoice> = {
+        status: 'cancelled'
+      };
+
+      return await this.updateInvoice(id, updateData);
+    } catch (error) {
+      console.error('Error in cancelInvoice:', error);
+      throw new Error('請求書のキャンセルに失敗しました');
     }
   }
 

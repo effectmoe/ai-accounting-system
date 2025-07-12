@@ -278,10 +278,16 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
           </Button>
           <Button
             variant="outline"
-            onClick={() => window.open(`/api/invoices/${invoice._id}/pdf?download=true`, '_blank')}
+            onClick={() => {
+              // 新しいウィンドウを開いて印刷ダイアログを表示
+              const printWindow = window.open(`/api/invoices/${invoice._id}/pdf?print=true`, '_blank', 'width=800,height=600');
+              if (printWindow) {
+                printWindow.focus();
+              }
+            }}
           >
             <Download className="mr-2 h-4 w-4" />
-            PDF
+            PDF印刷
           </Button>
           {invoice.status === 'draft' && (
             <Button
