@@ -57,7 +57,10 @@
     "test:azure-mongodb": "tsx scripts/test-azure-mongodb.ts",
     "db:setup": "tsx scripts/setup-db.ts",
     "db:setup:with-sample": "tsx scripts/setup-db.ts --sample-data",
-    "mcp:setup": "tsx scripts/setup-mcp-servers.ts"
+    "mcp:setup": "tsx scripts/setup-mcp-servers.ts",
+    "mcp:debug:coordinator": "node src/debug/mcp-servers/aam-debug-coordinator.js",
+    "mcp:debug:ocr": "node src/debug/mcp-servers/ocr-agent-monitor.js",
+    "mcp:debug:install": "cd src/debug/mcp-servers && npm install"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.27.3",
