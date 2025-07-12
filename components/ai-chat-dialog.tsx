@@ -240,6 +240,8 @@ export default function AIChatDialog({
         // 完全なデータ構造で更新（既存データとマージ）
         setCurrentInvoiceData(prev => {
           console.log('[Frontend] Previous state:', prev);
+          console.log('[Frontend] Result data from backend:', result.data);
+          console.log('[Frontend] Customer name in result:', result.data.customerName);
           
           // itemsの更新は、バックエンドが明示的に送信した場合のみ行う
           // バックエンドは常に完全な更新後のitemsを送信するので、そのまま使用する
@@ -252,7 +254,9 @@ export default function AIChatDialog({
             taxAmount: result.data.taxAmount !== undefined ? result.data.taxAmount : (result.data.totalTaxAmount !== undefined ? result.data.totalTaxAmount : prev.taxAmount || 0),
             totalAmount: result.data.totalAmount !== undefined ? result.data.totalAmount : prev.totalAmount || 0
           };
+          
           console.log('[Frontend] New state will be:', newData);
+          console.log('[Frontend] Customer name updated to:', newData.customerName);
           console.log('[Frontend] Items update:', {
             prevItemsCount: prev.items?.length || 0,
             newItemsCount: newData.items?.length || 0,

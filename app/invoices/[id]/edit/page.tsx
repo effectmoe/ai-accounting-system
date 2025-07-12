@@ -324,14 +324,23 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
   // AI会話からのデータを適用
   const handleAIComplete = (data: any) => {
     console.log('[EditPage] AI Complete data received:', data);
+    console.log('[EditPage] Current customer name state:', customerName);
+    console.log('[EditPage] Current selected customer ID:', selectedCustomerId);
     
     // 顧客名は明示的に変更された場合のみ更新（Unknown Customerは無視）
     if (data.customerName && data.customerName !== 'Unknown Customer' && data.customerName !== '未設定顧客') {
       console.log('[EditPage] Updating customer name to:', data.customerName);
+      console.log('[EditPage] Previous customer name was:', customerName);
+      
+      // 強制的に顧客名を設定し、既存顧客の選択をクリア
       setCustomerName(data.customerName);
       setSelectedCustomerId('');
+      
+      console.log('[EditPage] Customer name updated. New value:', data.customerName);
+      console.log('[EditPage] Selected customer ID cleared');
     } else {
       console.log('[EditPage] Customer name not updated. Current:', data.customerName);
+      console.log('[EditPage] Reason: either null/empty, Unknown Customer, or 未設定顧客');
     }
     
     // 日付は有効な値の場合のみ更新（1970-01-01は無視）
