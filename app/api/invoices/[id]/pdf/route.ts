@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { InvoiceService } from '@/services/invoice.service';
 import { CompanyInfoService } from '@/services/company-info.service';
-import { generatePDFFromInvoiceData, generateInvoiceFilename } from '@/lib/pdf-jspdf-japanese';
+import { generatePDFFromInvoiceData, generateInvoiceFilename, generateSafeFilename } from '@/lib/pdf-jspdf-japanese';
 
 export async function GET(
   request: NextRequest,
@@ -39,19 +39,24 @@ export async function GET(
       
       // 新しい命名規則でファイル名を生成: 請求日_帳表名_顧客名
       const filename = generateInvoiceFilename(invoice);
+      const safeFilename = generateSafeFilename(invoice);
       console.log('Generated filename:', filename);
+      console.log('Safe filename for header:', safeFilename);
       
       // URLクエリパラメータでダウンロードモードを判定
       const url = new URL(request.url);
       const isDownload = url.searchParams.get('download') === 'true';
+      
+      // 日本語ファイル名をRFC 5987準拠でエンコード
+      const encodedFilename = encodeURIComponent(filename);
       
       return new NextResponse(pdfBuffer, {
         status: 200,
         headers: {
           'Content-Type': 'application/pdf',
           'Content-Disposition': isDownload 
-            ? `attachment; filename="${filename}"`
-            : `inline; filename="${filename}"`,
+            ? `attachment; filename="${safeFilename}"; filename*=UTF-8''${encodedFilename}`
+            : `inline; filename="${safeFilename}"; filename*=UTF-8''${encodedFilename}`,
         },
       });
     } catch (pdfError) {
@@ -153,14 +158,16 @@ export async function GET(
       
       // HTMLファイル名も新しい命名規則を使用
       const htmlFilename = generateInvoiceFilename(invoice).replace('.pdf', '.html');
+      const safeHtmlFilename = generateSafeFilename(invoice).replace('.pdf', '.html');
+      const encodedHtmlFilename = encodeURIComponent(htmlFilename);
       
       return new NextResponse(htmlContent, {
         status: 200,
         headers: {
           'Content-Type': 'text/html; charset=utf-8',
           'Content-Disposition': isDownload 
-            ? `attachment; filename="${htmlFilename}"`
-            : `inline; filename="${htmlFilename}"`,
+            ? `attachment; filename="${safeHtmlFilename}"; filename*=UTF-8''${encodedHtmlFilename}`
+            : `inline; filename="${safeHtmlFilename}"; filename*=UTF-8''${encodedHtmlFilename}`,
         },
       });
     }

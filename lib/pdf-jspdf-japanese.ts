@@ -71,6 +71,14 @@ function setupJapaneseFont(pdf: jsPDF) {
 export async function generatePDFFromHTML(documentData: DocumentData): Promise<Buffer> {
   try {
     console.log('[PDF] Starting PDF generation with Japanese support');
+    console.log('[PDF] Document data:', JSON.stringify({
+      documentType: documentData.documentType,
+      documentNumber: documentData.documentNumber,
+      issueDate: documentData.issueDate,
+      partnerName: documentData.partner?.name,
+      itemsCount: documentData.items?.length,
+      total: documentData.total
+    }, null, 2));
     
     // Create PDF with A4 size
     const pdf = new jsPDF({
@@ -328,6 +336,25 @@ export async function generatePDFFromInvoiceData(invoice: any, companyInfo: any)
 
 // Generate filename with new naming convention: 請求日_帳表名_顧客名
 export function generateInvoiceFilename(invoice: any): string {
+  const issueDate = new Date(invoice.issueDate || invoice.invoiceDate || new Date());
+  const dateStr = issueDate.toISOString().split('T')[0].replace(/-/g, '');
+  
+  const customerName = invoice.customer?.companyName || 
+                      invoice.customer?.name || 
+                      invoice.customerSnapshot?.companyName || 
+                      '顧客名未設定';
+  
+  // 日本語の顧客名を維持（ファイル名に使えない文字のみ置換）
+  const cleanCustomerName = customerName
+    .replace(/[<>:"/\\|?*]/g, '_')
+    .replace(/\s+/g, '_')
+    .substring(0, 20); // 長さ制限
+  
+  return `${dateStr}_請求書_${cleanCustomerName}.pdf`;
+}
+
+// Generate filename with ASCII-safe format (for Content-Disposition header)
+export function generateSafeFilename(invoice: any): string {
   const issueDate = new Date(invoice.issueDate || invoice.invoiceDate || new Date());
   const dateStr = issueDate.toISOString().split('T')[0].replace(/-/g, '');
   
