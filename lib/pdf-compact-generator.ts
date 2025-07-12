@@ -25,48 +25,44 @@ export function generateCompactInvoiceHTML(invoice: any, companyInfo: any): stri
     
     body {
       font-family: 'Noto Sans JP', sans-serif;
-      font-size: 11px;
-      line-height: 1.4;
+      font-size: 12px;
+      line-height: 1.6;
       color: #333;
+      background-color: #f5f5f5;
     }
     
     .invoice-container {
-      width: 100%;
-      max-width: 210mm;
+      max-width: 800px;
       margin: 0 auto;
-      padding: 15mm;
+      background-color: white;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      padding: 40px;
+    
     }
     
     /* ヘッダー */
-    .header-section {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-bottom: 15px;
+    .invoice-header {
+      text-align: center;
+      margin-bottom: 40px;
     }
     
     .invoice-title {
-      font-size: 22px;
+      font-size: 32px;
       font-weight: 700;
-      letter-spacing: 3px;
-    }
-    
-    .invoice-meta {
-      text-align: right;
-      font-size: 10px;
+      letter-spacing: 4px;
+      margin-bottom: 10px;
     }
     
     .invoice-number {
-      font-weight: 700;
-      margin-bottom: 3px;
+      font-size: 14px;
+      color: #666;
     }
     
     /* 顧客・会社情報 */
-    .info-section {
+    .invoice-info {
       display: flex;
       justify-content: space-between;
-      margin-bottom: 15px;
-      gap: 20px;
+      margin-bottom: 30px;
     }
     
     .customer-info {
@@ -74,41 +70,45 @@ export function generateCompactInvoiceHTML(invoice: any, companyInfo: any): stri
     }
     
     .customer-name {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+    
+    .company-info {
+      text-align: right;
+      flex: 1;
+    }
+    
+    .company-name {
       font-size: 16px;
       font-weight: 700;
       margin-bottom: 5px;
     }
     
-    .company-info {
-      flex: 1;
-      text-align: right;
-      font-size: 10px;
-    }
-    
-    .company-name {
-      font-size: 12px;
-      font-weight: 700;
-      margin-bottom: 3px;
+    .invoice-dates {
+      margin-bottom: 10px;
+      line-height: 1.8;
     }
     
     /* 合計金額 */
-    .total-box {
+    .total-amount-box {
       background-color: #e6f2ff;
-      padding: 10px 15px;
-      margin-bottom: 15px;
-      border-radius: 3px;
+      padding: 20px;
+      margin-bottom: 30px;
+      border-radius: 5px;
       display: flex;
       justify-content: space-between;
       align-items: center;
     }
     
     .total-label {
-      font-size: 12px;
+      font-size: 18px;
       font-weight: 700;
     }
     
     .total-amount {
-      font-size: 18px;
+      font-size: 24px;
       font-weight: 700;
       color: #0066cc;
     }
@@ -117,14 +117,13 @@ export function generateCompactInvoiceHTML(invoice: any, companyInfo: any): stri
     .invoice-table {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 15px;
-      font-size: 10px;
+      margin-bottom: 30px;
     }
     
     .invoice-table th {
       background-color: #34495e;
       color: white;
-      padding: 6px 8px;
+      padding: 12px;
       text-align: left;
       font-weight: 700;
     }
@@ -137,17 +136,17 @@ export function generateCompactInvoiceHTML(invoice: any, companyInfo: any): stri
     .invoice-table th:nth-child(2),
     .invoice-table td:nth-child(2) {
       text-align: center;
-      width: 60px;
+      width: 80px;
     }
     
     .invoice-table th:nth-child(3),
     .invoice-table td:nth-child(3) {
       text-align: right;
-      width: 90px;
+      width: 120px;
     }
     
     .invoice-table td {
-      padding: 5px 8px;
+      padding: 12px;
       border-bottom: 1px solid #ddd;
     }
     
@@ -155,99 +154,144 @@ export function generateCompactInvoiceHTML(invoice: any, companyInfo: any): stri
     .summary-section {
       display: flex;
       justify-content: flex-end;
-      margin-bottom: 15px;
+      margin-bottom: 40px;
     }
     
     .summary-table {
-      width: 220px;
-      font-size: 11px;
+      width: 300px;
     }
     
     .summary-row {
       display: flex;
       justify-content: space-between;
-      padding: 3px 0;
+      padding: 8px 0;
+      font-size: 14px;
     }
     
     .summary-row.total {
       border-top: 2px solid #333;
-      padding-top: 5px;
-      margin-top: 3px;
+      padding-top: 12px;
+      font-size: 18px;
       font-weight: 700;
-      font-size: 12px;
     }
     
     /* 備考 */
     .notes-section {
-      margin-top: 15px;
-      padding: 10px;
+      margin-top: 30px;
+      padding: 15px;
       background-color: #f9f9f9;
-      border-radius: 3px;
-      font-size: 10px;
+      border-radius: 5px;
     }
     
     .notes-title {
       font-weight: 700;
-      margin-bottom: 5px;
+      margin-bottom: 10px;
+      font-size: 14px;
     }
     
     .notes-content {
       white-space: pre-wrap;
-      line-height: 1.5;
+      line-height: 1.8;
+    }
+    
+    /* 支払情報 */
+    .payment-info {
+      margin-top: 30px;
+    }
+    
+    .payment-info h3 {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+    
+    .bank-info {
+      margin-top: 10px;
+      padding: 15px;
+      background-color: #f5f5f5;
+      border-radius: 5px;
+      line-height: 1.8;
     }
     
     @media print {
       @page {
         size: A4;
-        margin: 10mm;
+        margin: 15mm;
       }
       
       body {
+        background-color: white;
         margin: 0;
         padding: 0;
       }
       
       .invoice-container {
-        padding: 0;
+        box-shadow: none;
+        width: 100%;
         max-width: none;
-      }
-      
-      /* 改ページ防止 */
-      .invoice-table,
-      .summary-section,
-      .notes-section {
+        margin: 0;
+        padding: 0;
         page-break-inside: avoid;
       }
       
-      /* より小さなフォントサイズ */
-      body {
-        font-size: 10px;
+      .invoice-header {
+        margin-bottom: 20px;
       }
       
       .invoice-title {
-        font-size: 20px;
+        font-size: 24px;
+        margin-bottom: 5px;
       }
       
-      .customer-name {
-        font-size: 14px;
+      .invoice-info {
+        margin-bottom: 20px;
       }
       
-      .total-amount {
-        font-size: 16px;
+      .total-amount-box {
+        margin-bottom: 15px;
+        padding: 10px;
       }
       
       .invoice-table {
-        font-size: 9px;
+        margin-bottom: 15px;
+        font-size: 10px;
       }
       
       .invoice-table th,
       .invoice-table td {
-        padding: 4px 6px;
+        padding: 6px;
+      }
+      
+      .summary-section {
+        margin-bottom: 20px;
       }
       
       .notes-section {
-        font-size: 9px;
-        padding: 8px;
+        margin-top: 20px;
+        padding: 10px;
+        page-break-inside: avoid;
+      }
+      
+      /* フォントサイズを全体的に小さく */
+      body {
+        font-size: 10px;
+      }
+      
+      .customer-name {
+        font-size: 16px;
+      }
+      
+      .total-label {
+        font-size: 14px;
+      }
+      
+      .total-amount {
+        font-size: 18px;
+      }
+      
+      /* 改ページ制御 */
+      .invoice-table {
+        page-break-inside: avoid;
       }
     }
   </style>
@@ -255,35 +299,38 @@ export function generateCompactInvoiceHTML(invoice: any, companyInfo: any): stri
 <body>
   <div class="invoice-container">
     <!-- ヘッダー -->
-    <div class="header-section">
+    <div class="invoice-header">
       <h1 class="invoice-title">請求書</h1>
-      <div class="invoice-meta">
-        <div class="invoice-number">No: ${invoice.invoiceNumber}</div>
-        <div>発行日: ${issueDate}</div>
-        <div>支払期限: ${dueDate}</div>
-      </div>
+      <p class="invoice-number">Invoice No: ${invoice.invoiceNumber}</p>
     </div>
     
     <!-- 顧客・会社情報 -->
-    <div class="info-section">
+    <div class="invoice-info">
       <div class="customer-info">
-        <div class="customer-name">${customerName} 御中</div>
-        ${invoice.customer?.address ? `<div>${invoice.customer.address}</div>` : ''}
-        ${invoice.customer?.phone ? `<div>TEL: ${invoice.customer.phone}</div>` : ''}
+        <h2 class="customer-name">${customerName} 御中</h2>
+        ${invoice.customer?.address ? `<p>${invoice.customer.address}</p>` : ''}
+        ${invoice.customer?.phone ? `<p>TEL: ${invoice.customer.phone}</p>` : ''}
+        ${invoice.customer?.email ? `<p>Email: ${invoice.customer.email}</p>` : ''}
       </div>
       
       <div class="company-info">
-        <div class="company-name">${companyInfo?.companyName || ''}</div>
-        ${companyInfo?.address ? `<div>${companyInfo.address}</div>` : ''}
-        ${companyInfo?.phone ? `<div>TEL: ${companyInfo.phone}</div>` : ''}
-        ${companyInfo?.email ? `<div>${companyInfo.email}</div>` : ''}
+        <div class="invoice-dates">
+          <p>発行日: ${issueDate}</p>
+          <p>支払期限: ${dueDate}</p>
+        </div>
+        <div style="margin-top: 20px;">
+          <h3 class="company-name">${companyInfo?.companyName || ''}</h3>
+          ${companyInfo?.address ? `<p>${companyInfo.address}</p>` : ''}
+          ${companyInfo?.phone ? `<p>TEL: ${companyInfo.phone}</p>` : ''}
+          ${companyInfo?.email ? `<p>${companyInfo.email}</p>` : ''}
+        </div>
       </div>
     </div>
     
     <!-- 合計金額 -->
-    <div class="total-box">
-      <div class="total-label">請求金額合計（税込）</div>
-      <div class="total-amount">¥${totalAmount.toLocaleString()}</div>
+    <div class="total-amount-box">
+      <div class="total-label">請求金額合計</div>
+      <div class="total-amount">¥${totalAmount.toLocaleString()} (税込)</div>
     </div>
     
     <!-- 明細テーブル -->
@@ -326,10 +373,22 @@ export function generateCompactInvoiceHTML(invoice: any, companyInfo: any): stri
       </div>
     </div>
     
+    <!-- 支払情報 -->
+    ${invoice.paymentMethod === 'bank_transfer' && companyInfo?.bankAccount ? `
+      <div class="payment-info">
+        <h3>振込先</h3>
+        <div class="bank-info">
+          <p>${companyInfo.bankAccount.bankName} ${companyInfo.bankAccount.branchName}</p>
+          <p>${companyInfo.bankAccount.accountType} ${companyInfo.bankAccount.accountNumber}</p>
+          <p>${companyInfo.bankAccount.accountHolder}</p>
+        </div>
+      </div>
+    ` : ''}
+    
     <!-- 備考 -->
     ${invoice.notes ? `
       <div class="notes-section">
-        <div class="notes-title">備考</div>
+        <h3 class="notes-title">備考</h3>
         <div class="notes-content">${invoice.notes}</div>
       </div>
     ` : ''}
