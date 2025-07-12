@@ -332,12 +332,24 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
       console.log('[EditPage] Updating customer name to:', data.customerName);
       console.log('[EditPage] Previous customer name was:', customerName);
       
-      // 強制的に顧客名を設定し、既存顧客の選択をクリア
-      setCustomerName(data.customerName);
-      setSelectedCustomerId('');
+      // まず既存顧客リストから該当する顧客を探す
+      const existingCustomer = customers.find(c => 
+        c.companyName === data.customerName || c.name === data.customerName
+      );
       
-      console.log('[EditPage] Customer name updated. New value:', data.customerName);
-      console.log('[EditPage] Selected customer ID cleared');
+      if (existingCustomer) {
+        console.log('[EditPage] Found existing customer:', existingCustomer._id, existingCustomer.companyName || existingCustomer.name);
+        // 既存顧客として選択
+        setSelectedCustomerId(existingCustomer._id);
+        setCustomerName(''); // 新規顧客名はクリア
+        console.log('[EditPage] Selected existing customer ID:', existingCustomer._id);
+      } else {
+        console.log('[EditPage] Customer not found in existing list, setting as new customer');
+        // 新規顧客として設定
+        setCustomerName(data.customerName);
+        setSelectedCustomerId('');
+        console.log('[EditPage] Set as new customer name:', data.customerName);
+      }
     } else {
       console.log('[EditPage] Customer name not updated. Current:', data.customerName);
       console.log('[EditPage] Reason: either null/empty, Unknown Customer, or 未設定顧客');
