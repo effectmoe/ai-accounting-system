@@ -405,10 +405,10 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
                     <tr key={index} className="hover:bg-gray-50">
                       <td className="py-3 px-4 border border-gray-200">{item.description}</td>
                       <td className="text-center py-3 px-4 border border-gray-200">{item.quantity}</td>
-                      <td className="text-right py-3 px-4 border border-gray-200 font-mono">¥{item.unitPrice.toLocaleString()}</td>
-                      <td className="text-right py-3 px-4 border border-gray-200 font-mono">¥{item.amount.toLocaleString()}</td>
-                      <td className="text-right py-3 px-4 border border-gray-200 font-mono text-sm text-gray-600">¥{item.taxAmount.toLocaleString()}</td>
-                      <td className="text-right py-3 px-4 border border-gray-200 font-medium">¥{(item.amount + item.taxAmount).toLocaleString()}</td>
+                      <td className="text-right py-3 px-4 border border-gray-200 font-mono">¥{(item.unitPrice || 0).toLocaleString()}</td>
+                      <td className="text-right py-3 px-4 border border-gray-200 font-mono">¥{(item.amount || 0).toLocaleString()}</td>
+                      <td className="text-right py-3 px-4 border border-gray-200 font-mono text-sm text-gray-600">¥{(item.taxAmount || 0).toLocaleString()}</td>
+                      <td className="text-right py-3 px-4 border border-gray-200 font-medium">¥{((item.amount || 0) + (item.taxAmount || 0)).toLocaleString()}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -424,27 +424,27 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-gray-700">小計:</span>
-                  <span className="text-lg font-mono">¥{invoice.subtotal.toLocaleString()}</span>
+                  <span className="text-lg font-mono">¥{(invoice.subtotal || 0).toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-700">消費税:</span>
-                  <span className="text-lg font-mono">¥{invoice.taxAmount.toLocaleString()}</span>
+                  <span className="text-lg font-mono">¥{(invoice.taxAmount || 0).toLocaleString()}</span>
                 </div>
                 <div className="border-t border-gray-300 pt-3">
                   <div className="flex justify-between items-center">
                     <span className="text-xl font-bold text-gray-900">請求金額合計:</span>
-                    <span className="text-2xl font-bold text-blue-600">¥{invoice.totalAmount.toLocaleString()}</span>
+                    <span className="text-2xl font-bold text-blue-600">¥{(invoice.totalAmount || 0).toLocaleString()}</span>
                   </div>
                 </div>
                 {invoice.paidAmount > 0 && invoice.paidAmount < invoice.totalAmount && (
                   <div className="border-t border-gray-300 pt-3 space-y-2">
                     <div className="flex justify-between items-center text-sm">
                       <span className="text-gray-600">支払済み:</span>
-                      <span className="font-mono text-green-600">¥{invoice.paidAmount.toLocaleString()}</span>
+                      <span className="font-mono text-green-600">¥{(invoice.paidAmount || 0).toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="font-medium text-gray-900">残額:</span>
-                      <span className="text-lg font-bold text-red-600">¥{(invoice.totalAmount - invoice.paidAmount).toLocaleString()}</span>
+                      <span className="text-lg font-bold text-red-600">¥{((invoice.totalAmount || 0) - (invoice.paidAmount || 0)).toLocaleString()}</span>
                     </div>
                   </div>
                 )}
