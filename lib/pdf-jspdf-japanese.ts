@@ -1,5 +1,4 @@
 import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import { DocumentData } from './document-generator';
 
 // 日本語テキストを安全な形式に変換
@@ -81,14 +80,27 @@ export async function generatePDFFromHTML(documentData: DocumentData): Promise<B
     }, null, 2));
     
     // Create PDF with A4 size
-    const pdf = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'a4'
-    });
+    let pdf: jsPDF;
+    try {
+      pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+      console.log('[PDF] jsPDF instance created successfully');
+    } catch (err) {
+      console.error('[PDF] Failed to create jsPDF instance:', err);
+      throw new Error(`Failed to create PDF instance: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    }
     
     // Setup Japanese font
-    setupJapaneseFont(pdf);
+    try {
+      setupJapaneseFont(pdf);
+      console.log('[PDF] Font setup completed');
+    } catch (err) {
+      console.error('[PDF] Font setup failed:', err);
+      // Continue with default font
+    }
     
     let yPos = 30;
     
@@ -195,32 +207,52 @@ export async function generatePDFFromHTML(documentData: DocumentData): Promise<B
       });
     }
     
-    (pdf as any).autoTable({
-      startY: yPos,
-      head: [tableColumns.map(col => col.header)],
-      body: tableData.map(row => [row.name, row.quantity, row.unitPrice, row.amount]),
-      styles: {
-        font: 'helvetica',
-        fontSize: 10,
-        cellPadding: 5,
-      },
-      headStyles: {
-        fillColor: [52, 73, 94],
-        textColor: 255,
-        fontStyle: 'bold'
-      },
-      columnStyles: {
-        0: { cellWidth: 80 }, // 品目
-        1: { cellWidth: 25, halign: 'center' }, // 数量
-        2: { cellWidth: 35, halign: 'right' }, // 単価
-        3: { cellWidth: 40, halign: 'right' } // 金額
-      },
-      margin: { left: 20, right: 20 },
-      tableWidth: 'wrap'
+    // テーブルを手動で描画（autoTableのエラーを回避）
+    const startY = yPos;
+    const rowHeight = 8;
+    const colX = [20, 100, 125, 155]; // 列の開始位置
+    
+    // ヘッダー背景
+    pdf.setFillColor(52, 73, 94);
+    pdf.rect(20, startY - 5, 170, rowHeight + 2, 'F');
+    
+    // ヘッダーテキスト
+    pdf.setTextColor(255, 255, 255);
+    pdf.setFontSize(10);
+    pdf.text(tableColumns[0].header, colX[0], startY);
+    pdf.text(tableColumns[1].header, colX[1], startY);
+    pdf.text(tableColumns[2].header, colX[2], startY);
+    pdf.text(tableColumns[3].header, colX[3], startY);
+    
+    pdf.setTextColor(0, 0, 0);
+    yPos = startY + rowHeight + 3;
+    
+    // テーブルデータ行
+    tableData.forEach((row, index) => {
+      if (yPos > 260) {
+        pdf.addPage();
+        yPos = 30;
+      }
+      
+      // 罫線
+      if (index > 0) {
+        pdf.setDrawColor(200, 200, 200);
+        pdf.line(20, yPos - 4, 190, yPos - 4);
+      }
+      
+      // データ
+      pdf.text(row.name, colX[0], yPos);
+      pdf.text(row.quantity, colX[1], yPos);
+      pdf.text(row.unitPrice, colX[2], yPos, { align: 'right' });
+      pdf.text(row.amount, colX[3] + 30, yPos, { align: 'right' });
+      
+      yPos += rowHeight;
     });
     
-    // Get final Y position after table
-    yPos = (pdf as any).lastAutoTable.finalY + 10;
+    // 最後の罫線
+    pdf.setDrawColor(0, 0, 0);
+    pdf.line(20, yPos - 3, 190, yPos - 3);
+    yPos += 5;
     
     // Summary section
     const summaryX = 130;
@@ -264,14 +296,35 @@ export async function generatePDFFromHTML(documentData: DocumentData): Promise<B
     }
     
     // Convert to buffer
-    const pdfArrayBuffer = pdf.output('arraybuffer');
-    const pdfBuffer = Buffer.from(pdfArrayBuffer);
+    console.log('[PDF] Attempting to output PDF...');
+    let pdfArrayBuffer: ArrayBuffer;
+    try {
+      pdfArrayBuffer = pdf.output('arraybuffer');
+      console.log('[PDF] PDF output successful, arraybuffer size:', pdfArrayBuffer.byteLength);
+    } catch (err) {
+      console.error('[PDF] Failed to output PDF:', err);
+      throw new Error(`Failed to output PDF: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    }
+    
+    let pdfBuffer: Buffer;
+    try {
+      pdfBuffer = Buffer.from(pdfArrayBuffer);
+      console.log('[PDF] Buffer conversion successful, buffer size:', pdfBuffer.length);
+    } catch (err) {
+      console.error('[PDF] Failed to convert to buffer:', err);
+      throw new Error(`Failed to convert to buffer: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    }
     
     console.log('[PDF] PDF generated successfully with Japanese support, size:', pdfBuffer.length);
     return pdfBuffer;
     
   } catch (error) {
     console.error('[PDF] Japanese PDF generation failed:', error);
+    console.error('[PDF] Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown',
+      stack: error instanceof Error ? error.stack : 'No stack',
+      type: error instanceof Error ? error.constructor.name : 'Unknown type'
+    });
     throw error;
   }
 }
