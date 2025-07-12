@@ -84,10 +84,19 @@ export async function GET(
     try {
       console.log('Attempting PDF generation with data:', JSON.stringify({
         documentType: pdfData.documentType,
-        invoiceNumber: pdfData.invoiceNumber,
+        documentNumber: pdfData.documentNumber,
         itemsCount: pdfData.items.length,
-        hasCompanyInfo: !!pdfData.company.name
+        hasCompanyInfo: !!pdfData.company?.name,
+        partnerName: pdfData.partner?.name
       }));
+      
+      // データの検証
+      if (!pdfData.partner || !pdfData.partner.name) {
+        throw new Error('Partner information is missing');
+      }
+      if (!pdfData.items || pdfData.items.length === 0) {
+        throw new Error('Invoice items are missing');
+      }
       
       // React PDFライブラリを使用してPDFを生成
       const pdfStream = await ReactPDF.renderToStream(

@@ -2,25 +2,29 @@ import React from 'react';
 import { Document, Page, Text, View, StyleSheet, PDFViewer, Font, Image } from '@react-pdf/renderer';
 import { DocumentData } from '@/lib/document-generator';
 
-// 日本語フォントの登録（Noto Sans JPを使用）
-Font.register({
-  family: 'NotoSansJP',
-  fonts: [
-    {
-      src: 'https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-jp@5.0.8/files/noto-sans-jp-japanese-400-normal.woff',
-      fontWeight: 400,
-    },
-    {
-      src: 'https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-jp@5.0.8/files/noto-sans-jp-japanese-700-normal.woff',
-      fontWeight: 700,
-    },
-  ],
-});
+// 日本語フォントの登録を試行、失敗した場合はデフォルトフォントを使用
+try {
+  Font.register({
+    family: 'NotoSansJP',
+    fonts: [
+      {
+        src: 'https://fonts.gstatic.com/s/notosansjp/v52/-F6jfjtqLzI2JPCgQBnw7HFyzSD-AsregP2VFBEj75vY0rw-oME.woff2',
+        fontWeight: 400,
+      },
+      {
+        src: 'https://fonts.gstatic.com/s/notosansjp/v52/-F6jfjtqLzI2JPCgQBnw7HFyzSD-AsregP2VFBEj75vY0rw-oME.woff2',
+        fontWeight: 700,
+      },
+    ],
+  });
+} catch (error) {
+  console.warn('Failed to register Japanese font, using fallback:', error);
+}
 
 // PDFスタイル定義
 const styles = StyleSheet.create({
   page: {
-    fontFamily: 'NotoSansJP',
+    fontFamily: 'Helvetica',
     fontSize: 10,
     padding: 40,
     backgroundColor: '#ffffff',
@@ -444,6 +448,9 @@ export const PDFDocument: React.FC<{ data: DocumentData }> = ({ data }) => (
 // PDFプレビューコンポーネント
 export const DocumentPDFViewer: React.FC<{ data: DocumentData }> = ({ data }) => (
   <PDFViewer style={{ width: '100%', height: '100vh' }}>
-    <DocumentPDF data={data} />
+    <PDFDocument data={data} />
   </PDFViewer>
 );
+
+// エクスポート用のエイリアス
+export const DocumentPDF = PDFDocument;
