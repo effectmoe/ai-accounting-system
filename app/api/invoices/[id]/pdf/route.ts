@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { InvoiceService } from '@/services/invoice.service';
 import { CompanyInfoService } from '@/services/company-info.service';
-import { DocumentData } from '@/lib/document-generator';
-import ReactPDF from '@react-pdf/renderer';
-import { PDFDocument } from '@/lib/pdf-generator';
-import React from 'react';
+import { generatePDFFromInvoiceData } from '@/lib/pdf-puppeteer';
 
 export async function GET(
   request: NextRequest,
@@ -23,94 +20,22 @@ export async function GET(
     const companyInfoService = new CompanyInfoService();
     const companyInfo = await companyInfoService.getCompanyInfo();
 
-    // PDFデータを準備
-    const pdfData: DocumentData = {
-      documentType: 'invoice',
-      documentNumber: invoice.invoiceNumber,
-      issueDate: new Date(invoice.issueDate || invoice.invoiceDate || new Date()).toISOString(),
-      dueDate: new Date(invoice.dueDate).toISOString(),
-      partner: {
-        name: invoice.customer?.companyName || invoice.customer?.name || '',
-        address: [
-          invoice.customer?.postalCode ? `〒${invoice.customer.postalCode}` : '',
-          invoice.customer?.prefecture || '',
-          invoice.customer?.city || '',
-          invoice.customer?.address1 || '',
-          invoice.customer?.address2 || ''
-        ].filter(Boolean).join(' '),
-        phone: invoice.customer?.phone || '',
-        email: invoice.customer?.email || ''
-      },
-      items: invoice.items.map((item: any) => ({
-        name: item.description || item.itemName || '',
-        description: item.description || item.itemName || '',
-        quantity: item.quantity || 0,
-        unitPrice: item.unitPrice || 0,
-        taxRate: item.taxRate || 0.1,
-        amount: item.amount || 0,
-        taxAmount: item.taxAmount || Math.round((item.amount || 0) * (item.taxRate || 0.1))
-      })),
-      subtotal: invoice.subtotal || 0,
-      tax: invoice.taxAmount || 0,
-      total: invoice.totalAmount || 0,
-      notes: invoice.notes || '',
-      paymentTerms: invoice.paymentTerms || '銀行振込',
-      paymentMethod: invoice.paymentMethod || 'bank_transfer',
-      company: {
-        name: companyInfo?.companyName || '会社名未設定',
-        address: companyInfo ? [
-          companyInfo.postalCode ? `〒${companyInfo.postalCode}` : '',
-          companyInfo.prefecture || '',
-          companyInfo.city || '',
-          companyInfo.address1 || '',
-          companyInfo.address2 || ''
-        ].filter(Boolean).join(' ') : '',
-        phone: companyInfo?.phone || '',
-        email: companyInfo?.email || '',
-        registrationNumber: companyInfo?.registrationNumber || '',
-        bankAccount: invoice.bankAccount ? `${invoice.bankAccount.bankName} ${invoice.bankAccount.branchName} ${invoice.bankAccount.accountType} ${invoice.bankAccount.accountNumber} ${invoice.bankAccount.accountName}` : ''
-      },
-      bankInfo: invoice.bankAccount ? {
-        bankName: invoice.bankAccount.bankName,
-        branchName: invoice.bankAccount.branchName,
-        accountType: invoice.bankAccount.accountType,
-        accountNumber: invoice.bankAccount.accountNumber,
-        accountHolder: invoice.bankAccount.accountName
-      } : undefined
-    };
-    
-
     // PDFを生成
     try {
-      console.log('Attempting PDF generation with data:', JSON.stringify({
-        documentType: pdfData.documentType,
-        documentNumber: pdfData.documentNumber,
-        itemsCount: pdfData.items.length,
-        hasCompanyInfo: !!pdfData.company?.name,
-        partnerName: pdfData.partner?.name
-      }));
+      console.log('Attempting PDF generation with Puppeteer for invoice:', invoice.invoiceNumber);
       
       // データの検証
-      if (!pdfData.partner || !pdfData.partner.name) {
-        throw new Error('Partner information is missing');
+      if (!invoice.customer && !invoice.customerSnapshot) {
+        throw new Error('Customer information is missing');
       }
-      if (!pdfData.items || pdfData.items.length === 0) {
+      if (!invoice.items || invoice.items.length === 0) {
         throw new Error('Invoice items are missing');
       }
       
-      // React PDFライブラリを使用してPDFを生成
-      const pdfStream = await ReactPDF.renderToStream(
-        React.createElement(PDFDocument, { data: pdfData })
-      );
+      // Puppeteerを使用してPDFを生成
+      const pdfBuffer = await generatePDFFromInvoiceData(invoice, companyInfo);
       
-      // PDFバイナリを収集
-      const chunks: Uint8Array[] = [];
-      for await (const chunk of pdfStream) {
-        chunks.push(chunk);
-      }
-      const pdfBuffer = Buffer.concat(chunks);
-      
-      console.log('PDF generated successfully, buffer size:', pdfBuffer.length);
+      console.log('PDF generated successfully with Puppeteer, buffer size:', pdfBuffer.length);
       
       // URLクエリパラメータでダウンロードモードを判定
       const url = new URL(request.url);
@@ -256,4 +181,6 @@ export async function GET(
   }
 }
 
+// Vercel環境でPuppeteerを実行するための設定
 export const runtime = 'nodejs';
+export const maxDuration = 30; // 30秒タイムアウト
