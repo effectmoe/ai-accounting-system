@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { InvoiceService } from '@/services/invoice.service';
+import { CompanyInfoService } from '@/services/company-info.service';
 import { InvoiceStatus } from '@/types/collections';
 
 export async function GET(
@@ -16,6 +17,10 @@ export async function GET(
         { status: 404 }
       );
     }
+    
+    // 会社情報を取得
+    const companyInfoService = new CompanyInfoService();
+    const companyInfo = await companyInfoService.getCompanyInfo();
     
     // 顧客情報とデータ構造を整形
     const formattedInvoice = {
@@ -38,9 +43,17 @@ export async function GET(
         address: '',
       },
       companySnapshot: {
-        companyName: 'AAM Accounting',
-        address: '',
-        invoiceRegistrationNumber: '',
+        companyName: companyInfo?.companyName || '会社名未設定',
+        address: companyInfo ? [
+          companyInfo.postalCode ? `〒${companyInfo.postalCode}` : '',
+          companyInfo.prefecture || '',
+          companyInfo.city || '',
+          companyInfo.address1 || '',
+          companyInfo.address2 || ''
+        ].filter(Boolean).join(' ') : '',
+        phone: companyInfo?.phone,
+        email: companyInfo?.email,
+        invoiceRegistrationNumber: companyInfo?.registrationNumber || '',
         bankAccount: invoice.bankAccount ? {
           bankName: invoice.bankAccount.bankName,
           branchName: invoice.bankAccount.branchName,

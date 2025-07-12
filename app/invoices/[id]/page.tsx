@@ -28,7 +28,8 @@ import AIChatDialog from '@/components/ai-chat-dialog';
 interface Invoice {
   _id: string;
   invoiceNumber: string;
-  invoiceDate: string;
+  invoiceDate: string | Date;
+  issueDate?: string | Date;
   dueDate: string;
   customerId: string;
   customerSnapshot: {
@@ -314,18 +315,14 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
                 <Badge className={`${statusColors[invoice.status]} border-0`}>
                   {statusLabels[invoice.status]}
                 </Badge>
-                {invoice.isGeneratedByAI && (
-                  <Badge variant="secondary" className="bg-purple-100 text-purple-800 border-0">
-                    <Sparkles className="mr-1 h-3 w-3" />
-                    AI作成
-                  </Badge>
-                )}
               </div>
             </div>
             <div className="text-right">
               <p className="text-sm text-gray-600">請求日</p>
               <p className="font-medium">
-                {format(new Date(invoice.invoiceDate), 'yyyy年MM月dd日', { locale: ja })}
+                {invoice.invoiceDate && invoice.invoiceDate !== 'Invalid Date' ? 
+                  format(new Date(invoice.issueDate || invoice.invoiceDate), 'yyyy年MM月dd日', { locale: ja }) : 
+                  '日付未設定'}
               </p>
               <p className="text-sm text-gray-600 mt-2">支払期限</p>
               <p className="font-medium">
