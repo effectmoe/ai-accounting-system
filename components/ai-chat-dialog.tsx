@@ -131,6 +131,10 @@ export default function AIChatDialog({
         mode
       });
       
+      // タイムアウトを設定（30秒）
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+
       const response = await fetch('/api/invoices/analyze-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -140,10 +144,16 @@ export default function AIChatDialog({
           sessionId,
           currentInvoiceData,
           mode
-        })
+        }),
+        signal: controller.signal
       });
 
+      clearTimeout(timeoutId);
+
       if (!response.ok) {
+        if (response.status === 504) {
+          throw new Error('リクエストがタイムアウトしました。もう一度お試しください。');
+        }
         throw new Error('会話の処理に失敗しました');
       }
 
@@ -229,13 +239,24 @@ export default function AIChatDialog({
 
     } catch (error) {
       console.error('Error sending message:', error);
-      setError('メッセージの送信に失敗しました');
+      
+      let errorContent = '申し訳ございません。処理中にエラーが発生しました。もう一度お試しください。';
+      
+      if (error instanceof Error) {
+        if (error.name === 'AbortError' || error.message.includes('タイムアウト')) {
+          errorContent = 'リクエストがタイムアウトしました。ネットワーク接続を確認して、もう一度お試しください。';
+        } else if (error.message) {
+          errorContent = error.message;
+        }
+      }
+      
+      setError(errorContent);
       
       // エラーメッセージを追加
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: '申し訳ございません。処理中にエラーが発生しました。もう一度お試しください。',
+        content: errorContent,
         timestamp: new Date()
       };
       setMessages(prev => [...prev, errorMessage]);

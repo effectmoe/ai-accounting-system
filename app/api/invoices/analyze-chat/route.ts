@@ -23,6 +23,10 @@ async function callDeepSeekAPI(messages: Array<{role: string, content: string}>,
   console.log('[DeepSeek] API key length:', apiKey.length);
   console.log('[DeepSeek] API key prefix:', apiKey.substring(0, 10) + '...');
   
+  // タイムアウトを設定（8秒）
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 8000);
+  
   try {
     const response = await fetch('https://api.deepseek.com/chat/completions', {
       method: 'POST',
@@ -35,19 +39,27 @@ async function callDeepSeekAPI(messages: Array<{role: string, content: string}>,
         messages: messages,
         temperature: temperature,
         max_tokens: maxTokens
-      })
+      }),
+      signal: controller.signal
     });
+    
+    clearTimeout(timeoutId);
     
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('[DeepSeek] API error:', response.status, errorText);
-      throw new Error(`DeepSeek API error: ${response.status} - ${errorText}`);
+      console.error('[DeepSeek] API error:', response.status);
+      throw new Error(`DeepSeek API error: ${response.status}`);
     }
     
     const data = await response.json();
     console.log('[DeepSeek] API response received');
     return data;
   } catch (error) {
+    clearTimeout(timeoutId);
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.error('[DeepSeek] Request timeout');
+      throw new Error('DeepSeek API request timeout');
+    }
     console.error('[DeepSeek] Fetch error:', error);
     throw error;
   }
@@ -97,8 +109,12 @@ const InvoiceDataSchema = z.object({
 type InvoiceData = z.infer<typeof InvoiceDataSchema>;
 
 export async function POST(request: NextRequest) {
+  // Vercelのタイムアウトを考慮して、早期にレスポンスヘッダーを設定
+  const headers = new Headers();
+  headers.set('Content-Type', 'application/json');
+  
   try {
-    console.log('[API Start] analyze-chat endpoint called');
+    console.log('[API Start] analyze-chat endpoint called at', new Date().toISOString());
     
     const body = await request.json();
     console.log('Analyze chat request body:', body);
@@ -188,55 +204,32 @@ export async function POST(request: NextRequest) {
       const calculatedDueDate = calculateDueDate(today, paymentTerms);
       const dueDate = format(calculatedDueDate, 'yyyy-MM-dd');
 
-      // 自然な対話のためのプロンプト
+      // 自然な対話のためのプロンプト（簡潔版）
       const systemPrompt = `あなたは請求書作成を支援するAIアシスタントです。
-ユーザーとの自然な会話を通じて、請求書に必要な情報を段階的に収集してください。
+ユーザーとの自然な会話を通じて、請求書に必要な情報を収集してください。
 
 現在の請求書データ：
-${JSON.stringify(currentInvoiceData || {}, null, 2)}
-
-会社の支払い条件設定：
-- 支払い条件: ${paymentTerms || '設定なし（デフォルト: 30日後）'}
-- 計算された支払期限: ${dueDate}
+${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設定'}
+項目数: ${currentInvoiceData.items?.length || 0}` : 'なし'}
 
 重要なルール：
-1. 自然で親しみやすい日本語で応答してください
-2. 既存データがある場合は保持し、新しい項目は追加してください
-3. 必要な情報が不足している場合は質問してください
-4. 確認が必要な場合は「よろしいですか？」と聞いてください
-5. 今日の日付: ${invoiceDate}、支払期限: ${dueDate}（支払い条件: ${paymentTerms || 'デフォルト30日後'}）です
-6. 請求書が完成したら「下の『会話を終了して確定』ボタンをクリックして、請求書を作成してください。」と案内してください
-7. PDFダウンロードについては言及しないでください（請求書作成後に別画面で可能になります）
+1. 自然で親しみやすい日本語で応答
+2. 請求項目は番号付きリストで表示
+3. 例：「1. システム構築費：1,200,000円」
+4. 完成時は「下の『会話を終了して確定』ボタンをクリックしてください」と案内
 
-【重要】請求内容を説明する際の形式：
-請求項目がある場合は、必ず以下の形式で記載してください：
-
-現在の請求内容：
-1. [項目名]：[金額]円
-2. [項目名]：[金額]円
-（必要に応じて3, 4, 5...と続ける）
-
-合計金額は[金額]円（税抜）で、消費税10%を加えると[金額]円になります。
-
-例：
-現在の請求内容：
-1. システム構築費：1,200,000円
-2. システム保守料（年間契約・12ヶ月分）：96,000円
-
-合計金額は1,296,000円（税抜）で、消費税10%を加えると1,425,600円になります。
-
-この形式を必ず守って、ユーザーに分かりやすく請求内容を伝えてください。
-応答は自然な日本語の会話で行ってください。技術的な詳細やJSONなどは表示しないでください。`;
+今日: ${invoiceDate}、支払期限: ${dueDate}`;
 
       try {
         console.log('[AI] Starting AI processing', { usingDeepSeek });
         
-        // 会話履歴を含むメッセージを構築
+        // 会話履歴を含むメッセージを構築（最大10メッセージに制限）
         const messages = [{ role: 'system', content: systemPrompt }];
         
-        // 会話履歴を追加
+        // 会話履歴を追加（最新の10メッセージのみ）
         if (conversationHistory && conversationHistory.length > 0) {
-          conversationHistory.forEach(msg => {
+          const recentHistory = conversationHistory.slice(-10);
+          recentHistory.forEach(msg => {
             messages.push({
               role: msg.role as string,
               content: msg.content
@@ -759,44 +752,24 @@ ${JSON.stringify(currentInvoiceData || {}, null, 2)}
       return NextResponse.json(response);
   } catch (error) {
     console.error('Error analyzing conversation:', error);
-    console.error('Error details:', {
-      message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-      type: error?.constructor?.name,
-      env: {
-        hasDeepSeekKey: !!process.env.DEEPSEEK_API_KEY,
-        deepSeekKeyLength: process.env.DEEPSEEK_API_KEY?.length || 0,
-        hasOpenAIKey: !!process.env.OPENAI_API_KEY,
-        hasAzureKey: !!process.env.AZURE_OPENAI_API_KEY,
-        nodeEnv: process.env.NODE_ENV,
-        vercelEnv: process.env.VERCEL_ENV
-      }
-    });
     
-    // 開発環境または本番環境のデバッグ用
-    const isDevelopment = process.env.NODE_ENV === 'development';
-    const isVercelProduction = process.env.VERCEL_ENV === 'production';
+    // タイムアウトエラーを明確に返す
+    if (error instanceof Error && (error.message.includes('timeout') || error.name === 'AbortError')) {
+      return NextResponse.json(
+        { 
+          error: 'Request timeout',
+          message: 'リクエストがタイムアウトしました。もう一度お試しください。'
+        },
+        { status: 504, headers }
+      );
+    }
     
     return NextResponse.json(
       { 
         error: 'Failed to analyze conversation',
-        details: error instanceof Error ? error.message : 'Unknown error',
-        type: error?.constructor?.name,
-        // 一時的にデバッグ情報を追加
-        debug: {
-          hasKeys: {
-            deepseek: !!process.env.DEEPSEEK_API_KEY,
-            openai: !!process.env.OPENAI_API_KEY,
-            azure: !!process.env.AZURE_OPENAI_API_KEY
-          },
-          environment: {
-            nodeEnv: process.env.NODE_ENV,
-            vercelEnv: process.env.VERCEL_ENV
-          },
-          timestamp: new Date().toISOString()
-        }
+        message: '会話の処理に失敗しました。もう一度お試しください。'
       },
-      { status: 500 }
+      { status: 500, headers }
     );
   }
 }
