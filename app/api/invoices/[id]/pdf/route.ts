@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { InvoiceService } from '@/services/invoice.service';
 import { CompanyInfoService } from '@/services/company-info.service';
+import { DocumentData } from '@/lib/document-generator';
 import ReactPDF from '@react-pdf/renderer';
 import { PDFDocument } from '@/lib/pdf-generator';
 import React from 'react';
@@ -23,11 +24,11 @@ export async function GET(
     const companyInfo = await companyInfoService.getCompanyInfo();
 
     // PDFデータを準備
-    const pdfData = {
-      documentType: 'invoice' as const,
-      invoiceNumber: invoice.invoiceNumber,
-      issueDate: invoice.issueDate || invoice.invoiceDate || new Date(),
-      dueDate: invoice.dueDate,
+    const pdfData: DocumentData = {
+      documentType: 'invoice',
+      documentNumber: invoice.invoiceNumber,
+      issueDate: new Date(invoice.issueDate || invoice.invoiceDate || new Date()).toISOString(),
+      dueDate: new Date(invoice.dueDate).toISOString(),
       partner: {
         name: invoice.customer?.companyName || invoice.customer?.name || '',
         address: [
@@ -51,11 +52,10 @@ export async function GET(
       })),
       subtotal: invoice.subtotal || 0,
       tax: invoice.taxAmount || 0,
-      taxAmount: invoice.taxAmount || 0,
       total: invoice.totalAmount || 0,
-      totalAmount: invoice.totalAmount || 0,
       notes: invoice.notes || '',
       paymentTerms: invoice.paymentTerms || '銀行振込',
+      paymentMethod: invoice.paymentMethod || 'bank_transfer',
       company: {
         name: companyInfo?.companyName || '会社名未設定',
         address: companyInfo ? [
@@ -68,18 +68,27 @@ export async function GET(
         phone: companyInfo?.phone || '',
         email: companyInfo?.email || '',
         registrationNumber: companyInfo?.registrationNumber || '',
-        bankAccount: invoice.bankAccount ? `${invoice.bankAccount.bankName} ${invoice.bankAccount.branchName} ${invoice.bankAccount.accountType} ${invoice.bankAccount.accountNumber} ${invoice.bankAccount.accountName}` : '',
-        sealImageUrl: companyInfo?.stampImage || ''
-      }
+        bankAccount: invoice.bankAccount ? `${invoice.bankAccount.bankName} ${invoice.bankAccount.branchName} ${invoice.bankAccount.accountType} ${invoice.bankAccount.accountNumber} ${invoice.bankAccount.accountName}` : ''
+      },
+      bankInfo: invoice.bankAccount ? {
+        bankName: invoice.bankAccount.bankName,
+        branchName: invoice.bankAccount.branchName,
+        accountType: invoice.bankAccount.accountType,
+        accountNumber: invoice.bankAccount.accountNumber,
+        accountHolder: invoice.bankAccount.accountName
+      } : undefined
     };
     
-    // 社印の存在を確認
-    if (pdfData.company.sealImageUrl) {
-      console.log('Company seal URL:', pdfData.company.sealImageUrl);
-    }
 
     // PDFを生成
     try {
+      console.log('Attempting PDF generation with data:', JSON.stringify({
+        documentType: pdfData.documentType,
+        invoiceNumber: pdfData.invoiceNumber,
+        itemsCount: pdfData.items.length,
+        hasCompanyInfo: !!pdfData.company.name
+      }));
+      
       // React PDFライブラリを使用してPDFを生成
       const pdfStream = await ReactPDF.renderToStream(
         React.createElement(PDFDocument, { data: pdfData })
@@ -91,6 +100,8 @@ export async function GET(
         chunks.push(chunk);
       }
       const pdfBuffer = Buffer.concat(chunks);
+      
+      console.log('PDF generated successfully, buffer size:', pdfBuffer.length);
       
       // URLクエリパラメータでダウンロードモードを判定
       const url = new URL(request.url);
@@ -107,6 +118,11 @@ export async function GET(
       });
     } catch (pdfError) {
       console.error('PDF generation failed, falling back to HTML:', pdfError);
+      console.error('PDF error details:', {
+        message: pdfError instanceof Error ? pdfError.message : 'Unknown',
+        stack: pdfError instanceof Error ? pdfError.stack : 'No stack',
+        type: pdfError instanceof Error ? pdfError.constructor.name : 'Unknown type'
+      });
       
       // PDF生成が失敗した場合はHTMLを返す（フォールバック）
       const htmlContent = `
