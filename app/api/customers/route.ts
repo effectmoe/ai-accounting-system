@@ -75,32 +75,36 @@ export async function POST(request: NextRequest) {
 
     // 必須フィールドのチェック
     const customerName = companyName || name;
-    if (!customerName || !email) {
+    if (!customerName) {
       return NextResponse.json(
-        { success: false, error: '顧客名とメールアドレスは必須です' },
+        { success: false, error: '顧客名は必須です' },
         { status: 400 }
       );
     }
 
-    // メールアドレスの形式チェック
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return NextResponse.json(
-        { success: false, error: '有効なメールアドレスを入力してください' },
-        { status: 400 }
-      );
+    // メールアドレスの形式チェック（メールアドレスが提供された場合のみ）
+    if (email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return NextResponse.json(
+          { success: false, error: '有効なメールアドレスを入力してください' },
+          { status: 400 }
+        );
+      }
     }
 
     const db = await getDatabase();
     const collection = db.collection('customers');
 
-    // メールアドレスの重複チェック
-    const existingCustomer = await collection.findOne({ email });
-    if (existingCustomer) {
-      return NextResponse.json(
-        { success: false, error: 'このメールアドレスは既に登録されています' },
-        { status: 400 }
-      );
+    // メールアドレスの重複チェック（メールアドレスが提供された場合のみ）
+    if (email) {
+      const existingCustomer = await collection.findOne({ email });
+      if (existingCustomer) {
+        return NextResponse.json(
+          { success: false, error: 'このメールアドレスは既に登録されています' },
+          { status: 400 }
+        );
+      }
     }
 
     // 新規顧客データの作成

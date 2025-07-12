@@ -510,8 +510,8 @@ function NewInvoiceContent() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
-            companyName: customerName,
-            email: 'contact@example.com' // 仮のメールアドレス
+            companyName: customerName
+            // メールアドレスは省略（オプショナル）
           }),
         });
         
