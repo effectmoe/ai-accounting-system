@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { InvoiceService } from '@/services/invoice.service';
 import { CompanyInfoService } from '@/services/company-info.service';
-import { generatePDFFromInvoiceData } from '@/lib/pdf-puppeteer';
+import { generatePDFFromInvoiceData } from '@/lib/pdf-jspdf';
 
 export async function GET(
   request: NextRequest,
@@ -22,7 +22,7 @@ export async function GET(
 
     // PDFを生成
     try {
-      console.log('Attempting PDF generation with Puppeteer for invoice:', invoice.invoiceNumber);
+      console.log('Attempting PDF generation with jsPDF for invoice:', invoice.invoiceNumber);
       
       // データの検証
       if (!invoice.customer && !invoice.customerSnapshot) {
@@ -32,10 +32,10 @@ export async function GET(
         throw new Error('Invoice items are missing');
       }
       
-      // Puppeteerを使用してPDFを生成
+      // jsPDFを使用してPDFを生成
       const pdfBuffer = await generatePDFFromInvoiceData(invoice, companyInfo);
       
-      console.log('PDF generated successfully with Puppeteer, buffer size:', pdfBuffer.length);
+      console.log('PDF generated successfully with jsPDF, buffer size:', pdfBuffer.length);
       
       // URLクエリパラメータでダウンロードモードを判定
       const url = new URL(request.url);
@@ -103,9 +103,9 @@ export async function GET(
       companyInfo.address2 || ''
     ].filter(Boolean).join(' ') : ''}</p>
     <p>${companyInfo?.phone ? `TEL: ${companyInfo.phone}` : ''}</p>
-    ${pdfData.company.sealImageUrl ? `
+    ${companyInfo?.sealImageUrl ? `
     <div class="seal-area">
-      <img src="${pdfData.company.sealImageUrl}" alt="社印" class="seal-img" />
+      <img src="${companyInfo.sealImageUrl}" alt="社印" class="seal-img" />
     </div>
     ` : ''}
   </div>
@@ -181,6 +181,4 @@ export async function GET(
   }
 }
 
-// Vercel環境でPuppeteerを実行するための設定
-export const runtime = 'nodejs';
-export const maxDuration = 30; // 30秒タイムアウト
+// jsPDFはランタイム設定不要
