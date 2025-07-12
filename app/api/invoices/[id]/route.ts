@@ -119,18 +119,37 @@ export async function PUT(
     // 通常の更新
     console.log('Updating invoice with data:', body);
     
-    // 請求書データの整形（AI編集から来る場合）
+    // 請求書データの整形
     const updateData: any = {};
     
     if (body.customerId) updateData.customerId = body.customerId;
-    if (body.invoiceDate) updateData.invoiceDate = new Date(body.invoiceDate);
+    if (body.invoiceDate) updateData.issueDate = new Date(body.invoiceDate);
     if (body.dueDate) updateData.dueDate = new Date(body.dueDate);
-    if (body.items) updateData.items = body.items;
+    if (body.items) {
+      // itemsの処理：descriptionをitemNameにマッピング
+      updateData.items = body.items.map((item: any) => ({
+        ...item,
+        itemName: item.description || item.itemName,
+        totalAmount: item.amount + item.taxAmount
+      }));
+    }
     if (body.notes !== undefined) updateData.notes = body.notes;
     if (body.paymentMethod) updateData.paymentMethod = body.paymentMethod;
-    if (body.subtotal !== undefined) updateData.subtotal = body.subtotal;
-    if (body.taxAmount !== undefined) updateData.taxAmount = body.taxAmount;
-    if (body.totalAmount !== undefined) updateData.totalAmount = body.totalAmount;
+    
+    // 合計金額を再計算
+    if (updateData.items) {
+      let subtotal = 0;
+      let taxAmount = 0;
+      
+      updateData.items.forEach((item: any) => {
+        subtotal += item.amount || 0;
+        taxAmount += item.taxAmount || 0;
+      });
+      
+      updateData.subtotal = subtotal;
+      updateData.taxAmount = taxAmount;
+      updateData.totalAmount = subtotal + taxAmount;
+    }
     
     const invoice = await invoiceService.updateInvoice(params.id, updateData);
     if (!invoice) {

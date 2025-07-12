@@ -250,6 +250,25 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
           <h1 className="text-3xl font-bold">請求書詳細</h1>
         </div>
         <div className="flex gap-2">
+          {/* 編集ボタン（支払済み以外） */}
+          {invoice.status !== 'paid' && invoice.status !== 'cancelled' && (
+            <>
+              <Button
+                variant="outline"
+                onClick={() => router.push(`/invoices/${invoice._id}/edit`)}
+              >
+                <Edit className="mr-2 h-4 w-4" />
+                編集
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => router.push(`/invoices/${invoice._id}/edit?mode=ai`)}
+              >
+                <MessageSquare className="mr-2 h-4 w-4" />
+                AI会話で編集
+              </Button>
+            </>
+          )}
           <Button
             variant="outline"
             onClick={() => setShowPdfPreview(true)}
@@ -265,22 +284,13 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
             PDF
           </Button>
           {invoice.status === 'draft' && (
-            <>
-              <Button
-                variant="outline"
-                onClick={() => setShowAIChat(true)}
-              >
-                <MessageSquare className="mr-2 h-4 w-4" />
-                AI編集
-              </Button>
-              <Button
-                onClick={() => updateStatus('sent')}
-                disabled={isUpdating}
-              >
-                <Send className="mr-2 h-4 w-4" />
-                送信
-              </Button>
-            </>
+            <Button
+              onClick={() => updateStatus('sent')}
+              disabled={isUpdating}
+            >
+              <Send className="mr-2 h-4 w-4" />
+              送信
+            </Button>
           )}
           {invoice.status === 'sent' && (
             <Button
