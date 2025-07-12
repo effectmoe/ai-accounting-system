@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { InvoiceService } from '@/services/invoice.service';
 import { CompanyInfoService } from '@/services/company-info.service';
-import { generatePDFFromInvoiceData } from '@/lib/pdf-jspdf';
+import { generatePDFFromInvoiceData, generateInvoiceFilename } from '@/lib/pdf-jspdf-japanese';
 
 export async function GET(
   request: NextRequest,
@@ -22,7 +22,7 @@ export async function GET(
 
     // PDFを生成
     try {
-      console.log('Attempting PDF generation with jsPDF for invoice:', invoice.invoiceNumber);
+      console.log('Attempting PDF generation with Japanese jsPDF for invoice:', invoice.invoiceNumber);
       
       // データの検証
       if (!invoice.customer && !invoice.customerSnapshot) {
@@ -32,10 +32,14 @@ export async function GET(
         throw new Error('Invoice items are missing');
       }
       
-      // jsPDFを使用してPDFを生成
+      // 日本語対応jsPDFを使用してPDFを生成
       const pdfBuffer = await generatePDFFromInvoiceData(invoice, companyInfo);
       
-      console.log('PDF generated successfully with jsPDF, buffer size:', pdfBuffer.length);
+      console.log('PDF generated successfully with Japanese jsPDF, buffer size:', pdfBuffer.length);
+      
+      // 新しい命名規則でファイル名を生成: 請求日_帳表名_顧客名
+      const filename = generateInvoiceFilename(invoice);
+      console.log('Generated filename:', filename);
       
       // URLクエリパラメータでダウンロードモードを判定
       const url = new URL(request.url);
@@ -46,8 +50,8 @@ export async function GET(
         headers: {
           'Content-Type': 'application/pdf',
           'Content-Disposition': isDownload 
-            ? `attachment; filename="${invoice.invoiceNumber}.pdf"`
-            : `inline; filename="${invoice.invoiceNumber}.pdf"`,
+            ? `attachment; filename="${filename}"`
+            : `inline; filename="${filename}"`,
         },
       });
     } catch (pdfError) {
@@ -147,13 +151,16 @@ export async function GET(
       const url = new URL(request.url);
       const isDownload = url.searchParams.get('download') === 'true';
       
+      // HTMLファイル名も新しい命名規則を使用
+      const htmlFilename = generateInvoiceFilename(invoice).replace('.pdf', '.html');
+      
       return new NextResponse(htmlContent, {
         status: 200,
         headers: {
           'Content-Type': 'text/html; charset=utf-8',
           'Content-Disposition': isDownload 
-            ? `attachment; filename="${invoice.invoiceNumber}.html"`
-            : `inline; filename="${invoice.invoiceNumber}.html"`,
+            ? `attachment; filename="${htmlFilename}"`
+            : `inline; filename="${htmlFilename}"`,
         },
       });
     }
