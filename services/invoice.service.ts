@@ -171,11 +171,20 @@ export class InvoiceService {
    */
   async getInvoice(id: string): Promise<Invoice | null> {
     try {
+      console.log('[InvoiceService] getInvoice called with ID:', id);
+      console.log('[InvoiceService] ID type:', typeof id, 'Length:', id?.length);
+      
       const invoice = await db.findById<Invoice>(this.collectionName, id);
       
       if (!invoice) {
+        console.log('[InvoiceService] No invoice found for ID:', id);
         return null;
       }
+      
+      console.log('[InvoiceService] Invoice found:', {
+        _id: invoice._id,
+        invoiceNumber: invoice.invoiceNumber
+      });
 
       // 顧客情報を取得
       if (invoice.customerId) {
@@ -199,6 +208,11 @@ export class InvoiceService {
    */
   async updateInvoice(id: string, updateData: Partial<Invoice>): Promise<Invoice | null> {
     try {
+      console.log('[InvoiceService] updateInvoice called with:', {
+        id,
+        updateData: JSON.stringify(updateData, null, 2)
+      });
+      
       // _idフィールドは更新対象から除外
       const { _id, ...dataToUpdate } = updateData;
 
@@ -229,7 +243,15 @@ export class InvoiceService {
         }
       }
 
+      console.log('[InvoiceService] Calling db.update with:', {
+        collection: this.collectionName,
+        id,
+        dataToUpdate: JSON.stringify(dataToUpdate, null, 2)
+      });
+      
       const updated = await db.update<Invoice>(this.collectionName, id, dataToUpdate);
+      
+      console.log('[InvoiceService] Updated invoice:', updated ? 'Success' : 'Failed');
       
       if (updated) {
         // 顧客情報を取得

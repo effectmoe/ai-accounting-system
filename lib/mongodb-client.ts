@@ -209,9 +209,30 @@ export class DatabaseService {
    * ドキュメントの取得
    */
   async findById<T>(collectionName: string, id: string | ObjectId): Promise<T | null> {
-    const collection = await getCollection<T>(collectionName);
-    const objectId = typeof id === 'string' ? new ObjectId(id) : id;
-    return await collection.findOne({ _id: objectId } as any);
+    try {
+      console.log(`[MongoDB] findById called for collection: ${collectionName}, id: ${id}`);
+      console.log(`[MongoDB] ID type: ${typeof id}, length: ${id?.toString()?.length}`);
+      
+      const collection = await getCollection<T>(collectionName);
+      const objectId = typeof id === 'string' ? new ObjectId(id) : id;
+      
+      console.log(`[MongoDB] Converted ObjectId: ${objectId}`);
+      
+      const result = await collection.findOne({ _id: objectId } as any);
+      
+      console.log(`[MongoDB] findById result: ${result ? 'found' : 'not found'}`);
+      if (result) {
+        console.log(`[MongoDB] Found document with _id: ${result._id}`);
+      }
+      
+      return result;
+    } catch (error) {
+      console.error(`[MongoDB] findById error for ${collectionName}:`, error);
+      if (error instanceof Error && error.message.includes('invalid ObjectId')) {
+        console.error(`[MongoDB] Invalid ObjectId format: ${id}`);
+      }
+      throw error;
+    }
   }
 
   /**

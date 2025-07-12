@@ -102,8 +102,13 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
 
   const fetchInvoice = async () => {
     try {
+      console.log('[EditPage] fetchInvoice called with ID:', params.id);
+      console.log('[EditPage] ID type:', typeof params.id, 'Length:', params.id?.length);
+      
       const response = await fetch(`/api/invoices/${params.id}`);
       if (!response.ok) {
+        console.error('[EditPage] Failed to fetch invoice. Status:', response.status);
+        console.error('[EditPage] Response:', await response.text());
         throw new Error('Failed to fetch invoice');
       }
       const data = await response.json();
@@ -111,6 +116,14 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
       // 請求書データをフォームに設定
       setInvoice(data);
       setSelectedCustomerId(data.customerId || '');
+      
+      // 顧客名の設定 - 既存顧客の場合は顧客名も設定
+      if (data.customer) {
+        setCustomerName(data.customer.companyName || data.customer.name || '');
+      } else if (data.customerSnapshot) {
+        setCustomerName(data.customerSnapshot.companyName || '');
+      }
+      
       setInvoiceDate(format(new Date(data.issueDate || data.invoiceDate), 'yyyy-MM-dd'));
       setDueDate(format(new Date(data.dueDate), 'yyyy-MM-dd'));
       setItems(data.items || []);
@@ -171,24 +184,67 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
     setError(null);
 
     try {
-      // 新規顧客の場合は先に作成
+      console.log('[EditPage] Saving invoice with:', {
+        selectedCustomerId,
+        customerName,
+        invoiceDate,
+        dueDate,
+        items: items.length,
+        originalInvoice: {
+          customerId: invoice?.customerId,
+          customerName: invoice?.customer?.companyName || invoice?.customerSnapshot?.companyName
+        }
+      });
+      
+      // 顧客IDの決定ロジック
       let customerId = selectedCustomerId;
-      if (!customerId && customerName) {
-        const customerResponse = await fetch('/api/customers', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            companyName: customerName
-          }),
+      
+      // AIチャットで顧客名が変更された場合の処理
+      if (customerName && !selectedCustomerId) {
+        // 元の請求書の顧客名と比較
+        const originalCustomerName = invoice?.customer?.companyName || invoice?.customer?.name || invoice?.customerSnapshot?.companyName;
+        
+        console.log('[EditPage] Customer name comparison:', {
+          current: customerName,
+          original: originalCustomerName,
+          isSame: customerName === originalCustomerName,
+          originalCustomerId: invoice?.customerId
         });
         
-        if (!customerResponse.ok) {
-          const errorData = await customerResponse.json();
-          throw new Error(errorData.error || 'Failed to create customer');
+        // 顧客名が変更されていない場合は元の顧客IDを使用
+        if (customerName === originalCustomerName && invoice?.customerId) {
+          customerId = invoice.customerId;
+          console.log('[EditPage] Using original customer ID:', customerId);
+        } else {
+          // 既存顧客リストから検索
+          const existingCustomer = customers.find(c => 
+            c.companyName === customerName || c.name === customerName
+          );
+          
+          if (existingCustomer) {
+            console.log('[EditPage] Found existing customer:', existingCustomer._id);
+            customerId = existingCustomer._id;
+          } else {
+            // 新規顧客として作成
+            console.log('[EditPage] Creating new customer:', customerName);
+            const customerResponse = await fetch('/api/customers', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                companyName: customerName
+              }),
+            });
+            
+            if (!customerResponse.ok) {
+              const errorData = await customerResponse.json();
+              throw new Error(errorData.error || 'Failed to create customer');
+            }
+            
+            const newCustomer = await customerResponse.json();
+            customerId = newCustomer._id;
+            console.log('[EditPage] New customer created with ID:', customerId);
+          }
         }
-        
-        const newCustomer = await customerResponse.json();
-        customerId = newCustomer._id;
       }
 
       // 請求書を更新
@@ -200,7 +256,12 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
         notes,
         paymentMethod,
       };
+      
+      console.log('[EditPage] Sending invoice update:', JSON.stringify(invoiceData, null, 2));
 
+      console.log('[EditPage] Making PUT request to:', `/api/invoices/${params.id}`);
+      console.log('[EditPage] Params ID:', params.id);
+      
       const response = await fetch(`/api/invoices/${params.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -262,23 +323,44 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
 
   // AI会話からのデータを適用
   const handleAIComplete = (data: any) => {
-    if (data.customerName) {
+    console.log('[EditPage] AI Complete data received:', data);
+    
+    // 顧客名は明示的に変更された場合のみ更新（Unknown Customerは無視）
+    if (data.customerName && data.customerName !== 'Unknown Customer' && data.customerName !== '未設定顧客') {
+      console.log('[EditPage] Updating customer name to:', data.customerName);
       setCustomerName(data.customerName);
       setSelectedCustomerId('');
+    } else {
+      console.log('[EditPage] Customer name not updated. Current:', data.customerName);
     }
-    if (data.invoiceDate) {
+    
+    // 日付は有効な値の場合のみ更新（1970-01-01は無視）
+    if (data.invoiceDate && data.invoiceDate !== '1970-01-01' && new Date(data.invoiceDate).getFullYear() > 2000) {
+      console.log('[EditPage] Updating invoice date to:', data.invoiceDate);
       setInvoiceDate(data.invoiceDate);
+    } else {
+      console.log('[EditPage] Invoice date not updated. Current:', data.invoiceDate);
     }
-    if (data.dueDate) {
+    
+    if (data.dueDate && data.dueDate !== '1970-01-01' && new Date(data.dueDate).getFullYear() > 2000) {
+      console.log('[EditPage] Updating due date to:', data.dueDate);
       setDueDate(data.dueDate);
+    } else {
+      console.log('[EditPage] Due date not updated. Current:', data.dueDate);
     }
-    if (data.items) {
+    
+    // itemsは常に更新（AIが明示的に変更したもの）
+    if (data.items && Array.isArray(data.items) && data.items.length > 0) {
       setItems(data.items);
     }
-    if (data.notes) {
+    
+    // 備考は内容がある場合のみ更新
+    if (data.notes && data.notes.trim() !== '') {
       setNotes(data.notes);
     }
-    if (data.paymentMethod) {
+    
+    // 支払方法は有効な値の場合のみ更新
+    if (data.paymentMethod && ['bank_transfer', 'credit_card', 'cash', 'other'].includes(data.paymentMethod)) {
       setPaymentMethod(data.paymentMethod);
     }
     
@@ -309,13 +391,16 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
           onClose={() => setShowAIChat(false)}
           onComplete={handleAIComplete}
           mode="edit"
-          initialData={{
+          initialInvoiceData={{
             customerName: customerName || getDisplayName(customers.find(c => c._id === selectedCustomerId) || {} as Customer),
             invoiceDate,
             dueDate,
             items,
             notes,
             paymentMethod,
+            subtotal: items.reduce((sum, item) => sum + item.amount, 0),
+            taxAmount: items.reduce((sum, item) => sum + item.taxAmount, 0),
+            totalAmount: items.reduce((sum, item) => sum + item.amount + item.taxAmount, 0)
           }}
         />
       )}

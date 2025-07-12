@@ -8,15 +8,19 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    console.log('[GET /api/invoices/[id]] Request for ID:', params.id);
     const invoiceService = new InvoiceService();
     const invoice = await invoiceService.getInvoice(params.id);
     
     if (!invoice) {
+      console.log('[GET /api/invoices/[id]] Invoice not found for ID:', params.id);
       return NextResponse.json(
         { error: 'Invoice not found' },
         { status: 404 }
       );
     }
+    
+    console.log('[GET /api/invoices/[id]] Invoice found:', invoice._id);
     
     // 会社情報を取得
     const companyInfoService = new CompanyInfoService();
@@ -79,9 +83,9 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    console.log('PUT /api/invoices/[id] - params:', params);
+    console.log('[PUT /api/invoices/[id]] Request for ID:', params.id);
     const body = await request.json();
-    console.log('PUT /api/invoices/[id] - body:', body);
+    console.log('[PUT /api/invoices/[id]] Request body:', body);
     
     const invoiceService = new InvoiceService();
     
