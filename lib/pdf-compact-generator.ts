@@ -44,9 +44,7 @@ export function generateCompactInvoiceHTML(invoice: any, companyInfo: any): stri
     .invoice-header {
       text-align: center;
       margin-bottom: 40px;
-      background-color: #f8f9fa;
       padding: 30px;
-      border-radius: 5px;
     }
     
     .invoice-title {
@@ -161,9 +159,7 @@ export function generateCompactInvoiceHTML(invoice: any, companyInfo: any): stri
     
     .summary-table {
       width: 300px;
-      background-color: #f5f5f5;
       padding: 20px;
-      border-radius: 5px;
     }
     
     .summary-row {
