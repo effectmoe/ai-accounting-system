@@ -434,7 +434,7 @@ function NewInvoiceContent() {
       // 登録した商品を選択状態にする
       updateItem(index, 'productId', newProduct._id);
       
-      setSuccessMessage(`「${item.description}」を商品マスターに登録しました`);
+      setSuccessMessage(`「${item.description}」を商品マスターに登録しました。右上の「AI会話で修正」ボタンから、引き続き商品の追加や請求書の修正が可能です。`);
       // エラーメッセージをクリア
       setError(null);
     } catch (error) {
@@ -631,31 +631,10 @@ function NewInvoiceContent() {
           <AlertDescription className="space-y-3">
             <p>{successMessage}</p>
             {aiDataApplied && (
-              <div className="flex gap-3 mt-3">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowAIChat(true)}
-                  className="flex items-center gap-2"
-                >
-                  <MessageSquare className="h-4 w-4" />
-                  AI会話で修正
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setSuccessMessage('下のフォームで直接編集できます。');
-                    // フォーカスを最初の入力フィールドに移動
-                    setTimeout(() => {
-                      document.getElementById('customer')?.focus();
-                    }, 100);
-                  }}
-                  className="flex items-center gap-2"
-                >
-                  <Edit className="h-4 w-4" />
-                  手動で修正
-                </Button>
+              <div className="mt-3">
+                <p className="text-sm text-gray-600">
+                  右上の「AI会話で修正」ボタンから、引き続き商品の追加や請求書の修正が可能です。
+                </p>
               </div>
             )}
           </AlertDescription>
