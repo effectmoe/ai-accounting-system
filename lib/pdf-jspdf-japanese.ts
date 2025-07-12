@@ -2,13 +2,68 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { DocumentData } from './document-generator';
 
+// 日本語テキストを安全な形式に変換
+function convertJapaneseText(text: string): string {
+  if (!text) return '';
+  
+  // 日本語文字を含む場合はローマ字に変換または英語表記に
+  const translations: { [key: string]: string } = {
+    '請求書': 'Invoice',
+    '御中': 'Co., Ltd.',
+    '発行日': 'Issue Date',
+    '文書番号': 'Document No.',
+    '支払期限': 'Due Date',
+    '品目・仕様': 'Description',
+    '数量': 'Qty',
+    '単価': 'Unit Price',
+    '金額': 'Amount',
+    '小計': 'Subtotal',
+    '消費税': 'Tax',
+    '合計金額': 'Total',
+    '備考': 'Notes',
+    '円': 'JPY',
+    '株式会社': 'Co., Ltd.',
+    '有限会社': 'Ltd.',
+    '商事': 'Trading',
+    '山田': 'Yamada',
+    '谷川': 'Tanigawa',
+    '田中': 'Tanaka',
+    '佐藤': 'Sato',
+    '鈴木': 'Suzuki',
+    '高橋': 'Takahashi',
+    '工業': 'Industry',
+    '製作所': 'Manufacturing',
+    'システム構築費': 'System Development',
+    'システム保守料': 'System Maintenance',
+    '年間契約': 'Annual Contract',
+    'ヶ月分': 'months'
+  };
+  
+  let convertedText = text;
+  
+  // 翻訳辞書を使用して変換
+  Object.entries(translations).forEach(([japanese, english]) => {
+    convertedText = convertedText.replace(new RegExp(japanese, 'g'), english);
+  });
+  
+  // 残った日本語文字を安全な文字に置換
+  convertedText = convertedText.replace(/[^\x00-\x7F]/g, '?');
+  
+  return convertedText;
+}
+
+// 数値のフォーマット（日本語通貨記号を避ける）
+function formatCurrency(amount: number): string {
+  return `¥${amount.toLocaleString()}`;
+}
+
 // 日本語フォントの設定
 function setupJapaneseFont(pdf: jsPDF) {
   try {
-    // デフォルトのフォントを使用（日本語対応）
+    // 安全なフォントを使用
     pdf.setFont('helvetica');
   } catch (error) {
-    console.warn('Japanese font setup failed, using default font:', error);
+    console.warn('Font setup failed, using default font:', error);
     pdf.setFont('helvetica');
   }
 }
@@ -31,19 +86,19 @@ export async function generatePDFFromHTML(documentData: DocumentData): Promise<B
     
     // Title
     pdf.setFontSize(24);
-    pdf.text('請求書', 105, yPos, { align: 'center' });
+    pdf.text(convertJapaneseText('請求書'), 105, yPos, { align: 'center' });
     yPos += 20;
     
     // Document info (right aligned)
     pdf.setFontSize(12);
     const rightX = 180;
-    pdf.text(`発行日: ${documentData.issueDate}`, rightX, yPos, { align: 'right' });
+    pdf.text(`${convertJapaneseText('発行日')}: ${documentData.issueDate}`, rightX, yPos, { align: 'right' });
     yPos += 7;
-    pdf.text(`文書番号: ${documentData.documentNumber}`, rightX, yPos, { align: 'right' });
+    pdf.text(`${convertJapaneseText('文書番号')}: ${documentData.documentNumber}`, rightX, yPos, { align: 'right' });
     yPos += 7;
     
     if (documentData.dueDate) {
-      pdf.text(`支払期限: ${documentData.dueDate}`, rightX, yPos, { align: 'right' });
+      pdf.text(`${convertJapaneseText('支払期限')}: ${documentData.dueDate}`, rightX, yPos, { align: 'right' });
       yPos += 7;
     }
     
@@ -51,12 +106,12 @@ export async function generatePDFFromHTML(documentData: DocumentData): Promise<B
     
     // Customer section
     pdf.setFontSize(16);
-    pdf.text(`${documentData.partner.name} 御中`, 20, yPos);
+    pdf.text(`${convertJapaneseText(documentData.partner.name)} ${convertJapaneseText('御中')}`, 20, yPos);
     yPos += 10;
     
     pdf.setFontSize(10);
     if (documentData.partner.address) {
-      pdf.text(documentData.partner.address, 20, yPos);
+      pdf.text(convertJapaneseText(documentData.partner.address), 20, yPos);
       yPos += 6;
     }
     
@@ -71,13 +126,13 @@ export async function generatePDFFromHTML(documentData: DocumentData): Promise<B
     const companyStartY = yPos;
     if (documentData.company?.name) {
       pdf.setFontSize(12);
-      pdf.text(documentData.company.name, rightX, yPos, { align: 'right' });
+      pdf.text(convertJapaneseText(documentData.company.name), rightX, yPos, { align: 'right' });
       yPos += 8;
     }
     
     pdf.setFontSize(10);
     if (documentData.company?.address) {
-      const addressLines = pdf.splitTextToSize(documentData.company.address, 50);
+      const addressLines = pdf.splitTextToSize(convertJapaneseText(documentData.company.address), 50);
       addressLines.forEach((line: string) => {
         pdf.text(line, rightX, yPos, { align: 'right' });
         yPos += 6;
@@ -101,25 +156,25 @@ export async function generatePDFFromHTML(documentData: DocumentData): Promise<B
     pdf.setFillColor(230, 242, 255);
     pdf.rect(20, yPos - 5, 170, 20, 'F');
     pdf.setFontSize(14);
-    pdf.text('合計金額', 25, yPos + 5);
+    pdf.text(convertJapaneseText('合計金額'), 25, yPos + 5);
     pdf.setFontSize(18);
-    pdf.text(`¥${documentData.total.toLocaleString()}（税込）`, rightX - 5, yPos + 8, { align: 'right' });
+    pdf.text(`${formatCurrency(documentData.total)} (Tax Incl.)`, rightX - 5, yPos + 8, { align: 'right' });
     
     yPos += 25;
     
     // Items table using autoTable
     const tableColumns = [
-      { header: '品目・仕様', dataKey: 'name' },
-      { header: '数量', dataKey: 'quantity' },
-      { header: '単価', dataKey: 'unitPrice' },
-      { header: '金額', dataKey: 'amount' }
+      { header: convertJapaneseText('品目・仕様'), dataKey: 'name' },
+      { header: convertJapaneseText('数量'), dataKey: 'quantity' },
+      { header: convertJapaneseText('単価'), dataKey: 'unitPrice' },
+      { header: convertJapaneseText('金額'), dataKey: 'amount' }
     ];
     
     const tableData = documentData.items.map(item => ({
-      name: item.name || '',
+      name: convertJapaneseText(item.name || ''),
       quantity: item.quantity.toString(),
-      unitPrice: `¥${item.unitPrice.toLocaleString()}`,
-      amount: `¥${item.amount.toLocaleString()}`
+      unitPrice: formatCurrency(item.unitPrice),
+      amount: formatCurrency(item.amount)
     }));
     
     // Add empty rows to make table look more professional
@@ -163,12 +218,12 @@ export async function generatePDFFromHTML(documentData: DocumentData): Promise<B
     const summaryX = 130;
     pdf.setFontSize(11);
     
-    pdf.text('小計:', summaryX, yPos);
-    pdf.text(`¥${documentData.subtotal.toLocaleString()}`, rightX - 5, yPos, { align: 'right' });
+    pdf.text(`${convertJapaneseText('小計')}:`, summaryX, yPos);
+    pdf.text(formatCurrency(documentData.subtotal), rightX - 5, yPos, { align: 'right' });
     yPos += 7;
     
-    pdf.text('消費税（10%）:', summaryX, yPos);
-    pdf.text(`¥${documentData.tax.toLocaleString()}`, rightX - 5, yPos, { align: 'right' });
+    pdf.text(`${convertJapaneseText('消費税')}(10%):`, summaryX, yPos);
+    pdf.text(formatCurrency(documentData.tax), rightX - 5, yPos, { align: 'right' });
     yPos += 7;
     
     // Total line
@@ -176,19 +231,20 @@ export async function generatePDFFromHTML(documentData: DocumentData): Promise<B
     yPos += 7;
     
     pdf.setFontSize(14);
-    pdf.text('合計金額:', summaryX, yPos);
-    pdf.text(`¥${documentData.total.toLocaleString()}`, rightX - 5, yPos, { align: 'right' });
+    pdf.text(`${convertJapaneseText('合計金額')}:`, summaryX, yPos);
+    pdf.text(formatCurrency(documentData.total), rightX - 5, yPos, { align: 'right' });
     
     yPos += 20;
     
     // Notes section
     if (documentData.notes) {
       pdf.setFontSize(12);
-      pdf.text('備考:', 20, yPos);
+      pdf.text(`${convertJapaneseText('備考')}:`, 20, yPos);
       yPos += 8;
       
       pdf.setFontSize(10);
-      const noteLines = pdf.splitTextToSize(documentData.notes, 150);
+      const convertedNotes = convertJapaneseText(documentData.notes);
+      const noteLines = pdf.splitTextToSize(convertedNotes, 150);
       noteLines.forEach((line: string) => {
         if (yPos > 270) {
           pdf.addPage();
@@ -278,13 +334,17 @@ export function generateInvoiceFilename(invoice: any): string {
   const customerName = invoice.customer?.companyName || 
                       invoice.customer?.name || 
                       invoice.customerSnapshot?.companyName || 
-                      '顧客名未設定';
+                      'Customer';
+  
+  // Convert Japanese customer name to safe ASCII format
+  const convertedCustomerName = convertJapaneseText(customerName);
   
   // Clean customer name for filename (remove invalid characters)
-  const cleanCustomerName = customerName
+  const cleanCustomerName = convertedCustomerName
     .replace(/[<>:"/\\|?*]/g, '_')
     .replace(/\s+/g, '_')
+    .replace(/[^\x00-\x7F]/g, '_') // Remove any remaining non-ASCII
     .substring(0, 20); // Limit length
   
-  return `${dateStr}_請求書_${cleanCustomerName}.pdf`;
+  return `${dateStr}_Invoice_${cleanCustomerName}.pdf`;
 }
