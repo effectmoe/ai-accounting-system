@@ -155,14 +155,20 @@ export async function PUT(
       updateData.totalAmount = subtotal + taxAmount;
     }
     
+    console.log('[PUT /api/invoices/[id]] Calling updateInvoice with ID:', params.id);
+    console.log('[PUT /api/invoices/[id]] Update data:', JSON.stringify(updateData, null, 2));
+    
     const invoice = await invoiceService.updateInvoice(params.id, updateData);
     if (!invoice) {
+      console.error('[PUT /api/invoices/[id]] Invoice not found. ID:', params.id);
+      console.error('[PUT /api/invoices/[id]] Attempted update data:', updateData);
       return NextResponse.json(
         { error: 'Invoice not found' },
         { status: 404 }
       );
     }
     
+    console.log('[PUT /api/invoices/[id]] Invoice updated successfully');
     return NextResponse.json(invoice);
   } catch (error) {
     console.error('Error updating invoice:', error);
