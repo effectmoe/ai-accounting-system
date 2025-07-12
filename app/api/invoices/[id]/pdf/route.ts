@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDatabase } from '@/lib/mongodb-client';
-import { ObjectId } from 'mongodb';
+import { InvoiceService } from '@/services/invoice.service';
+import { CompanyInfoService } from '@/services/company-info.service';
 import ReactPDF from '@react-pdf/renderer';
 import { PDFDocument } from '@/lib/pdf-generator';
 import React from 'react';
@@ -10,29 +10,33 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const db = await getDatabase();
-    
     // 請求書を取得
-    const invoice = await db.findOne('invoices', { _id: new ObjectId(params.id) });
+    const invoiceService = new InvoiceService();
+    const invoice = await invoiceService.getInvoice(params.id);
     
     if (!invoice) {
       return NextResponse.json({ error: 'Invoice not found' }, { status: 404 });
     }
 
-    // リレーションデータを取得
-    if (invoice.customerId) {
-      invoice.customer = await db.findOne('customers', { _id: new ObjectId(invoice.customerId) });
-    }
+    // 会社情報を取得
+    const companyInfoService = new CompanyInfoService();
+    const companyInfo = await companyInfoService.getCompanyInfo();
 
     // PDFデータを準備
     const pdfData = {
       documentType: 'invoice' as const,
       invoiceNumber: invoice.invoiceNumber,
-      issueDate: invoice.invoiceDate,
+      issueDate: invoice.issueDate || invoice.invoiceDate,
       dueDate: invoice.dueDate,
       partner: {
-        name: invoice.customer?.companyName || invoice.customerName || '',
-        address: invoice.customer?.address || '',
+        name: invoice.customer?.companyName || invoice.customer?.name || '',
+        address: [
+          invoice.customer?.postalCode ? `〒${invoice.customer.postalCode}` : '',
+          invoice.customer?.prefecture || '',
+          invoice.customer?.city || '',
+          invoice.customer?.address1 || '',
+          invoice.customer?.address2 || ''
+        ].filter(Boolean).join(' '),
         phone: invoice.customer?.phone || '',
         email: invoice.customer?.email || ''
       },
@@ -53,13 +57,19 @@ export async function GET(
       notes: invoice.notes || '',
       paymentTerms: invoice.paymentTerms || '銀行振込',
       company: {
-        name: invoice.companySnapshot?.companyName || '',
-        address: invoice.companySnapshot?.address || '',
-        phone: invoice.companySnapshot?.phone || '',
-        email: invoice.companySnapshot?.email || '',
-        registrationNumber: invoice.companySnapshot?.registrationNumber || '',
-        bankAccount: invoice.companySnapshot?.bankAccount || '',
-        sealImageUrl: invoice.companySnapshot?.sealImageUrl || invoice.companySnapshot?.stampImage || ''
+        name: companyInfo?.companyName || '会社名未設定',
+        address: companyInfo ? [
+          companyInfo.postalCode ? `〒${companyInfo.postalCode}` : '',
+          companyInfo.prefecture || '',
+          companyInfo.city || '',
+          companyInfo.address1 || '',
+          companyInfo.address2 || ''
+        ].filter(Boolean).join(' ') : '',
+        phone: companyInfo?.phone || '',
+        email: companyInfo?.email || '',
+        registrationNumber: companyInfo?.registrationNumber || '',
+        bankAccount: invoice.bankAccount ? `${invoice.bankAccount.bankName} ${invoice.bankAccount.branchName} ${invoice.bankAccount.accountType} ${invoice.bankAccount.accountNumber} ${invoice.bankAccount.accountName}` : '',
+        sealImageUrl: companyInfo?.stampImage || ''
       }
     };
     
@@ -125,18 +135,24 @@ export async function GET(
   
   <div class="header">
     <div>
-      <h2>${invoice.customerSnapshot.companyName} 御中</h2>
+      <h2>${invoice.customer?.companyName || invoice.customer?.name || '顧客名未設定'} 御中</h2>
       <p>請求番号: ${invoice.invoiceNumber}</p>
-      <p>請求日: ${new Date(invoice.invoiceDate).toLocaleDateString('ja-JP')}</p>
+      <p>請求日: ${new Date(invoice.issueDate || invoice.invoiceDate).toLocaleDateString('ja-JP')}</p>
       <p>支払期限: ${new Date(invoice.dueDate).toLocaleDateString('ja-JP')}</p>
     </div>
     <div></div>
   </div>
 
   <div class="company-info">
-    <p>${invoice.companySnapshot.companyName}</p>
-    <p>${invoice.companySnapshot.address || ''}</p>
-    <p>${invoice.companySnapshot.phone || ''}</p>
+    <p>${companyInfo?.companyName || '会社名未設定'}</p>
+    <p>${companyInfo ? [
+      companyInfo.postalCode ? `〒${companyInfo.postalCode}` : '',
+      companyInfo.prefecture || '',
+      companyInfo.city || '',
+      companyInfo.address1 || '',
+      companyInfo.address2 || ''
+    ].filter(Boolean).join(' ') : ''}</p>
+    <p>${companyInfo?.phone ? `TEL: ${companyInfo.phone}` : ''}</p>
     ${pdfData.company.sealImageUrl ? `
     <div class="seal-area">
       <img src="${pdfData.company.sealImageUrl}" alt="社印" class="seal-img" />
