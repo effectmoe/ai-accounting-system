@@ -44,18 +44,20 @@ export function generateCompactInvoiceHTML(invoice: any, companyInfo: any): stri
     .invoice-header {
       text-align: center;
       margin-bottom: 40px;
+      background-color: #f8f9fa;
+      padding: 30px;
+      border-radius: 5px;
     }
     
     .invoice-title {
       font-size: 32px;
       font-weight: 700;
       letter-spacing: 4px;
-      margin-bottom: 10px;
+      margin: 0;
     }
     
     .invoice-number {
-      font-size: 14px;
-      color: #666;
+      display: none;
     }
     
     /* 顧客・会社情報 */
@@ -159,6 +161,9 @@ export function generateCompactInvoiceHTML(invoice: any, companyInfo: any): stri
     
     .summary-table {
       width: 300px;
+      background-color: #f5f5f5;
+      padding: 20px;
+      border-radius: 5px;
     }
     
     .summary-row {
@@ -171,6 +176,7 @@ export function generateCompactInvoiceHTML(invoice: any, companyInfo: any): stri
     .summary-row.total {
       border-top: 2px solid #333;
       padding-top: 12px;
+      margin-top: 8px;
       font-size: 18px;
       font-weight: 700;
     }
@@ -236,6 +242,7 @@ export function generateCompactInvoiceHTML(invoice: any, companyInfo: any): stri
       
       .invoice-header {
         margin-bottom: 20px;
+        padding: 20px;
       }
       
       .invoice-title {
@@ -264,6 +271,10 @@ export function generateCompactInvoiceHTML(invoice: any, companyInfo: any): stri
       
       .summary-section {
         margin-bottom: 20px;
+      }
+      
+      .summary-table {
+        padding: 15px;
       }
       
       .notes-section {
@@ -301,7 +312,6 @@ export function generateCompactInvoiceHTML(invoice: any, companyInfo: any): stri
     <!-- ヘッダー -->
     <div class="invoice-header">
       <h1 class="invoice-title">請求書</h1>
-      <p class="invoice-number">Invoice No: ${invoice.invoiceNumber}</p>
     </div>
     
     <!-- 顧客・会社情報 -->
