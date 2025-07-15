@@ -69,6 +69,7 @@ interface Message {
   copied?: boolean;
   isStreaming?: boolean;
   faqGenerated?: boolean;
+  showFaqDialog?: boolean;
 }
 
 interface KnowledgeFilters {
@@ -113,6 +114,7 @@ export default function EnhancedKnowledgeChatDialog({
   const [suggestedQuestions, setSuggestedQuestions] = useState<string[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [multiLine, setMultiLine] = useState(false);
+  const [faqDialogMessageId, setFaqDialogMessageId] = useState<string | null>(null);
   
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -330,6 +332,9 @@ export default function EnhancedKnowledgeChatDialog({
             : msg
         ));
         
+        // ストリーミング完了後にFAQ追加確認ダイアログを表示
+        setFaqDialogMessageId(assistantMessage.id);
+        
       } else {
         // 通常のレスポンス
         const response = await fetch('/api/knowledge/analyze-chat', {
@@ -372,6 +377,9 @@ export default function EnhancedKnowledgeChatDialog({
         if (data.suggestedQuestions) {
           setSuggestedQuestions(data.suggestedQuestions);
         }
+        
+        // 非ストリーミング完了後にもFAQ追加確認ダイアログを表示
+        setFaqDialogMessageId(assistantMessage.id);
       }
 
     } catch (error) {
@@ -452,6 +460,9 @@ export default function EnhancedKnowledgeChatDialog({
         setMessages(prev => prev.map(msg => 
           msg.id === messageId ? { ...msg, faqGenerated: true } : msg
         ));
+        
+        // FAQ確認ダイアログを非表示
+        setFaqDialogMessageId(null);
       } else {
         alert('FAQ生成に失敗しました: ' + result.error);
       }
@@ -459,6 +470,10 @@ export default function EnhancedKnowledgeChatDialog({
       console.error('FAQ generation error:', error);
       alert('FAQ生成中にエラーが発生しました。');
     }
+  };
+
+  const handleFaqDialogSkip = () => {
+    setFaqDialogMessageId(null);
   };
 
   const toggleVoiceInput = () => {
@@ -1029,6 +1044,57 @@ export default function EnhancedKnowledgeChatDialog({
             </div>
           </div>
         </motion.div>
+        
+        {/* FAQ追加確認ダイアログ */}
+        {faqDialogMessageId && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-black/20 flex items-center justify-center z-10"
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-lg shadow-lg p-6 max-w-md mx-4"
+            >
+              <div className="flex items-start space-x-3">
+                <div className="flex-shrink-0">
+                  <BookOpen className="w-6 h-6 text-blue-500" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    FAQに追加しますか？
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-4">
+                    この会話をFAQナレッジベースに保存して、他のユーザーと共有することができます。
+                    DeepSeekによる内部検索が向上します。
+                  </p>
+                  <div className="flex space-x-2">
+                    <Button
+                      onClick={() => handleGenerateFaq(faqDialogMessageId)}
+                      className="flex-1 bg-blue-500 hover:bg-blue-600 text-white"
+                      size="sm"
+                    >
+                      <Archive className="w-4 h-4 mr-2" />
+                      FAQに追加
+                    </Button>
+                    <Button
+                      onClick={handleFaqDialogSkip}
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                    >
+                      <X className="w-4 h-4 mr-2" />
+                      スキップ
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
       </motion.div>
     </AnimatePresence>
   );
