@@ -923,12 +923,32 @@ export default function AIChatDialog({
                 
                 // 保存ボタンのクリック状態を確認
                 console.log('[AIChatDialog] Save button clicked');
+                console.log('[AIChatDialog] Document type:', documentType);
                 console.log('[AIChatDialog] Current data:', currentInvoiceData);
                 console.log('[AIChatDialog] Data validation:', {
                   hasCustomerName: !!currentInvoiceData?.customerName,
                   hasItems: !!(currentInvoiceData?.items && currentInvoiceData.items.length > 0),
-                  itemsCount: currentInvoiceData?.items?.length || 0
+                  itemsCount: currentInvoiceData?.items?.length || 0,
+                  customerName: currentInvoiceData?.customerName,
+                  subtotal: currentInvoiceData?.subtotal,
+                  taxAmount: currentInvoiceData?.taxAmount,
+                  totalAmount: currentInvoiceData?.totalAmount
                 });
+                
+                // 各アイテムの詳細もログ出力
+                if (currentInvoiceData?.items && currentInvoiceData.items.length > 0) {
+                  console.log('[AIChatDialog] Items details:');
+                  currentInvoiceData.items.forEach((item, index) => {
+                    console.log(`[AIChatDialog] Item ${index}:`, {
+                      description: item.description,
+                      quantity: item.quantity,
+                      unitPrice: item.unitPrice,
+                      amount: item.amount,
+                      taxAmount: item.taxAmount,
+                      total: item.amount + item.taxAmount
+                    });
+                  });
+                }
                 
                 // 会話履歴を保存
                 if (companyId && conversationId && messages.length > 1) {
