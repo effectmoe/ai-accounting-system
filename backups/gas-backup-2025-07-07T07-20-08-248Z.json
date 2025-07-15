@@ -1,0 +1,92 @@
+{
+  "scriptId": "1MznJUkM6ki8--le-vwlpG4A3H1-JXsA2TjvDdHSf3aEymrlKmmRCjHV5",
+  "files": [
+    {
+      "name": "appsscript",
+      "type": "JSON",
+      "source": "{\n  \"timeZone\": \"Asia/Tokyo\",\n  \"exceptionLogging\": \"STACKDRIVER\",\n  \"runtimeVersion\": \"V8\",\n  \"dependencies\": {\n    \"enabledAdvancedServices\": [\n      {\n        \"userSymbol\": \"Drive\",\n        \"serviceId\": \"drive\",\n        \"version\": \"v2\"\n      }\n    ]\n  },\n  \"webapp\": {\n    \"executeAs\": \"USER_DEPLOYING\",\n    \"access\": \"ANYONE_ANONYMOUS\"\n  }\n}",
+      "lastModifyUser": {
+        "photoUrl": "https://lh3.googleusercontent.com/a-/ALV-UjUjqp2soQrqHXA7eTypQ3UgYwqFnvefijOE5nspPL29Iae4ZHPuZA=h128"
+      },
+      "createTime": "2025-07-05T18:01:43.226Z",
+      "updateTime": "2025-07-06T12:54:20.166Z",
+      "functionSet": {}
+    },
+    {
+      "name": "コード",
+      "type": "SERVER_JS",
+      "source": "/**\n * AI会計システム 完全版OCR処理スクリプト\n * Version: 2.0.0\n * \n * 機能:\n * 1. Google Driveのプッシュ通知でリアルタイムOCR処理\n * 2. PDFと画像ファイルのOCR\n * 3. Supabaseへの自動保存\n * 4. ファイルの自動アーカイブ\n * 5. テスト機能完備\n */\n\n// ===== 設定 =====\nconst SUPABASE_URL = 'https://clqpfmroqcnvyxdzadln.supabase.co';\nconst SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNscXBmbXJvcWNudnl4ZHphZGxuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTE2OTc3NDEsImV4cCI6MjA2NzI3Mzc0MX0.CN7Vk_-W7Pn09jvrlVyOlgyguxqgNLs3C-9Bf1UTdTA';\nconst FOLDER_ID = '1X3Q-t8V6xyqfDx1bGxnXCkDUMxlGNptL'; // 監視対象フォルダID\nconst ARCHIVE_FOLDER_ID = '1bEwOT_swfFWp2m-CI97mgYePDGkFKYgZ'; // アーカイブ用フォルダID\n\n// ===== Webhook処理（プッシュ通知） =====\nfunction doPost(e) {\n  console.log('プッシュ通知を受信しました');\n  \n  try {\n    // 通知を受けたら少し待機（ファイルの完全アップロードを待つ）\n    Utilities.sleep(2000);\n    \n    // 最新のファイルをチェックして処理\n    const results = checkAndProcessRecentFiles();\n    \n    return ContentService.createTextOutput(JSON.stringify({\n      success: true,\n      processed: results.length,\n      results: results\n    })).setMimeType(ContentService.MimeType.JSON);\n    \n  } catch (error) {\n    console.error('Webhook処理エラー:', error);\n    return ContentService.createTextOutput(JSON.stringify({\n      success: false,\n      error: error.toString()\n    })).setMimeType(ContentService.MimeType.JSON);\n  }\n}\n\n// doGetも実装（ステータス確認用）\nfunction doGet(e) {\n  return ContentService.createTextOutput(JSON.stringify({\n    status: 'OK',\n    message: 'AI会計OCR Web Appsが正常に動作しています',\n    version: '2.0.0',\n    lastCheck: new Date().toISOString()\n  })).setMimeType(ContentService.MimeType.JSON);\n}\n\n// ===== 最新ファイルの確認と処理 =====\nfunction checkAndProcessRecentFiles() {\n  console.log('最新ファイルをチェック中...');\n  \n  const results = [];\n  const processedFiles = PropertiesService.getScriptProperties().getProperty('processedFiles') || '[]';\n  const processedList = JSON.parse(processedFiles);\n  \n  try {\n    // 過去10分間のファイルを取得\n    const tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();\n    const files = Drive.Files.list({\n      q: `'${FOLDER_ID}' in parents and modifiedDate > '${tenMinutesAgo}' and trashed = false`,\n      maxResults: 20,\n      orderBy: 'modifiedDate desc'\n    });\n    \n    if (!files.items || files.items.length === 0) {\n      console.log('新しいファイルが見つかりません');\n      return results;\n    }\n    \n    console.log(`${files.items.length}個のファイルが見つかりました`);\n    \n    // 各ファイルを処理\n    for (const file of files.items) {\n      if (!processedList.includes(file.id)) {\n        console.log(`処理中: ${file.title}`);\n        \n        const result = processFile(file.id);\n        if (result) {\n          results.push(result);\n          processedList.push(file.id);\n        }\n      }\n    }\n    \n    // 処理済みリストを更新（最大100件保持）\n    if (processedList.length > 100) {\n      processedList.splice(0, processedList.length - 100);\n    }\n    PropertiesService.getScriptProperties().setProperty('processedFiles', JSON.stringify(processedList));\n    \n  } catch (error) {\n    console.error('ファイルチェックエラー:', error);\n  }\n  \n  return results;\n}\n\n// ===== 個別ファイルの処理 =====\nfunction processFile(fileId) {\n  try {\n    const file = DriveApp.getFileById(fileId);\n    const fileName = file.getName();\n    const mimeType = file.getMimeType();\n    \n    // PDFまたは画像ファイルのみ処理\n    if (!mimeType.includes('pdf') && !mimeType.includes('image')) {\n      console.log(`スキップ: ${fileName} (サポートされていないファイルタイプ)`);\n      return null;\n    }\n    \n    console.log(`OCR処理開始: ${fileName}`);\n    \n    // OCR処理\n    const ocrResult = performOCR(fileId);\n    \n    if (ocrResult.success) {\n      // Supabaseに保存\n      const saveResult = saveToSupabase(ocrResult.data);\n      \n      if (saveResult.success) {\n        // ファイルをアーカイブ\n        archiveFile(fileId, ocrResult.data);\n        \n        return {\n          fileId: fileId,\n          fileName: fileName,\n          success: true,\n          data: saveResult.data\n        };\n      }\n    }\n    \n    return {\n      fileId: fileId,\n      fileName: fileName,\n      success: false,\n      error: ocrResult.error\n    };\n    \n  } catch (error) {\n    console.error('ファイル処理エラー:', error);\n    return {\n      fileId: fileId,\n      success: false,\n      error: error.toString()\n    };\n  }\n}\n\n// ===== OCR処理 =====\nfunction performOCR(fileId) {\n  try {\n    const file = DriveApp.getFileById(fileId);\n    const fileName = file.getName();\n    const fileSize = file.getSize();\n    const mimeType = file.getMimeType();\n    \n    let ocrText = '';\n    let confidence = 0.95;\n    \n    // Drive API v2を使用したOCR\n    try {\n      const resource = {\n        title: fileName + '_OCR_TEMP',\n        mimeType: 'application/vnd.google-apps.document'\n      };\n      \n      const docFile = Drive.Files.copy(resource, fileId, {\n        convert: true,\n        ocr: true,\n        ocrLanguage: 'ja'\n      });\n      \n      if (docFile && docFile.id) {\n        const doc = DocumentApp.openById(docFile.id);\n        ocrText = doc.getBody().getText();\n        Drive.Files.remove(docFile.id);\n      }\n    } catch (apiError) {\n      console.error('Drive API エラー:', apiError);\n      // フォールバック処理\n      ocrText = `[OCR処理中]\\nファイル名: ${fileName}\\n処理日時: ${new Date().toLocaleString('ja-JP')}`;\n      confidence = 0.5;\n    }\n    \n    // テキストから情報を抽出\n    const extracted = extractInformation(ocrText, fileName);\n    \n    return {\n      success: true,\n      data: {\n        file_name: fileName,\n        file_size: fileSize,\n        file_type: mimeType,\n        file_url: file.getUrl(),\n        extracted_text: ocrText,\n        confidence: confidence,\n        vendor_name: extracted.vendor,\n        receipt_date: extracted.date,\n        total_amount: extracted.amount,\n        tax_amount: extracted.tax,\n        status: 'completed',\n        company_id: '11111111-1111-1111-1111-111111111111'\n      }\n    };\n    \n  } catch (error) {\n    console.error('OCR処理エラー:', error);\n    return {\n      success: false,\n      error: error.toString()\n    };\n  }\n}\n\n// ===== 情報抽出 =====\nfunction extractInformation(text, fileName) {\n  const result = {\n    vendor: '',\n    date: new Date().toISOString().split('T')[0],\n    amount: 0,\n    tax: 0\n  };\n  \n  try {\n    // ベンダー名の抽出\n    const vendorMatch = text.match(/(?:株式会社|有限会社|合同会社)?[\\u4e00-\\u9fa5\\u30a0-\\u30ff]+(?:株式会社|店|商店|ストア)?/);\n    if (vendorMatch) {\n      result.vendor = vendorMatch[0];\n    }\n    \n    // 日付の抽出\n    const dateMatch = text.match(/(\\d{4})[年\\/\\-](\\d{1,2})[月\\/\\-](\\d{1,2})日?/);\n    if (dateMatch) {\n      const year = dateMatch[1];\n      const month = dateMatch[2].padStart(2, '0');\n      const day = dateMatch[3].padStart(2, '0');\n      result.date = `${year}-${month}-${day}`;\n    }\n    \n    // 金額の抽出\n    const amountMatch = text.match(/[¥￥]?\\s*([0-9,]+)\\s*円?/g);\n    if (amountMatch && amountMatch.length > 0) {\n      const amounts = amountMatch.map(m => \n        parseInt(m.replace(/[¥￥,円\\s]/g, ''))\n      ).filter(a => !isNaN(a));\n      \n      if (amounts.length > 0) {\n        result.amount = Math.max(...amounts);\n        result.tax = Math.floor(result.amount * 0.1 / 1.1);\n      }\n    }\n    \n    // ファイル名からの補完\n    if (!result.vendor && fileName.includes('_')) {\n      const parts = fileName.split('_');\n      if (parts.length >= 3) {\n        result.vendor = parts[2];\n      }\n    }\n    \n  } catch (error) {\n    console.error('情報抽出エラー:', error);\n  }\n  \n  return result;\n}\n\n// ===== Supabaseへの保存 =====\nfunction saveToSupabase(data) {\n  try {\n    const url = `${SUPABASE_URL}/rest/v1/ocr_results`;\n    \n    const response = UrlFetchApp.fetch(url, {\n      method: 'POST',\n      headers: {\n        'apikey': SUPABASE_ANON_KEY,\n        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,\n        'Content-Type': 'application/json',\n        'Prefer': 'return=representation'\n      },\n      payload: JSON.stringify(data)\n    });\n    \n    if (response.getResponseCode() === 201) {\n      const result = JSON.parse(response.getContentText());\n      console.log('Supabase保存成功:', result[0].id);\n      return {\n        success: true,\n        data: result[0]\n      };\n    } else {\n      throw new Error(`保存失敗: ${response.getResponseCode()}`);\n    }\n    \n  } catch (error) {\n    console.error('Supabase保存エラー:', error);\n    return {\n      success: false,\n      error: error.toString()\n    };\n  }\n}\n\n// ===== ファイルのアーカイブ =====\nfunction archiveFile(fileId, ocrData) {\n  try {\n    const file = DriveApp.getFileById(fileId);\n    const archiveFolder = DriveApp.getFolderById(ARCHIVE_FOLDER_ID);\n    \n    // 新しいファイル名を生成\n    const date = new Date(ocrData.receipt_date || new Date());\n    const dateStr = Utilities.formatDate(date, 'JST', 'yyyyMMdd');\n    const vendor = ocrData.vendor_name || 'unknown';\n    const amount = ocrData.total_amount || 0;\n    \n    const newFileName = `${dateStr}_領収書_${vendor}_${amount}円.pdf`;\n    \n    // ファイルをコピーしてアーカイブ\n    const copiedFile = file.makeCopy(newFileName, archiveFolder);\n    \n    // 元のファイルを削除\n    file.setTrashed(true);\n    \n    console.log(`アーカイブ完了: ${newFileName}`);\n    return true;\n    \n  } catch (error) {\n    console.error('アーカイブエラー:', error);\n    return false;\n  }\n}\n\n// ===== テスト関数 =====\n\n// 1. API設定確認\nfunction checkApiSettings() {\n  console.log('=== API設定確認 ===');\n  \n  // Drive API v2の確認\n  try {\n    const testList = Drive.Files.list({ maxResults: 1 });\n    console.log('✅ Drive API v2: 正常');\n  } catch (e) {\n    console.error('❌ Drive API v2: 未設定', e.message);\n    console.log('解決方法: サービス > Drive API を追加してください');\n  }\n  \n  // フォルダーIDの確認\n  console.log('📁 監視フォルダID:', FOLDER_ID);\n  console.log('📁 アーカイブフォルダID:', ARCHIVE_FOLDER_ID);\n  \n  // Supabase設定の確認\n  console.log('🔗 Supabase URL:', SUPABASE_URL ? '設定済み' : '未設定');\n  console.log('🔑 Supabase Key:', SUPABASE_ANON_KEY ? '設定済み' : '未設定');\n}\n\n// 2. 手動OCR実行テスト\nfunction manualOcrTest() {\n  console.log('=== 手動OCRテスト開始 ===');\n  \n  // 最新ファイルを1つ処理\n  const results = checkAndProcessRecentFiles();\n  \n  if (results.length > 0) {\n    console.log('✅ OCR処理成功:', results[0]);\n  } else {\n    console.log('⚠️ 処理対象のファイルがありません');\n    console.log('指定フォルダにPDFをアップロードしてください');\n  }\n}\n\n// 3. Supabase接続テスト\nfunction testSupabaseConnection() {\n  console.log('=== Supabase接続テスト ===');\n  \n  const testData = {\n    company_id: '11111111-1111-1111-1111-111111111111',\n    file_name: 'test_connection_' + new Date().getTime() + '.pdf',\n    file_size: 1024,\n    file_type: 'application/pdf',\n    file_url: 'https://example.com/test.pdf',\n    extracted_text: 'テスト接続確認',\n    confidence: 0.99,\n    vendor_name: 'テスト店舗',\n    receipt_date: new Date().toISOString().split('T')[0],\n    total_amount: 1000,\n    tax_amount: 100,\n    status: 'completed'\n  };\n  \n  const result = saveToSupabase(testData);\n  \n  if (result.success) {\n    console.log('✅ Supabase接続成功');\n    console.log('保存されたID:', result.data.id);\n  } else {\n    console.error('❌ Supabase接続失敗:', result.error);\n  }\n}\n\n// 4. 最新ファイルの確認\nfunction checkRecentFiles() {\n  console.log('=== 最新ファイル確認 ===');\n  \n  const files = Drive.Files.list({\n    q: `'${FOLDER_ID}' in parents and mimeType = 'application/pdf' and trashed = false`,\n    orderBy: 'createdDate desc',\n    maxResults: 5\n  });\n  \n  if (files.items.length === 0) {\n    console.log('⚠️ PDFファイルが見つかりません');\n    return;\n  }\n  \n  console.log(`📄 ${files.items.length}個のPDFファイルが見つかりました:`);\n  files.items.forEach((file, index) => {\n    console.log(`${index + 1}. ${file.title} (${new Date(file.createdDate).toLocaleString('ja-JP')})`);\n  });\n}\n\n// 5. プッシュ通知の初期設定\nfunction setupPushNotifications() {\n  try {\n    const channelId = Utilities.getUuid();\n    const address = ScriptApp.getService().getUrl();\n    \n    const watchResponse = Drive.Files.watch({\n      id: FOLDER_ID,\n      resource: {\n        id: channelId,\n        type: 'web_hook',\n        address: address,\n        expiration: Date.now() + 86400000 // 24時間後\n      }\n    });\n    \n    console.log('プッシュ通知設定完了:', watchResponse);\n    PropertiesService.getScriptProperties().setProperty('channelId', channelId);\n    \n  } catch (error) {\n    console.error('プッシュ通知設定エラー:', error);\n  }\n}",
+      "lastModifyUser": {
+        "photoUrl": "https://lh3.googleusercontent.com/a-/ALV-UjUjqp2soQrqHXA7eTypQ3UgYwqFnvefijOE5nspPL29Iae4ZHPuZA=h128"
+      },
+      "createTime": "2025-07-05T18:01:43.226Z",
+      "updateTime": "2025-07-06T12:54:20.166Z",
+      "functionSet": {
+        "values": [
+          {
+            "name": "doPost",
+            "parameters": [
+              "e"
+            ]
+          },
+          {
+            "name": "doGet",
+            "parameters": [
+              "e"
+            ]
+          },
+          {
+            "name": "checkAndProcessRecentFiles"
+          },
+          {
+            "name": "processFile",
+            "parameters": [
+              "fileId"
+            ]
+          },
+          {
+            "name": "performOCR",
+            "parameters": [
+              "fileId"
+            ]
+          },
+          {
+            "name": "extractInformation",
+            "parameters": [
+              "text",
+              "fileName"
+            ]
+          },
+          {
+            "name": "saveToSupabase",
+            "parameters": [
+              "data"
+            ]
+          },
+          {
+            "name": "archiveFile",
+            "parameters": [
+              "fileId",
+              "ocrData"
+            ]
+          },
+          {
+            "name": "checkApiSettings"
+          },
+          {
+            "name": "manualOcrTest"
+          },
+          {
+            "name": "testSupabaseConnection"
+          },
+          {
+            "name": "checkRecentFiles"
+          },
+          {
+            "name": "setupPushNotifications"
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,341 @@
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { 
+  SpeechRecognition,
+  SpeechRecognitionConfig,
+  SpeechRecognitionHookResult,
+  SpeechRecognitionEvent,
+  SpeechRecognitionErrorEvent
+} from '../types/speech-recognition';
+
+const defaultConfig: SpeechRecognitionConfig = {
+  continuous: true,
+  interimResults: true,
+  language: 'ja-JP',
+  maxAlternatives: 1,
+  speechTimeout: 12000, // デフォルト10秒 + 2秒延長
+};
+
+export function useSpeechRecognition(config: SpeechRecognitionConfig = {}): SpeechRecognitionHookResult {
+  const [isListening, setIsListening] = useState(false);
+  const [transcript, setTranscript] = useState('');
+  const [interimTranscript, setInterimTranscript] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [isSupported, setIsSupported] = useState(false);
+
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const finalTranscriptRef = useRef('');
+  const autoRestartRef = useRef(true); // 自動再開フラグ
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null); // タイムアウト管理
+
+  // Web Speech API サポート確認
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const SpeechRecognitionConstructor = 
+        window.SpeechRecognition || window.webkitSpeechRecognition;
+      const supported = !!SpeechRecognitionConstructor;
+      setIsSupported(supported);
+      
+      if (!supported) {
+        console.warn('[SpeechRecognition] このブラウザはWeb Speech APIに対応していません');
+        setError('お使いのブラウザは音声認識に対応していません。Chrome、Edge、Safariなどのモダンブラウザをお試しください。');
+      } else {
+        console.log('[SpeechRecognition] Web Speech APIが利用可能です');
+      }
+    }
+  }, []);
+
+  // SpeechRecognition インスタンスの初期化
+  const initializeRecognition = useCallback(() => {
+    if (typeof window === 'undefined') return null;
+
+    const SpeechRecognitionConstructor = 
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognitionConstructor) {
+      setError('お使いのブラウザは音声認識に対応していません');
+      return null;
+    }
+
+    const recognition = new SpeechRecognitionConstructor();
+    const finalConfig = { ...defaultConfig, ...config };
+
+    // 設定を適用
+    recognition.continuous = finalConfig.continuous !== undefined ? finalConfig.continuous : true; // デフォルトをtrueに変更
+    recognition.interimResults = finalConfig.interimResults !== undefined ? finalConfig.interimResults : true;
+    recognition.lang = finalConfig.language || 'ja-JP';
+    recognition.maxAlternatives = finalConfig.maxAlternatives || 1;
+
+    // イベントハンドラーの設定
+    recognition.onstart = () => {
+      setIsListening(true);
+      setError(null);
+      console.log('[SpeechRecognition] 音声認識を開始しました');
+      console.log('[SpeechRecognition] continuous設定:', recognition.continuous);
+      console.log('[SpeechRecognition] interimResults設定:', recognition.interimResults);
+      
+      // カスタムタイムアウトを設定
+      const timeout = finalConfig.speechTimeout || 12000;
+      timeoutRef.current = setTimeout(() => {
+        console.log(`[SpeechRecognition] タイムアウト（${timeout}ms）により音声認識を自動停止`);
+        if (recognitionRef.current) {
+          recognitionRef.current.stop();
+        }
+      }, timeout);
+    };
+
+    recognition.onend = () => {
+      console.log('[SpeechRecognition] 音声認識を終了しました');
+      console.log('[SpeechRecognition] 終了時のfinalTranscript:', finalTranscriptRef.current);
+      
+      // タイムアウトタイマーをクリア
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+      
+      // 手動停止でない場合は状態を更新
+      if (autoRestartRef.current) {
+        setIsListening(false);
+      }
+      
+      // 音声認識終了時にinterimTranscriptをクリア
+      setInterimTranscript('');
+    };
+
+    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+      console.error('[SpeechRecognition] エラー:', event.error);
+      console.error('[SpeechRecognition] エラーイベント詳細:', event);
+      setIsListening(false);
+      
+      // タイムアウトタイマーをクリア
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+      
+      let errorMessage = '音声認識でエラーが発生しました';
+      let errorDetail = '';
+      
+      switch (event.error) {
+        case 'not-allowed':
+          errorMessage = 'マイクへのアクセスが拒否されました';
+          errorDetail = 'ブラウザのアドレスバー左上のマイクアイコンをクリックして許可してください。または、ブラウザの設定からマイクへのアクセスを許可してください。';
+          break;
+        case 'no-speech':
+          errorMessage = '音声が検出されませんでした';
+          errorDetail = '静かな環境でマイクに近づいてもう一度お試しください。マイクが正しく動作しているか確認してください。';
+          break;
+        case 'audio-capture':
+          errorMessage = 'マイクが見つかりません';
+          errorDetail = 'マイクが正しく接続されているか確認し、他のアプリケーションで使用されていないか確認してください。システム設定でマイクが有効になっているか確認してください。';
+          break;
+        case 'network':
+          errorMessage = 'ネットワークエラーが発生しました';
+          errorDetail = 'インターネット接続を確認してください。ファイアウォールやプロキシの設定も確認してください。';
+          break;
+        case 'aborted':
+          errorMessage = '音声認識が中止されました';
+          errorDetail = 'もう一度お試しください。';
+          break;
+        case 'bad-grammar':
+          errorMessage = '音声認識の設定にエラーがあります';
+          errorDetail = 'システムエラーが発生しました。ページをリロードしてお試しください。';
+          break;
+        case 'language-not-supported':
+          errorMessage = '指定された言語（日本語）はサポートされていません';
+          errorDetail = 'お使いのブラウザまたはシステムで日本語の音声認識がサポートされていない可能性があります。';
+          break;
+        case 'service-not-allowed':
+          errorMessage = '音声認識サービスが利用できません';
+          errorDetail = 'HTTPS接続が必要です。HTTPSでアクセスするか、開発環境の場合はlocalhostを使用してください。';
+          break;
+        default:
+          errorMessage = `音声認識エラー: ${event.error}`;
+          errorDetail = '不明なエラーが発生しました。ブラウザのコンソールで詳細を確認してください。';
+      }
+      
+      const fullErrorMessage = errorDetail ? `${errorMessage}\n${errorDetail}` : errorMessage;
+      setError(fullErrorMessage);
+    };
+
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
+      let interimTranscriptText = '';
+      let finalTranscriptText = finalTranscriptRef.current;
+
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const result = event.results[i];
+        const transcriptText = result[0].transcript;
+
+        if (result.isFinal) {
+          finalTranscriptText += transcriptText;
+          console.log('[SpeechRecognition] 確定テキスト:', transcriptText);
+        } else {
+          interimTranscriptText += transcriptText;
+          console.log('[SpeechRecognition] 中間テキスト:', transcriptText);
+        }
+      }
+
+      finalTranscriptRef.current = finalTranscriptText;
+      setTranscript(finalTranscriptText);
+      setInterimTranscript(interimTranscriptText);
+    };
+
+    recognition.onsoundstart = () => {
+      console.log('[SpeechRecognition] 音声検出開始');
+    };
+
+    recognition.onsoundend = () => {
+      console.log('[SpeechRecognition] 音声検出終了');
+      console.log('[SpeechRecognition] continuous設定:', recognition.continuous);
+    };
+
+    recognition.onspeechstart = () => {
+      console.log('[SpeechRecognition] 発話検出開始');
+    };
+
+    recognition.onspeechend = () => {
+      console.log('[SpeechRecognition] 発話検出終了');
+    };
+
+    recognition.onaudiostart = () => {
+      console.log('[SpeechRecognition] オーディオキャプチャ開始');
+    };
+
+    recognition.onaudioend = () => {
+      console.log('[SpeechRecognition] オーディオキャプチャ終了');
+    };
+
+    return recognition;
+  }, [config]);
+
+  // 音声認識開始
+  const startListening = useCallback(async () => {
+    if (!isSupported) {
+      setError('お使いのブラウザは音声認識に対応していません');
+      return;
+    }
+
+    // HTTPSチェック
+    if (typeof window !== 'undefined' && window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
+      console.error('[SpeechRecognition] HTTPS接続が必要です');
+      setError('音声認識を使用するにはHTTPS接続が必要です。HTTPSでアクセスするか、開発環境の場合はlocalhostを使用してください。');
+      return;
+    }
+
+    if (isListening) {
+      console.log('[SpeechRecognition] 既に音声認識中です');
+      return;
+    }
+
+    try {
+      // マイクアクセス許可を明示的に要求
+      console.log('[SpeechRecognition] マイクアクセス許可を確認中...');
+      
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          console.log('[SpeechRecognition] マイクアクセス許可が取得できました');
+          // ストリームを即座に停止（音声認識APIが独自にマイクを制御するため）
+          stream.getTracks().forEach(track => track.stop());
+        } catch (mediaError) {
+          console.error('[SpeechRecognition] マイクアクセスエラー:', mediaError);
+          const error = mediaError as any;
+          let errorMessage = 'マイクへのアクセスに失敗しました';
+          
+          if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+            errorMessage = 'マイクへのアクセスが拒否されました。\nブラウザの設定でこのサイトのマイクアクセスを許可してください。';
+          } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+            errorMessage = 'マイクが見つかりません。\nマイクが正しく接続されているか確認してください。';
+          } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+            errorMessage = 'マイクにアクセスできません。\n他のアプリケーションがマイクを使用している可能性があります。';
+          } else if (error.name === 'OverconstrainedError') {
+            errorMessage = 'マイクの設定に問題があります。\nシステム設定を確認してください。';
+          } else if (error.name === 'SecurityError') {
+            errorMessage = 'セキュリティエラーが発生しました。\nHTTPS接続でアクセスしているか確認してください。';
+          }
+          
+          setError(errorMessage);
+          return;
+        }
+      }
+
+      // 音声認識開始前に前回の結果をクリア
+      console.log('[SpeechRecognition] 音声認識開始前にトランスクリプトをリセット');
+      setTranscript('');
+      setInterimTranscript('');
+      finalTranscriptRef.current = '';
+      setError(null);
+      
+      autoRestartRef.current = true; // 自動再開を有効に
+      const recognition = initializeRecognition();
+      if (recognition) {
+        recognitionRef.current = recognition;
+        recognition.start();
+      }
+    } catch (err) {
+      console.error('[SpeechRecognition] 開始エラー:', err);
+      const error = err as any;
+      let detailedError = '音声認識の開始に失敗しました';
+      
+      if (error.name === 'NotAllowedError') {
+        detailedError += '\nマイクへのアクセスが拒否されました。ブラウザの設定を確認してください。';
+      } else if (error.name === 'NotFoundError') {
+        detailedError += '\nマイクが見つかりません。デバイスが正しく接続されているか確認してください。';
+      } else if (error.name === 'NotSupportedError') {
+        detailedError += '\nお使いのブラウザまたはデバイスは音声認識に対応していません。';
+      } else if (error.message) {
+        detailedError += `\n詳細: ${error.message}`;
+      }
+      
+      setError(detailedError);
+      setIsListening(false);
+    }
+  }, [isSupported, isListening, initializeRecognition]);
+
+  // 音声認識停止
+  const stopListening = useCallback(() => {
+    autoRestartRef.current = false; // 手動停止を記録
+    
+    // タイムアウトタイマーをクリア
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    
+    if (recognitionRef.current && isListening) {
+      recognitionRef.current.stop();
+    }
+    setIsListening(false);
+  }, [isListening]);
+
+  // トランスクリプトリセット
+  const resetTranscript = useCallback(() => {
+    setTranscript('');
+    setInterimTranscript('');
+    finalTranscriptRef.current = '';
+    setError(null);
+  }, []);
+
+  // クリーンアップ
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
+  return {
+    isListening,
+    transcript,
+    interimTranscript,
+    error,
+    isSupported,
+    startListening,
+    stopListening,
+    resetTranscript,
+  };
+}

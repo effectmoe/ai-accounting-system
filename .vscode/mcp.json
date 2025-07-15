@@ -1,0 +1,54 @@
+{
+  "servers": {
+    "eslint": {
+      "command": "npx",
+      "args": ["@eslint/mcp@latest"],
+      "description": "JavaScript/TypeScript/React静的解析"
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "."],
+      "description": "ファイルシステム操作・分析"
+    },
+    "git": {
+      "command": "uvx",
+      "args": ["mcp-server-git", "--repository", "."],
+      "description": "Git履歴・ブランチ分析"
+    },
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${env:GITHUB_TOKEN}"
+      },
+      "description": "GitHub PR/Issue統合"
+    },
+    "nodejs-debugger": {
+      "command": "npx",
+      "args": ["@hyperdrive-eng/mcp-nodejs-debugger"],
+      "description": "Node.js実行時デバッグ"
+    },
+    "aam-debug-coordinator": {
+      "command": "node",
+      "args": ["src/debug/mcp-servers/aam-debug-coordinator.js"],
+      "cwd": ".",
+      "env": {
+        "MONGODB_URI": "${env:MONGODB_URI}",
+        "AZURE_FORM_RECOGNIZER_KEY": "${env:AZURE_FORM_RECOGNIZER_KEY}",
+        "OPENAI_API_KEY": "${env:OPENAI_API_KEY}",
+        "DEEPSEEK_API_KEY": "${env:DEEPSEEK_API_KEY}"
+      },
+      "description": "AAM統合デバッグコーディネーター"
+    },
+    "aam-ocr-monitor": {
+      "command": "node",
+      "args": ["src/debug/mcp-servers/ocr-agent-monitor.js"],
+      "cwd": ".",
+      "env": {
+        "AZURE_FORM_RECOGNIZER_ENDPOINT": "${env:AZURE_FORM_RECOGNIZER_ENDPOINT}",
+        "GAS_OCR_URL": "${env:GAS_OCR_URL}"
+      },
+      "description": "OCRエージェント専用監視"
+    }
+  }
+}

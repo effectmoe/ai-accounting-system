@@ -1,0 +1,63 @@
+{
+  "buildCommand": "npm run build",
+  "outputDirectory": ".next",
+  "devCommand": "npm run dev",
+  "installCommand": "npm install",
+  "framework": "nextjs",
+  "regions": ["hnd1"],
+  "build": {
+    "env": {
+      "NODE_ENV": "production",
+      "FORCE_REBUILD": "2025-07-08-azure-fix"
+    }
+  },
+  "functions": {
+    "app/api/upload/gdrive/route.ts": {
+      "maxDuration": 30
+    },
+    "app/api/import/freee/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/batch-import/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/ocr/analyze/route.ts": {
+      "maxDuration": 30
+    },
+    "app/api/webhook/ocr/route.ts": {
+      "maxDuration": 30
+    },
+    "app/api/accounts/learn/route.ts": {
+      "maxDuration": 30
+    },
+    "app/api/accounts/analyze/route.ts": {
+      "maxDuration": 30
+    },
+    "app/api/documents/[id]/route.ts": {
+      "maxDuration": 30
+    },
+    "app/api/files/[id]/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/files/[id]/direct/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/invoices/analyze-chat/route.ts": {
+      "maxDuration": 30
+    },
+    "app/api/invoices/[id]/pdf/route.ts": {
+      "maxDuration": 30
+    }
+  },
+  "public": true,
+  "headers": [
+    {
+      "source": "/api/webhook/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET,OPTIONS,PATCH,DELETE,POST,PUT" },
+        { "key": "Access-Control-Allow-Headers", "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version" }
+      ]
+    }
+  ]
+}

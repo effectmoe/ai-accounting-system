@@ -1,0 +1,119 @@
+{
+  "mcpServers": {
+    "ocr-server": {
+      "command": "npx",
+      "args": ["tsx", "./src/mcp-servers/ocr-mcp-server.ts"],
+      "env": {
+        "HANDWRITING_OCR_API_KEY": "",
+        "GOOGLE_CLOUD_API_KEY": "",
+        "GAS_OCR_URL": ""
+      }
+    },
+    "accounting-server": {
+      "command": "npx",
+      "args": ["tsx", "./src/mcp-servers/accounting-mcp-server.ts"],
+      "env": {
+        "DEEPSEEK_API_KEY": ""
+      }
+    },
+    "database-server": {
+      "command": "npx", 
+      "args": ["tsx", "./src/mcp-servers/database-mcp-server.ts"],
+      "env": {
+        "MONGODB_URI": ""
+      }
+    },
+    "customer-server": {
+      "command": "npx",
+      "args": ["tsx", "./src/mcp-servers/customer-mcp-server.ts"],
+      "env": {
+        "MONGODB_URI": ""
+      }
+    },
+    "product-server": {
+      "command": "npx",
+      "args": ["tsx", "./src/mcp-servers/product-mcp-server.ts"],
+      "env": {
+        "MONGODB_URI": ""
+      }
+    },
+    "japan-tax-server": {
+      "command": "npx",
+      "args": ["tsx", "./src/mcp-servers/japan-tax-mcp-server.ts"],
+      "env": {
+        "DEEPSEEK_API_KEY": ""
+      }
+    },
+    "ui-server": {
+      "command": "npx",
+      "args": ["tsx", "./src/mcp-servers/ui-mcp-server.ts"],
+      "env": {
+        "LOVABLE_API_KEY": "",
+        "V0_API_KEY": "",
+        "ANTHROPIC_API_KEY": ""
+      }
+    },
+    "nlweb-server": {
+      "command": "npx",
+      "args": ["tsx", "./src/mcp-servers/nlweb-mcp-server.ts"],
+      "env": {
+        "NLWEB_API_KEY": "",
+        "PERPLEXITY_API_KEY": "",
+        "FIRECRAWL_API_KEY": "",
+        "DEEPSEEK_API_KEY": "",
+        "ANTHROPIC_API_KEY": "",
+        "OPENAI_API_KEY": ""
+      }
+    },
+    "github-server": {
+      "command": "npx",
+      "args": ["tsx", "./src/mcp-servers/github-mcp-wrapper.ts"],
+      "env": {
+        "GITHUB_TOKEN": ""
+      }
+    },
+    "vercel-server": {
+      "command": "npx",
+      "args": ["tsx", "./src/mcp-servers/vercel-mcp-wrapper.ts"],
+      "env": {
+        "VERCEL_TOKEN": "",
+        "VERCEL_TEAM_ID": ""
+      }
+    },
+    "ml-analytics-server": {
+      "command": "npx",
+      "args": ["tsx", "./src/mcp-servers/ml-analytics-mcp-server.ts"],
+      "env": {
+        "NODE_ENV": "production"
+      }
+    },
+    "websocket-server": {
+      "command": "npx",
+      "args": ["tsx", "./src/mcp-servers/websocket-mcp-server.ts"],
+      "env": {
+        "WEBSOCKET_PORT": "3001"
+      }
+    },
+    "enhanced-firecrawl-server": {
+      "command": "npx",
+      "args": ["tsx", "./src/mcp-servers/enhanced-firecrawl-mcp-server.ts"],
+      "env": {
+        "FIRECRAWL_API_KEY": ""
+      }
+    },
+    "mcp-coordinator": {
+      "command": "npx",
+      "args": ["tsx", "./src/mcp-servers/mcp-coordinator.ts"],
+      "env": {
+        "NODE_ENV": "production",
+        "MONGODB_URI": "",
+        "DEEPSEEK_API_KEY": "",
+        "ANTHROPIC_API_KEY": "",
+        "OPENAI_API_KEY": "",
+        "PERPLEXITY_API_KEY": "",
+        "FIRECRAWL_API_KEY": "",
+        "WEBSOCKET_PORT": "3001"
+      }
+    }
+  }
+}

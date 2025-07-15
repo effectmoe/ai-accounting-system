@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "mongodb": {
+      "command": "npx",
+      "args": [
+        "@mongodb-js/mongodb-mcp-server",
+        "--uri",
+        "${MONGODB_URI}"
+      ],
+      "env": {
+        "MONGODB_URI": "${MONGODB_URI}"
+      }
+    }
+  }
+}

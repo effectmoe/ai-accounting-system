@@ -1,0 +1,65 @@
+{
+  "mcpServers": {
+    "perplexity-mcp": {
+      "command": "node",
+      "args": ["./node_modules/@modelcontextprotocol/server-perplexity/dist/index.js"],
+      "env": {
+        "PERPLEXITY_API_KEY": "${PERPLEXITY_API_KEY}"
+      },
+      "disabled": false
+    },
+    "sequential-thinking": {
+      "command": "node",
+      "args": ["./node_modules/@modelcontextprotocol/server-sequential-thinking/dist/index.js"],
+      "env": {
+        "DEEPSEEK_API_KEY": "${DEEPSEEK_API_KEY}"
+      },
+      "disabled": false
+    },
+    "midscene": {
+      "command": "node",
+      "args": ["./node_modules/@modelcontextprotocol/server-midscene/dist/index.js"],
+      "env": {
+        "MIDSCENE_API_KEY": "${MIDSCENE_API_KEY}",
+        "MIDSCENE_CHROME_EXTENSION_ID": "${MIDSCENE_CHROME_EXTENSION_ID}",
+        "MIDSCENE_WEBSOCKET_PORT": "9222",
+        "MIDSCENE_ENABLE_CHROME_EXTENSION": "true"
+      },
+      "disabled": false
+    },
+    "firecrawl": {
+      "command": "node",
+      "args": ["./node_modules/@modelcontextprotocol/server-firecrawl/dist/index.js"],
+      "env": {
+        "FIRECRAWL_API_KEY": "${FIRECRAWL_API_KEY}"
+      },
+      "disabled": false
+    },
+    "dataforseo": {
+      "command": "node",
+      "args": ["./node_modules/@modelcontextprotocol/server-dataforseo/dist/index.js"],
+      "env": {
+        "DATAFORSEO_API_KEY": "${DATAFORSEO_API_KEY}"
+      },
+      "disabled": false
+    },
+    "playwright": {
+      "command": "node",
+      "args": ["./node_modules/@modelcontextprotocol/server-playwright/dist/index.js"],
+      "env": {
+        "PLAYWRIGHT_HEADLESS": "true",
+        "PLAYWRIGHT_BROWSER": "chromium"
+      },
+      "disabled": false
+    },
+    "filesystem": {
+      "command": "node",
+      "args": ["./node_modules/@modelcontextprotocol/server-filesystem/dist/index.js"],
+      "env": {
+        "FILESYSTEM_ROOT": "/Users/tonychustudio/Documents",
+        "FILESYSTEM_READ_ONLY": "false"
+      },
+      "disabled": false
+    }
+  }
+}
