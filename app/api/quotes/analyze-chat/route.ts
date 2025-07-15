@@ -178,56 +178,25 @@ export async function POST(request: NextRequest) {
       `ID: ${customer._id}, 会社名: ${customer.companyName || customer.name || '名前未設定'}, 電話: ${customer.phone || '未設定'}, メール: ${customer.email || '未設定'}`
     ).join('\n');
 
-    // システムプロンプト
+    // システムプロンプト（請求書用と同じ自然な会話形式に修正）
     const systemPrompt = `あなたは見積書作成を支援するAIアシスタントです。
-ユーザーとの会話から見積書の情報を抽出し、構造化されたデータとして返してください。
+ユーザーとの自然な会話を通じて、見積書に必要な情報を収集してください。
 
-利用可能な顧客データ:
-${customerList}
+現在の見積書データ：
+${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設定'}
+項目数: ${currentInvoiceData.items?.length || 0}` : 'なし'}
 
-現在の見積書データ (更新基準):
-${JSON.stringify(currentInvoiceData, null, 2)}
+重要なルール：
+1. 自然で親しみやすい日本語で応答
+2. 見積項目は番号付きリストで表示
+3. 例：「1. システム構築費：1,200,000円」
+4. 完成時は「下の『会話を終了して確定』ボタンをクリックしてください」と案内
+5. 見積書の有効期限は通常30日後（特に指定がない場合）
 
-会話履歴:
-${conversationHistory ? conversationHistory.map((msg: any) => `${msg.role}: ${msg.content}`).join('\n') : ''}
+今日: ${defaultQuoteDate}、有効期限: ${formattedValidityDate}
 
-以下のJSON形式で見積書データを返してください:
-{
-  "customerName": "顧客名（完全一致する顧客がある場合はその名前、ない場合はユーザーが言った名前）",
-  "customerId": "完全一致する顧客のIDまたはnull",
-  "items": [
-    {
-      "description": "項目名・商品名",
-      "quantity": 数量（数値）,
-      "unitPrice": 単価（数値）,
-      "amount": 小計（数値、quantity × unitPrice）,
-      "taxRate": 税率（通常0.1）,
-      "taxAmount": 税額（数値、amount × taxRate）
-    }
-  ],
-  "subtotal": 合計小計（全項目のamountの合計）,
-  "taxAmount": 合計税額（全項目のtaxAmountの合計）,
-  "totalAmount": 総合計（subtotal + taxAmount）,
-  "quoteDate": "見積書発行日（YYYY-MM-DD形式、今日の日付: ${defaultQuoteDate}）",
-  "validityDate": "見積書有効期限（YYYY-MM-DD形式、デフォルト: ${formattedValidityDate}）",
-  "notes": "備考・特記事項",
-  "paymentMethod": "支払い方法（bank_transfer等）"
-}
-
-重要な注意点:
-1. 顧客名は既存顧客と完全一致チェックを行い、一致する場合はcustomerIdも設定
-2. 金額計算は正確に行う（amount = quantity × unitPrice, taxAmount = amount × taxRate）
-3. 日付は必ずYYYY-MM-DD形式で返す
-4. 見積書の有効期限は通常30日後（特に指定がない場合）
-5. 既存データがある場合は、更新・追加・修正として処理
-6. ユーザーの質問や確認には自然な日本語で回答も含める
-
-返答は以下の形式で:
-{
-  "data": 上記のJSON形式のデータ,
-  "message": "ユーザーへの確認・質問・返答メッセージ",
-  "requiresConfirmation": 確認が必要な場合true
-}`;
+ユーザーの入力に対して、見積書作成のサポートを行ってください。
+金額や項目が含まれる場合は、番号付きリストで明確に表示してください。`;
 
     try {
       console.log('[API] Calling DeepSeek API for quote analysis');
@@ -248,27 +217,109 @@ ${conversationHistory ? conversationHistory.map((msg: any) => `${msg.role}: ${ms
       const aiResponse = completion.choices[0].message.content;
       console.log('[API] AI Response:', aiResponse);
 
-      // JSONレスポンスをパース
-      let parsedResponse;
-      try {
-        // コードブロックがある場合は除去
-        const cleanedResponse = aiResponse.replace(/```json\n|\n```|```/g, '');
-        parsedResponse = JSON.parse(cleanedResponse);
-        console.log('[API] Parsed response:', JSON.stringify(parsedResponse, null, 2));
-      } catch (parseError) {
-        console.error('[API] JSON parse error:', parseError);
-        console.error('[API] Raw AI response:', aiResponse);
-        throw new Error('Invalid JSON response from AI');
+      // 請求書APIと同じパターンでデータを抽出
+      let extractedData = null;
+      let updatedData = { 
+        ...currentInvoiceData,
+        items: currentInvoiceData?.items ? [...currentInvoiceData.items] : []
+      };
+
+      if (aiResponse) {
+        console.log('[API] Processing AI response for data extraction');
+        
+        // シンプルなキーワードベースの抽出
+        const lines = aiResponse.split('\n');
+        let newItems = [];
+        let foundItemList = false;
+        
+        // 顧客名の抽出
+        if (mode === 'create' && !updatedData.customerName && conversation) {
+          const customerMatch = conversation.match(/([^に]+)(?:さん|様)?に/);
+          if (customerMatch) {
+            updatedData.customerName = customerMatch[1].replace(/さん|様/g, '').trim();
+            console.log('[API] Extracted customer name from conversation:', updatedData.customerName);
+          }
+        }
+        
+        // 番号付き項目を探す（例：1. システム構築費：1,200,000円）
+        for (const line of lines) {
+          const itemMatch = line.match(/^(\d+)\.\s*([^：]+)：\s*([\d,]+)円/);
+          if (itemMatch) {
+            foundItemList = true;
+            const itemNumber = parseInt(itemMatch[1]);
+            const description = itemMatch[2].trim();
+            const amount = parseInt(itemMatch[3].replace(/,/g, ''));
+            
+            console.log(`[API] Found item ${itemNumber}: ${description} = ${amount}円`);
+            
+            newItems.push({
+              description: description,
+              quantity: 1,
+              unitPrice: amount,
+              amount: amount,
+              taxRate: 0.1,
+              taxAmount: Math.floor(amount * 0.1)
+            });
+          }
+        }
+        
+        // 項目が見つかった場合は、既存の項目を置き換える
+        if (foundItemList && newItems.length > 0) {
+          updatedData.items = newItems;
+          console.log('[API] Updated items from AI response:', JSON.stringify(newItems, null, 2));
+        }
+        
+        // extractedDataに更新されたデータを設定
+        extractedData = updatedData;
       }
 
-      // データ検証
-      const validatedData = QuoteDataSchema.parse(parsedResponse.data || parsedResponse);
-      console.log('[API] Validated data:', JSON.stringify(validatedData, null, 2));
+      // フォールバック処理
+      if (!extractedData || !extractedData.items || extractedData.items.length === 0) {
+        console.log('[API] No items found in AI response, keeping current data');
+        extractedData = currentInvoiceData || {};
+      }
+
+      // 日付設定
+      if (extractedData) {
+        if (!extractedData.quoteDate) {
+          extractedData.quoteDate = defaultQuoteDate;
+        }
+        if (!extractedData.validityDate) {
+          extractedData.validityDate = formattedValidityDate;
+        }
+      }
+
+      // 合計計算
+      const finalData = extractedData;
+      const subtotal = finalData.items ? finalData.items.reduce((sum, item) => sum + (item.amount || 0), 0) : 0;
+      const taxAmount = finalData.items ? finalData.items.reduce((sum, item) => sum + (item.taxAmount || 0), 0) : 0;
+      const totalAmount = subtotal + taxAmount;
+
+      // AIの応答からJSONやコードを除去して、自然な日本語のみを抽出
+      let cleanMessage = aiResponse;
+      cleanMessage = cleanMessage.replace(/```json[\s\S]*?```/g, '');
+      cleanMessage = cleanMessage.replace(/\{[\s\S]*?"extractedData"[\s\S]*?\}/g, '');
+      cleanMessage = cleanMessage.replace(/```[\s\S]*?```/g, '');
+      cleanMessage = cleanMessage.replace(/\n\n+/g, '\n\n').trim();
+
+      const responseData = {
+        customerId: null,
+        customerName: finalData.customerName || '',
+        items: finalData.items || [],
+        quoteDate: finalData.quoteDate,
+        validityDate: finalData.validityDate,
+        notes: finalData.notes || '',
+        paymentMethod: finalData.paymentMethod || 'bank_transfer',
+        subtotal,
+        taxAmount,
+        totalAmount,
+      };
 
       return NextResponse.json({
-        data: validatedData,
-        message: parsedResponse.message || 'データが更新されました。',
-        requiresConfirmation: parsedResponse.requiresConfirmation || false
+        success: true,
+        data: responseData,
+        message: cleanMessage,
+        aiConversationId: sessionId || Date.now().toString(),
       });
 
     } catch (aiError) {
@@ -276,6 +327,7 @@ ${conversationHistory ? conversationHistory.map((msg: any) => `${msg.role}: ${ms
       
       // フォールバック応答
       return NextResponse.json({
+        success: false,
         data: currentInvoiceData || {},
         message: '申し訳ございませんが、AI処理でエラーが発生しました。手動で入力していただくか、もう一度お試しください。',
         requiresConfirmation: false
