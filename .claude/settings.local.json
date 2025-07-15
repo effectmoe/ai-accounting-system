@@ -94,7 +94,12 @@
       "Bash(git fetch:*)",
       "Bash(./setup-mongodb-env.sh:*)",
       "Bash(tsx scripts/simple-mastra-deploy.ts:*)",
-      "Bash(tsx scripts/test-structured-data.ts:*)"
+      "Bash(tsx scripts/test-structured-data.ts:*)",
+      "Bash(tsx scripts/check-mongodb-vector.ts:*)",
+      "Bash(MONGODB_URI=\"mongodb+srv://accounting-user:Monchan5454%40@accounting-cluster.nld0j20.mongodb.net/accounting?retryWrites=true&w=majority&appName=accounting-cluster\" npx tsx scripts/check-mongodb-vector.ts)",
+      "Bash(MONGODB_URI=\"mongodb+srv://accounting-user:Monchan5454%40@accounting-cluster.nld0j20.mongodb.net/accounting?retryWrites=true&w=majority&appName=accounting-cluster\" npx tsx -e \"\nimport { MongoClient } from ''mongodb'';\nconst client = new MongoClient(process.env.MONGODB_URI);\nawait client.connect();\nconst db = client.db(''accounting'');\n\n// FAQコレクションの構造確認\nconst faq = await db.collection(''faq_articles'').findOne();\nconsole.log(''FAQ サンプル構造:'', Object.keys(faq || {}));\n\n// ナレッジコレクション確認\nconst knowledgeExists = await db.collection(''knowledgeArticles'').findOne();\nconsole.log(''knowledgeArticles サンプル:'', Object.keys(knowledgeExists || {}));\n\nawait client.close();\n\")",
+      "Bash(MONGODB_URI=\"mongodb+srv://accounting-user:Monchan5454%40@accounting-cluster.nld0j20.mongodb.net/accounting?retryWrites=true&w=majority&appName=accounting-cluster\" npx tsx scripts/setup-vector-search.ts)",
+      "Bash(./scripts/setup-nlweb-env.sh:*)"
     ],
     "deny": []
   }
