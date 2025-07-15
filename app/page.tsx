@@ -118,6 +118,7 @@ const recentActivities = [
 export default function Home() {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isKnowledgeChatOpen, setIsKnowledgeChatOpen] = useState(false);
+  const [documentType, setDocumentType] = useState<'invoice' | 'quote'>('invoice');
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
@@ -242,17 +243,32 @@ export default function Home() {
                   AIアシスタントに相談
                 </h2>
                 <p className="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
-                  書類作成から税務相談まで、AIが専門的にサポートします。
+                  請求書・見積書の作成から税務相談まで、AIが専門的にサポートします。
                   最新の税務・会計ナレッジを活用して、正確な回答を提供します。
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-6">
-                  <Button 
-                    onClick={() => setIsChatOpen(true)}
-                    className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-3 rounded-full text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
-                  >
-                    <MessageSquare className="mr-2 h-5 w-5" />
-                    書類作成チャット
-                  </Button>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Button 
+                      onClick={() => {
+                        setDocumentType('invoice');
+                        setIsChatOpen(true);
+                      }}
+                      className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-6 py-3 rounded-full text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+                    >
+                      <MessageSquare className="mr-2 h-5 w-5" />
+                      請求書作成チャット
+                    </Button>
+                    <Button 
+                      onClick={() => {
+                        setDocumentType('quote');
+                        setIsChatOpen(true);
+                      }}
+                      className="bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white px-6 py-3 rounded-full text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+                    >
+                      <MessageSquare className="mr-2 h-5 w-5" />
+                      見積書作成チャット
+                    </Button>
+                  </div>
                   <Button 
                     onClick={() => setIsKnowledgeChatOpen(true)}
                     className="bg-gradient-to-r from-emerald-600 to-cyan-600 hover:from-emerald-700 hover:to-cyan-700 text-white px-6 py-3 rounded-full text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
@@ -357,7 +373,7 @@ export default function Home() {
             <div className="h-[60vh]">
               <AIChatDialog 
                 mode="create"
-                documentType="invoice"
+                documentType={documentType}
                 onClose={() => setIsChatOpen(false)}
                 isOpen={isChatOpen}
               />

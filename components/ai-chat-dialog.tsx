@@ -921,6 +921,15 @@ export default function AIChatDialog({
               onClick={async (e) => {
                 e.preventDefault();
                 
+                // 保存ボタンのクリック状態を確認
+                console.log('[AIChatDialog] Save button clicked');
+                console.log('[AIChatDialog] Current data:', currentInvoiceData);
+                console.log('[AIChatDialog] Data validation:', {
+                  hasCustomerName: !!currentInvoiceData?.customerName,
+                  hasItems: !!(currentInvoiceData?.items && currentInvoiceData.items.length > 0),
+                  itemsCount: currentInvoiceData?.items?.length || 0
+                });
+                
                 // 会話履歴を保存
                 if (companyId && conversationId && messages.length > 1) {
                   // conversationIdの最終チェックと正規化
@@ -983,6 +992,7 @@ export default function AIChatDialog({
                   }
                 }
                 
+                console.log('[AIChatDialog] Calling completeConversation');
                 completeConversation();
               }}
               disabled={!currentInvoiceData || (!currentInvoiceData.customerName && (!currentInvoiceData.items || currentInvoiceData.items.length === 0))}
