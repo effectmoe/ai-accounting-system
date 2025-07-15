@@ -644,3 +644,136 @@ export interface AIConversation {
   createdAt?: Date;
   updatedAt?: Date;
 }
+
+// FAQ記事インターフェース
+export interface FaqArticle {
+  _id?: ObjectId;
+  id?: string;
+  
+  // 基本情報
+  question: string;
+  answer: string;
+  category: string;
+  subcategory?: string;
+  
+  // メタデータ
+  tags: string[];
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  priority: number; // 表示優先度 (1-10)
+  
+  // 構造化データ
+  structuredData: {
+    contentType: 'tax' | 'accounting' | 'invoice' | 'compliance' | 'procedure' | 'general';
+    taxLaw?: string[]; // 関連する税法
+    applicableBusinessTypes?: string[]; // 適用される業種
+    relatedRegulations?: string[]; // 関連する規制
+    effectiveDate?: Date; // 有効開始日
+    expirationDate?: Date; // 有効終了日
+  };
+  
+  // ソース情報
+  sourceInfo: {
+    chatSessionId?: string; // 元のチャットセッションID
+    chatMessageId?: string; // 元のメッセージID
+    originalQuestion?: string; // 元の質問
+    generatedBy: 'chat' | 'manual' | 'import';
+    generatedAt: Date;
+    verifiedBy?: string; // 検証者
+    verifiedAt?: Date;
+  };
+  
+  // 品質管理
+  qualityMetrics: {
+    accuracy: number; // 正確性 (0-100)
+    completeness: number; // 完全性 (0-100)
+    clarity: number; // 明確性 (0-100)
+    usefulness: number; // 有用性 (0-100)
+    overallScore: number; // 総合スコア (0-100)
+  };
+  
+  // 利用統計
+  usageStats: {
+    viewCount: number;
+    helpfulVotes: number;
+    unhelpfulVotes: number;
+    lastViewed?: Date;
+    relatedQuestions?: string[]; // 関連質問のID
+  };
+  
+  // ステータス
+  status: 'draft' | 'review' | 'published' | 'archived' | 'deprecated';
+  isPublished: boolean;
+  isFeatured: boolean; // 注目記事フラグ
+  
+  // バージョン管理
+  version: number;
+  previousVersions?: string[]; // 過去バージョンのID
+  
+  // 検索最適化
+  searchKeywords: string[];
+  relatedFaqIds?: string[];
+  
+  // 日付情報
+  createdAt: Date;
+  updatedAt: Date;
+  publishedAt?: Date;
+}
+
+// FAQカテゴリー
+export interface FaqCategory {
+  _id?: ObjectId;
+  id?: string;
+  
+  name: string;
+  slug: string;
+  description?: string;
+  icon?: string;
+  color?: string;
+  
+  // 階層構造
+  parentCategoryId?: string;
+  subcategories?: string[]; // 子カテゴリのID
+  
+  // 表示設定
+  displayOrder: number;
+  isVisible: boolean;
+  
+  // 統計
+  articleCount: number;
+  totalViews: number;
+  
+  // メタデータ
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// FAQ利用ログ
+export interface FaqUsageLog {
+  _id?: ObjectId;
+  
+  faqId: string;
+  action: 'view' | 'helpful' | 'unhelpful' | 'share' | 'copy';
+  
+  // セッション情報
+  sessionId?: string;
+  userId?: string;
+  ipAddress?: string;
+  userAgent?: string;
+  
+  // コンテキスト
+  referrer?: string;
+  searchQuery?: string;
+  chatContext?: {
+    chatSessionId: string;
+    relatedQuestion: string;
+  };
+  
+  // 詳細データ
+  metadata?: {
+    feedback?: string;
+    rating?: number;
+    [key: string]: any;
+  };
+  
+  timestamp: Date;
+}

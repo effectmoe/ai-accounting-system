@@ -91,7 +91,9 @@
       "Bash(test:*)",
       "WebFetch(domain:accounting-automation-qff3ls6pp-effectmoes-projects.vercel.app)",
       "WebFetch(domain:ai-accounting-system.vercel.app)",
-      "Bash(git fetch:*)"
+      "Bash(git fetch:*)",
+      "Bash(./setup-mongodb-env.sh:*)",
+      "Bash(tsx scripts/simple-mastra-deploy.ts:*)"
     ],
     "deny": []
   }
