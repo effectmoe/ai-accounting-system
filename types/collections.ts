@@ -777,3 +777,175 @@ export interface FaqUsageLog {
   
   timestamp: Date;
 }
+
+// チャットセッション履歴インターフェース
+export interface ChatSession {
+  _id?: ObjectId;
+  sessionId: string;
+  userId?: string;
+  title: string; // 自動生成されるセッションタイトル
+  
+  // メッセージ履歴
+  messages: ChatMessage[];
+  
+  // セッション設定
+  settings: {
+    aiModel: 'deepseek' | 'openai';
+    temperature?: number;
+    maxTokens?: number;
+    systemPrompt?: string;
+  };
+  
+  // コンテキスト管理
+  context: {
+    totalTokens: number;
+    maxTokensLimit: number;
+    summarizedTokens: number; // 要約されたトークン数
+    summaries: ContextSummary[]; // コンテキスト要約履歴
+  };
+  
+  // ファイル添付
+  attachments?: ChatAttachment[];
+  
+  // セッション状態
+  status: 'active' | 'archived' | 'deleted';
+  isBookmarked: boolean;
+  
+  // 統計情報
+  stats: {
+    messageCount: number;
+    totalResponseTime: number; // 累計応答時間（ms）
+    averageResponseTime: number; // 平均応答時間（ms）
+    faqGenerated: number; // 生成されたFAQ数
+  };
+  
+  // メタデータ
+  metadata: {
+    userAgent?: string;
+    ipAddress?: string;
+    language: string;
+    lastActiveAt: Date;
+  };
+  
+  // 日付
+  createdAt: Date;
+  updatedAt: Date;
+  archivedAt?: Date;
+}
+
+// チャットメッセージインターフェース
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  timestamp: Date;
+  
+  // メッセージ固有の設定
+  isStreaming?: boolean;
+  isComplete: boolean;
+  
+  // 添付ファイル
+  attachments?: string[];
+  
+  // AI応答メタデータ
+  metadata?: {
+    model?: string;
+    tokens?: {
+      prompt: number;
+      completion: number;
+      total: number;
+    };
+    responseTime?: number; // ms
+    finishReason?: 'stop' | 'length' | 'content_filter';
+    
+    // 知識ベース活用情報
+    knowledgeUsed?: {
+      articleIds: string[];
+      relevanceScores: number[];
+      vectorSearchQuery?: string;
+    };
+    
+    // FAQ生成情報
+    faqCandidate?: {
+      question: string;
+      category: string;
+      isGenerated: boolean;
+      faqId?: string;
+    };
+  };
+  
+  // ユーザーフィードバック
+  feedback?: {
+    rating: 'good' | 'bad';
+    comment?: string;
+    timestamp: Date;
+  };
+  
+  // エラー情報
+  error?: {
+    message: string;
+    code?: string;
+    retryCount: number;
+  };
+}
+
+// コンテキスト要約インターフェース
+export interface ContextSummary {
+  id: string;
+  summaryText: string;
+  originalTokenCount: number;
+  summaryTokenCount: number;
+  compressionRatio: number; // 圧縮率
+  messageRange: {
+    startIndex: number;
+    endIndex: number;
+    startTimestamp: Date;
+    endTimestamp: Date;
+  };
+  summary_method: 'extractive' | 'abstractive' | 'hierarchical';
+  createdAt: Date;
+}
+
+// チャット添付ファイルインターフェース
+export interface ChatAttachment {
+  id: string;
+  fileName: string;
+  fileType: string;
+  fileSize: number;
+  filePath: string;
+  uploadedAt: Date;
+  
+  // ファイル処理状況
+  processing: {
+    status: 'uploading' | 'processing' | 'completed' | 'failed';
+    extractedText?: string;
+    ocrResults?: string;
+    error?: string;
+  };
+  
+  // 関連情報
+  relatedMessageIds: string[];
+}
+
+// チャットエクスポート設定インターフェース
+export interface ChatExportSettings {
+  format: 'markdown' | 'pdf' | 'html' | 'json';
+  includeMetadata: boolean;
+  includeSystemMessages: boolean;
+  includeAttachments: boolean;
+  dateRange?: {
+    start: Date;
+    end: Date;
+  };
+  messageFilter?: {
+    roles: ('user' | 'assistant' | 'system')[];
+    hasAttachments?: boolean;
+    hasFeedback?: boolean;
+  };
+  styling?: {
+    theme: 'light' | 'dark' | 'auto';
+    fontSize: number;
+    includeTimestamps: boolean;
+    includeTokenCounts: boolean;
+  };
+}
