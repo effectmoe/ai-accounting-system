@@ -25,7 +25,8 @@ import {
   MessageSquare,
   Bot,
   BookOpen,
-  Lightbulb
+  Lightbulb,
+  HelpCircle
 } from 'lucide-react';
 
 const quickActions = [
@@ -73,6 +74,14 @@ const quickActions = [
     href: '/customers',
     icon: Building2,
     color: 'from-orange-500 to-orange-600'
+  },
+  {
+    title: 'FAQ',
+    description: 'よくある質問とその回答',
+    href: '/faq',
+    icon: HelpCircle,
+    color: 'from-amber-500 to-amber-600',
+    badge: 'ナレッジ'
   }
 ];
 

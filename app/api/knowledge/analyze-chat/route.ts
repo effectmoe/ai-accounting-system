@@ -58,8 +58,19 @@ export async function POST(request: NextRequest) {
       conversationHistory = [],
       sessionId,
       includeKnowledge = true,
-      knowledgeFilters = {}
+      knowledgeFilters = {},
+      stream = false
     } = body;
+    
+    // ストリーミングが有効な場合は別のエンドポイントにリダイレクト
+    if (stream) {
+      const streamResponse = await fetch(new URL('/api/knowledge/analyze-chat-stream', request.url), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      return streamResponse;
+    }
     
     if (!conversation || typeof conversation !== 'string') {
       return NextResponse.json(
