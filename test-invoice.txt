@@ -1,0 +1,16 @@
+INVOICE
+
+Invoice Number: TEST-2025-001
+Date: 2025-07-08
+
+To:
+Test Company Inc.
+123 Test Street
+Test City, TC 12345
+
+Description: Testing OCR Service
+Amount: $100.00
+Tax: $10.00
+Total: $110.00
+
+Payment Terms: Net 30

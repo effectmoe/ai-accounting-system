@@ -1,0 +1,1062 @@
+
+> mastra-accounting-automation@1.0.0 dev
+> next dev
+
+   ▲ Next.js 14.1.0
+   - Local:        http://localhost:3000
+   - Environments: .env.local, .env
+
+ ✓ Ready in 1062ms
+ ✓ Compiled /middleware in 148ms (64 modules)
+ ✓ Compiled /api/documents/list in 121ms (40 modules)
+Creating new MongoDB connection...
+MongoDB URI configured: mongodb+srv://***:***@accounting-cluster.nld0j20.mongodb.net/accounting?retryWrites=true&w=majority&appName=accounting-cluster
+Documents list API - MongoDB URI exists: true
+MongoDB connection verified with ping
+Reusing cached MongoDB connection
+Raw documents from database: 1
+First document raw data: {
+  _id: new ObjectId('686de42824009ad5c5b13920'),
+  companyId: '11111111-1111-1111-1111-111111111111',
+  fileName: 'スキャン_20250705-2350.pdf',
+  fileType: 'application/pdf',
+  fileSize: 579577,
+  documentType: 'receipt',
+  vendorName: 'タイムズ',
+  totalAmount: 800,
+  taxAmount: 0,
+  documentDate: 2025-05-25T00:00:00.000Z,
+  issue_date: 2025-05-25T00:00:00.000Z,
+  receipt_date: '2025-05-25',
+  category: '旅費交通費',
+  subcategory: null,
+  extractedText: '{\n' +
+    '  "merchantName": "タイムズ",\n' +
+    '  "merchantPhoneNumber": "TEL:0120-70-8924\\n4010001137272",\n' +
+    '  "transactionDate": "2025年 5月25日",\n' +
+    '  "transactionTime": "13:53",\n' +
+    '  "total": 800,\n' +
+    '  "items": [],\n' +
+    '  "customFields": {\n' +
+    '    "MerchantPhoneNumber": "TEL:0120-70-8924\\n4010001137272",\n' +
+    '    "TransactionTime": "13:53"\n' +
+    '  }\n' +
+    '}',
+  confidence: 0.995,
+  ocrStatus: 'completed',
+  ocrResultId: '686de42824009ad5c5b1391f',
+  gridfsFileId: '686de42824009ad5c5b1391b',
+  status: 'pending',
+  createdAt: 2025-07-09T03:38:16.918Z,
+  updatedAt: 2025-07-09T03:38:16.918Z
+}
+Formatted documents: 1
+First formatted document: {
+  id: '686de42824009ad5c5b13920',
+  company_id: '11111111-1111-1111-1111-111111111111',
+  document_type: 'receipt',
+  document_number: 'DOC-c5b13920',
+  status: 'pending',
+  issue_date: 2025-05-25T00:00:00.000Z,
+  partner_name: 'タイムズ',
+  partner_address: '',
+  total_amount: 800,
+  tax_amount: 0,
+  subtotal: 800,
+  notes: '',
+  created_at: 2025-07-09T03:38:16.918Z,
+  updated_at: 2025-07-09T03:38:16.918Z,
+  file_name: 'スキャン_20250705-2350.pdf',
+  file_type: 'application/pdf',
+  file_size: 579577,
+  vendor_name: 'タイムズ',
+  receipt_date: 2025-05-25T00:00:00.000Z,
+  category: '旅費交通費',
+  extracted_text: '{\n' +
+    '  "merchantName": "タイムズ",\n' +
+    '  "merchantPhoneNumber": "TEL:0120-70-8924\\n4010001137272",\n' +
+    '  "transactionDate": "2025年 5月25日",\n' +
+    '  "transactionTime": "13:53",\n' +
+    '  "total": 800,\n' +
+    '  "items": [],\n' +
+    '  "customFields": {\n' +
+    '    "MerchantPhoneNumber": "TEL:0120-70-8924\\n4010001137272",\n' +
+    '    "TransactionTime": "13:53"\n' +
+    '  }\n' +
+    '}',
+  confidence: 0.995,
+  ocr_status: 'completed',
+  ocr_result_id: '686de42824009ad5c5b1391f',
+  gridfs_file_id: '686de42824009ad5c5b1391b',
+  journalId: undefined
+}
+Reusing cached MongoDB connection
+ ✓ Compiled /api/files/[id] in 30ms (42 modules)
+Reusing cached MongoDB connection
+Creating new MongoDB connection...
+MongoDB URI configured: mongodb+srv://***:***@accounting-cluster.nld0j20.mongodb.net/accounting?retryWrites=true&w=majority&appName=accounting-cluster
+File API called with ID: 686de42824009ad5c5b1391b
+Reusing cached MongoDB connection
+Searching for file with ObjectId: 686de42824009ad5c5b1391b
+Found files: 0
+File not found in GridFS
+ ○ Compiling /documents ...
+ ✓ Compiled /documents in 2.1s (732 modules)
+ ✓ Compiled in 91ms (339 modules)
+Documents list API - MongoDB URI exists: true
+Reusing cached MongoDB connection
+Reusing cached MongoDB connection
+Raw documents from database: 1
+First document raw data: {
+  _id: new ObjectId('686de42824009ad5c5b13920'),
+  companyId: '11111111-1111-1111-1111-111111111111',
+  fileName: 'スキャン_20250705-2350.pdf',
+  fileType: 'application/pdf',
+  fileSize: 579577,
+  documentType: 'receipt',
+  vendorName: 'タイムズ',
+  totalAmount: 800,
+  taxAmount: 0,
+  documentDate: 2025-05-25T00:00:00.000Z,
+  issue_date: 2025-05-25T00:00:00.000Z,
+  receipt_date: '2025-05-25',
+  category: '旅費交通費',
+  subcategory: null,
+  extractedText: '{\n' +
+    '  "merchantName": "タイムズ",\n' +
+    '  "merchantPhoneNumber": "TEL:0120-70-8924\\n4010001137272",\n' +
+    '  "transactionDate": "2025年 5月25日",\n' +
+    '  "transactionTime": "13:53",\n' +
+    '  "total": 800,\n' +
+    '  "items": [],\n' +
+    '  "customFields": {\n' +
+    '    "MerchantPhoneNumber": "TEL:0120-70-8924\\n4010001137272",\n' +
+    '    "TransactionTime": "13:53"\n' +
+    '  }\n' +
+    '}',
+  confidence: 0.995,
+  ocrStatus: 'completed',
+  ocrResultId: '686de42824009ad5c5b1391f',
+  gridfsFileId: '686de42824009ad5c5b1391b',
+  status: 'pending',
+  createdAt: 2025-07-09T03:38:16.918Z,
+  updatedAt: 2025-07-09T03:38:16.918Z
+}
+Formatted documents: 1
+First formatted document: {
+  id: '686de42824009ad5c5b13920',
+  company_id: '11111111-1111-1111-1111-111111111111',
+  document_type: 'receipt',
+  document_number: 'DOC-c5b13920',
+  status: 'pending',
+  issue_date: 2025-05-25T00:00:00.000Z,
+  partner_name: 'タイムズ',
+  partner_address: '',
+  total_amount: 800,
+  tax_amount: 0,
+  subtotal: 800,
+  notes: '',
+  created_at: 2025-07-09T03:38:16.918Z,
+  updated_at: 2025-07-09T03:38:16.918Z,
+  file_name: 'スキャン_20250705-2350.pdf',
+  file_type: 'application/pdf',
+  file_size: 579577,
+  vendor_name: 'タイムズ',
+  receipt_date: 2025-05-25T00:00:00.000Z,
+  category: '旅費交通費',
+  extracted_text: '{\n' +
+    '  "merchantName": "タイムズ",\n' +
+    '  "merchantPhoneNumber": "TEL:0120-70-8924\\n4010001137272",\n' +
+    '  "transactionDate": "2025年 5月25日",\n' +
+    '  "transactionTime": "13:53",\n' +
+    '  "total": 800,\n' +
+    '  "items": [],\n' +
+    '  "customFields": {\n' +
+    '    "MerchantPhoneNumber": "TEL:0120-70-8924\\n4010001137272",\n' +
+    '    "TransactionTime": "13:53"\n' +
+    '  }\n' +
+    '}',
+  confidence: 0.995,
+  ocr_status: 'completed',
+  ocr_result_id: '686de42824009ad5c5b1391f',
+  gridfs_file_id: '686de42824009ad5c5b1391b',
+  journalId: undefined
+}
+Reusing cached MongoDB connection
+Documents list API - MongoDB URI exists: true
+Reusing cached MongoDB connection
+Raw documents from database: 1
+First document raw data: {
+  _id: new ObjectId('686de42824009ad5c5b13920'),
+  companyId: '11111111-1111-1111-1111-111111111111',
+  fileName: 'スキャン_20250705-2350.pdf',
+  fileType: 'application/pdf',
+  fileSize: 579577,
+  documentType: 'receipt',
+  vendorName: 'タイムズ',
+  totalAmount: 800,
+  taxAmount: 0,
+  documentDate: 2025-05-25T00:00:00.000Z,
+  issue_date: 2025-05-25T00:00:00.000Z,
+  receipt_date: '2025-05-25',
+  category: '旅費交通費',
+  subcategory: null,
+  extractedText: '{\n' +
+    '  "merchantName": "タイムズ",\n' +
+    '  "merchantPhoneNumber": "TEL:0120-70-8924\\n4010001137272",\n' +
+    '  "transactionDate": "2025年 5月25日",\n' +
+    '  "transactionTime": "13:53",\n' +
+    '  "total": 800,\n' +
+    '  "items": [],\n' +
+    '  "customFields": {\n' +
+    '    "MerchantPhoneNumber": "TEL:0120-70-8924\\n4010001137272",\n' +
+    '    "TransactionTime": "13:53"\n' +
+    '  }\n' +
+    '}',
+  confidence: 0.995,
+  ocrStatus: 'completed',
+  ocrResultId: '686de42824009ad5c5b1391f',
+  gridfsFileId: '686de42824009ad5c5b1391b',
+  status: 'pending',
+  createdAt: 2025-07-09T03:38:16.918Z,
+  updatedAt: 2025-07-09T03:38:16.918Z
+}
+Formatted documents: 1
+First formatted document: {
+  id: '686de42824009ad5c5b13920',
+  company_id: '11111111-1111-1111-1111-111111111111',
+  document_type: 'receipt',
+  document_number: 'DOC-c5b13920',
+  status: 'pending',
+  issue_date: 2025-05-25T00:00:00.000Z,
+  partner_name: 'タイムズ',
+  partner_address: '',
+  total_amount: 800,
+  tax_amount: 0,
+  subtotal: 800,
+  notes: '',
+  created_at: 2025-07-09T03:38:16.918Z,
+  updated_at: 2025-07-09T03:38:16.918Z,
+  file_name: 'スキャン_20250705-2350.pdf',
+  file_type: 'application/pdf',
+  file_size: 579577,
+  vendor_name: 'タイムズ',
+  receipt_date: 2025-05-25T00:00:00.000Z,
+  category: '旅費交通費',
+  extracted_text: '{\n' +
+    '  "merchantName": "タイムズ",\n' +
+    '  "merchantPhoneNumber": "TEL:0120-70-8924\\n4010001137272",\n' +
+    '  "transactionDate": "2025年 5月25日",\n' +
+    '  "transactionTime": "13:53",\n' +
+    '  "total": 800,\n' +
+    '  "items": [],\n' +
+    '  "customFields": {\n' +
+    '    "MerchantPhoneNumber": "TEL:0120-70-8924\\n4010001137272",\n' +
+    '    "TransactionTime": "13:53"\n' +
+    '  }\n' +
+    '}',
+  confidence: 0.995,
+  ocr_status: 'completed',
+  ocr_result_id: '686de42824009ad5c5b1391f',
+  gridfs_file_id: '686de42824009ad5c5b1391b',
+  journalId: undefined
+}
+Reusing cached MongoDB connection
+ ✓ Compiled /not-found in 151ms (714 modules)
+ ✓ Compiled in 110ms (339 modules)
+ ✓ Compiled /not-found in 56ms (688 modules)
+ ✓ Compiled /_error in 377ms (851 modules)
+ ⨯ Error: Cannot find module './1638.js'
+Require stack:
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/pages/_document.js
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/utils.js
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-middleware.js
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-reloader-webpack.js
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1405:15)
+    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require-hook.js:55:36
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1061:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1066:22)
+    at Function._load (node:internal/modules/cjs/loader:1215:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1491:12)
+    at mod.require (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require-hook.js:65:28)
+    at require (node:internal/modules/helpers:135:16)
+    at __webpack_require__.f.require (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:198:28)
+    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:111:40
+    at Array.reduce (<anonymous>)
+    at __webpack_require__.e (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:110:67)
+    at Array.map (<anonymous>)
+    at __webpack_require__.X (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:162:22)
+    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/app/documents/page.js:18:5340
+    at Object.<anonymous> (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/app/documents/page.js:18:5393)
+    at Module._compile (node:internal/modules/cjs/loader:1734:14)
+    at Object..js (node:internal/modules/cjs/loader:1899:10)
+    at Module.load (node:internal/modules/cjs/loader:1469:32)
+    at Function._load (node:internal/modules/cjs/loader:1286:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1491:12)
+    at mod.require (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require-hook.js:65:28)
+    at require (node:internal/modules/helpers:135:16)
+    at requirePage (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js:109:84)
+    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js:74:84
+    at async loadComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js:74:26)
+    at async DevServer.findPageComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:675:36) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js',
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/pages/_document.js',
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js',
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js',
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/utils.js',
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-middleware.js',
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-reloader-webpack.js',
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js',
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js',
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js'
+  ],
+  page: '/documents'
+}
+ ⨯ Error: Cannot find module './1638.js'
+Require stack:
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/pages/_document.js
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/utils.js
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-middleware.js
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-reloader-webpack.js
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1405:15)
+    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require-hook.js:55:36
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1061:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1066:22)
+    at Function._load (node:internal/modules/cjs/loader:1215:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1491:12)
+    at mod.require (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require-hook.js:65:28)
+    at require (node:internal/modules/helpers:135:16)
+    at __webpack_require__.f.require (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:198:28)
+    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:111:40
+    at Array.reduce (<anonymous>)
+    at __webpack_require__.e (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:110:67)
+    at Array.map (<anonymous>)
+    at __webpack_require__.X (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:162:22)
+    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/app/documents/page.js:18:5340
+    at Object.<anonymous> (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/app/documents/page.js:18:5393)
+    at Module._compile (node:internal/modules/cjs/loader:1734:14)
+    at Object..js (node:internal/modules/cjs/loader:1899:10)
+    at Module.load (node:internal/modules/cjs/loader:1469:32)
+    at Function._load (node:internal/modules/cjs/loader:1286:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1491:12)
+    at mod.require (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require-hook.js:65:28)
+    at require (node:internal/modules/helpers:135:16)
+    at requirePage (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js:109:84)
+    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js:74:84
+    at async loadComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js:74:26)
+    at async DevServer.findPageComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:675:36) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js',
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/pages/_document.js',
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js',
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js',
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/utils.js',
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-middleware.js',
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-reloader-webpack.js',
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js',
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js',
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js'
+  ],
+  page: '/documents'
+}
+ ⨯ Error: Cannot find module './1638.js'
+Require stack:
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/pages/_document.js
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/utils.js
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-middleware.js
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-reloader-webpack.js
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1405:15)
+    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require-hook.js:55:36
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1061:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1066:22)
+    at Function._load (node:internal/modules/cjs/loader:1215:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1491:12)
+    at mod.require (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require-hook.js:65:28)
+    at require (node:internal/modules/helpers:135:16)
+    at __webpack_require__.f.require (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:198:28)
+    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:111:40
+    at Array.reduce (<anonymous>)
+    at __webpack_require__.e (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:110:67)
+    at Array.map (<anonymous>)
+    at __webpack_require__.X (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:162:22)
+    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/app/documents/page.js:18:5340
+    at Object.<anonymous> (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/app/documents/page.js:18:5393)
+    at Module._compile (node:internal/modules/cjs/loader:1734:14)
+    at Object..js (node:internal/modules/cjs/loader:1899:10)
+    at Module.load (node:internal/modules/cjs/loader:1469:32)
+    at Function._load (node:internal/modules/cjs/loader:1286:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1491:12)
+    at mod.require (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require-hook.js:65:28)
+    at require (node:internal/modules/helpers:135:16)
+    at requirePage (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js:109:84)
+    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js:74:84
+    at async loadComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js:74:26)
+    at async DevServer.findPageComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:675:36) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js',
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/pages/_document.js',
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js',
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js',
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/utils.js',
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-middleware.js',
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-reloader-webpack.js',
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js',
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js',
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js'
+  ],
+  page: '/documents'
+}
+ ✓ Compiled in 75ms (464 modules)
+ ⨯ Error: Cannot find module './1638.js'
+Require stack:
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/pages/_document.js
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/utils.js
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-middleware.js
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-reloader-webpack.js
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1405:15)
+    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require-hook.js:55:36
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1061:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1066:22)
+    at Function._load (node:internal/modules/cjs/loader:1215:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1491:12)
+    at mod.require (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require-hook.js:65:28)
+    at require (node:internal/modules/helpers:135:16)
+    at __webpack_require__.f.require (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:198:28)
+    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:111:40
+    at Array.reduce (<anonymous>)
+    at __webpack_require__.e (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:110:67)
+    at Array.map (<anonymous>)
+    at __webpack_require__.X (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:162:22)
+    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/app/documents/page.js:18:5340
+    at Object.<anonymous> (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/app/documents/page.js:18:5393)
+    at Module._compile (node:internal/modules/cjs/loader:1734:14)
+    at Object..js (node:internal/modules/cjs/loader:1899:10)
+    at Module.load (node:internal/modules/cjs/loader:1469:32)
+    at Function._load (node:internal/modules/cjs/loader:1286:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1491:12)
+    at mod.require (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require-hook.js:65:28)
+    at require (node:internal/modules/helpers:135:16)
+    at requirePage (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js:109:84)
+    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js:74:84
+    at async loadComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js:74:26)
+    at async DevServer.findPageComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:675:36) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js',
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/pages/_document.js',
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js',
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js',
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/utils.js',
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-middleware.js',
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-reloader-webpack.js',
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js',
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js',
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js'
+  ],
+  page: '/documents'
+}
+ ✓ Compiled in 64ms (464 modules)
+ ⨯ Error: Cannot find module './1638.js'
+Require stack:
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/pages/_document.js
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/utils.js
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-middleware.js
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-reloader-webpack.js
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1405:15)
+    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require-hook.js:55:36
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1061:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1066:22)
+    at Function._load (node:internal/modules/cjs/loader:1215:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1491:12)
+    at mod.require (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require-hook.js:65:28)
+    at require (node:internal/modules/helpers:135:16)
+    at __webpack_require__.f.require (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:198:28)
+    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:111:40
+    at Array.reduce (<anonymous>)
+    at __webpack_require__.e (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:110:67)
+    at Array.map (<anonymous>)
+    at __webpack_require__.X (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:162:22)
+    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/app/documents/page.js:18:5340
+    at Object.<anonymous> (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/app/documents/page.js:18:5393)
+    at Module._compile (node:internal/modules/cjs/loader:1734:14)
+    at Object..js (node:internal/modules/cjs/loader:1899:10)
+    at Module.load (node:internal/modules/cjs/loader:1469:32)
+    at Function._load (node:internal/modules/cjs/loader:1286:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1491:12)
+    at mod.require (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require-hook.js:65:28)
+    at require (node:internal/modules/helpers:135:16)
+    at requirePage (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js:109:84)
+    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js:74:84
+    at async loadComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js:74:26)
+    at async DevServer.findPageComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:675:36) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js',
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/pages/_document.js',
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js',
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js',
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/utils.js',
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-middleware.js',
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-reloader-webpack.js',
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js',
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js',
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js'
+  ],
+  page: '/documents'
+}
+ ✓ Compiled in 61ms (464 modules)
+ ⨯ Error: Cannot find module './1638.js'
+Require stack:
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/pages/_document.js
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/utils.js
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-middleware.js
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-reloader-webpack.js
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js
+- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1405:15)
+    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require-hook.js:55:36
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1061:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1066:22)
+    at Function._load (node:internal/modules/cjs/loader:1215:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1491:12)
+    at mod.require (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require-hook.js:65:28)
+    at require (node:internal/modules/helpers:135:16)
+    at __webpack_require__.f.require (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:198:28)
+    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:111:40
+    at Array.reduce (<anonymous>)
+    at __webpack_require__.e (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:110:67)
+    at Array.map (<anonymous>)
+    at __webpack_require__.X (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:162:22)
+    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/app/documents/page.js:18:5340
+    at Object.<anonymous> (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/app/documents/page.js:18:5393)
+    at Module._compile (node:internal/modules/cjs/loader:1734:14)
+    at Object..js (node:internal/modules/cjs/loader:1899:10)
+    at Module.load (node:internal/modules/cjs/loader:1469:32)
+    at Function._load (node:internal/modules/cjs/loader:1286:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1491:12)
+    at mod.require (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require-hook.js:65:28)
+    at require (node:internal/modules/helpers:135:16)
+    at requirePage (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js:109:84)
+    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js:74:84
+    at async loadComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js:74:26)
+    at async DevServer.findPageComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:675:36) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js',
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/pages/_document.js',
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js',
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js',
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/utils.js',
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-middleware.js',
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-reloader-webpack.js',
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js',
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js',
+    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js'
+  ],
+  page: '/documents'
+}
+ ✓ Compiled in 96ms (462 modules)
+ ✓ Compiled in 63ms (462 modules)
+ ✓ Compiled in 57ms (462 modules)
+ ✓ Compiled in 72ms (462 modules)
+ ✓ Compiled in 127ms (860 modules)
+ ✓ Compiled in 102ms (860 modules)
+ ✓ Compiled in 108ms (860 modules)
+ ✓ Compiled in 53ms (462 modules)
+ ✓ Compiled in 157ms (860 modules)
+ ✓ Compiled in 86ms (462 modules)
+ ✓ Compiled in 62ms (462 modules)
+ ✓ Compiled in 128ms (860 modules)
+ ✓ Compiled in 67ms (462 modules)
+ ✓ Compiled in 58ms (462 modules)
+ ✓ Compiled in 107ms (860 modules)
+ ✓ Compiled in 134ms (462 modules)
+ ✓ Compiled in 76ms (462 modules)
+ ✓ Compiled in 124ms (860 modules)
+ ✓ Compiled in 64ms (462 modules)
+ ✓ Compiled in 60ms (462 modules)
+ ✓ Compiled in 110ms (860 modules)
+ ✓ Compiled in 132ms (860 modules)
+ ✓ Compiled in 110ms (860 modules)
+ ✓ Compiled in 110ms (860 modules)
+ ✓ Compiled in 71ms (462 modules)
+ ✓ Compiled in 148ms (860 modules)
+ ✓ Compiled in 100ms (860 modules)
+ ✓ Compiled in 100ms (860 modules)
+ ✓ Compiled in 106ms (860 modules)
+ ✓ Compiled in 102ms (462 modules)
+ ✓ Compiled in 143ms (860 modules)
+ ✓ Compiled in 72ms (462 modules)
+ ✓ Compiled in 68ms (462 modules)
+ ✓ Compiled in 60ms (462 modules)
+ ✓ Compiled in 63ms (462 modules)
+ ✓ Compiled in 65ms (462 modules)
+ ✓ Compiled in 108ms (910 modules)
+[Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'
+}
+[Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'
+}
+ ⨯ unhandledRejection: [Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'
+}
+ ⨯ unhandledRejection: [Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'
+}
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'
+ ✓ Compiled in 76ms (462 modules)
+ ✓ Compiled in 66ms (462 modules)
+ ✓ Compiled in 83ms (910 modules)
+ ✓ Compiled /api/files/[id] in 62ms (422 modules)
+Reusing cached MongoDB connection
+Reusing cached MongoDB connection
+Creating new MongoDB connection...
+MongoDB URI configured: mongodb+srv://***:***@accounting-cluster.nld0j20.mongodb.net/accounting?retryWrites=true&w=majority&appName=accounting-cluster
+[Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/server-development/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/server-development/0.pack.gz'
+}
+[Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/server-development/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/server-development/0.pack.gz'
+}
+ ⨯ unhandledRejection: [Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/server-development/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/server-development/0.pack.gz'
+}
+ ⨯ unhandledRejection: [Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/server-development/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/server-development/0.pack.gz'
+}
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/server-development/0.pack.gz'
+ ✓ Compiled in 88ms (462 modules)
+ ✓ Compiled in 74ms (462 modules)
+ ✓ Compiled in 97ms (860 modules)
+ ✓ Compiled /api/debug/gridfs in 32ms (422 modules)
+Reusing cached MongoDB connection
+Reusing cached MongoDB connection
+ ✓ Compiled /api/files/[id] in 32ms (424 modules)
+Reusing cached MongoDB connection
+Reusing cached MongoDB connection
+Creating new MongoDB connection...
+MongoDB URI configured: mongodb+srv://***:***@accounting-cluster.nld0j20.mongodb.net/accounting?retryWrites=true&w=majority&appName=accounting-cluster
+ ✓ Compiled /api/files/[id]/direct in 32ms (426 modules)
+Reusing cached MongoDB connection
+Creating new MongoDB connection...
+MongoDB URI configured: mongodb+srv://***:***@accounting-cluster.nld0j20.mongodb.net/accounting?retryWrites=true&w=majority&appName=accounting-cluster
+Direct file API called with ID: 686de42824009ad5c5b1391b
+Reusing cached MongoDB connection
+Direct file error: TypeError: Cannot convert argument to a ByteString because the character at index 18 has a value of 12473 which is greater than 255.
+    at webidl.converters.ByteString (node:internal/deps/undici/undici:3889:17)
+    at Object.record<ByteString, ByteString> (node:internal/deps/undici/undici:3796:32)
+    at webidl.converters.HeadersInit (node:internal/deps/undici/undici:9023:67)
+    at Object.ResponseInit (node:internal/deps/undici/undici:3852:21)
+    at new Response (node:internal/deps/undici/undici:9128:34)
+    at GET (webpack-internal:///(rsc)/./app/api/files/[id]/direct/route.ts:57:16)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:63809
+    at async eU.execute (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:53964)
+    at async eU.handle (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:65062)
+    at async doRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1333:42)
+    at async cacheEntry.responseCache.get.routeKind (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1543:40)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1463:28)
+    at async DevServer.renderPageComponent (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1856:24)
+    at async DevServer.renderToResponseImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1894:32)
+    at async DevServer.pipeImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:911:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:271:17)
+    at async DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:807:17)
+    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:331:20
+    at async Span.traceAsyncFn (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/trace/trace.js:151:20)
+    at async DevServer.handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:328:24)
+    at async invokeRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:163:21)
+    at async handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:342:24)
+    at async requestHandlerImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:366:13)
+    at async Server.requestListener (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js:140:13)
+ ✓ Compiled in 102ms (888 modules)
+ ✓ Compiled in 85ms (888 modules)
+Direct file API called with ID: 686de42824009ad5c5b1391b
+Reusing cached MongoDB connection
+Reusing cached MongoDB connection
+Creating new MongoDB connection...
+MongoDB URI configured: mongodb+srv://***:***@accounting-cluster.nld0j20.mongodb.net/accounting?retryWrites=true&w=majority&appName=accounting-cluster
+MongoDB connection verified with ping
+ ✓ Compiled in 118ms (886 modules)
+ ✓ Compiled /api/accounts/learn in 62ms (423 modules)
+Learn API - MongoDB URI exists: true
+Reusing cached MongoDB connection
+Reusing cached MongoDB connection
+Reusing cached MongoDB connection
+Reusing cached MongoDB connection
+Reusing cached MongoDB connection
+ ✓ Compiled in 115ms (885 modules)
+ ✓ Compiled in 116ms (860 modules)
+ ✓ Compiled in 57ms (462 modules)
+ ✓ Compiled in 121ms (462 modules)
+ ✓ Compiled in 61ms (462 modules)
+ ✓ Compiled in 58ms (462 modules)
+ ✓ Compiled in 66ms (462 modules)
+ ✓ Compiled /api/learning/list in 69ms (422 modules)
+Reusing cached MongoDB connection
+Reusing cached MongoDB connection
+Reusing cached MongoDB connection
+Reusing cached MongoDB connection
+ ✓ Compiled in 120ms (462 modules)
+ ✓ Compiled in 125ms (860 modules)
+ ✓ Compiled in 74ms (462 modules)
+ ✓ Compiled in 69ms (462 modules)
+ ✓ Compiled in 57ms (462 modules)
+ ✓ Compiled in 61ms (462 modules)
+ ✓ Compiled in 61ms (462 modules)
+ ✓ Compiled in 56ms (462 modules)
+ ✓ Compiled in 71ms (846 modules)
+ ✓ Compiled in 61ms (462 modules)
+ ✓ Compiled in 74ms (462 modules)
+ ✓ Compiled in 95ms (910 modules)
+ ✓ Compiled in 67ms (462 modules)
+ ✓ Compiled in 83ms (910 modules)
+ ✓ Compiled in 63ms (462 modules)
+ ✓ Compiled in 78ms (910 modules)
+ ✓ Compiled in 58ms (462 modules)
+ ✓ Compiled in 71ms (910 modules)
+ ✓ Compiled in 58ms (462 modules)
+ ✓ Compiled in 76ms (910 modules)
+ ✓ Compiled in 105ms (860 modules)
+ ✓ Compiled in 69ms (462 modules)
+ ✓ Compiled in 53ms (462 modules)
+ ✓ Compiled in 75ms (462 modules)
+ ✓ Compiled in 114ms (910 modules)
+ ✓ Compiled in 78ms (462 modules)
+ ✓ Compiled in 69ms (910 modules)
+ ✓ Compiled in 58ms (462 modules)
+ ✓ Compiled in 75ms (910 modules)
+ ✓ Compiled in 60ms (462 modules)
+ ✓ Compiled in 67ms (910 modules)
+ ✓ Compiled in 56ms (462 modules)
+ ✓ Compiled in 57ms (462 modules)
+ ✓ Compiled in 68ms (910 modules)
+ ✓ Compiled in 104ms (860 modules)
+ ✓ Compiled in 84ms (860 modules)
+ ✓ Compiled in 77ms (462 modules)
+ ✓ Compiled in 82ms (910 modules)
+ ✓ Compiled in 59ms (462 modules)
+ ✓ Compiled in 56ms (462 modules)
+ ✓ Compiled in 79ms (910 modules)
+ ✓ Compiled in 87ms (462 modules)
+ ✓ Compiled in 82ms (910 modules)
+ ✓ Compiled in 67ms (462 modules)
+ ✓ Compiled in 57ms (462 modules)
+ ✓ Compiled in 77ms (462 modules)
+ ✓ Compiled in 75ms (910 modules)
+ ✓ Compiled in 104ms (462 modules)
+ ✓ Compiled in 58ms (462 modules)
+ ✓ Compiled in 56ms (462 modules)
+ ✓ Compiled in 58ms (462 modules)
+ ✓ Compiled in 64ms (462 modules)
+ ✓ Compiled in 59ms (462 modules)
+ ✓ Compiled in 63ms (462 modules)
+ ✓ Compiled in 80ms (462 modules)
+ ✓ Compiled in 87ms (462 modules)
+ ✓ Compiled in 63ms (462 modules)
+ ✓ Compiled in 79ms (462 modules)
+ ✓ Compiled in 70ms (462 modules)
+ ✓ Compiled in 76ms (462 modules)
+ ✓ Compiled in 110ms (846 modules)
+[Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/server-development/1.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/server-development/1.pack.gz'
+}
+[Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/server-development/1.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/server-development/1.pack.gz'
+}
+ ⨯ unhandledRejection: [Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/server-development/1.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/server-development/1.pack.gz'
+}
+ ⨯ unhandledRejection: [Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/server-development/1.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/server-development/1.pack.gz'
+}
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/server-development/1.pack.gz'
+[Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'
+}
+[Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'
+}
+ ⨯ unhandledRejection: [Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'
+}
+ ⨯ unhandledRejection: [Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'
+}
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'
+ ✓ Compiled in 81ms (462 modules)
+ ✓ Compiled in 70ms (462 modules)
+ ✓ Compiled in 63ms (462 modules)
+ ✓ Compiled in 61ms (462 modules)
+ ✓ Compiled in 69ms (462 modules)
+ ✓ Compiled in 59ms (462 modules)
+ ✓ Compiled in 77ms (462 modules)
+[Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'
+}
+[Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'
+}
+ ⨯ unhandledRejection: [Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'
+}
+ ⨯ unhandledRejection: [Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'
+}
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'
+ ✓ Compiled in 54ms (846 modules)
+ ✓ Compiled in 63ms (462 modules)
+ ✓ Compiled in 56ms (846 modules)
+ ✓ Compiled in 66ms (462 modules)
+ ✓ Compiled in 64ms (462 modules)
+ ✓ Compiled in 71ms (462 modules)
+ ✓ Compiled in 73ms (462 modules)
+ ✓ Compiled in 86ms (462 modules)
+ ✓ Compiled in 81ms (462 modules)
+ ✓ Compiled in 63ms (462 modules)
+[Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'
+}
+[Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'
+}
+ ⨯ unhandledRejection: [Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'
+}
+ ⨯ unhandledRejection: [Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'
+}
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'
+ ✓ Compiled in 63ms (462 modules)
+ ✓ Compiled in 66ms (462 modules)
+ ✓ Compiled in 59ms (462 modules)
+ ✓ Compiled in 81ms (462 modules)
+ ✓ Compiled in 88ms (462 modules)
+ ✓ Compiled in 65ms (462 modules)
+ ✓ Compiled in 84ms (462 modules)
+ ✓ Compiled in 71ms (462 modules)
+ ✓ Compiled in 68ms (462 modules)
+ ✓ Compiled in 95ms (462 modules)
+ ✓ Compiled in 84ms (462 modules)
+ ✓ Compiled in 64ms (462 modules)
+ ✓ Compiled in 75ms (462 modules)
+ ✓ Compiled in 63ms (462 modules)
+ ✓ Compiled in 66ms (462 modules)
+ ✓ Compiled in 71ms (462 modules)
+ ✓ Compiled in 69ms (462 modules)
+ ✓ Compiled in 132ms (860 modules)
+ ✓ Compiled in 96ms (860 modules)
+ ✓ Compiled in 78ms (462 modules)
+ ✓ Compiled in 70ms (462 modules)
+ ✓ Compiled in 59ms (462 modules)
+ ✓ Compiled in 71ms (462 modules)
+ ✓ Compiled in 67ms (462 modules)
+ ✓ Compiled in 91ms (462 modules)
+ ✓ Compiled in 67ms (462 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Restoring pack from /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development.pack.gz failed: TypeError: Cannot read properties of undefined (reading 'hasStartTime')
+ ✓ Compiled in 73ms (846 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Restoring pack from /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development.pack.gz failed: TypeError: Cannot read properties of undefined (reading 'hasStartTime')
+ ✓ Compiled in 100ms (462 modules)
+ ✓ Compiled in 85ms (462 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Restoring pack from /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development.pack.gz failed: TypeError: Cannot read properties of undefined (reading 'hasStartTime')
+ ✓ Compiled in 100ms (462 modules)
+ ✓ Compiled in 65ms (462 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Restoring pack from /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development.pack.gz failed: TypeError: Cannot read properties of undefined (reading 'hasStartTime')
+ ✓ Compiled in 73ms (462 modules)
+ ✓ Compiled in 63ms (462 modules)
+ ✓ Compiled in 58ms (462 modules)
+ ✓ Compiled in 111ms (910 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Restoring pack from /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development.pack.gz failed: TypeError: Cannot read properties of undefined (reading 'hasStartTime')
+ ✓ Compiled in 70ms (462 modules)
+ ✓ Compiled in 82ms (910 modules)
+ ✓ Compiled in 58ms (462 modules)
+ ✓ Compiled in 71ms (910 modules)
+ ✓ Compiled in 72ms (462 modules)
+ ✓ Compiled in 93ms (910 modules)
+ ✓ Compiled in 77ms (462 modules)
+ ✓ Compiled in 99ms (910 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Restoring pack from /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development.pack.gz failed: TypeError: Cannot read properties of undefined (reading 'hasStartTime')
+ ✓ Compiled in 78ms (462 modules)
+ ✓ Compiled in 69ms (910 modules)
+ ✓ Compiled in 72ms (462 modules)
+ ✓ Compiled in 64ms (462 modules)
+ ✓ Compiled in 63ms (462 modules)
+ ✓ Compiled in 66ms (462 modules)
+ ✓ Compiled in 63ms (462 modules)
+ ✓ Compiled in 60ms (462 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Restoring pack from /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development.pack.gz failed: TypeError: Cannot read properties of undefined (reading 'hasStartTime')
+ ✓ Compiled in 84ms (462 modules)
+ ✓ Compiled in 74ms (462 modules)
+ ✓ Compiled in 119ms (860 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Restoring pack from /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development.pack.gz failed: TypeError: Cannot read properties of undefined (reading 'hasStartTime')
+ ✓ Compiled in 98ms (462 modules)
+ ✓ Compiled in 61ms (462 modules)
+ ✓ Compiled in 66ms (462 modules)
+ ✓ Compiled in 65ms (462 modules)
+ ✓ Compiled in 77ms (462 modules)
+ ✓ Compiled in 68ms (462 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Restoring pack from /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development.pack.gz failed: TypeError: Cannot read properties of undefined (reading 'hasStartTime')
+ ✓ Compiled in 71ms (462 modules)
+ ✓ Compiled in 64ms (462 modules)
+ ✓ Compiled in 62ms (462 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Restoring pack from /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development.pack.gz failed: TypeError: Cannot read properties of undefined (reading 'hasStartTime')
+ ✓ Compiled in 85ms (462 modules)
+ ✓ Compiled in 66ms (462 modules)
+ ✓ Compiled in 63ms (462 modules)
+ ✓ Compiled in 72ms (462 modules)
+ ✓ Compiled in 62ms (462 modules)
+ ✓ Compiled in 60ms (462 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Restoring pack from /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development.pack.gz failed: TypeError: Cannot read properties of undefined (reading 'hasStartTime')
+ ✓ Compiled in 69ms (462 modules)
+ ✓ Compiled in 63ms (462 modules)
+ ✓ Compiled in 59ms (462 modules)
+ ✓ Compiled in 65ms (462 modules)
+ ✓ Compiled in 72ms (462 modules)
+ ✓ Compiled in 66ms (462 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Restoring pack from /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development.pack.gz failed: TypeError: Cannot read properties of undefined (reading 'hasStartTime')
+ ✓ Compiled in 72ms (462 modules)
+ ✓ Compiled in 65ms (462 modules)
+ ✓ Compiled in 60ms (462 modules)
+ ✓ Compiled in 63ms (462 modules)
+ ✓ Compiled in 61ms (462 modules)
+ ✓ Compiled in 58ms (462 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Restoring pack from /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development.pack.gz failed: TypeError: Cannot read properties of undefined (reading 'hasStartTime')
+ ✓ Compiled in 69ms (462 modules)
+ ✓ Compiled in 63ms (462 modules)
+ ✓ Compiled in 108ms (398 modules)
+ ✓ Compiled in 73ms (398 modules)
+[?25h
