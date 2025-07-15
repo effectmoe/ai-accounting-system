@@ -178,7 +178,7 @@ export async function POST(request: NextRequest) {
       `ID: ${customer._id}, 会社名: ${customer.companyName || customer.name || '名前未設定'}, 電話: ${customer.phone || '未設定'}, メール: ${customer.email || '未設定'}`
     ).join('\n');
 
-    // システムプロンプト（請求書用と同じ自然な会話形式に修正）
+    // システムプロンプト（見積書用）
     const systemPrompt = `あなたは見積書作成を支援するAIアシスタントです。
 ユーザーとの自然な会話を通じて、見積書に必要な情報を収集してください。
 
@@ -317,8 +317,8 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
 
       return NextResponse.json({
         success: true,
-        data: responseData,
         message: cleanMessage,
+        data: responseData,
         aiConversationId: sessionId || Date.now().toString(),
       });
 
