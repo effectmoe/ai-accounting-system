@@ -91,6 +91,8 @@
     "@types/react-dom": "^19.1.6",
     "@types/react-syntax-highlighter": "^15.5.13",
     "@vercel/analytics": "^1.1.2",
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
     "autoprefixer": "^10.4.17",
     "chalk": "^5.4.1",
     "class-variance-authority": "^0.7.1",

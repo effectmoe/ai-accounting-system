@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { KnowledgeService } from '@/services/knowledge.service';
+import { StructuredDataService } from '@/services/structured-data.service';
 import { FaqArticle, FaqUsageLog } from '@/types/collections';
 import { ObjectId } from 'mongodb';
 
@@ -33,6 +34,7 @@ export async function GET(request: NextRequest) {
   
   try {
     const { searchParams } = new URL(request.url);
+    const includeStructuredData = searchParams.get('includeStructuredData') === 'true';
     
     const searchRequest: SearchFaqRequest = {
       query: searchParams.get('query') || undefined,
@@ -105,6 +107,27 @@ export async function GET(request: NextRequest) {
     // 総件数を取得
     const totalCount = await collection.countDocuments(filter);
     
+    // 構造化データを取得（必要な場合）
+    let structuredDataMap: Map<string, any> = new Map();
+    if (includeStructuredData && faqs.length > 0) {
+      try {
+        const structuredDataService = new StructuredDataService();
+        const faqIds = faqs.map(faq => faq._id);
+        
+        for (const faqId of faqIds) {
+          const structuredData = await structuredDataService.getStructuredData(faqId, 'faq');
+          if (structuredData.length > 0) {
+            structuredDataMap.set(faqId.toString(), structuredData[0].jsonLd);
+          }
+        }
+        
+        await structuredDataService.close();
+      } catch (structuredError) {
+        console.error('Failed to get structured data for FAQs:', structuredError);
+        // 構造化データ取得エラーは検索結果を停止しない
+      }
+    }
+    
     await knowledgeService.disconnect();
     
     return NextResponse.json({
@@ -127,7 +150,8 @@ export async function GET(request: NextRequest) {
         unhelpfulVotes: faq.usageStats.unhelpfulVotes,
         createdAt: faq.createdAt,
         updatedAt: faq.updatedAt,
-        publishedAt: faq.publishedAt
+        publishedAt: faq.publishedAt,
+        structuredData: includeStructuredData ? structuredDataMap.get(faq._id.toString()) : undefined
       })),
       pagination: {
         total: totalCount,
@@ -235,6 +259,46 @@ export async function POST(request: NextRequest) {
     
     const collection = knowledgeService.db.collection('faq_articles');
     const result = await collection.insertOne(faqArticle);
+    
+    // 構造化データを生成して保存
+    try {
+      const structuredDataService = new StructuredDataService();
+      const faqWithId = { ...faqArticle, _id: result.insertedId };
+      
+      const structuredResult = await structuredDataService.generateStructuredData(
+        faqWithId as FaqArticle,
+        'FAQPage',
+        {
+          includeCompanyInfo: false,
+          includeCustomerInfo: false,
+          includeTaxInfo: false,
+          includeLineItems: false,
+          language: 'ja',
+          context: 'https://schema.org'
+        }
+      );
+      
+      if (structuredResult.success && structuredResult.data) {
+        await structuredDataService.saveStructuredData(
+          result.insertedId,
+          'faq',
+          'FAQPage',
+          structuredResult.data,
+          {
+            isValid: structuredResult.success,
+            errors: structuredResult.errors || [],
+            warnings: structuredResult.warnings
+          },
+          structuredResult.metadata || {}
+        );
+        console.log('Structured data generated for FAQ:', result.insertedId);
+      }
+      
+      await structuredDataService.close();
+    } catch (structuredError) {
+      console.error('Failed to generate structured data for FAQ:', structuredError);
+      // 構造化データの生成エラーはFAQ作成を停止しない
+    }
     
     await knowledgeService.disconnect();
     
