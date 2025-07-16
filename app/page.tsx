@@ -82,6 +82,21 @@ const quickActions = [
     icon: HelpCircle,
     color: 'from-amber-500 to-amber-600',
     badge: 'ナレッジ'
+  },
+  {
+    title: '仕入先管理',
+    description: '仕入先の登録・管理',
+    href: '/suppliers',
+    icon: Building2,
+    color: 'from-slate-500 to-slate-600'
+  },
+  {
+    title: '仕入先見積書',
+    description: '仕入先からの見積書管理',
+    href: '/supplier-quotes',
+    icon: FileText,
+    color: 'from-teal-500 to-teal-600',
+    badge: '新機能'
   }
 ];
 
@@ -141,7 +156,7 @@ export default function Home() {
           </div>
 
           {/* クイックアクション */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-12">
             {quickActions.map((action) => (
               <Link key={action.href} href={action.href} className="group">
                 <Card className="h-full hover:shadow-xl transition-all duration-300 hover:-translate-y-1 overflow-hidden">
