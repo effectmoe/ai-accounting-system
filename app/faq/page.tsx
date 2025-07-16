@@ -44,6 +44,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Slider } from '@/components/ui/slider';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface FaqItem {
   id: string;
@@ -64,6 +69,26 @@ interface FaqItem {
   createdAt: string;
   updatedAt: string;
   publishedAt?: string;
+  // 構造化データ
+  structuredData?: {
+    contentType: 'tax' | 'accounting' | 'invoice' | 'compliance' | 'procedure' | 'general';
+    taxLaw?: string[];
+    applicableBusinessTypes?: string[];
+    relatedRegulations?: string[];
+    effectiveDate?: string;
+    expirationDate?: string;
+  };
+  // 品質メトリクス
+  qualityMetrics?: {
+    accuracy: number;
+    completeness: number;
+    clarity: number;
+    usefulness: number;
+    overallScore: number;
+  };
+  // 関連FAQ
+  relatedFaqIds?: string[];
+  searchKeywords?: string[];
 }
 
 interface CategoryStats {
@@ -99,6 +124,7 @@ export default function FaqPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedDifficulty, setSelectedDifficulty] = useState('');
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<'relevance' | 'date' | 'popularity' | 'quality'>('popularity');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [expandedFaq, setExpandedFaq] = useState<string | null>(null);
@@ -107,6 +133,12 @@ export default function FaqPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [faqToDelete, setFaqToDelete] = useState<FaqItem | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingFaq, setEditingFaq] = useState<FaqItem | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [relatedFaqs, setRelatedFaqs] = useState<FaqItem[]>([]);
+  const [showMigrationDialog, setShowMigrationDialog] = useState(false);
+  const [isMigrating, setIsMigrating] = useState(false);
 
   // FAQデータを取得
   useEffect(() => {
@@ -120,7 +152,8 @@ export default function FaqPage() {
         status: 'published',
         limit: '100',
         sortBy,
-        sortOrder
+        sortOrder,
+        includeStructuredData: 'true'
       });
 
       console.log('[FAQ Page] Fetching FAQs with params:', params.toString());
@@ -137,6 +170,17 @@ export default function FaqPage() {
       if (data.success) {
         setFaqs(data.faqs || []);
         setFilteredFaqs(data.faqs || []);
+        
+        // すべてのタグを収集
+        const allTags = new Set<string>();
+        data.faqs.forEach((faq: FaqItem) => {
+          faq.tags.forEach(tag => allTags.add(tag));
+        });
+        
+        // カテゴリごとの件数を更新
+        CATEGORIES.forEach(cat => {
+          cat.count = data.faqs.filter((faq: FaqItem) => faq.category === cat.name).length;
+        });
       } else {
         console.error('Failed to fetch FAQs:', data.error);
         // 空の配列をセット
@@ -162,7 +206,10 @@ export default function FaqPage() {
       filtered = filtered.filter(faq => 
         faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
         faq.answer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        faq.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+        faq.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (faq.searchKeywords && faq.searchKeywords.some(keyword => 
+          keyword.toLowerCase().includes(searchQuery.toLowerCase())
+        ))
       );
     }
 
@@ -175,9 +222,16 @@ export default function FaqPage() {
     if (selectedDifficulty) {
       filtered = filtered.filter(faq => faq.difficulty === selectedDifficulty);
     }
+    
+    // タグフィルター
+    if (selectedTags.length > 0) {
+      filtered = filtered.filter(faq => 
+        selectedTags.some(tag => faq.tags.includes(tag))
+      );
+    }
 
     setFilteredFaqs(filtered);
-  }, [faqs, searchQuery, selectedCategory, selectedDifficulty]);
+  }, [faqs, searchQuery, selectedCategory, selectedDifficulty, selectedTags]);
 
   const handleFaqVote = async (faqId: string, voteType: 'helpful' | 'unhelpful') => {
     try {
@@ -242,6 +296,94 @@ export default function FaqPage() {
     }
   };
 
+  const handleEditClick = async (faq: FaqItem) => {
+    setEditingFaq(faq);
+    
+    // 関連FAQを取得
+    if (faq.relatedFaqIds && faq.relatedFaqIds.length > 0) {
+      try {
+        const relatedData = await Promise.all(
+          faq.relatedFaqIds.map(id => 
+            fetch(`/api/faq?id=${id}`).then(res => res.json())
+          )
+        );
+        setRelatedFaqs(relatedData.filter(d => d.success).map(d => d.faq));
+      } catch (error) {
+        console.error('Error fetching related FAQs:', error);
+        setRelatedFaqs([]);
+      }
+    } else {
+      setRelatedFaqs([]);
+    }
+    
+    setEditDialogOpen(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingFaq) return;
+
+    setIsSaving(true);
+    try {
+      const response = await fetch('/api/faq', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editingFaq)
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // FAQリストを更新
+        setFaqs(prev => prev.map(faq => 
+          faq.id === editingFaq.id ? editingFaq : faq
+        ));
+        setFilteredFaqs(prev => prev.map(faq => 
+          faq.id === editingFaq.id ? editingFaq : faq
+        ));
+        
+        // ダイアログを閉じる
+        setEditDialogOpen(false);
+        setEditingFaq(null);
+        
+        console.log('FAQ updated successfully');
+      } else {
+        console.error('Failed to update FAQ:', data.error);
+        alert('FAQの更新に失敗しました: ' + (data.error || '不明なエラー'));
+      }
+    } catch (error) {
+      console.error('Error updating FAQ:', error);
+      alert('FAQの更新中にエラーが発生しました');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleMigration = async () => {
+    setIsMigrating(true);
+    try {
+      const response = await fetch('/api/faq/migrate', {
+        method: 'POST'
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        alert(`${data.migratedCount}件のFAQを移行しました`);
+        // FAQリストを再取得
+        fetchFaqs();
+      } else {
+        console.error('Migration failed:', data.error);
+        alert('移行に失敗しました: ' + (data.error || '不明なエラー'));
+      }
+    } catch (error) {
+      console.error('Error during migration:', error);
+      alert('移行中にエラーが発生しました');
+    } finally {
+      setIsMigrating(false);
+      setShowMigrationDialog(false);
+    }
+  };
+
   const exportFaqs = () => {
     const dataStr = JSON.stringify(filteredFaqs, null, 2);
     const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
@@ -290,6 +432,15 @@ export default function FaqPage() {
         </div>
         
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowMigrationDialog(true)}
+            className="flex items-center gap-2"
+          >
+            <TrendingUp className="w-4 h-4" />
+            データ移行
+          </Button>
           <Button
             variant="outline"
             size="sm"
@@ -538,15 +689,26 @@ export default function FaqPage() {
                       </div>
                       
                       <div className="flex flex-col items-end gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDeleteClick(faq)}
-                          className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:border-red-300"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                          削除
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditClick(faq)}
+                            className="flex items-center gap-2"
+                          >
+                            <Edit className="w-4 h-4" />
+                            編集
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDeleteClick(faq)}
+                            className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:border-red-300"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            削除
+                          </Button>
+                        </div>
                         <div className="text-sm text-gray-500">
                           最終更新: {format(new Date(faq.updatedAt), 'yyyy/MM/dd HH:mm', { locale: ja })}
                         </div>
@@ -603,6 +765,429 @@ export default function FaqPage() {
               disabled={isDeleting}
             >
               {isDeleting ? '削除中...' : '削除する'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 編集ダイアログ */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>FAQ編集</DialogTitle>
+            <DialogDescription>
+              FAQの詳細情報と構造化データを編集できます
+            </DialogDescription>
+          </DialogHeader>
+          
+          {editingFaq && (
+            <Tabs defaultValue="basic" className="w-full">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="basic">基本情報</TabsTrigger>
+                <TabsTrigger value="structured">構造化データ</TabsTrigger>
+                <TabsTrigger value="quality">品質管理</TabsTrigger>
+                <TabsTrigger value="related">関連情報</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="basic" className="space-y-4">
+                <div>
+                  <Label htmlFor="question">質問</Label>
+                  <Textarea
+                    id="question"
+                    value={editingFaq.question}
+                    onChange={(e) => setEditingFaq({...editingFaq, question: e.target.value})}
+                    className="mt-1"
+                    rows={3}
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="answer">回答</Label>
+                  <Textarea
+                    id="answer"
+                    value={editingFaq.answer}
+                    onChange={(e) => setEditingFaq({...editingFaq, answer: e.target.value})}
+                    className="mt-1"
+                    rows={6}
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="category">カテゴリ</Label>
+                    <Select
+                      value={editingFaq.category}
+                      onValueChange={(value) => setEditingFaq({...editingFaq, category: value})}
+                    >
+                      <SelectTrigger id="category" className="mt-1">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CATEGORIES.map(cat => (
+                          <SelectItem key={cat.name} value={cat.name}>
+                            {cat.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="difficulty">難易度</Label>
+                    <Select
+                      value={editingFaq.difficulty}
+                      onValueChange={(value: 'beginner' | 'intermediate' | 'advanced') => 
+                        setEditingFaq({...editingFaq, difficulty: value})}
+                    >
+                      <SelectTrigger id="difficulty" className="mt-1">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="beginner">初級</SelectItem>
+                        <SelectItem value="intermediate">中級</SelectItem>
+                        <SelectItem value="advanced">上級</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                
+                <div>
+                  <Label htmlFor="tags">タグ（カンマ区切り）</Label>
+                  <Input
+                    id="tags"
+                    value={editingFaq.tags.join(', ')}
+                    onChange={(e) => setEditingFaq({
+                      ...editingFaq, 
+                      tags: e.target.value.split(',').map(t => t.trim()).filter(t => t)
+                    })}
+                    className="mt-1"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="priority">優先度 (1-10)</Label>
+                  <div className="flex items-center gap-4 mt-1">
+                    <Slider
+                      id="priority"
+                      value={[editingFaq.priority]}
+                      onValueChange={(value) => setEditingFaq({...editingFaq, priority: value[0]})}
+                      min={1}
+                      max={10}
+                      step={1}
+                      className="flex-1"
+                    />
+                    <span className="w-12 text-center font-medium">{editingFaq.priority}</span>
+                  </div>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="structured" className="space-y-4">
+                <div>
+                  <Label htmlFor="contentType">コンテンツタイプ</Label>
+                  <Select
+                    value={editingFaq.structuredData?.contentType || 'general'}
+                    onValueChange={(value: 'tax' | 'accounting' | 'invoice' | 'compliance' | 'procedure' | 'general') => 
+                      setEditingFaq({
+                        ...editingFaq, 
+                        structuredData: {
+                          ...editingFaq.structuredData,
+                          contentType: value
+                        }
+                      })}
+                  >
+                    <SelectTrigger id="contentType" className="mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="tax">税務</SelectItem>
+                      <SelectItem value="accounting">会計</SelectItem>
+                      <SelectItem value="invoice">請求</SelectItem>
+                      <SelectItem value="compliance">コンプライアンス</SelectItem>
+                      <SelectItem value="procedure">手続き</SelectItem>
+                      <SelectItem value="general">一般</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <Label htmlFor="taxLaw">関連する税法（カンマ区切り）</Label>
+                  <Input
+                    id="taxLaw"
+                    value={editingFaq.structuredData?.taxLaw?.join(', ') || ''}
+                    onChange={(e) => setEditingFaq({
+                      ...editingFaq, 
+                      structuredData: {
+                        ...editingFaq.structuredData!,
+                        taxLaw: e.target.value.split(',').map(t => t.trim()).filter(t => t)
+                      }
+                    })}
+                    className="mt-1"
+                    placeholder="例: 法人税法, 消費税法"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="businessTypes">適用業種（カンマ区切り）</Label>
+                  <Input
+                    id="businessTypes"
+                    value={editingFaq.structuredData?.applicableBusinessTypes?.join(', ') || ''}
+                    onChange={(e) => setEditingFaq({
+                      ...editingFaq, 
+                      structuredData: {
+                        ...editingFaq.structuredData!,
+                        applicableBusinessTypes: e.target.value.split(',').map(t => t.trim()).filter(t => t)
+                      }
+                    })}
+                    className="mt-1"
+                    placeholder="例: 製造業, サービス業, 小売業"
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="searchKeywords">検索キーワード（カンマ区切り）</Label>
+                  <Input
+                    id="searchKeywords"
+                    value={editingFaq.searchKeywords?.join(', ') || ''}
+                    onChange={(e) => setEditingFaq({
+                      ...editingFaq, 
+                      searchKeywords: e.target.value.split(',').map(t => t.trim()).filter(t => t)
+                    })}
+                    className="mt-1"
+                    placeholder="例: 確定申告, 年末調整, 源泉徴収"
+                  />
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="quality" className="space-y-4">
+                <Alert>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>
+                    品質スコアは0-100の範囲で設定してください。総合スコアは自動的に計算されます。
+                  </AlertDescription>
+                </Alert>
+                
+                <div>
+                  <Label htmlFor="accuracy">正確性</Label>
+                  <div className="flex items-center gap-4 mt-1">
+                    <Slider
+                      id="accuracy"
+                      value={[editingFaq.qualityMetrics?.accuracy || 85]}
+                      onValueChange={(value) => setEditingFaq({
+                        ...editingFaq, 
+                        qualityMetrics: {
+                          ...editingFaq.qualityMetrics!,
+                          accuracy: value[0],
+                          overallScore: Math.round(
+                            (value[0] + 
+                             (editingFaq.qualityMetrics?.completeness || 85) + 
+                             (editingFaq.qualityMetrics?.clarity || 85) + 
+                             (editingFaq.qualityMetrics?.usefulness || 85)) / 4
+                          )
+                        }
+                      })}
+                      min={0}
+                      max={100}
+                      step={5}
+                      className="flex-1"
+                    />
+                    <span className="w-12 text-center font-medium">{editingFaq.qualityMetrics?.accuracy || 85}</span>
+                  </div>
+                </div>
+                
+                <div>
+                  <Label htmlFor="completeness">完全性</Label>
+                  <div className="flex items-center gap-4 mt-1">
+                    <Slider
+                      id="completeness"
+                      value={[editingFaq.qualityMetrics?.completeness || 85]}
+                      onValueChange={(value) => setEditingFaq({
+                        ...editingFaq, 
+                        qualityMetrics: {
+                          ...editingFaq.qualityMetrics!,
+                          completeness: value[0],
+                          overallScore: Math.round(
+                            ((editingFaq.qualityMetrics?.accuracy || 85) + 
+                             value[0] + 
+                             (editingFaq.qualityMetrics?.clarity || 85) + 
+                             (editingFaq.qualityMetrics?.usefulness || 85)) / 4
+                          )
+                        }
+                      })}
+                      min={0}
+                      max={100}
+                      step={5}
+                      className="flex-1"
+                    />
+                    <span className="w-12 text-center font-medium">{editingFaq.qualityMetrics?.completeness || 85}</span>
+                  </div>
+                </div>
+                
+                <div>
+                  <Label htmlFor="clarity">明確性</Label>
+                  <div className="flex items-center gap-4 mt-1">
+                    <Slider
+                      id="clarity"
+                      value={[editingFaq.qualityMetrics?.clarity || 85]}
+                      onValueChange={(value) => setEditingFaq({
+                        ...editingFaq, 
+                        qualityMetrics: {
+                          ...editingFaq.qualityMetrics!,
+                          clarity: value[0],
+                          overallScore: Math.round(
+                            ((editingFaq.qualityMetrics?.accuracy || 85) + 
+                             (editingFaq.qualityMetrics?.completeness || 85) + 
+                             value[0] + 
+                             (editingFaq.qualityMetrics?.usefulness || 85)) / 4
+                          )
+                        }
+                      })}
+                      min={0}
+                      max={100}
+                      step={5}
+                      className="flex-1"
+                    />
+                    <span className="w-12 text-center font-medium">{editingFaq.qualityMetrics?.clarity || 85}</span>
+                  </div>
+                </div>
+                
+                <div>
+                  <Label htmlFor="usefulness">有用性</Label>
+                  <div className="flex items-center gap-4 mt-1">
+                    <Slider
+                      id="usefulness"
+                      value={[editingFaq.qualityMetrics?.usefulness || 85]}
+                      onValueChange={(value) => setEditingFaq({
+                        ...editingFaq, 
+                        qualityMetrics: {
+                          ...editingFaq.qualityMetrics!,
+                          usefulness: value[0],
+                          overallScore: Math.round(
+                            ((editingFaq.qualityMetrics?.accuracy || 85) + 
+                             (editingFaq.qualityMetrics?.completeness || 85) + 
+                             (editingFaq.qualityMetrics?.clarity || 85) + 
+                             value[0]) / 4
+                          )
+                        }
+                      })}
+                      min={0}
+                      max={100}
+                      step={5}
+                      className="flex-1"
+                    />
+                    <span className="w-12 text-center font-medium">{editingFaq.qualityMetrics?.usefulness || 85}</span>
+                  </div>
+                </div>
+                
+                <div className="pt-4 border-t">
+                  <div className="flex items-center justify-between">
+                    <Label>総合スコア</Label>
+                    <span className="text-2xl font-bold text-blue-600">
+                      {editingFaq.qualityMetrics?.overallScore || Math.round(
+                        ((editingFaq.qualityMetrics?.accuracy || 85) + 
+                         (editingFaq.qualityMetrics?.completeness || 85) + 
+                         (editingFaq.qualityMetrics?.clarity || 85) + 
+                         (editingFaq.qualityMetrics?.usefulness || 85)) / 4
+                      )}
+                    </span>
+                  </div>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="related" className="space-y-4">
+                <div>
+                  <Label>関連FAQ</Label>
+                  <div className="mt-2 space-y-2">
+                    {relatedFaqs.length > 0 ? (
+                      relatedFaqs.map(relatedFaq => (
+                        <Card key={relatedFaq.id} className="p-3">
+                          <p className="font-medium text-sm">{relatedFaq.question}</p>
+                          <p className="text-xs text-gray-600 mt-1">{relatedFaq.category} • {DIFFICULTY_LABELS[relatedFaq.difficulty]}</p>
+                        </Card>
+                      ))
+                    ) : (
+                      <p className="text-sm text-gray-500">関連FAQはありません</p>
+                    )}
+                  </div>
+                </div>
+                
+                <div>
+                  <Label>統計情報</Label>
+                  <div className="mt-2 grid grid-cols-2 gap-4">
+                    <Card className="p-3">
+                      <p className="text-sm text-gray-600">閲覧数</p>
+                      <p className="text-xl font-bold">{editingFaq.viewCount}</p>
+                    </Card>
+                    <Card className="p-3">
+                      <p className="text-sm text-gray-600">評価</p>
+                      <p className="text-xl font-bold">
+                        👍 {editingFaq.helpfulVotes} / 👎 {editingFaq.unhelpfulVotes}
+                      </p>
+                    </Card>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>作成日</Label>
+                    <p className="mt-1 text-sm">{format(new Date(editingFaq.createdAt), 'yyyy/MM/dd HH:mm', { locale: ja })}</p>
+                  </div>
+                  <div>
+                    <Label>更新日</Label>
+                    <p className="mt-1 text-sm">{format(new Date(editingFaq.updatedAt), 'yyyy/MM/dd HH:mm', { locale: ja })}</p>
+                  </div>
+                </div>
+              </TabsContent>
+            </Tabs>
+          )}
+          
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setEditDialogOpen(false)}
+              disabled={isSaving}
+            >
+              キャンセル
+            </Button>
+            <Button
+              onClick={handleSaveEdit}
+              disabled={isSaving}
+            >
+              {isSaving ? '保存中...' : '保存する'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 移行確認ダイアログ */}
+      <Dialog open={showMigrationDialog} onOpenChange={setShowMigrationDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>データ移行の確認</DialogTitle>
+            <DialogDescription>
+              既存のfaqコレクションからfaq_articlesコレクションへデータを移行します。
+              この操作により、すべてのFAQが新しい構造化データ形式に変換されます。
+            </DialogDescription>
+          </DialogHeader>
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              移行前に必ずデータのバックアップを取ってください。
+              この操作は取り消すことができません。
+            </AlertDescription>
+          </Alert>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowMigrationDialog(false)}
+              disabled={isMigrating}
+            >
+              キャンセル
+            </Button>
+            <Button
+              onClick={handleMigration}
+              disabled={isMigrating}
+            >
+              {isMigrating ? '移行中...' : '移行を実行'}
             </Button>
           </DialogFooter>
         </DialogContent>

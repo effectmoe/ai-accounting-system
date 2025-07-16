@@ -192,18 +192,14 @@ export async function GET(request: NextRequest) {
         status: faq.status,
         isPublished: faq.isPublished,
         isFeatured: faq.isFeatured,
-        qualityScore: faq.qualityMetrics?.overallScore || 85,
-        viewCount: faq.usageStats?.viewCount || 0,
-        helpfulVotes: faq.usageStats?.helpfulVotes || 0,
-        unhelpfulVotes: faq.usageStats?.unhelpfulVotes || 0,
+        qualityScore: faq.qualityMetrics.overallScore,
+        viewCount: faq.usageStats.viewCount,
+        helpfulVotes: faq.usageStats.helpfulVotes,
+        unhelpfulVotes: faq.usageStats.unhelpfulVotes,
         createdAt: faq.createdAt,
         updatedAt: faq.updatedAt,
         publishedAt: faq.publishedAt,
-        structuredData: faq.structuredData,
-        qualityMetrics: faq.qualityMetrics,
-        relatedFaqIds: faq.relatedFaqIds,
-        searchKeywords: faq.searchKeywords,
-        jsonLdData: includeStructuredData ? structuredDataMap.get(faq._id.toString()) : undefined
+        structuredData: includeStructuredData ? structuredDataMap.get(faq._id.toString()) : undefined
       })),
       pagination: {
         total: totalCount,
@@ -410,58 +406,10 @@ export async function PUT(request: NextRequest) {
       publishedAt: updateData.isPublished && !currentFaq.isPublished ? new Date() : currentFaq.publishedAt
     };
     
-    // 品質メトリクスの総合スコアを再計算
-    if (updateDoc.qualityMetrics) {
-      const metrics = updateDoc.qualityMetrics;
-      metrics.overallScore = Math.round(
-        (metrics.accuracy + metrics.completeness + metrics.clarity + metrics.usefulness) / 4
-      );
-    }
-    
     const result = await collection.updateOne(
       { _id: new ObjectId(id) },
       { $set: updateDoc }
     );
-    
-    // 構造化データを再生成
-    if (result.modifiedCount > 0) {
-      try {
-        const structuredDataService = new StructuredDataService();
-        const updatedFaq = await collection.findOne({ _id: new ObjectId(id) });
-        
-        const structuredResult = await structuredDataService.generateStructuredData(
-          updatedFaq as FaqArticle,
-          'FAQPage',
-          {
-            includeCompanyInfo: false,
-            includeCustomerInfo: false,
-            includeTaxInfo: false,
-            includeLineItems: false,
-            language: 'ja',
-            context: 'https://schema.org'
-          }
-        );
-        
-        if (structuredResult.success && structuredResult.data) {
-          await structuredDataService.saveStructuredData(
-            new ObjectId(id),
-            'faq',
-            'FAQPage',
-            structuredResult.data,
-            {
-              isValid: structuredResult.success,
-              errors: structuredResult.errors || [],
-              warnings: structuredResult.warnings
-            },
-            structuredResult.metadata || {}
-          );
-        }
-        
-        await structuredDataService.close();
-      } catch (structuredError) {
-        console.error('Failed to update structured data for FAQ:', structuredError);
-      }
-    }
     
     await knowledgeService.disconnect();
     
