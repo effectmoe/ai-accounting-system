@@ -84,11 +84,33 @@ export async function POST(request: NextRequest) {
       );
     }
     
+    // supplierId が提供されていない場合は、デフォルトの仕入先を作成または取得
+    let finalSupplierId = supplierId;
     if (!supplierId) {
-      return NextResponse.json(
-        { error: 'Supplier ID is required' },
-        { status: 400 }
-      );
+      const client = await getMongoClient();
+      const db = client.db(DB_NAME);
+      
+      // デフォルトの仕入先を検索
+      let defaultSupplier = await db.collection('suppliers').findOne({ 
+        companyName: 'OCR自動登録仕入先' 
+      });
+      
+      if (!defaultSupplier) {
+        // デフォルトの仕入先を作成
+        const result = await db.collection('suppliers').insertOne({
+          companyName: 'OCR自動登録仕入先',
+          contactEmail: '',
+          contactPhone: '',
+          address: '',
+          postalCode: '',
+          isActive: true,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        });
+        finalSupplierId = result.insertedId.toString();
+      } else {
+        finalSupplierId = defaultSupplier._id.toString();
+      }
     }
     
     // OCR処理を実行
@@ -112,7 +134,7 @@ export async function POST(request: NextRequest) {
     // 仕入先情報を追加
     const supplierQuote: SupplierQuote = {
       ...quoteData as SupplierQuote,
-      supplierId: new ObjectId(supplierId),
+      supplierId: new ObjectId(finalSupplierId),
       dealId: dealId ? new ObjectId(dealId) : undefined,
       attachments: [file.name], // ファイル名を保存
       createdAt: new Date(),
@@ -131,7 +153,7 @@ export async function POST(request: NextRequest) {
     
     // 仕入先情報を含めて返す
     const supplier = await db.collection('suppliers').findOne({ 
-      _id: new ObjectId(supplierId) 
+      _id: new ObjectId(finalSupplierId) 
     });
     
     if (supplier) {

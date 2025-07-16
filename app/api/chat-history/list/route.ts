@@ -3,6 +3,9 @@ import { MongoClient } from 'mongodb';
 
 const MONGODB_URI = process.env.MONGODB_URI;
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   let client: MongoClient | null = null;
 
@@ -19,7 +22,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const { searchParams } = new URL(request.url);
+    const { searchParams } = request.nextUrl;
     const category = searchParams.get('category') || 'tax';
     
     console.log('Fetching chat history for category:', category);

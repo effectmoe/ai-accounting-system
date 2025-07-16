@@ -147,6 +147,12 @@ export async function getClientPromise(): Promise<MongoClient> {
   return client;
 }
 
+// 後方互換性のためのgetMongoClient関数
+export async function getMongoClient(): Promise<MongoClient> {
+  const { client } = await connectToDatabase();
+  return client;
+}
+
 // シングルトンのクライアントプロミス（名前付きエクスポート）
 export const mongoClientPromise = getClientPromise();
 

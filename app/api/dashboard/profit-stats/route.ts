@@ -5,6 +5,9 @@ import { DashboardProfitData } from '@/types/collections';
 
 const DB_NAME = process.env.MONGODB_DB_NAME || 'accounting-app';
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic';
+
 // GET: ダッシュボード用利益統計を取得
 export async function GET(request: NextRequest) {
   try {
