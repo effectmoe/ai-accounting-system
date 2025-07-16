@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Plus, Search, Filter, Edit, Trash2, Calendar, Building, FileText, TrendingUp, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Search, Filter, Edit, Trash2, Calendar, Building, FileText, TrendingUp, ChevronLeft, ChevronRight, Upload, ScanLine } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { SupplierQuote, SupplierQuoteStatus, Supplier } from '@/types/collections';
 
@@ -151,6 +151,7 @@ export default function SupplierQuotesPage() {
     }
   };
 
+
   // ページネーション
   const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
 
@@ -171,13 +172,38 @@ export default function SupplierQuotesPage() {
     <div className="container mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-900">仕入先見積書管理</h1>
-        <Link
-          href="/supplier-quotes/new"
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2"
-        >
-          <Plus size={20} />
-          新規作成
-        </Link>
+        <div className="flex gap-2">
+          <Link
+            href="/documents/new?type=supplier-quote"
+            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md flex items-center gap-2"
+          >
+            <ScanLine size={20} />
+            OCRスキャン
+          </Link>
+          <Link
+            href="/supplier-quotes/new"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2"
+          >
+            <Plus size={20} />
+            新規作成
+          </Link>
+        </div>
+      </div>
+
+      {/* OCR機能の説明 */}
+      <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-200 p-4 mb-6">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+            <ScanLine className="w-5 h-5 text-green-600" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-gray-900">OCR自動処理</h3>
+            <p className="text-sm text-gray-600">
+              仕入先からの見積書PDF/画像をアップロードすると、自動で項目・金額・仕入先情報を抽出し、見積書データを作成します。
+              「OCRスキャン」ボタンから統合されたOCR処理ページでアップロードできます。
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* 検索とフィルター */}
