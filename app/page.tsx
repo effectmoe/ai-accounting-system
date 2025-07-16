@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import AIChatDialog from '@/components/ai-chat-dialog';
-import EnhancedKnowledgeChatDialog from '@/components/enhanced-knowledge-chat-dialog';
+import SimpleKnowledgeDialog from '@/components/simple-knowledge-dialog';
 import { 
   Plus, 
   FileText, 
@@ -383,7 +383,7 @@ export default function Home() {
       )}
 
       {/* ナレッジチャットモーダル */}
-      <EnhancedKnowledgeChatDialog 
+      <SimpleKnowledgeDialog 
         isOpen={isKnowledgeChatOpen}
         onClose={() => setIsKnowledgeChatOpen(false)}
         title="税務・会計ナレッジチャット"
