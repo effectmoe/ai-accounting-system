@@ -1,16 +1,26 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Upload, FileText, Plus } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 export default function NewDocumentPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [dragActive, setDragActive] = useState(false);
+  const [documentType, setDocumentType] = useState<'general' | 'supplier-quote'>('general');
+
+  // URLパラメータに基づいてドキュメントタイプを設定
+  useEffect(() => {
+    const type = searchParams.get('type');
+    if (type === 'supplier-quote') {
+      setDocumentType('supplier-quote');
+    }
+  }, [searchParams]);
 
   const handleFileUpload = async (selectedFile: File) => {
     if (!selectedFile) return;
@@ -20,7 +30,18 @@ export default function NewDocumentPage() {
       const formData = new FormData();
       formData.append('file', selectedFile);
 
-      const response = await fetch('/api/ocr/process', {
+      let apiEndpoint = '/api/ocr/process';
+      let successMessage = 'ドキュメントをアップロードしました';
+      let redirectPath = '/documents';
+
+      // 仕入先見積書の場合は専用のAPIを使用
+      if (documentType === 'supplier-quote') {
+        apiEndpoint = '/api/ocr/supplier-quote';
+        successMessage = '仕入先見積書をOCRで処理しました';
+        redirectPath = '/supplier-quotes';
+      }
+
+      const response = await fetch(apiEndpoint, {
         method: 'POST',
         body: formData,
       });
@@ -32,8 +53,14 @@ export default function NewDocumentPage() {
       const result = await response.json();
       
       if (result.success) {
-        toast.success('ドキュメントをアップロードしました');
-        router.push('/documents');
+        toast.success(successMessage);
+        
+        // 仕入先見積書の場合は作成された見積書の詳細ページに遷移
+        if (documentType === 'supplier-quote' && result.supplierQuote) {
+          router.push(`/supplier-quotes/${result.supplierQuote.id}`);
+        } else {
+          router.push(redirectPath);
+        }
       } else {
         throw new Error(result.error || 'OCR処理に失敗しました');
       }
@@ -89,6 +116,62 @@ export default function NewDocumentPage() {
             戻る
           </Link>
           <h1 className="text-2xl font-bold text-gray-900">新規ドキュメント</h1>
+        </div>
+      </div>
+
+      {/* ドキュメントタイプの選択 */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">ドキュメントタイプを選択</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div
+            onClick={() => setDocumentType('general')}
+            className={`p-4 rounded-lg border-2 cursor-pointer transition-colors ${
+              documentType === 'general' 
+                ? 'border-blue-500 bg-blue-50' 
+                : 'border-gray-200 hover:border-gray-300'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <div className={`w-4 h-4 rounded-full border-2 ${
+                documentType === 'general' 
+                  ? 'border-blue-500 bg-blue-500' 
+                  : 'border-gray-300'
+              }`}>
+                {documentType === 'general' && (
+                  <div className="w-full h-full rounded-full bg-white scale-50"></div>
+                )}
+              </div>
+              <div>
+                <h3 className="font-medium text-gray-900">一般的な書類</h3>
+                <p className="text-sm text-gray-600">領収書、請求書、その他の書類</p>
+              </div>
+            </div>
+          </div>
+          
+          <div
+            onClick={() => setDocumentType('supplier-quote')}
+            className={`p-4 rounded-lg border-2 cursor-pointer transition-colors ${
+              documentType === 'supplier-quote' 
+                ? 'border-green-500 bg-green-50' 
+                : 'border-gray-200 hover:border-gray-300'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <div className={`w-4 h-4 rounded-full border-2 ${
+                documentType === 'supplier-quote' 
+                  ? 'border-green-500 bg-green-500' 
+                  : 'border-gray-300'
+              }`}>
+                {documentType === 'supplier-quote' && (
+                  <div className="w-full h-full rounded-full bg-white scale-50"></div>
+                )}
+              </div>
+              <div>
+                <h3 className="font-medium text-gray-900">仕入先見積書</h3>
+                <p className="text-sm text-gray-600">仕入先からの見積書（推奨）</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
