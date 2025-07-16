@@ -1,0 +1,5 @@
+User-agent: *
+Disallow: /
+
+# 社内ツールのため全てのクローラーを拒否
+# AAM Accounting Automation - Internal Tool Only
