@@ -28,6 +28,8 @@
     "workflow:run": "tsx scripts/run-workflow.ts",
     "mastra:dev": "tsx --watch src/index.ts",
     "mastra:start": "tsx src/index.ts",
+    "setup:vercel-env": "bash ./scripts/setup-vercel-env.sh",
+    "env:check": "curl http://localhost:3000/api/env-check",
     "mastra:api": "tsx src/api.ts",
     "mastra:build": "tsc --build",
     "setup-database": "npx tsx scripts/setup-database.ts --direct",

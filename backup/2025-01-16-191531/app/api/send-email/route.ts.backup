@@ -1,0 +1,348 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { QuoteService } from '@/services/quote.service';
+import { InvoiceService } from '@/services/invoice.service';
+import { generatePDFBase64 } from '@/lib/pdf-export';
+import { DocumentData } from '@/lib/document-generator';
+import nodemailer from 'nodemailer';
+
+// 日本語フォント処理のためにNode.js Runtimeを使用
+export const runtime = 'nodejs';
+
+// メール送信のための型定義
+interface EmailRequest {
+  documentType: 'quote' | 'invoice';
+  documentId: string;
+  to: string;
+  cc?: string;
+  bcc?: string;
+  subject?: string;
+  body?: string;
+  attachPdf?: boolean;
+}
+
+// Gmail SMTP設定
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.GMAIL_USER || 'info@effect.moe',
+    pass: process.env.GMAIL_APP_PASSWORD || 'zrvn vpbs bgcx leyo'
+  }
+});
+
+// メール送信サービス
+async function sendEmail(options: {
+  to: string;
+  cc?: string;
+  bcc?: string;
+  subject: string;
+  body: string;
+  attachments?: Array<{
+    filename: string;
+    content: string; // base64
+    contentType: string;
+  }>;
+}) {
+  try {
+    const mailOptions = {
+      from: `${process.env.EMAIL_FROM_NAME || '株式会社EFFECT'} <${process.env.EMAIL_FROM_ADDRESS || 'info@effect.moe'}>`,
+      to: options.to,
+      cc: options.cc || undefined,
+      bcc: options.bcc || undefined,
+      subject: options.subject,
+      html: options.body,
+      attachments: options.attachments?.map(att => ({
+        filename: att.filename,
+        content: att.content,
+        encoding: 'base64' as const,
+        contentType: att.contentType
+      }))
+    };
+
+    console.log('Sending email via Gmail:', {
+      to: options.to,
+      cc: options.cc,
+      bcc: options.bcc,
+      subject: options.subject,
+      hasAttachments: !!options.attachments?.length,
+    });
+
+    const info = await transporter.sendMail(mailOptions);
+    
+    console.log('Email sent successfully:', info.messageId);
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    console.error('Gmail送信エラー:', error);
+    throw new Error(`メール送信に失敗しました: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+
+// デフォルトのメールテンプレート
+function getDefaultEmailTemplate(
+  documentType: 'quote' | 'invoice',
+  documentNumber: string,
+  customerName: string,
+  totalAmount: number,
+  dueDate?: string
+): { subject: string; body: string } {
+  if (documentType === 'quote') {
+    return {
+      subject: `【見積書】${documentNumber} のご送付`,
+      body: `
+<p>${customerName} 様</p>
+
+<p>いつもお世話になっております。</p>
+
+<p>ご依頼いただきました見積書をお送りいたします。</p>
+
+<p><strong>見積書番号：</strong>${documentNumber}<br/>
+<strong>見積金額：</strong>¥${totalAmount.toLocaleString()}</p>
+
+<p>添付ファイルをご確認ください。</p>
+
+<p>ご不明な点がございましたら、お気軽にお問い合わせください。</p>
+
+<p>よろしくお願いいたします。</p>
+      `.trim(),
+    };
+  } else {
+    return {
+      subject: `【請求書】${documentNumber} のご送付`,
+      body: `
+<p>${customerName} 様</p>
+
+<p>いつもお世話になっております。</p>
+
+<p>請求書をお送りいたします。</p>
+
+<p><strong>請求書番号：</strong>${documentNumber}<br/>
+<strong>請求金額：</strong>¥${totalAmount.toLocaleString()}<br/>
+${dueDate ? `<strong>お支払期限：</strong>${dueDate}` : ''}</p>
+
+<p>添付ファイルをご確認の上、期限までにお支払いをお願いいたします。</p>
+
+<p>ご不明な点がございましたら、お気軽にお問い合わせください。</p>
+
+<p>よろしくお願いいたします。</p>
+      `.trim(),
+    };
+  }
+}
+
+export async function POST(request: NextRequest) {
+  console.log('=== EMAIL SEND API CALLED ===');
+  try {
+    const body: EmailRequest = await request.json();
+    console.log('Request body:', body);
+    const { documentType, documentId, to, cc, bcc, subject, body: customBody, attachPdf = true } = body;
+
+    // ドキュメントを取得
+    console.log('Fetching document...', { documentType, documentId });
+    let document: any;
+    let documentData: DocumentData;
+    
+    if (documentType === 'quote') {
+      console.log('Fetching quote document...');
+      const quoteService = new QuoteService();
+      document = await quoteService.getQuote(documentId);
+      console.log('Quote fetched:', document ? 'SUCCESS' : 'FAILED');
+      
+      if (!document) {
+        return NextResponse.json({ error: '見積書が見つかりません' }, { status: 404 });
+      }
+      
+      // DocumentData形式に変換
+      documentData = {
+        documentType: 'quote',
+        documentNumber: document.quoteNumber,
+        issueDate: new Date(document.issueDate),
+        validUntilDate: new Date(document.validityDate),
+        customerName: document.customer?.companyName || '',
+        customerAddress: `${document.customer?.prefecture || ''}${document.customer?.city || ''}${document.customer?.address1 || ''}`,
+        items: document.items.map((item: any) => ({
+          description: item.itemName,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          amount: item.amount,
+        })),
+        subtotal: document.subtotal,
+        tax: document.taxAmount,
+        total: document.totalAmount,
+        notes: document.notes,
+        companyInfo: {
+          name: document.companySnapshot?.companyName || '',
+          address: document.companySnapshot?.address || '',
+          phone: document.companySnapshot?.phone,
+          email: document.companySnapshot?.email,
+          registrationNumber: document.companySnapshot?.invoiceRegistrationNumber,
+        },
+      };
+    } else {
+      const invoiceService = new InvoiceService();
+      document = await invoiceService.getInvoice(documentId);
+      
+      if (!document) {
+        return NextResponse.json({ error: '請求書が見つかりません' }, { status: 404 });
+      }
+      
+      // DocumentData形式に変換
+      documentData = {
+        documentType: 'invoice',
+        documentNumber: document.invoiceNumber,
+        issueDate: new Date(document.issueDate || document.invoiceDate),
+        dueDate: new Date(document.dueDate),
+        customerName: document.customerSnapshot?.companyName || '',
+        customerAddress: document.customerSnapshot?.address || '',
+        items: document.items.map((item: any) => ({
+          description: item.description,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          amount: item.amount,
+        })),
+        subtotal: document.subtotal,
+        tax: document.taxAmount,
+        total: document.totalAmount,
+        notes: document.notes,
+        companyInfo: {
+          name: document.companySnapshot?.companyName || '',
+          address: document.companySnapshot?.address || '',
+          phone: document.companySnapshot?.phone,
+          email: document.companySnapshot?.email,
+          registrationNumber: document.companySnapshot?.invoiceRegistrationNumber,
+        },
+        bankAccount: document.companySnapshot?.bankAccount,
+      };
+    }
+
+    // デフォルトのメールテンプレートを取得
+    const defaultTemplate = getDefaultEmailTemplate(
+      documentType,
+      documentData.documentNumber,
+      documentData.customerName,
+      documentData.total,
+      documentData.dueDate ? new Date(documentData.dueDate).toLocaleDateString('ja-JP') : undefined
+    );
+
+    // メールの件名と本文を設定
+    const emailSubject = subject || defaultTemplate.subject;
+    const emailBody = customBody || defaultTemplate.body;
+
+    // 添付ファイルの準備
+    console.log('=== ATTACHMENT PREPARATION START ===');
+    console.log('Preparing attachments...', { attachPdf });
+    const attachments = [];
+    if (attachPdf) {
+      console.log('PDF attachment requested');
+      try {
+        console.log('Generating PDF for document:', documentData.documentNumber);
+        console.log('Document data summary:', {
+          documentType: documentData.documentType,
+          documentNumber: documentData.documentNumber,
+          customerName: documentData.customerName,
+          itemsCount: documentData.items?.length || 0,
+          total: documentData.total
+        });
+        
+        const pdfBase64 = await generatePDFBase64(documentData);
+        console.log('PDF generated successfully, size:', pdfBase64.length, 'characters');
+        console.log('PDF base64 sample (first 100 chars):', pdfBase64.substring(0, 100));
+        
+        const attachment = {
+          filename: `${documentData.documentNumber}.pdf`,
+          content: pdfBase64,
+          contentType: 'application/pdf',
+        };
+        attachments.push(attachment);
+        console.log('Attachment added to array:', {
+          filename: attachment.filename,
+          contentLength: attachment.content.length,
+          contentType: attachment.contentType
+        });
+      } catch (pdfError) {
+        console.error('=== PDF GENERATION FAILED ===');
+        console.error('PDF generation failed:', pdfError);
+        console.error('PDF error details:', {
+          message: pdfError instanceof Error ? pdfError.message : String(pdfError),
+          stack: pdfError instanceof Error ? pdfError.stack : null,
+          type: pdfError instanceof Error ? pdfError.constructor.name : typeof pdfError
+        });
+        
+        // PDF生成エラーの場合はPDFなしでメール送信を継続
+        console.log('Continuing email send without PDF attachment');
+        // throw new Error(`PDF生成に失敗しました: ${pdfError instanceof Error ? pdfError.message : String(pdfError)}`);
+      }
+    } else {
+      console.log('PDF attachment not requested (attachPdf is false)');
+    }
+    
+    console.log('=== ATTACHMENT PREPARATION END ===');
+    console.log('Final attachments array:', attachments.map(a => ({ filename: a.filename, size: a.content.length })));
+
+    // メール送信
+    console.log('Sending email with attachments count:', attachments.length);
+    console.log('Email attachments:', attachments.map(a => ({ filename: a.filename, size: a.content.length })));
+    
+    const result = await sendEmail({
+      to,
+      cc,
+      bcc,
+      subject: emailSubject,
+      body: emailBody,
+      attachments,
+    });
+    
+    console.log('Email sent successfully:', result);
+
+    if (!result.success) {
+      throw new Error('メール送信に失敗しました');
+    }
+
+    // ステータスを自動更新（下書き → 保存済み）
+    if (document.status === 'draft') {
+      if (documentType === 'quote') {
+        const quoteService = new QuoteService();
+        await quoteService.updateQuote(documentId, { status: 'saved' });
+      } else {
+        const invoiceService = new InvoiceService();
+        await invoiceService.updateInvoice(documentId, { status: 'saved' });
+      }
+    }
+
+    // 送信履歴を記録（将来的に実装）
+    // await recordEmailHistory({
+    //   documentType,
+    //   documentId,
+    //   to,
+    //   cc,
+    //   bcc,
+    //   subject: emailSubject,
+    //   sentAt: new Date(),
+    //   messageId: result.messageId,
+    // });
+
+    return NextResponse.json({
+      success: true,
+      message: 'メールが送信されました',
+      messageId: result.messageId,
+    });
+  } catch (error) {
+    console.error('Email sending error:', error);
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    
+    // より詳細なエラー情報を返す
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    const errorDetails = {
+      message: errorMessage,
+      type: error instanceof Error ? error.constructor.name : 'Unknown',
+      stack: error instanceof Error ? error.stack : null
+    };
+    
+    return NextResponse.json(
+      { 
+        error: 'メール送信に失敗しました', 
+        details: errorMessage,
+        debugInfo: errorDetails
+      },
+      { status: 500 }
+    );
+  }
+}
