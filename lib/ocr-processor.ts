@@ -442,3 +442,9 @@ export class OCRProcessor {
     };
   }
 }
+
+// 後方互換性のためのprocessOCR関数をエクスポート
+export async function processOCR(file: File): Promise<OCRResult> {
+  const ocrProcessor = new OCRProcessor();
+  return await ocrProcessor.processReceiptFile(file);
+}
