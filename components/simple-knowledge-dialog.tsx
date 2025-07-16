@@ -304,7 +304,8 @@ export default function SimpleKnowledgeDialog({
 
       if (response.ok) {
         console.log('FAQ保存成功:', responseData.id);
-        alert('FAQに保存されました！');
+        alert('FAQに保存されました！\n\n保存したFAQは「FAQ管理」ページで確認できます。');
+        // TODO: FAQ一覧ページへのリンクまたは表示機能を追加
       } else {
         console.error('FAQ保存失敗:', responseData.error);
         alert(`FAQの保存に失敗しました: ${responseData.error}`);
