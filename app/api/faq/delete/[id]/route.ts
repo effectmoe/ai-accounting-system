@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
-import clientPromise from '@/lib/mongodb';
+import { KnowledgeService } from '@/services/knowledge.service';
+import { StructuredDataService } from '@/services/structured-data.service';
 import { ObjectId } from 'mongodb';
 
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const knowledgeService = new KnowledgeService();
+  
   try {
     const { id } = params;
     console.log('[FAQ Delete API] Starting deletion for ID:', id);
@@ -19,24 +22,40 @@ export async function DELETE(
       );
     }
 
-    const client = await clientPromise;
-    const db = client.db('accounting-app');
+    await knowledgeService.connect();
 
-    // Delete from faq collection
-    const faqResult = await db.collection('faq').deleteOne({
+    // Delete from faq_articles collection
+    const faqArticlesResult = await knowledgeService.db.collection('faq_articles').deleteOne({
+      _id: new ObjectId(id)
+    });
+
+    console.log('[FAQ Delete API] FAQ articles deletion result:', faqArticlesResult);
+
+    // Also try to delete from old faq collection
+    const faqResult = await knowledgeService.db.collection('faq').deleteOne({
       _id: new ObjectId(id)
     });
 
     console.log('[FAQ Delete API] FAQ deletion result:', faqResult);
 
-    // Delete from faq_articles collection
-    const articleResult = await db.collection('faq_articles').deleteOne({
-      faqId: id
-    });
+    // Delete associated structured data
+    try {
+      const structuredDataService = new StructuredDataService();
+      const structuredDataCollection = structuredDataService.db.collection('structuredData');
+      const structuredDataResult = await structuredDataCollection.deleteMany({
+        sourceId: new ObjectId(id),
+        sourceType: 'faq'
+      });
+      console.log('[FAQ Delete API] Structured data deletion result:', structuredDataResult);
+      await structuredDataService.close();
+    } catch (structuredError) {
+      console.error('[FAQ Delete API] Error deleting structured data:', structuredError);
+      // Continue with FAQ deletion even if structured data deletion fails
+    }
 
-    console.log('[FAQ Delete API] FAQ article deletion result:', articleResult);
+    await knowledgeService.disconnect();
 
-    if (faqResult.deletedCount === 0) {
+    if (faqArticlesResult.deletedCount === 0 && faqResult.deletedCount === 0) {
       console.warn('[FAQ Delete API] FAQ not found with ID:', id);
       return NextResponse.json(
         { success: false, error: 'FAQ not found' },
@@ -44,14 +63,16 @@ export async function DELETE(
       );
     }
 
-    console.log('[FAQ Delete API] Successfully deleted FAQ and article');
+    console.log('[FAQ Delete API] Successfully deleted FAQ and associated data');
     return NextResponse.json({
       success: true,
-      deletedFaq: faqResult.deletedCount,
-      deletedArticle: articleResult.deletedCount
+      deletedFaqArticle: faqArticlesResult.deletedCount,
+      deletedFaq: faqResult.deletedCount
     });
   } catch (error) {
     console.error('[FAQ Delete API] Error deleting FAQ:', error);
+    await knowledgeService.disconnect();
+    
     return NextResponse.json(
       { 
         success: false, 
