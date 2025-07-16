@@ -36,14 +36,6 @@ import {
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import ReactMarkdown from 'react-markdown';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 
 interface FaqItem {
   id: string;
@@ -104,9 +96,6 @@ export default function FaqPage() {
   const [expandedFaq, setExpandedFaq] = useState<string | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [faqToDelete, setFaqToDelete] = useState<FaqItem | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
 
   // FAQデータを取得
   useEffect(() => {
@@ -201,44 +190,6 @@ export default function FaqPage() {
       }
     } catch (error) {
       console.error('Error voting on FAQ:', error);
-    }
-  };
-
-  const handleDeleteClick = (faq: FaqItem) => {
-    setFaqToDelete(faq);
-    setDeleteDialogOpen(true);
-  };
-
-  const handleDeleteConfirm = async () => {
-    if (!faqToDelete) return;
-
-    setIsDeleting(true);
-    try {
-      const response = await fetch(`/api/faq/delete/${faqToDelete.id}`, {
-        method: 'DELETE'
-      });
-
-      const data = await response.json();
-
-      if (response.ok && data.success) {
-        // FAQリストから削除
-        setFaqs(prev => prev.filter(faq => faq.id !== faqToDelete.id));
-        setFilteredFaqs(prev => prev.filter(faq => faq.id !== faqToDelete.id));
-        
-        // ダイアログを閉じる
-        setDeleteDialogOpen(false);
-        setFaqToDelete(null);
-        
-        console.log('FAQ deleted successfully');
-      } else {
-        console.error('Failed to delete FAQ:', data.error);
-        alert('FAQの削除に失敗しました: ' + (data.error || '不明なエラー'));
-      }
-    } catch (error) {
-      console.error('Error deleting FAQ:', error);
-      alert('FAQの削除中にエラーが発生しました');
-    } finally {
-      setIsDeleting(false);
     }
   };
 
@@ -480,30 +431,19 @@ export default function FaqPage() {
                     </div>
                   </div>
                   
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDeleteClick(faq)}
-                      className="flex items-center gap-2 text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      削除
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setExpandedFaq(expandedFaq === faq.id ? null : faq.id)}
-                      className="flex items-center gap-2"
-                    >
-                      {expandedFaq === faq.id ? (
-                        <ChevronUp className="w-4 h-4" />
-                      ) : (
-                        <ChevronDown className="w-4 h-4" />
-                      )}
-                      {expandedFaq === faq.id ? '閉じる' : '詳細'}
-                    </Button>
-                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setExpandedFaq(expandedFaq === faq.id ? null : faq.id)}
+                    className="flex items-center gap-2"
+                  >
+                    {expandedFaq === faq.id ? (
+                      <ChevronUp className="w-4 h-4" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4" />
+                    )}
+                    {expandedFaq === faq.id ? '閉じる' : '詳細'}
+                  </Button>
                 </div>
 
                 {/* 展開された回答 */}
@@ -573,40 +513,6 @@ export default function FaqPage() {
           </CardContent>
         </Card>
       )}
-
-      {/* 削除確認ダイアログ */}
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>FAQの削除確認</DialogTitle>
-            <DialogDescription>
-              このFAQを削除してよろしいですか？この操作は取り消せません。
-            </DialogDescription>
-          </DialogHeader>
-          {faqToDelete && (
-            <div className="py-4">
-              <p className="text-sm text-gray-600 mb-2">削除するFAQ:</p>
-              <p className="font-medium">{faqToDelete.question}</p>
-            </div>
-          )}
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setDeleteDialogOpen(false)}
-              disabled={isDeleting}
-            >
-              キャンセル
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleDeleteConfirm}
-              disabled={isDeleting}
-            >
-              {isDeleting ? '削除中...' : '削除する'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

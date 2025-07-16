@@ -45,7 +45,22 @@
     "app/api/invoices/analyze-chat/route.ts": {
       "maxDuration": 30
     },
+    "app/api/quotes/analyze-chat/route.ts": {
+      "maxDuration": 30
+    },
+    "app/api/knowledge/analyze-chat/route.ts": {
+      "maxDuration": 30
+    },
+    "app/api/knowledge/analyze-chat-stream/route.ts": {
+      "maxDuration": 30
+    },
     "app/api/invoices/[id]/pdf/route.ts": {
+      "maxDuration": 30
+    },
+    "app/api/quotes/[id]/pdf/route.ts": {
+      "maxDuration": 30
+    },
+    "app/api/delivery-notes/[id]/pdf/route.tsx": {
       "maxDuration": 30
     }
   },
