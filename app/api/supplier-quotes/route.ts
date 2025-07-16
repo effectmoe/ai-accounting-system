@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { SupplierQuoteService } from '@/services/supplier-quote.service';
 
+// Force dynamic rendering for this route
+export const dynamic = 'force-dynamic';
+
 // GET: 仕入先見積書一覧取得
 export async function GET(request: NextRequest) {
   try {

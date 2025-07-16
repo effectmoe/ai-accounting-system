@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, Upload, FileText, Plus } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
-export default function NewDocumentPage() {
+function NewDocumentContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
@@ -315,5 +315,13 @@ export default function NewDocumentPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function NewDocumentPage() {
+  return (
+    <Suspense fallback={<div className="container mx-auto p-6">読み込み中...</div>}>
+      <NewDocumentContent />
+    </Suspense>
   );
 }
