@@ -173,7 +173,13 @@ export default function SimpleKnowledgeDialog({
       });
 
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'エラーが発生しました');
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+      setError(`回答の生成に失敗しました: ${errorMessage}`);
+      console.error('Chat error details:', {
+        error: err,
+        sessionId,
+        messagesCount: messages.length
+      });
     } finally {
       setIsLoading(false);
       setIsTyping(false);

@@ -23,6 +23,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // DeepSeek API key の存在確認
+    if (!process.env.DEEPSEEK_API_KEY) {
+      console.error('DeepSeek API key not configured');
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'AI service not configured' 
+        }),
+        { status: 500, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // デバッグ用ログ
+    console.log('API Request:', {
+      hasApiKey: !!process.env.DEEPSEEK_API_KEY,
+      conversationLength: Array.isArray(conversation) ? conversation.length : 1,
+      includeKnowledge,
+      sessionId: sessionId?.slice(-8)
+    });
+
     // ナレッジベースから関連記事を検索
     let knowledgeUsed = [];
     let knowledgeContext = '';
@@ -134,8 +154,16 @@ ${knowledgeContext}
           });
 
           if (!apiResponse.ok) {
-            throw new Error(`DeepSeek API error: ${apiResponse.status}`);
+            const errorText = await apiResponse.text();
+            console.error('DeepSeek API error:', {
+              status: apiResponse.status,
+              statusText: apiResponse.statusText,
+              error: errorText
+            });
+            throw new Error(`DeepSeek API error: ${apiResponse.status} - ${errorText}`);
           }
+
+          console.log('DeepSeek API response received, starting stream processing');
 
           const reader = apiResponse.body?.getReader();
           const decoder = new TextDecoder();
