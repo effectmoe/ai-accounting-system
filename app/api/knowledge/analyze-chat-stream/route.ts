@@ -43,6 +43,32 @@ export async function POST(request: NextRequest) {
       sessionId: sessionId?.slice(-8)
     });
 
+    // conversationの詳細ログ
+    console.log('Conversation debug:', {
+      type: typeof conversation,
+      isArray: Array.isArray(conversation),
+      data: JSON.stringify(conversation).slice(0, 200) + '...'
+    });
+
+    // searchTextを最初に定義
+    let searchText: string;
+    if (Array.isArray(conversation)) {
+      const lastMessage = conversation[conversation.length - 1];
+      console.log('Last message:', { lastMessage, hasContent: !!lastMessage?.content });
+      searchText = lastMessage?.content || lastMessage?.message || String(lastMessage) || '';
+    } else if (typeof conversation === 'object' && conversation?.content) {
+      searchText = conversation.content;
+    } else if (typeof conversation === 'object' && conversation?.message) {
+      searchText = conversation.message;
+    } else {
+      searchText = String(conversation || '');
+    }
+    
+    if (!searchText || searchText.trim().length === 0) {
+      searchText = '税務 会計';
+      console.log('Using default searchText:', searchText);
+    }
+
     // ナレッジベースから関連記事を検索
     let knowledgeUsed = [];
     let knowledgeContext = '';
@@ -85,23 +111,6 @@ ${searchResult.articles.map((article, index) =>
 ).join('\n\n')}
 `;
       }
-    }
-
-    // searchTextを上位スコープで定義
-    let searchText: string;
-    if (Array.isArray(conversation)) {
-      const lastMessage = conversation[conversation.length - 1];
-      searchText = lastMessage?.content || lastMessage?.message || lastMessage || '';
-    } else if (typeof conversation === 'object' && conversation?.content) {
-      searchText = conversation.content;
-    } else if (typeof conversation === 'object' && conversation?.message) {
-      searchText = conversation.message;
-    } else {
-      searchText = String(conversation);
-    }
-    
-    if (!searchText || searchText.trim().length === 0) {
-      searchText = '税務 会計';
     }
 
     // ストリーミングレスポンスの設定
@@ -195,7 +204,8 @@ ${knowledgeContext}
                     const content = parsed.choices?.[0]?.delta?.content || '';
                     if (content) {
                       fullResponse += content;
-                      controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content })}\n\n`));
+                      // 累積されたコンテンツ全体を送信
+                      controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: fullResponse })}\n\n`));
                     }
                   } catch (e) {
                     console.error('Failed to parse SSE data:', e);
