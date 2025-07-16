@@ -374,7 +374,9 @@ export default function EnhancedKnowledgeChatDialog({
     // セッションにメッセージを保存
     if (currentSession) {
       try {
-        await fetch(`/api/chat-history/${currentSession.sessionId}/messages`, {
+        console.log('[Chat Component] Saving message to session:', currentSession.sessionId);
+        console.log('[Chat Component] Current session:', currentSession);
+        const response = await fetch(`/api/chat-history/${currentSession.sessionId}/messages`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -382,9 +384,18 @@ export default function EnhancedKnowledgeChatDialog({
             content: input.trim()
           })
         });
+        
+        if (!response.ok) {
+          const error = await response.json();
+          console.error('[Chat Component] Failed to save message:', error);
+        } else {
+          console.log('[Chat Component] Message saved successfully');
+        }
       } catch (error) {
-        console.error('Failed to save message:', error);
+        console.error('[Chat Component] Failed to save message:', error);
       }
+    } else {
+      console.log('[Chat Component] No current session, skipping message save');
     }
 
     setMessages(prev => [...prev, userMessage]);

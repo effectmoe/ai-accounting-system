@@ -8,6 +8,9 @@ export async function GET(request: NextRequest) {
 
   try {
     // 環境変数チェック
+    console.log('MONGODB_URI check:', MONGODB_URI ? 'Set' : 'Not set');
+    console.log('MONGODB_URI value:', MONGODB_URI);
+    
     if (!MONGODB_URI) {
       console.error('MONGODB_URI is not set');
       return NextResponse.json(
@@ -30,27 +33,38 @@ export async function GET(request: NextRequest) {
 
     // セッション一覧を取得（最新順）
     // categoryフィールドはオプショナル - 存在しないセッションも取得
-    const query: any = {
-      // statusが'deleted'でないセッションのみ取得
-      $or: [
-        { status: { $ne: 'deleted' } },
-        { status: { $exists: false } }
-      ]
-    };
+    let query: any = {};
     
     // categoryでのフィルタリングをオプショナルに（taxカテゴリー優先）
     if (category === 'tax') {
-      query.$and = [
-        query.$or,
-        {
-          $or: [
-            { category: 'tax' },
-            { category: { $exists: false } },
-            { 'specialization.primaryDomain': '税務' }
-          ]
-        }
-      ];
-      delete query.$or;
+      // $andを使って複数の条件を組み合わせる
+      query = {
+        $and: [
+          // statusの条件: deletedでないセッション
+          {
+            $or: [
+              { status: { $ne: 'deleted' } },
+              { status: { $exists: false } }
+            ]
+          },
+          // categoryの条件: tax関連のセッション
+          {
+            $or: [
+              { category: 'tax' },
+              { category: { $exists: false } },
+              { 'specialization.primaryDomain': '税務' }
+            ]
+          }
+        ]
+      };
+    } else {
+      // tax以外の場合は、statusのみでフィルタリング
+      query = {
+        $or: [
+          { status: { $ne: 'deleted' } },
+          { status: { $exists: false } }
+        ]
+      };
     }
     
     console.log('Query:', JSON.stringify(query));
