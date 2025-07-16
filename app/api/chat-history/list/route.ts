@@ -30,9 +30,29 @@ export async function GET(request: NextRequest) {
 
     // セッション一覧を取得（最新順）
     // categoryフィールドはオプショナル - 存在しないセッションも取得
-    const query: any = {};
+    const query: any = {
+      // statusが'deleted'でないセッションのみ取得
+      $or: [
+        { status: { $ne: 'deleted' } },
+        { status: { $exists: false } }
+      ]
+    };
     
-    // categoryでのフィルタリングは廃止し、すべてのセッションを取得
+    // categoryでのフィルタリングをオプショナルに（taxカテゴリー優先）
+    if (category === 'tax') {
+      query.$and = [
+        query.$or,
+        {
+          $or: [
+            { category: 'tax' },
+            { category: { $exists: false } },
+            { 'specialization.primaryDomain': '税務' }
+          ]
+        }
+      ];
+      delete query.$or;
+    }
+    
     console.log('Query:', JSON.stringify(query));
     
     const sessions = await sessionsCollection

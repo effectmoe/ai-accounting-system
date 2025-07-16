@@ -55,16 +55,14 @@ export default function SimpleKnowledgeDialog({
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
   const [chatHistory, setChatHistory] = useState<any[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
-  const [isNewChat, setIsNewChat] = useState(true);
   
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (isOpen && !sessionId) {
-      // 新規チャットを開始
-      setIsNewChat(true);
-      // sessionIdは最初のメッセージ送信時にサーバーから取得
+      const newSessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      setSessionId(newSessionId);
     }
   }, [isOpen]);
 
@@ -159,13 +157,6 @@ export default function SimpleKnowledgeDialog({
                     }
                   });
                 }
-                
-                // セッションIDが返された場合は更新
-                if (parsed.sessionId && isNewChat) {
-                  console.log('[simple-knowledge-dialog] サーバーからセッションID取得:', parsed.sessionId);
-                  setSessionId(parsed.sessionId);
-                  setIsNewChat(false);
-                }
               } catch (e) {
                 console.error('Failed to parse SSE data:', e);
               }
@@ -206,7 +197,6 @@ export default function SimpleKnowledgeDialog({
       const response = await fetch('/api/chat-history/list?category=tax');
       if (response.ok) {
         const data = await response.json();
-        console.log('[simple-knowledge-dialog] 取得した履歴:', data.sessions?.length || 0, '件');
         setChatHistory(data.sessions || []);
       } else {
         console.error('履歴の取得に失敗しました');
@@ -228,11 +218,11 @@ export default function SimpleKnowledgeDialog({
   const loadHistorySession = async (sessionId: string) => {
     try {
       const response = await fetch(`/api/chat-history/${sessionId}`);
-      console.log('[simple-knowledge-dialog] 履歴セッション読込みレスポンス:', response.status);
+      console.log('履歴セッション読込みレスポンス:', response.status);
       
       if (response.ok) {
         const result = await response.json();
-        console.log('[simple-knowledge-dialog] 履歴セッションデータ:', result);
+        console.log('履歴セッションデータ:', result);
         
         if (result.success && result.data) {
           const sessionData = result.data;
@@ -247,7 +237,6 @@ export default function SimpleKnowledgeDialog({
             }));
             setMessages(formattedMessages);
             setSessionId(sessionData.sessionId || sessionId);
-            setIsNewChat(false); // 既存セッションを読み込んだのでfalseに
             setShowHistory(false);
           } else {
             console.warn('セッションにメッセージが含まれていません');
@@ -341,21 +330,6 @@ export default function SimpleKnowledgeDialog({
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                // 新規チャットを開始
-                setSessionId('');
-                setMessages([]);
-                setIsNewChat(true);
-                setShowHistory(false);
-              }}
-              className="hover:bg-white/50"
-              title="新規チャット"
-            >
-              <Plus className="w-4 h-4" />
-            </Button>
             <Button
               variant="ghost"
               size="sm"
@@ -551,7 +525,7 @@ export default function SimpleKnowledgeDialog({
                   Enter で送信 • Shift+Enter で改行
                 </div>
                 <div className="text-xs text-gray-400">
-                  {sessionId ? `Session: ${sessionId.slice(-8)}` : 'New Session'}
+                  Session: {sessionId.slice(-8)}
                 </div>
               </div>
             </div>
