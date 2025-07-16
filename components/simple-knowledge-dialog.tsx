@@ -85,14 +85,19 @@ export default function SimpleKnowledgeDialog({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          conversation: userMessage.content,
+          conversation: [
+            ...messages.map(msg => ({
+              role: msg.role,
+              content: msg.content
+            })),
+            {
+              role: 'user',
+              content: userMessage.content
+            }
+          ],
           sessionId,
           includeKnowledge: true,
-          stream: true,
-          conversationHistory: messages.map(msg => ({
-            role: msg.role,
-            content: msg.content
-          }))
+          stream: true
         }),
       });
 
