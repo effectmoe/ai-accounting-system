@@ -18,6 +18,7 @@ const Navigation = () => {
     { href: '/products', label: '商品管理' },
     { href: '/import', label: 'インポート' },
     { href: '/reports', label: 'レポート' },
+    { href: '/faq', label: 'FAQ' },
     { href: '/settings', label: '設定' },
   ];
 

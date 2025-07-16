@@ -49,7 +49,10 @@ export async function GET(request: NextRequest) {
     };
     
     await knowledgeService.connect();
-    const collection = knowledgeService.db.collection('faq_articles');
+    
+    // 両方のコレクションを確認
+    const faqArticlesCollection = knowledgeService.db.collection('faq_articles');
+    const simpleFaqCollection = knowledgeService.db.collection('faq');
     
     // 検索条件を構築
     const filter: any = {};
@@ -96,23 +99,68 @@ export async function GET(request: NextRequest) {
         sort.createdAt = -1;
     }
     
-    // FAQを検索
-    const faqs = await collection
+    // FAQを検索（faq_articlesコレクション）
+    const faqArticles = await faqArticlesCollection
       .find(filter)
       .sort(sort)
       .skip(searchRequest.offset || 0)
       .limit(searchRequest.limit || 20)
       .toArray();
     
+    // シンプルFAQも取得（faqコレクション）
+    const simpleFaqs = await simpleFaqCollection
+      .find({ status: 'active' })
+      .sort({ savedAt: -1 })
+      .limit(20)
+      .toArray();
+    
+    // 結果を統合
+    const allFaqs = [...faqArticles];
+    
+    // シンプルFAQを変換して追加
+    for (const simpleFaq of simpleFaqs) {
+      allFaqs.push({
+        _id: simpleFaq._id,
+        question: simpleFaq.question,
+        answer: simpleFaq.answer,
+        category: simpleFaq.category || 'tax-accounting',
+        subcategory: '',
+        tags: simpleFaq.tags || ['ai-generated'],
+        difficulty: 'intermediate' as const,
+        priority: 5,
+        status: 'published' as const,
+        isPublished: true,
+        isFeatured: false,
+        qualityMetrics: {
+          accuracy: 85,
+          completeness: 85,
+          clarity: 85,
+          usefulness: 85,
+          overallScore: 85
+        },
+        usageStats: {
+          viewCount: 0,
+          helpfulVotes: 0,
+          unhelpfulVotes: 0,
+          relatedQuestions: []
+        },
+        createdAt: simpleFaq.createdAt || simpleFaq.savedAt,
+        updatedAt: simpleFaq.savedAt,
+        publishedAt: simpleFaq.savedAt
+      });
+    }
+    
     // 総件数を取得
-    const totalCount = await collection.countDocuments(filter);
+    const faqArticlesCount = await faqArticlesCollection.countDocuments(filter);
+    const simpleFaqsCount = await simpleFaqCollection.countDocuments({ status: 'active' });
+    const totalCount = faqArticlesCount + simpleFaqsCount;
     
     // 構造化データを取得（必要な場合）
     let structuredDataMap: Map<string, any> = new Map();
-    if (includeStructuredData && faqs.length > 0) {
+    if (includeStructuredData && allFaqs.length > 0) {
       try {
         const structuredDataService = new StructuredDataService();
-        const faqIds = faqs.map(faq => faq._id);
+        const faqIds = allFaqs.map(faq => faq._id);
         
         for (const faqId of faqIds) {
           const structuredData = await structuredDataService.getStructuredData(faqId, 'faq');
@@ -132,7 +180,7 @@ export async function GET(request: NextRequest) {
     
     return NextResponse.json({
       success: true,
-      faqs: faqs.map(faq => ({
+      faqs: allFaqs.map(faq => ({
         id: faq._id.toString(),
         question: faq.question,
         answer: faq.answer,

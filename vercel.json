@@ -11,21 +11,6 @@
       "FORCE_REBUILD": "2025-07-16-env-update"
     }
   },
-  "env": {
-    "MONGODB_URI": "@mongodb_uri",
-    "DEEPSEEK_API_KEY": "@deepseek_api_key",
-    "GOOGLE_CLIENT_EMAIL": "@google_client_email",
-    "GOOGLE_CLIENT_ID": "@google_client_id",
-    "GOOGLE_CLOUD_PROJECT_ID": "@google_cloud_project_id",
-    "GOOGLE_PRIVATE_KEY": "@google_private_key",
-    "GOOGLE_PRIVATE_KEY_ID": "@google_private_key_id",
-    "NEXT_PUBLIC_SUPABASE_URL": "@next_public_supabase_url",
-    "NEXT_PUBLIC_SUPABASE_ANON_KEY": "@next_public_supabase_anon_key",
-    "SUPABASE_SERVICE_ROLE_KEY": "@supabase_service_role_key",
-    "ENABLE_OCR": "@enable_ocr",
-    "GAS_OCR_URL": "@gas_ocr_url",
-    "GAS_WEBHOOK_URL": "@gas_webhook_url"
-  },
   "functions": {
     "app/api/upload/gdrive/route.ts": {
       "maxDuration": 30

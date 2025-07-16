@@ -112,17 +112,31 @@ export default function FaqPage() {
         sortOrder
       });
 
+      console.log('[FAQ Page] Fetching FAQs with params:', params.toString());
       const response = await fetch(`/api/faq?${params}`);
+      console.log('[FAQ Page] Response status:', response.status);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       const data = await response.json();
+      console.log('[FAQ Page] Response data:', data);
 
       if (data.success) {
-        setFaqs(data.faqs);
-        setFilteredFaqs(data.faqs);
+        setFaqs(data.faqs || []);
+        setFilteredFaqs(data.faqs || []);
       } else {
         console.error('Failed to fetch FAQs:', data.error);
+        // 空の配列をセット
+        setFaqs([]);
+        setFilteredFaqs([]);
       }
     } catch (error) {
       console.error('Error fetching FAQs:', error);
+      // エラー時も空の配列をセット
+      setFaqs([]);
+      setFilteredFaqs([]);
     } finally {
       setLoading(false);
     }

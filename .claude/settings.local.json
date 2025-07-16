@@ -124,7 +124,10 @@
       "Bash(dig:*)",
       "Bash(MONGODB_URI=\"mongodb+srv://effectmoe:Dhfgmtekd77@cluster0.h1e6k.mongodb.net/accounting-automation?retryWrites=true&w=majority&appName=Cluster0\" node test-mongodb-connection.js)",
       "Bash(MONGODB_URI=\"mongodb+srv://accounting-user:Monchan5454%40@accounting-cluster.nld0j20.mongodb.net/accounting?retryWrites=true&w=majority&appName=accounting-cluster\" node test-mongodb-connection.js)",
-      "Bash(gh auth:*)"
+      "Bash(gh auth:*)",
+      "Bash(npm bin:*)",
+      "Bash(/usr/local/bin/vercel:*)",
+      "Bash(npm root:*)"
     ],
     "deny": []
   }
