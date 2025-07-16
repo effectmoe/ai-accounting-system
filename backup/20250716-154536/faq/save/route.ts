@@ -1,50 +1,50 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { MongoClient } from 'mongodb';
 
-const MONGODB_URI = process.env.MONGODB_URI;
+const MONGODB_URI = process.env.MONGODB_URI!;
 
 export async function POST(request: NextRequest) {
   let client: MongoClient | null = null;
 
   try {
-    console.log('[FAQ API] FAQ save API called');
+    console.log('FAQ save API called');
     
     // 環境変数チェック
     if (!MONGODB_URI) {
-      console.error('[FAQ API] MONGODB_URI環境変数が設定されていません');
+      console.error('MONGODB_URI is not set');
       return NextResponse.json(
         { success: false, error: 'Database configuration error' },
         { status: 500 }
       );
     }
     
-    console.log('[FAQ API] MongoDB URIが設定されています');
+    console.log('MONGODB_URI is configured:', !!MONGODB_URI);
 
     const body = await request.json();
-    console.log('[FAQ API] リクエストボディ:', JSON.stringify(body));
+    console.log('Request body:', body);
     
     const { question, answer, sessionId, timestamp } = body;
 
     if (!question || !answer) {
-      console.log('[FAQ API] バリデーションエラー: questionまたはanswerが不足');
+      console.log('Validation failed: missing question or answer');
       return NextResponse.json(
         { success: false, error: 'Question and answer are required' },
         { status: 400 }
       );
     }
 
-    console.log('[FAQ API] MongoDB接続を開始...');
+    console.log('Attempting MongoDB connection...');
     
     // MongoDB接続
     client = new MongoClient(MONGODB_URI);
     await client.connect();
-    console.log('[FAQ API] MongoDB接続成功');
+    console.log('MongoDB connected successfully');
     
     const db = client.db('accounting-automation');
-    console.log('[FAQ API] データベース選択: accounting-automation');
+    console.log('Database selected: accounting-automation');
     
     const faqCollection = db.collection('faq');
-    console.log('[FAQ API] FAQコレクション選択完了');
+    console.log('FAQ collection selected');
 
     // FAQ保存
     const faqEntry = {
@@ -58,11 +58,11 @@ export async function POST(request: NextRequest) {
       tags: ['ai-generated', 'chat']
     };
 
-    console.log('[FAQ API] FAQエントリを挿入:', JSON.stringify(faqEntry));
+    console.log('Inserting FAQ entry:', faqEntry);
     
     const result = await faqCollection.insertOne(faqEntry);
 
-    console.log('[FAQ API] FAQ保存成功 ID:', result.insertedId);
+    console.log('FAQ saved successfully:', result.insertedId);
 
     return NextResponse.json({
       success: true,
@@ -71,14 +71,14 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('[FAQ API] FAQ保存エラー:', error);
-    console.error('[FAQ API] エラー詳細:', error instanceof Error ? error.stack : 'Unknown error');
+    console.error('FAQ保存エラー:', error);
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     
     return NextResponse.json(
       { 
         success: false, 
         error: error instanceof Error ? error.message : 'FAQ保存に失敗しました',
-        details: error instanceof Error ? error.message : undefined
+        details: error instanceof Error ? error.stack : undefined
       },
       { status: 500 }
     );
@@ -86,9 +86,9 @@ export async function POST(request: NextRequest) {
     if (client) {
       try {
         await client.close();
-        console.log('[FAQ API] MongoDB接続をクローズ');
+        console.log('MongoDB connection closed');
       } catch (closeError) {
-        console.error('[FAQ API] MongoDB接続クローズエラー:', closeError);
+        console.error('Error closing MongoDB connection:', closeError);
       }
     }
   }
