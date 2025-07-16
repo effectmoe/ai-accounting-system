@@ -254,27 +254,39 @@ export default function SimpleKnowledgeDialog({
     if (!selectedMessage) return;
     
     try {
+      const questionMessage = messages.find(m => m.role === 'user' && m.timestamp <= selectedMessage.timestamp);
+      const requestData = {
+        question: questionMessage?.content || '',
+        answer: selectedMessage.content,
+        sessionId,
+        timestamp: selectedMessage.timestamp
+      };
+      
+      console.log('FAQ保存リクエスト開始:', requestData);
+      
       const response = await fetch('/api/faq/save', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          question: messages.find(m => m.role === 'user' && m.timestamp <= selectedMessage.timestamp)?.content || '',
-          answer: selectedMessage.content,
-          sessionId,
-          timestamp: selectedMessage.timestamp
-        }),
+        body: JSON.stringify(requestData),
       });
 
+      console.log('FAQ保存レスポンス:', response.status, response.statusText);
+      
+      const responseData = await response.json();
+      console.log('FAQ保存レスポンスデータ:', responseData);
+
       if (response.ok) {
+        console.log('FAQ保存成功:', responseData.id);
         alert('FAQに保存されました！');
       } else {
-        alert('FAQの保存に失敗しました。');
+        console.error('FAQ保存失敗:', responseData.error);
+        alert(`FAQの保存に失敗しました: ${responseData.error}`);
       }
     } catch (error) {
       console.error('FAQ保存エラー:', error);
-      alert('FAQ保存中にエラーが発生しました。');
+      alert('FAQ保存中にエラーが発生しました。詳細はコンソールを確認してください。');
     } finally {
       setShowFaqSaveDialog(false);
       setSelectedMessage(null);
