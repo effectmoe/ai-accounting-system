@@ -38,7 +38,7 @@ const deploymentAgent = {
         
         // Check if Vercel CLI is installed
         try {
-          execSync('vercel --version', { stdio: 'ignore' });
+          execSync('npx vercel --version', { stdio: 'ignore' });
         } catch (error) {
           return {
             success: false,
@@ -59,8 +59,8 @@ const deploymentAgent = {
 
         // Deploy to Vercel
         const deployCommand = config.environment === 'production' 
-          ? 'vercel --prod --yes' 
-          : 'vercel --yes';
+          ? 'npx vercel --prod --yes' 
+          : 'npx vercel --yes';
 
         console.log(`[Deployment Agent] Deploying to ${config.environment}...`);
         const deployResult = execSync(deployCommand, {
@@ -100,7 +100,7 @@ const deploymentAgent = {
       error?: string;
     }> => {
       try {
-        const result = execSync(`vercel ls`, {
+        const result = execSync(`npx vercel ls`, {
           encoding: 'utf8',
           stdio: 'pipe'
         });
@@ -130,7 +130,7 @@ const deploymentAgent = {
         console.log(`[Deployment Agent] Setting environment variables for ${environment}...`);
         
         for (const [key, value] of Object.entries(variables)) {
-          const command = `vercel env add ${key} ${environment}`;
+          const command = `npx vercel env add ${key} ${environment}`;
           console.log(`[Deployment Agent] Setting ${key}...`);
           
           // Note: This is a simplified implementation
@@ -162,7 +162,7 @@ const deploymentAgent = {
         console.log('[Deployment Agent] Rolling back deployment...');
         
         // Get previous deployment
-        const deploymentsResult = execSync('vercel ls', {
+        const deploymentsResult = execSync('npx vercel ls', {
           encoding: 'utf8',
           stdio: 'pipe'
         });
@@ -170,8 +170,8 @@ const deploymentAgent = {
         // This is a simplified rollback implementation
         // In practice, you'd need to parse the deployments and select the previous one
         const rollbackCommand = deploymentId 
-          ? `vercel rollback ${deploymentId}` 
-          : 'vercel rollback';
+          ? `npx vercel rollback ${deploymentId}` 
+          : 'npx vercel rollback';
 
         const rollbackResult = execSync(rollbackCommand, {
           encoding: 'utf8',
@@ -204,7 +204,7 @@ const deploymentAgent = {
       error?: string;
     }> => {
       try {
-        const result = execSync(`vercel logs ${deploymentId}`, {
+        const result = execSync(`npx vercel logs ${deploymentId}`, {
           encoding: 'utf8',
           stdio: 'pipe'
         });

@@ -9,7 +9,7 @@
  * 3. プロジェクトの再デプロイ
  */
 
-import { vercelIntegrationAgent } from '../src/agents/vercel-integration-agent';
+// import { vercelIntegrationAgent } from '../src/agents/vercel-integration-agent';
 import dotenv from 'dotenv';
 import path from 'path';
 import chalk from 'chalk';
@@ -26,60 +26,29 @@ async function main() {
   `));
   
   try {
-    // 1. Vercel APIトークン確認
-    console.log(chalk.yellow('1️⃣ Vercel APIトークンを確認中...'));
-    const tokenResult = await vercelIntegrationAgent.run('getVercelToken', {});
+    // 1. Vercel CLIの確認
+    console.log(chalk.yellow('1️⃣ Vercel CLIを確認中...'));
+    const { exec } = await import('child_process');
+    const { promisify } = await import('util');
+    const execAsync = promisify(exec);
     
-    if (!tokenResult.hasToken) {
-      console.error(chalk.red('❌ ' + tokenResult.message));
-      console.log(chalk.yellow('\nVercel CLIでログインしてください:'));
-      console.log(chalk.gray('  vercel login'));
+    try {
+      await execAsync('npx vercel whoami');
+      console.log(chalk.green('✅ Vercel CLIが利用可能です'));
+    } catch (error) {
+      console.error(chalk.red('❌ Vercel CLIでログインしてください:'));
+      console.log(chalk.gray('  npx vercel login'));
       process.exit(1);
     }
-    console.log(chalk.green('✅ ' + tokenResult.message));
     
-    // 2. プロジェクト情報取得
-    console.log(chalk.yellow('\n2️⃣ プロジェクト情報を取得中...'));
-    const projectInfo = await vercelIntegrationAgent.run('getProjectInfo', {
-      projectName: 'accounting-automation'
-    });
-    
-    if (!projectInfo.success) {
-      console.error(chalk.red('❌ ' + projectInfo.error));
-      process.exit(1);
-    }
-    console.log(chalk.green('✅ プロジェクトを確認しました'));
-    console.log(chalk.gray(`  Project ID: ${projectInfo.projectId}`));
-    if (projectInfo.teamId) {
-      console.log(chalk.gray(`  Team ID: ${projectInfo.teamId}`));
-    }
-    
-    // 3. 環境変数設定
-    console.log(chalk.yellow('\n3️⃣ 環境変数を設定中...'));
+    // 2. 環境変数確認
+    console.log(chalk.yellow('\n2️⃣ 環境変数を確認中...'));
     
     const variables = [
-      {
-        key: 'AZURE_FORM_RECOGNIZER_ENDPOINT',
-        value: process.env.AZURE_FORM_RECOGNIZER_ENDPOINT || '',
-      },
-      {
-        key: 'AZURE_FORM_RECOGNIZER_KEY',
-        value: process.env.AZURE_FORM_RECOGNIZER_KEY || '',
-      },
-      {
-        key: 'MONGODB_URI',
-        value: process.env.MONGODB_URI || '',
-      },
-      {
-        key: 'USE_AZURE_MONGODB',
-        value: 'true',
-      },
+      'MONGODB_URI',
     ];
     
-    // 必須環境変数チェック
-    const missingVars = variables
-      .filter(v => v.key !== 'USE_AZURE_MONGODB' && !v.value)
-      .map(v => v.key);
+    const missingVars = variables.filter(v => !process.env[v]);
     
     if (missingVars.length > 0) {
       console.error(chalk.red('❌ 必須環境変数が設定されていません:'));
@@ -88,42 +57,13 @@ async function main() {
       process.exit(1);
     }
     
-    // 環境変数を一括設定
-    const envResult = await vercelIntegrationAgent.run('setEnvironmentVariables', {
-      projectName: 'accounting-automation',
-      variables,
-    });
+    console.log(chalk.green('✅ すべての環境変数が設定されています'));
     
-    if (!envResult.success) {
-      console.error(chalk.red('❌ 環境変数の設定に失敗しました'));
-      envResult.results.forEach(r => {
-        if (r.success) {
-          console.log(chalk.green(`  ✅ ${r.key}`));
-        } else {
-          console.error(chalk.red(`  ❌ ${r.key}: ${r.error}`));
-        }
-      });
-      
-      if (!envResult.results.every(r => r.success)) {
-        process.exit(1);
-      }
-    } else {
-      console.log(chalk.green('✅ すべての環境変数を設定しました'));
-      envResult.results.forEach(r => {
-        console.log(chalk.gray(`  - ${r.key}`));
-      });
-    }
-    
-    // 4. デプロイ実行
-    console.log(chalk.yellow('\n4️⃣ 本番環境へデプロイ中...'));
-    
-    // Vercel CLIを使用してデプロイ
-    const { exec } = await import('child_process');
-    const { promisify } = await import('util');
-    const execAsync = promisify(exec);
+    // 3. デプロイ実行
+    console.log(chalk.yellow('\n3️⃣ 本番環境へデプロイ中...'));
     
     try {
-      const { stdout } = await execAsync('vercel --prod --yes');
+      const { stdout } = await execAsync('npx vercel --prod --yes');
       
       // URLを抽出
       const urlMatch = stdout.match(/Production: (https:\/\/[^\s]+)/);
