@@ -480,30 +480,19 @@ export default function FaqPage() {
                     </div>
                   </div>
                   
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDeleteClick(faq)}
-                      className="flex items-center gap-2 text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      削除
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setExpandedFaq(expandedFaq === faq.id ? null : faq.id)}
-                      className="flex items-center gap-2"
-                    >
-                      {expandedFaq === faq.id ? (
-                        <ChevronUp className="w-4 h-4" />
-                      ) : (
-                        <ChevronDown className="w-4 h-4" />
-                      )}
-                      {expandedFaq === faq.id ? '閉じる' : '詳細'}
-                    </Button>
-                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setExpandedFaq(expandedFaq === faq.id ? null : faq.id)}
+                    className="flex items-center gap-2"
+                  >
+                    {expandedFaq === faq.id ? (
+                      <ChevronUp className="w-4 h-4" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4" />
+                    )}
+                    {expandedFaq === faq.id ? '閉じる' : '詳細'}
+                  </Button>
                 </div>
 
                 {/* 展開された回答 */}
@@ -548,8 +537,19 @@ export default function FaqPage() {
                         </Button>
                       </div>
                       
-                      <div className="text-sm text-gray-500">
-                        最終更新: {format(new Date(faq.updatedAt), 'yyyy/MM/dd HH:mm', { locale: ja })}
+                      <div className="flex flex-col items-end gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDeleteClick(faq)}
+                          className="flex items-center gap-2 text-red-600 hover:text-red-700 hover:border-red-300"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          削除
+                        </Button>
+                        <div className="text-sm text-gray-500">
+                          最終更新: {format(new Date(faq.updatedAt), 'yyyy/MM/dd HH:mm', { locale: ja })}
+                        </div>
                       </div>
                     </div>
                   </div>
