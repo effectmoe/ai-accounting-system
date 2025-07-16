@@ -51,6 +51,10 @@ export default function SimpleKnowledgeDialog({
   const [error, setError] = useState<string | null>(null);
   const [isTyping, setIsTyping] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [showFaqSaveDialog, setShowFaqSaveDialog] = useState(false);
+  const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
+  const [chatHistory, setChatHistory] = useState<any[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -129,6 +133,7 @@ export default function SimpleKnowledgeDialog({
                 const parsed = JSON.parse(data);
                 
                 if (parsed.content) {
+                  // サーバーから送られてくる content は既に累積されているので、そのまま使用
                   accumulatedContent = parsed.content;
                   
                   setMessages(prev => {
@@ -186,10 +191,93 @@ export default function SimpleKnowledgeDialog({
     }
   };
 
+  const loadChatHistory = async () => {
+    setIsLoadingHistory(true);
+    try {
+      const response = await fetch('/api/chat-history/list?category=tax');
+      if (response.ok) {
+        const data = await response.json();
+        setChatHistory(data.sessions || []);
+      } else {
+        console.error('履歴の取得に失敗しました');
+      }
+    } catch (error) {
+      console.error('履歴取得エラー:', error);
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  };
+
+  const toggleHistory = async () => {
+    if (!showHistory) {
+      await loadChatHistory();
+    }
+    setShowHistory(!showHistory);
+  };
+
+  const loadHistorySession = async (sessionId: string) => {
+    try {
+      const response = await fetch(`/api/chat-history/${sessionId}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data.messages) {
+          const formattedMessages = data.messages.map((msg: any) => ({
+            id: msg._id || `msg_${Date.now()}_${Math.random()}`,
+            role: msg.role,
+            content: msg.content,
+            timestamp: new Date(msg.timestamp)
+          }));
+          setMessages(formattedMessages);
+          setSessionId(sessionId);
+          setShowHistory(false);
+        }
+      }
+    } catch (error) {
+      console.error('履歴セッション読込みエラー:', error);
+    }
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
+    }
+  };
+
+  const handleSaveToFaq = (message: Message) => {
+    console.log('FAQ保存が要求されました:', message);
+    setSelectedMessage(message);
+    setShowFaqSaveDialog(true);
+  };
+
+  const confirmSaveToFaq = async () => {
+    if (!selectedMessage) return;
+    
+    try {
+      const response = await fetch('/api/faq/save', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          question: messages.find(m => m.role === 'user' && m.timestamp <= selectedMessage.timestamp)?.content || '',
+          answer: selectedMessage.content,
+          sessionId,
+          timestamp: selectedMessage.timestamp
+        }),
+      });
+
+      if (response.ok) {
+        alert('FAQに保存されました！');
+      } else {
+        alert('FAQの保存に失敗しました。');
+      }
+    } catch (error) {
+      console.error('FAQ保存エラー:', error);
+      alert('FAQ保存中にエラーが発生しました。');
+    } finally {
+      setShowFaqSaveDialog(false);
+      setSelectedMessage(null);
     }
   };
 
@@ -219,11 +307,12 @@ export default function SimpleKnowledgeDialog({
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setShowHistory(!showHistory)}
+              onClick={toggleHistory}
               className="hover:bg-white/50"
+              disabled={isLoadingHistory}
             >
               <Clock className="w-4 h-4 mr-2" />
-              履歴
+              {isLoadingHistory ? '読込中...' : '履歴'}
             </Button>
             <Button
               variant="ghost"
@@ -252,9 +341,36 @@ export default function SimpleKnowledgeDialog({
                 </div>
               </div>
               <ScrollArea className="flex-1">
-                <div className="p-4 text-center text-gray-500">
-                  履歴機能は実装中です
-                </div>
+                {isLoadingHistory ? (
+                  <div className="p-4 text-center text-gray-500">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mb-2"></div>
+                    履歴を読込中...
+                  </div>
+                ) : chatHistory.length > 0 ? (
+                  <div className="p-2 space-y-2">
+                    {chatHistory.map((session) => (
+                      <div
+                        key={session._id}
+                        onClick={() => loadHistorySession(session._id)}
+                        className="p-3 bg-white rounded-lg shadow-sm border hover:bg-gray-50 cursor-pointer transition-colors"
+                      >
+                        <div className="text-sm font-medium text-gray-900 truncate">
+                          {session.title || `セッション ${session._id.slice(-6)}`}
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1">
+                          {new Date(session.createdAt).toLocaleDateString('ja-JP')}
+                        </div>
+                        <div className="text-xs text-gray-400 mt-1">
+                          {session.messageCount || 0} メッセージ
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-4 text-center text-gray-500">
+                    履歴はまだありません
+                  </div>
+                )}
               </ScrollArea>
             </div>
           )}
@@ -284,11 +400,12 @@ export default function SimpleKnowledgeDialog({
                         <span className="text-xs text-gray-400">
                           {format(message.timestamp, 'HH:mm', { locale: ja })}
                         </span>
-                        {message.role === 'assistant' && (
+                        {message.role === 'assistant' && !message.isTyping && (
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => handleSaveToFaq(message)}
+                            className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity hover:bg-blue-50"
                           >
                             <BookOpen className="w-3 h-3 mr-1" />
                             FAQに保存
@@ -388,6 +505,47 @@ export default function SimpleKnowledgeDialog({
             </div>
           </div>
         </div>
+
+        {/* FAQ保存確認ダイアログ */}
+        {showFaqSaveDialog && selectedMessage && (
+          <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-10">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+              <h3 className="text-lg font-semibold mb-4">FAQに保存しますか？</h3>
+              <div className="space-y-3 mb-6">
+                <div>
+                  <p className="text-sm font-medium text-gray-700 mb-1">質問:</p>
+                  <p className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
+                    {messages.find(m => m.role === 'user' && m.timestamp <= selectedMessage.timestamp)?.content || '質問が見つかりません'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-700 mb-1">回答:</p>
+                  <p className="text-sm text-gray-600 bg-gray-50 p-2 rounded max-h-32 overflow-y-auto">
+                    {selectedMessage.content}
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowFaqSaveDialog(false);
+                    setSelectedMessage(null);
+                  }}
+                  className="flex-1"
+                >
+                  キャンセル
+                </Button>
+                <Button
+                  onClick={confirmSaveToFaq}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  保存
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
