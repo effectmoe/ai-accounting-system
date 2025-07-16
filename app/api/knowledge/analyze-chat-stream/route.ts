@@ -30,11 +30,37 @@ export async function POST(request: NextRequest) {
     if (includeKnowledge) {
       await knowledgeService.connect();
       
+      // conversationが配列の場合は適切な文字列に変換
+      let searchText: string;
+      if (Array.isArray(conversation)) {
+        // 配列の場合は最後のメッセージのcontentを使用
+        const lastMessage = conversation[conversation.length - 1];
+        searchText = lastMessage?.content || lastMessage?.message || lastMessage || '';
+      } else if (typeof conversation === 'object' && conversation?.content) {
+        // オブジェクトでcontentプロパティがある場合
+        searchText = conversation.content;
+      } else if (typeof conversation === 'object' && conversation?.message) {
+        // オブジェクトでmessageプロパティがある場合
+        searchText = conversation.message;
+      } else {
+        // 文字列の場合はそのまま使用
+        searchText = String(conversation);
+      }
+      
+      // 空の文字列の場合のデフォルト値を設定
+      if (!searchText || searchText.trim().length === 0) {
+        searchText = '税務 会計'; // デフォルトの検索語
+      }
+      
+      console.log('Knowledge search - searchText:', searchText, 'type:', typeof searchText);
+      
       const searchResult = await knowledgeService.searchArticles({
-        text: conversation,
+        text: searchText,
         ...knowledgeFilters,
         limit: 5
       });
+      
+      console.log('Knowledge search result:', searchResult.total, 'articles found');
       
       if (searchResult.articles.length > 0) {
         knowledgeUsed = searchResult.articles.map(article => ({
@@ -98,7 +124,7 @@ ${knowledgeContext}
                 })),
                 {
                   role: 'user',
-                  content: conversation
+                  content: searchText
                 }
               ],
               stream: true,
@@ -133,7 +159,7 @@ ${knowledgeContext}
                     const finalData = {
                       content: '',
                       knowledgeUsed: knowledgeUsed,
-                      suggestedQuestions: generateSuggestedQuestions(conversation, fullResponse)
+                      suggestedQuestions: generateSuggestedQuestions(searchText, fullResponse)
                     };
                     controller.enqueue(encoder.encode(`data: ${JSON.stringify(finalData)}\n\n`));
                     controller.enqueue(encoder.encode('data: [DONE]\n\n'));

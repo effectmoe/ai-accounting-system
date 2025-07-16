@@ -67,11 +67,12 @@ export class KnowledgeService {
     limit?: number;
     offset?: number;
   }): Promise<{ articles: KnowledgeArticle[]; total: number }> {
-    const filter: any = {};
+    try {
+      const filter: any = {};
 
-    if (query.text) {
-      filter.$text = { $search: query.text };
-    }
+      if (query.text && typeof query.text === 'string' && query.text.trim().length > 0) {
+        filter.$text = { $search: query.text.trim() };
+      }
 
     if (query.categories && query.categories.length > 0) {
       filter.categories = { $in: query.categories };
@@ -108,15 +109,20 @@ export class KnowledgeService {
       filter.isVerified = query.isVerified;
     }
 
-    const total = await this.articlesCollection.countDocuments(filter);
-    const articles = await this.articlesCollection
-      .find(filter)
-      .sort({ publishedDate: -1 })
-      .skip(query.offset || 0)
-      .limit(query.limit || 20)
-      .toArray();
+      const total = await this.articlesCollection.countDocuments(filter);
+      const articles = await this.articlesCollection
+        .find(filter)
+        .sort({ publishedDate: -1 })
+        .skip(query.offset || 0)
+        .limit(query.limit || 20)
+        .toArray();
 
-    return { articles, total };
+      return { articles, total };
+    } catch (error) {
+      console.error('Search articles error:', error);
+      // エラーが発生した場合は空の結果を返す
+      return { articles: [], total: 0 };
+    }
   }
 
   async updateArticle(id: string, updates: Partial<KnowledgeArticle>): Promise<KnowledgeArticle | null> {
@@ -228,35 +234,45 @@ export class KnowledgeService {
   }
 
   async searchSimilarArticles(vector: number[], limit: number = 10): Promise<KnowledgeArticle[]> {
-    // ベクトル類似度検索（実装はベクトルデータベースに依存）
-    // ここでは基本的な実装例を示す
-    const pipeline = [
-      {
-        $vectorSearch: {
-          index: 'knowledge_embeddings_index',
-          path: 'embeddings.vector',
-          queryVector: vector,
-          numCandidates: 100,
-          limit: limit
-        }
-      },
-      {
-        $lookup: {
-          from: 'knowledgeArticles',
-          localField: 'articleId',
-          foreignField: '_id',
-          as: 'article'
-        }
-      },
-      {
-        $unwind: '$article'
-      },
-      {
-        $replaceRoot: { newRoot: '$article' }
+    try {
+      // ベクトル類似度検索の前に、ベクトルが適切な配列であることを確認
+      if (!Array.isArray(vector) || vector.length === 0) {
+        console.warn('Invalid vector provided for similarity search');
+        return [];
       }
-    ];
 
-    return await this.embeddingsCollection.aggregate(pipeline).toArray();
+      const pipeline = [
+        {
+          $vectorSearch: {
+            index: 'knowledge_embeddings_index',
+            path: 'vector', // embeddings.vector ではなく vector フィールドを直接使用
+            queryVector: vector,
+            numCandidates: 100,
+            limit: limit
+          }
+        },
+        {
+          $lookup: {
+            from: 'knowledgeArticles',
+            localField: 'articleId',
+            foreignField: '_id',
+            as: 'article'
+          }
+        },
+        {
+          $unwind: '$article'
+        },
+        {
+          $replaceRoot: { newRoot: '$article' }
+        }
+      ];
+
+      return await this.embeddingsCollection.aggregate(pipeline).toArray();
+    } catch (error) {
+      console.error('Vector search error:', error);
+      // ベクトル検索が失敗した場合は空配列を返す
+      return [];
+    }
   }
 
   // === 処理ログ管理 ===
