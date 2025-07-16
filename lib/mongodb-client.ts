@@ -512,6 +512,9 @@ export const Collections = {
   BANK_ACCOUNTS: 'bankAccounts',
   PRODUCTS: 'products',
   QUOTES: 'quotes',
+  SUPPLIERS: 'suppliers',
+  SUPPLIER_QUOTES: 'supplierQuotes',
+  PURCHASE_ORDERS: 'purchaseOrders',
 } as const;
 
 // データベースサービスのシングルトンインスタンス

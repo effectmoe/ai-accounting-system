@@ -1,8 +1,8 @@
 import { ObjectId } from 'mongodb';
-import { getMongoClient } from '@/lib/mongodb-client';
+import { getDatabase } from '@/lib/mongodb-client';
 import { Supplier, SupplierStatus } from '@/types/collections';
 
-const DB_NAME = process.env.MONGODB_DB_NAME || 'accounting-app';
+// MongoDB接続はgetDatabase()で'accounting'データベースを使用するため、この定数は不要
 const COLLECTION_NAME = 'suppliers';
 
 export class SupplierService {
@@ -24,8 +24,7 @@ export class SupplierService {
       sortOrder = 'asc' 
     } = params || {};
 
-    const client = await getMongoClient();
-    const db = client.db(DB_NAME);
+    const db = await getDatabase();
     const collection = db.collection<Supplier>(COLLECTION_NAME);
 
     // フィルター条件の構築
@@ -71,8 +70,7 @@ export class SupplierService {
 
   // 仕入先詳細取得
   static async getSupplierById(id: string) {
-    const client = await getMongoClient();
-    const db = client.db(DB_NAME);
+    const db = await getDatabase();
     const collection = db.collection<Supplier>(COLLECTION_NAME);
 
     const supplier = await collection.findOne({ _id: new ObjectId(id) });
@@ -98,8 +96,7 @@ export class SupplierService {
 
   // 仕入先作成
   static async createSupplier(data: Omit<Supplier, '_id' | 'createdAt' | 'updatedAt'>) {
-    const client = await getMongoClient();
-    const db = client.db(DB_NAME);
+    const db = await getDatabase();
     const collection = db.collection<Supplier>(COLLECTION_NAME);
 
     // 仕入先コードの重複チェック
@@ -129,8 +126,7 @@ export class SupplierService {
 
   // 仕入先更新
   static async updateSupplier(id: string, data: Partial<Omit<Supplier, '_id' | 'createdAt'>>) {
-    const client = await getMongoClient();
-    const db = client.db(DB_NAME);
+    const db = await getDatabase();
     const collection = db.collection<Supplier>(COLLECTION_NAME);
 
     // 仕入先コードの重複チェック（自分以外）
@@ -172,8 +168,7 @@ export class SupplierService {
 
   // 仕入先削除
   static async deleteSupplier(id: string) {
-    const client = await getMongoClient();
-    const db = client.db(DB_NAME);
+    const db = await getDatabase();
     const collection = db.collection<Supplier>(COLLECTION_NAME);
 
     // 関連する発注書や見積書が存在するかチェック
@@ -219,8 +214,7 @@ export class SupplierService {
 
   // 仕入先コードの自動生成
   static async generateSupplierCode() {
-    const client = await getMongoClient();
-    const db = client.db(DB_NAME);
+    const db = await getDatabase();
     const collection = db.collection<Supplier>(COLLECTION_NAME);
 
     // 最新の仕入先コードを取得
@@ -243,8 +237,7 @@ export class SupplierService {
 
   // 仕入先の統計情報取得
   static async getSupplierStats(supplierId: string) {
-    const client = await getMongoClient();
-    const db = client.db(DB_NAME);
+    const db = await getDatabase();
 
     const supplierObjectId = new ObjectId(supplierId);
 
