@@ -218,19 +218,33 @@ export default function SimpleKnowledgeDialog({
   const loadHistorySession = async (sessionId: string) => {
     try {
       const response = await fetch(`/api/chat-history/${sessionId}`);
+      console.log('履歴セッション読込みレスポンス:', response.status);
+      
       if (response.ok) {
-        const data = await response.json();
-        if (data.messages) {
-          const formattedMessages = data.messages.map((msg: any) => ({
-            id: msg._id || `msg_${Date.now()}_${Math.random()}`,
-            role: msg.role,
-            content: msg.content,
-            timestamp: new Date(msg.timestamp)
-          }));
-          setMessages(formattedMessages);
-          setSessionId(sessionId);
-          setShowHistory(false);
+        const result = await response.json();
+        console.log('履歴セッションデータ:', result);
+        
+        if (result.success && result.data) {
+          const sessionData = result.data;
+          
+          // messagesフィールドがあるか確認
+          if (sessionData.messages && Array.isArray(sessionData.messages)) {
+            const formattedMessages = sessionData.messages.map((msg: any) => ({
+              id: msg.id || msg._id || `msg_${Date.now()}_${Math.random()}`,
+              role: msg.role,
+              content: msg.content,
+              timestamp: new Date(msg.timestamp)
+            }));
+            setMessages(formattedMessages);
+            setSessionId(sessionData.sessionId || sessionId);
+            setShowHistory(false);
+          } else {
+            console.warn('セッションにメッセージが含まれていません');
+          }
         }
+      } else {
+        const errorData = await response.json();
+        console.error('履歴セッション読込みエラー:', errorData);
       }
     } catch (error) {
       console.error('履歴セッション読込みエラー:', error);
