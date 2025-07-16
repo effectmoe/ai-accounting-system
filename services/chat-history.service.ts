@@ -9,13 +9,15 @@ import {
   ChatMessage, 
   ContextSummary, 
   ChatAttachment,
-  ChatExportSettings
+  ChatExportSettings,
+  KnowledgeChatSession
 } from '@/types/collections';
 
 export class ChatHistoryService {
   private client: MongoClient;
   private db!: Db;
   private sessions!: Collection<ChatSession>;
+  private knowledgeSessions!: Collection<KnowledgeChatSession>;
   private isConnected = false;
 
   constructor() {
@@ -29,6 +31,7 @@ export class ChatHistoryService {
       await this.client.connect();
       this.db = this.client.db('accounting');
       this.sessions = this.db.collection<ChatSession>('chat_sessions');
+      this.knowledgeSessions = this.db.collection<KnowledgeChatSession>('chat_sessions');
       this.isConnected = true;
     }
   }
@@ -441,6 +444,168 @@ export class ChatHistoryService {
         }
       }
     );
+  }
+
+  /**
+   * 知識ベースチャットセッションを作成
+   */
+  async createKnowledgeSession(
+    userId?: string,
+    category: 'tax' | 'accounting' | 'journal' | 'mixed' = 'mixed'
+  ): Promise<KnowledgeChatSession> {
+    await this.connect();
+    
+    const sessionId = this.generateSessionId();
+    const session: KnowledgeChatSession = {
+      sessionId,
+      userId,
+      title: `税務・会計相談 ${new Date().toLocaleDateString()}`,
+      category,
+      specialization: {
+        primaryDomain: category === 'tax' ? '税務' : category === 'accounting' ? '会計' : category === 'journal' ? '仕訳' : '総合',
+        subDomains: [],
+        detectedTopics: []
+      },
+      knowledgeContext: {
+        relevantArticles: [],
+        faqCandidates: []
+      },
+      messages: [],
+      settings: {
+        aiModel: 'deepseek',
+        temperature: 0.7,
+        maxTokens: 2000
+      },
+      context: {
+        totalTokens: 0,
+        maxTokensLimit: 16000,
+        summarizedTokens: 0,
+        summaries: []
+      },
+      status: 'active',
+      isBookmarked: false,
+      stats: {
+        messageCount: 0,
+        totalResponseTime: 0,
+        averageResponseTime: 0,
+        faqGenerated: 0
+      },
+      metadata: {
+        language: 'ja',
+        lastActiveAt: new Date()
+      },
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+
+    const result = await this.knowledgeSessions.insertOne(session);
+    return { ...session, _id: result.insertedId };
+  }
+
+  /**
+   * 知識ベースセッション一覧を取得
+   */
+  async getKnowledgeSessions(
+    userId?: string,
+    options: {
+      limit?: number;
+      offset?: number;
+      category?: 'tax' | 'accounting' | 'journal' | 'mixed';
+      status?: 'active' | 'archived' | 'deleted';
+      sortBy?: 'createdAt' | 'updatedAt' | 'lastActiveAt';
+      sortOrder?: 'asc' | 'desc';
+    } = {}
+  ): Promise<{ sessions: KnowledgeChatSession[]; total: number }> {
+    await this.connect();
+
+    const {
+      limit = 20,
+      offset = 0,
+      category,
+      status = 'active',
+      sortBy = 'updatedAt',
+      sortOrder = 'desc'
+    } = options;
+
+    const filter: any = { status };
+    if (userId) {
+      filter.userId = userId;
+    }
+    if (category) {
+      filter.category = category;
+    }
+
+    const sortOption: any = {};
+    sortOption[sortBy] = sortOrder === 'desc' ? -1 : 1;
+
+    const [sessions, total] = await Promise.all([
+      this.knowledgeSessions
+        .find(filter)
+        .sort(sortOption)
+        .skip(offset)
+        .limit(limit)
+        .toArray(),
+      this.knowledgeSessions.countDocuments(filter)
+    ]);
+
+    return { sessions, total };
+  }
+
+  /**
+   * 知識ベースセッションのカテゴリを更新
+   */
+  async updateKnowledgeSessionCategory(
+    sessionId: string,
+    category: 'tax' | 'accounting' | 'journal' | 'mixed',
+    detectedTopics?: string[]
+  ): Promise<boolean> {
+    await this.connect();
+    
+    const updateData: any = {
+      category,
+      updatedAt: new Date()
+    };
+
+    if (detectedTopics) {
+      updateData['specialization.detectedTopics'] = detectedTopics;
+    }
+
+    const result = await this.knowledgeSessions.updateOne(
+      { sessionId },
+      { $set: updateData }
+    );
+
+    return result.modifiedCount > 0;
+  }
+
+  /**
+   * FAQキャンディデートを追加
+   */
+  async addFaqCandidate(
+    sessionId: string,
+    candidate: {
+      messageId: string;
+      question: string;
+      answer: string;
+      confidence: number;
+      category: string;
+    }
+  ): Promise<boolean> {
+    await this.connect();
+    
+    const result = await this.knowledgeSessions.updateOne(
+      { sessionId },
+      {
+        $push: {
+          'knowledgeContext.faqCandidates': candidate
+        },
+        $set: {
+          updatedAt: new Date()
+        }
+      }
+    );
+
+    return result.modifiedCount > 0;
   }
 }
 

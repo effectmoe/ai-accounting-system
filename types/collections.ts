@@ -833,6 +833,34 @@ export interface ChatSession {
   archivedAt?: Date;
 }
 
+// 知識ベースチャットセッション（拡張版）
+export interface KnowledgeChatSession extends ChatSession {
+  category: 'tax' | 'accounting' | 'journal' | 'mixed';
+  specialization?: {
+    primaryDomain: string;
+    subDomains: string[];
+    detectedTopics: string[];
+  };
+  knowledgeContext?: {
+    searchFilters?: {
+      categories?: string[];
+      tags?: string[];
+      sourceTypes?: string[];
+      difficulty?: string;
+      contentType?: string;
+      verifiedOnly?: boolean;
+    };
+    relevantArticles?: string[];
+    faqCandidates?: Array<{
+      messageId: string;
+      question: string;
+      answer: string;
+      confidence: number;
+      category: string;
+    }>;
+  };
+}
+
 // チャットメッセージインターフェース
 export interface ChatMessage {
   id: string;

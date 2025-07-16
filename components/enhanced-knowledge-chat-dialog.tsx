@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -38,7 +38,13 @@ import {
   Search,
   ChevronRight,
   Archive,
-  Bookmark
+  Bookmark,
+  History,
+  Clock,
+  Calendar,
+  Trash2,
+  FolderOpen,
+  Plus
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
@@ -46,6 +52,24 @@ import TypingIndicator from '@/components/ui/typing-indicator';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
+import { KnowledgeChatSession, ChatMessage as ChatMessageType } from '@/types/collections';
 
 interface KnowledgeArticle {
   id: string;
@@ -59,17 +83,14 @@ interface KnowledgeArticle {
   contentType: 'news' | 'guide' | 'case_study' | 'regulation' | 'faq' | 'opinion';
 }
 
-interface Message {
-  id: string;
-  role: 'user' | 'assistant';
-  content: string;
-  timestamp: Date;
+interface Message extends Omit<ChatMessageType, 'metadata'> {
   knowledgeUsed?: KnowledgeArticle[];
   feedback?: 'good' | 'bad';
   copied?: boolean;
-  isStreaming?: boolean;
-  faqGenerated?: boolean;
   showFaqDialog?: boolean;
+  metadata?: ChatMessageType['metadata'] & {
+    knowledgeUsed?: KnowledgeArticle[];
+  };
 }
 
 interface KnowledgeFilters {
@@ -100,6 +121,13 @@ export default function EnhancedKnowledgeChatDialog({
   enableVoiceInput = true,
   enableStreaming = true
 }: EnhancedKnowledgeChatDialogProps) {
+  // セッション管理状態
+  const [currentSession, setCurrentSession] = useState<KnowledgeChatSession | null>(null);
+  const [sessions, setSessions] = useState<KnowledgeChatSession[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [sessionCategory, setSessionCategory] = useState<'tax' | 'accounting' | 'journal' | 'mixed'>('mixed');
+  const [showNewSessionDialog, setShowNewSessionDialog] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -115,6 +143,7 @@ export default function EnhancedKnowledgeChatDialog({
   const [isTyping, setIsTyping] = useState(false);
   const [multiLine, setMultiLine] = useState(false);
   const [faqDialogMessageId, setFaqDialogMessageId] = useState<string | null>(null);
+  const [historySearchQuery, setHistorySearchQuery] = useState('');
   
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -124,23 +153,136 @@ export default function EnhancedKnowledgeChatDialog({
   // 初期化
   useEffect(() => {
     if (isOpen && !sessionId) {
+      // 過去のセッションを読み込み
+      loadSessions();
+      // 新しいセッションを作成
+      createNewSession();
+    }
+  }, [isOpen]);
+
+  // セッション作成関数
+  const createNewSession = async (category: 'tax' | 'accounting' | 'journal' | 'mixed' = 'mixed') => {
+    try {
+      const response = await fetch('/api/chat-history', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: `税務・会計相談 ${new Date().toLocaleDateString()}`,
+          userId: undefined // TODO: ユーザーIDの実装
+        })
+      });
+
+      if (!response.ok) throw new Error('Failed to create session');
+
+      const result = await response.json();
+      const session: KnowledgeChatSession = {
+        ...result.data,
+        category,
+        specialization: {
+          primaryDomain: category === 'tax' ? '税務' : category === 'accounting' ? '会計' : category === 'journal' ? '仕訳' : '総合',
+          subDomains: [],
+          detectedTopics: []
+        },
+        knowledgeContext: {
+          searchFilters: filters,
+          relevantArticles: [],
+          faqCandidates: []
+        }
+      };
+
+      setCurrentSession(session);
+      setSessionId(session.sessionId);
+      setSessionCategory(category);
+      
+      // 初期メッセージを設定
+      const initialMessage = getInitialMessage(category);
+      setMessages([{
+        id: '1',
+        role: 'assistant',
+        content: initialMessage.content,
+        timestamp: new Date(),
+        isComplete: true
+      }]);
+      
+      // 提案質問を設定
+      setSuggestedQuestions(initialMessage.suggestions);
+    } catch (error) {
+      console.error('Failed to create session:', error);
+      // フォールバック
       setSessionId(generateSessionId());
       setMessages([{
         id: '1',
         role: 'assistant',
-        content: 'こんにちは！税務・会計に関する質問にお答えします。\n\n消費税、法人税、会計処理、インボイス制度など、何でもお気軽にご相談ください。',
-        timestamp: new Date()
+        content: 'こんにちは！税務・会計に関する質問にお答えします。',
+        timestamp: new Date(),
+        isComplete: true
       }]);
-      
-      // 初期の提案質問
-      setSuggestedQuestions([
-        'インボイス制度について教えてください',
-        '法人税の基本税率を教えてください',
-        '減価償却の計算方法は？',
-        '電子帳簿保存法の改正ポイント'
-      ]);
     }
-  }, [isOpen]);
+  };
+
+  // カテゴリ別の初期メッセージ
+  const getInitialMessage = (category: 'tax' | 'accounting' | 'journal' | 'mixed') => {
+    switch (category) {
+      case 'tax':
+        return {
+          content: 'こんにちは！税務相談アシスタントです。\n\n法人税、消費税、所得税、インボイス制度など、税務に関するご質問にお答えします。',
+          suggestions: [
+            'インボイス制度の概要を教えて',
+            '法人税率の最新情報',
+            '消費税の軽減税率制度について',
+            '電子帳簿保存法の要件'
+          ]
+        };
+      case 'accounting':
+        return {
+          content: 'こんにちは！会計処理アシスタントです。\n\n会計基準、減価償却、引当金、財務諸表など、会計処理に関するご質問にお答えします。',
+          suggestions: [
+            '減価償却の計算方法',
+            '貸倒引当金の設定基準',
+            '収益認識基準について',
+            '棚卸資産の評価方法'
+          ]
+        };
+      case 'journal':
+        return {
+          content: 'こんにちは！仕訳・勘定科目アシスタントです。\n\n仕訳処理、勘定科目の選定、複式簿記など、経理処理に関するご質問にお答えします。',
+          suggestions: [
+            '売上計上の仕訳例',
+            '経費精算の勘定科目',
+            '消費税の仕訳処理',
+            '固定資産購入の仕訳'
+          ]
+        };
+      default:
+        return {
+          content: 'こんにちは！税務・会計総合アシスタントです。\n\n税務、会計処理、仕訳、勘定科目など、幅広いご質問にお答えします。どのようなことでもお気軽にご相談ください。',
+          suggestions: [
+            'インボイス制度について教えて',
+            '減価償却の計算方法',
+            '売上計上の仕訳例',
+            '法人税の基本税率'
+          ]
+        };
+    }
+  };
+
+  // セッション履歴の読み込み
+  const loadSessions = async () => {
+    setHistoryLoading(true);
+    try {
+      const response = await fetch('/api/chat-history?limit=50&status=active');
+      if (!response.ok) throw new Error('Failed to load sessions');
+      
+      const result = await response.json();
+      if (result.success && result.data) {
+        setSessions(result.data);
+      }
+    } catch (error) {
+      console.error('Failed to load sessions:', error);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
 
   // メッセージが追加されたときにスクロール
   useEffect(() => {
@@ -225,8 +367,25 @@ export default function EnhancedKnowledgeChatDialog({
       id: Date.now().toString(),
       role: 'user',
       content: input.trim(),
-      timestamp: new Date()
+      timestamp: new Date(),
+      isComplete: true
     };
+
+    // セッションにメッセージを保存
+    if (currentSession) {
+      try {
+        await fetch(`/api/chat-history/${currentSession.sessionId}/messages`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            role: 'user',
+            content: input.trim()
+          })
+        });
+      } catch (error) {
+        console.error('Failed to save message:', error);
+      }
+    }
 
     setMessages(prev => [...prev, userMessage]);
     setInput('');
@@ -271,7 +430,8 @@ export default function EnhancedKnowledgeChatDialog({
           role: 'assistant',
           content: '',
           timestamp: new Date(),
-          isStreaming: true
+          isStreaming: true,
+          isComplete: false
         };
 
         setMessages(prev => [...prev, assistantMessage]);
@@ -328,12 +488,38 @@ export default function EnhancedKnowledgeChatDialog({
 
         setMessages(prev => prev.map(msg => 
           msg.id === assistantMessage.id 
-            ? { ...msg, isStreaming: false }
+            ? { ...msg, isStreaming: false, isComplete: true }
             : msg
         ));
         
         // ストリーミング完了後にFAQ追加確認ダイアログを表示
         setFaqDialogMessageId(assistantMessage.id);
+        
+        // アシスタントメッセージをセッションに保存
+        if (currentSession) {
+          const finalMessage = messages.find(m => m.id === assistantMessage.id);
+          if (finalMessage) {
+            try {
+              await fetch(`/api/chat-history/${currentSession.sessionId}/messages`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  role: 'assistant',
+                  content: finalMessage.content,
+                  metadata: {
+                    knowledgeUsed: finalMessage.knowledgeUsed,
+                    responseTime: Date.now() - userMessage.timestamp.getTime()
+                  }
+                })
+              });
+              
+              // カテゴリ検出と更新
+              await detectAndUpdateCategory(finalMessage.content);
+            } catch (error) {
+              console.error('Failed to save assistant message:', error);
+            }
+          }
+        }
         
       } else {
         // 通常のレスポンス
@@ -369,8 +555,32 @@ export default function EnhancedKnowledgeChatDialog({
           role: 'assistant',
           content: data.response,
           timestamp: new Date(),
-          knowledgeUsed: data.knowledgeUsed || []
+          knowledgeUsed: data.knowledgeUsed || [],
+          isComplete: true
         };
+        
+        // アシスタントメッセージをセッションに保存
+        if (currentSession) {
+          try {
+            await fetch(`/api/chat-history/${currentSession.sessionId}/messages`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                role: 'assistant',
+                content: data.response,
+                metadata: {
+                  knowledgeUsed: data.knowledgeUsed || [],
+                  responseTime: Date.now() - userMessage.timestamp.getTime()
+                }
+              })
+            });
+            
+            // カテゴリ検出と更新
+            await detectAndUpdateCategory(data.response);
+          } catch (error) {
+            console.error('Failed to save assistant message:', error);
+          }
+        }
 
         setMessages(prev => [...prev, assistantMessage]);
         
@@ -532,6 +742,160 @@ export default function EnhancedKnowledgeChatDialog({
     setExpandedKnowledge(newExpanded);
   };
 
+  // カテゴリ検出と更新
+  const detectAndUpdateCategory = async (content: string) => {
+    if (!currentSession) return;
+    
+    // キーワードベースのカテゴリ検出
+    const taxKeywords = ['税務', '税金', '法人税', '消費税', '所得税', 'インボイス', '税率', '納税'];
+    const accountingKeywords = ['会計', '経理', '減価償却', '引当金', '財務諸表', '損益計算', '貸借対照表'];
+    const journalKeywords = ['仕訳', '勘定科目', '複式簿記', '借方', '貸方', '伝票'];
+    
+    const contentLower = content.toLowerCase();
+    let detectedCategories = [];
+    
+    if (taxKeywords.some(keyword => content.includes(keyword))) {
+      detectedCategories.push('tax');
+    }
+    if (accountingKeywords.some(keyword => content.includes(keyword))) {
+      detectedCategories.push('accounting');
+    }
+    if (journalKeywords.some(keyword => content.includes(keyword))) {
+      detectedCategories.push('journal');
+    }
+    
+    // カテゴリ更新
+    let newCategory = sessionCategory;
+    if (detectedCategories.length === 1) {
+      newCategory = detectedCategories[0] as typeof sessionCategory;
+    } else if (detectedCategories.length > 1) {
+      newCategory = 'mixed';
+    }
+    
+    if (newCategory !== sessionCategory) {
+      setSessionCategory(newCategory);
+      // TODO: セッションのカテゴリを更新するAPIコール
+    }
+  };
+
+  // セッション切り替え
+  const switchSession = async (session: KnowledgeChatSession) => {
+    // 現在のセッションを保存
+    if (currentSession && messages.length > 1) {
+      await updateSessionTitle(currentSession.sessionId);
+    }
+    
+    // 新しいセッションを読み込み
+    setCurrentSession(session);
+    setSessionId(session.sessionId);
+    setSessionCategory(session.category);
+    
+    // メッセージを復元
+    const sessionMessages = session.messages.map(msg => ({
+      ...msg,
+      timestamp: new Date(msg.timestamp)
+    }));
+    setMessages(sessionMessages);
+    
+    // フィルターを復元
+    if (session.knowledgeContext?.searchFilters) {
+      setFilters(session.knowledgeContext.searchFilters);
+    }
+    
+    setShowHistory(false);
+  };
+
+  // セッションタイトルの更新
+  const updateSessionTitle = async (sessionId: string) => {
+    try {
+      await fetch(`/api/chat-history/${sessionId}/title`, {
+        method: 'POST'
+      });
+    } catch (error) {
+      console.error('Failed to update session title:', error);
+    }
+  };
+
+  // セッション削除
+  const deleteSession = async (sessionId: string, permanent = false) => {
+    try {
+      const response = await fetch(`/api/chat-history?sessionId=${sessionId}&permanent=${permanent}`, {
+        method: 'DELETE'
+      });
+      
+      if (response.ok) {
+        // セッションリストから削除
+        setSessions(prev => prev.filter(s => s.sessionId !== sessionId));
+        
+        // 現在のセッションが削除された場合は新しいセッションを作成
+        if (currentSession?.sessionId === sessionId) {
+          await createNewSession();
+        }
+      }
+    } catch (error) {
+      console.error('Failed to delete session:', error);
+    }
+  };
+
+  // セッションアーカイブ
+  const archiveSession = async (sessionId: string) => {
+    try {
+      const response = await fetch(`/api/chat-history/${sessionId}/archive`, {
+        method: 'POST'
+      });
+      
+      if (response.ok) {
+        // セッションリストから削除
+        setSessions(prev => prev.filter(s => s.sessionId !== sessionId));
+        
+        // 現在のセッションがアーカイブされた場合は新しいセッションを作成
+        if (currentSession?.sessionId === sessionId) {
+          await createNewSession();
+        }
+      }
+    } catch (error) {
+      console.error('Failed to archive session:', error);
+    }
+  };
+
+  // セッションブックマーク
+  const toggleBookmark = async (sessionId: string) => {
+    try {
+      const response = await fetch(`/api/chat-history/${sessionId}/bookmark`, {
+        method: 'POST'
+      });
+      
+      if (response.ok) {
+        // セッションリストを更新
+        setSessions(prev => prev.map(s => 
+          s.sessionId === sessionId 
+            ? { ...s, isBookmarked: !s.isBookmarked }
+            : s
+        ));
+        
+        // 現在のセッションも更新
+        if (currentSession?.sessionId === sessionId) {
+          setCurrentSession(prev => prev ? { ...prev, isBookmarked: !prev.isBookmarked } : null);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to toggle bookmark:', error);
+    }
+  };
+
+  // フィルタリングされたセッション
+  const filteredSessions = useMemo(() => {
+    if (!historySearchQuery) return sessions;
+    
+    const query = historySearchQuery.toLowerCase();
+    return sessions.filter(session => 
+      session.title.toLowerCase().includes(query) ||
+      session.category.includes(query) ||
+      session.specialization?.primaryDomain.toLowerCase().includes(query) ||
+      session.messages.some(msg => msg.content.toLowerCase().includes(query))
+    );
+  }, [sessions, historySearchQuery]);
+
   if (!isOpen) return null;
 
   return (
@@ -563,10 +927,50 @@ export default function EnhancedKnowledgeChatDialog({
               </motion.div>
               <div>
                 <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-                <p className="text-sm text-gray-500">税務・会計の専門知識でサポート</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm text-gray-500">税務・会計の専門知識でサポート</p>
+                  {currentSession && (
+                    <Badge 
+                      variant="outline" 
+                      className={`text-xs ${
+                        sessionCategory === 'tax' ? 'border-green-500 text-green-700' :
+                        sessionCategory === 'accounting' ? 'border-blue-500 text-blue-700' :
+                        sessionCategory === 'journal' ? 'border-purple-500 text-purple-700' :
+                        'border-gray-500 text-gray-700'
+                      }`}
+                    >
+                      {sessionCategory === 'tax' ? '税務' :
+                       sessionCategory === 'accounting' ? '会計' :
+                       sessionCategory === 'journal' ? '仕訳' : '総合'}
+                    </Badge>
+                  )}
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowNewSessionDialog(true)}
+                className="text-gray-600"
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                新規
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowHistory(!showHistory)}
+                className="text-gray-600 relative"
+              >
+                <History className="w-4 h-4 mr-1" />
+                履歴
+                {sessions.length > 0 && (
+                  <Badge variant="secondary" className="ml-1 text-xs">
+                    {sessions.length}
+                  </Badge>
+                )}
+              </Button>
               <Button
                 variant="ghost"
                 size="sm"
@@ -658,9 +1062,140 @@ export default function EnhancedKnowledgeChatDialog({
             )}
           </AnimatePresence>
 
-          {/* メッセージエリア */}
-          <ScrollArea ref={scrollAreaRef} className="flex-1 p-4">
-            <div className="space-y-4">
+          {/* メインコンテンツ */}
+          <div className="flex flex-1 overflow-hidden">
+            {/* 履歴パネル */}
+            <AnimatePresence>
+              {showHistory && (
+                <motion.div
+                  initial={{ width: 0, opacity: 0 }}
+                  animate={{ width: 320, opacity: 1 }}
+                  exit={{ width: 0, opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="border-r bg-gray-50 overflow-hidden flex flex-col"
+                >
+                  <div className="p-4 border-b bg-white">
+                    <h4 className="text-sm font-semibold text-gray-900 mb-3">チャット履歴</h4>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <Input
+                        value={historySearchQuery}
+                        onChange={(e) => setHistorySearchQuery(e.target.value)}
+                        placeholder="履歴を検索..."
+                        className="pl-9 pr-3 py-2 text-sm"
+                      />
+                    </div>
+                  </div>
+                  
+                  <ScrollArea className="flex-1">
+                    <div className="p-2">
+                      {historyLoading ? (
+                        <div className="flex items-center justify-center py-8">
+                          <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+                        </div>
+                      ) : filteredSessions.length > 0 ? (
+                        <div className="space-y-2">
+                          {filteredSessions.map((session) => (
+                            <motion.div
+                              key={session.sessionId}
+                              initial={{ opacity: 0, x: -20 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              className={`p-3 rounded-lg cursor-pointer transition-colors ${
+                                currentSession?.sessionId === session.sessionId
+                                  ? 'bg-blue-100 border border-blue-300'
+                                  : 'bg-white hover:bg-gray-100 border border-gray-200'
+                              }`}
+                              onClick={() => switchSession(session)}
+                            >
+                              <div className="flex items-start justify-between mb-1">
+                                <h5 className="text-sm font-medium text-gray-900 line-clamp-1">
+                                  {session.title}
+                                </h5>
+                                {session.isBookmarked && (
+                                  <Bookmark className="w-3 h-3 text-yellow-500 fill-current flex-shrink-0 ml-1" />
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2 mb-1">
+                                <Badge 
+                                  variant="outline" 
+                                  className={`text-xs ${
+                                    session.category === 'tax' ? 'border-green-500 text-green-700' :
+                                    session.category === 'accounting' ? 'border-blue-500 text-blue-700' :
+                                    session.category === 'journal' ? 'border-purple-500 text-purple-700' :
+                                    'border-gray-500 text-gray-700'
+                                  }`}
+                                >
+                                  {session.category === 'tax' ? '税務' :
+                                   session.category === 'accounting' ? '会計' :
+                                   session.category === 'journal' ? '仕訳' : '総合'}
+                                </Badge>
+                                <span className="text-xs text-gray-500">
+                                  {session.messages.length} メッセージ
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs text-gray-400">
+                                  {format(new Date(session.updatedAt), 'M/d HH:mm', { locale: ja })}
+                                </span>
+                                <div className="flex items-center gap-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 w-6 p-0"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      toggleBookmark(session.sessionId);
+                                    }}
+                                  >
+                                    <Bookmark className={`w-3 h-3 ${
+                                      session.isBookmarked ? 'text-yellow-500 fill-current' : 'text-gray-400'
+                                    }`} />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 w-6 p-0"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      archiveSession(session.sessionId);
+                                    }}
+                                  >
+                                    <Archive className="w-3 h-3 text-gray-400" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 w-6 p-0"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      deleteSession(session.sessionId);
+                                    }}
+                                  >
+                                    <Trash2 className="w-3 h-3 text-gray-400" />
+                                  </Button>
+                                </div>
+                              </div>
+                            </motion.div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8">
+                          <FolderOpen className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                          <p className="text-sm text-gray-500">
+                            {historySearchQuery ? '検索結果がありません' : '履歴がありません'}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </ScrollArea>
+                </motion.div>
+              )}
+            </AnimatePresence>
+            
+            {/* メッセージエリア */}
+            <div className="flex-1 flex flex-col overflow-hidden">
+              <ScrollArea ref={scrollAreaRef} className="flex-1 p-4">
+                <div className="space-y-4">
               <AnimatePresence initial={false}>
                 {messages.map((message, index) => (
                   <motion.div
@@ -929,8 +1464,8 @@ export default function EnhancedKnowledgeChatDialog({
                   </div>
                 </motion.div>
               )}
-            </div>
-          </ScrollArea>
+                </div>
+              </ScrollArea>
 
           {/* 提案質問 */}
           <AnimatePresence>
@@ -986,8 +1521,8 @@ export default function EnhancedKnowledgeChatDialog({
             )}
           </AnimatePresence>
 
-          {/* 入力エリア */}
-          <div className="p-4 border-t bg-gray-50">
+              {/* 入力エリア */}
+              <div className="p-4 border-t bg-gray-50">
             <div className="flex gap-2">
               <div className="flex-1 relative">
                 <Textarea
@@ -1040,6 +1575,7 @@ export default function EnhancedKnowledgeChatDialog({
               </div>
               <div className="text-xs text-gray-400">
                 Session: {sessionId.slice(-8)}
+              </div>
               </div>
             </div>
           </div>
@@ -1095,6 +1631,103 @@ export default function EnhancedKnowledgeChatDialog({
             </motion.div>
           </motion.div>
         )}
+        
+        {/* 新規セッション作成ダイアログ */}
+        <Dialog open={showNewSessionDialog} onOpenChange={setShowNewSessionDialog}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>新しいチャットを開始</DialogTitle>
+              <DialogDescription>
+                どのような相談をしますか？
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <Button
+                variant="outline"
+                className="justify-start h-auto p-4"
+                onClick={() => {
+                  createNewSession('tax');
+                  setShowNewSessionDialog(false);
+                }}
+              >
+                <div className="text-left">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                      <FileText className="w-4 h-4 text-green-600" />
+                    </div>
+                    <span className="font-medium">税務相談</span>
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    法人税、消費税、インボイス制度など
+                  </p>
+                </div>
+              </Button>
+              
+              <Button
+                variant="outline"
+                className="justify-start h-auto p-4"
+                onClick={() => {
+                  createNewSession('accounting');
+                  setShowNewSessionDialog(false);
+                }}
+              >
+                <div className="text-left">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                      <BookOpen className="w-4 h-4 text-blue-600" />
+                    </div>
+                    <span className="font-medium">会計処理相談</span>
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    減価償却、引当金、財務諸表など
+                  </p>
+                </div>
+              </Button>
+              
+              <Button
+                variant="outline"
+                className="justify-start h-auto p-4"
+                onClick={() => {
+                  createNewSession('journal');
+                  setShowNewSessionDialog(false);
+                }}
+              >
+                <div className="text-left">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                      <FileText className="w-4 h-4 text-purple-600" />
+                    </div>
+                    <span className="font-medium">仕訳・勘定科目相談</span>
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    仕訳処理、勘定科目の選定など
+                  </p>
+                </div>
+              </Button>
+              
+              <Button
+                variant="outline"
+                className="justify-start h-auto p-4"
+                onClick={() => {
+                  createNewSession('mixed');
+                  setShowNewSessionDialog(false);
+                }}
+              >
+                <div className="text-left">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                      <MessageSquare className="w-4 h-4 text-gray-600" />
+                    </div>
+                    <span className="font-medium">総合相談</span>
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    税務・会計・仕訳全般の相談
+                  </p>
+                </div>
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </motion.div>
     </AnimatePresence>
   );
