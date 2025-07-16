@@ -11,11 +11,9 @@ const Navigation = () => {
   const navItems = [
     { href: '/', label: 'ダッシュボード' },
     { href: '/documents', label: '書類管理' },
-    { href: '/deals', label: '案件管理' },
     { href: '/quotes', label: '見積書' },
     { href: '/invoices', label: '請求書' },
     { href: '/delivery-notes', label: '納品書' },
-    { href: '/suppliers', label: '仕入先' },
     { href: '/customers', label: '顧客管理' },
     { href: '/products', label: '商品管理' },
     { href: '/import', label: 'インポート' },
