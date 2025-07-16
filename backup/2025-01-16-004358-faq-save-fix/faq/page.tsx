@@ -268,7 +268,7 @@ export default function FaqPage() {
 
     setIsDeleting(true);
     try {
-      const response = await fetch(`/api/faq/${faqToDelete.id}`, {
+      const response = await fetch(`/api/faq/delete/${faqToDelete.id}`, {
         method: 'DELETE'
       });
 
@@ -324,7 +324,7 @@ export default function FaqPage() {
 
     setIsSaving(true);
     try {
-      const response = await fetch(`/api/faq/${editingFaq.id}`, {
+      const response = await fetch('/api/faq', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editingFaq)

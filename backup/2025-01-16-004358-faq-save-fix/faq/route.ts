@@ -382,15 +382,9 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const { id, ...updateData } = body;
     
-    console.log('[FAQ API] PUT request - id:', id);
-    console.log('[FAQ API] PUT request - updateData keys:', Object.keys(updateData));
-    
     if (!id) {
       return NextResponse.json(
-        { 
-          success: false,
-          error: 'FAQ ID is required' 
-        },
+        { error: 'FAQ ID is required' },
         { status: 400 }
       );
     }
@@ -399,49 +393,11 @@ export async function PUT(request: NextRequest) {
     
     const collection = knowledgeService.db.collection('faq_articles');
     
-    // ObjectIdの作成をtry-catchで囲む
-    let objectId;
-    try {
-      objectId = new ObjectId(id);
-    } catch (error) {
-      console.error('[FAQ API] Invalid ObjectId:', id, error);
-      return NextResponse.json(
-        { 
-          success: false,
-          error: 'Invalid FAQ ID format' 
-        },
-        { status: 400 }
-      );
-    }
-    
     // バージョン管理のために現在のFAQを取得
-    const currentFaq = await collection.findOne({ _id: objectId });
-    
-    // faq_articlesで見つからない場合、faqコレクションも確認
+    const currentFaq = await collection.findOne({ _id: new ObjectId(id) });
     if (!currentFaq) {
-      console.log('[FAQ API] FAQ not found in faq_articles with id:', id);
-      
-      // 旧FAQコレクションを確認
-      const simpleFaqCollection = knowledgeService.db.collection('faq');
-      const simpleFaq = await simpleFaqCollection.findOne({ _id: objectId });
-      
-      if (simpleFaq) {
-        console.log('[FAQ API] FAQ found in simple faq collection, but update is not supported for simple FAQs');
-        return NextResponse.json(
-          { 
-            success: false,
-            error: 'このFAQは旧形式のため、編集できません。データ移行を実行してください。' 
-          },
-          { status: 400 }
-        );
-      }
-      
-      console.log('[FAQ API] FAQ not found in any collection with id:', id);
       return NextResponse.json(
-        { 
-          success: false,
-          error: 'FAQ not found' 
-        },
+        { error: 'FAQ not found' },
         { status: 404 }
       );
     }
@@ -463,7 +419,7 @@ export async function PUT(request: NextRequest) {
     }
     
     const result = await collection.updateOne(
-      { _id: objectId },
+      { _id: new ObjectId(id) },
       { $set: updateDoc }
     );
     
@@ -471,7 +427,7 @@ export async function PUT(request: NextRequest) {
     if (result.modifiedCount > 0) {
       try {
         const structuredDataService = new StructuredDataService();
-        const updatedFaq = await collection.findOne({ _id: objectId });
+        const updatedFaq = await collection.findOne({ _id: new ObjectId(id) });
         
         const structuredResult = await structuredDataService.generateStructuredData(
           updatedFaq as FaqArticle,
@@ -488,7 +444,7 @@ export async function PUT(request: NextRequest) {
         
         if (structuredResult.success && structuredResult.data) {
           await structuredDataService.saveStructuredData(
-            objectId,
+            new ObjectId(id),
             'faq',
             'FAQPage',
             structuredResult.data,
