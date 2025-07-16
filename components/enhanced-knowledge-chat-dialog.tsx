@@ -899,20 +899,19 @@ export default function EnhancedKnowledgeChatDialog({
   if (!isOpen) return null;
 
   return (
-    <>
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+    >
       <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+        initial={{ scale: 0.95, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.95, opacity: 0 }}
+        transition={{ type: "spring", damping: 20 }}
+        className="bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col"
       >
-        <motion.div 
-          initial={{ scale: 0.95, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0.95, opacity: 0 }}
-          transition={{ type: "spring", damping: 20 }}
-          className="bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden flex flex-col"
-        >
           
           {/* ヘッダー */}
           <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-blue-50 to-purple-50">
@@ -1576,159 +1575,158 @@ export default function EnhancedKnowledgeChatDialog({
               <div className="text-xs text-gray-400">
                 Session: {sessionId.slice(-8)}
               </div>
-              </div>
             </div>
           </div>
-        </motion.div>
-        
-        {/* FAQ追加確認ダイアログ */}
-        {faqDialogMessageId && (
+        </div>
+      </motion.div>
+      
+      {/* FAQ追加確認ダイアログ */}
+      {faqDialogMessageId && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/20 flex items-center justify-center z-[60]"
+        >
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-black/20 flex items-center justify-center z-10"
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.9, opacity: 0 }}
+            className="bg-white rounded-lg shadow-lg p-6 max-w-md mx-4"
           >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-white rounded-lg shadow-lg p-6 max-w-md mx-4"
-            >
-              <div className="flex items-start space-x-3">
-                <div className="flex-shrink-0">
-                  <BookOpen className="w-6 h-6 text-blue-500" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    FAQに追加しますか？
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-4">
-                    この会話をFAQナレッジベースに保存して、他のユーザーと共有することができます。
-                    DeepSeekによる内部検索が向上します。
-                  </p>
-                  <div className="flex space-x-2">
-                    <Button
-                      onClick={() => handleGenerateFaq(faqDialogMessageId)}
-                      className="flex-1 bg-blue-500 hover:bg-blue-600 text-white"
-                      size="sm"
-                    >
-                      <Archive className="w-4 h-4 mr-2" />
-                      FAQに追加
-                    </Button>
-                    <Button
-                      onClick={handleFaqDialogSkip}
-                      variant="outline"
-                      size="sm"
-                      className="flex-1"
-                    >
-                      <X className="w-4 h-4 mr-2" />
-                      スキップ
-                    </Button>
-                  </div>
+            <div className="flex items-start space-x-3">
+              <div className="flex-shrink-0">
+                <BookOpen className="w-6 h-6 text-blue-500" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  FAQに追加しますか？
+                </h3>
+                <p className="text-sm text-gray-600 mb-4">
+                  この会話をFAQナレッジベースに保存して、他のユーザーと共有することができます。
+                  DeepSeekによる内部検索が向上します。
+                </p>
+                <div className="flex space-x-2">
+                  <Button
+                    onClick={() => handleGenerateFaq(faqDialogMessageId)}
+                    className="flex-1 bg-blue-500 hover:bg-blue-600 text-white"
+                    size="sm"
+                  >
+                    <Archive className="w-4 h-4 mr-2" />
+                    FAQに追加
+                  </Button>
+                  <Button
+                    onClick={handleFaqDialogSkip}
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                  >
+                    <X className="w-4 h-4 mr-2" />
+                    スキップ
+                  </Button>
                 </div>
               </div>
-            </motion.div>
-          </motion.div>
-        )}
-        
-        {/* 新規セッション作成ダイアログ */}
-        <Dialog open={showNewSessionDialog} onOpenChange={setShowNewSessionDialog}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>新しいチャットを開始</DialogTitle>
-              <DialogDescription>
-                どのような相談をしますか？
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <Button
-                variant="outline"
-                className="justify-start h-auto p-4"
-                onClick={() => {
-                  createNewSession('tax');
-                  setShowNewSessionDialog(false);
-                }}
-              >
-                <div className="text-left">
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                      <FileText className="w-4 h-4 text-green-600" />
-                    </div>
-                    <span className="font-medium">税務相談</span>
-                  </div>
-                  <p className="text-sm text-gray-600">
-                    法人税、消費税、インボイス制度など
-                  </p>
-                </div>
-              </Button>
-              
-              <Button
-                variant="outline"
-                className="justify-start h-auto p-4"
-                onClick={() => {
-                  createNewSession('accounting');
-                  setShowNewSessionDialog(false);
-                }}
-              >
-                <div className="text-left">
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                      <BookOpen className="w-4 h-4 text-blue-600" />
-                    </div>
-                    <span className="font-medium">会計処理相談</span>
-                  </div>
-                  <p className="text-sm text-gray-600">
-                    減価償却、引当金、財務諸表など
-                  </p>
-                </div>
-              </Button>
-              
-              <Button
-                variant="outline"
-                className="justify-start h-auto p-4"
-                onClick={() => {
-                  createNewSession('journal');
-                  setShowNewSessionDialog(false);
-                }}
-              >
-                <div className="text-left">
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                      <FileText className="w-4 h-4 text-purple-600" />
-                    </div>
-                    <span className="font-medium">仕訳・勘定科目相談</span>
-                  </div>
-                  <p className="text-sm text-gray-600">
-                    仕訳処理、勘定科目の選定など
-                  </p>
-                </div>
-              </Button>
-              
-              <Button
-                variant="outline"
-                className="justify-start h-auto p-4"
-                onClick={() => {
-                  createNewSession('mixed');
-                  setShowNewSessionDialog(false);
-                }}
-              >
-                <div className="text-left">
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                      <MessageSquare className="w-4 h-4 text-gray-600" />
-                    </div>
-                    <span className="font-medium">総合相談</span>
-                  </div>
-                  <p className="text-sm text-gray-600">
-                    税務・会計・仕訳全般の相談
-                  </p>
-                </div>
-              </Button>
             </div>
-          </DialogContent>
-        </Dialog>
-      </motion.div>
-    </>
+          </motion.div>
+        </motion.div>
+      )}
+      
+      {/* 新規セッション作成ダイアログ */}
+      <Dialog open={showNewSessionDialog} onOpenChange={setShowNewSessionDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>新しいチャットを開始</DialogTitle>
+            <DialogDescription>
+              どのような相談をしますか？
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <Button
+              variant="outline"
+              className="justify-start h-auto p-4"
+              onClick={() => {
+                createNewSession('tax');
+                setShowNewSessionDialog(false);
+              }}
+            >
+              <div className="text-left">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                    <FileText className="w-4 h-4 text-green-600" />
+                  </div>
+                  <span className="font-medium">税務相談</span>
+                </div>
+                <p className="text-sm text-gray-600">
+                  法人税、消費税、インボイス制度など
+                </p>
+              </div>
+            </Button>
+            
+            <Button
+              variant="outline"
+              className="justify-start h-auto p-4"
+              onClick={() => {
+                createNewSession('accounting');
+                setShowNewSessionDialog(false);
+              }}
+            >
+              <div className="text-left">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                    <BookOpen className="w-4 h-4 text-blue-600" />
+                  </div>
+                  <span className="font-medium">会計処理相談</span>
+                </div>
+                <p className="text-sm text-gray-600">
+                  減価償却、引当金、財務諸表など
+                </p>
+              </div>
+            </Button>
+            
+            <Button
+              variant="outline"
+              className="justify-start h-auto p-4"
+              onClick={() => {
+                createNewSession('journal');
+                setShowNewSessionDialog(false);
+              }}
+            >
+              <div className="text-left">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                    <FileText className="w-4 h-4 text-purple-600" />
+                  </div>
+                  <span className="font-medium">仕訳・勘定科目相談</span>
+                </div>
+                <p className="text-sm text-gray-600">
+                  仕訳処理、勘定科目の選定など
+                </p>
+              </div>
+            </Button>
+            
+            <Button
+              variant="outline"
+              className="justify-start h-auto p-4"
+              onClick={() => {
+                createNewSession('mixed');
+                setShowNewSessionDialog(false);
+              }}
+            >
+              <div className="text-left">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                    <MessageSquare className="w-4 h-4 text-gray-600" />
+                  </div>
+                  <span className="font-medium">総合相談</span>
+                </div>
+                <p className="text-sm text-gray-600">
+                  税務・会計・仕訳全般の相談
+                </p>
+              </div>
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </motion.div>
   );
 }
