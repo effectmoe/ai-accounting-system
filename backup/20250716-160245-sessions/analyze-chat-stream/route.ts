@@ -1,11 +1,9 @@
 import { NextRequest } from 'next/server';
 import { KnowledgeService } from '@/services/knowledge.service';
-import { getChatHistoryService } from '@/services/chat-history.service';
 
 export async function POST(request: NextRequest) {
   const encoder = new TextEncoder();
   const knowledgeService = new KnowledgeService();
-  const chatHistoryService = getChatHistoryService();
 
   try {
     const body = await request.json();
@@ -115,41 +113,6 @@ ${searchResult.articles.map((article, index) =>
       }
     }
 
-    // セッション作成またはメッセージ追加の処理
-    let activeSessionId = sessionId;
-    let isNewSession = false;
-    let sessionError: Error | null = null;
-    
-    try {
-      await chatHistoryService.connect();
-      
-      if (!activeSessionId) {
-        // 新規セッション作成
-        console.log('[analyze-chat-stream] 新規セッション作成中...');
-        const newSession = await chatHistoryService.createKnowledgeSession(
-          undefined, // userId（現在は未実装）
-          'tax' // カテゴリー
-        );
-        activeSessionId = newSession.sessionId;
-        isNewSession = true;
-        console.log('[analyze-chat-stream] 新規セッション作成完了:', activeSessionId);
-      }
-      
-      // ユーザーメッセージを保存
-      await chatHistoryService.addMessage(activeSessionId, {
-        role: 'user',
-        content: searchText,
-        metadata: {
-          tokens: { total: searchText.length * 2 }, // 簡易的なトークン計算
-          timestamp: new Date().toISOString()
-        }
-      });
-    } catch (error) {
-      console.error('[analyze-chat-stream] セッション処理エラー:', error);
-      sessionError = error instanceof Error ? error : new Error('Session error');
-      // エラーが発生してもストリーミングは続行
-    }
-
     // ストリーミングレスポンスの設定
     const responseStream = new ReadableStream({
       async start(controller) {
@@ -224,35 +187,11 @@ ${knowledgeContext}
                 if (line.startsWith('data: ')) {
                   const data = line.slice(6);
                   if (data === '[DONE]') {
-                    // アシスタントの返答を保存
-                    if (activeSessionId && !sessionError) {
-                      try {
-                        await chatHistoryService.addMessage(activeSessionId, {
-                          role: 'assistant',
-                          content: fullResponse,
-                          metadata: {
-                            tokens: { total: fullResponse.length * 2 }, // 簡易的なトークン計算
-                            timestamp: new Date().toISOString(),
-                            knowledgeUsed: knowledgeUsed.length > 0 ? knowledgeUsed : undefined
-                          }
-                        });
-                        
-                        // 新規セッションの場合、タイトルを生成
-                        if (isNewSession) {
-                          await chatHistoryService.generateSessionTitle(activeSessionId);
-                        }
-                      } catch (error) {
-                        console.error('[analyze-chat-stream] メッセージ保存エラー:', error);
-                      }
-                    }
-                    
-                    // 最後にナレッジ情報、提案質問、セッションIDを送信
+                    // 最後にナレッジ情報と提案質問を送信
                     const finalData = {
                       content: '',
                       knowledgeUsed: knowledgeUsed,
-                      suggestedQuestions: generateSuggestedQuestions(searchText, fullResponse),
-                      sessionId: activeSessionId,
-                      isNewSession: isNewSession
+                      suggestedQuestions: generateSuggestedQuestions(searchText, fullResponse)
                     };
                     controller.enqueue(encoder.encode(`data: ${JSON.stringify(finalData)}\n\n`));
                     controller.enqueue(encoder.encode('data: [DONE]\n\n'));
@@ -284,7 +223,6 @@ ${knowledgeContext}
     });
 
     await knowledgeService.disconnect();
-    await chatHistoryService.disconnect();
 
     return new Response(responseStream, {
       headers: {
@@ -297,7 +235,6 @@ ${knowledgeContext}
   } catch (error) {
     console.error('Knowledge chat streaming error:', error);
     await knowledgeService.disconnect();
-    await chatHistoryService.disconnect();
     
     return new Response(
       JSON.stringify({ 
