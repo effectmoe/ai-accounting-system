@@ -117,7 +117,11 @@
       "Bash(/bin/bash -c \"git status\")",
       "Bash(python3:*)",
       "Bash(/usr/bin/python3:*)",
-      "Bash(/usr/bin/node:*)"
+      "Bash(/usr/bin/node:*)",
+      "Bash(mongod:*)",
+      "Bash(MONGODB_URI=\"mongodb+srv://effectmoe:Dhfgmtekd77@cluster0.h1e6k.mongodb.net/accounting-automation?retryWrites=true&w=majority&appName=Cluster0\" npm run dev)",
+      "Bash(unset MONGODB_URI)",
+      "Bash(dig:*)"
     ],
     "deny": []
   }
