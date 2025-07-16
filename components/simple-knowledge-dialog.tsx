@@ -79,14 +79,16 @@ export default function SimpleKnowledgeDialog({
     setIsTyping(true);
 
     try {
-      const response = await fetch('/api/knowledge-chat', {
+      const response = await fetch('/api/knowledge/analyze-chat-stream', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          message: userMessage.content,
+          conversation: userMessage.content,
           sessionId,
+          includeKnowledge: true,
+          stream: true,
           conversationHistory: messages.map(msg => ({
             role: msg.role,
             content: msg.content

@@ -318,15 +318,17 @@ export default function EnhancedKnowledgeChatDialog({
       const startTime = Date.now();
       
       // APIリクエスト
-      const response = await fetch('/api/knowledge-chat', {
+      const response = await fetch('/api/knowledge/analyze-chat-stream', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          message: userMessage.content,
+          conversation: userMessage.content,
           sessionId,
-          filters,
+          includeKnowledge: true,
+          stream: true,
+          knowledgeFilters: filters,
           conversationHistory: messages.map(msg => ({
             role: msg.role,
             content: msg.content
