@@ -18,10 +18,10 @@ function extractVendorInformation(extractedData: any): {name: string, address: s
   
   // 1. 仕入先名の優先順位付き抽出
   const vendorNameCandidates = [
-    extractedData.VendorAddressRecipient,
-    extractedData.RemittanceAddressRecipient,
     extractedData.vendorName,
     extractedData.VendorName,
+    extractedData.VendorAddressRecipient,
+    extractedData.RemittanceAddressRecipient,
     extractedData.customerName,
     extractedData.CustomerName
   ];
