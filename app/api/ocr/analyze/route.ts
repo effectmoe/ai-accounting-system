@@ -199,11 +199,20 @@ export async function POST(request: NextRequest) {
       processingTime = 10; // モック処理時間
     }
     
-    // オーケストレータを使用した構造化（仕入先見積書の場合のみ）
+    // オーケストレータを使用した構造化（請求書・見積書の場合）
     let structuredData = null;
-    console.log('[OCR] documentType:', documentType);
-    console.log('[OCR] オーケストレータ実行条件チェック:', documentType === 'invoice' || documentType === 'supplier-quote');
+    let aiOrchestratorSuccess = false;
+    
+    console.log('[OCR] オーケストレータ実行条件チェック:', {
+      documentType: documentType,
+      isInvoiceOrQuote: documentType === 'invoice' || documentType === 'supplier-quote',
+      useAIOrchestrator: useAIOrchestrator,
+      anthropicApiKey: !!process.env.ANTHROPIC_API_KEY
+    });
+    
     if (documentType === 'invoice' || documentType === 'supplier-quote') {
+      console.log('[OCR] 請求書/見積書でオーケストレータを開始');
+      
       // 1. まずAIオーケストレータを試行
       if (useAIOrchestrator) {
         try {
@@ -220,6 +229,7 @@ export async function POST(request: NextRequest) {
           // 構造化データをanalysisResultに統合
           if (structuredData) {
             console.log('[OCR] AIオーケストレータによる構造化完了');
+            aiOrchestratorSuccess = true;
             
             // fieldsを更新
             analysisResult.fields = {
@@ -271,10 +281,21 @@ export async function POST(request: NextRequest) {
         }
       }
       
-      // 2. AIオーケストレータが使用できない、または失敗した場合はルールベース
-      if (!structuredData) {
+      // 2. AIオーケストレータが使用できない、または失敗した場合は常にルールベースを実行
+      console.log('[OCR] ルールベースオーケストレータの実行判定:', {
+        aiOrchestratorSuccess: aiOrchestratorSuccess,
+        hasStructuredData: !!structuredData,
+        willExecuteRuleBased: true, // 常に実行する
+        documentType: documentType
+      });
+      
+      // 常にルールベースオーケストレータを実行（AIが失敗した場合の補完として）
+      // if (!aiOrchestratorSuccess) {
         try {
           console.log('[OCR] ルールベースオーケストレータで構造化を開始...');
+          console.log('[OCR] useAIOrchestrator:', useAIOrchestrator);
+          console.log('[OCR] documentType:', documentType);
+          
           const { OCRRuleBasedOrchestrator } = await import('@/lib/ocr-rule-based-orchestrator');
           
           // analysisResultの構造を確認
@@ -286,7 +307,26 @@ export async function POST(request: NextRequest) {
             pagesLength: analysisResult.pages?.length || 0
           });
           
+          // pagesの詳細構造を確認
+          if (analysisResult.pages && analysisResult.pages.length > 0) {
+            console.log('[OCR] pages詳細構造:', {
+              page0: {
+                hasLines: !!analysisResult.pages[0].lines,
+                linesCount: analysisResult.pages[0].lines?.length || 0,
+                width: analysisResult.pages[0].width,
+                height: analysisResult.pages[0].height,
+                firstLineExample: analysisResult.pages[0].lines?.[0] || null
+              }
+            });
+          }
+          
           const ruleBasedResult = OCRRuleBasedOrchestrator.orchestrateFromTables(analysisResult);
+          
+          console.log('[OCR] ルールベース結果:', {
+            success: ruleBasedResult.success,
+            hasData: !!ruleBasedResult.data,
+            errors: ruleBasedResult.errors
+          });
           
           if (ruleBasedResult.success && ruleBasedResult.data) {
             console.log('[OCR] ルールベース構造化完了:', {
@@ -298,7 +338,7 @@ export async function POST(request: NextRequest) {
             
             const data = ruleBasedResult.data;
             
-            // fieldsを部分的に更新
+            // fieldsを部分的に更新（AIオーケストレータが成功していない場合のみ）
             if (data.subject) {
               analysisResult.fields.subject = data.subject;
             }
@@ -318,11 +358,14 @@ export async function POST(request: NextRequest) {
             if (data.items && data.items.length > 0) {
               analysisResult.fields.items = data.items;
             }
+          } else {
+            console.error('[OCR] ルールベースオーケストレータが失敗しました:', ruleBasedResult.errors);
           }
         } catch (ruleBasedError) {
           console.error('[OCR] ルールベースオーケストレータエラー:', ruleBasedError);
+          console.error('[OCR] エラーの詳細:', ruleBasedError.stack);
         }
-      }
+      // }
     }
     
     // GridFSにファイルを保存
@@ -848,6 +891,12 @@ export async function POST(request: NextRequest) {
       receiptDate: finalDocumentDate && !isNaN(finalDocumentDate.getTime()) ? finalDocumentDate.toISOString().split('T')[0] : null,
       vendorName: finalVendorName,
       dateExtracted: finalDateFound, // 日付抽出の成否を追加
+      // オーケストレータの使用状況
+      orchestratorUsed: {
+        aiOrchestrator: aiOrchestratorSuccess,
+        ruleBasedOrchestrator: (documentType === 'invoice' || documentType === 'supplier-quote'),
+        documentType: documentType
+      },
       // デバッグ情報（開発環境のみ）
       debug: process.env.NODE_ENV === 'development' ? {
         azureConfigured,
@@ -857,7 +906,10 @@ export async function POST(request: NextRequest) {
         hasPages: !!analysisResult.pages,
         pagesCount: analysisResult.pages?.length || 0,
         hasTables: !!analysisResult.tables,
-        tablesCount: analysisResult.tables?.length || 0
+        tablesCount: analysisResult.tables?.length || 0,
+        aiOrchestratorSuccess: aiOrchestratorSuccess,
+        useAIOrchestrator: useAIOrchestrator,
+        anthropicApiKey: !!process.env.ANTHROPIC_API_KEY
       } : undefined
     };
     

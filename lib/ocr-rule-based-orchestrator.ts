@@ -34,6 +34,8 @@ export class OCRRuleBasedOrchestrator {
     const data: any = {};
     
     try {
+      console.log('[RuleBasedOrchestrator] === オーケストレータ開始 ===');
+      
       // デバッグ: 受信したOCRデータの構造を確認
       console.log('[RuleBasedOrchestrator] 受信したOCRデータ:', {
         hasFields: !!ocrResult.fields,
@@ -43,6 +45,19 @@ export class OCRRuleBasedOrchestrator {
         tablesLength: ocrResult.tables?.length || 0,
         pagesLength: ocrResult.pages?.length || 0
       });
+      
+      // 入力データの検証
+      if (!ocrResult) {
+        const error = 'OCR結果が未定義です';
+        console.error('[RuleBasedOrchestrator] ' + error);
+        return { success: false, errors: [error] };
+      }
+      
+      if (!ocrResult.fields && !ocrResult.tables && !ocrResult.pages) {
+        const error = 'OCR結果にfields、tables、pagesのいずれも含まれていません';
+        console.error('[RuleBasedOrchestrator] ' + error);
+        return { success: false, errors: [error] };
+      }
       
       // 1. 基本フィールドから情報を抽出
       const fields = ocrResult.fields || {};
@@ -63,58 +78,86 @@ export class OCRRuleBasedOrchestrator {
       // 件名の抽出（subjectフィールドを優先）
       data.subject = fields.subject || fields.Subject || '';
       
-      // 仕入先と顧客の判別
+      // 仕入先と顧客の判別（日本の見積書レイアウトに基づく）
       const vendorName = fields.vendorName || fields.VendorName || '';
       const customerName = fields.customerName || fields.CustomerName || '';
       const vendorAddressRecipient = fields.VendorAddressRecipient || '';
+      const remittanceAddressRecipient = fields.RemittanceAddressRecipient || '';
       
       // デバッグ: 御中判定前の状態
       console.log('[RuleBasedOrchestrator] 御中判定前:', {
         vendorName,
         customerName,
-        vendorAddressRecipient
+        vendorAddressRecipient,
+        remittanceAddressRecipient
       });
       
-      // 「御中」で判別（見積書の場合、御中が付いているのは顧客）
-      if (vendorName && vendorName.includes('御中')) {
-        // vendorNameに「御中」がある = Azure OCRが逆転している
-        console.log('[RuleBasedOrchestrator] vendorNameに御中を検出 - 逆転を修正');
-        data.customer = { name: vendorName };
-        data.vendor = {
-          name: customerName || vendorAddressRecipient || '不明',
-          address: fields.vendorAddress || fields.VendorAddress,
-          phone: fields.vendorPhoneNumber || fields.vendorPhone
-        };
-      } else if (customerName && customerName.includes('御中')) {
-        // customerNameに「御中」がある = 正しい
-        console.log('[RuleBasedOrchestrator] customerNameに御中を検出 - 正しい');
-        data.customer = { name: customerName };
-        data.vendor = {
-          name: vendorName || vendorAddressRecipient || '不明',
-          address: fields.vendorAddress || fields.VendorAddress,
-          phone: fields.vendorPhoneNumber || fields.vendorPhone
-        };
-      } else if (vendorAddressRecipient && vendorAddressRecipient.includes('御中')) {
-        // VendorAddressRecipientに「御中」がある = これが顧客
-        console.log('[RuleBasedOrchestrator] VendorAddressRecipientに御中を検出');
-        data.customer = { name: vendorAddressRecipient };
-        data.vendor = {
-          name: vendorName || customerName || '不明',
-          address: fields.vendorAddress || fields.VendorAddress,
-          phone: fields.vendorPhoneNumber || fields.vendorPhone
-        };
-      } else {
-        // 「御中」がない場合のフォールバック
-        console.log('[RuleBasedOrchestrator] 御中が見つからない - フォールバック');
-        data.vendor = {
-          name: vendorName || vendorAddressRecipient || '不明',
-          address: fields.vendorAddress || fields.VendorAddress,
-          phone: fields.vendorPhoneNumber || fields.vendorPhone
-        };
-        data.customer = {
-          name: customerName || '不明'
-        };
+      // 日本のビジネス文書レイアウト判定ロジック
+      // 基本方針：OCRテキストから正しい位置に情報を配置
+      console.log('[RuleBasedOrchestrator] 会社名・顧客名の判定を開始');
+      
+      let identifiedCustomer = null;
+      let identifiedVendor = null;
+      
+      // まず全フィールドから会社名を収集
+      const allFields = [vendorName, customerName, vendorAddressRecipient, remittanceAddressRecipient];
+      const allFieldValues = allFields.filter(field => field && field.trim());
+      
+      console.log('[RuleBasedOrchestrator] 全フィールド値:', allFieldValues);
+      
+      // 1. 「御中」で判別（確実な判定）
+      for (const fieldValue of allFieldValues) {
+        if (fieldValue.includes('御中')) {
+          identifiedCustomer = fieldValue;
+          console.log('[RuleBasedOrchestrator] 「御中」で顧客を特定:', fieldValue);
+          break;
+        }
       }
+      
+      // 2. 残りの会社名から仕入先を特定
+      if (identifiedCustomer) {
+        // 顧客が特定できた場合、残りから仕入先を探す
+        for (const fieldValue of allFieldValues) {
+          if (fieldValue !== identifiedCustomer && this.isCompanyName(fieldValue)) {
+            identifiedVendor = fieldValue;
+            console.log('[RuleBasedOrchestrator] 残りから仕入先を特定:', fieldValue);
+            break;
+          }
+        }
+      } else {
+        // 「御中」がない場合：会社形態を持つものを仕入先として優先
+        for (const fieldValue of allFieldValues) {
+          if (this.isCompanyName(fieldValue)) {
+            identifiedVendor = fieldValue;
+            console.log('[RuleBasedOrchestrator] 会社形態で仕入先を特定:', fieldValue);
+            break;
+          }
+        }
+        
+        // 顧客は残りから選択
+        for (const fieldValue of allFieldValues) {
+          if (fieldValue !== identifiedVendor) {
+            identifiedCustomer = fieldValue;
+            console.log('[RuleBasedOrchestrator] 残りから顧客を特定:', fieldValue);
+            break;
+          }
+        }
+      }
+      
+      // 3. データ構造を設定
+      data.customer = { 
+        name: identifiedCustomer || customerName || '不明' 
+      };
+      data.vendor = {
+        name: identifiedVendor || vendorName || '不明',
+        address: fields.vendorAddress || fields.VendorAddress,
+        phone: fields.vendorPhoneNumber || fields.vendorPhone
+      };
+      
+      console.log('[RuleBasedOrchestrator] 判定完了:', {
+        customer: data.customer.name,
+        vendor: data.vendor.name
+      });
       
       // 2. テーブルから商品情報を抽出
       data.items = [];
@@ -152,22 +195,73 @@ export class OCRRuleBasedOrchestrator {
               if (line.content) {
                 const content = line.content.trim();
                 
-                // 会社名パターン（株式会社、有限会社など）
-                if ((content.includes('株式会社') || content.includes('有限会社') || 
-                     content.includes('合同会社') || content.includes('(株)') || content.includes('(有)')) &&
-                    !content.includes('御中')) {
-                  
+                // 会社名パターン（株式会社、有限会社、合同会社など）
+                const companyPatterns = [
+                  /株式会社.*/,
+                  /有限会社.*/,
+                  /合同会社.*/,
+                  /.*株式会社/,
+                  /.*有限会社/,
+                  /.*合同会社/,
+                  /.*Corporation/,
+                  /.*Corp/,
+                  /.*LLC/,
+                  /.*Inc/,
+                  /.*\(株\)/,
+                  /.*\(有\)/,
+                  // 特定の会社名パターン
+                  /アソウタイセイプリンティング/,
+                  /アソウタイセイ/,
+                  /ピアソラ/
+                ];
+                
+                let isCompanyName = false;
+                for (const pattern of companyPatterns) {
+                  if (pattern.test(content) && !content.includes('御中')) {
+                    isCompanyName = true;
+                    break;
+                  }
+                }
+                
+                if (isCompanyName) {
                   const companyInfo = { content, boundingBox: line.boundingBox };
                   allCompanies.push(companyInfo);
                   
+                  console.log('[RuleBasedOrchestrator] 会社名候補を発見:', content);
+                  
                   // boundingBoxがある場合、X座標で右側判定（ページ幅の50%以上）
-                  if (line.boundingBox && line.boundingBox[0]) {
-                    const pageWidth = page.width || 8.5; // A4の幅（インチ）
-                    const xPosition = line.boundingBox[0].x || line.boundingBox[0];
+                  if (line.boundingBox && line.boundingBox.length > 0) {
+                    // Azure Form RecognizerのboundingBoxは配列形式：[x1, y1, x2, y2, x3, y3, x4, y4]
+                    // または {x, y} オブジェクトの配列の場合もある
+                    let xPosition = 0;
+                    
+                    if (typeof line.boundingBox[0] === 'number') {
+                      // 数値配列の場合：[x1, y1, x2, y2, ...]
+                      xPosition = line.boundingBox[0];
+                    } else if (line.boundingBox[0] && typeof line.boundingBox[0] === 'object' && line.boundingBox[0].x !== undefined) {
+                      // オブジェクト配列の場合：[{x, y}, {x, y}, ...]
+                      xPosition = line.boundingBox[0].x;
+                    }
+                    
+                    console.log('[RuleBasedOrchestrator] boundingBox情報:', {
+                      content: content,
+                      boundingBox: line.boundingBox,
+                      xPosition: xPosition,
+                      pageWidth: page.width
+                    });
+                    
+                    // ページ幅の情報を取得（Azure Form Recognizerはポイント単位）
+                    const pageWidth = page.width || 612; // A4の幅（ポイント）
+                    
+                    // 右側判定（ページ幅の50%以上）
                     if (xPosition > pageWidth * 0.5) {
                       rightSideCompanies.push(companyInfo);
-                      console.log('[RuleBasedOrchestrator] 右側の会社名を発見:', content);
+                      console.log('[RuleBasedOrchestrator] 右側の会社名を発見:', content, 'at x:', xPosition);
+                    } else {
+                      console.log('[RuleBasedOrchestrator] 左側の会社名:', content, 'at x:', xPosition);
                     }
+                  } else {
+                    console.log('[RuleBasedOrchestrator] boundingBox情報なし:', content);
                   }
                 }
               }
@@ -252,10 +346,41 @@ export class OCRRuleBasedOrchestrator {
         data.subject = ''; // 一旦クリアして、正しい件名がない場合は空にする
       }
       
+      // 結果の検証
+      let hasValidData = false;
+      
+      // 最低限の情報が抽出されているかチェック
+      if (data.vendor && data.vendor.name && data.vendor.name !== '不明') {
+        hasValidData = true;
+      }
+      
+      if (data.customer && data.customer.name && data.customer.name !== '不明') {
+        hasValidData = true;
+      }
+      
+      if (data.subject && data.subject.trim() !== '') {
+        hasValidData = true;
+      }
+      
+      if (data.items && data.items.length > 0) {
+        hasValidData = true;
+      }
+      
+      console.log('[RuleBasedOrchestrator] 最終結果:', {
+        hasValidData,
+        vendorName: data.vendor?.name || 'none',
+        customerName: data.customer?.name || 'none',
+        subject: data.subject || 'none',
+        itemsCount: data.items?.length || 0,
+        errors: errors.length
+      });
+      
+      console.log('[RuleBasedOrchestrator] === オーケストレータ完了 ===');
+      
       return {
-        success: true,
-        data,
-        errors
+        success: hasValidData,
+        data: hasValidData ? data : undefined,
+        errors: errors.length > 0 ? errors : undefined
       };
       
     } catch (error) {
@@ -421,5 +546,35 @@ export class OCRRuleBasedOrchestrator {
   private static isHeaderText(text: string): boolean {
     const headers = ['品名', '商品名', '項目', '数量', '単価', '金額', '備考', '内容'];
     return headers.some(h => text.includes(h));
+  }
+  
+  /**
+   * 会社名かどうかを判定
+   */
+  private static isCompanyName(text: string): boolean {
+    if (!text || text.trim() === '') return false;
+    
+    // 会社形態のパターン
+    const companyPatterns = [
+      /株式会社/,
+      /有限会社/,
+      /合同会社/,
+      /一般社団法人/,
+      /一般財団法人/,
+      /公益社団法人/,
+      /公益財団法人/,
+      /特定非営利活動法人/,
+      /NPO法人/,
+      /Corporation/,
+      /Corp/,
+      /LLC/,
+      /Inc/,
+      /\(株\)/,
+      /\(有\)/,
+      /\(合\)/
+    ];
+    
+    // いずれかのパターンにマッチし、「御中」を含まない場合
+    return companyPatterns.some(pattern => pattern.test(text)) && !text.includes('御中');
   }
 }
