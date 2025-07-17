@@ -248,6 +248,15 @@ export class FormRecognizerService {
           quotationValidity: extractedData.fields.quotationValidity
         });
       }
+      
+      // pages と tables データを含める（重要！）
+      extractedData.pages = result.pages || [];
+      extractedData.tables = result.tables || [];
+      
+      // デバッグ用にrawResultも含める
+      if (process.env.NODE_ENV === 'development') {
+        extractedData.rawResult = result;
+      }
 
       return extractedData;
     } catch (error) {
