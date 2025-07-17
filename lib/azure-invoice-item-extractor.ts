@@ -10,6 +10,14 @@ export class InvoiceItemExtractor {
   static extractItems(analysisResult: AnalysisResult): any[] {
     const items: any[] = [];
     
+    console.log('[InvoiceItemExtractor] 商品抽出開始:', {
+      hasFields: !!analysisResult.fields,
+      fieldsCount: analysisResult.fields ? Object.keys(analysisResult.fields).length : 0,
+      hasRawResult: !!analysisResult.rawResult,
+      hasPages: !!analysisResult.pages,
+      hasTables: !!analysisResult.tables
+    });
+    
     // 1. 標準のitemsフィールドから抽出を試行
     if (analysisResult.fields?.items && Array.isArray(analysisResult.fields.items)) {
       console.log('[InvoiceItemExtractor] 標準itemsフィールドから抽出');
@@ -142,8 +150,23 @@ export class InvoiceItemExtractor {
     const items: any[] = [];
     
     try {
+      console.log('[InvoiceItemExtractor] ページ数:', pages.length);
+      
       for (const page of pages) {
         if (page.lines && Array.isArray(page.lines)) {
+          console.log('[InvoiceItemExtractor] ページの行数:', page.lines.length);
+          
+          // すべての行をログ出力（商品情報を探すため）
+          page.lines.forEach((line: any, index: number) => {
+            const content = line.content || '';
+            // 商品に関連しそうな行を特定
+            if (content.includes('【') || content.includes('用紙') || 
+                content.includes('印刷') || content.includes('枚') || 
+                content.includes('¥') || /\d{1,3}(?:,\d{3})*/.test(content)) {
+              console.log(`[InvoiceItemExtractor] 行[${index}]:`, content);
+            }
+          });
+          
           const pageText = page.lines.map((line: any) => line.content).join('\n');
           const pageItems = this.extractItemsFromText(pageText);
           items.push(...pageItems);
