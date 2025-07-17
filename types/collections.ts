@@ -1150,6 +1150,12 @@ export interface SupplierQuote {
   paymentTerms?: string; // お支払条件
   quotationValidity?: string; // 見積有効期限（テキスト形式）
   
+  // OCRで直接抽出した仕入先情報（supplierが未設定の場合に使用）
+  vendorName?: string;
+  vendorAddress?: string;
+  vendorPhone?: string;
+  vendorEmail?: string;
+  
   // メタデータ
   notes?: string;
   attachments?: string[]; // ファイルパス
