@@ -448,9 +448,9 @@ export class AccountCategoryAI {
         );
       }
       
-      // Problem Solving Agentに分析を依頼
-      const solution = await problemSolvingAgent.tools.solveProblem.execute({
-        problem: `
+      // Problem Solving Agentに分析を依頼（スタブ実装対応）
+      try {
+        const problemDescription = `
           以下のレシート情報から適切な勘定科目を判定してください：
           
           【基本情報】
@@ -478,19 +478,23 @@ export class AccountCategoryAI {
           
           【参考情報】
           ${accountingInfo}
-        `,
-        requiresWebSearch: true,
-        requiresDataAnalysis: true,
-        context: { 
+        `;
+        
+        const solution = await problemSolvingAgent.solve(problemDescription, { 
           type: 'accounting',
           country: 'Japan',
           taxSystem: 'consumption_tax',
           businessType: extractedInfo.businessType
-        }
-      });
-      
-      // 解決策から勘定科目を抽出
-      return this.parseSolutionToPrediction(solution, ocrResult);
+        });
+        
+        // 解決策から勘定科目を抽出
+        return this.parseSolutionToPrediction(solution, ocrResult);
+        
+      } catch (agentError) {
+        console.warn('Problem Solving Agent not available, falling back to rule-based analysis:', agentError);
+        // Problem Solving Agentが利用できない場合は、直接フォールバック分析を実行
+        return this.intelligentFallback(ocrResult);
+      }
       
     } catch (error) {
       console.error('Complex analysis failed:', error);
@@ -504,7 +508,7 @@ export class AccountCategoryAI {
    */
   private parseSolutionToPrediction(solution: any, ocrResult: OCRResult): AccountCategoryPrediction {
     // AIの分析結果から勘定科目を抽出
-    const analysisText = JSON.stringify(solution);
+    const analysisText = solution.reasoning || solution.solution || JSON.stringify(solution);
     
     // デフォルトの予測
     let prediction: AccountCategoryPrediction = {
@@ -513,6 +517,12 @@ export class AccountCategoryAI {
       reasoning: 'AIによる分析結果',
       alternativeCategories: []
     };
+    
+    // Problem Solving Agentが失敗した場合のフォールバック
+    if (!solution.success) {
+      console.log('Problem Solving Agent failed, using fallback logic');
+      return this.intelligentFallback(ocrResult);
+    }
     
     // 分析結果から勘定科目を推定
     const categoryMappings = {
@@ -536,10 +546,10 @@ export class AccountCategoryAI {
     
     prediction.reasoning = `
       Problem Solving Agentによる総合分析：
-      ${solution.recommendations?.join('\n') || ''}
+      ${solution.reasoning || 'スタブ実装により詳細な分析は現在利用できません'}
       
-      データソース：
-      ${solution.data?.searchResults?.sources?.join(', ') || 'Perplexity AI'}
+      分析ステップ：
+      ${solution.steps?.join('\n') || ''}
     `.trim();
     
     return prediction;

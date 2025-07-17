@@ -130,7 +130,8 @@
       "Bash(npm root:*)",
       "Bash(tree:*)",
       "WebFetch(domain:accounting-automation-gemloby95-effectmoes-projects.vercel.app)",
-      "WebFetch(domain:accounting-automation-awhwfywsq-effectmoes-projects.vercel.app)"
+      "WebFetch(domain:accounting-automation-awhwfywsq-effectmoes-projects.vercel.app)",
+      "WebFetch(domain:vercel.com)"
     ],
     "deny": []
   }
