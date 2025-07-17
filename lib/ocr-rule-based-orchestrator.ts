@@ -34,8 +34,31 @@ export class OCRRuleBasedOrchestrator {
     const data: any = {};
     
     try {
+      // デバッグ: 受信したOCRデータの構造を確認
+      console.log('[RuleBasedOrchestrator] 受信したOCRデータ:', {
+        hasFields: !!ocrResult.fields,
+        hasTables: !!ocrResult.tables,
+        hasPages: !!ocrResult.pages,
+        fieldsKeys: ocrResult.fields ? Object.keys(ocrResult.fields) : [],
+        tablesLength: ocrResult.tables?.length || 0,
+        pagesLength: ocrResult.pages?.length || 0
+      });
+      
       // 1. 基本フィールドから情報を抽出
       const fields = ocrResult.fields || {};
+      
+      // デバッグ: フィールドの内容を確認
+      console.log('[RuleBasedOrchestrator] fieldsの内容:', {
+        vendorName: fields.vendorName,
+        VendorName: fields.VendorName,
+        vendorAddress: fields.vendorAddress,
+        VendorAddress: fields.VendorAddress,
+        vendorAddressRecipient: fields.VendorAddressRecipient,
+        customerName: fields.customerName,
+        CustomerName: fields.CustomerName,
+        subject: fields.subject,
+        Subject: fields.Subject
+      });
       
       // 件名の抽出（subjectフィールドを優先）
       data.subject = fields.subject || fields.Subject || '';
@@ -104,7 +127,52 @@ export class OCRRuleBasedOrchestrator {
         }
       }
       
-      // 4. 件名を正しく抽出（pagesデータから「件名」ラベルを探す）
+      // 4. pagesデータから仕入先情報を補完
+      if ((!data.vendor || data.vendor.name === '不明') && ocrResult.pages && ocrResult.pages.length > 0) {
+        console.log('[RuleBasedOrchestrator] pagesから仕入先情報を探索');
+        
+        for (const page of ocrResult.pages) {
+          if (page.lines) {
+            // 最初の数行に仕入先情報がある可能性が高い
+            for (let i = 0; i < Math.min(10, page.lines.length); i++) {
+              const line = page.lines[i];
+              if (line.content) {
+                const content = line.content.trim();
+                
+                // 会社名パターン（株式会社、有限会社など）
+                if (content.includes('株式会社') || content.includes('有限会社') || 
+                    content.includes('合同会社') || content.includes('(株)') || content.includes('(有)')) {
+                  // 御中を含まない場合は仕入先
+                  if (!content.includes('御中')) {
+                    data.vendor = data.vendor || {};
+                    data.vendor.name = content;
+                    console.log('[RuleBasedOrchestrator] pagesから仕入先名を抽出:', content);
+                  }
+                }
+                
+                // 住所パターン（都道府県を含む）
+                if ((content.includes('県') || content.includes('都') || content.includes('府') || 
+                     content.includes('市') || content.includes('区')) && 
+                    !content.includes('御中')) {
+                  data.vendor = data.vendor || {};
+                  data.vendor.address = content;
+                  console.log('[RuleBasedOrchestrator] pagesから住所を抽出:', content);
+                }
+                
+                // 電話番号パターン
+                const phoneMatch = content.match(/\d{2,4}-\d{2,4}-\d{3,4}/);
+                if (phoneMatch) {
+                  data.vendor = data.vendor || {};
+                  data.vendor.phone = phoneMatch[0];
+                  console.log('[RuleBasedOrchestrator] pagesから電話番号を抽出:', phoneMatch[0]);
+                }
+              }
+            }
+          }
+        }
+      }
+      
+      // 5. 件名を正しく抽出（pagesデータから「件名」ラベルを探す）
       if (ocrResult.pages && ocrResult.pages.length > 0) {
         console.log('[RuleBasedOrchestrator] pagesから件名を探索');
         
@@ -138,7 +206,7 @@ export class OCRRuleBasedOrchestrator {
         }
       }
       
-      // 5. 件名が「CROP様分」のような顧客向けテキストの場合は修正
+      // 6. 件名が「CROP様分」のような顧客向けテキストの場合は修正
       if (data.subject && data.subject.includes('様分')) {
         console.log('[RuleBasedOrchestrator] 件名が顧客向けテキストになっています。正しい件名を再検索。');
         data.subject = ''; // 一旦クリアして、正しい件名がない場合は空にする
