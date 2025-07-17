@@ -24,26 +24,42 @@ function extractVendorInformation(extractedData: any): {name: string, address: s
     vendorPhoneNumber: extractedData.vendorPhoneNumber
   });
   
-  // 1. 見積書では「御中」が付いているのは顧客なので、逆転を修正
-  const vendorNameField = extractedData.vendorName || extractedData.VendorName || '';
-  const customerNameField = extractedData.customerName || extractedData.CustomerName || '';
-  const vendorAddressRecipient = extractedData.VendorAddressRecipient || '';
+  // 1. 仕入先名の優先順位付き抽出
+  const vendorNameCandidates = [
+    extractedData.vendorName,
+    extractedData.VendorName,
+    extractedData.VendorAddressRecipient,
+    extractedData.RemittanceAddressRecipient,
+    extractedData.customerName,
+    extractedData.CustomerName
+  ];
   
-  if (vendorNameField && vendorNameField.includes('御中')) {
-    // vendorNameに「御中」がある = Azure OCRが逆転している
-    console.log('[extractVendorInformation] vendorNameに御中を検出 - 逆転を修正');
-    vendorInfo.name = customerNameField || vendorAddressRecipient || 'OCR抽出仕入先';
-  } else if (customerNameField && !customerNameField.includes('御中')) {
-    // customerNameに「御中」がない = これが仕入先の可能性
-    console.log('[extractVendorInformation] customerNameに御中がない - 仕入先として使用');
-    vendorInfo.name = customerNameField;
-  } else {
-    // 通常のケース
-    vendorInfo.name = vendorNameField || vendorAddressRecipient || 'OCR抽出仕入先';
+  // 2. 「御中」を含む場合は顧客名なので除外
+  for (const candidate of vendorNameCandidates) {
+    if (candidate && typeof candidate === 'string' && !candidate.includes('御中')) {
+      vendorInfo.name = candidate.trim();
+      console.log(`[extractVendorInformation] 仕入先名を決定: "${vendorInfo.name}"`);
+      break;
+    }
   }
   
-  // 「御中」を除去
-  vendorInfo.name = vendorInfo.name.replace(/\s*御中\s*$/, '').trim();
+  // 3. 仕入先名が見つからない場合、「御中」を除去して使用
+  if (!vendorInfo.name) {
+    for (const candidate of vendorNameCandidates) {
+      if (candidate && typeof candidate === 'string') {
+        vendorInfo.name = candidate.replace(/\s*御中\s*$/, '').trim();
+        if (vendorInfo.name) {
+          console.log(`[extractVendorInformation] 「御中」を除去して仕入先名を決定: "${vendorInfo.name}"`);
+          break;
+        }
+      }
+    }
+  }
+  
+  // 4. 最終フォールバック
+  if (!vendorInfo.name) {
+    vendorInfo.name = 'OCR抽出仕入先';
+  }
   
   // 2. 仕入先詳細情報の抽出
   vendorInfo.address = extractedData.vendorAddress || extractedData.VendorAddress || '';
@@ -243,6 +259,7 @@ async function convertOCRToSupplierQuote(ocrResult: any) {
     isGeneratedByAI: true,
     notes: '', // 備考欄は空にする
     ocrResultId: ocrResult.ocrResultId,
+    fileId: ocrResult.fileId, // 元ファイルのID
     // 赤枠の4項目を追加
     subject,
     deliveryLocation,

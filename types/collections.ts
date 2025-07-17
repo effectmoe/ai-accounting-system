@@ -1160,6 +1160,7 @@ export interface SupplierQuote {
   notes?: string;
   attachments?: string[]; // ファイルパス
   ocrResultId?: ObjectId; // OCR結果との関連
+  fileId?: string; // 元ファイルのID（GridFS）
   
   // 変換情報
   convertedToPurchaseOrderId?: ObjectId;
