@@ -339,6 +339,9 @@ export const ACCOUNT_CATEGORY_RULES: CategoryRule[] = [
  * ベンダー名から勘定科目を判定
  */
 export function determineAccountCategory(vendorName: string): string {
+  if (!vendorName || typeof vendorName !== 'string') {
+    return '消耗品費'; // デフォルト
+  }
   const vendorLower = vendorName.toLowerCase();
   
   // 優先度順にソート
