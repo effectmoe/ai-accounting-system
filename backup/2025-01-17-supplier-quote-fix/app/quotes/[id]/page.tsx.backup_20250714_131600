@@ -1,0 +1,531 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Separator } from '@/components/ui/separator';
+import { ArrowLeft, FileDown, Edit, Trash2, Calculator, CheckCircle, XCircle, Clock, AlertTriangle } from 'lucide-react';
+import { format } from 'date-fns';
+import { ja } from 'date-fns/locale';
+import { Quote, QuoteStatus } from '@/types/collections';
+import { safeFormatDate } from '@/lib/date-utils';
+
+const statusLabels: Record<QuoteStatus, string> = {
+  draft: '下書き',
+  sent: '送信済み',
+  accepted: '承認済み',
+  rejected: '拒否',
+  expired: '期限切れ',
+  converted: '請求書変換済み',
+};
+
+const statusColors: Record<QuoteStatus, string> = {
+  draft: 'bg-gray-100 text-gray-800',
+  sent: 'bg-blue-100 text-blue-800',
+  accepted: 'bg-green-100 text-green-800',
+  rejected: 'bg-red-100 text-red-800',
+  expired: 'bg-orange-100 text-orange-800',
+  converted: 'bg-purple-100 text-purple-800',
+};
+
+interface QuoteDetailPageProps {
+  params: { id: string };
+}
+
+export default function QuoteDetailPage({ params }: QuoteDetailPageProps) {
+  const router = useRouter();
+  const [quote, setQuote] = useState<Quote | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [isConverting, setIsConverting] = useState(false);
+
+  useEffect(() => {
+    fetchQuote();
+  }, [params.id]);
+
+  const fetchQuote = async () => {
+    try {
+      const response = await fetch(`/api/quotes/${params.id}`);
+      if (response.ok) {
+        const data = await response.json();
+        setQuote(data);
+      } else {
+        console.error('Quote not found');
+        router.push('/quotes');
+      }
+    } catch (error) {
+      console.error('Error fetching quote:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const updateQuoteStatus = async (newStatus: QuoteStatus) => {
+    if (!quote) return;
+
+    setIsUpdatingStatus(true);
+    try {
+      const response = await fetch(`/api/quotes/${quote._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          status: newStatus,
+          [newStatus === 'accepted' ? 'acceptedDate' : 
+           newStatus === 'rejected' ? 'rejectedDate' : 
+           newStatus === 'expired' ? 'expiredDate' : null]: new Date().toISOString(),
+        }),
+      });
+
+      if (response.ok) {
+        const updatedQuote = await response.json();
+        setQuote(updatedQuote);
+      } else {
+        throw new Error('ステータス更新に失敗しました');
+      }
+    } catch (error) {
+      console.error('Error updating quote status:', error);
+      alert('ステータスの更新に失敗しました');
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
+
+  const handleConvertToInvoice = async () => {
+    if (!quote) return;
+
+    if (!confirm('この見積書を請求書に変換しますか？')) {
+      return;
+    }
+
+    setIsConverting(true);
+    try {
+      const response = await fetch(`/api/quotes/${quote._id}/convert-to-invoice`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert('請求書への変換が完了しました！');
+        fetchQuote(); // 見積書データを再読み込み
+        if (confirm('作成された請求書を確認しますか？')) {
+          router.push(`/invoices/${data._id}`);
+        }
+      } else {
+        throw new Error(data.details || data.error || '変換に失敗しました');
+      }
+    } catch (error) {
+      console.error('Error converting quote to invoice:', error);
+      alert(`変換エラー: ${error instanceof Error ? error.message : '不明なエラー'}`);
+    } finally {
+      setIsConverting(false);
+    }
+  };
+
+  const deleteQuote = async () => {
+    if (!quote) return;
+
+    if (!confirm('この見積書を削除しますか？この操作は取り消せません。')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/quotes/${quote._id}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        alert('見積書が削除されました');
+        router.push('/quotes');
+      } else {
+        throw new Error('削除に失敗しました');
+      }
+    } catch (error) {
+      console.error('Error deleting quote:', error);
+      alert('見積書の削除に失敗しました');
+    }
+  };
+
+  const getStatusBadge = (status: QuoteStatus) => {
+    return (
+      <Badge className={`${statusColors[status]} border-0`}>
+        {statusLabels[status]}
+      </Badge>
+    );
+  };
+
+  const getStatusActions = () => {
+    if (!quote) return null;
+
+    const actions = [];
+
+    switch (quote.status) {
+      case 'draft':
+        actions.push(
+          <Button
+            key="send"
+            size="sm"
+            onClick={() => updateQuoteStatus('sent')}
+            disabled={isUpdatingStatus}
+          >
+            送信済みにする
+          </Button>
+        );
+        break;
+      case 'sent':
+        actions.push(
+          <Button
+            key="accept"
+            size="sm"
+            onClick={() => updateQuoteStatus('accepted')}
+            disabled={isUpdatingStatus}
+            className="bg-green-600 hover:bg-green-700"
+          >
+            <CheckCircle className="mr-2 h-4 w-4" />
+            承認
+          </Button>
+        );
+        actions.push(
+          <Button
+            key="reject"
+            size="sm"
+            variant="outline"
+            onClick={() => updateQuoteStatus('rejected')}
+            disabled={isUpdatingStatus}
+            className="border-red-300 text-red-700 hover:bg-red-50"
+          >
+            <XCircle className="mr-2 h-4 w-4" />
+            拒否
+          </Button>
+        );
+        actions.push(
+          <Button
+            key="expire"
+            size="sm"
+            variant="outline"
+            onClick={() => updateQuoteStatus('expired')}
+            disabled={isUpdatingStatus}
+            className="border-orange-300 text-orange-700 hover:bg-orange-50"
+          >
+            <Clock className="mr-2 h-4 w-4" />
+            期限切れ
+          </Button>
+        );
+        break;
+      case 'accepted':
+        if (!quote.convertedToInvoiceId) {
+          actions.push(
+            <Button
+              key="convert"
+              size="sm"
+              onClick={handleConvertToInvoice}
+              disabled={isConverting}
+              className="bg-purple-600 hover:bg-purple-700"
+            >
+              {isConverting ? (
+                '変換中...'
+              ) : (
+                <>
+                  <Calculator className="mr-2 h-4 w-4" />
+                  請求書に変換
+                </>
+              )}
+            </Button>
+          );
+        }
+        break;
+    }
+
+    return actions.length > 0 ? (
+      <div className="flex gap-2 flex-wrap">
+        {actions}
+      </div>
+    ) : null;
+  };
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!quote) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">見積書が見つかりません</h1>
+          <Button onClick={() => router.push('/quotes')}>
+            見積書一覧に戻る
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto p-6 max-w-4xl">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            onClick={() => router.push('/quotes')}
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            戻る
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold">見積書詳細</h1>
+            <p className="text-gray-600">#{quote.quoteNumber}</p>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => window.open(`/api/quotes/${quote._id}/pdf`, '_blank')}
+          >
+            <FileDown className="mr-2 h-4 w-4" />
+            PDF出力
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => router.push(`/quotes/${quote._id}/edit`)}
+          >
+            <Edit className="mr-2 h-4 w-4" />
+            編集
+          </Button>
+          <Button
+            variant="outline"
+            onClick={deleteQuote}
+            className="border-red-300 text-red-700 hover:bg-red-50"
+          >
+            <Trash2 className="mr-2 h-4 w-4" />
+            削除
+          </Button>
+        </div>
+      </div>
+
+      {/* Status and Actions */}
+      <Card className="mb-6">
+        <CardContent className="pt-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <span className="font-medium">ステータス:</span>
+              {getStatusBadge(quote.status)}
+              {quote.convertedToInvoiceId && (
+                <Button
+                  variant="link"
+                  size="sm"
+                  onClick={() => router.push(`/invoices/${quote.convertedToInvoiceId}`)}
+                  className="p-0 h-auto"
+                >
+                  変換された請求書を表示
+                </Button>
+              )}
+            </div>
+            {getStatusActions()}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Quote Information */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>見積書情報</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <h3 className="font-semibold mb-3">基本情報</h3>
+              <div className="space-y-2">
+                <div>
+                  <span className="text-gray-600">見積書番号:</span>
+                  <span className="ml-2 font-medium">{quote.quoteNumber}</span>
+                </div>
+                <div>
+                  <span className="text-gray-600">発行日:</span>
+                  <span className="ml-2">{safeFormatDate(quote.issueDate)}</span>
+                </div>
+                <div>
+                  <span className="text-gray-600">有効期限:</span>
+                  <span className="ml-2">{safeFormatDate(quote.validityDate)}</span>
+                  {new Date(quote.validityDate) < new Date() && quote.status !== 'expired' && (
+                    <Badge className="ml-2 bg-orange-100 text-orange-800 border-0">
+                      <AlertTriangle className="mr-1 h-3 w-3" />
+                      期限切れ
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            </div>
+            <div>
+              <h3 className="font-semibold mb-3">顧客情報</h3>
+              <div className="space-y-2">
+                <div>
+                  <span className="text-gray-600">会社名:</span>
+                  <span className="ml-2 font-medium">
+                    {quote.customer?.companyName || '未設定'}
+                  </span>
+                </div>
+                {quote.customer?.email && (
+                  <div>
+                    <span className="text-gray-600">メール:</span>
+                    <span className="ml-2">{quote.customer.email}</span>
+                  </div>
+                )}
+                {quote.customer?.phone && (
+                  <div>
+                    <span className="text-gray-600">電話:</span>
+                    <span className="ml-2">{quote.customer.phone}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Quote Items */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>見積項目</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>項目名</TableHead>
+                <TableHead className="text-right">数量</TableHead>
+                <TableHead className="text-right">単価</TableHead>
+                <TableHead className="text-right">小計</TableHead>
+                <TableHead className="text-right">税額</TableHead>
+                <TableHead className="text-right">合計</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {quote.items.map((item, index) => (
+                <TableRow key={index}>
+                  <TableCell>
+                    <div>
+                      <div className="font-medium">{item.itemName}</div>
+                      {item.description && (
+                        <div className="text-sm text-gray-600">{item.description}</div>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right">{item.quantity}</TableCell>
+                  <TableCell className="text-right">
+                    ¥{item.unitPrice.toLocaleString()}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    ¥{item.amount.toLocaleString()}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    ¥{(item.taxAmount || 0).toLocaleString()}
+                  </TableCell>
+                  <TableCell className="text-right font-medium">
+                    ¥{(item.amount + (item.taxAmount || 0)).toLocaleString()}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+
+          <Separator className="my-4" />
+
+          <div className="flex justify-end">
+            <div className="w-64 space-y-2">
+              <div className="flex justify-between">
+                <span>小計:</span>
+                <span>¥{quote.subtotal.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>税額:</span>
+                <span>¥{quote.taxAmount.toLocaleString()}</span>
+              </div>
+              <Separator />
+              <div className="flex justify-between font-bold text-lg">
+                <span>合計金額:</span>
+                <span>¥{quote.totalAmount.toLocaleString()}</span>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Notes */}
+      {quote.notes && (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>備考</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="whitespace-pre-wrap">{quote.notes}</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Status History */}
+      <Card>
+        <CardHeader>
+          <CardTitle>ステータス履歴</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <Badge className="bg-gray-100 text-gray-800 border-0">作成</Badge>
+              <span className="text-sm text-gray-600">
+                {safeFormatDate(quote.createdAt)}
+              </span>
+            </div>
+            {quote.acceptedDate && (
+              <div className="flex items-center gap-3">
+                <Badge className="bg-green-100 text-green-800 border-0">承認</Badge>
+                <span className="text-sm text-gray-600">
+                  {safeFormatDate(quote.acceptedDate)}
+                </span>
+              </div>
+            )}
+            {quote.rejectedDate && (
+              <div className="flex items-center gap-3">
+                <Badge className="bg-red-100 text-red-800 border-0">拒否</Badge>
+                <span className="text-sm text-gray-600">
+                  {safeFormatDate(quote.rejectedDate)}
+                </span>
+              </div>
+            )}
+            {quote.expiredDate && (
+              <div className="flex items-center gap-3">
+                <Badge className="bg-orange-100 text-orange-800 border-0">期限切れ</Badge>
+                <span className="text-sm text-gray-600">
+                  {safeFormatDate(quote.expiredDate)}
+                </span>
+              </div>
+            )}
+            {quote.convertedToInvoiceDate && (
+              <div className="flex items-center gap-3">
+                <Badge className="bg-purple-100 text-purple-800 border-0">請求書変換</Badge>
+                <span className="text-sm text-gray-600">
+                  {safeFormatDate(quote.convertedToInvoiceDate)}
+                </span>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}

@@ -148,6 +148,18 @@ export class SupplierQuoteService {
     try {
       console.log('[SupplierQuoteService] getSupplierQuote called with ID:', id);
       
+      // IDの検証
+      if (!id || id === 'undefined' || id === 'null') {
+        console.log('[SupplierQuoteService] Invalid ID provided:', id);
+        return null;
+      }
+
+      // IDの長さチェック（ObjectIdは24文字）
+      if (id.length !== 24) {
+        console.log('[SupplierQuoteService] Invalid ObjectId length:', id.length);
+        return null;
+      }
+      
       const quote = await db.findById<SupplierQuote>(this.collectionName, id);
       
       if (!quote) {
@@ -162,12 +174,21 @@ export class SupplierQuoteService {
 
       // 仕入先情報を取得
       if (quote.supplierId) {
-        quote.supplier = await db.findById<Supplier>('suppliers', quote.supplierId);
+        try {
+          quote.supplier = await db.findById<Supplier>('suppliers', quote.supplierId);
+        } catch (error) {
+          console.error('Error fetching supplier:', error);
+          // 仕入先の取得に失敗しても処理を続行
+        }
       }
 
       return quote;
     } catch (error) {
       console.error('Error in getSupplierQuote:', error);
+      if (error instanceof Error && error.message.includes('must be a valid ObjectId')) {
+        console.error('Invalid ObjectId format:', id);
+        return null;
+      }
       throw new Error('仕入先見積書の取得に失敗しました');
     }
   }

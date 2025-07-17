@@ -52,11 +52,14 @@ function NewDocumentContent() {
 
       const result = await response.json();
       
+      console.log('[Documents New] OCR Response:', result);
+      
       if (result.success) {
         toast.success(successMessage);
         
         // 仕入先見積書の場合は作成された見積書の詳細ページに遷移
         if (documentType === 'supplier-quote' && result.supplierQuote) {
+          console.log('[Documents New] Navigating to supplier quote:', result.supplierQuote.id);
           router.push(`/supplier-quotes/${result.supplierQuote.id}`);
         } else {
           router.push(redirectPath);
