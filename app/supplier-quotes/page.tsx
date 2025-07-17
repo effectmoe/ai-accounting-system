@@ -409,7 +409,7 @@ export default function SupplierQuotesPage() {
                       {new Date(quote.validityDate).toLocaleDateString('ja-JP')}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      ¥{quote.totalAmount.toLocaleString()}
+                      ¥{(quote.totalAmount || 0).toLocaleString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full border ${statusStyles[quote.status]}`}>

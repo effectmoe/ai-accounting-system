@@ -246,7 +246,7 @@ export default function SupplierQuoteDetailPage() {
                 <div className="flex items-center gap-2">
                   <DollarSign className="h-5 w-5 text-gray-400" />
                   <span className="text-gray-900 font-medium">
-                    ¥{quote.totalAmount.toLocaleString()}
+                    ¥{(quote.totalAmount || 0).toLocaleString()}
                   </span>
                 </div>
               </div>
@@ -304,16 +304,16 @@ export default function SupplierQuoteDetailPage() {
                         {item.quantity}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        ¥{item.unitPrice.toLocaleString()}
+                        ¥{(item.unitPrice || 0).toLocaleString()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        ¥{item.amount.toLocaleString()}
+                        ¥{(item.amount || 0).toLocaleString()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {item.taxRate}%
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        ¥{item.taxAmount.toLocaleString()}
+                        ¥{(item.taxAmount || 0).toLocaleString()}
                       </td>
                     </tr>
                   ))}
@@ -327,15 +327,15 @@ export default function SupplierQuoteDetailPage() {
                 <div className="w-64 space-y-2">
                   <div className="flex justify-between">
                     <span className="text-sm text-gray-600">小計:</span>
-                    <span className="text-sm text-gray-900">¥{quote.subtotal.toLocaleString()}</span>
+                    <span className="text-sm text-gray-900">¥{(quote.subtotal || 0).toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm text-gray-600">税額:</span>
-                    <span className="text-sm text-gray-900">¥{quote.taxAmount.toLocaleString()}</span>
+                    <span className="text-sm text-gray-900">¥{(quote.taxAmount || 0).toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between font-medium border-t pt-2">
                     <span className="text-sm text-gray-900">合計:</span>
-                    <span className="text-sm text-gray-900">¥{quote.totalAmount.toLocaleString()}</span>
+                    <span className="text-sm text-gray-900">¥{(quote.totalAmount || 0).toLocaleString()}</span>
                   </div>
                 </div>
               </div>

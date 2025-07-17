@@ -1117,6 +1117,9 @@ export interface DealActivity {
   metadata?: Record<string, any>;
 }
 
+// 仕入見積書ステータス
+export type SupplierQuoteStatus = 'pending' | 'received' | 'accepted' | 'rejected' | 'expired' | 'cancelled' | 'converted';
+
 // 仕入見積書インターフェース
 export interface SupplierQuote {
   _id?: ObjectId;
@@ -1139,7 +1142,7 @@ export interface SupplierQuote {
   totalAmount: number;
   
   // ステータス
-  status: 'draft' | 'received' | 'accepted' | 'rejected' | 'expired';
+  status: SupplierQuoteStatus;
   
   // メタデータ
   notes?: string;
