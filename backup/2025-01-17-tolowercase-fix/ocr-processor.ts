@@ -342,12 +342,6 @@ export class OCRProcessor {
       ocrResult.text = '';
     }
     
-    // textフィールドの検証と正規化
-    if (!ocrResult.text || typeof ocrResult.text !== 'string') {
-      console.warn('OCRResult.textが無効です:', ocrResult.text);
-      ocrResult.text = '';
-    }
-    
     // vendorフィールドの検証と正規化
     if (!ocrResult.vendor || typeof ocrResult.vendor !== 'string' || ocrResult.vendor.trim() === '') {
       console.warn('OCRResult.vendorが無効です:', ocrResult.vendor);
@@ -358,7 +352,6 @@ export class OCRProcessor {
     }
     
     console.error('[OCR-Processor] 使用するベンダー名:', ocrResult.vendor);
-    console.error('[OCR-Processor] textフィールド長:', ocrResult.text?.length || 0);
     
     // OCR結果から仕訳データを生成
     const description = `${ocrResult.vendor || '店舗名不明'} - ${ocrResult.items?.map(i => i.name).join(', ') || ''}`;
