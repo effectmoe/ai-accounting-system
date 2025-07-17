@@ -28,62 +28,26 @@ async function convertOCRToSupplierQuote(ocrResult: any) {
     })));
   }
   
-  // 金額抽出の改善（複数のフィールドを確認）
-  const extractAmount = (value: any): number => {
-    if (typeof value === 'number') return value;
-    if (typeof value === 'string') {
-      const match = value.match(/[\d,]+/);
-      if (match) {
-        return parseInt(match[0].replace(/,/g, ''));
-      }
-    }
-    if (typeof value === 'object' && value?.amount) {
-      return value.amount;
-    }
-    return 0;
-  };
-
-  // より多くのフィールドから金額を抽出
-  const totalAmountFromOCR = extractAmount(extractedData.totalAmount) || 
-                            extractAmount(extractedData.total) || 
-                            extractAmount(extractedData.InvoiceTotal) ||
-                            extractAmount(extractedData.TotalAmount) ||
-                            extractAmount(extractedData.Amount) || 0;
-  
-  const taxAmountFromOCR = extractAmount(extractedData.taxAmount) || 
-                          extractAmount(extractedData.tax) || 
-                          extractAmount(extractedData.TotalTax) || 0;
-
-  console.log('[convertOCRToSupplierQuote] 抽出された金額:', {
-    totalAmountFromOCR,
-    taxAmountFromOCR,
-    originalData: {
-      totalAmount: extractedData.totalAmount,
-      InvoiceTotal: extractedData.InvoiceTotal,
-      taxAmount: extractedData.taxAmount
-    }
-  });
-
   // アイテムがない場合、総額から推定
   if (items.length === 0) {
-    if (totalAmountFromOCR > 0) {
-      const itemAmount = totalAmountFromOCR - taxAmountFromOCR;
+    const totalAmount = extractedData.totalAmount || extractedData.total || extractedData.InvoiceTotal || 0;
+    if (totalAmount > 0) {
       items.push({
         itemName: '商品',
         description: '',
         quantity: 1,
-        unitPrice: itemAmount,
-        amount: itemAmount,
+        unitPrice: totalAmount,
+        amount: totalAmount,
         taxRate: 10,
-        taxAmount: taxAmountFromOCR || itemAmount * 0.1
+        taxAmount: totalAmount * 0.1
       });
     }
   }
   
   // 合計金額の計算
   const subtotal = items.reduce((sum: number, item: any) => sum + (item.amount || 0), 0);
-  const taxAmount = taxAmountFromOCR || subtotal * 0.1;
-  const totalAmount = totalAmountFromOCR || subtotal + taxAmount;
+  const taxAmount = extractedData.taxAmount || extractedData.tax || subtotal * 0.1;
+  const totalAmount = extractedData.totalAmount || extractedData.total || extractedData.InvoiceTotal || subtotal + taxAmount;
   
   // 仕入先見積書データの構築
   const supplierQuoteData = {
