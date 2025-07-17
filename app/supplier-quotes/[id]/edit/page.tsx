@@ -368,7 +368,7 @@ export default function EditSupplierQuotePage() {
                       />
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      ¥{item.amount.toLocaleString()}
+                      ¥{(item.amount || 0).toLocaleString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <input
@@ -382,7 +382,7 @@ export default function EditSupplierQuotePage() {
                       <span className="text-sm text-gray-500 ml-1">%</span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      ¥{item.taxAmount.toLocaleString()}
+                      ¥{(item.taxAmount || 0).toLocaleString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <button
@@ -406,15 +406,15 @@ export default function EditSupplierQuotePage() {
               <div className="w-64 space-y-2">
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-600">小計:</span>
-                  <span className="text-sm text-gray-900">¥{formData.subtotal?.toLocaleString()}</span>
+                  <span className="text-sm text-gray-900">¥{(formData.subtotal || 0).toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-600">税額:</span>
-                  <span className="text-sm text-gray-900">¥{formData.taxAmount?.toLocaleString()}</span>
+                  <span className="text-sm text-gray-900">¥{(formData.taxAmount || 0).toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between font-medium border-t pt-2">
                   <span className="text-sm text-gray-900">合計:</span>
-                  <span className="text-sm text-gray-900">¥{formData.totalAmount?.toLocaleString()}</span>
+                  <span className="text-sm text-gray-900">¥{(formData.totalAmount || 0).toLocaleString()}</span>
                 </div>
               </div>
             </div>
