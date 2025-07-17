@@ -37,7 +37,8 @@ export async function POST(request: NextRequest) {
     }
     // Azure Form RecognizerとMongoDBが利用可能であれば処理を続行
 
-    // Azure Form Recognizerを直接使用するため、エージェント確認は不要
+    // AIオーケストレータの利用可能性を確認
+    const useAIOrchestrator = !!process.env.ANTHROPIC_API_KEY;
 
     // フォームデータを取得
     const formData = await request.formData();
@@ -196,6 +197,121 @@ export async function POST(request: NextRequest) {
       };
       
       processingTime = 10; // モック処理時間
+    }
+    
+    // オーケストレータを使用した構造化（仕入先見積書の場合のみ）
+    let structuredData = null;
+    if (documentType === 'invoice' || documentType === 'supplier-quote') {
+      // 1. まずAIオーケストレータを試行
+      if (useAIOrchestrator) {
+        try {
+          console.log('[OCR] AIオーケストレータで構造化を開始...');
+          const { OCRAIOrchestrator } = await import('@/lib/ocr-ai-orchestrator');
+          const orchestrator = new OCRAIOrchestrator();
+          
+          structuredData = await orchestrator.orchestrateOCRResult({
+            ocrResult: analysisResult,
+            documentType: documentType as 'invoice' | 'supplier-quote',
+            companyId
+          });
+          
+          // 構造化データをanalysisResultに統合
+          if (structuredData) {
+            console.log('[OCR] AIオーケストレータによる構造化完了');
+            
+            // fieldsを更新
+            analysisResult.fields = {
+              ...analysisResult.fields,
+              // 基本情報
+              invoiceNumber: structuredData.documentNumber,
+              invoiceDate: structuredData.issueDate,
+              validityDate: structuredData.validityDate,
+              subject: structuredData.subject,
+              
+              // 仕入先情報
+              vendorName: structuredData.vendor.name,
+              vendorAddress: structuredData.vendor.address,
+              vendorPhoneNumber: structuredData.vendor.phone,
+              vendorEmail: structuredData.vendor.email,
+              
+              // 顧客情報
+              customerName: structuredData.customer.name,
+              CustomerName: structuredData.customer.name,
+              VendorAddressRecipient: structuredData.customer.name, // 互換性のため
+              
+              // 金額
+              totalAmount: { amount: structuredData.totalAmount, currencyCode: 'JPY' },
+              InvoiceTotal: structuredData.totalAmount.toString(),
+              subtotal: structuredData.subtotal,
+              taxAmount: structuredData.taxAmount,
+              
+              // 商品明細
+              items: structuredData.items.map(item => ({
+                itemName: item.itemName,
+                description: item.description || item.remarks || '',
+                quantity: item.quantity,
+                unitPrice: item.unitPrice,
+                amount: item.amount,
+                taxRate: item.taxRate || 10,
+                taxAmount: item.taxAmount || Math.floor(item.amount * 0.1)
+              })),
+              
+              // 追加フィールド
+              deliveryLocation: structuredData.deliveryLocation,
+              paymentTerms: structuredData.paymentTerms,
+              quotationValidity: structuredData.quotationValidity,
+              notes: structuredData.notes
+            };
+          }
+        } catch (orchestrationError) {
+          console.error('[OCR] AIオーケストレータエラー:', orchestrationError);
+          // エラーが発生したらルールベースにフォールバック
+        }
+      }
+      
+      // 2. AIオーケストレータが使用できない、または失敗した場合はルールベース
+      if (!structuredData) {
+        try {
+          console.log('[OCR] ルールベースオーケストレータで構造化を開始...');
+          const { OCRRuleBasedOrchestrator } = await import('@/lib/ocr-rule-based-orchestrator');
+          
+          const ruleBasedResult = OCRRuleBasedOrchestrator.orchestrateFromTables(analysisResult);
+          
+          if (ruleBasedResult.success && ruleBasedResult.data) {
+            console.log('[OCR] ルールベース構造化完了:', {
+              subject: ruleBasedResult.data.subject,
+              vendorName: ruleBasedResult.data.vendor?.name,
+              customerName: ruleBasedResult.data.customer?.name,
+              itemsCount: ruleBasedResult.data.items?.length || 0
+            });
+            
+            const data = ruleBasedResult.data;
+            
+            // fieldsを部分的に更新
+            if (data.subject) {
+              analysisResult.fields.subject = data.subject;
+            }
+            
+            if (data.vendor) {
+              analysisResult.fields.vendorName = data.vendor.name;
+              if (data.vendor.address) analysisResult.fields.vendorAddress = data.vendor.address;
+              if (data.vendor.phone) analysisResult.fields.vendorPhoneNumber = data.vendor.phone;
+            }
+            
+            if (data.customer) {
+              analysisResult.fields.customerName = data.customer.name;
+              analysisResult.fields.CustomerName = data.customer.name;
+              analysisResult.fields.VendorAddressRecipient = data.customer.name;
+            }
+            
+            if (data.items && data.items.length > 0) {
+              analysisResult.fields.items = data.items;
+            }
+          }
+        } catch (ruleBasedError) {
+          console.error('[OCR] ルールベースオーケストレータエラー:', ruleBasedError);
+        }
+      }
     }
     
     // GridFSにファイルを保存
