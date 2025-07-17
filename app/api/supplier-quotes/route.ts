@@ -62,12 +62,24 @@ export async function POST(request: NextRequest) {
           supplierId = existingSupplier._id;
           console.log(`[Supplier Quote] Found existing supplier: ${existingSupplier.companyName}`);
         } else {
+          // OCRから抽出された仕入先情報を使用
+          const vendorAddress = quoteData.vendorAddress || '';
+          const vendorPhone = quoteData.vendorPhone || quoteData.vendorPhoneNumber || '';
+          const vendorEmail = quoteData.vendorEmail || '';
+          
+          console.log(`[Supplier Quote] Creating new supplier with OCR data:`, {
+            companyName: quoteData.vendorName,
+            address: vendorAddress,
+            contactPhone: vendorPhone,
+            contactEmail: vendorEmail
+          });
+          
           // 新しい仕入先を作成
           const newSupplier = await db.create('suppliers', {
             companyName: quoteData.vendorName,
-            contactEmail: '',
-            contactPhone: '',
-            address: '',
+            contactEmail: vendorEmail,
+            contactPhone: vendorPhone,
+            address: vendorAddress,
             postalCode: '',
             isActive: true,
             notes: 'OCRで自動作成された仕入先'

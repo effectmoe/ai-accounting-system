@@ -214,7 +214,18 @@ export default function SupplierQuoteDetailPage() {
                 </label>
                 <div className="flex items-center gap-2">
                   <Building className="h-5 w-5 text-gray-400" />
-                  <span className="text-gray-900">{quote.supplier?.companyName || '未設定'}</span>
+                  <div className="flex flex-col">
+                    <span className="text-gray-900 font-medium">{quote.supplier?.companyName || '未設定'}</span>
+                    {quote.supplier?.address && (
+                      <span className="text-sm text-gray-600">{quote.supplier.address}</span>
+                    )}
+                    {quote.supplier?.contactPhone && (
+                      <span className="text-sm text-gray-600">TEL: {quote.supplier.contactPhone}</span>
+                    )}
+                    {quote.supplier?.contactEmail && (
+                      <span className="text-sm text-gray-600">Email: {quote.supplier.contactEmail}</span>
+                    )}
+                  </div>
                 </div>
               </div>
               <div>
