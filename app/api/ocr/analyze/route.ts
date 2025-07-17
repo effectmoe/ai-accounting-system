@@ -59,11 +59,13 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const companyId = formData.get('companyId') as string || 'default';
+    const documentType = formData.get('documentType') as string || 'receipt';
     
     console.log('OCR Analyze Request:', {
       fileName: file?.name,
       fileSize: file?.size,
-      companyId: companyId
+      companyId: companyId,
+      documentType: documentType
     });
     
     if (!file) {
@@ -78,8 +80,8 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(arrayBuffer);
     const fileBuffer = buffer.toString('base64');
 
-    // MastraエージェントでOCR処理
-    console.log('Mastra OCRエージェントで領収書を分析中...');
+    // Azure Form Recognizerを使用してOCR処理
+    console.log(`Azure Form Recognizerで${documentType === 'invoice' ? '請求書/見積書' : '領収書'}を分析中...`);
     
     // 直接Azure Form Recognizerサービスを使用
     const { getFormRecognizerService } = await import('@/lib/azure-form-recognizer');
@@ -87,8 +89,15 @@ export async function POST(request: NextRequest) {
     
     const startTime = Date.now();
     
-    // Azure Form Recognizerで分析
-    const analysisResult = await formRecognizer.analyzeReceipt(buffer, file.name);
+    // ドキュメントタイプに応じて適切な分析メソッドを選択
+    let analysisResult;
+    if (documentType === 'invoice' || documentType === 'supplier-quote') {
+      // 請求書/見積書として分析（invoiceモデルを使用）
+      analysisResult = await formRecognizer.analyzeInvoice(buffer, file.name);
+    } else {
+      // 領収書として分析（receiptモデルを使用）
+      analysisResult = await formRecognizer.analyzeReceipt(buffer, file.name);
+    }
     
     const processingTime = Date.now() - startTime;
     
@@ -108,7 +117,7 @@ export async function POST(request: NextRequest) {
       mimeType: file.type || (file.name.endsWith('.pdf') ? 'application/pdf' : 'image/jpeg'),
       processedAt: new Date(),
       processingTime,
-      documentType: 'receipt',
+      documentType: documentType,
       confidence: analysisResult.confidence,
       status: 'completed',
       extractedData: analysisResult.fields,

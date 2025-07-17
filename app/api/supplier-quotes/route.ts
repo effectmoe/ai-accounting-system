@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { SupplierQuoteService } from '@/services/supplier-quote.service';
+import { db } from '@/lib/mongodb-client';
+import { ObjectId } from 'mongodb';
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic';
@@ -45,12 +47,78 @@ export async function POST(request: NextRequest) {
     const quoteData = await request.json();
     const supplierQuoteService = new SupplierQuoteService();
     
-    // 見積書番号が指定されていない場合は自動生成
-    if (!quoteData.quoteNumber) {
-      quoteData.quoteNumber = await supplierQuoteService.generateSupplierQuoteNumber();
+    // 仕入先の処理
+    let supplierId = quoteData.supplierId;
+    
+    // OCRからの場合、vendorNameから仕入先を自動作成または取得
+    if (!supplierId && quoteData.vendorName) {
+      try {
+        // 既存の仕入先を検索
+        const existingSupplier = await db.findOne('suppliers', {
+          companyName: quoteData.vendorName
+        });
+        
+        if (existingSupplier) {
+          supplierId = existingSupplier._id;
+          console.log(`[Supplier Quote] Found existing supplier: ${existingSupplier.companyName}`);
+        } else {
+          // 新しい仕入先を作成
+          const newSupplier = await db.create('suppliers', {
+            companyName: quoteData.vendorName,
+            contactEmail: '',
+            contactPhone: '',
+            address: '',
+            postalCode: '',
+            isActive: true,
+            notes: 'OCRで自動作成された仕入先'
+          });
+          supplierId = newSupplier._id;
+          console.log(`[Supplier Quote] Created new supplier: ${newSupplier.companyName} (${supplierId})`);
+        }
+      } catch (error) {
+        console.error('Error handling supplier:', error);
+        // 仕入先処理に失敗した場合はデフォルト仕入先を使用
+        const defaultSupplier = await db.findOne('suppliers', {
+          companyName: 'OCR自動登録仕入先'
+        });
+        
+        if (!defaultSupplier) {
+          const newDefaultSupplier = await db.create('suppliers', {
+            companyName: 'OCR自動登録仕入先',
+            contactEmail: '',
+            contactPhone: '',
+            address: '',
+            postalCode: '',
+            isActive: true,
+            notes: 'OCR処理でのデフォルト仕入先'
+          });
+          supplierId = newDefaultSupplier._id;
+        } else {
+          supplierId = defaultSupplier._id;
+        }
+      }
     }
     
-    const quote = await supplierQuoteService.createSupplierQuote(quoteData);
+    // supplierId を確実にObjectIdに変換
+    if (supplierId && typeof supplierId === 'string') {
+      supplierId = new ObjectId(supplierId);
+    }
+    
+    // 見積書データを更新
+    const finalQuoteData = {
+      ...quoteData,
+      supplierId
+    };
+    
+    // vendorNameを削除（supplierIdで管理するため）
+    delete finalQuoteData.vendorName;
+    
+    // 見積書番号が指定されていない場合は自動生成
+    if (!finalQuoteData.quoteNumber) {
+      finalQuoteData.quoteNumber = await supplierQuoteService.generateSupplierQuoteNumber();
+    }
+    
+    const quote = await supplierQuoteService.createSupplierQuote(finalQuoteData);
     
     return NextResponse.json(quote, { status: 201 });
   } catch (error) {

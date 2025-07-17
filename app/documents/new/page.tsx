@@ -6,6 +6,79 @@ import Link from 'next/link';
 import { ArrowLeft, Upload, FileText, Plus } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
+// OCR結果を仕入先見積書に変換する関数
+async function convertOCRToSupplierQuote(ocrResult: any) {
+  // OCR結果から仕入先見積書データを抽出
+  const extractedData = ocrResult.extractedData || {};
+  const vendorName = extractedData.vendorName || extractedData.merchantName || 'OCR自動登録仕入先';
+  
+  // 項目の抽出
+  const items = [];
+  if (extractedData.items && Array.isArray(extractedData.items)) {
+    items.push(...extractedData.items.map((item: any) => ({
+      itemName: item.description || item.name || '商品',
+      description: '',
+      quantity: item.quantity || 1,
+      unitPrice: item.unitPrice || item.price || item.amount || 0,
+      amount: item.amount || item.totalPrice || (item.quantity || 1) * (item.unitPrice || item.price || 0),
+      taxRate: 10,
+      taxAmount: (item.amount || item.totalPrice || 0) * 0.1
+    })));
+  }
+  
+  // アイテムがない場合、総額から推定
+  if (items.length === 0) {
+    const totalAmount = extractedData.totalAmount || extractedData.total || extractedData.InvoiceTotal || 0;
+    if (totalAmount > 0) {
+      items.push({
+        itemName: '商品',
+        description: '',
+        quantity: 1,
+        unitPrice: totalAmount,
+        amount: totalAmount,
+        taxRate: 10,
+        taxAmount: totalAmount * 0.1
+      });
+    }
+  }
+  
+  // 合計金額の計算
+  const subtotal = items.reduce((sum: number, item: any) => sum + (item.amount || 0), 0);
+  const taxAmount = extractedData.taxAmount || extractedData.tax || subtotal * 0.1;
+  const totalAmount = extractedData.totalAmount || extractedData.total || extractedData.InvoiceTotal || subtotal + taxAmount;
+  
+  // 仕入先見積書データの構築
+  const supplierQuoteData = {
+    vendorName,
+    issueDate: extractedData.invoiceDate || extractedData.transactionDate || new Date().toISOString(),
+    validityDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30日後
+    items,
+    subtotal,
+    taxAmount,
+    taxRate: 10,
+    totalAmount,
+    status: 'received',
+    isGeneratedByAI: true,
+    notes: 'OCRで自動生成された見積書',
+    ocrResultId: ocrResult.ocrResultId
+  };
+  
+  // 仕入先見積書APIに送信
+  const response = await fetch('/api/supplier-quotes', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(supplierQuoteData),
+  });
+  
+  if (!response.ok) {
+    throw new Error('仕入先見積書の作成に失敗しました');
+  }
+  
+  return await response.json();
+}
+
 function NewDocumentContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -34,9 +107,10 @@ function NewDocumentContent() {
       let successMessage = 'ドキュメントをアップロードしました';
       let redirectPath = '/documents';
 
-      // 仕入先見積書の場合は専用のAPIを使用
+      // 仕入先見積書の場合も共通のOCR APIを使用
       if (documentType === 'supplier-quote') {
-        apiEndpoint = '/api/ocr/supplier-quote';
+        apiEndpoint = '/api/ocr/analyze';
+        formData.append('documentType', 'supplier-quote');
         successMessage = '仕入先見積書をOCRで処理しました';
         redirectPath = '/supplier-quotes';
       }
@@ -57,10 +131,17 @@ function NewDocumentContent() {
       if (result.success) {
         toast.success(successMessage);
         
-        // 仕入先見積書の場合は作成された見積書の詳細ページに遷移
-        if (documentType === 'supplier-quote' && result.supplierQuote) {
-          console.log('[Documents New] Navigating to supplier quote:', result.supplierQuote.id);
-          router.push(`/supplier-quotes/${result.supplierQuote.id}`);
+        // 仕入先見積書の場合は、OCR結果から仕入先見積書を作成
+        if (documentType === 'supplier-quote') {
+          try {
+            const supplierQuoteData = await convertOCRToSupplierQuote(result);
+            console.log('[Documents New] Created supplier quote:', supplierQuoteData.id);
+            router.push(`/supplier-quotes/${supplierQuoteData.id}`);
+          } catch (error) {
+            console.error('Supplier quote creation error:', error);
+            toast.error('仕入先見積書の作成に失敗しました');
+            router.push(redirectPath);
+          }
         } else {
           router.push(redirectPath);
         }
