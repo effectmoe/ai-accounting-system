@@ -257,7 +257,7 @@ async function convertOCRToSupplierQuote(ocrResult: any) {
     totalAmount,
     status: 'received',
     isGeneratedByAI: true,
-    notes: 'OCRで自動生成された見積書', // 備考欄
+    notes: extractedData.notes || extractedData.remarks || extractedData.備考 || '', // 備考欄（OCRから抽出）
     ocrResultId: ocrResult.ocrResultId,
     fileId: ocrResult.fileId, // 元ファイルのID
     // 赤枠の4項目を追加
