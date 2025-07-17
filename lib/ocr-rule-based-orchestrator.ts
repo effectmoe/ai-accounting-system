@@ -104,34 +104,44 @@ export class OCRRuleBasedOrchestrator {
         }
       }
       
-      // 4. 件名が商品テーブルから誤って取得されている場合の修正
-      if (data.subject && data.items.length > 0) {
-        // 件名が商品名と同じ場合、件名をクリア
-        const firstItemName = data.items[0]?.itemName;
-        if (firstItemName && data.subject.includes(firstItemName)) {
-          console.log('[RuleBasedOrchestrator] 件名が商品名と混同されています。修正を試みます。');
-          
-          // pagesから「件名」というラベルを探す
-          if (ocrResult.pages && ocrResult.pages.length > 0) {
-            for (const page of ocrResult.pages) {
-              if (page.lines) {
-                for (let i = 0; i < page.lines.length; i++) {
-                  const line = page.lines[i];
-                  if (line.content && line.content.includes('件名')) {
-                    // 次の行または同じ行の後半が実際の件名
-                    if (i + 1 < page.lines.length) {
-                      const nextLine = page.lines[i + 1].content;
-                      if (nextLine && !nextLine.includes('件名')) {
-                        data.subject = nextLine.trim();
-                        break;
-                      }
-                    }
+      // 4. 件名を正しく抽出（pagesデータから「件名」ラベルを探す）
+      if (ocrResult.pages && ocrResult.pages.length > 0) {
+        console.log('[RuleBasedOrchestrator] pagesから件名を探索');
+        
+        for (const page of ocrResult.pages) {
+          if (page.lines) {
+            for (let i = 0; i < page.lines.length; i++) {
+              const line = page.lines[i];
+              if (line.content && line.content.includes('件名')) {
+                console.log('[RuleBasedOrchestrator] 「件名」ラベルを発見:', line.content);
+                
+                // 同じ行の「件名」の後の部分を確認
+                const sameLineMatch = line.content.match(/件名[:\s：]*(.+)/);
+                if (sameLineMatch && sameLineMatch[1].trim()) {
+                  data.subject = sameLineMatch[1].trim();
+                  console.log('[RuleBasedOrchestrator] 同じ行から件名を抽出:', data.subject);
+                  break;
+                }
+                
+                // 次の行が実際の件名
+                if (i + 1 < page.lines.length) {
+                  const nextLine = page.lines[i + 1].content;
+                  if (nextLine && !nextLine.includes('件名')) {
+                    data.subject = nextLine.trim();
+                    console.log('[RuleBasedOrchestrator] 次の行から件名を抽出:', data.subject);
+                    break;
                   }
                 }
               }
             }
           }
         }
+      }
+      
+      // 5. 件名が「CROP様分」のような顧客向けテキストの場合は修正
+      if (data.subject && data.subject.includes('様分')) {
+        console.log('[RuleBasedOrchestrator] 件名が顧客向けテキストになっています。正しい件名を再検索。');
+        data.subject = ''; // 一旦クリアして、正しい件名がない場合は空にする
       }
       
       return {
