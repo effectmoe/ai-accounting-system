@@ -239,6 +239,11 @@ export class JapaneseTaxCalculator {
    * 軽減税率の判定
    */
   static isReducedTaxItem(itemType: string): boolean {
+    // itemTypeがundefinedやnullの場合はfalseを返す
+    if (!itemType || typeof itemType !== 'string') {
+      return false;
+    }
+    
     const reducedTaxItems = [
       '食料品',
       '飲料',
