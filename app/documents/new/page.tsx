@@ -227,6 +227,16 @@ async function convertOCRToSupplierQuote(ocrResult: any) {
                      extractedData.vendorPhone || extractedData.VendorPhone || '';
   const vendorEmail = extractedData.vendorEmail || extractedData.VendorEmail || '';
   
+  // デバッグログ: 仕入先情報の詳細を出力
+  console.log('[convertOCRToSupplierQuote] 仕入先情報の詳細:', {
+    vendorName,
+    vendorAddress,
+    vendorPhone,
+    vendorEmail,
+    extractedDataKeys: Object.keys(extractedData),
+    extractedData: extractedData
+  });
+  
   // 仕入先が存在しない場合は作成
   if (vendorName && vendorName !== 'OCR抽出仕入先') {
     try {
