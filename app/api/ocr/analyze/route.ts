@@ -275,6 +275,15 @@ export async function POST(request: NextRequest) {
           console.log('[OCR] ルールベースオーケストレータで構造化を開始...');
           const { OCRRuleBasedOrchestrator } = await import('@/lib/ocr-rule-based-orchestrator');
           
+          // analysisResultの構造を確認
+          console.log('[OCR] analysisResultの構造:', {
+            hasFields: !!analysisResult.fields,
+            hasTables: !!analysisResult.tables,
+            hasPages: !!analysisResult.pages,
+            tablesLength: analysisResult.tables?.length || 0,
+            pagesLength: analysisResult.pages?.length || 0
+          });
+          
           const ruleBasedResult = OCRRuleBasedOrchestrator.orchestrateFromTables(analysisResult);
           
           if (ruleBasedResult.success && ruleBasedResult.data) {

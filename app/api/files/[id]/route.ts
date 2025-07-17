@@ -185,8 +185,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
     
     return NextResponse.json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to retrieve file'
+      error: 'サーバーエラーが発生しました'
     }, { status: 500 });
   }
 }
