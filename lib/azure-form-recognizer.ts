@@ -74,6 +74,9 @@ export class FormRecognizerService {
           vendorName: fields.VendorName?.content,
           vendorAddress: fields.VendorAddress?.content,
           vendorTaxId: fields.VendorTaxId?.content,
+          // 追加のベンダー名フィールド（日本の請求書用）
+          VendorAddressRecipient: fields.VendorAddressRecipient?.content,
+          RemittanceAddressRecipient: fields.RemittanceAddressRecipient?.content,
           customerName: fields.CustomerName?.content,
           customerAddress: fields.CustomerAddress?.content,
           customerTaxId: fields.CustomerTaxId?.content,
