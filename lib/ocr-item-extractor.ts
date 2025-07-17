@@ -19,7 +19,27 @@ export class OCRItemExtractor {
   static extractItemsFromOCR(ocrData: any): ExtractedItem[] {
     const items: ExtractedItem[] = [];
     
-    // 1. まずitemsフィールドから抽出を試みる
+    // 0. 最優先：tablesデータから抽出（構造化されたデータ）
+    if (ocrData.tables && Array.isArray(ocrData.tables) && ocrData.tables.length > 0) {
+      console.log('[OCRItemExtractor] tablesデータから商品情報を抽出します');
+      const tableItems = this.extractItemsFromTables(ocrData.tables);
+      if (tableItems.length > 0) {
+        console.log(`[OCRItemExtractor] テーブルから${tableItems.length}個の商品を抽出しました`);
+        return tableItems;
+      }
+    }
+    
+    // 1. 次にpagesデータから抽出（行ベースのデータ）
+    if (ocrData.pages && Array.isArray(ocrData.pages) && ocrData.pages.length > 0) {
+      console.log('[OCRItemExtractor] pagesデータから商品情報を抽出します');
+      const pageItems = this.extractItemsFromPages(ocrData.pages);
+      if (pageItems.length > 0) {
+        console.log(`[OCRItemExtractor] ページから${pageItems.length}個の商品を抽出しました`);
+        return pageItems;
+      }
+    }
+    
+    // 2. itemsフィールドから抽出を試みる
     if (ocrData.items && Array.isArray(ocrData.items) && ocrData.items.length > 0) {
       ocrData.items.forEach((item: any, index: number) => {
         const extractedItem = this.extractSingleItem(item, index);
@@ -29,7 +49,7 @@ export class OCRItemExtractor {
       });
     }
     
-    // 2. itemsが空または不完全な場合、OCR全体から商品情報を探す
+    // 3. itemsが空または不完全な場合、OCR全体から商品情報を探す
     if (items.length === 0 || items.every(item => this.isDefaultItemName(item.itemName))) {
       console.log('[OCRItemExtractor] itemsフィールドが不完全。OCR全体から商品情報を抽出します');
       
@@ -203,10 +223,175 @@ export class OCRItemExtractor {
    * デフォルトの商品名かどうかチェック
    */
   private static isDefaultItemName(name: string): boolean {
-    return /^商品\\d+$/.test(name) || 
+    return /^商品\\d*$/.test(name) || 
            name.includes('デフォルト') ||
            name === '抽出商品' ||
            name.length < 3;
+  }
+  
+  /**
+   * テーブルデータから商品情報を抽出
+   */
+  private static extractItemsFromTables(tables: any[]): ExtractedItem[] {
+    const items: ExtractedItem[] = [];
+    
+    for (const table of tables) {
+      console.log(`[OCRItemExtractor] テーブル: ${table.rowCount}行 x ${table.columnCount}列`);
+      
+      // テーブルのヘッダー行をスキップして、データ行を処理
+      const rows = this.groupCellsByRow(table.cells);
+      
+      for (let rowIndex = 1; rowIndex < rows.length; rowIndex++) {
+        const row = rows[rowIndex];
+        if (!row || row.length === 0) continue;
+        
+        // 最初の列が商品名の可能性が高い
+        const productName = row[0]?.content || '';
+        
+        // 空行またはヘッダー行をスキップ
+        if (!productName || this.isHeaderOrEmptyRow(productName)) continue;
+        
+        // 数量、単価、金額を探す
+        let quantity = 1;
+        let unitPrice = 0;
+        let amount = 0;
+        
+        // 各セルから数値を抽出
+        for (let colIndex = 1; colIndex < row.length; colIndex++) {
+          const cellContent = row[colIndex]?.content || '';
+          const numericValue = this.parseNumber(cellContent);
+          
+          if (numericValue > 0) {
+            // 金額の大きさで判定
+            if (numericValue >= 10000) {
+              // 大きな値は金額の可能性が高い
+              if (amount === 0) amount = numericValue;
+              else if (unitPrice === 0) unitPrice = numericValue;
+            } else if (numericValue < 100) {
+              // 小さな値は数量の可能性が高い
+              quantity = numericValue;
+            } else {
+              // 中間の値は単価の可能性
+              if (unitPrice === 0) unitPrice = numericValue;
+            }
+          }
+        }
+        
+        // 金額が設定されていない場合は計算
+        if (amount === 0 && unitPrice > 0) {
+          amount = unitPrice * quantity;
+        }
+        
+        // 有効な商品情報の場合のみ追加
+        if (productName && !this.isDefaultItemName(productName) && (amount > 0 || unitPrice > 0)) {
+          items.push({
+            itemName: productName,
+            description: '',
+            quantity: quantity,
+            unitPrice: unitPrice || amount,
+            amount: amount || unitPrice,
+            taxRate: 10,
+            taxAmount: Math.floor((amount || unitPrice) * 0.1)
+          });
+          
+          console.log(`[OCRItemExtractor] テーブルから商品抽出: ${productName}, 数量: ${quantity}, 単価: ${unitPrice}, 金額: ${amount}`);
+        }
+      }
+    }
+    
+    return items;
+  }
+  
+  /**
+   * セルを行ごとにグループ化
+   */
+  private static groupCellsByRow(cells: any[]): any[][] {
+    if (!cells || cells.length === 0) return [];
+    
+    const rows: any[][] = [];
+    
+    for (const cell of cells) {
+      const rowIndex = cell.rowIndex || 0;
+      if (!rows[rowIndex]) rows[rowIndex] = [];
+      rows[rowIndex][cell.columnIndex || 0] = cell;
+    }
+    
+    return rows;
+  }
+  
+  /**
+   * ヘッダー行または空行かどうかチェック
+   */
+  private static isHeaderOrEmptyRow(text: string): boolean {
+    const headerKeywords = ['品名', '商品名', '項目', '内容', '摘要', '品目', 'Item', 'Description'];
+    return headerKeywords.some(keyword => text.includes(keyword)) || text.trim().length === 0;
+  }
+  
+  /**
+   * ページデータから商品情報を抽出（行ベース）
+   */
+  private static extractItemsFromPages(pages: any[]): ExtractedItem[] {
+    const items: ExtractedItem[] = [];
+    
+    for (const page of pages) {
+      if (!page.lines || page.lines.length === 0) continue;
+      
+      console.log(`[OCRItemExtractor] ページの行数: ${page.lines.length}`);
+      
+      for (let i = 0; i < page.lines.length; i++) {
+        const line = page.lines[i];
+        const content = line.content || '';
+        
+        // 金額パターンを含む行を探す
+        const amountMatch = content.match(/([\\d,]+)\\s*円|¥\\s*([\\d,]+)|([\\d,]+)\\s*$/);
+        if (amountMatch) {
+          const amountStr = amountMatch[1] || amountMatch[2] || amountMatch[3];
+          const amount = this.parseNumber(amountStr);
+          
+          if (amount > 1000) { // 1000円以上を商品として認識
+            // 同じ行または前の行から商品名を探す
+            let productName = '';
+            
+            // 同じ行の金額より前の部分
+            const beforeAmount = content.substring(0, content.indexOf(amountMatch[0])).trim();
+            if (beforeAmount && !this.isNumericOnly(beforeAmount)) {
+              productName = beforeAmount;
+            }
+            
+            // 商品名が見つからない場合は前の行を確認
+            if (!productName && i > 0) {
+              const prevLine = page.lines[i - 1].content || '';
+              if (!this.isNumericOnly(prevLine) && !this.isHeaderOrEmptyRow(prevLine)) {
+                productName = prevLine.trim();
+              }
+            }
+            
+            if (productName && !this.isDefaultItemName(productName)) {
+              items.push({
+                itemName: productName,
+                description: '',
+                quantity: 1,
+                unitPrice: amount,
+                amount: amount,
+                taxRate: 10,
+                taxAmount: Math.floor(amount * 0.1)
+              });
+              
+              console.log(`[OCRItemExtractor] ページから商品抽出: ${productName}, 金額: ${amount}`);
+            }
+          }
+        }
+      }
+    }
+    
+    return items;
+  }
+  
+  /**
+   * 数値のみかどうかチェック
+   */
+  private static isNumericOnly(text: string): boolean {
+    return /^[\\d,\\.\\s]+$/.test(text.trim());
   }
   
   /**

@@ -706,7 +706,14 @@ export async function POST(request: NextRequest) {
       fileId,
       documentType: analysisResult.documentType,
       confidence: analysisResult.confidence || 0.8,
-      extractedData: analysisResult.fields || analysisResult.extractedData,
+      extractedData: {
+        ...analysisResult.fields,
+        // tablesとpagesを含める（重要！）
+        tables: analysisResult.tables || [],
+        pages: analysisResult.pages || [],
+        // rawResultも含める（デバッグ用）
+        rawResult: process.env.NODE_ENV === 'development' ? analysisResult.rawResult : undefined
+      },
       processingTime: processingTime, // analysisResult.processingTimeではなく、実際の処理時間を使用
       message: 'OCR処理が完了しました',
       // チャット画面で使用するための追加情報
@@ -719,7 +726,11 @@ export async function POST(request: NextRequest) {
         azureConfigured,
         isUsingMockData: analysisResult.fields?.mockData === true,
         originalConfidence: analysisResult.confidence,
-        processingTimeMs: processingTime
+        processingTimeMs: processingTime,
+        hasPages: !!analysisResult.pages,
+        pagesCount: analysisResult.pages?.length || 0,
+        hasTables: !!analysisResult.tables,
+        tablesCount: analysisResult.tables?.length || 0
       } : undefined
     };
     

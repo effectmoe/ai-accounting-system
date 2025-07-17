@@ -7,6 +7,63 @@ import { ArrowLeft, Upload, FileText, Plus } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { OCRItemExtractor } from '@/lib/ocr-item-extractor';
 
+// 仕入先情報抽出関数（改善版）
+function extractVendorInformation(extractedData: any): {name: string, address: string, phone: string, email: string} {
+  const vendorInfo = {
+    name: '',
+    address: '',
+    phone: '',
+    email: ''
+  };
+  
+  // 1. 仕入先名の優先順位付き抽出
+  const vendorNameCandidates = [
+    extractedData.VendorAddressRecipient,
+    extractedData.RemittanceAddressRecipient,
+    extractedData.vendorName,
+    extractedData.VendorName,
+    extractedData.customerName,
+    extractedData.CustomerName
+  ];
+  
+  // 2. 「御中」を含む場合は顧客名なので除外
+  for (const candidate of vendorNameCandidates) {
+    if (candidate && typeof candidate === 'string' && !candidate.includes('御中')) {
+      vendorInfo.name = candidate.trim();
+      console.log(`[extractVendorInformation] 仕入先名を決定: "${vendorInfo.name}"`);
+      break;
+    }
+  }
+  
+  // 3. 仕入先名が見つからない場合、「御中」を除去して使用
+  if (!vendorInfo.name) {
+    for (const candidate of vendorNameCandidates) {
+      if (candidate && typeof candidate === 'string') {
+        vendorInfo.name = candidate.replace(/\s*御中\s*$/, '').trim();
+        if (vendorInfo.name) {
+          console.log(`[extractVendorInformation] 「御中」を除去して仕入先名を決定: "${vendorInfo.name}"`);
+          break;
+        }
+      }
+    }
+  }
+  
+  // 4. 最終フォールバック
+  if (!vendorInfo.name) {
+    vendorInfo.name = 'OCR抽出仕入先';
+  }
+  
+  // 5. 仕入先詳細情報の抽出
+  vendorInfo.address = extractedData.vendorAddress || extractedData.VendorAddress || '';
+  vendorInfo.phone = extractedData.vendorPhoneNumber || extractedData.VendorPhoneNumber || 
+                     extractedData.vendorPhone || extractedData.VendorPhone || '';
+  vendorInfo.email = extractedData.vendorEmail || extractedData.VendorEmail || '';
+  
+  console.log('[extractVendorInformation] 最終仕入先情報:', vendorInfo);
+  
+  return vendorInfo;
+}
+
 // OCR結果を仕入先見積書に変換する関数
 async function convertOCRToSupplierQuote(ocrResult: any) {
   // OCR結果から仕入先見積書データを抽出
@@ -14,33 +71,9 @@ async function convertOCRToSupplierQuote(ocrResult: any) {
   
   console.log('[convertOCRToSupplierQuote] 全抽出データ:', extractedData);
   
-  // 仕入先名の正しい抽出（請求書の文脈を理解）
-  let vendorName = '';
-  
-  // Azure Form Recognizerでは、vendorName/customerNameが混同されることがある
-  const extractedVendorName = extractedData.vendorName || extractedData.VendorName;
-  const extractedCustomerName = extractedData.customerName || extractedData.CustomerName;
-  const vendorAddressRecipient = extractedData.VendorAddressRecipient;
-  
-  // 「御中」チェックで正しい仕入先を特定
-  if (extractedVendorName && extractedVendorName.includes('御中')) {
-    // vendorNameに「御中」がある場合、Azure OCRが混同している
-    vendorName = vendorAddressRecipient || 
-                 extractedData.RemittanceAddressRecipient ||
-                 extractedCustomerName ||
-                 'OCR抽出仕入先';
-  } else if (vendorAddressRecipient && !vendorAddressRecipient.includes('御中')) {
-    // VendorAddressRecipientに会社名があり、「御中」がない場合、これが仕入先
-    vendorName = vendorAddressRecipient;
-  } else {
-    // 通常のケース
-    vendorName = extractedVendorName || 
-                 vendorAddressRecipient ||
-                 'OCR抽出仕入先';
-  }
-  
-  // 「御中」を除去
-  vendorName = vendorName.replace(/\s*御中\s*$/, '').trim();
+  // 仕入先情報の改善された抽出
+  const vendorInfo = extractVendorInformation(extractedData);
+  const vendorName = vendorInfo.name;
   
   console.log('[convertOCRToSupplierQuote] 最終仕入先名:', vendorName);
   
@@ -62,6 +95,10 @@ async function convertOCRToSupplierQuote(ocrResult: any) {
       console.log(`[convertOCRToSupplierQuote] ${field}フィールド発見:`, JSON.stringify(extractedData[field], null, 2));
     }
   }
+  
+  // まずtablesとpagesデータを確認
+  console.log('[convertOCRToSupplierQuote] tablesデータ:', extractedData.tables);
+  console.log('[convertOCRToSupplierQuote] pagesデータ:', extractedData.pages);
   
   // OCRItemExtractorを使用して商品情報を抽出
   let items = OCRItemExtractor.extractItemsFromOCR(extractedData);
@@ -200,12 +237,6 @@ async function convertOCRToSupplierQuote(ocrResult: any) {
     quotationValidity
   });
   
-  // 仕入先情報の詳細を取得
-  const vendorAddress = extractedData.vendorAddress || extractedData.VendorAddress || '';
-  const vendorPhone = extractedData.vendorPhoneNumber || extractedData.VendorPhoneNumber || 
-                     extractedData.vendorPhone || extractedData.VendorPhone || '';
-  const vendorEmail = extractedData.vendorEmail || extractedData.VendorEmail || '';
-  
   // 仕入先見積書データの構築
   const supplierQuoteData = {
     vendorName,
@@ -225,18 +256,18 @@ async function convertOCRToSupplierQuote(ocrResult: any) {
     deliveryLocation,
     paymentTerms,
     quotationValidity,
-    // 仕入先情報を追加
-    vendorAddress,
-    vendorPhone,
-    vendorEmail
+    // 仕入先情報を追加（改善版）
+    vendorAddress: vendorInfo.address,
+    vendorPhone: vendorInfo.phone,
+    vendorEmail: vendorInfo.email
   };
   
   // デバッグログ: 仕入先情報の詳細を出力
   console.log('[convertOCRToSupplierQuote] 仕入先情報の詳細:', {
     vendorName,
-    vendorAddress,
-    vendorPhone,
-    vendorEmail,
+    vendorAddress: vendorInfo.address,
+    vendorPhone: vendorInfo.phone,
+    vendorEmail: vendorInfo.email,
     extractedDataKeys: Object.keys(extractedData),
     supplierQuoteData: supplierQuoteData
   });
@@ -251,9 +282,9 @@ async function convertOCRToSupplierQuote(ocrResult: any) {
         },
         body: JSON.stringify({
           companyName: vendorName,
-          address: vendorAddress,
-          phone: vendorPhone,
-          email: vendorEmail,
+          address: vendorInfo.address,
+          phone: vendorInfo.phone,
+          email: vendorInfo.email,
           contactPerson: '',
           isGeneratedByAI: true,
           notes: 'OCRで自動作成された仕入先'
