@@ -69,11 +69,19 @@ export async function POST(request: NextRequest) {
     
     // Azure Form Recognizer環境変数チェック
     const azureConfigured = !!(process.env.AZURE_FORM_RECOGNIZER_ENDPOINT && process.env.AZURE_FORM_RECOGNIZER_KEY);
-    console.log('Azure Form Recognizer設定状態:', {
+    const azureStatus = {
       endpoint: process.env.AZURE_FORM_RECOGNIZER_ENDPOINT ? '設定済み' : '未設定',
       apiKey: process.env.AZURE_FORM_RECOGNIZER_KEY ? '設定済み' : '未設定',
-      configured: azureConfigured
-    });
+      configured: azureConfigured,
+      timestamp: new Date().toISOString()
+    };
+    
+    // エラーレベルでログ出力（Vercelでも確実に出力される）
+    if (!azureConfigured) {
+      console.error('[OCR] Azure Form Recognizer未設定 - モックモードで動作:', azureStatus);
+    } else {
+      console.error('[OCR] Azure Form Recognizer設定確認:', azureStatus);
+    }
     
     let analysisResult;
     let processingTime = 0;
@@ -96,7 +104,13 @@ export async function POST(request: NextRequest) {
         }
         
         processingTime = Date.now() - startTime;
-        console.log('Azure OCR処理完了:', { processingTime, documentType });
+        console.error('[OCR] Azure OCR処理完了:', { 
+          processingTime, 
+          documentType,
+          confidence: analysisResult.confidence,
+          hasFields: !!analysisResult.fields,
+          fieldCount: Object.keys(analysisResult.fields || {}).length
+        });
       } catch (azureError) {
         console.error('Azure Form Recognizerエラー:', azureError);
         // Azure エラーの場合はフォールバックせずにエラーを返す
@@ -575,21 +589,35 @@ export async function POST(request: NextRequest) {
     }
 
     // レスポンスを返す
-    return NextResponse.json({
+    const response = {
       success: true,
       ocrResultId,
       fileId,
       documentType: analysisResult.documentType,
       confidence: analysisResult.confidence || 0.8,
       extractedData: analysisResult.fields || analysisResult.extractedData,
-      processingTime: analysisResult.processingTime,
+      processingTime: processingTime, // analysisResult.processingTimeではなく、実際の処理時間を使用
       message: 'OCR処理が完了しました',
       // チャット画面で使用するための追加情報
       category: categoryForResponse,
       receiptDate: finalDocumentDate && !isNaN(finalDocumentDate.getTime()) ? finalDocumentDate.toISOString().split('T')[0] : null,
       vendorName: finalVendorName,
-      dateExtracted: finalDateFound // 日付抽出の成否を追加
-    });
+      dateExtracted: finalDateFound, // 日付抽出の成否を追加
+      // デバッグ情報（開発環境のみ）
+      debug: process.env.NODE_ENV === 'development' ? {
+        azureConfigured,
+        isUsingMockData: analysisResult.fields?.mockData === true,
+        originalConfidence: analysisResult.confidence,
+        processingTimeMs: processingTime
+      } : undefined
+    };
+    
+    // 本番環境でもモックデータ使用時は警告を含める
+    if (analysisResult.fields?.mockData === true) {
+      response.warning = 'このデータはモックデータです。Azure Form Recognizerが設定されていません。';
+    }
+    
+    return NextResponse.json(response);
 
   } catch (error) {
     console.error('API エラー:', error);
