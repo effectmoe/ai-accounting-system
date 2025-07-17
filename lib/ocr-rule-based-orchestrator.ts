@@ -158,6 +158,7 @@ export class OCRRuleBasedOrchestrator {
                     data.vendor = data.vendor || {};
                     data.vendor.name = content;
                     console.log('[RuleBasedOrchestrator] pagesから仕入先名を抽出:', content);
+                    break; // 最初に見つかった会社名を使用
                   }
                 }
                 
