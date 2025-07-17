@@ -200,6 +200,12 @@ async function convertOCRToSupplierQuote(ocrResult: any) {
     quotationValidity
   });
   
+  // 仕入先情報の詳細を取得
+  const vendorAddress = extractedData.vendorAddress || extractedData.VendorAddress || '';
+  const vendorPhone = extractedData.vendorPhoneNumber || extractedData.VendorPhoneNumber || 
+                     extractedData.vendorPhone || extractedData.VendorPhone || '';
+  const vendorEmail = extractedData.vendorEmail || extractedData.VendorEmail || '';
+  
   // 仕入先見積書データの構築
   const supplierQuoteData = {
     vendorName,
@@ -218,14 +224,12 @@ async function convertOCRToSupplierQuote(ocrResult: any) {
     subject,
     deliveryLocation,
     paymentTerms,
-    quotationValidity
+    quotationValidity,
+    // 仕入先情報を追加
+    vendorAddress,
+    vendorPhone,
+    vendorEmail
   };
-  
-  // 仕入先情報の詳細を取得
-  const vendorAddress = extractedData.vendorAddress || extractedData.VendorAddress || '';
-  const vendorPhone = extractedData.vendorPhoneNumber || extractedData.VendorPhoneNumber || 
-                     extractedData.vendorPhone || extractedData.VendorPhone || '';
-  const vendorEmail = extractedData.vendorEmail || extractedData.VendorEmail || '';
   
   // デバッグログ: 仕入先情報の詳細を出力
   console.log('[convertOCRToSupplierQuote] 仕入先情報の詳細:', {
@@ -234,7 +238,7 @@ async function convertOCRToSupplierQuote(ocrResult: any) {
     vendorPhone,
     vendorEmail,
     extractedDataKeys: Object.keys(extractedData),
-    extractedData: extractedData
+    supplierQuoteData: supplierQuoteData
   });
   
   // 仕入先が存在しない場合は作成
