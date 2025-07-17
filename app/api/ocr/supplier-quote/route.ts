@@ -148,7 +148,7 @@ export async function POST(request: NextRequest) {
     const savedQuote = {
       ...supplierQuote,
       _id: result.insertedId,
-      id: result.insertedId.toString()
+      id: result.insertedId.toString()  // 文字列形式のIDも含める
     };
     
     // 仕入先情報を含めて返す
@@ -159,6 +159,9 @@ export async function POST(request: NextRequest) {
     if (supplier) {
       savedQuote.supplier = supplier as any;
     }
+    
+    console.log('[OCR API] Returning saved quote with ID:', savedQuote.id);
+    console.log('[OCR API] Full savedQuote object:', JSON.stringify(savedQuote, null, 2));
     
     return NextResponse.json({
       success: true,
