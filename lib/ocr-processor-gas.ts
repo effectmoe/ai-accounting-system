@@ -31,7 +31,15 @@ export class GASWebAppOCRProcessor {
         throw new Error(`GAS OCR APIエラー: ${response.status} ${response.statusText}`);
       }
 
-      const result = await response.json();
+      let result;
+      try {
+        result = await response.json();
+      } catch (jsonError) {
+        // JSONパースに失敗した場合、レスポンスをテキストとして取得してエラーを詳しく記録
+        const responseText = await response.text();
+        console.error('GAS OCR Response (not JSON):', responseText.substring(0, 200));
+        throw new Error(`GAS OCRがJSONを返しませんでした: ${responseText.substring(0, 100)}...`);
+      }
 
       if (!result.success) {
         throw new Error(`OCR処理エラー: ${result.error}`);
