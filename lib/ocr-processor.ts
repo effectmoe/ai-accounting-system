@@ -167,6 +167,10 @@ export class OCRProcessor {
         } catch (error) {
           console.error('GAS OCR API error:', error);
           console.log('PDF processing now handled by Azure Form Recognizer');
+          // GASエラーの詳細をログに記録
+          if (error instanceof Error) {
+            console.error('GAS OCR Error details:', error.message);
+          }
         }
       }
       

@@ -4,7 +4,7 @@ import { ObjectId } from 'mongodb';
 import { processOCR } from '@/lib/ocr-processor';
 import { SupplierQuote, SupplierQuoteItem, OCRResult } from '@/types/collections';
 
-const DB_NAME = process.env.MONGODB_DB_NAME || 'accounting-app';
+const DB_NAME = process.env.MONGODB_DB_NAME || 'accounting';
 
 // 仕入見積書用のOCR処理
 async function processSupplierQuoteOCR(ocrResult: OCRResult): Promise<Partial<SupplierQuote>> {
