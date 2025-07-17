@@ -172,6 +172,15 @@ export class FormRecognizerService {
         }
         
         console.log('[Azure Form Recognizer] 追加フィールドを抽出:', additionalFields);
+        console.log('[Azure Form Recognizer] 最終的な抽出データ:', {
+          vendorAddress: extractedData.fields.vendorAddress,
+          vendorPhoneNumber: extractedData.fields.vendorPhoneNumber,
+          vendorEmail: extractedData.fields.vendorEmail,
+          subject: extractedData.fields.subject,
+          deliveryLocation: extractedData.fields.deliveryLocation,
+          paymentTerms: extractedData.fields.paymentTerms,
+          quotationValidity: extractedData.fields.quotationValidity
+        });
       }
 
       return extractedData;
@@ -281,6 +290,11 @@ export class FormRecognizerService {
         }
         
         console.log('[Azure Form Recognizer] 領収書追加フィールドを抽出:', additionalFields);
+        console.log('[Azure Form Recognizer] 領収書最終的な抽出データ:', {
+          merchantAddress: extractedData.fields.merchantAddress,
+          merchantPhoneNumber: extractedData.fields.merchantPhoneNumber,
+          merchantEmail: extractedData.fields.merchantEmail
+        });
       }
 
       return extractedData;
@@ -755,6 +769,7 @@ export class FormRecognizerService {
     
     try {
       console.log('[Azure Form Recognizer] 追加フィールド抽出開始');
+      console.log('[Azure Form Recognizer] 抽出対象のコンテンツ（最初の500文字）:', content.substring(0, 500));
       
       // 件名の抽出（複数のパターンを試す）
       const subjectPatterns = [
@@ -823,7 +838,10 @@ export class FormRecognizerService {
         /〒\s*(\d{3}-\d{4})\s*([^\n\r]+)/,
         /〒\s*(\d{7})\s*([^\n\r]+)/,
         /([^\n\r]*[都道府県][^\n\r]*[市区町村][^\n\r]*)/,
-        /([^\n\r]*[区市町村][^\n\r]*[番地丁目][^\n\r]*)/
+        /([^\n\r]*[区市町村][^\n\r]*[番地丁目][^\n\r]*)/,
+        /([^\n\r]*福岡[^\n\r]*)/,
+        /([^\n\r]*[市区町村][^\n\r]*[0-9-]+[^\n\r]*)/,
+        /([^\n\r]*[都道府県][^\n\r]*[0-9-]+[^\n\r]*)/
       ];
       
       for (const pattern of addressPatterns) {
@@ -835,9 +853,13 @@ export class FormRecognizerService {
           } else {
             fields.vendorAddress = match[1].trim();
           }
-          console.log(`[Azure Form Recognizer] 住所抽出: ${fields.vendorAddress}`);
+          console.log(`[Azure Form Recognizer] 住所抽出成功: ${fields.vendorAddress} (パターン: ${pattern})`);
           break;
         }
+      }
+      
+      if (!fields.vendorAddress) {
+        console.log('[Azure Form Recognizer] 住所が見つかりませんでした');
       }
       
       // 電話番号の抽出
@@ -846,16 +868,23 @@ export class FormRecognizerService {
         /(?:携帯|mobile|Mobile)[：:\s]*([0-9-]+)/,
         /(?:FAX|Fax|fax)[：:\s]*([0-9-]+)/,
         /(\d{2,4}-\d{2,4}-\d{4})/,
-        /(\d{10,11})/
+        /(\d{10,11})/,
+        /(?:^|\s)(\d{3}-\d{4}-\d{4})(?:\s|$)/,
+        /(?:^|\s)(\d{2,4}-\d{2,4}-\d{4})(?:\s|$)/,
+        /(?:^|\s)(0\d{2,3}-\d{2,4}-\d{4})(?:\s|$)/
       ];
       
       for (const pattern of phonePatterns) {
         const match = content.match(pattern);
         if (match) {
           fields.vendorPhoneNumber = match[1].trim();
-          console.log(`[Azure Form Recognizer] 電話番号抽出: ${fields.vendorPhoneNumber}`);
+          console.log(`[Azure Form Recognizer] 電話番号抽出成功: ${fields.vendorPhoneNumber} (パターン: ${pattern})`);
           break;
         }
+      }
+      
+      if (!fields.vendorPhoneNumber) {
+        console.log('[Azure Form Recognizer] 電話番号が見つかりませんでした');
       }
       
       // メールアドレスの抽出
@@ -868,9 +897,13 @@ export class FormRecognizerService {
         const match = content.match(pattern);
         if (match) {
           fields.vendorEmail = match[1].trim();
-          console.log(`[Azure Form Recognizer] メールアドレス抽出: ${fields.vendorEmail}`);
+          console.log(`[Azure Form Recognizer] メールアドレス抽出成功: ${fields.vendorEmail} (パターン: ${pattern})`);
           break;
         }
+      }
+      
+      if (!fields.vendorEmail) {
+        console.log('[Azure Form Recognizer] メールアドレスが見つかりませんでした');
       }
       
     } catch (error) {
