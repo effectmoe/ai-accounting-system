@@ -336,11 +336,16 @@ export class OCRProcessor {
     // TypeScript税制ライブラリをインポート
     const { TaxCalculator } = await import('./tax-calculator');
     
-    // vendorフィールドの検証
-    if (!ocrResult.vendor || typeof ocrResult.vendor !== 'string') {
+    // vendorフィールドの検証と正規化
+    if (!ocrResult.vendor || typeof ocrResult.vendor !== 'string' || ocrResult.vendor.trim() === '') {
       console.warn('OCRResult.vendorが無効です:', ocrResult.vendor);
       ocrResult.vendor = '店舗名不明';
+    } else {
+      // 文字列として有効な場合はトリムして正規化
+      ocrResult.vendor = ocrResult.vendor.trim();
     }
+    
+    console.error('[OCR-Processor] 使用するベンダー名:', ocrResult.vendor);
     
     // OCR結果から仕訳データを生成
     const description = `${ocrResult.vendor || '店舗名不明'} - ${ocrResult.items?.map(i => i.name).join(', ') || ''}`;

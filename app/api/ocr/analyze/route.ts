@@ -224,27 +224,53 @@ export async function POST(request: NextRequest) {
       }, { status: 500 });
     }
 
-    // 分析結果の詳細をログ出力
-    console.log('Analysis result fields:', JSON.stringify(analysisResult.fields, null, 2));
-    console.log('OCR Result ID:', ocrResultId);
-    console.log('File ID:', fileId);
+    // 分析結果の詳細をログ出力（エラーレベルで確実に出力）
+    console.error('[OCR] Analysis result fields:', JSON.stringify(analysisResult.fields, null, 2));
+    console.error('[OCR] Raw analysis result:', JSON.stringify(analysisResult, null, 2));
+    console.error('[OCR] OCR Result ID:', ocrResultId);
+    console.error('[OCR] File ID:', fileId);
 
     // MongoDBのdocumentsコレクションに保存（書類管理画面で表示するため）
     try {
       // 金額抽出のデバッグ
-      console.log('Raw fields data:', JSON.stringify(analysisResult.fields, null, 2));
-      console.log('customFields:', analysisResult.fields?.customFields);
+      console.error('[OCR] Raw fields data:', JSON.stringify(analysisResult.fields, null, 2));
+      console.error('[OCR] customFields:', analysisResult.fields?.customFields);
+      
+      // 金額フィールドの候補を全て確認
+      const amountFields = [
+        analysisResult.fields?.InvoiceTotal,
+        analysisResult.fields?.totalAmount,
+        analysisResult.fields?.total,
+        analysisResult.fields?.customFields?.InvoiceTotal,
+        analysisResult.fields?.TotalAmount,
+        analysisResult.fields?.Amount,
+        analysisResult.fields?.SubTotal,
+        analysisResult.fields?.AmountDue
+      ];
+      
+      console.error('[OCR] 金額フィールド候補:', amountFields);
       
       const totalAmountExtracted = extractAmount(analysisResult.fields?.InvoiceTotal) || 
                                   extractAmount(analysisResult.fields?.totalAmount) || 
                                   extractAmount(analysisResult.fields?.total) || 
-                                  extractAmount(analysisResult.fields?.customFields?.InvoiceTotal) || 0;
+                                  extractAmount(analysisResult.fields?.customFields?.InvoiceTotal) || 
+                                  extractAmount(analysisResult.fields?.TotalAmount) ||
+                                  extractAmount(analysisResult.fields?.Amount) || 0;
       
       const taxAmountExtracted = extractAmount(analysisResult.fields?.taxAmount) || 
                                 extractAmount(analysisResult.fields?.tax) || 
-                                extractAmount(analysisResult.fields?.customFields?.Tax) || 0;
+                                extractAmount(analysisResult.fields?.customFields?.Tax) || 
+                                extractAmount(analysisResult.fields?.TotalTax) || 0;
       
-      console.log('Extracted amounts:', { totalAmount: totalAmountExtracted, taxAmount: taxAmountExtracted });
+      console.error('[OCR] 抽出された金額:', { 
+        totalAmount: totalAmountExtracted, 
+        taxAmount: taxAmountExtracted,
+        originalFields: {
+          InvoiceTotal: analysisResult.fields?.InvoiceTotal,
+          totalAmount: analysisResult.fields?.totalAmount,
+          total: analysisResult.fields?.total
+        }
+      });
       
       // 日付を適切に解析
       let documentDate: Date | null = null; // デフォルトをnullに
@@ -314,10 +340,13 @@ export async function POST(request: NextRequest) {
         analysisResult.fields?.RemittanceAddressRecipient
       ];
       
+      console.error('[OCR] 抽出されたベンダーフィールド:', vendorFields);
+      
       // 有効な値を探す
       for (const field of vendorFields) {
         if (field && typeof field === 'string' && field.trim()) {
           vendorName = field.trim();
+          console.error('[OCR] 使用するベンダー名:', vendorName);
           break;
         }
       }
@@ -325,6 +354,7 @@ export async function POST(request: NextRequest) {
       // ベンダー名が見つからない場合はファイル名を使用
       if (!vendorName) {
         vendorName = file.name.replace(/\.(pdf|png|jpg|jpeg)$/i, '') || 'Unknown Vendor';
+        console.error('[OCR] フォールバック ベンダー名:', vendorName);
       }
       
       // より詳細なベンダー名をOCRテキストから抽出
@@ -547,6 +577,8 @@ export async function POST(request: NextRequest) {
       if (!finalVendorName) {
         finalVendorName = file.name.replace(/\.(pdf|png|jpg|jpeg)$/i, '') || 'Unknown Vendor';
       }
+      
+      console.error('[OCR] レスポンス用ベンダー名:', finalVendorName);
       
       const totalAmountExtracted = extractAmount(analysisResult.fields?.InvoiceTotal) || 
                                   extractAmount(analysisResult.fields?.totalAmount) || 
