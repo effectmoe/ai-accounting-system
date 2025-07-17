@@ -67,96 +67,30 @@ export async function POST(request: NextRequest) {
     // Azure Form Recognizerを使用してOCR処理
     console.log(`Azure Form Recognizerで${documentType === 'invoice' || documentType === 'supplier-quote' ? '請求書/見積書' : '領収書'}を分析中...`);
     
-    // Azure Form Recognizer環境変数チェック
-    const azureConfigured = !!(process.env.AZURE_FORM_RECOGNIZER_ENDPOINT && process.env.AZURE_FORM_RECOGNIZER_KEY);
-    console.log('Azure Form Recognizer設定状態:', {
-      endpoint: process.env.AZURE_FORM_RECOGNIZER_ENDPOINT ? '設定済み' : '未設定',
-      apiKey: process.env.AZURE_FORM_RECOGNIZER_KEY ? '設定済み' : '未設定',
-      configured: azureConfigured
-    });
+    // 直接Azure Form Recognizerサービスを使用
+    const { getFormRecognizerService } = await import('@/lib/azure-form-recognizer');
+    const formRecognizer = getFormRecognizerService();
     
+    const startTime = Date.now();
+    
+    // ドキュメントタイプに応じて適切な分析メソッドを選択
     let analysisResult;
-    let processingTime = 0;
-    
-    if (azureConfigured) {
-      try {
-        // 直接Azure Form Recognizerサービスを使用
-        const { getFormRecognizerService } = await import('@/lib/azure-form-recognizer');
-        const formRecognizer = getFormRecognizerService();
-        
-        const startTime = Date.now();
-        
-        // ドキュメントタイプに応じて適切な分析メソッドを選択
-        if (documentType === 'invoice' || documentType === 'supplier-quote') {
-          // 請求書/見積書として分析（invoiceモデルを使用）
-          analysisResult = await formRecognizer.analyzeInvoice(buffer, file.name);
-        } else {
-          // 領収書として分析（receiptモデルを使用）
-          analysisResult = await formRecognizer.analyzeReceipt(buffer, file.name);
-        }
-        
-        processingTime = Date.now() - startTime;
-        console.log('Azure OCR処理完了:', { processingTime, documentType });
-      } catch (azureError) {
-        console.error('Azure Form Recognizerエラー:', azureError);
-        // Azure エラーの場合はフォールバックせずにエラーを返す
-        return NextResponse.json({
-          success: false,
-          error: 'Azure Form Recognizer処理中にエラーが発生しました',
-          details: azureError instanceof Error ? azureError.message : 'Unknown error',
-          suggestion: 'Azure Form Recognizerの環境変数を確認してください'
-        }, { status: 500 });
-      }
+    if (documentType === 'invoice' || documentType === 'supplier-quote') {
+      // 請求書/見積書として分析（invoiceモデルを使用）
+      analysisResult = await formRecognizer.analyzeInvoice(buffer, file.name);
     } else {
-      // Azure未設定の場合は明示的にモックデータを使用
-      console.warn('Azure Form Recognizer未設定のため、モックデータを使用します');
-      
-      // モックデータの生成
-      const mockVendorName = documentType === 'supplier-quote' ? 'モック仕入先株式会社' : 'モック店舗';
-      const mockAmount = Math.floor(Math.random() * 50000) + 1000;
-      const mockTaxAmount = Math.floor(mockAmount * 0.1);
-      
-      analysisResult = {
-        documentType: documentType === 'supplier-quote' ? 'invoice' : 'receipt',
-        confidence: 0.99,
-        fields: {
-          vendorName: mockVendorName,
-          VendorAddressRecipient: mockVendorName,
-          merchantName: mockVendorName,
-          invoiceDate: new Date().toISOString(),
-          transactionDate: new Date().toISOString(),
-          totalAmount: mockAmount,
-          InvoiceTotal: mockAmount,
-          taxAmount: mockTaxAmount,
-          items: [{
-            description: 'モック商品',
-            quantity: 1,
-            unitPrice: mockAmount,
-            amount: mockAmount
-          }],
-          mockData: true // モックデータであることを明示
-        },
-        rawResult: { mockData: true }
-      };
-      
-      processingTime = 10; // モック処理時間
+      // 領収書として分析（receiptモデルを使用）
+      analysisResult = await formRecognizer.analyzeReceipt(buffer, file.name);
     }
+    
+    const processingTime = Date.now() - startTime;
     
     // GridFSにファイルを保存
-    let sourceFileId;
-    if (azureConfigured) {
-      const { getFormRecognizerService } = await import('@/lib/azure-form-recognizer');
-      const formRecognizer = getFormRecognizerService();
-      sourceFileId = await formRecognizer.saveToGridFS(
-        buffer,
-        file.name,
-        { companyId: companyId, uploadedAt: new Date().toISOString() }
-      );
-    } else {
-      // モックの場合はランダムなIDを生成
-      sourceFileId = new ObjectId().toString();
-      console.log('モックファイルID生成:', sourceFileId);
-    }
+    const sourceFileId = await formRecognizer.saveToGridFS(
+      buffer,
+      file.name,
+      { companyId: companyId, uploadedAt: new Date().toISOString() }
+    );
     
     // OCR結果をMongoDBに保存
     const ocrResult = {
