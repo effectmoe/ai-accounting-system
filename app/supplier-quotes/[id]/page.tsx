@@ -246,7 +246,7 @@ export default function SupplierQuoteDetailPage() {
                 <div className="flex items-center gap-2">
                   <DollarSign className="h-5 w-5 text-gray-400" />
                   <span className="text-gray-900 font-medium">
-                    ¥{(typeof quote.totalAmount === 'number' ? quote.totalAmount : quote.totalAmount?.amount || 0).toLocaleString()}
+                    ¥{(quote.totalAmount || 0).toLocaleString()}
                   </span>
                 </div>
               </div>
@@ -327,15 +327,15 @@ export default function SupplierQuoteDetailPage() {
                 <div className="w-64 space-y-2">
                   <div className="flex justify-between">
                     <span className="text-sm text-gray-600">小計:</span>
-                    <span className="text-sm text-gray-900">¥{(typeof quote.subtotal === 'number' ? quote.subtotal : quote.subtotal?.amount || 0).toLocaleString()}</span>
+                    <span className="text-sm text-gray-900">¥{(quote.subtotal || 0).toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm text-gray-600">税額:</span>
-                    <span className="text-sm text-gray-900">¥{(typeof quote.taxAmount === 'number' ? quote.taxAmount : quote.taxAmount?.amount || 0).toLocaleString()}</span>
+                    <span className="text-sm text-gray-900">¥{(quote.taxAmount || 0).toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between font-medium border-t pt-2">
                     <span className="text-sm text-gray-900">合計:</span>
-                    <span className="text-sm text-gray-900">¥{(typeof quote.totalAmount === 'number' ? quote.totalAmount : quote.totalAmount?.amount || 0).toLocaleString()}</span>
+                    <span className="text-sm text-gray-900">¥{(quote.totalAmount || 0).toLocaleString()}</span>
                   </div>
                 </div>
               </div>
