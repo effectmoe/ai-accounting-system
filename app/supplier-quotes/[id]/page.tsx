@@ -215,25 +215,27 @@ export default function SupplierQuoteDetailPage() {
                 <div className="flex items-start gap-2">
                   <Building className="h-5 w-5 text-gray-400 mt-0.5" />
                   <div className="flex flex-col space-y-1">
-                    <span className="text-gray-900 font-medium">{quote.supplier?.companyName || '未設定'}</span>
-                    {quote.supplier?.address && (
+                    <span className="text-gray-900 font-medium">
+                      {quote.supplier?.companyName || quote.vendorName || '未設定'}
+                    </span>
+                    {(quote.supplier?.address || quote.vendorAddress) && (
                       <span className="text-sm text-gray-600">
-                        <span className="font-medium">住所:</span> {quote.supplier.address}
+                        <span className="font-medium">住所:</span> {quote.supplier?.address || quote.vendorAddress}
                       </span>
                     )}
-                    {quote.supplier?.contactPhone && (
+                    {(quote.supplier?.contactPhone || quote.vendorPhone) && (
                       <span className="text-sm text-gray-600">
                         <span className="font-medium">TEL:</span> 
-                        <a href={`tel:${quote.supplier.contactPhone}`} className="text-blue-600 hover:text-blue-800 ml-1">
-                          {quote.supplier.contactPhone}
+                        <a href={`tel:${quote.supplier?.contactPhone || quote.vendorPhone}`} className="text-blue-600 hover:text-blue-800 ml-1">
+                          {quote.supplier?.contactPhone || quote.vendorPhone}
                         </a>
                       </span>
                     )}
-                    {quote.supplier?.contactEmail && (
+                    {(quote.supplier?.contactEmail || quote.vendorEmail) && (
                       <span className="text-sm text-gray-600">
                         <span className="font-medium">Email:</span> 
-                        <a href={`mailto:${quote.supplier.contactEmail}`} className="text-blue-600 hover:text-blue-800 ml-1">
-                          {quote.supplier.contactEmail}
+                        <a href={`mailto:${quote.supplier?.contactEmail || quote.vendorEmail}`} className="text-blue-600 hover:text-blue-800 ml-1">
+                          {quote.supplier?.contactEmail || quote.vendorEmail}
                         </a>
                       </span>
                     )}

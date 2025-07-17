@@ -162,6 +162,7 @@ export default function SupplierQuotesPage() {
     return (
       quote.quoteNumber.toLowerCase().includes(searchLower) ||
       quote.supplier?.companyName?.toLowerCase().includes(searchLower) ||
+      quote.vendorName?.toLowerCase().includes(searchLower) ||
       quote.items?.some(item => 
         item.itemName?.toLowerCase().includes(searchLower)
       )
@@ -398,7 +399,7 @@ export default function SupplierQuotesPage() {
                       <div className="flex items-center">
                         <Building className="h-5 w-5 text-gray-400 mr-2" />
                         <span className="text-sm font-medium text-gray-900">
-                          {quote.supplier?.companyName || '未設定'}
+                          {quote.supplier?.companyName || quote.vendorName || '未設定'}
                         </span>
                       </div>
                     </td>
