@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
     const fileBuffer = buffer.toString('base64');
 
     // Azure Form Recognizerを使用してOCR処理
-    console.log(`Azure Form Recognizerで${documentType === 'invoice' ? '請求書/見積書' : '領収書'}を分析中...`);
+    console.log(`Azure Form Recognizerで${documentType === 'invoice' || documentType === 'supplier-quote' ? '請求書/見積書' : '領収書'}を分析中...`);
     
     // 直接Azure Form Recognizerサービスを使用
     const { getFormRecognizerService } = await import('@/lib/azure-form-recognizer');
@@ -224,6 +224,8 @@ export async function POST(request: NextRequest) {
       const extractedText = JSON.stringify(analysisResult.fields || {});
       let vendorName = analysisResult.fields?.vendorName || analysisResult.fields?.merchantName || 
                       analysisResult.fields?.VendorName || analysisResult.fields?.MerchantName || 
+                      analysisResult.fields?.VendorAddressRecipient || // 請求書モデルでのベンダー名フィールド
+                      analysisResult.fields?.RemittanceAddressRecipient || // 送金先名称
                       file.name.replace(/\.(pdf|png|jpg|jpeg)$/i, '');
       
       // より詳細なベンダー名をOCRテキストから抽出
@@ -425,6 +427,8 @@ export async function POST(request: NextRequest) {
       
       finalVendorName = analysisResult.fields?.vendorName || analysisResult.fields?.merchantName || 
                        analysisResult.fields?.VendorName || analysisResult.fields?.MerchantName || 
+                       analysisResult.fields?.VendorAddressRecipient || // 請求書モデルでのベンダー名フィールド
+                       analysisResult.fields?.RemittanceAddressRecipient || // 送金先名称
                        file.name.replace(/\.(pdf|png|jpg|jpeg)$/i, '');
       
       const totalAmountExtracted = extractAmount(analysisResult.fields?.InvoiceTotal) || 

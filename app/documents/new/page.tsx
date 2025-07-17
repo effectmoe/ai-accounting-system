@@ -10,7 +10,9 @@ import { toast } from 'react-hot-toast';
 async function convertOCRToSupplierQuote(ocrResult: any) {
   // OCR結果から仕入先見積書データを抽出
   const extractedData = ocrResult.extractedData || {};
-  const vendorName = extractedData.vendorName || extractedData.merchantName || 'OCR自動登録仕入先';
+  const vendorName = extractedData.vendorName || extractedData.merchantName || 
+                      extractedData.VendorAddressRecipient || extractedData.RemittanceAddressRecipient || 
+                      'OCR自動登録仕入先';
   
   // 項目の抽出
   const items = [];
@@ -73,10 +75,25 @@ async function convertOCRToSupplierQuote(ocrResult: any) {
   });
   
   if (!response.ok) {
+    const errorData = await response.text();
+    console.error('[convertOCRToSupplierQuote] API Error:', errorData);
     throw new Error('仕入先見積書の作成に失敗しました');
   }
   
-  return await response.json();
+  const result = await response.json();
+  console.log('[convertOCRToSupplierQuote] API Response:', result);
+  
+  // IDの確認
+  if (!result._id && !result.id) {
+    console.error('[convertOCRToSupplierQuote] No ID in response:', result);
+  }
+  
+  // _idをidに変換（フロントエンドで一貫性を保つため）
+  if (result._id && !result.id) {
+    result.id = result._id;
+  }
+  
+  return result;
 }
 
 function NewDocumentContent() {
@@ -103,16 +120,18 @@ function NewDocumentContent() {
       const formData = new FormData();
       formData.append('file', selectedFile);
 
-      let apiEndpoint = '/api/ocr/process';
+      // 共通のOCR APIを使用
+      const apiEndpoint = '/api/ocr/analyze';
       let successMessage = 'ドキュメントをアップロードしました';
       let redirectPath = '/documents';
 
-      // 仕入先見積書の場合も共通のOCR APIを使用
+      // ドキュメントタイプに応じて設定を変更
       if (documentType === 'supplier-quote') {
-        apiEndpoint = '/api/ocr/analyze';
         formData.append('documentType', 'supplier-quote');
         successMessage = '仕入先見積書をOCRで処理しました';
         redirectPath = '/supplier-quotes';
+      } else {
+        formData.append('documentType', 'receipt');
       }
 
       const response = await fetch(apiEndpoint, {
