@@ -713,45 +713,137 @@ export class FormRecognizerService {
     try {
       console.log('[Azure Form Recognizer] 全コンテンツ:', content);
       
-      // 正確な商品名、数量、単価を抽出
-      const productNameMatch = content.match(/【既製品印刷加工】[^\n\r]+用紙[：:]([^\n\r]+)/);
-      const quantityMatch = content.match(/(\d{1,3}(?:,\d{3})*)\s*枚/);
-      const unitPriceMatch = content.match(/(\d+(?:\.\d+)?)\s*円?/);
+      // 汎用的な商品名抽出パターン
+      const productPatterns = [
+        // 既製品印刷加工パターン
+        /【既製品印刷加工】[^\n\r]+用紙[：:]([^\n\r]+)/,
+        // 一般的な商品名パターン
+        /【([^】]+)】/,
+        // 商品名：形式
+        /商品名[：:]\s*([^\n\r]+)/,
+        // 品名：形式
+        /品名[：:]\s*([^\n\r]+)/,
+        // 項目名：形式
+        /項目名[：:]\s*([^\n\r]+)/,
+        // 内容：形式
+        /内容[：:]\s*([^\n\r]+)/,
+        // 説明：形式
+        /説明[：:]\s*([^\n\r]+)/,
+        // 一般的な商品パターン（商品、サービス、製品など）
+        /(商品|サービス|製品|品物)[：:\s]*([^\n\r]+)/,
+        // 長い文字列（商品名らしき行）
+        /([^\n\r]{10,100}(?:用紙|印刷|加工|製品|サービス|商品)[^\n\r]*)/,
+      ];
       
-      console.log('[Azure Form Recognizer] 抽出結果:', {
-        productName: productNameMatch ? productNameMatch[0] : null,
-        quantity: quantityMatch ? quantityMatch[1] : null,
-        unitPrice: unitPriceMatch ? unitPriceMatch[1] : null
-      });
+      // 数量抽出パターン
+      const quantityPatterns = [
+        /(\d{1,3}(?:,\d{3})*)\s*枚/,
+        /(\d{1,3}(?:,\d{3})*)\s*個/,
+        /(\d{1,3}(?:,\d{3})*)\s*点/,
+        /(\d{1,3}(?:,\d{3})*)\s*本/,
+        /(\d{1,3}(?:,\d{3})*)\s*箱/,
+        /(\d{1,3}(?:,\d{3})*)\s*セット/,
+        /数量[：:]\s*(\d{1,3}(?:,\d{3})*)/,
+        /qty[：:]\s*(\d{1,3}(?:,\d{3})*)/i,
+      ];
       
-      if (productNameMatch) {
-        const quantity = quantityMatch ? parseInt(quantityMatch[1].replace(/,/g, '')) : 1;
-        const unitPrice = unitPriceMatch ? parseFloat(unitPriceMatch[1]) : 0;
-        
-        // 総額から単価を逆算（より正確）
-        const totalAmountMatch = content.match(/¥22,400/);
-        let calculatedUnitPrice = unitPrice;
-        
-        if (totalAmountMatch && quantity > 0) {
-          const totalAmount = 22400; // 税抜き価格
-          const subtotal = Math.round(totalAmount / 1.1); // 税抜き
-          calculatedUnitPrice = subtotal / quantity;
-          
-          console.log(`[Azure Form Recognizer] 総額から単価を逆算: ${totalAmount}円 ÷ ${quantity}枚 = ${calculatedUnitPrice}円`);
+      // 単価抽出パターン
+      const unitPricePatterns = [
+        /単価[：:]\s*[¥￥]?(\d+(?:\.\d+)?)/,
+        /unit price[：:]\s*[¥￥]?(\d+(?:\.\d+)?)/i,
+        /[¥￥](\d+(?:\.\d+)?)\s*\/\s*\w+/,
+        /(\d+(?:\.\d+)?)\s*円\s*\/\s*\w+/,
+        /(\d+(?:\.\d+)?)\s*円(?:\s|$)/,
+      ];
+      
+      // 総額抽出パターン
+      const totalAmountPatterns = [
+        /[¥￥](\d{1,3}(?:,\d{3})*)/g,
+        /(\d{1,3}(?:,\d{3})*)\s*円/g,
+        /合計[：:]\s*[¥￥]?(\d{1,3}(?:,\d{3})*)/,
+        /total[：:]\s*[¥￥]?(\d{1,3}(?:,\d{3})*)/i,
+      ];
+      
+      let productName = null;
+      let quantity = 1;
+      let unitPrice = 0;
+      let totalAmount = 0;
+      
+      // 商品名を抽出
+      for (const pattern of productPatterns) {
+        const match = content.match(pattern);
+        if (match) {
+          productName = match[1] ? match[1].trim() : match[0].trim();
+          if (productName && productName.length > 3) {
+            console.log(`[Azure Form Recognizer] 商品名抽出成功: ${productName}`);
+            break;
+          }
         }
+      }
+      
+      // 数量を抽出
+      for (const pattern of quantityPatterns) {
+        const match = content.match(pattern);
+        if (match) {
+          quantity = parseInt(match[1].replace(/,/g, ''));
+          console.log(`[Azure Form Recognizer] 数量抽出成功: ${quantity}`);
+          break;
+        }
+      }
+      
+      // 単価を抽出
+      for (const pattern of unitPricePatterns) {
+        const match = content.match(pattern);
+        if (match) {
+          unitPrice = parseFloat(match[1]);
+          console.log(`[Azure Form Recognizer] 単価抽出成功: ${unitPrice}`);
+          break;
+        }
+      }
+      
+      // 総額を抽出
+      const totalMatches = [];
+      for (const pattern of totalAmountPatterns) {
+        const matches = Array.from(content.matchAll(pattern));
+        totalMatches.push(...matches);
+      }
+      
+      if (totalMatches.length > 0) {
+        // 最も大きい金額を総額として採用
+        const amounts = totalMatches.map(match => 
+          parseInt(match[1].replace(/,/g, ''))
+        ).filter(amount => amount > 0);
         
+        if (amounts.length > 0) {
+          totalAmount = Math.max(...amounts);
+          console.log(`[Azure Form Recognizer] 総額抽出成功: ${totalAmount}`);
+        }
+      }
+      
+      // 単価が0で総額がある場合、逆算
+      if (unitPrice === 0 && totalAmount > 0 && quantity > 0) {
+        const subtotal = Math.round(totalAmount / 1.1); // 税抜き
+        unitPrice = subtotal / quantity;
+        console.log(`[Azure Form Recognizer] 総額から単価を逆算: ${totalAmount}円 ÷ ${quantity} = ${unitPrice}円`);
+      }
+      
+      // 商品情報が抽出できた場合、アイテムを作成
+      if (productName) {
+        const calculatedAmount = unitPrice * quantity;
         const item = {
-          itemName: productNameMatch[0].trim(),
-          description: productNameMatch[0].trim(),
+          itemName: productName,
+          description: productName,
           quantity,
-          unitPrice: calculatedUnitPrice,
-          amount: calculatedUnitPrice * quantity,
+          unitPrice: unitPrice,
+          amount: calculatedAmount,
           taxRate: 10,
-          taxAmount: Math.round(calculatedUnitPrice * quantity * 0.1)
+          taxAmount: Math.round(calculatedAmount * 0.1)
         };
         
         items.push(item);
         console.log(`[Azure Form Recognizer] 商品を抽出:`, item);
+      } else {
+        console.log('[Azure Form Recognizer] 商品名が抽出できませんでした');
       }
       
     } catch (error) {
