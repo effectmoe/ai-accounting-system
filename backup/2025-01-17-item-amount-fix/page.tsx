@@ -92,7 +92,6 @@ async function convertOCRToSupplierQuote(ocrResult: any) {
           }
           
           item.taxAmount = Math.round(item.amount * 0.1);
-          item.taxRate = 10;
         });
         
         console.log('[convertOCRToSupplierQuote] 既存項目に金額を分割:', {
@@ -125,18 +124,8 @@ async function convertOCRToSupplierQuote(ocrResult: any) {
   
   // 合計金額の計算
   const subtotal = items.reduce((sum: number, item: any) => sum + (item.amount || 0), 0);
-  const calculatedTaxAmount = items.reduce((sum: number, item: any) => sum + (item.taxAmount || 0), 0);
-  const taxAmount = taxAmountFromOCR || calculatedTaxAmount || subtotal * 0.1;
+  const taxAmount = taxAmountFromOCR || subtotal * 0.1;
   const totalAmount = totalAmountFromOCR || subtotal + taxAmount;
-  
-  console.log('[convertOCRToSupplierQuote] 最終計算:', {
-    subtotal,
-    calculatedTaxAmount,
-    taxAmountFromOCR,
-    finalTaxAmount: taxAmount,
-    totalAmountFromOCR,
-    finalTotalAmount: totalAmount
-  });
   
   // 仕入先見積書データの構築
   const supplierQuoteData = {
