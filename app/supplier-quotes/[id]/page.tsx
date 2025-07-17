@@ -478,6 +478,14 @@ export default function SupplierQuoteDetailPage() {
                     <div className="text-sm text-gray-900">{quote.supplier.email}</div>
                   </div>
                 )}
+                {quote.supplier.address && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      住所
+                    </label>
+                    <div className="text-sm text-gray-900">{quote.supplier.address}</div>
+                  </div>
+                )}
                 {quote.supplier.phone && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">

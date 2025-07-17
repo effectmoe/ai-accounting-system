@@ -142,8 +142,8 @@ export class FormRecognizerService {
         }
       }
 
-      // ページコンテンツから赤枠の4項目を追加抽出
-      if (result.content && (!extractedData.fields.subject || !extractedData.fields.deliveryLocation)) {
+      // ページコンテンツから追加フィールドを抽出
+      if (result.content) {
         const additionalFields = this.extractAdditionalFieldsFromContent(result.content);
         
         // 既存のフィールドがない場合のみ上書き
@@ -158,6 +158,17 @@ export class FormRecognizerService {
         }
         if (!extractedData.fields.quotationValidity && additionalFields.quotationValidity) {
           extractedData.fields.quotationValidity = additionalFields.quotationValidity;
+        }
+        
+        // 住所・電話番号・メールアドレスの追加
+        if (!extractedData.fields.vendorAddress && additionalFields.vendorAddress) {
+          extractedData.fields.vendorAddress = additionalFields.vendorAddress;
+        }
+        if (!extractedData.fields.vendorPhoneNumber && additionalFields.vendorPhoneNumber) {
+          extractedData.fields.vendorPhoneNumber = additionalFields.vendorPhoneNumber;
+        }
+        if (!extractedData.fields.vendorEmail && additionalFields.vendorEmail) {
+          extractedData.fields.vendorEmail = additionalFields.vendorEmail;
         }
         
         console.log('[Azure Form Recognizer] 追加フィールドを抽出:', additionalFields);
@@ -253,6 +264,24 @@ export class FormRecognizerService {
         pages: receiptResult.pages,
         rawResult: receiptResult,
       };
+
+      // 領収書でも追加フィールドを抽出
+      if (layoutResult.content) {
+        const additionalFields = this.extractAdditionalFieldsFromContent(layoutResult.content);
+        
+        // 既存のフィールドがない場合のみ上書き
+        if (!extractedData.fields.merchantAddress && additionalFields.vendorAddress) {
+          extractedData.fields.merchantAddress = additionalFields.vendorAddress;
+        }
+        if (!extractedData.fields.merchantPhoneNumber && additionalFields.vendorPhoneNumber) {
+          extractedData.fields.merchantPhoneNumber = additionalFields.vendorPhoneNumber;
+        }
+        if (!extractedData.fields.merchantEmail && additionalFields.vendorEmail) {
+          extractedData.fields.merchantEmail = additionalFields.vendorEmail;
+        }
+        
+        console.log('[Azure Form Recognizer] 領収書追加フィールドを抽出:', additionalFields);
+      }
 
       return extractedData;
     } catch (error) {
@@ -784,6 +813,62 @@ export class FormRecognizerService {
         if (match) {
           fields.quotationValidity = match[1].trim();
           console.log(`[Azure Form Recognizer] 見積有効期限抽出: ${fields.quotationValidity}`);
+          break;
+        }
+      }
+      
+      // 住所の抽出
+      const addressPatterns = [
+        /住所[：:]\s*([^\n\r]+)/,
+        /〒\s*(\d{3}-\d{4})\s*([^\n\r]+)/,
+        /〒\s*(\d{7})\s*([^\n\r]+)/,
+        /([^\n\r]*[都道府県][^\n\r]*[市区町村][^\n\r]*)/,
+        /([^\n\r]*[区市町村][^\n\r]*[番地丁目][^\n\r]*)/
+      ];
+      
+      for (const pattern of addressPatterns) {
+        const match = content.match(pattern);
+        if (match) {
+          // 郵便番号と住所が分かれている場合は結合
+          if (match[2]) {
+            fields.vendorAddress = `〒${match[1]} ${match[2]}`.trim();
+          } else {
+            fields.vendorAddress = match[1].trim();
+          }
+          console.log(`[Azure Form Recognizer] 住所抽出: ${fields.vendorAddress}`);
+          break;
+        }
+      }
+      
+      // 電話番号の抽出
+      const phonePatterns = [
+        /(?:電話|TEL|Tel|tel)[：:\s]*([0-9-]+)/,
+        /(?:携帯|mobile|Mobile)[：:\s]*([0-9-]+)/,
+        /(?:FAX|Fax|fax)[：:\s]*([0-9-]+)/,
+        /(\d{2,4}-\d{2,4}-\d{4})/,
+        /(\d{10,11})/
+      ];
+      
+      for (const pattern of phonePatterns) {
+        const match = content.match(pattern);
+        if (match) {
+          fields.vendorPhoneNumber = match[1].trim();
+          console.log(`[Azure Form Recognizer] 電話番号抽出: ${fields.vendorPhoneNumber}`);
+          break;
+        }
+      }
+      
+      // メールアドレスの抽出
+      const emailPatterns = [
+        /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/,
+        /(?:email|Email|EMAIL|メール)[：:\s]*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/
+      ];
+      
+      for (const pattern of emailPatterns) {
+        const match = content.match(pattern);
+        if (match) {
+          fields.vendorEmail = match[1].trim();
+          console.log(`[Azure Form Recognizer] メールアドレス抽出: ${fields.vendorEmail}`);
           break;
         }
       }

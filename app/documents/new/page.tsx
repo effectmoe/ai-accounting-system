@@ -223,7 +223,8 @@ async function convertOCRToSupplierQuote(ocrResult: any) {
   
   // 仕入先情報の詳細を取得
   const vendorAddress = extractedData.vendorAddress || extractedData.VendorAddress || '';
-  const vendorPhone = extractedData.vendorPhone || extractedData.VendorPhone || '';
+  const vendorPhone = extractedData.vendorPhoneNumber || extractedData.VendorPhoneNumber || 
+                     extractedData.vendorPhone || extractedData.VendorPhone || '';
   const vendorEmail = extractedData.vendorEmail || extractedData.VendorEmail || '';
   
   // 仕入先が存在しない場合は作成
