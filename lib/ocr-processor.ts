@@ -444,7 +444,7 @@ export class OCRProcessor {
     // 品目から軽減税率の判定
     if (ocrResult.items && ocrResult.items.length > 0) {
       const hasReducedTaxItems = ocrResult.items.some(item => 
-        TaxCalculator.isReducedTaxItem(item.name)
+        item && item.name && TaxCalculator.isReducedTaxItem(item.name)
       );
       if (hasReducedTaxItems) {
         taxRate = 0.08; // 軽減税率
