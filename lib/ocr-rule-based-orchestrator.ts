@@ -138,34 +138,62 @@ export class OCRRuleBasedOrchestrator {
         }
       }
       
-      // 4. pagesデータから仕入先情報を補完
+      // 4. pagesデータから仕入先情報を補完（日本の見積書は右側が発行元）
       if ((!data.vendor || data.vendor.name === '不明') && ocrResult.pages && ocrResult.pages.length > 0) {
         console.log('[RuleBasedOrchestrator] pagesから仕入先情報を探索');
         
+        // 右側にある会社名を優先的に収集
+        const rightSideCompanies: Array<{content: string, boundingBox?: any}> = [];
+        const allCompanies: Array<{content: string, boundingBox?: any}> = [];
+        
         for (const page of ocrResult.pages) {
           if (page.lines) {
-            // 最初の数行に仕入先情報がある可能性が高い
-            for (let i = 0; i < Math.min(10, page.lines.length); i++) {
-              const line = page.lines[i];
+            for (const line of page.lines) {
               if (line.content) {
                 const content = line.content.trim();
                 
                 // 会社名パターン（株式会社、有限会社など）
-                if (content.includes('株式会社') || content.includes('有限会社') || 
-                    content.includes('合同会社') || content.includes('(株)') || content.includes('(有)')) {
-                  // 御中を含まない場合は仕入先
-                  if (!content.includes('御中')) {
-                    data.vendor = data.vendor || {};
-                    data.vendor.name = content;
-                    console.log('[RuleBasedOrchestrator] pagesから仕入先名を抽出:', content);
-                    break; // 最初に見つかった会社名を使用
+                if ((content.includes('株式会社') || content.includes('有限会社') || 
+                     content.includes('合同会社') || content.includes('(株)') || content.includes('(有)')) &&
+                    !content.includes('御中')) {
+                  
+                  const companyInfo = { content, boundingBox: line.boundingBox };
+                  allCompanies.push(companyInfo);
+                  
+                  // boundingBoxがある場合、X座標で右側判定（ページ幅の50%以上）
+                  if (line.boundingBox && line.boundingBox[0]) {
+                    const pageWidth = page.width || 8.5; // A4の幅（インチ）
+                    const xPosition = line.boundingBox[0].x || line.boundingBox[0];
+                    if (xPosition > pageWidth * 0.5) {
+                      rightSideCompanies.push(companyInfo);
+                      console.log('[RuleBasedOrchestrator] 右側の会社名を発見:', content);
+                    }
                   }
                 }
+              }
+            }
+          }
+        }
+        
+        // 右側の会社名を優先、なければ全体から選択
+        const selectedCompany = rightSideCompanies.length > 0 ? rightSideCompanies[0] : allCompanies[0];
+        if (selectedCompany) {
+          data.vendor = data.vendor || {};
+          data.vendor.name = selectedCompany.content;
+          console.log('[RuleBasedOrchestrator] 仕入先名を決定:', selectedCompany.content);
+        }
+        
+        // 住所と電話番号の抽出（元のロジック）
+        for (const page of ocrResult.pages) {
+          if (page.lines) {
+            for (const line of page.lines) {
+              if (line.content) {
+                const content = line.content.trim();
                 
                 // 住所パターン（都道府県を含む）
                 if ((content.includes('県') || content.includes('都') || content.includes('府') || 
                      content.includes('市') || content.includes('区')) && 
-                    !content.includes('御中')) {
+                    !content.includes('御中') && !data.vendor?.address) {
                   data.vendor = data.vendor || {};
                   data.vendor.address = content;
                   console.log('[RuleBasedOrchestrator] pagesから住所を抽出:', content);
@@ -173,7 +201,7 @@ export class OCRRuleBasedOrchestrator {
                 
                 // 電話番号パターン
                 const phoneMatch = content.match(/\d{2,4}-\d{2,4}-\d{3,4}/);
-                if (phoneMatch) {
+                if (phoneMatch && !data.vendor?.phone) {
                   data.vendor = data.vendor || {};
                   data.vendor.phone = phoneMatch[0];
                   console.log('[RuleBasedOrchestrator] pagesから電話番号を抽出:', phoneMatch[0]);
