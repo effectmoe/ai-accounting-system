@@ -12,34 +12,93 @@ async function convertOCRToSupplierQuote(ocrResult: any) {
   // OCR結果から仕入先見積書データを抽出
   const extractedData = ocrResult.extractedData || {};
   
-  console.log('[convertOCRToSupplierQuote] 全抽出データ:', extractedData);
-  
   // 仕入先名の正しい抽出（請求書の文脈を理解）
   let vendorName = '';
   
-  // Azure Form Recognizerでは、vendorName/customerNameが混同されることがある
-  const extractedVendorName = extractedData.vendorName || extractedData.VendorName;
-  const extractedCustomerName = extractedData.customerName || extractedData.CustomerName;
-  const vendorAddressRecipient = extractedData.VendorAddressRecipient;
+  console.log('[convertOCRToSupplierQuote] 全抽出データ:', extractedData);
   
-  // 「御中」チェックで正しい仕入先を特定
-  if (extractedVendorName && extractedVendorName.includes('御中')) {
-    // vendorNameに「御中」がある場合、Azure OCRが混同している
-    vendorName = vendorAddressRecipient || 
-                 extractedData.RemittanceAddressRecipient ||
-                 extractedCustomerName ||
-                 'OCR抽出仕入先';
-  } else if (vendorAddressRecipient && !vendorAddressRecipient.includes('御中')) {
-    // VendorAddressRecipientに会社名があり、「御中」がない場合、これが仕入先
-    vendorName = vendorAddressRecipient;
+  // Azure Form Recognizerでは：
+  // - vendorName/VendorName: 通常は発行者（売り手）
+  // - customerName/CustomerName: 通常は宛先（買い手）
+  // - 「御中」が付いているのは宛先（customerName）
+  
+  // 仕入先見積書の場合：発行者（売り手）が仕入先
+  if (ocrResult.documentType === 'supplier-quote' || ocrResult.documentType === 'invoice') {
+    // まず、customerNameが設定されている場合、vendorNameと逆転している可能性をチェック
+    if (extractedData.customerName && extractedData.customerName.includes('御中')) {
+      // customerNameに「御中」がある場合、これは宛先（自社）
+      // vendorNameが正しい仕入先である可能性が高い
+      vendorName = extractedData.vendorName || 
+                   extractedData.VendorName || 
+                   extractedData.VendorAddressRecipient ||
+                   'OCR自動登録仕入先';
+    } else if (extractedData.vendorName && extractedData.vendorName.includes('御中')) {
+      // vendorNameに「御中」がある場合、Azure OCRが逆転している
+      // この場合、実際の仕入先は別のフィールドまたは発行者情報にある
+      vendorName = extractedData.customerName || 
+                   extractedData.CustomerName ||
+                   extractedData.RemittanceAddressRecipient ||
+                   extractedData.merchantName ||
+                   'OCR自動登録仕入先';
+    } else {
+      // 通常のケース：vendorNameが発行者（仕入先）
+      vendorName = extractedData.vendorName || 
+                   extractedData.VendorName || 
+                   extractedData.VendorAddressRecipient ||
+                   extractedData.customerName || // フォールバック
+                   'OCR自動登録仕入先';
+    }
   } else {
-    // 通常のケース
-    vendorName = extractedVendorName || 
-                 vendorAddressRecipient ||
-                 'OCR抽出仕入先';
+    // 領収書の場合
+    vendorName = extractedData.merchantName || 
+                 extractedData.vendorName || 
+                 extractedData.VendorName ||
+                 'OCR自動登録仕入先';
   }
   
   // 「御中」を除去
+  vendorName = vendorName.replace(/\s*御中\s*$/, '').trim();
+  
+  console.log('[convertOCRToSupplierQuote] 抽出されたベンダー情報:', {
+    documentType: ocrResult.documentType,
+    vendorName: extractedData.vendorName,
+    customerName: extractedData.customerName,
+    VendorName: extractedData.VendorName,
+    CustomerName: extractedData.CustomerName,
+    VendorAddressRecipient: extractedData.VendorAddressRecipient,
+    merchantName: extractedData.merchantName,
+    selectedVendor: vendorName,
+    hasOnchuInVendor: extractedData.vendorName?.includes('御中'),
+    hasOnchuInCustomer: extractedData.customerName?.includes('御中')
+  });
+  
+  // 強制的に仕入先情報を補正（Azure OCRの誤認識対策）
+  if (vendorName.includes('御中') || vendorName === 'OCR自動登録仕入先') {
+    console.log('[convertOCRToSupplierQuote] 仕入先情報の強制補正を実行');
+    
+    // VendorAddressRecipientから仕入先を抽出
+    if (extractedData.VendorAddressRecipient && !extractedData.VendorAddressRecipient.includes('御中')) {
+      vendorName = extractedData.VendorAddressRecipient;
+      console.log('[convertOCRToSupplierQuote] VendorAddressRecipientから補正:', vendorName);
+    }
+    // RemittanceAddressRecipientから仕入先を抽出
+    else if (extractedData.RemittanceAddressRecipient && !extractedData.RemittanceAddressRecipient.includes('御中')) {
+      vendorName = extractedData.RemittanceAddressRecipient;
+      console.log('[convertOCRToSupplierQuote] RemittanceAddressRecipientから補正:', vendorName);
+    }
+    // customerNameが「御中」を含まない場合、実際の仕入先の可能性
+    else if (extractedData.customerName && !extractedData.customerName.includes('御中')) {
+      vendorName = extractedData.customerName;
+      console.log('[convertOCRToSupplierQuote] customerNameから補正:', vendorName);
+    }
+    else {
+      // 最後の手段：ファイル名から推測
+      vendorName = 'ファイル名由来仕入先';
+      console.log('[convertOCRToSupplierQuote] フォールバック処理');
+    }
+  }
+  
+  // 最終的に「御中」を除去
   vendorName = vendorName.replace(/\s*御中\s*$/, '').trim();
   
   console.log('[convertOCRToSupplierQuote] 最終仕入先名:', vendorName);
@@ -47,26 +106,191 @@ async function convertOCRToSupplierQuote(ocrResult: any) {
   // 項目の抽出（改善されたエクストラクターを使用）
   console.log('[convertOCRToSupplierQuote] OCRデータ全体:', JSON.stringify(extractedData, null, 2));
   
-  // itemsフィールドの内容を詳しく確認
-  if (extractedData.items && Array.isArray(extractedData.items)) {
-    console.log('[convertOCRToSupplierQuote] items配列の詳細:');
-    extractedData.items.forEach((item: any, index: number) => {
-      console.log(`  アイテム[${index}]:`, JSON.stringify(item, null, 2));
-    });
-  }
-  
-  // テーブルやラインアイテムの存在確認
-  const tableFields = ['tables', 'Tables', 'lineItems', 'LineItems', 'invoiceItems', 'InvoiceItems'];
-  for (const field of tableFields) {
-    if (extractedData[field]) {
-      console.log(`[convertOCRToSupplierQuote] ${field}フィールド発見:`, JSON.stringify(extractedData[field], null, 2));
-    }
-  }
-  
   // OCRItemExtractorを使用して商品情報を抽出
   let items = OCRItemExtractor.extractItemsFromOCR(extractedData);
   
   console.log('[convertOCRToSupplierQuote] 抽出された項目:', items);
+  
+  // 項目が空の場合のフォールバック処理
+  if (items.length === 0) {
+    console.log('[convertOCRToSupplierQuote] 項目が抽出されなかったため、デフォルト項目を作成');
+      
+      // 商品名の詳細抽出（Azure Form Recognizerの様々なフィールドをチェック）
+      let itemName = 'デフォルト商品名';
+      
+      // Azure Form Recognizerの実際のフィールド構造に対応
+      if (item.description && typeof item.description === 'string' && item.description.trim()) {
+        itemName = item.description.trim();
+      } else if (item.name && typeof item.name === 'string' && item.name.trim()) {
+        itemName = item.name.trim();
+      } else if (item.itemName && typeof item.itemName === 'string' && item.itemName.trim()) {
+        itemName = item.itemName.trim();
+      } else if (item.productName && typeof item.productName === 'string' && item.productName.trim()) {
+        itemName = item.productName.trim();
+      } else {
+        // フォールバック：オブジェクトの場合、contentフィールドをチェック
+        if (item.description?.content) itemName = item.description.content;
+        else if (item.name?.content) itemName = item.name.content;
+        else if (item.Description?.content) itemName = item.Description.content;
+        else if (item.Name?.content) itemName = item.Name.content;
+        else itemName = `商品${index + 1}`;
+      }
+      
+      // 数量の抽出（Azure Form Recognizerの形式に対応）
+      let quantity = 1;
+      if (item.quantity !== undefined && item.quantity !== null) {
+        if (typeof item.quantity === 'number') {
+          quantity = item.quantity;
+        } else if (typeof item.quantity === 'string') {
+          quantity = parseFloat(item.quantity) || 1;
+        } else if (item.quantity.value !== undefined) {
+          quantity = parseFloat(item.quantity.value) || 1;
+        }
+      } else if (item.Quantity?.value !== undefined) {
+        quantity = parseFloat(item.Quantity.value) || 1;
+      }
+      
+      // 単価の抽出（Azure Form Recognizerの形式に対応）
+      let unitPrice = 0;
+      if (item.unitPrice !== undefined && item.unitPrice !== null) {
+        if (typeof item.unitPrice === 'number') {
+          unitPrice = item.unitPrice;
+        } else if (typeof item.unitPrice === 'string') {
+          unitPrice = parseFloat(item.unitPrice) || 0;
+        } else if (item.unitPrice.value !== undefined) {
+          unitPrice = parseFloat(item.unitPrice.value) || 0;
+        }
+      } else if (item.UnitPrice?.value !== undefined) {
+        unitPrice = parseFloat(item.UnitPrice.value) || 0;
+      } else if (item.price !== undefined) {
+        if (typeof item.price === 'number') {
+          unitPrice = item.price;
+        } else if (item.price.value !== undefined) {
+          unitPrice = parseFloat(item.price.value) || 0;
+        }
+      }
+      
+      // 金額の抽出（Azure Form Recognizerの形式に対応）
+      let amount = 0;
+      if (item.amount !== undefined && item.amount !== null) {
+        if (typeof item.amount === 'number') {
+          amount = item.amount;
+        } else if (typeof item.amount === 'string') {
+          amount = parseFloat(item.amount) || 0;
+        } else if (item.amount.value !== undefined) {
+          amount = parseFloat(item.amount.value) || 0;
+        }
+      } else if (item.Amount?.value !== undefined) {
+        amount = parseFloat(item.Amount.value) || 0;
+      } else if (item.totalPrice !== undefined) {
+        if (typeof item.totalPrice === 'number') {
+          amount = item.totalPrice;
+        } else if (item.totalPrice.value !== undefined) {
+          amount = parseFloat(item.totalPrice.value) || 0;
+        }
+      } else if (unitPrice > 0 && quantity > 0) {
+        amount = unitPrice * quantity;
+      }
+      
+      // 単価が0で金額がある場合、単価を計算
+      if (unitPrice === 0 && amount > 0 && quantity > 0) {
+        unitPrice = Math.round(amount / quantity);
+      }
+      
+      console.log(`[convertOCRToSupplierQuote] 項目${index + 1} 処理結果:`, {
+        itemName,
+        quantity,
+        unitPrice,
+        amount,
+        originalItem: item
+      });
+      
+      return {
+        itemName,
+        description: itemName,
+        quantity,
+        unitPrice,
+        amount,
+        taxRate: 10,
+        taxAmount: Math.round(amount * 0.1)
+      };
+    }));
+  } else {
+    console.log('[convertOCRToSupplierQuote] 項目データが見つからないため、総額から推定');
+  }
+  
+  // 商品情報が不完全な場合、OCR生データから抽出を試行
+  if (items.length === 0 || items.every(item => item.itemName === '商品1' || item.itemName.includes('デフォルト'))) {
+    console.log('[convertOCRToSupplierQuote] 商品情報の補完処理を開始');
+    
+    // OCR生データから商品情報を探す
+    const rawOcrText = JSON.stringify(extractedData);
+    console.log('[convertOCRToSupplierQuote] OCR生データサンプル:', rawOcrText.substring(0, 500));
+    
+    // 商品情報のパターンマッチング
+    const productPatterns = [
+      /【.*?】.*?(?=\s|\n|$)/g,  // 【】で囲まれた商品名
+      /用紙[:：].*?(?=\s|\n|$)/g,  // 用紙: で始まる商品名
+      /印刷.*?(?=\s|\n|$)/g,  // 印刷で始まる商品名
+      /.*?(?:窓|セロ|特白).*?(?=\s|\n|$)/g,  // 特定キーワードを含む商品名
+    ];
+    
+    let extractedProductName = '';
+    for (const pattern of productPatterns) {
+      const matches = rawOcrText.match(pattern);
+      if (matches && matches.length > 0) {
+        extractedProductName = matches[0].replace(/["\{\}]/g, '').trim();
+        if (extractedProductName.length > 5) { // 意味のある長さ
+          console.log('[convertOCRToSupplierQuote] パターンマッチで商品名を抽出:', extractedProductName);
+          break;
+        }
+      }
+    }
+    
+    // 数量・単価の抽出試行
+    let extractedQuantity = 1;
+    let extractedUnitPrice = 0;
+    
+    // 数量パターン（2,000枚、500個など）
+    const quantityPattern = /([\d,]+)\s*(?:枚|個|本|台|セット)/g;
+    const quantityMatch = rawOcrText.match(quantityPattern);
+    if (quantityMatch) {
+      const qty = quantityMatch[0].replace(/[^\d]/g, '');
+      extractedQuantity = parseInt(qty) || 1;
+      console.log('[convertOCRToSupplierQuote] 数量を抽出:', extractedQuantity);
+    }
+    
+    // 単価パターン（¥11.20、15円など）
+    const unitPricePattern = /[¥￥]?\s*(\d+\.?\d*)\s*円?(?:\s|\/|単価)/g;
+    const priceMatch = rawOcrText.match(unitPricePattern);
+    if (priceMatch) {
+      const price = priceMatch[0].replace(/[^\d.]/g, '');
+      extractedUnitPrice = parseFloat(price) || 0;
+      console.log('[convertOCRToSupplierQuote] 単価を抽出:', extractedUnitPrice);
+    }
+    
+    // 抽出した情報で項目を更新または作成
+    if (extractedProductName || extractedQuantity > 1 || extractedUnitPrice > 0) {
+      const newItem = {
+        itemName: extractedProductName || '抽出商品',
+        description: extractedProductName || '',
+        quantity: extractedQuantity,
+        unitPrice: extractedUnitPrice,
+        amount: extractedUnitPrice * extractedQuantity,
+        taxRate: 10,
+        taxAmount: Math.round(extractedUnitPrice * extractedQuantity * 0.1)
+      };
+      
+      // 既存項目を置き換えまたは新規追加
+      if (items.length > 0) {
+        items[0] = newItem;
+        console.log('[convertOCRToSupplierQuote] 既存項目を置き換え:', newItem);
+      } else {
+        items.push(newItem);
+        console.log('[convertOCRToSupplierQuote] 新規項目を追加:', newItem);
+      }
+    }
+  }
   
   // 金額抽出の改善（複数のフィールドを確認）
   const extractAmount = (value: any): number => {
@@ -111,18 +335,55 @@ async function convertOCRToSupplierQuote(ocrResult: any) {
     if (totalAmountFromOCR > 0) {
       const itemAmount = totalAmountFromOCR - taxAmountFromOCR;
       
-      // アイテムがない場合は新規作成
-      items.push({
-        itemName: '商品',
-        description: '',
-        quantity: 1,
-        unitPrice: itemAmount,
-        amount: itemAmount,
-        taxRate: 10,
-        taxAmount: taxAmountFromOCR || itemAmount * 0.1
-      });
-      
-      console.log('[convertOCRToSupplierQuote] 新規項目を作成:', items[0]);
+      // 既存のアイテムがある場合は、それらに金額を分割
+      if (items.length > 0) {
+        const totalQuantity = items.reduce((sum, item) => sum + (item.quantity || 1), 0);
+        const pricePerUnit = itemAmount / totalQuantity;
+        
+        let remainingAmount = itemAmount;
+        items.forEach((item, index) => {
+          const itemQuantity = item.quantity || 1;
+          
+          // 最後のアイテムは残りの金額を全て割り当て（四捨五入誤差を調整）
+          if (index === items.length - 1) {
+            item.amount = remainingAmount;
+            item.unitPrice = Math.round(remainingAmount / itemQuantity);
+          } else {
+            const itemTotal = Math.round(pricePerUnit * itemQuantity);
+            item.amount = itemTotal;
+            item.unitPrice = Math.round(pricePerUnit);
+            remainingAmount -= itemTotal;
+          }
+          
+          item.taxAmount = Math.round(item.amount * 0.1);
+          item.taxRate = 10;
+        });
+        
+        console.log('[convertOCRToSupplierQuote] 既存項目に金額を分割:', {
+          totalQuantity,
+          pricePerUnit,
+          itemAmount,
+          items: items.map(item => ({
+            name: item.itemName,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            amount: item.amount
+          }))
+        });
+      } else {
+        // アイテムがない場合は新規作成
+        items.push({
+          itemName: '商品',
+          description: '',
+          quantity: 1,
+          unitPrice: itemAmount,
+          amount: itemAmount,
+          taxRate: 10,
+          taxAmount: taxAmountFromOCR || itemAmount * 0.1
+        });
+        
+        console.log('[convertOCRToSupplierQuote] 新規項目を作成:', items[0]);
+      }
     }
   }
   

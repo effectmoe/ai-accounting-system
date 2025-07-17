@@ -47,22 +47,6 @@ async function convertOCRToSupplierQuote(ocrResult: any) {
   // 項目の抽出（改善されたエクストラクターを使用）
   console.log('[convertOCRToSupplierQuote] OCRデータ全体:', JSON.stringify(extractedData, null, 2));
   
-  // itemsフィールドの内容を詳しく確認
-  if (extractedData.items && Array.isArray(extractedData.items)) {
-    console.log('[convertOCRToSupplierQuote] items配列の詳細:');
-    extractedData.items.forEach((item: any, index: number) => {
-      console.log(`  アイテム[${index}]:`, JSON.stringify(item, null, 2));
-    });
-  }
-  
-  // テーブルやラインアイテムの存在確認
-  const tableFields = ['tables', 'Tables', 'lineItems', 'LineItems', 'invoiceItems', 'InvoiceItems'];
-  for (const field of tableFields) {
-    if (extractedData[field]) {
-      console.log(`[convertOCRToSupplierQuote] ${field}フィールド発見:`, JSON.stringify(extractedData[field], null, 2));
-    }
-  }
-  
   // OCRItemExtractorを使用して商品情報を抽出
   let items = OCRItemExtractor.extractItemsFromOCR(extractedData);
   

@@ -329,27 +329,60 @@ export async function POST(request: NextRequest) {
       // 完全なベンダー名を抽出（OCRテキスト全体から）
       const extractedText = JSON.stringify(analysisResult.fields || {});
       
-      // ベンダー名の抽出（nullやundefinedのチェックを追加）
+      // ベンダー名の抽出（Azure Form Recognizerの結果を補正）
       let vendorName = '';
-      const vendorFields = [
-        analysisResult.fields?.vendorName,
-        analysisResult.fields?.merchantName,
-        analysisResult.fields?.VendorName,
-        analysisResult.fields?.MerchantName,
-        analysisResult.fields?.VendorAddressRecipient,
-        analysisResult.fields?.RemittanceAddressRecipient
-      ];
       
-      console.error('[OCR] 抽出されたベンダーフィールド:', vendorFields);
+      console.error('[OCR] Azure Form Recognizer抽出フィールド詳細:', {
+        vendorName: analysisResult.fields?.vendorName,
+        customerName: analysisResult.fields?.customerName,
+        VendorName: analysisResult.fields?.VendorName,
+        CustomerName: analysisResult.fields?.CustomerName,
+        VendorAddressRecipient: analysisResult.fields?.VendorAddressRecipient,
+        RemittanceAddressRecipient: analysisResult.fields?.RemittanceAddressRecipient,
+        merchantName: analysisResult.fields?.merchantName
+      });
       
-      // 有効な値を探す
-      for (const field of vendorFields) {
-        if (field && typeof field === 'string' && field.trim()) {
-          vendorName = field.trim();
-          console.error('[OCR] 使用するベンダー名:', vendorName);
-          break;
+      if (documentType === 'supplier-quote' || documentType === 'invoice') {
+        // 仕入先見積書のAzure Form Recognizer結果を補正
+        
+        // 1. 「御中」チェックで正しい仕入先を特定
+        const extractedVendorName = analysisResult.fields?.vendorName;
+        const extractedCustomerName = analysisResult.fields?.customerName;
+        const vendorAddressRecipient = analysisResult.fields?.VendorAddressRecipient;
+        
+        if (extractedVendorName && extractedVendorName.includes('御中')) {
+          // vendorNameに「御中」がある場合、Azure OCRが混同している
+          // 実際の仕入先はVendorAddressRecipientまたは他のフィールドにある
+          console.error('[OCR] Azure OCRの混同を検出: vendorNameに「御中」が含まれています');
+          
+          vendorName = vendorAddressRecipient || 
+                       analysisResult.fields?.RemittanceAddressRecipient ||
+                       extractedCustomerName ||
+                       'OCR抽出仕入先';
+        } else if (vendorAddressRecipient && !vendorAddressRecipient.includes('御中')) {
+          // VendorAddressRecipientに会社名があり、「御中」がない場合、これが仕入先
+          vendorName = vendorAddressRecipient;
+          console.error('[OCR] VendorAddressRecipientから仕入先を特定:', vendorName);
+        } else {
+          // 通常のケース
+          vendorName = extractedVendorName || 
+                       analysisResult.fields?.VendorName || 
+                       vendorAddressRecipient ||
+                       'OCR抽出仕入先';
         }
+        
+        // 「御中」を除去
+        vendorName = vendorName.replace(/\s*御中\s*$/, '').trim();
+        
+      } else {
+        // 領収書の場合
+        vendorName = analysisResult.fields?.merchantName || 
+                     analysisResult.fields?.vendorName || 
+                     analysisResult.fields?.VendorName ||
+                     'OCR抽出店舗';
       }
+      
+      console.error('[OCR] 補正後のベンダー名:', vendorName);
       
       // ベンダー名が見つからない場合はファイル名を使用
       if (!vendorName) {
@@ -410,7 +443,7 @@ export async function POST(request: NextRequest) {
           amount: totalAmountExtracted,
           taxAmount: taxAmountExtracted,
           date: documentDate ? documentDate.toISOString().split('T')[0] : null,
-          items: []
+          items: analysisResult.fields?.items || []
         };
         
         console.log('Calling AI category prediction with:', {
@@ -451,7 +484,7 @@ export async function POST(request: NextRequest) {
             amount: totalAmountExtracted,
             taxAmount: taxAmountExtracted,
             date: documentDate ? documentDate.toISOString().split('T')[0] : null,
-            items: [],
+            items: analysisResult.fields?.items || [],
             confidence: analysisResult.confidence || 0.8
           };
           
@@ -607,7 +640,7 @@ export async function POST(request: NextRequest) {
         amount: totalAmountExtracted,
         taxAmount: taxAmountExtracted,
         date: finalDocumentDate && !isNaN(finalDocumentDate.getTime()) ? finalDocumentDate.toISOString().split('T')[0] : null,
-        items: [],
+        items: analysisResult.fields?.items || [],
         confidence: analysisResult.confidence || 0.8
       };
       

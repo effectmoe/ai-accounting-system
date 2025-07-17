@@ -1,6 +1,7 @@
 import { AzureKeyCredential, DocumentAnalysisClient } from '@azure/ai-form-recognizer';
 import { GridFSBucket } from 'mongodb';
 import { getDatabase } from './mongodb-client';
+import { InvoiceItemExtractor } from './azure-invoice-item-extractor';
 
 export interface FormRecognizerConfig {
   endpoint: string;
@@ -91,7 +92,7 @@ export class FormRecognizerService {
           billingAddress: fields.BillingAddress?.content,
           shippingAddress: fields.ShippingAddress?.content,
           paymentTerm: fields.PaymentTerm?.content,
-          items: this.extractLineItems(fields.Items),
+          items: [], // 一時的に空配列にして、後で強化版エクストラクターを使用
           // カスタムフィールド
           customFields: this.extractCustomFields(fields),
         },
@@ -99,6 +100,10 @@ export class FormRecognizerService {
         pages: result.pages,
         rawResult: result,
       };
+
+      // 強化版アイテムエクストラクターを使用して商品明細を抽出
+      extractedData.fields.items = InvoiceItemExtractor.extractItems(extractedData);
+      console.log(`[Azure Form Recognizer] 強化版エクストラクターで${extractedData.fields.items.length}個の商品を抽出`);
 
       return extractedData;
     } catch (error) {
@@ -321,18 +326,78 @@ export class FormRecognizerService {
   }
 
   /**
-   * 明細行の抽出（請求書用）
+   * 明細行の抽出（請求書用）- 強化版
    */
-  private extractLineItems(itemsField: any): any[] {
-    if (!itemsField || !itemsField.values) return [];
+  private extractLineItems(itemsField: any, fullResult?: any): any[] {
+    if (!itemsField || !itemsField.values) {
+      // 明細がない場合、テーブルから抽出を試行
+      return this.extractItemsFromTables(fullResult);
+    }
     
-    return itemsField.values.map((item: any) => {
+    return itemsField.values.map((item: any, index: number) => {
       const itemFields = item.fields || {};
+      
+      // 商品名の抽出（複数のフィールドから）
+      const description = itemFields.Description?.content || 
+                         itemFields.Name?.content || 
+                         itemFields.ItemName?.content || 
+                         itemFields.ProductName?.content || 
+                         `商品${index + 1}`;
+      
+      // 数量の抽出（文字列と数値両方に対応）
+      let quantity = 1;
+      if (itemFields.Quantity?.value !== undefined) {
+        quantity = parseFloat(itemFields.Quantity.value) || 1;
+      } else if (itemFields.Quantity?.content !== undefined) {
+        quantity = parseFloat(itemFields.Quantity.content) || 1;
+      }
+      
+      // 単価の抽出
+      let unitPrice = 0;
+      if (itemFields.UnitPrice?.value !== undefined) {
+        unitPrice = parseFloat(itemFields.UnitPrice.value) || 0;
+      } else if (itemFields.UnitPrice?.content !== undefined) {
+        unitPrice = parseFloat(itemFields.UnitPrice.content) || 0;
+      } else if (itemFields.Price?.value !== undefined) {
+        unitPrice = parseFloat(itemFields.Price.value) || 0;
+      }
+      
+      // 金額の抽出
+      let amount = 0;
+      if (itemFields.Amount?.value !== undefined) {
+        amount = parseFloat(itemFields.Amount.value) || 0;
+      } else if (itemFields.Amount?.content !== undefined) {
+        amount = parseFloat(itemFields.Amount.content) || 0;
+      } else if (itemFields.TotalPrice?.value !== undefined) {
+        amount = parseFloat(itemFields.TotalPrice.value) || 0;
+      } else if (unitPrice > 0 && quantity > 0) {
+        amount = unitPrice * quantity;
+      }
+      
+      // 単価が0で金額がある場合、単価を計算
+      if (unitPrice === 0 && amount > 0 && quantity > 0) {
+        unitPrice = Math.round(amount / quantity);
+      }
+      
+      console.log(`[Azure Form Recognizer] 明細項目${index + 1}:`, {
+        description,
+        quantity,
+        unitPrice,
+        amount,
+        originalFields: {
+          Description: itemFields.Description?.content,
+          Quantity: itemFields.Quantity?.value,
+          UnitPrice: itemFields.UnitPrice?.value,
+          Amount: itemFields.Amount?.value
+        }
+      });
+      
       return {
-        description: itemFields.Description?.content,
-        quantity: itemFields.Quantity?.value,
-        unitPrice: itemFields.UnitPrice?.value,
-        amount: itemFields.Amount?.value,
+        description,
+        name: description, // 後方互換性のため
+        quantity,
+        unitPrice,
+        amount,
         productCode: itemFields.ProductCode?.content,
         unit: itemFields.Unit?.content,
         date: itemFields.Date?.content,
@@ -342,20 +407,200 @@ export class FormRecognizerService {
   }
 
   /**
-   * 明細行の抽出（領収書用）
+   * 明細行の抽出（領収書用）- 強化版
    */
   private extractReceiptItems(itemsField: any): any[] {
     if (!itemsField || !itemsField.values) return [];
     
-    return itemsField.values.map((item: any) => {
+    return itemsField.values.map((item: any, index: number) => {
       const itemFields = item.fields || {};
+      
+      // 商品名の抽出（複数のフィールドから）
+      const name = itemFields.Name?.content || 
+                   itemFields.Description?.content || 
+                   itemFields.ItemName?.content || 
+                   itemFields.ProductName?.content || 
+                   `商品${index + 1}`;
+      
+      // 数量の抽出（文字列と数値両方に対応）
+      let quantity = 1;
+      if (itemFields.Quantity?.value !== undefined) {
+        quantity = parseFloat(itemFields.Quantity.value) || 1;
+      } else if (itemFields.Quantity?.content !== undefined) {
+        quantity = parseFloat(itemFields.Quantity.content) || 1;
+      }
+      
+      // 単価の抽出
+      let price = 0;
+      if (itemFields.Price?.value !== undefined) {
+        price = parseFloat(itemFields.Price.value) || 0;
+      } else if (itemFields.Price?.content !== undefined) {
+        price = parseFloat(itemFields.Price.content) || 0;
+      } else if (itemFields.UnitPrice?.value !== undefined) {
+        price = parseFloat(itemFields.UnitPrice.value) || 0;
+      }
+      
+      // 合計金額の抽出
+      let totalPrice = 0;
+      if (itemFields.TotalPrice?.value !== undefined) {
+        totalPrice = parseFloat(itemFields.TotalPrice.value) || 0;
+      } else if (itemFields.TotalPrice?.content !== undefined) {
+        totalPrice = parseFloat(itemFields.TotalPrice.content) || 0;
+      } else if (itemFields.Amount?.value !== undefined) {
+        totalPrice = parseFloat(itemFields.Amount.value) || 0;
+      } else if (price > 0 && quantity > 0) {
+        totalPrice = price * quantity;
+      }
+      
+      // 単価が0で合計金額がある場合、単価を計算
+      if (price === 0 && totalPrice > 0 && quantity > 0) {
+        price = Math.round(totalPrice / quantity);
+      }
+      
+      console.log(`[Azure Form Recognizer] 領収書明細項目${index + 1}:`, {
+        name,
+        quantity,
+        price,
+        totalPrice,
+        originalFields: {
+          Name: itemFields.Name?.content,
+          Quantity: itemFields.Quantity?.value,
+          Price: itemFields.Price?.value,
+          TotalPrice: itemFields.TotalPrice?.value
+        }
+      });
+      
       return {
-        name: itemFields.Name?.content,
-        quantity: itemFields.Quantity?.value || 1,
-        price: itemFields.Price?.value,
-        totalPrice: itemFields.TotalPrice?.value,
+        name,
+        description: name, // 後方互換性のため
+        quantity,
+        price,
+        unitPrice: price, // 統一性のため
+        totalPrice,
+        amount: totalPrice, // 統一性のため
       };
     });
+  }
+
+  /**
+   * テーブルから商品明細を抽出（Azure Form Recognizerでitemsが取得できない場合の補完）
+   */
+  private extractItemsFromTables(fullResult?: any): any[] {
+    if (!fullResult || !fullResult.tables || fullResult.tables.length === 0) {
+      return [];
+    }
+
+    const items: any[] = [];
+    
+    try {
+      // 最初のテーブルから商品情報を抽出
+      const table = fullResult.tables[0];
+      if (!table.cells) return [];
+
+      console.log('[Azure Form Recognizer] テーブルから商品情報を抽出:', {
+        tableCount: fullResult.tables.length,
+        cellCount: table.cells.length
+      });
+
+      // テーブルのヘッダー行を特定（商品名、数量、単価、金額のパターンを探す）
+      const headerPatterns = ['商品', '品名', '項目', '内容', '数量', '単価', '金額', '価格'];
+      let headerRow = -1;
+      let descriptionCol = -1;
+      let quantityCol = -1;
+      let unitPriceCol = -1;
+      let amountCol = -1;
+
+      // ヘッダー行の特定
+      for (const cell of table.cells) {
+        if (cell.rowIndex === 0 || (headerRow === -1 && headerPatterns.some(pattern => 
+          cell.content && cell.content.includes(pattern)))) {
+          headerRow = cell.rowIndex;
+          
+          if (cell.content.includes('商品') || cell.content.includes('品名') || cell.content.includes('項目')) {
+            descriptionCol = cell.columnIndex;
+          } else if (cell.content.includes('数量')) {
+            quantityCol = cell.columnIndex;
+          } else if (cell.content.includes('単価')) {
+            unitPriceCol = cell.columnIndex;
+          } else if (cell.content.includes('金額') || cell.content.includes('価格')) {
+            amountCol = cell.columnIndex;
+          }
+        }
+      }
+
+      console.log('[Azure Form Recognizer] テーブル列構造:', {
+        headerRow,
+        descriptionCol,
+        quantityCol,
+        unitPriceCol,
+        amountCol
+      });
+
+      // データ行の抽出
+      const dataRows = new Map<number, any>();
+      for (const cell of table.cells) {
+        if (cell.rowIndex > headerRow) {
+          if (!dataRows.has(cell.rowIndex)) {
+            dataRows.set(cell.rowIndex, {});
+          }
+          const row = dataRows.get(cell.rowIndex);
+          
+          if (cell.columnIndex === descriptionCol) {
+            row.description = cell.content;
+          } else if (cell.columnIndex === quantityCol) {
+            row.quantity = this.parseNumber(cell.content);
+          } else if (cell.columnIndex === unitPriceCol) {
+            row.unitPrice = this.parseNumber(cell.content);
+          } else if (cell.columnIndex === amountCol) {
+            row.amount = this.parseNumber(cell.content);
+          }
+        }
+      }
+
+      // 商品明細を構築
+      for (const [rowIndex, rowData] of dataRows) {
+        if (rowData.description && rowData.description.trim()) {
+          const quantity = rowData.quantity || 1;
+          const unitPrice = rowData.unitPrice || 0;
+          const amount = rowData.amount || (unitPrice * quantity);
+
+          items.push({
+            description: rowData.description.trim(),
+            name: rowData.description.trim(),
+            quantity,
+            unitPrice,
+            amount,
+            productCode: null,
+            unit: null,
+            date: null,
+            tax: null
+          });
+
+          console.log(`[Azure Form Recognizer] テーブル行${rowIndex}から抽出:`, {
+            description: rowData.description,
+            quantity,
+            unitPrice,
+            amount
+          });
+        }
+      }
+
+    } catch (error) {
+      console.error('[Azure Form Recognizer] テーブル解析エラー:', error);
+    }
+
+    return items;
+  }
+
+  /**
+   * 文字列から数値を抽出（通貨記号、コンマを除去）
+   */
+  private parseNumber(text: string): number {
+    if (!text || typeof text !== 'string') return 0;
+    
+    // 数値パターンの抽出（¥マーク、コンマを除去）
+    const match = text.replace(/[¥,\s]/g, '').match(/\d+\.?\d*/);
+    return match ? parseFloat(match[0]) : 0;
   }
 
   /**
