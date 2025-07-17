@@ -771,6 +771,101 @@ export class FormRecognizerService {
   }
 
   /**
+   * 行から商品名を抽出する改良版メソッド
+   */
+  private extractProductNameFromLine(content: string, allLines: any[], currentLineIndex: number): string {
+    // 1. 特定の商品パターンを優先的に検出
+    const specialPatterns = [
+      /【既製品印刷加工】.*?(?=\d{1,3}(?:,\d{3})*\s*(?:枚|個|本|箱|セット|点|台|つ)|$)/,
+      /【.*?】.*?(?=\d{1,3}(?:,\d{3})*\s*(?:枚|個|本|箱|セット|点|台|つ)|$)/,
+      /\w+印刷.*?(?=\d{1,3}(?:,\d{3})*\s*(?:枚|個|本|箱|セット|点|台|つ)|$)/,
+      /用紙[:：].*?(?=\d{1,3}(?:,\d{3})*\s*(?:枚|個|本|箱|セット|点|台|つ)|$)/
+    ];
+    
+    for (const pattern of specialPatterns) {
+      const match = content.match(pattern);
+      if (match) {
+        const productName = match[0].trim();
+        console.log(`[Azure Form Recognizer] 特定パターンで商品名抽出: "${productName}"`);
+        return productName;
+      }
+    }
+    
+    // 2. 一般的な数量・金額パターンを除去して商品名を抽出
+    let productName = content
+      .replace(/(\d{1,3}(?:,\d{3})*)\s*(?:枚|個|本|箱|セット|点|台|つ)/g, '') // 数量を削除
+      .replace(/(\d+(?:\.\d+)?)\s*円|￥(\d+(?:\.\d+)?)/g, '') // 単価を削除
+      .replace(/(\d{1,3}(?:,\d{3})*)\s*円|￥(\d{1,3}(?:,\d{3})*)/g, '') // 金額を削除
+      .replace(/単価[：:]\s*\d+(?:\.\d+)?/g, '') // 単価表記を削除
+      .replace(/金額[：:]\s*\d{1,3}(?:,\d{3})*/g, '') // 金額表記を削除
+      .replace(/\s+/g, ' ') // 複数スペースを1つに
+      .trim();
+    
+    // 3. 商品名が短い場合は上下文を確認
+    if (productName.length < 15) {
+      const enrichedName = this.enrichProductNameWithContext(productName, allLines, currentLineIndex);
+      if (enrichedName.length > productName.length) {
+        console.log(`[Azure Form Recognizer] 上下文で商品名を拡張: "${productName}" → "${enrichedName}"`);
+        return enrichedName;
+      }
+    }
+    
+    return productName;
+  }
+
+  /**
+   * 上下文を使用して商品名を拡張
+   */
+  private enrichProductNameWithContext(productName: string, allLines: any[], currentLineIndex: number): string {
+    let enrichedName = productName;
+    
+    // 前の行を確認（最大3行）
+    for (let i = currentLineIndex - 1; i >= 0 && i >= currentLineIndex - 3; i--) {
+      const prevLine = allLines[i];
+      if (prevLine && prevLine.content) {
+        const prevContent = prevLine.content.trim();
+        
+        // 前の行に数量・金額情報がない場合、商品名の一部として結合
+        if (!this.containsQuantityOrAmount(prevContent)) {
+          enrichedName = prevContent + ' ' + enrichedName;
+        } else {
+          break; // 数量・金額情報がある行に到達したら停止
+        }
+      }
+    }
+    
+    // 次の行を確認（最大3行）
+    for (let i = currentLineIndex + 1; i < allLines.length && i <= currentLineIndex + 3; i++) {
+      const nextLine = allLines[i];
+      if (nextLine && nextLine.content) {
+        const nextContent = nextLine.content.trim();
+        
+        // 次の行に数量・金額情報がない場合、商品名の一部として結合
+        if (!this.containsQuantityOrAmount(nextContent)) {
+          enrichedName = enrichedName + ' ' + nextContent;
+        } else {
+          break; // 数量・金額情報がある行に到達したら停止
+        }
+      }
+    }
+    
+    return enrichedName.trim().replace(/\s+/g, ' ');
+  }
+
+  /**
+   * 行に数量・金額情報が含まれているかチェック
+   */
+  private containsQuantityOrAmount(content: string): boolean {
+    const patterns = [
+      /(\d{1,3}(?:,\d{3})*)\s*(?:枚|個|本|箱|セット|点|台|つ|円)/,
+      /￥(\d{1,3}(?:,\d{3})*)/,
+      /単価|金額/
+    ];
+    
+    return patterns.some(pattern => pattern.test(content));
+  }
+
+  /**
    * ページ情報から商品明細を行ベースで抽出（日本語見積書用改良版）
    */
   private extractItemsFromPages(pages: any[]): any[] {
@@ -830,14 +925,7 @@ export class FormRecognizerService {
           const { lineIndex, content, quantity, unitPrice, amount } = priceLine;
           
           // 同じ行から商品名を抽出（数値以外の部分）
-          let productName = content
-            .replace(/(\d{1,3}(?:,\d{3})*)\s*(?:枚|個|本|箱|セット|点|台|つ)/g, '') // 数量を削除
-            .replace(/(\d+(?:\.\d+)?)\s*円|￥(\d+(?:\.\d+)?)/g, '') // 単価を削除
-            .replace(/(\d{1,3}(?:,\d{3})*)\s*円|￥(\d{1,3}(?:,\d{3})*)/g, '') // 金額を削除
-            .replace(/単価[：:]\s*\d+(?:\.\d+)?/g, '') // 単価表記を削除
-            .replace(/金額[：:]\s*\d{1,3}(?:,\d{3})*/g, '') // 金額表記を削除
-            .replace(/\s+/g, ' ') // 複数スペースを1つに
-            .trim();
+          let productName = this.extractProductNameFromLine(content, page.lines, lineIndex);
           
           console.log(`[Azure Form Recognizer] 同じ行から商品名抽出: "${productName}"`);
           

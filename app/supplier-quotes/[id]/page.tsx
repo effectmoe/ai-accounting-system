@@ -212,18 +212,30 @@ export default function SupplierQuoteDetailPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   仕入先
                 </label>
-                <div className="flex items-center gap-2">
-                  <Building className="h-5 w-5 text-gray-400" />
-                  <div className="flex flex-col">
+                <div className="flex items-start gap-2">
+                  <Building className="h-5 w-5 text-gray-400 mt-0.5" />
+                  <div className="flex flex-col space-y-1">
                     <span className="text-gray-900 font-medium">{quote.supplier?.companyName || '未設定'}</span>
                     {quote.supplier?.address && (
-                      <span className="text-sm text-gray-600">{quote.supplier.address}</span>
+                      <span className="text-sm text-gray-600">
+                        <span className="font-medium">住所:</span> {quote.supplier.address}
+                      </span>
                     )}
                     {quote.supplier?.contactPhone && (
-                      <span className="text-sm text-gray-600">TEL: {quote.supplier.contactPhone}</span>
+                      <span className="text-sm text-gray-600">
+                        <span className="font-medium">TEL:</span> 
+                        <a href={`tel:${quote.supplier.contactPhone}`} className="text-blue-600 hover:text-blue-800 ml-1">
+                          {quote.supplier.contactPhone}
+                        </a>
+                      </span>
                     )}
                     {quote.supplier?.contactEmail && (
-                      <span className="text-sm text-gray-600">Email: {quote.supplier.contactEmail}</span>
+                      <span className="text-sm text-gray-600">
+                        <span className="font-medium">Email:</span> 
+                        <a href={`mailto:${quote.supplier.contactEmail}`} className="text-blue-600 hover:text-blue-800 ml-1">
+                          {quote.supplier.contactEmail}
+                        </a>
+                      </span>
                     )}
                   </div>
                 </div>
