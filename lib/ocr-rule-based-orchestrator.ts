@@ -68,36 +68,47 @@ export class OCRRuleBasedOrchestrator {
       const customerName = fields.customerName || fields.CustomerName || '';
       const vendorAddressRecipient = fields.VendorAddressRecipient || '';
       
-      // 「御中」で判別
-      if (vendorAddressRecipient && vendorAddressRecipient.includes('御中')) {
-        // VendorAddressRecipientに「御中」がある = これが顧客
-        data.customer = { name: vendorAddressRecipient };
+      // デバッグ: 御中判定前の状態
+      console.log('[RuleBasedOrchestrator] 御中判定前:', {
+        vendorName,
+        customerName,
+        vendorAddressRecipient
+      });
+      
+      // 「御中」で判別（見積書の場合、御中が付いているのは顧客）
+      if (vendorName && vendorName.includes('御中')) {
+        // vendorNameに「御中」がある = Azure OCRが逆転している
+        console.log('[RuleBasedOrchestrator] vendorNameに御中を検出 - 逆転を修正');
+        data.customer = { name: vendorName };
         data.vendor = {
-          name: vendorName || '不明',
-          address: fields.vendorAddress,
+          name: customerName || vendorAddressRecipient || '不明',
+          address: fields.vendorAddress || fields.VendorAddress,
           phone: fields.vendorPhoneNumber || fields.vendorPhone
         };
       } else if (customerName && customerName.includes('御中')) {
         // customerNameに「御中」がある = 正しい
+        console.log('[RuleBasedOrchestrator] customerNameに御中を検出 - 正しい');
         data.customer = { name: customerName };
         data.vendor = {
           name: vendorName || vendorAddressRecipient || '不明',
-          address: fields.vendorAddress,
+          address: fields.vendorAddress || fields.VendorAddress,
           phone: fields.vendorPhoneNumber || fields.vendorPhone
         };
-      } else if (vendorName && vendorName.includes('御中')) {
-        // vendorNameに「御中」がある = 逆転している
-        data.customer = { name: vendorName };
+      } else if (vendorAddressRecipient && vendorAddressRecipient.includes('御中')) {
+        // VendorAddressRecipientに「御中」がある = これが顧客
+        console.log('[RuleBasedOrchestrator] VendorAddressRecipientに御中を検出');
+        data.customer = { name: vendorAddressRecipient };
         data.vendor = {
-          name: vendorAddressRecipient || customerName || '不明',
-          address: fields.vendorAddress,
+          name: vendorName || customerName || '不明',
+          address: fields.vendorAddress || fields.VendorAddress,
           phone: fields.vendorPhoneNumber || fields.vendorPhone
         };
       } else {
         // 「御中」がない場合のフォールバック
+        console.log('[RuleBasedOrchestrator] 御中が見つからない - フォールバック');
         data.vendor = {
           name: vendorName || vendorAddressRecipient || '不明',
-          address: fields.vendorAddress,
+          address: fields.vendorAddress || fields.VendorAddress,
           phone: fields.vendorPhoneNumber || fields.vendorPhone
         };
         data.customer = {
