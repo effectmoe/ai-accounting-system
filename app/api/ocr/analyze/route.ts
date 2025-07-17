@@ -104,6 +104,48 @@ export async function POST(request: NextRequest) {
         }
         
         processingTime = Date.now() - startTime;
+        
+        // デバッグ: 詳細な分析結果を出力
+        console.log('[OCR] Azure分析結果詳細:', {
+          processingTime,
+          documentType,
+          confidence: analysisResult.confidence,
+          fieldsCount: Object.keys(analysisResult.fields).length,
+          hasItems: !!analysisResult.fields.items,
+          itemsCount: analysisResult.fields.items?.length || 0,
+          hasTables: !!analysisResult.tables,
+          tablesCount: analysisResult.tables?.length || 0,
+          hasPages: !!analysisResult.pages,
+          pagesCount: analysisResult.pages?.length || 0,
+          hasRawResult: !!analysisResult.rawResult
+        });
+        
+        // テーブル情報を詳しく出力
+        if (analysisResult.tables && analysisResult.tables.length > 0) {
+          console.log('[OCR] テーブル情報:');
+          analysisResult.tables.forEach((table: any, index: number) => {
+            console.log(`  テーブル[${index}]: ${table.rowCount}行 x ${table.columnCount}列`);
+            if (table.cells && table.cells.length > 0) {
+              console.log(`  最初の10セル:`, table.cells.slice(0, 10).map((cell: any) => ({
+                row: cell.rowIndex,
+                col: cell.columnIndex,
+                content: cell.content?.substring(0, 50) // 長いテキストは切り詰め
+              })));
+            }
+          });
+        }
+        
+        // ページ情報を詳しく出力
+        if (analysisResult.pages && analysisResult.pages.length > 0) {
+          console.log('[OCR] ページ情報:');
+          analysisResult.pages.forEach((page: any, index: number) => {
+            console.log(`  ページ[${index}]: ${page.lines?.length || 0}行`);
+            if (page.lines && page.lines.length > 0) {
+              console.log(`  最初の15行:`, page.lines.slice(0, 15).map((line: any) => line.content));
+            }
+          });
+        }
+        
         console.error('[OCR] Azure OCR処理完了:', { 
           processingTime, 
           documentType,

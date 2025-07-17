@@ -262,7 +262,84 @@ export default function SupplierQuoteDetailPage() {
                 </div>
               </div>
             </div>
+            
+            {/* 赤枠の4項目 */}
+            {(quote.subject || quote.deliveryLocation || quote.paymentTerms || quote.quotationValidity) && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 pt-4 border-t border-gray-200">
+                {quote.subject && (
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      件名
+                    </label>
+                    <div className="text-gray-900">{quote.subject}</div>
+                  </div>
+                )}
+                {quote.deliveryLocation && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      納入場所
+                    </label>
+                    <div className="text-gray-900">{quote.deliveryLocation}</div>
+                  </div>
+                )}
+                {quote.paymentTerms && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      お支払条件
+                    </label>
+                    <div className="text-gray-900">{quote.paymentTerms}</div>
+                  </div>
+                )}
+                {quote.quotationValidity && (
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      見積有効期限
+                    </label>
+                    <div className="text-gray-900">{quote.quotationValidity}</div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
+
+          {/* OCR元ファイル */}
+          {quote.ocrResultId && (
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">OCR元ファイル</h2>
+              <div className="flex items-center gap-4">
+                <div className="flex-1">
+                  <p className="text-sm text-gray-600 mb-2">
+                    この見積書はOCRによって自動生成されました。
+                  </p>
+                  <div className="flex gap-2">
+                    <a
+                      href={`/api/files/${quote.ocrResultId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                      元ファイルを表示
+                    </a>
+                    <a
+                      href={`/api/ocr-results/${quote.ocrResultId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      OCR結果を表示
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* 見積項目 */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">

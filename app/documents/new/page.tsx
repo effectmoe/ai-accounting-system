@@ -186,6 +186,20 @@ async function convertOCRToSupplierQuote(ocrResult: any) {
     }
   }
   
+  // 赤枠の4項目を抽出
+  const subject = extractedData.subject || extractedData.Subject || 'OCR見積書';
+  const deliveryLocation = extractedData.deliveryLocation || extractedData.DeliveryLocation || '';
+  const paymentTerms = extractedData.paymentTerms || extractedData.PaymentTerms || 
+                      extractedData.paymentTerm || extractedData.PaymentTerm || '';
+  const quotationValidity = extractedData.quotationValidity || extractedData.QuotationValidity || '';
+  
+  console.log('[convertOCRToSupplierQuote] 追加フィールド:', {
+    subject,
+    deliveryLocation,
+    paymentTerms,
+    quotationValidity
+  });
+  
   // 仕入先見積書データの構築
   const supplierQuoteData = {
     vendorName,
@@ -199,8 +213,48 @@ async function convertOCRToSupplierQuote(ocrResult: any) {
     status: 'received',
     isGeneratedByAI: true,
     notes: 'OCRで自動生成された見積書',
-    ocrResultId: ocrResult.ocrResultId
+    ocrResultId: ocrResult.ocrResultId,
+    // 赤枠の4項目を追加
+    subject,
+    deliveryLocation,
+    paymentTerms,
+    quotationValidity
   };
+  
+  // 仕入先情報の詳細を取得
+  const vendorAddress = extractedData.vendorAddress || extractedData.VendorAddress || '';
+  const vendorPhone = extractedData.vendorPhone || extractedData.VendorPhone || '';
+  const vendorEmail = extractedData.vendorEmail || extractedData.VendorEmail || '';
+  
+  // 仕入先が存在しない場合は作成
+  if (vendorName && vendorName !== 'OCR抽出仕入先') {
+    try {
+      const vendorResponse = await fetch('/api/suppliers', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          companyName: vendorName,
+          address: vendorAddress,
+          phone: vendorPhone,
+          email: vendorEmail,
+          contactPerson: '',
+          isGeneratedByAI: true,
+          notes: 'OCRで自動作成された仕入先'
+        }),
+      });
+      
+      if (vendorResponse.ok) {
+        const vendor = await vendorResponse.json();
+        console.log('[convertOCRToSupplierQuote] 仕入先を作成:', vendor);
+      } else {
+        console.log('[convertOCRToSupplierQuote] 仕入先作成失敗（既存の可能性）');
+      }
+    } catch (error) {
+      console.error('[convertOCRToSupplierQuote] 仕入先作成エラー:', error);
+    }
+  }
   
   // 仕入先見積書APIに送信
   const response = await fetch('/api/supplier-quotes', {

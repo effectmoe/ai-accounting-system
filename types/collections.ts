@@ -1144,6 +1144,12 @@ export interface SupplierQuote {
   // ステータス
   status: SupplierQuoteStatus;
   
+  // 追加フィールド（赤枠の4項目）
+  subject?: string; // 件名
+  deliveryLocation?: string; // 納入場所
+  paymentTerms?: string; // お支払条件
+  quotationValidity?: string; // 見積有効期限（テキスト形式）
+  
   // メタデータ
   notes?: string;
   attachments?: string[]; // ファイルパス
