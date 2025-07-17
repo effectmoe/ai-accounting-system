@@ -201,6 +201,8 @@ export async function POST(request: NextRequest) {
     
     // オーケストレータを使用した構造化（仕入先見積書の場合のみ）
     let structuredData = null;
+    console.log('[OCR] documentType:', documentType);
+    console.log('[OCR] オーケストレータ実行条件チェック:', documentType === 'invoice' || documentType === 'supplier-quote');
     if (documentType === 'invoice' || documentType === 'supplier-quote') {
       // 1. まずAIオーケストレータを試行
       if (useAIOrchestrator) {
