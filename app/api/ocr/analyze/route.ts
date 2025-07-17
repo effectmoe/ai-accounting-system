@@ -35,25 +35,9 @@ export async function POST(request: NextRequest) {
         details: error instanceof Error ? error.message : 'Unknown error'
       }, { status: 500 });
     }
-    // 環境変数チェック
-    const useAzureMongoDB = process.env.USE_AZURE_MONGODB === 'true';
-    
-    if (!useAzureMongoDB) {
-      // 旧システムにリダイレクト
-      return NextResponse.json({
-        success: false,
-        error: 'Please use /api/ocr for the legacy system'
-      }, { status: 400 });
-    }
+    // Azure Form RecognizerとMongoDBが利用可能であれば処理を続行
 
-    // Mastraエージェントの確認
-    const availableAgents = orchestrator.getAvailableAgents();
-    if (!availableAgents.includes('ocr-agent')) {
-      return NextResponse.json({
-        success: false,
-        error: 'OCRエージェントが利用できません'
-      }, { status: 500 });
-    }
+    // Azure Form Recognizerを直接使用するため、エージェント確認は不要
 
     // フォームデータを取得
     const formData = await request.formData();
