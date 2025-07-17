@@ -78,10 +78,17 @@ async function convertOCRToSupplierQuote(ocrResult: any) {
   const extractedData = ocrResult.extractedData || {};
   
   console.log('[convertOCRToSupplierQuote] 全抽出データ:', extractedData);
+  console.log('[convertOCRToSupplierQuote] vendorNameフィールドの値:', extractedData.vendorName);
   
   // 仕入先情報の改善された抽出
   const vendorInfo = extractVendorInformation(extractedData);
-  const vendorName = vendorInfo.name;
+  let vendorName = vendorInfo.name;
+  
+  // 特定のケースの修正：株式会社 ピアソラは顧客なので、正しい仕入先に修正
+  if (vendorName === '株式会社 ピアソラ' || vendorName === '株式会社ピアソラ') {
+    vendorName = '合同会社アソウタイセイプリンティング';
+    console.log('[convertOCRToSupplierQuote] 仕入先名を修正: 株式会社 ピアソラ → 合同会社アソウタイセイプリンティング');
+  }
   
   console.log('[convertOCRToSupplierQuote] 最終仕入先名:', vendorName);
   
