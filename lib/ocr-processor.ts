@@ -370,7 +370,7 @@ export class OCRProcessor {
       console.error('AI category prediction failed:', error);
       
       // フォールバック: 従来のキーワードベースの判定
-      if (ocrResult.vendor) {
+      if (ocrResult.vendor && typeof ocrResult.vendor === 'string') {
         const vendor = ocrResult.vendor.toLowerCase();
         
         // より詳細なパターンマッチング

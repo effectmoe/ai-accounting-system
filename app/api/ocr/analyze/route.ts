@@ -222,11 +222,30 @@ export async function POST(request: NextRequest) {
       
       // 完全なベンダー名を抽出（OCRテキスト全体から）
       const extractedText = JSON.stringify(analysisResult.fields || {});
-      let vendorName = analysisResult.fields?.vendorName || analysisResult.fields?.merchantName || 
-                      analysisResult.fields?.VendorName || analysisResult.fields?.MerchantName || 
-                      analysisResult.fields?.VendorAddressRecipient || // 請求書モデルでのベンダー名フィールド
-                      analysisResult.fields?.RemittanceAddressRecipient || // 送金先名称
-                      file.name.replace(/\.(pdf|png|jpg|jpeg)$/i, '');
+      
+      // ベンダー名の抽出（nullやundefinedのチェックを追加）
+      let vendorName = '';
+      const vendorFields = [
+        analysisResult.fields?.vendorName,
+        analysisResult.fields?.merchantName,
+        analysisResult.fields?.VendorName,
+        analysisResult.fields?.MerchantName,
+        analysisResult.fields?.VendorAddressRecipient,
+        analysisResult.fields?.RemittanceAddressRecipient
+      ];
+      
+      // 有効な値を探す
+      for (const field of vendorFields) {
+        if (field && typeof field === 'string' && field.trim()) {
+          vendorName = field.trim();
+          break;
+        }
+      }
+      
+      // ベンダー名が見つからない場合はファイル名を使用
+      if (!vendorName) {
+        vendorName = file.name.replace(/\.(pdf|png|jpg|jpeg)$/i, '') || 'Unknown Vendor';
+      }
       
       // より詳細なベンダー名をOCRテキストから抽出
       const vendorPatterns = [
@@ -425,11 +444,29 @@ export async function POST(request: NextRequest) {
       const { OCRProcessor } = await import('@/lib/ocr-processor');
       const ocrProcessor = new OCRProcessor();
       
-      finalVendorName = analysisResult.fields?.vendorName || analysisResult.fields?.merchantName || 
-                       analysisResult.fields?.VendorName || analysisResult.fields?.MerchantName || 
-                       analysisResult.fields?.VendorAddressRecipient || // 請求書モデルでのベンダー名フィールド
-                       analysisResult.fields?.RemittanceAddressRecipient || // 送金先名称
-                       file.name.replace(/\.(pdf|png|jpg|jpeg)$/i, '');
+      // ベンダー名の抽出（nullやundefinedのチェックを追加）
+      const vendorFieldsForResponse = [
+        analysisResult.fields?.vendorName,
+        analysisResult.fields?.merchantName,
+        analysisResult.fields?.VendorName,
+        analysisResult.fields?.MerchantName,
+        analysisResult.fields?.VendorAddressRecipient,
+        analysisResult.fields?.RemittanceAddressRecipient
+      ];
+      
+      // 有効な値を探す
+      finalVendorName = '';
+      for (const field of vendorFieldsForResponse) {
+        if (field && typeof field === 'string' && field.trim()) {
+          finalVendorName = field.trim();
+          break;
+        }
+      }
+      
+      // ベンダー名が見つからない場合はファイル名を使用
+      if (!finalVendorName) {
+        finalVendorName = file.name.replace(/\.(pdf|png|jpg|jpeg)$/i, '') || 'Unknown Vendor';
+      }
       
       const totalAmountExtracted = extractAmount(analysisResult.fields?.InvoiceTotal) || 
                                   extractAmount(analysisResult.fields?.totalAmount) || 

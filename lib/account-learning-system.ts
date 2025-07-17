@@ -39,6 +39,9 @@ export class AccountLearningSystem {
     accountCategory: string,
     metadata?: any
   ): Promise<AccountLearningData> {
+    if (!vendorName || typeof vendorName !== 'string') {
+      throw new Error('ベンダー名が無効です');
+    }
     const vendorNameLower = vendorName.toLowerCase();
     
     // 既存の学習データを確認
@@ -89,6 +92,9 @@ export class AccountLearningSystem {
     companyId: string,
     vendorName: string
   ): Promise<{ category: string; confidence: number } | null> {
+    if (!vendorName || typeof vendorName !== 'string') {
+      return null;
+    }
     const vendorNameLower = vendorName.toLowerCase();
 
     // 完全一致を検索
@@ -150,6 +156,9 @@ export class AccountLearningSystem {
    */
   private extractPatterns(vendorName: string): string[] {
     const patterns: string[] = [];
+    if (!vendorName || typeof vendorName !== 'string') {
+      return patterns;
+    }
     const lower = vendorName.toLowerCase();
 
     // 会社形態を除去

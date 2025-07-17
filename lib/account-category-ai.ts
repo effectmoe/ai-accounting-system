@@ -247,7 +247,7 @@ export class AccountCategoryAI {
       
       for (const keyword of keywords) {
         if (text.includes(keyword.toLowerCase()) || 
-            (ocrResult.vendor && ocrResult.vendor.toLowerCase().includes(keyword.toLowerCase()))) {
+            (ocrResult.vendor && typeof ocrResult.vendor === 'string' && ocrResult.vendor.toLowerCase().includes(keyword.toLowerCase()))) {
           matched.push(keyword);
           score++;
         }
@@ -356,7 +356,7 @@ export class AccountCategoryAI {
    */
   private isParkingReceipt(ocrResult: OCRResult, extractedInfo: any): boolean {
     const text = ocrResult.text.toLowerCase();
-    const vendor = (ocrResult.vendor || '').toLowerCase();
+    const vendor = (ocrResult.vendor && typeof ocrResult.vendor === 'string' ? ocrResult.vendor : '').toLowerCase();
     
     // 複数の指標でスコアリング
     let score = 0;
@@ -872,7 +872,7 @@ export class AccountCategoryAI {
    */
   private intelligentFallback(ocrResult: OCRResult): AccountCategoryPrediction {
     const text = ocrResult.text.toLowerCase();
-    const vendor = (ocrResult.vendor || '').toLowerCase();
+    const vendor = (ocrResult.vendor && typeof ocrResult.vendor === 'string' ? ocrResult.vendor : '').toLowerCase();
     
     // パターンベースの高度な分析
     const patterns = {
