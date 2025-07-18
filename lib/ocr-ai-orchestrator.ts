@@ -81,9 +81,16 @@ export class OCRAIOrchestrator {
   
   constructor() {
     const apiKey = process.env.DEEPSEEK_API_KEY;
+    console.log('[OCRAIOrchestrator] Initializing with DeepSeek API...');
+    console.log('[OCRAIOrchestrator] API Key from env:', apiKey ? `Present (${apiKey.substring(0, 10)}...)` : 'Not found');
+    console.log('[OCRAIOrchestrator] Contains test-key:', apiKey?.includes('test-key') || false);
+    
     if (apiKey && !apiKey.includes('test-key')) {
       this.deepseekApiKey = apiKey;
       this.isAvailable = true;
+      console.log('[OCRAIOrchestrator] DeepSeek API is available');
+    } else {
+      console.log('[OCRAIOrchestrator] DeepSeek API is NOT available');
     }
   }
   
@@ -217,6 +224,31 @@ export class OCRAIOrchestrator {
     
     try {
       console.log('[OCRAIOrchestrator] Making DeepSeek API request with 25s timeout...');
+      console.log('[OCRAIOrchestrator] DeepSeek API endpoint:', this.deepseekEndpoint);
+      console.log('[OCRAIOrchestrator] API Key present:', !!this.deepseekApiKey);
+      console.log('[OCRAIOrchestrator] API Key prefix:', this.deepseekApiKey?.substring(0, 10));
+      
+      const requestBody = {
+        model: 'deepseek-chat', // より汎用的なチャットモデル
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a JSON extraction expert. Always return valid JSON in code blocks.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        max_tokens: 4000,
+        temperature: 0,
+        stream: false
+      };
+      
+      console.log('[OCRAIOrchestrator] Request body (without content):', {
+        ...requestBody,
+        messages: requestBody.messages.map(m => ({ role: m.role, contentLength: m.content.length }))
+      });
       
       const response = await fetch(this.deepseekEndpoint, {
         method: 'POST',
@@ -224,36 +256,36 @@ export class OCRAIOrchestrator {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${this.deepseekApiKey}`
         },
-        body: JSON.stringify({
-          model: 'deepseek-chat', // より汎用的なチャットモデル
-          messages: [
-            {
-              role: 'system',
-              content: 'You are a JSON extraction expert. Always return valid JSON in code blocks.'
-            },
-            {
-              role: 'user',
-              content: prompt
-            }
-          ],
-          max_tokens: 4000,
-          temperature: 0,
-          stream: false
-        }),
+        body: JSON.stringify(requestBody),
         signal: controller.signal // タイムアウト用のシグナル
       });
 
       clearTimeout(timeoutId);
 
+      console.log('[OCRAIOrchestrator] Response status:', response.status);
+      console.log('[OCRAIOrchestrator] Response headers:', Object.fromEntries(response.headers.entries()));
+
       if (!response.ok) {
         const errorText = await response.text();
         console.error('[OCRAIOrchestrator] DeepSeek API error response:', errorText);
-        throw new Error(`DeepSeek API request failed: ${response.status} ${response.statusText}`);
+        console.error('[OCRAIOrchestrator] Full error details:', {
+          status: response.status,
+          statusText: response.statusText,
+          headers: Object.fromEntries(response.headers.entries()),
+          errorBody: errorText
+        });
+        throw new Error(`DeepSeek API request failed: ${response.status} ${response.statusText} - ${errorText}`);
       }
 
       const data = await response.json();
       console.log('[OCRAIOrchestrator] DeepSeek API request completed successfully');
-      console.log('[OCRAIOrchestrator] DeepSeek raw response:', JSON.stringify(data, null, 2));
+      console.log('[OCRAIOrchestrator] DeepSeek response structure:', {
+        hasChoices: !!data.choices,
+        choicesLength: data.choices?.length,
+        hasUsage: !!data.usage,
+        firstChoiceHasMessage: !!data.choices?.[0]?.message,
+        firstChoiceMessageContentLength: data.choices?.[0]?.message?.content?.length
+      });
       return data;
       
     } catch (error) {
@@ -263,6 +295,9 @@ export class OCRAIOrchestrator {
         console.error('[OCRAIOrchestrator] DeepSeek API request timed out after 25 seconds');
         throw new Error('DeepSeek API request timed out after 25 seconds');
       }
+      
+      console.error('[OCRAIOrchestrator] Unexpected error:', error);
+      console.error('[OCRAIOrchestrator] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
       
       throw error;
     }
