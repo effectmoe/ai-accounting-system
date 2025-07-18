@@ -191,12 +191,22 @@ export default function SupplierDetailPage() {
                     </p>
                   )}
                   {(supplier.prefecture || supplier.city || supplier.address1 || supplier.address2) ? (
-                    <p>
-                      {supplier.prefecture}
-                      {supplier.city}
-                      {supplier.address1}
-                      {supplier.address2}
-                    </p>
+                    <div>
+                      {/* 都道府県と市区町村が存在する場合 */}
+                      {(supplier.prefecture || supplier.city) && (
+                        <p>
+                          {supplier.prefecture}
+                          {supplier.city}
+                        </p>
+                      )}
+                      {/* 住所1と住所2が存在する場合 */}
+                      {(supplier.address1 || supplier.address2) && (
+                        <p>
+                          {supplier.address1}
+                          {supplier.address2}
+                        </p>
+                      )}
+                    </div>
                   ) : (
                     <p className="text-muted-foreground">住所情報が登録されていません</p>
                   )}

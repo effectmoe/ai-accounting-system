@@ -341,7 +341,13 @@ export default function SupplierQuoteDetailPage() {
                       <button
                         onClick={() => {
                           const fileId = quote.fileId;
-                          console.log('[SupplierQuoteDetail] Opening file:', fileId);
+                          console.log('[SupplierQuoteDetail] Opening file:', {
+                            fileId: fileId,
+                            fileIdType: typeof fileId,
+                            fileIdLength: fileId?.length,
+                            quoteId: quote._id || quote.id,
+                            fullQuote: quote
+                          });
                           window.open(`/api/documents/${fileId}/download`, '_blank');
                         }}
                         className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors cursor-pointer"

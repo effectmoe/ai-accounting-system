@@ -68,9 +68,20 @@ export async function POST(request: NextRequest) {
           const vendorPhone = quoteData.vendorPhone || quoteData.vendorPhoneNumber || '';
           const vendorEmail = quoteData.vendorEmail || '';
           
+          // 郵便番号を住所から抽出
+          let postalCode = '';
+          let cleanAddress = vendorAddress;
+          const postalCodeMatch = vendorAddress.match(/〒?(\d{3}-?\d{4})/);
+          if (postalCodeMatch) {
+            postalCode = postalCodeMatch[1];
+            // 郵便番号を住所から除去
+            cleanAddress = vendorAddress.replace(/〒?\d{3}-?\d{4}\s*/, '').trim();
+          }
+          
           console.log(`[Supplier Quote] Creating new supplier with OCR data:`, {
             companyName: quoteData.vendorName,
-            address: vendorAddress,
+            address: cleanAddress,
+            postalCode: postalCode,
             phone: vendorPhone,
             email: vendorEmail
           });
@@ -81,8 +92,8 @@ export async function POST(request: NextRequest) {
             companyName: quoteData.vendorName,
             email: vendorEmail,
             phone: vendorPhone,
-            address1: vendorAddress, // addressフィールドはaddress1に格納
-            postalCode: '',
+            address1: cleanAddress, // 郵便番号を除いた住所
+            postalCode: postalCode, // 抽出した郵便番号
             status: 'active',
             notes: 'OCRで自動作成された仕入先'
           });
