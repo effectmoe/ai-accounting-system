@@ -16,10 +16,8 @@ export async function GET(
       );
     }
 
-    // MongoDBからOCR結果を取得
-    const database = await db;
-    const collection = database.collection('ocr_results');
-    const ocrResult = await collection.findOne({ _id: new ObjectId(id) });
+    // MongoDBからOCR結果を取得（documentsコレクションから）
+    const ocrResult = await db.findById('documents', id);
 
     if (!ocrResult) {
       return NextResponse.json(
@@ -57,9 +55,7 @@ export async function DELETE(
     }
 
     // MongoDBからOCR結果（ドキュメント）を削除
-    const database = await db;
-    const collection = database.collection('documents');
-    const result = await collection.deleteOne({ _id: new ObjectId(id) });
+    const result = await db.delete('documents', id);
 
     if (!result) {
       return NextResponse.json(
