@@ -64,58 +64,39 @@ export async function GET(
 
       // ファイルをストリーミング
       const downloadStream = bucket.openDownloadStream(fileObjectId);
-      const chunks: Buffer[] = [];
+      const contentType = file.contentType || file.metadata?.contentType || 'application/octet-stream';
       
-      return new Promise<NextResponse>((resolve, reject) => {
-        let resolved = false;
-        
-        // 30秒のタイムアウトを設定
-        const timeout = setTimeout(() => {
-          if (!resolved) {
-            resolved = true;
-            console.error('[Document Download] Stream timeout after 30s');
-            downloadStream.destroy();
-            resolve(NextResponse.json({
-              error: 'Download timeout'
-            }, { status: 504 }));
-          }
-        }, 30000);
-
-        downloadStream.on('data', (chunk) => {
-          console.log('[Document Download] Received chunk:', chunk.length, 'bytes');
-          chunks.push(chunk);
-        });
-
-        downloadStream.on('error', (error) => {
-          if (!resolved) {
-            resolved = true;
-            clearTimeout(timeout);
+      console.log('[Document Download] Starting stream for file:', {
+        filename: file.filename,
+        length: file.length,
+        contentType: contentType
+      });
+      
+      // ReadableStreamを使用して直接ストリーミング
+      const stream = new ReadableStream({
+        start(controller) {
+          downloadStream.on('data', (chunk) => {
+            controller.enqueue(chunk);
+          });
+          
+          downloadStream.on('end', () => {
+            controller.close();
+          });
+          
+          downloadStream.on('error', (error) => {
             console.error('[Document Download] Stream error:', error);
-            resolve(NextResponse.json({
-              error: 'Failed to download file'
-            }, { status: 500 }));
-          }
-        });
-
-        downloadStream.on('end', () => {
-          if (!resolved) {
-            resolved = true;
-            clearTimeout(timeout);
-            const buffer = Buffer.concat(chunks);
-            const contentType = file.contentType || file.metadata?.contentType || 'application/octet-stream';
-            
-            console.log('[Document Download] Stream completed, buffer size:', buffer.length, 'bytes');
-            
-            resolve(new NextResponse(buffer, {
-              status: 200,
-              headers: {
-                'Content-Type': contentType,
-                'Content-Disposition': `inline; filename="${file.filename}"`,
-                'Content-Length': buffer.length.toString(),
-              },
-            }));
-          }
-        });
+            controller.error(error);
+          });
+        }
+      });
+      
+      return new NextResponse(stream, {
+        status: 200,
+        headers: {
+          'Content-Type': contentType,
+          'Content-Disposition': `inline; filename="${file.filename}"`,
+          'Content-Length': file.length.toString(),
+        },
       });
 
     } catch (gridfsError) {
