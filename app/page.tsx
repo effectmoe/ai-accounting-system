@@ -26,7 +26,8 @@ import {
   Bot,
   BookOpen,
   Lightbulb,
-  HelpCircle
+  HelpCircle,
+  Database
 } from 'lucide-react';
 
 const quickActions = [
@@ -365,6 +366,27 @@ export default function Home() {
                   </div>
                 </div>
               ))}
+            </CardContent>
+          </Card>
+
+          {/* 管理者向けツール */}
+          <Card className="bg-white/80 backdrop-blur-sm mt-6">
+            <CardHeader>
+              <CardTitle className="text-lg text-gray-700">管理者向けツール</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                <Database className="w-5 h-5 text-gray-500" />
+                <div className="flex-1">
+                  <Link href="/import" className="text-sm text-gray-700 hover:text-blue-600 transition-colors">
+                    freeeからのデータインポート
+                  </Link>
+                  <p className="text-xs text-gray-500 mt-1">
+                    freeeからエクスポートしたCSVファイルを一括インポート
+                  </p>
+                </div>
+                <ArrowRight className="w-4 h-4 text-gray-400" />
+              </div>
             </CardContent>
           </Card>
         </div>
