@@ -338,26 +338,28 @@ export default function SupplierQuoteDetailPage() {
                   </p>
                   <div className="flex gap-2">
                     {quote.fileId && (
-                      <button
-                        onClick={() => {
-                          const fileId = quote.fileId;
-                          console.log('[SupplierQuoteDetail] Opening file:', {
-                            fileId: fileId,
-                            fileIdType: typeof fileId,
-                            fileIdLength: fileId?.length,
-                            quoteId: quote._id || quote.id,
-                            fullQuote: quote
-                          });
-                          window.open(`/api/documents/${fileId}/download`, '_blank');
-                        }}
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors cursor-pointer"
-                      >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                      </svg>
-                        元ファイルを表示
-                      </button>
+                      <>
+                        <a
+                          href={`/api/documents/${quote.fileId}/download`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors cursor-pointer"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                          元ファイルを表示
+                        </a>
+                        <a
+                          href={`/api/documents/${quote.fileId}/download`}
+                          download
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-gray-50 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                        >
+                          <Download size={16} />
+                          ダウンロード
+                        </a>
+                      </>
                     )}
                     {quote.ocrResultId && (
                       <a

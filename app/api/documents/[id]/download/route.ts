@@ -28,6 +28,15 @@ export async function GET(
       fileId = objectIdMatch[1];
       console.log('[Document Download] Extracted ObjectId from string format:', fileId);
     }
+    
+    // ObjectIdインスタンスが文字列化されている場合の処理
+    if (typeof fileId === 'string' && fileId.includes('new ObjectId')) {
+      const match = fileId.match(/new ObjectId\("?([a-f0-9]{24})"?\)/i);
+      if (match) {
+        fileId = match[1];
+        console.log('[Document Download] Extracted from new ObjectId format:', fileId);
+      }
+    }
 
     if (!ObjectId.isValid(fileId)) {
       console.error('[Document Download] Invalid document ID format:', fileId);
@@ -119,6 +128,9 @@ export async function GET(
                   'Content-Type': contentType,
                   'Content-Disposition': `inline; filename="${file.filename}"`,
                   'Content-Length': buffer.length.toString(),
+                  'Cache-Control': 'no-cache, no-store, must-revalidate',
+                  'Pragma': 'no-cache',
+                  'Expires': '0',
                 },
               }));
             }
