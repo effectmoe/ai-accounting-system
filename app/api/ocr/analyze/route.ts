@@ -27,12 +27,23 @@ export async function POST(request: NextRequest) {
     // Azure Form Recognizerで基本的なOCR処理
     let azureOcrResult;
     
-    if (process.env.AZURE_FORM_RECOGNIZER_ENDPOINT && process.env.AZURE_FORM_RECOGNIZER_KEY) {
+    const azureEndpoint = process.env.AZURE_FORM_RECOGNIZER_ENDPOINT;
+    const azureKey = process.env.AZURE_FORM_RECOGNIZER_KEY;
+    
+    console.log('[OCR API] Azure config check:', {
+      hasEndpoint: !!azureEndpoint,
+      endpointValue: azureEndpoint || 'not set',
+      hasKey: !!azureKey,
+      keyLength: azureKey?.length || 0,
+      keyPrefix: azureKey?.substring(0, 10) || 'not set'
+    });
+    
+    if (azureEndpoint && azureKey && !azureEndpoint.includes('your-fr-endpoint') && !azureKey.includes('your-azure-key')) {
       console.log('[OCR API] Using Azure Form Recognizer...');
       
       const client = new DocumentAnalysisClient(
-        process.env.AZURE_FORM_RECOGNIZER_ENDPOINT,
-        new AzureKeyCredential(process.env.AZURE_FORM_RECOGNIZER_KEY)
+        azureEndpoint,
+        new AzureKeyCredential(azureKey)
       );
       
       const fileBuffer = await file.arrayBuffer();
@@ -47,27 +58,72 @@ export async function POST(request: NextRequest) {
       const azureElapsed = Date.now() - startTime;
       console.log('[OCR API] Azure Form Recognizer completed in', azureElapsed, 'ms');
     } else {
-      console.log('[OCR API] Azure Form Recognizer not configured, using mock data');
+      console.log('[OCR API] Azure Form Recognizer not configured properly, using mock data');
+      console.log('[OCR API] Mock data reason:', {
+        noEndpoint: !azureEndpoint,
+        noKey: !azureKey,
+        isTestEndpoint: azureEndpoint?.includes('your-fr-endpoint'),
+        isTestKey: azureKey?.includes('your-azure-key')
+      });
+      
+      // より現実的なモックデータ
       azureOcrResult = {
-        content: 'Mock OCR result for testing',
+        content: `合同会社アソウタイセイプリンティング
+〒xxx-xxxx 東京都〇〇区〇〇 1-2-3
+TEL: 03-xxxx-xxxx FAX: 03-xxxx-xxxx
+
+見積書
+
+見積番号: M-2025-001
+発行日: 2025年1月18日
+
+株式会社CROP御中
+
+件名: 印刷物
+
+下記の通り御見積申し上げます。
+
+品名: 領収書（3枚複写・1冊50組）
+数量: 1
+単価: 5,000
+金額: 5,000
+
+小計: 5,000
+消費税: 500
+合計金額: 5,500円
+
+備考: 納期は発注後約1週間となります。`,
         pages: [
           {
             pageNumber: 1,
             lines: [
               { content: '合同会社アソウタイセイプリンティング' },
+              { content: '〒xxx-xxxx 東京都〇〇区〇〇 1-2-3' },
+              { content: 'TEL: 03-xxxx-xxxx FAX: 03-xxxx-xxxx' },
+              { content: '見積書' },
+              { content: '見積番号: M-2025-001' },
+              { content: '発行日: 2025年1月18日' },
               { content: '株式会社CROP御中' },
               { content: '件名: 印刷物' },
-              { content: '領収書（3枚複写・1冊50組）' },
+              { content: '下記の通り御見積申し上げます。' },
+              { content: '品名: 領収書（3枚複写・1冊50組）' },
               { content: '数量: 1' },
               { content: '単価: 5,000' },
               { content: '金額: 5,000' },
               { content: '小計: 5,000' },
               { content: '消費税: 500' },
-              { content: '合計: 5,500' }
+              { content: '合計金額: 5,500円' },
+              { content: '備考: 納期は発注後約1週間となります。' }
             ]
           }
         ],
-        fields: {},
+        fields: {
+          'DocumentNumber': { value: 'M-2025-001' },
+          'Date': { value: '2025-01-18' },
+          'VendorName': { value: '合同会社アソウタイセイプリンティング' },
+          'CustomerName': { value: '株式会社CROP' },
+          'Total': { value: 5500 }
+        },
         tables: []
       };
     }
