@@ -388,8 +388,9 @@ async function convertOCRToSupplierQuote(ocrResult: any) {
         },
         body: JSON.stringify({
           companyName: vendorName,
-          address: vendorInfo.address,
+          address1: vendorInfo.address,  // Changed from 'address' to 'address1'
           phone: vendorInfo.phone,
+          fax: vendorInfo.fax,  // Added fax field
           email: vendorInfo.email,
           contactPerson: '',
           isGeneratedByAI: true,

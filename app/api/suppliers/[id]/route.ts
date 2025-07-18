@@ -19,6 +19,7 @@ export async function GET(
       companyName: supplier.companyName,
       email: supplier.email,
       phone: supplier.phone,
+      fax: supplier.fax,
       address1: supplier.address1,
       address2: supplier.address2,
       postalCode: supplier.postalCode,
@@ -31,6 +32,8 @@ export async function GET(
     console.log('[3] Field existence check:', {
       hasPhone: !!supplier.phone,
       phoneLength: supplier.phone?.length || 0,
+      hasFax: !!supplier.fax,
+      faxLength: supplier.fax?.length || 0,
       hasAddress1: !!supplier.address1,
       address1Length: supplier.address1?.length || 0,
       hasPostalCode: !!supplier.postalCode
