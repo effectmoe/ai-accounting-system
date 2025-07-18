@@ -8,12 +8,13 @@ import { toast } from 'react-hot-toast';
 import { OCRItemExtractor } from '@/lib/ocr-item-extractor';
 
 // 仕入先情報抽出関数（改善版）
-function extractVendorInformation(extractedData: any): {name: string, address: string, phone: string, email: string} {
+function extractVendorInformation(extractedData: any): {name: string, address: string, phone: string, email: string, fax: string} {
   const vendorInfo = {
     name: '',
     address: '',
     phone: '',
-    email: ''
+    email: '',
+    fax: ''
   };
   
   console.log('[extractVendorInformation] 入力データ:', {
@@ -26,6 +27,7 @@ function extractVendorInformation(extractedData: any): {name: string, address: s
   
   // 1. 仕入先名の優先順位付き抽出
   const vendorNameCandidates = [
+    extractedData.vendor?.name,
     extractedData.vendorName,
     extractedData.VendorName,
     extractedData.VendorAddressRecipient,
@@ -62,10 +64,11 @@ function extractVendorInformation(extractedData: any): {name: string, address: s
   }
   
   // 2. 仕入先詳細情報の抽出
-  vendorInfo.address = extractedData.vendorAddress || extractedData.VendorAddress || '';
-  vendorInfo.phone = extractedData.vendorPhoneNumber || extractedData.VendorPhoneNumber || 
+  vendorInfo.address = extractedData.vendor?.address || extractedData.vendorAddress || extractedData.VendorAddress || '';
+  vendorInfo.phone = extractedData.vendor?.phone || extractedData.vendorPhoneNumber || extractedData.VendorPhoneNumber || 
                      extractedData.vendorPhone || extractedData.VendorPhone || '';
-  vendorInfo.email = extractedData.vendorEmail || extractedData.VendorEmail || '';
+  vendorInfo.email = extractedData.vendor?.email || extractedData.vendorEmail || extractedData.VendorEmail || '';
+  vendorInfo.fax = extractedData.vendor?.fax || extractedData.vendorFax || extractedData.VendorFax || '';
   
   console.log('[extractVendorInformation] 最終仕入先情報:', vendorInfo);
   
@@ -122,6 +125,12 @@ async function convertOCRToSupplierQuote(ocrResult: any) {
   
   // OCRItemExtractorを使用して商品情報を抽出
   let items = OCRItemExtractor.extractItemsFromOCR(extractedData);
+  
+  // 備考欄の追加
+  items = items.map((item: any) => ({
+    ...item,
+    remarks: item.remarks || ''
+  }));
   
   console.log('[convertOCRToSupplierQuote] 抽出された項目:', items);
   
@@ -196,7 +205,8 @@ async function convertOCRToSupplierQuote(ocrResult: any) {
         unitPrice: itemAmount,
         amount: itemAmount,
         taxRate: 10,
-        taxAmount: taxAmountFromOCR || itemAmount * 0.1
+        taxAmount: taxAmountFromOCR || itemAmount * 0.1,
+        remarks: ''
       });
       
       console.log('[convertOCRToSupplierQuote] 新規項目を作成:', items[0]);
@@ -346,7 +356,9 @@ async function convertOCRToSupplierQuote(ocrResult: any) {
     // 仕入先情報を追加（改善版）
     vendorAddress: vendorInfo.address,
     vendorPhone: vendorInfo.phone,
-    vendorEmail: vendorInfo.email
+    vendorEmail: vendorInfo.email,
+    // vendorオブジェクトも追加
+    vendor: vendorInfo
   };
   
   // デバッグログ: 仕入先情報の詳細を出力

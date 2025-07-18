@@ -216,7 +216,7 @@ export default function SupplierQuoteDetailPage() {
                   <Building className="h-5 w-5 text-gray-400 mt-0.5" />
                   <div className="flex flex-col space-y-1">
                     <span className="text-gray-900 font-medium">
-                      {quote.supplier?.companyName || quote.vendorName || '未設定'}
+                      {quote.supplier?.companyName || quote.vendor?.name || quote.vendorName || '未設定'}
                     </span>
                     {(quote.supplier?.address || quote.vendorAddress) && (
                       <span className="text-sm text-gray-600">
@@ -339,7 +339,7 @@ export default function SupplierQuoteDetailPage() {
                   <div className="flex gap-2">
                     {quote.fileId && (
                       <a
-                        href={`/api/files/${quote.fileId}`}
+                        href={`/api/documents/${quote.fileId}/download`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors"
@@ -404,6 +404,11 @@ export default function SupplierQuoteDetailPage() {
                         <div className="text-sm font-medium text-gray-900">{item.itemName}</div>
                         {item.description && (
                           <div className="text-sm text-gray-500">{item.description}</div>
+                        )}
+                        {item.remarks && (
+                          <div className="text-sm text-gray-600 mt-1">
+                            <span className="font-medium">備考:</span> {item.remarks}
+                          </div>
                         )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
