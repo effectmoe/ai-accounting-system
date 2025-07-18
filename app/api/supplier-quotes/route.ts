@@ -74,8 +74,10 @@ export async function POST(request: NextRequest) {
             companyName: existingSupplier.companyName,
             phone: existingSupplier.phone,
             fax: existingSupplier.fax,
+            email: existingSupplier.email,
+            website: existingSupplier.website,
             address1: existingSupplier.address1,
-            address: existingSupplier.address,
+            address2: existingSupplier.address2,
             postalCode: existingSupplier.postalCode
           }, null, 2));
         } else {
@@ -88,6 +90,7 @@ export async function POST(request: NextRequest) {
           const vendorPhone = cleanPhoneNumber(rawVendorPhone);
           const vendorEmail = quoteData.vendorEmail || vendorInfo.email || '';
           const vendorFax = quoteData.vendorFax || vendorInfo.fax || '';
+          const vendorWebsite = quoteData.vendorWebsite || vendorInfo.website || vendorInfo.url || '';
           
           // 郵便番号を住所から抽出
           let postalCode = '';
@@ -118,7 +121,8 @@ export async function POST(request: NextRequest) {
             rawVendorPhone,
             vendorPhone,
             vendorFax,
-            vendorEmail
+            vendorEmail,
+            vendorWebsite
           }, null, 2));
           
           console.log('[3] Processed address data:', JSON.stringify({
@@ -129,11 +133,12 @@ export async function POST(request: NextRequest) {
           
           console.log('[4] Creating new supplier with data:', JSON.stringify({
             companyName: vendorName,
-            address: cleanAddress,
+            address1: cleanAddress,
             postalCode: postalCode,
             phone: vendorPhone,
             fax: vendorFax,
             email: vendorEmail,
+            website: vendorWebsite,
             originalAddress: vendorAddress
           }, null, 2));
           
@@ -144,15 +149,17 @@ export async function POST(request: NextRequest) {
             email: vendorEmail,
             phone: vendorPhone,
             fax: vendorFax, // FAX番号を追加
-            address: cleanAddress, // addressフィールドに保存（address1ではなく）
+            website: vendorWebsite, // ホームページURLを追加
+            address1: cleanAddress, // address1フィールドに保存
             postalCode: postalCode, // 抽出した郵便番号
-            status: 'active',
+            status: 'active' as const,
             notes: 'OCRで自動作成された仕入先'
           };
           
           console.log('[5] Supplier data to be saved:', JSON.stringify(supplierData, null, 2));
           
-          const newSupplier = await db.create('suppliers', supplierData);
+          // SupplierService.createSupplierを使用して正しく作成
+          const newSupplier = await SupplierService.createSupplier(supplierData);
           supplierId = newSupplier._id;
           
           console.log('[6] Created supplier result:', JSON.stringify({
@@ -162,8 +169,9 @@ export async function POST(request: NextRequest) {
             email: newSupplier.email,
             phone: newSupplier.phone,
             fax: newSupplier.fax,
+            website: newSupplier.website,
             address1: newSupplier.address1,
-            address: newSupplier.address,
+            address2: newSupplier.address2,
             postalCode: newSupplier.postalCode,
             status: newSupplier.status,
             notes: newSupplier.notes
@@ -176,8 +184,10 @@ export async function POST(request: NextRequest) {
             companyName: verifySupplier?.companyName,
             phone: verifySupplier?.phone,
             fax: verifySupplier?.fax,
+            email: verifySupplier?.email,
+            website: verifySupplier?.website,
             address1: verifySupplier?.address1,
-            address: verifySupplier?.address,
+            address2: verifySupplier?.address2,
             postalCode: verifySupplier?.postalCode
           }, null, 2));
           
@@ -189,8 +199,10 @@ export async function POST(request: NextRequest) {
             companyName: directSupplier?.companyName,
             phone: directSupplier?.phone,
             fax: directSupplier?.fax,
+            email: directSupplier?.email,
+            website: directSupplier?.website,
             address1: directSupplier?.address1,
-            address: directSupplier?.address,
+            address2: directSupplier?.address2,
             postalCode: directSupplier?.postalCode,
             allFields: Object.keys(directSupplier || {})
           }, null, 2));
@@ -205,14 +217,16 @@ export async function POST(request: NextRequest) {
         });
         
         if (!defaultSupplier) {
-          const newDefaultSupplier = await db.create('suppliers', {
+          const newDefaultSupplier = await SupplierService.createSupplier({
             supplierCode: await SupplierService.generateSupplierCode(),
             companyName: 'OCR自動登録仕入先',
             email: '',
             phone: '',
-            address: '',
+            fax: '',
+            website: '',
+            address1: '',
             postalCode: '',
-            status: 'active',
+            status: 'active' as const,
             notes: 'OCR処理でのデフォルト仕入先'
           });
           supplierId = newDefaultSupplier._id;
