@@ -9,32 +9,20 @@ export async function GET(
   try {
     const { id } = params;
     console.log('[Document Download] Getting document with ID:', id);
+    console.log('[Document Download] Request URL:', request.url);
+    console.log('[Document Download] Request headers:', Object.fromEntries(request.headers.entries()));
 
     if (!id || !ObjectId.isValid(id)) {
+      console.error('[Document Download] Invalid document ID:', id);
       return NextResponse.json({
         error: 'Invalid document ID'
       }, { status: 400 });
     }
 
-    // ドキュメントを取得
-    const document = await db.findById('documents', id);
-    
-    if (!document) {
-      return NextResponse.json({
-        error: 'Document not found'
-      }, { status: 404 });
-    }
-
-    // ファイルIDを確認
-    const fileId = document.fileId || document.file_id;
-    if (!fileId) {
-      console.error('[Document Download] No file ID found for document:', id);
-      return NextResponse.json({
-        error: 'No file attached to this document'
-      }, { status: 404 });
-    }
-
-    console.log('[Document Download] File ID found:', fileId);
+    // この場合、IDは直接GridFSのファイルIDとして扱う
+    // （supplier-quotesではfileIdがGridFSのファイルIDを指している）
+    const fileId = id;
+    console.log('[Document Download] Using ID as GridFS file ID:', fileId);
 
     // GridFSからファイルを取得
     const bucket = await getGridFSBucket();

@@ -1,4 +1,4 @@
-import { MongoClient, Db, Collection, ObjectId } from 'mongodb';
+import { MongoClient, Db, Collection, ObjectId, GridFSBucket } from 'mongodb';
 
 // カスタムエラークラス
 export class DatabaseError extends Error {
@@ -155,6 +155,13 @@ export async function getMongoClient(): Promise<MongoClient> {
 
 // シングルトンのクライアントプロミス（名前付きエクスポート）
 export const mongoClientPromise = getClientPromise();
+
+// GridFSバケットを取得
+export async function getGridFSBucket(): Promise<any> {
+  const { db } = await connectToDatabase();
+  const bucket = new GridFSBucket(db);
+  return bucket;
+}
 
 // トランザクション実行ヘルパー
 export async function withTransaction<T>(
