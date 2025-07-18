@@ -8,6 +8,8 @@ export default function OCRUploadAzure() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [results, setResults] = useState<any[]>([]);
   const [documentType, setDocumentType] = useState<'supplier-quote' | 'purchase-invoice'>('supplier-quote');
+  const [selectedResult, setSelectedResult] = useState<any>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
 
   const createSupplierQuote = async (ocrData: any, fileId: string) => {
     try {
@@ -424,7 +426,10 @@ export default function OCRUploadAzure() {
                 </button>
                 {result.structuredData && (
                   <button
-                    onClick={() => console.log('Structured Data:', result.structuredData)}
+                    onClick={() => {
+                      setSelectedResult(result);
+                      setShowDetailModal(true);
+                    }}
                     className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors text-sm"
                   >
                     詳細表示
@@ -433,6 +438,65 @@ export default function OCRUploadAzure() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* 詳細表示モーダル */}
+      {showDetailModal && selectedResult && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            <div className="p-6 border-b">
+              <h2 className="text-xl font-bold">OCR解析結果詳細</h2>
+            </div>
+            
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-8rem)]">
+              <div className="space-y-4">
+                {/* 基本情報 */}
+                <div>
+                  <h3 className="font-semibold text-lg mb-2">基本情報</h3>
+                  <div className="bg-gray-50 p-4 rounded space-y-2">
+                    <p><span className="font-medium">処理方法:</span> {selectedResult.processingMethod}</p>
+                    <p><span className="font-medium">AIモデル:</span> {selectedResult.model}</p>
+                    <p><span className="font-medium">ファイル名:</span> {selectedResult.fileName}</p>
+                  </div>
+                </div>
+
+                {/* 構造化データ */}
+                {selectedResult.structuredData && (
+                  <div>
+                    <h3 className="font-semibold text-lg mb-2">抽出データ</h3>
+                    <div className="bg-gray-50 p-4 rounded">
+                      <pre className="whitespace-pre-wrap text-sm">
+                        {JSON.stringify(selectedResult.structuredData, null, 2)}
+                      </pre>
+                    </div>
+                  </div>
+                )}
+
+                {/* エラー情報 */}
+                {selectedResult.error && (
+                  <div>
+                    <h3 className="font-semibold text-lg mb-2 text-red-600">エラー</h3>
+                    <div className="bg-red-50 p-4 rounded">
+                      <p className="text-red-700">{selectedResult.error}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="p-6 border-t">
+              <button
+                onClick={() => {
+                  setShowDetailModal(false);
+                  setSelectedResult(null);
+                }}
+                className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
+              >
+                閉じる
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
