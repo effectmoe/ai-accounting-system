@@ -97,6 +97,14 @@ const quickActions = [
     icon: FileText,
     color: 'from-teal-500 to-teal-600',
     badge: '新機能'
+  },
+  {
+    title: '仕入先請求書',
+    description: '仕入先からの請求書管理',
+    href: '/purchase-invoices',
+    icon: Receipt,
+    color: 'from-green-500 to-green-600',
+    badge: '新機能'
   }
 ];
 
