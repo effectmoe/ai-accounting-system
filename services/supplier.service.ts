@@ -70,13 +70,43 @@ export class SupplierService {
 
   // 仕入先詳細取得
   static async getSupplierById(id: string) {
+    console.log('===== [SupplierService] getSupplierById Debug START =====');
+    console.log('[1] Looking for supplier with ID:', id);
+    
     const db = await getDatabase();
     const collection = db.collection<Supplier>(COLLECTION_NAME);
 
     const supplier = await collection.findOne({ _id: new ObjectId(id) });
     if (!supplier) {
+      console.log('[2] Supplier not found in database');
       throw new Error('Supplier not found');
     }
+    
+    console.log('[2] Raw supplier from MongoDB:', JSON.stringify({
+      _id: supplier._id,
+      supplierCode: supplier.supplierCode,
+      companyName: supplier.companyName,
+      email: supplier.email,
+      phone: supplier.phone,
+      address1: supplier.address1,
+      address2: supplier.address2,
+      postalCode: supplier.postalCode,
+      prefecture: supplier.prefecture,
+      city: supplier.city,
+      status: supplier.status,
+      notes: supplier.notes,
+      createdAt: supplier.createdAt,
+      updatedAt: supplier.updatedAt
+    }, null, 2));
+    
+    console.log('[3] MongoDB field types:', {
+      phoneType: typeof supplier.phone,
+      phoneValue: supplier.phone,
+      address1Type: typeof supplier.address1,
+      address1Value: supplier.address1,
+      postalCodeType: typeof supplier.postalCode,
+      postalCodeValue: supplier.postalCode
+    });
 
     // 銀行口座情報を含める場合
     if (supplier.bankAccountId) {
@@ -88,10 +118,22 @@ export class SupplierService {
       }
     }
 
-    return {
+    const result = {
       ...supplier,
       id: supplier._id?.toString()
     };
+    
+    console.log('[4] Final supplier object to return:', JSON.stringify({
+      _id: result._id,
+      id: result.id,
+      phone: result.phone,
+      address1: result.address1,
+      postalCode: result.postalCode
+    }, null, 2));
+    
+    console.log('===== [SupplierService] getSupplierById Debug END =====');
+    
+    return result;
   }
 
   // 仕入先作成

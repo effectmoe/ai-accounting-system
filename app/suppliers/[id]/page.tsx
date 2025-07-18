@@ -199,10 +199,15 @@ export default function SupplierDetailPage() {
                           {supplier.city}
                         </p>
                       )}
-                      {/* 住所1と住所2が存在する場合 */}
-                      {(supplier.address1 || supplier.address2) && (
+                      {/* 住所1が存在する場合（OCRで取得した住所など） */}
+                      {supplier.address1 && (
                         <p>
                           {supplier.address1}
+                        </p>
+                      )}
+                      {/* 住所2が存在する場合 */}
+                      {supplier.address2 && (
+                        <p>
                           {supplier.address2}
                         </p>
                       )}
@@ -222,11 +227,19 @@ export default function SupplierDetailPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {supplier.phone && (
+                {supplier.phone ? (
                   <div className="flex items-center gap-2">
                     <Phone className="h-4 w-4 text-muted-foreground" />
                     <span>{supplier.phone}</span>
                   </div>
+                ) : (
+                  console.log('[Contact Info] No phone number found:', {
+                    supplierPhone: supplier.phone,
+                    supplierId: supplier._id,
+                    hasPhone: !!supplier.phone,
+                    phoneType: typeof supplier.phone,
+                    phoneValue: supplier.phone
+                  }) || null
                 )}
                 {supplier.fax && (
                   <div className="flex items-center gap-2">
