@@ -1,4 +1,4 @@
-import ImportForm from './components/import-form';
+// import ImportForm from './components/import-form';  // freeeインポート機能は現在使用していない
 // import OCRUpload from './components/ocr-upload';  // 旧システムは無効化
 import OCRUploadAzure from './components/ocr-upload-azure';
 
@@ -27,8 +27,8 @@ export default function ImportPage() {
         <OCRComponent />
       </div>
       
-      {/* CSVインポート */}
-      <div className="bg-white rounded-lg shadow p-6">
+      {/* CSVインポート - 現在使用していないため非表示 */}
+      {/* <div className="bg-white rounded-lg shadow p-6">
         <div className="mb-6">
           <h2 className="text-lg font-semibold mb-2">📊 freeeからのデータインポート</h2>
           <p className="text-gray-600 text-sm">
@@ -37,7 +37,7 @@ export default function ImportPage() {
         </div>
         
         <ImportForm />
-      </div>
+      </div> */}
     </div>
   );
 }

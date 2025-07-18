@@ -465,10 +465,146 @@ export default function OCRUploadAzure() {
                 {selectedResult.structuredData && (
                   <div>
                     <h3 className="font-semibold text-lg mb-2">抽出データ</h3>
-                    <div className="bg-gray-50 p-4 rounded">
-                      <pre className="whitespace-pre-wrap text-sm">
-                        {JSON.stringify(selectedResult.structuredData, null, 2)}
-                      </pre>
+                    <div className="bg-gray-50 p-4 rounded space-y-4">
+                      {/* 基本情報セクション */}
+                      {(selectedResult.structuredData.subject || selectedResult.structuredData.documentNumber || selectedResult.structuredData.issueDate) && (
+                        <div>
+                          <h4 className="font-medium text-gray-700 mb-2">基本情報</h4>
+                          <div className="space-y-1 text-sm">
+                            {selectedResult.structuredData.subject && (
+                              <p><span className="font-medium">件名:</span> {selectedResult.structuredData.subject}</p>
+                            )}
+                            {selectedResult.structuredData.documentNumber && (
+                              <p><span className="font-medium">文書番号:</span> {selectedResult.structuredData.documentNumber}</p>
+                            )}
+                            {selectedResult.structuredData.issueDate && (
+                              <p><span className="font-medium">発行日:</span> {selectedResult.structuredData.issueDate}</p>
+                            )}
+                            {selectedResult.structuredData.validityDate && (
+                              <p><span className="font-medium">有効期限:</span> {selectedResult.structuredData.validityDate}</p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* 仕入先情報 */}
+                      {selectedResult.structuredData.vendor && (
+                        <div>
+                          <h4 className="font-medium text-gray-700 mb-2">仕入先情報</h4>
+                          <div className="space-y-1 text-sm">
+                            {selectedResult.structuredData.vendor.name && (
+                              <p><span className="font-medium">会社名:</span> {selectedResult.structuredData.vendor.name}</p>
+                            )}
+                            {selectedResult.structuredData.vendor.address && (
+                              <p><span className="font-medium">住所:</span> {selectedResult.structuredData.vendor.address}</p>
+                            )}
+                            {selectedResult.structuredData.vendor.phone && (
+                              <p><span className="font-medium">電話番号:</span> {selectedResult.structuredData.vendor.phone}</p>
+                            )}
+                            {selectedResult.structuredData.vendor.fax && (
+                              <p><span className="font-medium">FAX:</span> {selectedResult.structuredData.vendor.fax}</p>
+                            )}
+                            {selectedResult.structuredData.vendor.email && (
+                              <p><span className="font-medium">メール:</span> {selectedResult.structuredData.vendor.email}</p>
+                            )}
+                            {selectedResult.structuredData.vendor.website && (
+                              <p><span className="font-medium">ウェブサイト:</span> {selectedResult.structuredData.vendor.website}</p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* 顧客情報 */}
+                      {selectedResult.structuredData.customer && (
+                        <div>
+                          <h4 className="font-medium text-gray-700 mb-2">顧客情報</h4>
+                          <div className="space-y-1 text-sm">
+                            {selectedResult.structuredData.customer.name && (
+                              <p><span className="font-medium">会社名:</span> {selectedResult.structuredData.customer.name}</p>
+                            )}
+                            {selectedResult.structuredData.customer.address && (
+                              <p><span className="font-medium">住所:</span> {selectedResult.structuredData.customer.address}</p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* 商品明細 */}
+                      {selectedResult.structuredData.items && selectedResult.structuredData.items.length > 0 && (
+                        <div>
+                          <h4 className="font-medium text-gray-700 mb-2">商品明細</h4>
+                          <div className="overflow-x-auto">
+                            <table className="min-w-full divide-y divide-gray-200">
+                              <thead className="bg-gray-100">
+                                <tr>
+                                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">商品名</th>
+                                  <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">数量</th>
+                                  <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">単価</th>
+                                  <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">金額</th>
+                                </tr>
+                              </thead>
+                              <tbody className="bg-white divide-y divide-gray-200">
+                                {selectedResult.structuredData.items.map((item: any, idx: number) => (
+                                  <tr key={idx}>
+                                    <td className="px-3 py-2 text-sm">{item.itemName || item.description || '-'}</td>
+                                    <td className="px-3 py-2 text-sm text-right">{item.quantity || '-'}</td>
+                                    <td className="px-3 py-2 text-sm text-right">
+                                      {item.unitPrice ? `¥${item.unitPrice.toLocaleString()}` : '-'}
+                                    </td>
+                                    <td className="px-3 py-2 text-sm text-right">
+                                      {item.amount ? `¥${item.amount.toLocaleString()}` : '-'}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* 金額情報 */}
+                      {(selectedResult.structuredData.subtotal || selectedResult.structuredData.taxAmount || selectedResult.structuredData.totalAmount) && (
+                        <div>
+                          <h4 className="font-medium text-gray-700 mb-2">金額情報</h4>
+                          <div className="space-y-1 text-sm">
+                            {selectedResult.structuredData.subtotal && (
+                              <p><span className="font-medium">小計:</span> ¥{selectedResult.structuredData.subtotal.toLocaleString()}</p>
+                            )}
+                            {selectedResult.structuredData.taxAmount && (
+                              <p><span className="font-medium">税額:</span> ¥{selectedResult.structuredData.taxAmount.toLocaleString()}</p>
+                            )}
+                            {selectedResult.structuredData.totalAmount && (
+                              <p className="text-lg"><span className="font-medium">合計金額:</span> <span className="font-bold">¥{selectedResult.structuredData.totalAmount.toLocaleString()}</span></p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* その他の情報 */}
+                      {(selectedResult.structuredData.deliveryLocation || selectedResult.structuredData.paymentTerms || selectedResult.structuredData.notes) && (
+                        <div>
+                          <h4 className="font-medium text-gray-700 mb-2">その他の情報</h4>
+                          <div className="space-y-1 text-sm">
+                            {selectedResult.structuredData.deliveryLocation && (
+                              <p><span className="font-medium">納品場所:</span> {selectedResult.structuredData.deliveryLocation}</p>
+                            )}
+                            {selectedResult.structuredData.paymentTerms && (
+                              <p><span className="font-medium">支払条件:</span> {selectedResult.structuredData.paymentTerms}</p>
+                            )}
+                            {selectedResult.structuredData.notes && (
+                              <p><span className="font-medium">備考:</span> {selectedResult.structuredData.notes}</p>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* 生JSONデータ表示（デバッグ用） */}
+                      <details className="mt-4">
+                        <summary className="cursor-pointer text-sm text-gray-600 hover:text-gray-800">生データを表示</summary>
+                        <pre className="mt-2 p-2 bg-gray-100 rounded text-xs overflow-x-auto">
+                          {JSON.stringify(selectedResult.structuredData, null, 2)}
+                        </pre>
+                      </details>
                     </div>
                   </div>
                 )}
