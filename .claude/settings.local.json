@@ -135,7 +135,8 @@
       "WebFetch(domain:accounting-automation-a6nwucdpx-effectmoes-projects.vercel.app)",
       "WebFetch(domain:accounting-automation-aehf9334t-effectmoes-projects.vercel.app)",
       "WebFetch(domain:accounting-automation-effectmoes-projects.vercel.app)",
-      "Bash(git restore:*)"
+      "Bash(git restore:*)",
+      "WebFetch(domain:accounting-automation-ecrmxyrdd-effectmoes-projects.vercel.app)"
     ],
     "deny": []
   }

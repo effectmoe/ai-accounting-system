@@ -51,6 +51,35 @@ export class DocumentService {
   }
 
   /**
+   * ドキュメントを保存（DocumentDataから変換して保存）
+   */
+  static async saveDocument(documentData: DocumentData, companyId: string): Promise<Document> {
+    const service = new DocumentService();
+    
+    // DocumentDataからDocumentフォーマットに変換
+    const document: Omit<Document, '_id' | 'createdAt' | 'updatedAt'> = {
+      documentNumber: documentData.documentNumber,
+      documentType: documentData.documentType || 'receipt',
+      issueDate: new Date(documentData.issueDate),
+      customerName: documentData.partner?.name || '',
+      items: documentData.items.map(item => ({
+        description: item.name,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        amount: item.amount,
+        taxRate: item.taxRate,
+      })),
+      subtotal: documentData.subtotal,
+      taxAmount: documentData.tax,
+      totalAmount: documentData.total,
+      status: 'draft',
+      notes: documentData.notes || '',
+    };
+
+    return await service.createDocument(document);
+  }
+
+  /**
    * OCRデータからドキュメントを作成
    */
   async createFromOCR(data: DocumentData & { ocrResultId?: string; file_name?: string }): Promise<Document> {
