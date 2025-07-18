@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 export default function OCRUploadAzure() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [results, setResults] = useState<any[]>([]);
+  const [documentType, setDocumentType] = useState<'supplier-quote' | 'purchase-invoice'>('supplier-quote');
 
   const createSupplierQuote = async (ocrData: any, fileId: string) => {
     try {
@@ -97,13 +98,98 @@ export default function OCRUploadAzure() {
       toast.error(`仕入先見積書の作成に失敗: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
+  
+  const createPurchaseInvoice = async (ocrData: any, fileId: string) => {
+    try {
+      console.log('[OCR Upload] Creating purchase invoice with fileId:', fileId);
+      
+      // OCRデータを仕入請求書形式に変換
+      const purchaseInvoiceData = {
+        invoiceNumber: ocrData.documentNumber || `PI-${Date.now()}`,
+        issueDate: ocrData.issueDate || new Date().toISOString().split('T')[0],
+        dueDate: ocrData.dueDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        
+        // 仕入先情報（OCRで認識された発行元）
+        vendorName: ocrData.vendor?.name || '不明',
+        vendorAddress: ocrData.vendor?.address || '',
+        vendorPhone: ocrData.vendor?.phone || '',
+        vendorEmail: ocrData.vendor?.email || '',
+        vendorFax: ocrData.vendor?.fax || '',
+        vendor: ocrData.vendor, // vendor オブジェクト全体も送信
+        
+        // 商品情報
+        items: ocrData.items?.map((item: any) => ({
+          itemName: item.itemName || '商品',
+          description: item.description || '',
+          quantity: item.quantity || 1,
+          unitPrice: item.unitPrice || 0,
+          amount: item.amount || 0,
+          taxRate: item.taxRate || 10,
+          taxAmount: item.taxAmount || 0,
+          remarks: item.remarks || ''
+        })) || [],
+        
+        // 金額情報
+        subtotal: ocrData.subtotal || 0,
+        taxAmount: ocrData.taxAmount || 0,
+        totalAmount: ocrData.totalAmount || 0,
+        taxRate: 10, // デフォルト税率
+        
+        // 追加情報
+        notes: ocrData.notes || '',
+        
+        // OCRメタデータ
+        isGeneratedByAI: true,
+        aiGenerationMetadata: {
+          source: 'Azure Form Recognizer + DeepSeek',
+          confidence: 0.8,
+          timestamp: new Date()
+        },
+        
+        // ファイルID
+        fileId: fileId,
+        
+        // ステータス
+        status: 'received',
+        paymentStatus: 'pending'
+      };
+      
+      console.log('[OCR Upload] Purchase invoice data:', purchaseInvoiceData);
+      
+      // 仕入請求書APIを呼び出し
+      const response = await fetch('/api/purchase-invoices', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(purchaseInvoiceData)
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || '仕入請求書の作成に失敗しました');
+      }
+
+      const createdInvoice = await response.json();
+      console.log('[OCR Upload] Created purchase invoice:', createdInvoice);
+      
+      toast.success('仕入請求書が作成されました！', { duration: 4000 });
+      
+      // 作成した請求書のページに移動するオプション
+      // window.location.href = `/purchase-invoices/${createdInvoice._id}`;
+      
+    } catch (error) {
+      console.error('[OCR Upload] Error creating purchase invoice:', error);
+      toast.error(`仕入請求書の作成に失敗: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  };
 
   const processImage = async (file: File) => {
     try {
       // AI駆動のOCR処理
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('documentType', 'supplier-quote'); // 見積書として処理
+      formData.append('documentType', documentType); // 選択されたドキュメントタイプ
       formData.append('companyId', '11111111-1111-1111-1111-111111111111');
 
       const response = await fetch('/api/ocr/analyze', {
@@ -125,6 +211,7 @@ export default function OCRUploadAzure() {
           model: result.model,
           structuredData: result.data,
           fileId: result.fileId, // GridFSのファイルIDを追加
+          documentType: documentType,
           ...result.data 
         }]);
         toast.success(`${file.name} の処理が完了しました (${result.processingMethod})`);
@@ -134,9 +221,13 @@ export default function OCRUploadAzure() {
           toast.success('AI駆動のOCR解析が完了しました', { duration: 4000 });
         }
         
-        // 仕入先見積書として処理する場合、自動的に見積書を作成
+        // ドキュメントタイプに応じて処理
         if (result.data && result.fileId) {
-          await createSupplierQuote(result.data, result.fileId);
+          if (documentType === 'supplier-quote') {
+            await createSupplierQuote(result.data, result.fileId);
+          } else if (documentType === 'purchase-invoice') {
+            await createPurchaseInvoice(result.data, result.fileId);
+          }
         }
       } else {
         toast.error(`${file.name} の処理に失敗: ${result.error}`);
@@ -224,6 +315,19 @@ export default function OCRUploadAzure() {
 
   return (
     <div className="space-y-4">
+      {/* ドキュメントタイプ選択 */}
+      <div className="flex items-center space-x-4">
+        <label className="font-medium text-gray-700">ドキュメントタイプ:</label>
+        <select
+          value={documentType}
+          onChange={(e) => setDocumentType(e.target.value as 'supplier-quote' | 'purchase-invoice')}
+          className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="supplier-quote">仕入先見積書</option>
+          <option value="purchase-invoice">仕入請求書</option>
+        </select>
+      </div>
+      
       <div
         {...getRootProps()}
         className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors
@@ -241,7 +345,10 @@ export default function OCRUploadAzure() {
               対応形式: PDF, JPEG, PNG, BMP, TIFF (最大50MB)
             </p>
             <p className="text-sm text-blue-600 mt-2">
-              AI駆動のOCR処理 (Claude 3.5 Sonnet) を実行します
+              AI駆動のOCR処理 (DeepSeek) を実行します
+            </p>
+            <p className="text-sm text-green-600 mt-1">
+              選択中: {documentType === 'supplier-quote' ? '仕入先見積書' : '仕入請求書'}として処理
             </p>
           </>
         )}
