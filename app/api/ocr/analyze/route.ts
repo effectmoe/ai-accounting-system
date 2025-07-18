@@ -139,7 +139,8 @@ export async function GET(request: NextRequest) {
       '合同会社アソウタイセイプリンティング等の企業名正確認識',
       '御中・様による顧客・仕入先自動判別',
       '商品明細の構造化抽出',
-      '金額計算の自動検証'
+      '金額計算の自動検証',
+      'DeepSeek Chat モデルによる高精度解析'
     ],
     timestamp: new Date().toISOString()
   });
