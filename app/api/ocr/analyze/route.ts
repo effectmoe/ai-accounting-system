@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
       data: structuredData,
       message: 'DeepSeek AI駆動のOCR解析が完了しました',
       processingMethod: 'DeepSeek-AI-driven',
-      model: 'deepseek-coder',
+      model: 'deepseek-chat',
       processingTime: {
         total: totalElapsed,
         azure: azureOcrResult ? (Date.now() - startTime) : 0
@@ -133,7 +133,7 @@ export async function GET(request: NextRequest) {
     method: 'POST',
     description: 'DeepSeek AI駆動のOCR解析エンドポイント',
     supportedDocumentTypes: ['invoice', 'supplier-quote', 'receipt'],
-    model: 'deepseek-coder',
+    model: 'deepseek-chat',
     features: [
       '日本語ビジネス文書の高精度解析',
       '合同会社アソウタイセイプリンティング等の企業名正確認識',

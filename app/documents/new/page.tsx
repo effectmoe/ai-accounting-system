@@ -74,8 +74,11 @@ function extractVendorInformation(extractedData: any): {name: string, address: s
 
 // OCR結果を仕入先見積書に変換する関数
 async function convertOCRToSupplierQuote(ocrResult: any) {
+  console.log('[convertOCRToSupplierQuote] OCR結果全体:', JSON.stringify(ocrResult, null, 2));
+  
   // OCR結果から仕入先見積書データを抽出
-  const extractedData = ocrResult.extractedData || {};
+  // DeepSeek AIの場合はresult.dataに格納されている
+  const extractedData = ocrResult.data || ocrResult.extractedData || {};
   
   console.log('[convertOCRToSupplierQuote] 全抽出データ:', extractedData);
   console.log('[convertOCRToSupplierQuote] vendorNameフィールドの値:', extractedData.vendorName);
