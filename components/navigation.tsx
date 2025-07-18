@@ -16,6 +16,8 @@ const Navigation = () => {
     { href: '/invoices', label: '請求書' },
     { href: '/delivery-notes', label: '納品書' },
     { href: '/suppliers', label: '仕入先' },
+    { href: '/supplier-quotes', label: '仕入見積書' },
+    { href: '/purchase-invoices', label: '仕入請求書' },
     { href: '/customers', label: '顧客管理' },
     { href: '/products', label: '商品管理' },
     { href: '/import', label: 'インポート' },
