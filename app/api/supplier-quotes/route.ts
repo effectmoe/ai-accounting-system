@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { SupplierQuoteService } from '@/services/supplier-quote.service';
+import { SupplierService } from '@/services/supplier.service';
 import { db } from '@/lib/mongodb-client';
 import { ObjectId } from 'mongodb';
 
@@ -70,18 +71,19 @@ export async function POST(request: NextRequest) {
           console.log(`[Supplier Quote] Creating new supplier with OCR data:`, {
             companyName: quoteData.vendorName,
             address: vendorAddress,
-            contactPhone: vendorPhone,
-            contactEmail: vendorEmail
+            phone: vendorPhone,
+            email: vendorEmail
           });
           
-          // 新しい仕入先を作成
+          // 新しい仕入先を作成（正しいフィールド名を使用）
           const newSupplier = await db.create('suppliers', {
+            supplierCode: await SupplierService.generateSupplierCode(),
             companyName: quoteData.vendorName,
-            contactEmail: vendorEmail,
-            contactPhone: vendorPhone,
-            address: vendorAddress,
+            email: vendorEmail,
+            phone: vendorPhone,
+            address1: vendorAddress, // addressフィールドはaddress1に格納
             postalCode: '',
-            isActive: true,
+            status: 'active',
             notes: 'OCRで自動作成された仕入先'
           });
           supplierId = newSupplier._id;
@@ -96,12 +98,13 @@ export async function POST(request: NextRequest) {
         
         if (!defaultSupplier) {
           const newDefaultSupplier = await db.create('suppliers', {
+            supplierCode: await SupplierService.generateSupplierCode(),
             companyName: 'OCR自動登録仕入先',
-            contactEmail: '',
-            contactPhone: '',
-            address: '',
+            email: '',
+            phone: '',
+            address1: '',
             postalCode: '',
-            isActive: true,
+            status: 'active',
             notes: 'OCR処理でのデフォルト仕入先'
           });
           supplierId = newDefaultSupplier._id;

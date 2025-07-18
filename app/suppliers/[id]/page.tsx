@@ -190,12 +190,16 @@ export default function SupplierDetailPage() {
                       〒{supplier.postalCode}
                     </p>
                   )}
-                  <p>
-                    {supplier.prefecture}
-                    {supplier.city}
-                    {supplier.address1}
-                    {supplier.address2}
-                  </p>
+                  {(supplier.prefecture || supplier.city || supplier.address1 || supplier.address2) ? (
+                    <p>
+                      {supplier.prefecture}
+                      {supplier.city}
+                      {supplier.address1}
+                      {supplier.address2}
+                    </p>
+                  ) : (
+                    <p className="text-muted-foreground">住所情報が登録されていません</p>
+                  )}
                 </div>
               </CardContent>
             </Card>
