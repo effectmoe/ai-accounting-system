@@ -62,42 +62,73 @@ export async function GET(
         length: file.length
       });
 
-      // ファイルをストリーミング
+      // ファイルをストリーミング（メモリ効率を考慮）
       const downloadStream = bucket.openDownloadStream(fileObjectId);
       const contentType = file.contentType || file.metadata?.contentType || 'application/octet-stream';
       
-      console.log('[Document Download] Starting stream for file:', {
+      console.log('[Document Download] Starting download for file:', {
         filename: file.filename,
         length: file.length,
         contentType: contentType
       });
       
-      // ReadableStreamを使用して直接ストリーミング
-      const stream = new ReadableStream({
-        start(controller) {
+      // 小さなファイルの場合は直接バッファに読み込み
+      if (file.length <= 1024 * 1024) { // 1MB以下
+        const chunks: Buffer[] = [];
+        
+        return new Promise<NextResponse>((resolve, reject) => {
+          let resolved = false;
+          
+          const timeout = setTimeout(() => {
+            if (!resolved) {
+              resolved = true;
+              console.error('[Document Download] Small file timeout');
+              downloadStream.destroy();
+              resolve(NextResponse.json({
+                error: 'Download timeout'
+              }, { status: 504 }));
+            }
+          }, 10000); // 10秒
+
           downloadStream.on('data', (chunk) => {
-            controller.enqueue(chunk);
+            chunks.push(chunk);
           });
-          
-          downloadStream.on('end', () => {
-            controller.close();
-          });
-          
+
           downloadStream.on('error', (error) => {
-            console.error('[Document Download] Stream error:', error);
-            controller.error(error);
+            if (!resolved) {
+              resolved = true;
+              clearTimeout(timeout);
+              console.error('[Document Download] Stream error:', error);
+              resolve(NextResponse.json({
+                error: 'Failed to download file'
+              }, { status: 500 }));
+            }
           });
-        }
-      });
-      
-      return new NextResponse(stream, {
-        status: 200,
-        headers: {
-          'Content-Type': contentType,
-          'Content-Disposition': `inline; filename="${file.filename}"`,
-          'Content-Length': file.length.toString(),
-        },
-      });
+
+          downloadStream.on('end', () => {
+            if (!resolved) {
+              resolved = true;
+              clearTimeout(timeout);
+              const buffer = Buffer.concat(chunks);
+              
+              console.log('[Document Download] Small file completed, buffer size:', buffer.length, 'bytes');
+              
+              resolve(new NextResponse(buffer, {
+                status: 200,
+                headers: {
+                  'Content-Type': contentType,
+                  'Content-Disposition': `inline; filename="${file.filename}"`,
+                  'Content-Length': buffer.length.toString(),
+                },
+              }));
+            }
+          });
+        });
+      } else {
+        // 大きなファイルの場合は内部リダイレクト
+        console.log('[Document Download] Large file, using internal redirect');
+        return NextResponse.redirect(new URL(`/api/debug/file-flow?action=test-download&fileId=${fileId}`, request.url));
+      }
 
     } catch (gridfsError) {
       console.error('[Document Download] GridFS error:', gridfsError);

@@ -126,14 +126,33 @@ export async function GET(request: NextRequest) {
         const content = Buffer.concat(chunks);
         console.log('[Debug File Flow] File content downloaded:', content.length, 'bytes');
         
-        return NextResponse.json({
-          success: true,
-          message: 'File downloaded successfully',
-          fileId: fileId,
-          filename: file.filename,
-          contentLength: content.length,
-          contentPreview: content.toString('utf-8').substring(0, 100)
-        });
+        // Check if this is a browser request
+        const userAgent = request.headers.get('user-agent') || '';
+        const isDownloadRequest = userAgent.includes('Mozilla') || userAgent.includes('Chrome') || userAgent.includes('Safari');
+        
+        if (isDownloadRequest) {
+          // Return the file directly for browser requests
+          const contentType = file.contentType || file.metadata?.contentType || 'application/octet-stream';
+          
+          return new NextResponse(content, {
+            status: 200,
+            headers: {
+              'Content-Type': contentType,
+              'Content-Disposition': `inline; filename="${file.filename}"`,
+              'Content-Length': content.length.toString(),
+            },
+          });
+        } else {
+          // Return JSON for API requests
+          return NextResponse.json({
+            success: true,
+            message: 'File downloaded successfully',
+            fileId: fileId,
+            filename: file.filename,
+            contentLength: content.length,
+            contentPreview: content.toString('utf-8').substring(0, 100)
+          });
+        }
         
       } catch (error) {
         console.error('[Debug File Flow] Error downloading file:', error);
