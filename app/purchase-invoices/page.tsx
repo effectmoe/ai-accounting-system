@@ -198,11 +198,11 @@ export default function PurchaseInvoicesPage() {
         </div>
         <div className="flex space-x-3">
           <Link
-            href="/import"
-            className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 flex items-center space-x-2"
+            href="/documents/new?type=purchase-invoice"
+            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center space-x-2"
           >
             <ScanLine className="w-5 h-5" />
-            <span>OCRでインポート</span>
+            <span>OCRスキャン</span>
           </Link>
           <Link
             href="/purchase-invoices/new"
