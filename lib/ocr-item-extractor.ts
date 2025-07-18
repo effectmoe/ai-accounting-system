@@ -10,6 +10,7 @@ export interface ExtractedItem {
   amount: number;
   taxRate: number;
   taxAmount: number;
+  remarks?: string; // 備考フィールドを追加
 }
 
 export class OCRItemExtractor {
@@ -234,6 +235,7 @@ export class OCRItemExtractor {
    */
   private static extractItemsFromTables(tables: any[]): ExtractedItem[] {
     const items: ExtractedItem[] = [];
+    const remarks: string[] = []; // 備考行を収集
     
     for (const table of tables) {
       console.log(`[OCRItemExtractor] テーブル: ${table.rowCount}行 x ${table.columnCount}列`);
@@ -252,9 +254,10 @@ export class OCRItemExtractor {
         if (!productName || this.isHeaderOrEmptyRow(productName)) continue;
         
         // 数量、単価、金額を探す
-        let quantity = 1;
+        let quantity = 0;
         let unitPrice = 0;
         let amount = 0;
+        let hasNumericData = false;
         
         // 各セルから数値を抽出
         for (let colIndex = 1; colIndex < row.length; colIndex++) {
@@ -262,6 +265,7 @@ export class OCRItemExtractor {
           const numericValue = this.parseNumber(cellContent);
           
           if (numericValue > 0) {
+            hasNumericData = true;
             // 金額の大きさで判定
             if (numericValue >= 10000) {
               // 大きな値は金額の可能性が高い
@@ -275,6 +279,18 @@ export class OCRItemExtractor {
               if (unitPrice === 0) unitPrice = numericValue;
             }
           }
+        }
+        
+        // 重要: 数量、単価、金額が全て0または未設定の場合は備考として扱う
+        if (!hasNumericData || (quantity === 0 && unitPrice === 0 && amount === 0)) {
+          console.log(`[OCRItemExtractor] 備考として認識: "${productName}"`);
+          remarks.push(productName);
+          continue;
+        }
+        
+        // デフォルト数量を1に設定（数値データがある場合のみ）
+        if (quantity === 0 && hasNumericData) {
+          quantity = 1;
         }
         
         // 金額が設定されていない場合は計算
@@ -291,12 +307,21 @@ export class OCRItemExtractor {
             unitPrice: unitPrice || amount,
             amount: amount || unitPrice,
             taxRate: 10,
-            taxAmount: Math.floor((amount || unitPrice) * 0.1)
+            taxAmount: Math.floor((amount || unitPrice) * 0.1),
+            remarks: ''
           });
           
           console.log(`[OCRItemExtractor] テーブルから商品抽出: ${productName}, 数量: ${quantity}, 単価: ${unitPrice}, 金額: ${amount}`);
         }
       }
+    }
+    
+    // 備考をnotesとして結合
+    if (remarks.length > 0 && items.length > 0) {
+      const combinedRemarks = remarks.join('\n');
+      // 最後の商品に備考を追加
+      items[items.length - 1].remarks = combinedRemarks;
+      console.log(`[OCRItemExtractor] 備考を追加: ${combinedRemarks}`);
     }
     
     return items;

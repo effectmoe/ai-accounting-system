@@ -361,7 +361,8 @@ export class OCRAIOrchestrator {
       vendorName: data.vendor?.name,
       customerName: data.customer?.name,
       totalAmount: data.totalAmount,
-      itemsCount: data.items?.length
+      itemsCount: data.items?.length,
+      items: data.items
     });
     
     // 会社名の検証
@@ -395,9 +396,48 @@ export class OCRAIOrchestrator {
       }
     }
     
-    // アイテムの検証
+    // アイテムの検証と備考の処理
+    if (data.items && data.items.length > 0) {
+      const validItems: any[] = [];
+      const remarksTexts: string[] = [];
+      
+      // 各アイテムを検証
+      data.items.forEach((item: any, index: number) => {
+        console.log(`[OCRAIOrchestrator] Checking item ${index}:`, {
+          itemName: item.itemName,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          amount: item.amount
+        });
+        
+        // 数量、単価、金額が全て空または0の場合は備考として扱う
+        if ((!item.quantity || item.quantity === 0) && 
+            (!item.unitPrice || item.unitPrice === 0) && 
+            (!item.amount || item.amount === 0)) {
+          console.log(`[OCRAIOrchestrator] Item ${index} "${item.itemName}" is a remark (no numeric data)`);
+          if (item.itemName && item.itemName.trim()) {
+            remarksTexts.push(item.itemName);
+          }
+        } else {
+          // 有効な商品として追加
+          validItems.push(item);
+        }
+      });
+      
+      // 有効な商品のみをitemsに設定
+      data.items = validItems;
+      
+      // 備考をnotesに追加
+      if (remarksTexts.length > 0) {
+        const additionalNotes = remarksTexts.join('\n');
+        data.notes = data.notes ? `${data.notes}\n\n${additionalNotes}` : additionalNotes;
+        console.log('[OCRAIOrchestrator] Added remarks to notes:', additionalNotes);
+      }
+    }
+    
+    // アイテムが空になった場合のフォールバック
     if (!data.items || data.items.length === 0) {
-      console.log('[OCRAIOrchestrator] No items found, creating default item');
+      console.log('[OCRAIOrchestrator] No valid items found, creating default item');
       data.items = [{
         itemName: '商品',
         quantity: 1,
@@ -412,7 +452,8 @@ export class OCRAIOrchestrator {
       vendorName: data.vendor?.name,
       customerName: data.customer?.name,
       totalAmount: data.totalAmount,
-      itemsCount: data.items?.length
+      itemsCount: data.items?.length,
+      hasNotes: !!data.notes
     });
     
     return data;
@@ -673,12 +714,18 @@ export class OCRAIOrchestrator {
     
     return `Extract structured data from Japanese ${docTypeJa} OCR.
 
-Rules:
-- 「御中」「様」 = customer (the recipient)
-- No honorific = vendor (the issuer)
-- Recognize company names like 合同会社アソウタイセイプリンティング, アソウタイセイプリンティング, アソウタイセイ
-- For items with empty quantity/price/amount columns, include the text as remarks
-- Extract content from 備考 columns as notes
+CRITICAL RULES:
+1. 「御中」「様」 = customer (the recipient)
+2. No honorific = vendor (the issuer)
+3. Recognize company names like 合同会社アソウタイセイプリンティング, アソウタイセイプリンティング, アソウタイセイ
+4. IMPORTANT: Rows in product table with text in name column but EMPTY quantity, unit price, AND amount are NOT products - these are remarks/notes
+5. Only treat rows as products if they have at least ONE of: quantity, unit price, or amount
+6. Extract content from 備考 columns as notes
+
+Example:
+- "CROP様分" with no quantity/price/amount → This is a REMARK, not a product
+- "領収書（3枚複写・1冊50組）" with quantity=200, price=570, amount=114,000 → This is a PRODUCT
+- Long specification text with no quantity/price/amount → This is a REMARK, not a product
 
 OCR data:
 ${ocrData}
@@ -706,12 +753,12 @@ Return ONLY JSON:
     "quantity": 1,
     "unitPrice": 5000,
     "amount": 5000,
-    "remarks": "string (for items with empty quantity/price)"
+    "remarks": "string"
   }],
   "subtotal": 5000,
   "taxAmount": 500,
   "totalAmount": 5500,
-  "notes": "string (content from 備考 column)",
+  "notes": "string (combined remarks/notes from non-product rows and 備考 column)",
   "deliveryLocation": "string",
   "paymentTerms": "string",
   "quotationValidity": "string"
