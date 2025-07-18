@@ -76,6 +76,8 @@ function extractVendorInformation(extractedData: any): {name: string, address: s
 async function convertOCRToSupplierQuote(ocrResult: any) {
   console.log('[convertOCRToSupplierQuote] OCR結果全体:', JSON.stringify(ocrResult, null, 2));
   
+  try {
+  
   // OCR結果から仕入先見積書データを抽出
   // DeepSeek AIの場合はresult.dataに格納されている
   const extractedData = ocrResult.data || ocrResult.extractedData || {};
@@ -205,6 +207,7 @@ async function convertOCRToSupplierQuote(ocrResult: any) {
   let subtotal = 0;
   let taxAmount = 0;
   let totalAmount = 0;
+  let calculatedTaxAmount = 0; // Define at the outer scope
   
   // DeepSeek AIからの値がある場合は優先
   if (subtotalFromOCR > 0 && taxAmountFromOCR > 0 && totalAmountFromOCR > 0) {
@@ -215,7 +218,7 @@ async function convertOCRToSupplierQuote(ocrResult: any) {
   } else {
     // アイテムから計算
     subtotal = items.reduce((sum: number, item: any) => sum + (item.amount || 0), 0);
-    const calculatedTaxAmount = items.reduce((sum: number, item: any) => sum + (item.taxAmount || 0), 0);
+    calculatedTaxAmount = items.reduce((sum: number, item: any) => sum + (item.taxAmount || 0), 0);
     
     // 税額の決定
     if (taxAmountFromOCR > 0) {
@@ -415,6 +418,14 @@ async function convertOCRToSupplierQuote(ocrResult: any) {
   }
   
   return result;
+  } catch (error) {
+    console.error('[convertOCRToSupplierQuote] エラー詳細:', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      ocrResult: ocrResult
+    });
+    throw error;
+  }
 }
 
 function NewDocumentContent() {
