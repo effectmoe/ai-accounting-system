@@ -82,6 +82,132 @@ function extractVendorInformation(extractedData: any): {name: string, address: s
   return vendorInfo;
 }
 
+// OCR結果を仕入請求書に変換する関数
+async function convertOCRToPurchaseInvoice(ocrResult: any) {
+  console.log('[convertOCRToPurchaseInvoice] OCR結果全体:', JSON.stringify(ocrResult, null, 2));
+  
+  try {
+    // OCR結果から仕入請求書データを抽出
+    const extractedData = ocrResult.data || ocrResult.extractedData || {};
+    
+    console.log('[convertOCRToPurchaseInvoice] 全抽出データ:', extractedData);
+    
+    // 仕入先情報の抽出
+    const vendorInfo = extractVendorInformation(extractedData);
+    let vendorName = vendorInfo.name;
+    
+    console.log('[convertOCRToPurchaseInvoice] 最終仕入先名:', vendorName);
+    
+    // 項目の抽出
+    let items = OCRItemExtractor.extractItemsFromOCR(extractedData);
+    
+    // 金額抽出
+    const extractAmount = (value: any): number => {
+      if (typeof value === 'number') return value;
+      if (typeof value === 'string') {
+        const match = value.match(/[\d,]+/);
+        if (match) {
+          return parseInt(match[0].replace(/,/g, ''));
+        }
+      }
+      return 0;
+    };
+
+    let totalAmountFromOCR = 0;
+    let taxAmountFromOCR = 0;
+    let subtotalFromOCR = 0;
+    
+    if (typeof extractedData.totalAmount === 'number') {
+      totalAmountFromOCR = extractedData.totalAmount;
+    }
+    if (typeof extractedData.taxAmount === 'number') {
+      taxAmountFromOCR = extractedData.taxAmount;
+    }
+    if (typeof extractedData.subtotal === 'number') {
+      subtotalFromOCR = extractedData.subtotal;
+    }
+    
+    // 発行日の抽出
+    let issueDate = new Date().toISOString();
+    if (extractedData.issueDate) {
+      try {
+        const parsedDate = new Date(extractedData.issueDate);
+        if (!isNaN(parsedDate.getTime())) {
+          issueDate = parsedDate.toISOString();
+        }
+      } catch (e) {
+        console.log('[convertOCRToPurchaseInvoice] issueDateパースエラー:', e);
+      }
+    }
+    
+    // 支払期限の抽出
+    let dueDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    if (extractedData.dueDate) {
+      try {
+        const parsedDate = new Date(extractedData.dueDate);
+        if (!isNaN(parsedDate.getTime())) {
+          dueDate = parsedDate.toISOString();
+        }
+      } catch (e) {
+        console.log('[convertOCRToPurchaseInvoice] dueDateパースエラー:', e);
+      }
+    }
+    
+    // 仕入請求書データの構築
+    const purchaseInvoiceData = {
+      vendorName,
+      issueDate,
+      dueDate,
+      items,
+      subtotal: subtotalFromOCR || totalAmountFromOCR - taxAmountFromOCR,
+      taxAmount: taxAmountFromOCR,
+      totalAmount: totalAmountFromOCR,
+      taxRate: 10,
+      status: 'received',
+      paymentStatus: 'pending',
+      isGeneratedByAI: true,
+      notes: extractedData.notes || extractedData.remarks || extractedData.備考 || '',
+      fileId: ocrResult.fileId || ocrResult.file || ocrResult.documentId,
+      // 仕入先情報を追加
+      vendorAddress: vendorInfo.address,
+      vendorPhone: vendorInfo.phone,
+      vendorEmail: vendorInfo.email,
+      vendorFax: vendorInfo.fax,
+      vendor: vendorInfo
+    };
+    
+    console.log('[convertOCRToPurchaseInvoice] 仕入請求書データ:', purchaseInvoiceData);
+    
+    // 仕入請求書APIに送信
+    const response = await fetch('/api/purchase-invoices', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(purchaseInvoiceData),
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error('[convertOCRToPurchaseInvoice] API Error:', errorData);
+      throw new Error('仕入請求書の作成に失敗しました');
+    }
+    
+    const result = await response.json();
+    console.log('[convertOCRToPurchaseInvoice] API Response:', result);
+    
+    // IDの確認
+    if (result._id && !result.id) {
+      result.id = result._id;
+    }
+    
+    return result;
+  } catch (error) {
+    console.error('[convertOCRToPurchaseInvoice] エラー詳細:', error);
+    throw error;
+  }
+}
+
 // OCR結果を仕入先見積書に変換する関数
 async function convertOCRToSupplierQuote(ocrResult: any) {
   console.log('[convertOCRToSupplierQuote] OCR結果全体:', JSON.stringify(ocrResult, null, 2));
@@ -454,13 +580,15 @@ function NewDocumentContent() {
   const [loading, setLoading] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [dragActive, setDragActive] = useState(false);
-  const [documentType, setDocumentType] = useState<'general' | 'supplier-quote'>('general');
+  const [documentType, setDocumentType] = useState<'general' | 'supplier-quote' | 'purchase-invoice'>('general');
 
   // URLパラメータに基づいてドキュメントタイプを設定
   useEffect(() => {
     const type = searchParams.get('type');
     if (type === 'supplier-quote') {
       setDocumentType('supplier-quote');
+    } else if (type === 'purchase-invoice') {
+      setDocumentType('purchase-invoice');
     }
   }, [searchParams]);
 
@@ -482,6 +610,10 @@ function NewDocumentContent() {
         formData.append('documentType', 'supplier-quote');
         successMessage = '仕入先見積書をOCRで処理しました';
         redirectPath = '/supplier-quotes';
+      } else if (documentType === 'purchase-invoice') {
+        formData.append('documentType', 'purchase-invoice');
+        successMessage = '仕入請求書をOCRで処理しました';
+        redirectPath = '/purchase-invoices';
       } else {
         formData.append('documentType', 'receipt');
       }
@@ -520,6 +652,25 @@ function NewDocumentContent() {
           } catch (error) {
             console.error('Supplier quote creation error:', error);
             toast.error('仕入先見積書の作成に失敗しました');
+            router.push(redirectPath);
+          }
+        } else if (documentType === 'purchase-invoice') {
+          try {
+            // DeepSeek AIの結果にファイルIDを追加
+            if (result.fileId || result.file || result.documentId) {
+              console.log('[Documents New] File ID found in OCR result:', {
+                fileId: result.fileId,
+                file: result.file,
+                documentId: result.documentId
+              });
+            }
+            
+            const purchaseInvoiceData = await convertOCRToPurchaseInvoice(result);
+            console.log('[Documents New] Created purchase invoice:', purchaseInvoiceData.id);
+            router.push(`/purchase-invoices/${purchaseInvoiceData.id}`);
+          } catch (error) {
+            console.error('Purchase invoice creation error:', error);
+            toast.error('仕入請求書の作成に失敗しました');
             router.push(redirectPath);
           }
         } else {
@@ -586,7 +737,7 @@ function NewDocumentContent() {
       {/* ドキュメントタイプの選択 */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">ドキュメントタイプを選択</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div
             onClick={() => setDocumentType('general')}
             className={`p-4 rounded-lg border-2 cursor-pointer transition-colors ${
@@ -633,6 +784,31 @@ function NewDocumentContent() {
               <div>
                 <h3 className="font-medium text-gray-900">仕入先見積書</h3>
                 <p className="text-sm text-gray-600">仕入先からの見積書（推奨）</p>
+              </div>
+            </div>
+          </div>
+          
+          <div
+            onClick={() => setDocumentType('purchase-invoice')}
+            className={`p-4 rounded-lg border-2 cursor-pointer transition-colors ${
+              documentType === 'purchase-invoice' 
+                ? 'border-purple-500 bg-purple-50' 
+                : 'border-gray-200 hover:border-gray-300'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <div className={`w-4 h-4 rounded-full border-2 ${
+                documentType === 'purchase-invoice' 
+                  ? 'border-purple-500 bg-purple-500' 
+                  : 'border-gray-300'
+              }`}>
+                {documentType === 'purchase-invoice' && (
+                  <div className="w-full h-full rounded-full bg-white scale-50"></div>
+                )}
+              </div>
+              <div>
+                <h3 className="font-medium text-gray-900">仕入請求書</h3>
+                <p className="text-sm text-gray-600">仕入先からの請求書</p>
               </div>
             </div>
           </div>
@@ -746,6 +922,19 @@ function NewDocumentContent() {
                 <div>
                   <h3 className="font-medium text-gray-900">仕入先見積書</h3>
                   <p className="text-sm text-gray-600">新しい仕入先見積書を作成</p>
+                </div>
+                <div className="text-gray-400">→</div>
+              </div>
+            </Link>
+            
+            <Link
+              href="/purchase-invoices/new"
+              className="block w-full bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg p-4 transition-colors"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-medium text-gray-900">仕入請求書</h3>
+                  <p className="text-sm text-gray-600">新しい仕入請求書を作成</p>
                 </div>
                 <div className="text-gray-400">→</div>
               </div>
