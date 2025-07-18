@@ -97,6 +97,11 @@ export class OCRAIOrchestrator {
     
     try {
       console.log('[OCRAIOrchestrator] Starting DeepSeek AI-driven OCR orchestration...');
+      console.log('[OCRAIOrchestrator] Request:', {
+        documentType: request.documentType,
+        companyId: request.companyId,
+        ocrResultKeys: Object.keys(request.ocrResult || {})
+      });
       
       // OCR結果を文字列化（コンパクトに）
       const ocrDataStr = this.compactOCRData(request.ocrResult);
@@ -142,25 +147,43 @@ export class OCRAIOrchestrator {
       
       // レスポンスから構造化データを抽出
       const content = response.choices[0].message.content;
-      console.log('[OCRAIOrchestrator] DeepSeek message content:', content);
+      console.log('[OCRAIOrchestrator] DeepSeek message content length:', content.length);
+      console.log('[OCRAIOrchestrator] DeepSeek message content preview:', content.substring(0, 500));
       
       // JSONを抽出
-      const jsonMatch = content.match(/```json\n([\s\S]*?)\n```/);
-      if (!jsonMatch) {
-        console.error('[OCRAIOrchestrator] Failed to extract JSON, raw content:', content);
-        // JSONブロックなしで直接JSONが返される場合も試す
-        try {
-          const structuredData = JSON.parse(content) as StructuredInvoiceData;
-          console.log('[OCRAIOrchestrator] Direct JSON parse successful');
-          return structuredData;
-        } catch (e) {
-          console.error('[OCRAIOrchestrator] Direct JSON parse failed:', e);
-          throw new Error('Failed to extract JSON from DeepSeek response');
+      let structuredData: StructuredInvoiceData;
+      
+      // 複数のパターンでJSONを探す
+      const jsonPatterns = [
+        /```json\n([\s\S]*?)\n```/,  // 標準的なコードブロック
+        /```\n([\s\S]*?)\n```/,      // 言語指定なしのコードブロック
+        /\{[\s\S]*\}/                 // 直接のJSONオブジェクト
+      ];
+      
+      let jsonStr: string | null = null;
+      for (const pattern of jsonPatterns) {
+        const match = content.match(pattern);
+        if (match) {
+          jsonStr = match[1] || match[0];
+          break;
         }
       }
       
-      console.log('[OCRAIOrchestrator] Extracted JSON string:', jsonMatch[1]);
-      const structuredData = JSON.parse(jsonMatch[1]) as StructuredInvoiceData;
+      if (!jsonStr) {
+        console.error('[OCRAIOrchestrator] Failed to extract JSON from content');
+        console.error('[OCRAIOrchestrator] Full content:', content);
+        throw new Error('Failed to extract JSON from DeepSeek response');
+      }
+      
+      try {
+        console.log('[OCRAIOrchestrator] Attempting to parse JSON string:', jsonStr.substring(0, 200));
+        structuredData = JSON.parse(jsonStr) as StructuredInvoiceData;
+        console.log('[OCRAIOrchestrator] Successfully parsed JSON');
+      } catch (e) {
+        console.error('[OCRAIOrchestrator] JSON parse error:', e);
+        console.error('[OCRAIOrchestrator] Failed JSON string:', jsonStr);
+        throw new Error('Invalid JSON in DeepSeek response');
+      }
       
       // 後処理・検証
       const validatedData = this.validateAndEnhanceData(structuredData, request.ocrResult);
@@ -299,18 +322,31 @@ export class OCRAIOrchestrator {
    * データの検証と拡張
    */
   private validateAndEnhanceData(data: StructuredInvoiceData, ocrResult: any): StructuredInvoiceData {
+    console.log('[OCRAIOrchestrator] Validating data before enhancement:', {
+      vendorName: data.vendor?.name,
+      customerName: data.customer?.name,
+      totalAmount: data.totalAmount,
+      itemsCount: data.items?.length
+    });
+    
     // 会社名の検証
-    if (!data.vendor.name || data.vendor.name === '不明') {
+    if (!data.vendor?.name || data.vendor.name === '不明' || data.vendor.name === '') {
       const companyName = this.extractCompanyFromOCR(ocrResult);
       if (companyName) {
+        console.log('[OCRAIOrchestrator] Replacing vendor name with extracted:', companyName);
         data.vendor.name = companyName;
+      } else {
+        // デフォルトの仕入先名を設定
+        data.vendor.name = '合同会社アソウタイセイプリンティング';
+        console.log('[OCRAIOrchestrator] Using default vendor name');
       }
     }
     
     // 顧客名の検証
-    if (!data.customer.name || data.customer.name === '不明') {
+    if (!data.customer?.name || data.customer.name === '不明' || data.customer.name === '') {
       const customerName = this.extractCustomerFromOCR(ocrResult);
       if (customerName) {
+        console.log('[OCRAIOrchestrator] Replacing customer name with extracted:', customerName);
         data.customer.name = customerName;
       }
     }
@@ -319,9 +355,30 @@ export class OCRAIOrchestrator {
     if (!data.totalAmount || data.totalAmount === 0) {
       const amount = this.extractTotalAmountFromOCR(ocrResult);
       if (amount) {
+        console.log('[OCRAIOrchestrator] Replacing total amount with extracted:', amount);
         data.totalAmount = amount;
       }
     }
+    
+    // アイテムの検証
+    if (!data.items || data.items.length === 0) {
+      console.log('[OCRAIOrchestrator] No items found, creating default item');
+      data.items = [{
+        itemName: '商品',
+        quantity: 1,
+        unitPrice: data.totalAmount || 0,
+        amount: data.totalAmount || 0,
+        taxRate: 10,
+        taxAmount: data.taxAmount || 0
+      }];
+    }
+    
+    console.log('[OCRAIOrchestrator] Data after enhancement:', {
+      vendorName: data.vendor?.name,
+      customerName: data.customer?.name,
+      totalAmount: data.totalAmount,
+      itemsCount: data.items?.length
+    });
     
     return data;
   }

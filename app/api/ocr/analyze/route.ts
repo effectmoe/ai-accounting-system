@@ -86,9 +86,14 @@ export async function POST(request: NextRequest) {
     const totalElapsed = Date.now() - startTime;
     console.log('[OCR API] AI orchestration completed successfully in', totalElapsed, 'ms total');
     
+    // ファイルIDを生成（一時的なソリューション）
+    const fileId = `file_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    console.log('[OCR API] Generated file ID:', fileId);
+    
     return NextResponse.json({
       success: true,
       data: structuredData,
+      fileId: fileId, // ファイルIDを追加
       message: 'DeepSeek AI駆動のOCR解析が完了しました',
       processingMethod: 'DeepSeek-AI-driven',
       model: 'deepseek-chat',

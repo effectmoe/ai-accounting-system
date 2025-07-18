@@ -138,16 +138,36 @@ async function convertOCRToSupplierQuote(ocrResult: any) {
     return 0;
   };
 
-  // より多くのフィールドから金額を抽出
-  const totalAmountFromOCR = extractAmount(extractedData.totalAmount) || 
-                            extractAmount(extractedData.total) || 
-                            extractAmount(extractedData.InvoiceTotal) ||
-                            extractAmount(extractedData.TotalAmount) ||
-                            extractAmount(extractedData.Amount) || 0;
+  // DeepSeek AIからの金額抽出
+  let totalAmountFromOCR = 0;
+  let taxAmountFromOCR = 0;
+  let subtotalFromOCR = 0;
   
-  const taxAmountFromOCR = extractAmount(extractedData.taxAmount) || 
-                          extractAmount(extractedData.tax) || 
-                          extractAmount(extractedData.TotalTax) || 0;
+  if (typeof extractedData.totalAmount === 'number') {
+    totalAmountFromOCR = extractedData.totalAmount;
+    console.log('[convertOCRToSupplierQuote] DeepSeek AI totalAmount:', totalAmountFromOCR);
+  }
+  if (typeof extractedData.taxAmount === 'number') {
+    taxAmountFromOCR = extractedData.taxAmount;
+    console.log('[convertOCRToSupplierQuote] DeepSeek AI taxAmount:', taxAmountFromOCR);
+  }
+  if (typeof extractedData.subtotal === 'number') {
+    subtotalFromOCR = extractedData.subtotal;
+    console.log('[convertOCRToSupplierQuote] DeepSeek AI subtotal:', subtotalFromOCR);
+  }
+  
+  // フォールバックとして他のフィールドも確認
+  if (totalAmountFromOCR === 0) {
+    totalAmountFromOCR = extractAmount(extractedData.total) || 
+                         extractAmount(extractedData.InvoiceTotal) ||
+                         extractAmount(extractedData.TotalAmount) ||
+                         extractAmount(extractedData.Amount) || 0;
+  }
+  
+  if (taxAmountFromOCR === 0) {
+    taxAmountFromOCR = extractAmount(extractedData.tax) || 
+                       extractAmount(extractedData.TotalTax) || 0;
+  }
 
   console.log('[convertOCRToSupplierQuote] 抽出された金額:', {
     totalAmountFromOCR,
@@ -182,10 +202,42 @@ async function convertOCRToSupplierQuote(ocrResult: any) {
   }
   
   // 合計金額の計算
-  const subtotal = items.reduce((sum: number, item: any) => sum + (item.amount || 0), 0);
-  const calculatedTaxAmount = items.reduce((sum: number, item: any) => sum + (item.taxAmount || 0), 0);
-  const taxAmount = taxAmountFromOCR || calculatedTaxAmount || subtotal * 0.1;
-  const totalAmount = totalAmountFromOCR || subtotal + taxAmount;
+  let subtotal = 0;
+  let taxAmount = 0;
+  let totalAmount = 0;
+  
+  // DeepSeek AIからの値がある場合は優先
+  if (subtotalFromOCR > 0 && taxAmountFromOCR > 0 && totalAmountFromOCR > 0) {
+    subtotal = subtotalFromOCR;
+    taxAmount = taxAmountFromOCR;
+    totalAmount = totalAmountFromOCR;
+    console.log('[convertOCRToSupplierQuote] DeepSeek AIの金額を使用');
+  } else {
+    // アイテムから計算
+    subtotal = items.reduce((sum: number, item: any) => sum + (item.amount || 0), 0);
+    const calculatedTaxAmount = items.reduce((sum: number, item: any) => sum + (item.taxAmount || 0), 0);
+    
+    // 税額の決定
+    if (taxAmountFromOCR > 0) {
+      taxAmount = taxAmountFromOCR;
+    } else if (calculatedTaxAmount > 0) {
+      taxAmount = calculatedTaxAmount;
+    } else {
+      taxAmount = Math.floor(subtotal * 0.1);
+    }
+    
+    // 総額の決定
+    if (totalAmountFromOCR > 0) {
+      totalAmount = totalAmountFromOCR;
+      // 総額から逆算
+      if (subtotal === 0) {
+        subtotal = Math.floor(totalAmount / 1.1);
+        taxAmount = totalAmount - subtotal;
+      }
+    } else {
+      totalAmount = subtotal + taxAmount;
+    }
+  }
   
   console.log('[convertOCRToSupplierQuote] 最終計算:', {
     subtotal,
@@ -199,7 +251,20 @@ async function convertOCRToSupplierQuote(ocrResult: any) {
   // 発行日の正しい抽出と変換
   let issueDate = new Date().toISOString();
   
-  // extractedDataから日付を抽出
+  // DeepSeek AIの場合、issueDateフィールドを確認
+  if (extractedData.issueDate) {
+    try {
+      const parsedDate = new Date(extractedData.issueDate);
+      if (!isNaN(parsedDate.getTime())) {
+        issueDate = parsedDate.toISOString();
+        console.log('[convertOCRToSupplierQuote] DeepSeek AI issueDate:', issueDate);
+      }
+    } catch (e) {
+      console.log('[convertOCRToSupplierQuote] issueDateパースエラー:', e);
+    }
+  }
+  
+  // フォールバックとして他の日付フィールドを確認
   const dateFields = [
     extractedData.invoiceDate,
     extractedData.transactionDate,
@@ -268,8 +333,8 @@ async function convertOCRToSupplierQuote(ocrResult: any) {
     status: 'received',
     isGeneratedByAI: true,
     notes: extractedData.notes || extractedData.remarks || extractedData.備考 || '', // 備考欄（OCRから抽出）
-    ocrResultId: ocrResult.ocrResultId,
-    fileId: ocrResult.fileId, // 元ファイルのID
+    ocrResultId: ocrResult.ocrResultId || ocrResult._id || ocrResult.id,
+    fileId: ocrResult.fileId || ocrResult.file || ocrResult.documentId, // 元ファイルのID
     // 赤枠の4項目を追加
     subject,
     deliveryLocation,
@@ -409,6 +474,15 @@ function NewDocumentContent() {
         // 仕入先見積書の場合は、OCR結果から仕入先見積書を作成
         if (documentType === 'supplier-quote') {
           try {
+            // DeepSeek AIの結果にファイルIDを追加
+            if (result.fileId || result.file || result.documentId) {
+              console.log('[Documents New] File ID found in OCR result:', {
+                fileId: result.fileId,
+                file: result.file,
+                documentId: result.documentId
+              });
+            }
+            
             const supplierQuoteData = await convertOCRToSupplierQuote(result);
             console.log('[Documents New] Created supplier quote:', supplierQuoteData.id);
             router.push(`/supplier-quotes/${supplierQuoteData.id}`);
