@@ -8,6 +8,96 @@ export default function OCRUploadAzure() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [results, setResults] = useState<any[]>([]);
 
+  const createSupplierQuote = async (ocrData: any, fileId: string) => {
+    try {
+      console.log('[OCR Upload] Creating supplier quote with fileId:', fileId);
+      
+      // OCRデータを仕入先見積書形式に変換
+      const supplierQuoteData = {
+        subject: ocrData.subject || '印刷物',
+        quoteNumber: ocrData.documentNumber || `SQ-${Date.now()}`,
+        issueDate: ocrData.issueDate || new Date().toISOString().split('T')[0],
+        validityDate: ocrData.validityDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        
+        // 仕入先情報（OCRで認識された発行元）
+        vendorName: ocrData.vendor?.name || '不明',
+        vendorAddress: ocrData.vendor?.address || '',
+        vendorPhone: ocrData.vendor?.phone || '',
+        vendorEmail: ocrData.vendor?.email || '',
+        vendorFax: ocrData.vendor?.fax || '',
+        
+        // 顧客情報（OCRで認識された宛先）
+        customerName: ocrData.customer?.name || '株式会社CROP',
+        customerAddress: ocrData.customer?.address || '',
+        
+        // 商品情報
+        items: ocrData.items?.map((item: any) => ({
+          itemName: item.itemName || '商品',
+          description: item.description || '',
+          quantity: item.quantity || 1,
+          unitPrice: item.unitPrice || 0,
+          amount: item.amount || 0,
+          taxRate: item.taxRate || 10,
+          taxAmount: item.taxAmount || 0,
+          remarks: item.remarks || ''
+        })) || [],
+        
+        // 金額情報
+        subtotal: ocrData.subtotal || 0,
+        taxAmount: ocrData.taxAmount || 0,
+        totalAmount: ocrData.totalAmount || 0,
+        
+        // 追加情報
+        deliveryLocation: ocrData.deliveryLocation || '',
+        paymentTerms: ocrData.paymentTerms || '',
+        quotationValidity: ocrData.quotationValidity || '',
+        notes: ocrData.notes || '',
+        
+        // OCRメタデータ
+        isGeneratedByAI: true,
+        aiGenerationMetadata: {
+          source: 'Azure Form Recognizer + DeepSeek',
+          confidence: 0.8,
+          timestamp: new Date()
+        },
+        
+        // ファイルID
+        fileId: fileId,
+        
+        // ステータス
+        status: 'draft'
+      };
+      
+      console.log('[OCR Upload] Supplier quote data:', supplierQuoteData);
+      
+      // 仕入先見積書APIを呼び出し
+      const response = await fetch('/api/supplier-quotes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(supplierQuoteData)
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || '仕入先見積書の作成に失敗しました');
+      }
+
+      const createdQuote = await response.json();
+      console.log('[OCR Upload] Created supplier quote:', createdQuote);
+      
+      toast.success('仕入先見積書が作成されました！', { duration: 4000 });
+      
+      // 作成した見積書のページに移動するオプション
+      // window.location.href = `/supplier-quotes/${createdQuote._id}`;
+      
+    } catch (error) {
+      console.error('[OCR Upload] Error creating supplier quote:', error);
+      toast.error(`仕入先見積書の作成に失敗: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  };
+
   const processImage = async (file: File) => {
     try {
       // AI駆動のOCR処理
@@ -34,6 +124,7 @@ export default function OCRUploadAzure() {
           processingMethod: result.processingMethod,
           model: result.model,
           structuredData: result.data,
+          fileId: result.fileId, // GridFSのファイルIDを追加
           ...result.data 
         }]);
         toast.success(`${file.name} の処理が完了しました (${result.processingMethod})`);
@@ -41,6 +132,11 @@ export default function OCRUploadAzure() {
         // AI駆動処理の成功通知
         if (result.processingMethod === 'AI-driven') {
           toast.success('AI駆動のOCR解析が完了しました', { duration: 4000 });
+        }
+        
+        // 仕入先見積書として処理する場合、自動的に見積書を作成
+        if (result.data && result.fileId) {
+          await createSupplierQuote(result.data, result.fileId);
         }
       } else {
         toast.error(`${file.name} の処理に失敗: ${result.error}`);

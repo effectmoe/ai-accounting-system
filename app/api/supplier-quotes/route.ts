@@ -139,6 +139,11 @@ export async function POST(request: NextRequest) {
     // vendorNameを削除（supplierIdで管理するため）
     delete finalQuoteData.vendorName;
     
+    // fileIdが含まれている場合はログに記録
+    if (finalQuoteData.fileId) {
+      console.log('[Supplier Quote] Including fileId in quote data:', finalQuoteData.fileId);
+    }
+    
     // 見積書番号が指定されていない場合は自動生成
     if (!finalQuoteData.quoteNumber) {
       finalQuoteData.quoteNumber = await supplierQuoteService.generateSupplierQuoteNumber();
