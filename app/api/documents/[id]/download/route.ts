@@ -126,7 +126,7 @@ export async function GET(
                 status: 200,
                 headers: {
                   'Content-Type': contentType,
-                  'Content-Disposition': `inline; filename="${file.filename}"`,
+                  'Content-Disposition': `inline; filename*=UTF-8''${encodeURIComponent(file.filename)}`,
                   'Content-Length': buffer.length.toString(),
                   'Cache-Control': 'no-cache, no-store, must-revalidate',
                   'Pragma': 'no-cache',
