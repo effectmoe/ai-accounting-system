@@ -75,6 +75,7 @@ export async function POST(request: NextRequest) {
             phone: existingSupplier.phone,
             fax: existingSupplier.fax,
             address1: existingSupplier.address1,
+            address: existingSupplier.address,
             postalCode: existingSupplier.postalCode
           }, null, 2));
         } else {
@@ -143,7 +144,7 @@ export async function POST(request: NextRequest) {
             email: vendorEmail,
             phone: vendorPhone,
             fax: vendorFax, // FAX番号を追加
-            address1: cleanAddress, // 郵便番号を除いた住所
+            address: cleanAddress, // addressフィールドに保存（address1ではなく）
             postalCode: postalCode, // 抽出した郵便番号
             status: 'active',
             notes: 'OCRで自動作成された仕入先'
@@ -162,6 +163,7 @@ export async function POST(request: NextRequest) {
             phone: newSupplier.phone,
             fax: newSupplier.fax,
             address1: newSupplier.address1,
+            address: newSupplier.address,
             postalCode: newSupplier.postalCode,
             status: newSupplier.status,
             notes: newSupplier.notes
@@ -175,6 +177,7 @@ export async function POST(request: NextRequest) {
             phone: verifySupplier?.phone,
             fax: verifySupplier?.fax,
             address1: verifySupplier?.address1,
+            address: verifySupplier?.address,
             postalCode: verifySupplier?.postalCode
           }, null, 2));
           
@@ -187,6 +190,7 @@ export async function POST(request: NextRequest) {
             phone: directSupplier?.phone,
             fax: directSupplier?.fax,
             address1: directSupplier?.address1,
+            address: directSupplier?.address,
             postalCode: directSupplier?.postalCode,
             allFields: Object.keys(directSupplier || {})
           }, null, 2));
@@ -206,7 +210,7 @@ export async function POST(request: NextRequest) {
             companyName: 'OCR自動登録仕入先',
             email: '',
             phone: '',
-            address1: '',
+            address: '',
             postalCode: '',
             status: 'active',
             notes: 'OCR処理でのデフォルト仕入先'
