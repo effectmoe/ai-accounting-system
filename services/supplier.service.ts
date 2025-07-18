@@ -88,6 +88,7 @@ export class SupplierService {
       companyName: supplier.companyName,
       email: supplier.email,
       phone: supplier.phone,
+      fax: supplier.fax,
       address1: supplier.address1,
       address2: supplier.address2,
       postalCode: supplier.postalCode,
@@ -102,6 +103,8 @@ export class SupplierService {
     console.log('[3] MongoDB field types:', {
       phoneType: typeof supplier.phone,
       phoneValue: supplier.phone,
+      faxType: typeof supplier.fax,
+      faxValue: supplier.fax,
       address1Type: typeof supplier.address1,
       address1Value: supplier.address1,
       postalCodeType: typeof supplier.postalCode,
@@ -127,6 +130,7 @@ export class SupplierService {
       _id: result._id,
       id: result.id,
       phone: result.phone,
+      fax: result.fax,
       address1: result.address1,
       postalCode: result.postalCode
     }, null, 2));

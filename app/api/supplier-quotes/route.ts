@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { SupplierQuoteService } from '@/services/supplier-quote.service';
 import { SupplierService } from '@/services/supplier.service';
-import { db } from '@/lib/mongodb-client';
+import { db, getDatabase } from '@/lib/mongodb-client';
 import { ObjectId } from 'mongodb';
 import { cleanPhoneNumber } from '@/lib/phone-utils';
 
@@ -176,6 +176,19 @@ export async function POST(request: NextRequest) {
             fax: verifySupplier?.fax,
             address1: verifySupplier?.address1,
             postalCode: verifySupplier?.postalCode
+          }, null, 2));
+          
+          // MongoDBに直接クエリして確認
+          const mongoDb = await getDatabase();
+          const directSupplier = await mongoDb.collection('suppliers').findOne({ _id: newSupplier._id });
+          console.log('[8] Direct MongoDB query result:', JSON.stringify({
+            _id: directSupplier?._id,
+            companyName: directSupplier?.companyName,
+            phone: directSupplier?.phone,
+            fax: directSupplier?.fax,
+            address1: directSupplier?.address1,
+            postalCode: directSupplier?.postalCode,
+            allFields: Object.keys(directSupplier || {})
           }, null, 2));
           
           console.log('===== [Supplier Quote] OCR Data Flow Debug END =====');
