@@ -44,7 +44,13 @@ export async function GET(request: NextRequest) {
         hasFax: 'fax' in supplier,
         faxValue: supplier.fax,
         hasPhone: 'phone' in supplier,
-        phoneValue: supplier.phone
+        phoneValue: supplier.phone,
+        hasEmail: 'email' in supplier,
+        emailValue: supplier.email,
+        hasWebsite: 'website' in supplier,
+        websiteValue: supplier.website,
+        hasPostalCode: 'postalCode' in supplier,
+        postalCodeValue: supplier.postalCode
       }
     });
   } catch (error) {
