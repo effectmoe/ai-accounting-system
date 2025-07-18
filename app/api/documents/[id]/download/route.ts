@@ -11,17 +11,33 @@ export async function GET(
     console.log('[Document Download] Getting document with ID:', id);
     console.log('[Document Download] Request URL:', request.url);
     console.log('[Document Download] Request headers:', Object.fromEntries(request.headers.entries()));
+    console.log('[Document Download] ID type:', typeof id);
+    console.log('[Document Download] ID length:', id?.length);
 
-    if (!id || !ObjectId.isValid(id)) {
-      console.error('[Document Download] Invalid document ID:', id);
+    if (!id) {
+      console.error('[Document Download] No ID provided');
       return NextResponse.json({
-        error: 'Invalid document ID'
+        error: 'Document ID is required'
       }, { status: 400 });
     }
 
-    // この場合、IDは直接GridFSのファイルIDとして扱う
-    // （supplier-quotesではfileIdがGridFSのファイルIDを指している）
-    const fileId = id;
+    // fileIdが"ObjectId(...)"形式の場合、内部の値を抽出
+    let fileId = id;
+    const objectIdMatch = id.match(/^ObjectId\("?([a-f0-9]{24})"?\)$/i);
+    if (objectIdMatch) {
+      fileId = objectIdMatch[1];
+      console.log('[Document Download] Extracted ObjectId from string format:', fileId);
+    }
+
+    if (!ObjectId.isValid(fileId)) {
+      console.error('[Document Download] Invalid document ID format:', fileId);
+      console.error('[Document Download] Original ID:', id);
+      return NextResponse.json({
+        error: `Invalid document ID format: ${id}`
+      }, { status: 400 });
+    }
+
+    // fileIdはすでに上で処理済み
     console.log('[Document Download] Using ID as GridFS file ID:', fileId);
 
     // GridFSからファイルを取得

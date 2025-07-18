@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DocumentAnalysisClient, AzureKeyCredential } from '@azure/ai-form-recognizer';
 import { OCRAIOrchestrator } from '@/lib/ocr-ai-orchestrator';
+import { getGridFSBucket } from '@/lib/mongodb-client';
+import { ObjectId } from 'mongodb';
+import { Readable } from 'stream';
 
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
@@ -142,14 +145,47 @@ TEL: 03-xxxx-xxxx FAX: 03-xxxx-xxxx
     const totalElapsed = Date.now() - startTime;
     console.log('[OCR API] AI orchestration completed successfully in', totalElapsed, 'ms total');
     
-    // ファイルIDを生成（一時的なソリューション）
-    const fileId = `file_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    console.log('[OCR API] Generated file ID:', fileId);
+    // ファイルをGridFSに保存
+    let gridfsFileId: string | null = null;
+    try {
+      console.log('[OCR API] Saving file to GridFS...');
+      const fileBuffer = await file.arrayBuffer();
+      const bucket = await getGridFSBucket();
+      
+      // GridFSにファイルをアップロード
+      const uploadStream = bucket.openUploadStream(file.name, {
+        metadata: {
+          uploadedAt: new Date(),
+          contentType: file.type,
+          documentType: documentType,
+          companyId: companyId,
+          ocrProcessed: true
+        }
+      });
+      
+      // ファイルIDを取得
+      gridfsFileId = uploadStream.id.toString();
+      console.log('[OCR API] GridFS file ID:', gridfsFileId);
+      
+      // BufferをStreamに変換してアップロード
+      const readableStream = Readable.from(Buffer.from(fileBuffer));
+      
+      await new Promise((resolve, reject) => {
+        readableStream.pipe(uploadStream)
+          .on('error', reject)
+          .on('finish', resolve);
+      });
+      
+      console.log('[OCR API] File saved to GridFS successfully');
+    } catch (gridfsError) {
+      console.error('[OCR API] Error saving to GridFS:', gridfsError);
+      // GridFS保存に失敗しても処理は続行（fileIdはnullのまま）
+    }
     
     return NextResponse.json({
       success: true,
       data: structuredData,
-      fileId: fileId, // ファイルIDを追加
+      fileId: gridfsFileId, // GridFSのファイルIDを返す
       message: 'DeepSeek AI駆動のOCR解析が完了しました',
       processingMethod: 'DeepSeek-AI-driven',
       model: 'deepseek-chat',
