@@ -1,11 +1,10 @@
-import clientPromise from '../lib/mongodb';
+import { getDatabase } from '../lib/mongodb-client';
 
 async function migrateSupplierAddressFields() {
   console.log('Starting supplier address field migration...');
   
   try {
-    const client = await clientPromise;
-    const db = client.db('accounting-automation');
+    const db = await getDatabase();
     const collection = db.collection('suppliers');
 
     // Find all suppliers with old 'address' field
