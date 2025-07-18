@@ -1155,6 +1155,13 @@ export interface SupplierQuote {
   vendorAddress?: string;
   vendorPhone?: string;
   vendorEmail?: string;
+  vendor?: {
+    name: string;
+    address?: string;
+    phone?: string;
+    email?: string;
+    fax?: string;
+  };
   
   // メタデータ
   notes?: string;
@@ -1190,6 +1197,7 @@ export interface SupplierQuoteItem {
   taxRate?: number;
   taxAmount?: number;
   notes?: string;
+  remarks?: string; // 備考（空の数量・単価・金額の行の内容）
 }
 
 // 発注書インターフェース

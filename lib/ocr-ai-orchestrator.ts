@@ -508,7 +508,8 @@ export class OCRAIOrchestrator {
         unitPrice: totalAmount || 5000,
         amount: totalAmount || 5000,
         taxRate: 10,
-        taxAmount: (totalAmount || 5000) * 0.1
+        taxAmount: (totalAmount || 5000) * 0.1,
+        remarks: ''
       }],
       subtotal: totalAmount ? totalAmount / 1.1 : 5000,
       taxAmount: totalAmount ? totalAmount - (totalAmount / 1.1) : 500,
@@ -673,9 +674,11 @@ export class OCRAIOrchestrator {
     return `Extract structured data from Japanese ${docTypeJa} OCR.
 
 Rules:
-- 「御中」「様」 = customer
-- No honorific = vendor
-- Recognize company names like 合同会社アソウタイセイプリンティング
+- 「御中」「様」 = customer (the recipient)
+- No honorific = vendor (the issuer)
+- Recognize company names like 合同会社アソウタイセイプリンティング, アソウタイセイプリンティング, アソウタイセイ
+- For items with empty quantity/price/amount columns, include the text as remarks
+- Extract content from 備考 columns as notes
 
 OCR data:
 ${ocrData}
@@ -689,7 +692,9 @@ Return ONLY JSON:
   "vendor": {
     "name": "vendor name (no 御中)",
     "address": "string",
-    "phone": "string"
+    "phone": "string",
+    "email": "string",
+    "fax": "string"
   },
   "customer": {
     "name": "customer name (with 御中)",
@@ -697,13 +702,19 @@ Return ONLY JSON:
   },
   "items": [{
     "itemName": "string",
+    "description": "string",
     "quantity": 1,
     "unitPrice": 5000,
-    "amount": 5000
+    "amount": 5000,
+    "remarks": "string (for items with empty quantity/price)"
   }],
   "subtotal": 5000,
   "taxAmount": 500,
-  "totalAmount": 5500
+  "totalAmount": 5500,
+  "notes": "string (content from 備考 column)",
+  "deliveryLocation": "string",
+  "paymentTerms": "string",
+  "quotationValidity": "string"
 }
 \`\`\``;
   }
