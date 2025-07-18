@@ -80,6 +80,78 @@ export async function POST(request: NextRequest) {
             address2: existingSupplier.address2,
             postalCode: existingSupplier.postalCode
           }, null, 2));
+          
+          // OCRから抽出された新しい情報を取得
+          const vendorInfo = quoteData.vendor || {};
+          const vendorAddress = quoteData.vendorAddress || vendorInfo.address || '';
+          const rawVendorPhone = quoteData.vendorPhone || quoteData.vendorPhoneNumber || vendorInfo.phone || '';
+          const vendorPhone = cleanPhoneNumber(rawVendorPhone);
+          const vendorEmail = quoteData.vendorEmail || vendorInfo.email || '';
+          const vendorFax = quoteData.vendorFax || vendorInfo.fax || '';
+          const vendorWebsite = quoteData.vendorWebsite || vendorInfo.website || vendorInfo.url || '';
+          
+          // 郵便番号を住所から抽出
+          let postalCode = '';
+          let cleanAddress = vendorAddress;
+          const postalCodeMatch = vendorAddress.match(/〒?(\d{3}-?\d{4})/);
+          if (postalCodeMatch) {
+            postalCode = postalCodeMatch[1];
+            // 郵便番号を住所から除去
+            cleanAddress = vendorAddress.replace(/〒?\d{3}-?\d{4}\s*/, '').trim();
+          }
+          
+          // 既存の仕入先データと新しいOCRデータを比較して更新が必要か確認
+          const updateData: any = {};
+          let needsUpdate = false;
+          
+          // 各フィールドを比較して、新しい値がある場合のみ更新
+          if (vendorPhone && vendorPhone !== existingSupplier.phone) {
+            updateData.phone = vendorPhone;
+            needsUpdate = true;
+          }
+          if (vendorFax && (!existingSupplier.fax || vendorFax !== existingSupplier.fax)) {
+            updateData.fax = vendorFax;
+            needsUpdate = true;
+          }
+          if (vendorEmail && vendorEmail !== existingSupplier.email) {
+            updateData.email = vendorEmail;
+            needsUpdate = true;
+          }
+          if (vendorWebsite && (!existingSupplier.website || vendorWebsite !== existingSupplier.website)) {
+            updateData.website = vendorWebsite;
+            needsUpdate = true;
+          }
+          if (cleanAddress && (!existingSupplier.address1 || cleanAddress !== existingSupplier.address1)) {
+            updateData.address1 = cleanAddress;
+            needsUpdate = true;
+          }
+          if (postalCode && (!existingSupplier.postalCode || postalCode !== existingSupplier.postalCode)) {
+            updateData.postalCode = postalCode;
+            needsUpdate = true;
+          }
+          
+          // 更新が必要な場合のみ実行
+          if (needsUpdate) {
+            console.log('[Supplier Quote] Updating existing supplier with new OCR data:', JSON.stringify(updateData, null, 2));
+            try {
+              const updatedSupplier = await SupplierService.updateSupplier(supplierId.toString(), updateData);
+              console.log('[Supplier Quote] Successfully updated supplier:', JSON.stringify({
+                _id: updatedSupplier._id,
+                companyName: updatedSupplier.companyName,
+                phone: updatedSupplier.phone,
+                fax: updatedSupplier.fax,
+                email: updatedSupplier.email,
+                website: updatedSupplier.website,
+                address1: updatedSupplier.address1,
+                postalCode: updatedSupplier.postalCode
+              }, null, 2));
+            } catch (updateError) {
+              console.error('[Supplier Quote] Error updating supplier:', updateError);
+              // 更新に失敗しても処理は続行（既存のsupplierIdを使用）
+            }
+          } else {
+            console.log('[Supplier Quote] No updates needed for existing supplier');
+          }
         } else {
           console.log('[Supplier Quote] No existing supplier found, will create new one');
           // OCRから抽出された仕入先情報を使用
