@@ -22,7 +22,7 @@ interface DeepSeekResponse {
 
 export interface OCROrchestrationRequest {
   ocrResult: any; // Azure Form Recognizerの結果
-  documentType: 'invoice' | 'supplier-quote' | 'receipt';
+  documentType: 'invoice' | 'supplier-quote' | 'receipt' | 'purchase-invoice';
   companyId: string;
 }
 
@@ -709,7 +709,8 @@ export class OCRAIOrchestrator {
     const docTypeJa = {
       'invoice': '請求書',
       'supplier-quote': '見積書',
-      'receipt': '領収書'
+      'receipt': '領収書',
+      'purchase-invoice': '仕入請求書'
     }[documentType] || '書類';
     
     return `Extract structured data from Japanese ${docTypeJa} OCR.

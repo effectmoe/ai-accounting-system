@@ -1267,6 +1267,98 @@ export interface PurchaseOrderItem {
   notes?: string;
 }
 
+// 仕入請求書ステータス
+export type PurchaseInvoiceStatus = 'draft' | 'received' | 'approved' | 'paid' | 'overdue' | 'cancelled';
+
+// 仕入請求書インターフェース
+export interface PurchaseInvoice {
+  _id?: ObjectId;
+  id?: string;
+  invoiceNumber: string; // 請求書番号
+  supplierId: ObjectId;
+  supplier?: Supplier; // Populated field
+  purchaseOrderId?: ObjectId; // 関連発注書
+  purchaseOrder?: PurchaseOrder; // Populated field
+  dealId?: ObjectId; // 関連案件
+  deal?: Deal; // Populated field
+  
+  // 日付情報
+  issueDate: Date;
+  dueDate: Date; // 支払期限
+  receivedDate?: Date; // 受領日
+  
+  // 金額情報
+  items: PurchaseInvoiceItem[];
+  subtotal: number;
+  taxAmount: number;
+  taxRate: number;
+  totalAmount: number;
+  
+  // ステータス
+  status: PurchaseInvoiceStatus;
+  
+  // 支払い情報
+  paymentMethod?: PaymentMethod;
+  bankAccountId?: ObjectId;
+  bankAccount?: BankAccount; // Populated field
+  paymentStatus: 'pending' | 'partial' | 'paid';
+  paidAmount?: number;
+  paidDate?: Date;
+  paymentReference?: string; // 振込参照番号など
+  
+  // OCRで直接抽出した仕入先情報（supplierが未設定の場合に使用）
+  vendorName?: string;
+  vendorAddress?: string;
+  vendorPhone?: string;
+  vendorEmail?: string;
+  vendor?: {
+    name: string;
+    address?: string;
+    phone?: string;
+    email?: string;
+    fax?: string;
+  };
+  
+  // メタデータ
+  notes?: string;
+  internalNotes?: string;
+  attachments?: string[]; // ファイルパス
+  ocrResultId?: ObjectId; // OCR結果との関連
+  fileId?: string; // 元ファイルのID（GridFS）
+  
+  // 承認情報
+  approvedBy?: string;
+  approvedAt?: Date;
+  approvalNotes?: string;
+  
+  // AI生成情報
+  isGeneratedByAI?: boolean;
+  aiGenerationMetadata?: {
+    source?: string;
+    confidence?: number;
+    timestamp?: Date;
+  };
+  
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+// 仕入請求書項目インターフェース
+export interface PurchaseInvoiceItem {
+  productId?: ObjectId;
+  product?: Product; // Populated field
+  itemName: string;
+  description?: string;
+  quantity: number;
+  unitPrice: number;
+  amount: number;
+  taxRate?: number;
+  taxAmount?: number;
+  purchaseOrderItemId?: ObjectId; // 関連発注書項目
+  notes?: string;
+  remarks?: string; // 備考
+}
+
 // ダッシュボード用集計データインターフェース
 export interface DashboardProfitData {
   period: 'daily' | 'weekly' | 'monthly' | 'yearly';
