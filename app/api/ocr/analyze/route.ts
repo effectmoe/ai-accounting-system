@@ -3,13 +3,19 @@ import { DocumentAnalysisClient, AzureKeyCredential } from '@azure/ai-form-recog
 import { OCRAIOrchestrator } from '@/lib/ocr-ai-orchestrator';
 
 export async function POST(request: NextRequest) {
+  const startTime = Date.now();
+  
   try {
     console.log('[OCR API] Starting OCR analysis...');
+    console.log('[OCR API] Request started at:', new Date().toISOString());
     
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const documentType = formData.get('documentType') as string || 'invoice';
     const companyId = formData.get('companyId') as string || '11111111-1111-1111-1111-111111111111';
+    
+    console.log('[OCR API] File size:', file?.size || 0, 'bytes');
+    console.log('[OCR API] Document type:', documentType);
     
     if (!file) {
       return NextResponse.json(
@@ -38,7 +44,8 @@ export async function POST(request: NextRequest) {
       const poller = await client.beginAnalyzeDocument(modelId, uint8Array);
       azureOcrResult = await poller.pollUntilDone();
       
-      console.log('[OCR API] Azure Form Recognizer completed');
+      const azureElapsed = Date.now() - startTime;
+      console.log('[OCR API] Azure Form Recognizer completed in', azureElapsed, 'ms');
     } else {
       console.log('[OCR API] Azure Form Recognizer not configured, using mock data');
       azureOcrResult = {
@@ -76,24 +83,44 @@ export async function POST(request: NextRequest) {
       companyId: companyId
     });
     
-    console.log('[OCR API] AI orchestration completed successfully');
+    const totalElapsed = Date.now() - startTime;
+    console.log('[OCR API] AI orchestration completed successfully in', totalElapsed, 'ms total');
     
     return NextResponse.json({
       success: true,
       data: structuredData,
       message: 'DeepSeek AI駆動のOCR解析が完了しました',
       processingMethod: 'DeepSeek-AI-driven',
-      model: 'deepseek-coder'
+      model: 'deepseek-coder',
+      processingTime: {
+        total: totalElapsed,
+        azure: azureOcrResult ? (Date.now() - startTime) : 0
+      }
     });
     
   } catch (error) {
-    console.error('[OCR API] Error:', error);
+    const totalElapsed = Date.now() - startTime;
+    console.error('[OCR API] Error after', totalElapsed, 'ms:', error);
+    
+    // タイムアウトエラーの場合は特別な処理
+    if (error instanceof Error && error.message.includes('timed out')) {
+      return NextResponse.json(
+        {
+          error: 'OCR処理がタイムアウトしました',
+          details: 'DeepSeek APIの応答が遅いため、処理時間制限を超過しました。しばらく待ってから再試行してください。',
+          processingMethod: 'DeepSeek-AI-driven (timeout)',
+          processingTime: totalElapsed
+        },
+        { status: 504 }
+      );
+    }
     
     return NextResponse.json(
       {
         error: 'DeepSeek OCR解析中にエラーが発生しました',
         details: error instanceof Error ? error.message : 'Unknown error',
-        processingMethod: 'DeepSeek-AI-driven (failed)'
+        processingMethod: 'DeepSeek-AI-driven (failed)',
+        processingTime: totalElapsed
       },
       { status: 500 }
     );
