@@ -233,44 +233,42 @@ export default function SupplierDetailPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {supplier.phone ? (
-                  <div className="flex items-center gap-2">
-                    <Phone className="h-4 w-4 text-muted-foreground" />
-                    <span>{supplier.phone}</span>
-                  </div>
+                {supplier.phone || (supplier.fax && supplier.fax.trim() !== '') || supplier.email || supplier.website ? (
+                  <>
+                    {supplier.phone && (
+                      <div className="flex items-center gap-2">
+                        <Phone className="h-4 w-4 text-muted-foreground" />
+                        <span>{supplier.phone}</span>
+                      </div>
+                    )}
+                    {supplier.fax && supplier.fax.trim() !== '' && (
+                      <div className="flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-muted-foreground" />
+                        <span>FAX: {supplier.fax}</span>
+                      </div>
+                    )}
+                    {supplier.email && (
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-4 w-4 text-muted-foreground" />
+                        <span>{supplier.email}</span>
+                      </div>
+                    )}
+                    {supplier.website && (
+                      <div className="flex items-center gap-2">
+                        <Globe className="h-4 w-4 text-muted-foreground" />
+                        <a
+                          href={supplier.website}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:underline"
+                        >
+                          {supplier.website}
+                        </a>
+                      </div>
+                    )}
+                  </>
                 ) : (
-                  console.log('[Contact Info] No phone number found:', {
-                    supplierPhone: supplier.phone,
-                    supplierId: supplier._id,
-                    hasPhone: !!supplier.phone,
-                    phoneType: typeof supplier.phone,
-                    phoneValue: supplier.phone
-                  }) || null
-                )}
-                {supplier.fax && (
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-muted-foreground" />
-                    <span>FAX: {supplier.fax}</span>
-                  </div>
-                )}
-                {supplier.email && (
-                  <div className="flex items-center gap-2">
-                    <Mail className="h-4 w-4 text-muted-foreground" />
-                    <span>{supplier.email}</span>
-                  </div>
-                )}
-                {supplier.website && (
-                  <div className="flex items-center gap-2">
-                    <Globe className="h-4 w-4 text-muted-foreground" />
-                    <a
-                      href={supplier.website}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:underline"
-                    >
-                      {supplier.website}
-                    </a>
-                  </div>
+                  <p className="text-muted-foreground">連絡先情報が登録されていません</p>
                 )}
               </CardContent>
             </Card>
