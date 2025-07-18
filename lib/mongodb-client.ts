@@ -200,6 +200,9 @@ export class DatabaseService {
    */
   async create<T>(collectionName: string, document: Omit<T, '_id'>): Promise<T> {
     try {
+      console.log(`===== [DatabaseService] Create Operation Debug START (${collectionName}) =====`);
+      console.log('[1] Document to create:', JSON.stringify(document, null, 2));
+      
       const collection = await getCollection<T>(collectionName);
       const now = new Date();
       const doc = {
@@ -207,8 +210,20 @@ export class DatabaseService {
         createdAt: now,
         updatedAt: now,
       };
+      
+      console.log('[2] Document with timestamps:', JSON.stringify(doc, null, 2));
+      
       const result = await collection.insertOne(doc as any);
-      return { ...doc, _id: result.insertedId } as T;
+      const createdDoc = { ...doc, _id: result.insertedId } as T;
+      
+      console.log('[3] Created document result:', JSON.stringify({
+        _id: result.insertedId,
+        ...doc
+      }, null, 2));
+      
+      console.log(`===== [DatabaseService] Create Operation Debug END (${collectionName}) =====`);
+      
+      return createdDoc;
     } catch (error) {
       console.error(`MongoDB create error in collection ${collectionName}:`, error);
       throw new DatabaseError(

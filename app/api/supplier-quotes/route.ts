@@ -55,18 +55,28 @@ export async function POST(request: NextRequest) {
     if (!supplierId && quoteData.vendorName) {
       try {
         // 既存の仕入先を検索
+        console.log('[Supplier Quote] Searching for existing supplier:', quoteData.vendorName);
         const existingSupplier = await db.findOne('suppliers', {
           companyName: quoteData.vendorName
         });
         
         if (existingSupplier) {
           supplierId = existingSupplier._id;
-          console.log(`[Supplier Quote] Found existing supplier: ${existingSupplier.companyName}`);
+          console.log(`[Supplier Quote] Found existing supplier:`, JSON.stringify({
+            _id: existingSupplier._id,
+            companyName: existingSupplier.companyName,
+            phone: existingSupplier.phone,
+            address1: existingSupplier.address1,
+            postalCode: existingSupplier.postalCode
+          }, null, 2));
         } else {
+          console.log('[Supplier Quote] No existing supplier found, will create new one');
           // OCRから抽出された仕入先情報を使用
-          const vendorAddress = quoteData.vendorAddress || '';
-          const vendorPhone = quoteData.vendorPhone || quoteData.vendorPhoneNumber || '';
-          const vendorEmail = quoteData.vendorEmail || '';
+          // vendor オブジェクトから情報を取得（AI Orchestratorからの場合）
+          const vendorInfo = quoteData.vendor || {};
+          const vendorAddress = quoteData.vendorAddress || vendorInfo.address || '';
+          const vendorPhone = quoteData.vendorPhone || quoteData.vendorPhoneNumber || vendorInfo.phone || '';
+          const vendorEmail = quoteData.vendorEmail || vendorInfo.email || '';
           
           // 郵便番号を住所から抽出
           let postalCode = '';
@@ -78,16 +88,41 @@ export async function POST(request: NextRequest) {
             cleanAddress = vendorAddress.replace(/〒?\d{3}-?\d{4}\s*/, '').trim();
           }
           
-          console.log(`[Supplier Quote] Creating new supplier with OCR data:`, {
+          // Comprehensive logging for OCR data flow
+          console.log('===== [Supplier Quote] OCR Data Flow Debug START =====');
+          console.log('[1] Raw quote data received:', JSON.stringify({
+            vendorName: quoteData.vendorName,
+            vendorAddress: quoteData.vendorAddress,
+            vendorPhone: quoteData.vendorPhone,
+            vendorPhoneNumber: quoteData.vendorPhoneNumber,
+            vendorEmail: quoteData.vendorEmail,
+            vendor: quoteData.vendor
+          }, null, 2));
+          
+          console.log('[2] Extracted vendor info:', JSON.stringify({
+            vendorInfo,
+            vendorAddress,
+            vendorPhone,
+            vendorEmail
+          }, null, 2));
+          
+          console.log('[3] Processed address data:', JSON.stringify({
+            originalAddress: vendorAddress,
+            postalCode: postalCode,
+            cleanAddress: cleanAddress
+          }, null, 2));
+          
+          console.log('[4] Creating new supplier with data:', JSON.stringify({
             companyName: quoteData.vendorName,
             address: cleanAddress,
             postalCode: postalCode,
             phone: vendorPhone,
-            email: vendorEmail
-          });
+            email: vendorEmail,
+            originalAddress: vendorAddress
+          }, null, 2));
           
           // 新しい仕入先を作成（正しいフィールド名を使用）
-          const newSupplier = await db.create('suppliers', {
+          const supplierData = {
             supplierCode: await SupplierService.generateSupplierCode(),
             companyName: quoteData.vendorName,
             email: vendorEmail,
@@ -96,12 +131,29 @@ export async function POST(request: NextRequest) {
             postalCode: postalCode, // 抽出した郵便番号
             status: 'active',
             notes: 'OCRで自動作成された仕入先'
-          });
+          };
+          
+          console.log('[5] Supplier data to be saved:', JSON.stringify(supplierData, null, 2));
+          
+          const newSupplier = await db.create('suppliers', supplierData);
           supplierId = newSupplier._id;
-          console.log(`[Supplier Quote] Created new supplier: ${newSupplier.companyName} (${supplierId})`);
+          
+          console.log('[6] Created supplier result:', JSON.stringify({
+            _id: newSupplier._id,
+            supplierCode: newSupplier.supplierCode,
+            companyName: newSupplier.companyName,
+            email: newSupplier.email,
+            phone: newSupplier.phone,
+            address1: newSupplier.address1,
+            postalCode: newSupplier.postalCode,
+            status: newSupplier.status,
+            notes: newSupplier.notes
+          }, null, 2));
+          
+          console.log('===== [Supplier Quote] OCR Data Flow Debug END =====');
         }
       } catch (error) {
-        console.error('Error handling supplier:', error);
+        console.error('[Supplier Quote] Error handling supplier:', error);
         // 仕入先処理に失敗した場合はデフォルト仕入先を使用
         const defaultSupplier = await db.findOne('suppliers', {
           companyName: 'OCR自動登録仕入先'

@@ -7,7 +7,37 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    console.log('===== [Supplier API] GET Request Debug START =====');
+    console.log('[1] Requested supplier ID:', params.id);
+    
     const supplier = await SupplierService.getSupplierById(params.id);
+    
+    console.log('[2] Retrieved supplier data:', JSON.stringify({
+      _id: supplier._id,
+      id: supplier.id,
+      supplierCode: supplier.supplierCode,
+      companyName: supplier.companyName,
+      email: supplier.email,
+      phone: supplier.phone,
+      address1: supplier.address1,
+      address2: supplier.address2,
+      postalCode: supplier.postalCode,
+      prefecture: supplier.prefecture,
+      city: supplier.city,
+      status: supplier.status,
+      notes: supplier.notes
+    }, null, 2));
+    
+    console.log('[3] Field existence check:', {
+      hasPhone: !!supplier.phone,
+      phoneLength: supplier.phone?.length || 0,
+      hasAddress1: !!supplier.address1,
+      address1Length: supplier.address1?.length || 0,
+      hasPostalCode: !!supplier.postalCode
+    });
+    
+    console.log('===== [Supplier API] GET Request Debug END =====');
+    
     return NextResponse.json(supplier);
   } catch (error: any) {
     console.error('Error fetching supplier:', error);
