@@ -190,17 +190,23 @@ export default function SupplierDetailPage() {
                       〒{supplier.postalCode}
                     </p>
                   )}
-                  {(supplier.prefecture || supplier.city || supplier.address1 || supplier.address2) ? (
+                  {(supplier.prefecture || supplier.city || supplier.address1 || supplier.address2 || (supplier as any).address) ? (
                     <div>
-                      {/* 都道府県と市区町村が存在する場合 */}
-                      {(supplier.prefecture || supplier.city) && (
+                      {/* addressフィールドが存在する場合（新しいフォーマット） */}
+                      {(supplier as any).address && (
+                        <p>
+                          {(supplier as any).address}
+                        </p>
+                      )}
+                      {/* 都道府県と市区町村が存在する場合（旧フォーマット） */}
+                      {!((supplier as any).address) && (supplier.prefecture || supplier.city) && (
                         <p>
                           {supplier.prefecture}
                           {supplier.city}
                         </p>
                       )}
-                      {/* 住所1が存在する場合（OCRで取得した住所など） */}
-                      {supplier.address1 && (
+                      {/* 住所1が存在する場合（旧フォーマット） */}
+                      {!((supplier as any).address) && supplier.address1 && (
                         <p>
                           {supplier.address1}
                         </p>
