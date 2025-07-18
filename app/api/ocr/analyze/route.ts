@@ -106,6 +106,8 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     const totalElapsed = Date.now() - startTime;
     console.error('[OCR API] Error after', totalElapsed, 'ms:', error);
+    console.error('[OCR API] Error type:', error?.constructor?.name);
+    console.error('[OCR API] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     
     // タイムアウトエラーの場合は特別な処理
     if (error instanceof Error && error.message.includes('timed out')) {
@@ -120,12 +122,36 @@ export async function POST(request: NextRequest) {
       );
     }
     
+    // AI Orchestratorが利用できない場合
+    if (error instanceof Error && error.message.includes('AI Orchestrator is not available')) {
+      return NextResponse.json(
+        {
+          error: 'AI OCR処理が利用できません',
+          details: 'DeepSeek APIキーが設定されていないか、無効です。環境変数を確認してください。',
+          processingMethod: 'DeepSeek-AI-driven (unavailable)',
+          processingTime: totalElapsed,
+          debugInfo: {
+            hasDeepSeekKey: !!process.env.DEEPSEEK_API_KEY,
+            deepSeekKeyPrefix: process.env.DEEPSEEK_API_KEY?.substring(0, 10) || 'not set'
+          }
+        },
+        { status: 503 }
+      );
+    }
+    
+    // その他のエラー
     return NextResponse.json(
       {
         error: 'DeepSeek OCR解析中にエラーが発生しました',
         details: error instanceof Error ? error.message : 'Unknown error',
         processingMethod: 'DeepSeek-AI-driven (failed)',
-        processingTime: totalElapsed
+        processingTime: totalElapsed,
+        errorType: error?.constructor?.name || 'UnknownError',
+        debugInfo: {
+          hasDeepSeekKey: !!process.env.DEEPSEEK_API_KEY,
+          hasAzureKey: !!process.env.AZURE_FORM_RECOGNIZER_KEY,
+          nodeEnv: process.env.NODE_ENV
+        }
       },
       { status: 500 }
     );
