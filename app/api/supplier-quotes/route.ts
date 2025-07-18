@@ -73,6 +73,7 @@ export async function POST(request: NextRequest) {
             _id: existingSupplier._id,
             companyName: existingSupplier.companyName,
             phone: existingSupplier.phone,
+            fax: existingSupplier.fax,
             address1: existingSupplier.address1,
             postalCode: existingSupplier.postalCode
           }, null, 2));
@@ -85,6 +86,7 @@ export async function POST(request: NextRequest) {
           const rawVendorPhone = quoteData.vendorPhone || quoteData.vendorPhoneNumber || vendorInfo.phone || '';
           const vendorPhone = cleanPhoneNumber(rawVendorPhone);
           const vendorEmail = quoteData.vendorEmail || vendorInfo.email || '';
+          const vendorFax = quoteData.vendorFax || vendorInfo.fax || '';
           
           // 郵便番号を住所から抽出
           let postalCode = '';
@@ -103,6 +105,7 @@ export async function POST(request: NextRequest) {
             vendorAddress: quoteData.vendorAddress,
             vendorPhone: quoteData.vendorPhone,
             vendorPhoneNumber: quoteData.vendorPhoneNumber,
+            vendorFax: quoteData.vendorFax,
             vendorEmail: quoteData.vendorEmail,
             vendor: quoteData.vendor,
             fullQuoteData: quoteData
@@ -113,6 +116,7 @@ export async function POST(request: NextRequest) {
             vendorAddress,
             rawVendorPhone,
             vendorPhone,
+            vendorFax,
             vendorEmail
           }, null, 2));
           
@@ -127,6 +131,7 @@ export async function POST(request: NextRequest) {
             address: cleanAddress,
             postalCode: postalCode,
             phone: vendorPhone,
+            fax: vendorFax,
             email: vendorEmail,
             originalAddress: vendorAddress
           }, null, 2));
@@ -137,6 +142,7 @@ export async function POST(request: NextRequest) {
             companyName: vendorName,
             email: vendorEmail,
             phone: vendorPhone,
+            fax: vendorFax, // FAX番号を追加
             address1: cleanAddress, // 郵便番号を除いた住所
             postalCode: postalCode, // 抽出した郵便番号
             status: 'active',
@@ -154,6 +160,7 @@ export async function POST(request: NextRequest) {
             companyName: newSupplier.companyName,
             email: newSupplier.email,
             phone: newSupplier.phone,
+            fax: newSupplier.fax,
             address1: newSupplier.address1,
             postalCode: newSupplier.postalCode,
             status: newSupplier.status,
@@ -166,6 +173,7 @@ export async function POST(request: NextRequest) {
             _id: verifySupplier?._id,
             companyName: verifySupplier?.companyName,
             phone: verifySupplier?.phone,
+            fax: verifySupplier?.fax,
             address1: verifySupplier?.address1,
             postalCode: verifySupplier?.postalCode
           }, null, 2));
