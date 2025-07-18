@@ -104,12 +104,16 @@ export class SupplierQuoteService {
   async createSupplierQuote(quoteData: Omit<SupplierQuote, '_id' | 'createdAt' | 'updatedAt'>): Promise<SupplierQuote> {
     try {
       // 見積書番号の重複チェック
+      let finalQuoteNumber = quoteData.quoteNumber;
       const existing = await db.findOne<SupplierQuote>(this.collectionName, {
         quoteNumber: quoteData.quoteNumber
       });
 
       if (existing) {
-        throw new Error(`見積書番号 ${quoteData.quoteNumber} は既に使用されています`);
+        console.log(`[SupplierQuoteService] Duplicate quote number detected: ${quoteData.quoteNumber}`);
+        // 重複が検出された場合、新しい番号を生成
+        finalQuoteNumber = await this.generateSupplierQuoteNumber();
+        console.log(`[SupplierQuoteService] Generated new quote number: ${finalQuoteNumber}`);
       }
 
       // 仕入先の存在確認
@@ -123,6 +127,7 @@ export class SupplierQuoteService {
       // 日付をDateオブジェクトに変換
       const quote: Omit<SupplierQuote, '_id' | 'createdAt' | 'updatedAt'> = {
         ...quoteData,
+        quoteNumber: finalQuoteNumber, // 重複チェック後の番号を使用
         issueDate: new Date(quoteData.issueDate),
         validityDate: new Date(quoteData.validityDate),
         receivedDate: quoteData.receivedDate ? new Date(quoteData.receivedDate) : undefined,
@@ -299,25 +304,51 @@ export class SupplierQuoteService {
       const month = (now.getMonth() + 1).toString().padStart(2, '0');
       const day = now.getDate().toString().padStart(2, '0');
       
-      // 今日の仕入先見積書数を取得してシーケンス番号を生成
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      // プレフィックスを作成
+      const prefix = `SQ-${year}${month}${day}`;
       
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      
-      const quoteCount = await db.count(this.collectionName, {
-        createdAt: {
-          $gte: today,
-          $lt: tomorrow
-        }
+      // 同じプレフィックスを持つ最大のシーケンス番号を取得
+      const existingQuotes = await db.find<SupplierQuote>(this.collectionName, {
+        quoteNumber: { $regex: `^${prefix}-` }
+      }, {
+        sort: { quoteNumber: -1 },
+        limit: 1
       });
       
-      const seq = (quoteCount + 1).toString().padStart(3, '0');
+      let seq = 1;
+      if (existingQuotes.length > 0) {
+        const lastQuoteNumber = existingQuotes[0].quoteNumber;
+        const lastSeq = lastQuoteNumber.split('-').pop();
+        if (lastSeq && !isNaN(parseInt(lastSeq))) {
+          seq = parseInt(lastSeq) + 1;
+        }
+      }
       
-      const quoteNumber = `SQ-${year}${month}${day}-${seq}`;
+      // 重複チェックのためのループ
+      let attempts = 0;
+      let quoteNumber = '';
       
-      return quoteNumber;
+      while (attempts < 100) {
+        quoteNumber = `${prefix}-${seq.toString().padStart(3, '0')}`;
+        
+        // 重複チェック
+        const existing = await db.findOne<SupplierQuote>(this.collectionName, {
+          quoteNumber: quoteNumber
+        });
+        
+        if (!existing) {
+          return quoteNumber;
+        }
+        
+        seq++;
+        attempts++;
+      }
+      
+      // 100回試しても重複が解消されない場合は、タイムスタンプを追加
+      console.warn('Failed to generate unique quote number after 100 attempts');
+      const timestamp = Date.now().toString().slice(-6);
+      return `${prefix}-${seq.toString().padStart(3, '0')}-${timestamp}`;
+      
     } catch (error) {
       console.error('Error in generateSupplierQuoteNumber:', error);
       // エラーの場合はタイムスタンプベースの番号を生成
