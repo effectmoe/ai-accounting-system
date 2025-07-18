@@ -1,6 +1,6 @@
 {
   "name": "mastra-accounting-automation",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "AI-driven accounting system automation with Mastra for Japanese tax compliance",
   "private": true,
   "browser": {
@@ -62,7 +62,8 @@
     "mcp:setup": "tsx scripts/setup-mcp-servers.ts",
     "mcp:debug:coordinator": "node src/debug/mcp-servers/aam-debug-coordinator.js",
     "mcp:debug:ocr": "node src/debug/mcp-servers/ocr-agent-monitor.js",
-    "mcp:debug:install": "cd src/debug/mcp-servers && npm install"
+    "mcp:debug:install": "cd src/debug/mcp-servers && npm install",
+    "migrate:supplier-fields": "tsx scripts/migrate-supplier-address-fields.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.27.3",
