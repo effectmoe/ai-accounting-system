@@ -22,7 +22,7 @@
       "maxDuration": 60
     },
     "app/api/ocr/analyze/route.ts": {
-      "maxDuration": 30
+      "maxDuration": 60
     },
     "app/api/webhook/ocr/route.ts": {
       "maxDuration": 30
