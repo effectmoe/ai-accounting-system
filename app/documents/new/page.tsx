@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { ArrowLeft, Upload, FileText, Plus } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { OCRItemExtractor } from '@/lib/ocr-item-extractor';
+import { cleanPhoneNumber } from '@/lib/phone-utils';
 
 // 仕入先情報抽出関数（改善版）
 function extractVendorInformation(extractedData: any): {name: string, address: string, phone: string, email: string, fax: string} {
@@ -65,12 +66,18 @@ function extractVendorInformation(extractedData: any): {name: string, address: s
   
   // 2. 仕入先詳細情報の抽出
   vendorInfo.address = extractedData.vendor?.address || extractedData.vendorAddress || extractedData.VendorAddress || '';
-  vendorInfo.phone = extractedData.vendor?.phone || extractedData.vendorPhoneNumber || extractedData.VendorPhoneNumber || 
-                     extractedData.vendorPhone || extractedData.VendorPhone || '';
+  const rawPhone = extractedData.vendor?.phone || extractedData.vendorPhoneNumber || extractedData.VendorPhoneNumber || 
+                   extractedData.vendorPhone || extractedData.VendorPhone || '';
+  vendorInfo.phone = cleanPhoneNumber(rawPhone);
   vendorInfo.email = extractedData.vendor?.email || extractedData.vendorEmail || extractedData.VendorEmail || '';
-  vendorInfo.fax = extractedData.vendor?.fax || extractedData.vendorFax || extractedData.VendorFax || '';
+  const rawFax = extractedData.vendor?.fax || extractedData.vendorFax || extractedData.VendorFax || '';
+  vendorInfo.fax = cleanPhoneNumber(rawFax);
   
-  console.log('[extractVendorInformation] 最終仕入先情報:', vendorInfo);
+  console.log('[extractVendorInformation] 最終仕入先情報:', {
+    ...vendorInfo,
+    rawPhone,
+    rawFax
+  });
   
   return vendorInfo;
 }

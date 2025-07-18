@@ -3,6 +3,7 @@ import { SupplierQuoteService } from '@/services/supplier-quote.service';
 import { SupplierService } from '@/services/supplier.service';
 import { db } from '@/lib/mongodb-client';
 import { ObjectId } from 'mongodb';
+import { cleanPhoneNumber } from '@/lib/phone-utils';
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic';
@@ -81,7 +82,8 @@ export async function POST(request: NextRequest) {
           // vendor オブジェクトから情報を取得（AI Orchestratorからの場合）
           const vendorInfo = quoteData.vendor || {};
           const vendorAddress = quoteData.vendorAddress || vendorInfo.address || '';
-          const vendorPhone = quoteData.vendorPhone || quoteData.vendorPhoneNumber || vendorInfo.phone || '';
+          const rawVendorPhone = quoteData.vendorPhone || quoteData.vendorPhoneNumber || vendorInfo.phone || '';
+          const vendorPhone = cleanPhoneNumber(rawVendorPhone);
           const vendorEmail = quoteData.vendorEmail || vendorInfo.email || '';
           
           // 郵便番号を住所から抽出
@@ -109,6 +111,7 @@ export async function POST(request: NextRequest) {
           console.log('[2] Extracted vendor info:', JSON.stringify({
             vendorInfo,
             vendorAddress,
+            rawVendorPhone,
             vendorPhone,
             vendorEmail
           }, null, 2));
