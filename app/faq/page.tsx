@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { logger } from '@/lib/logger';
 import { 
   Search, 
   Filter, 
@@ -156,16 +157,16 @@ export default function FaqPage() {
         includeStructuredData: 'true'
       });
 
-      console.log('[FAQ Page] Fetching FAQs with params:', params.toString());
+      logger.debug('[FAQ Page] Fetching FAQs with params:', params.toString());
       const response = await fetch(`/api/faq?${params}`);
-      console.log('[FAQ Page] Response status:', response.status);
+      logger.debug('[FAQ Page] Response status:', response.status);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
       const data = await response.json();
-      console.log('[FAQ Page] Response data:', data);
+      logger.debug('[FAQ Page] Response data:', data);
 
       if (data.success) {
         setFaqs(data.faqs || []);
@@ -182,13 +183,13 @@ export default function FaqPage() {
           cat.count = data.faqs.filter((faq: FaqItem) => faq.category === cat.name).length;
         });
       } else {
-        console.error('Failed to fetch FAQs:', data.error);
+        logger.error('Failed to fetch FAQs:', data.error);
         // 空の配列をセット
         setFaqs([]);
         setFilteredFaqs([]);
       }
     } catch (error) {
-      console.error('Error fetching FAQs:', error);
+      logger.error('Error fetching FAQs:', error);
       // エラー時も空の配列をセット
       setFaqs([]);
       setFilteredFaqs([]);
@@ -254,7 +255,7 @@ export default function FaqPage() {
         ));
       }
     } catch (error) {
-      console.error('Error voting on FAQ:', error);
+      logger.error('Error voting on FAQ:', error);
     }
   };
 
@@ -283,13 +284,13 @@ export default function FaqPage() {
         setDeleteDialogOpen(false);
         setFaqToDelete(null);
         
-        console.log('FAQ deleted successfully');
+        logger.debug('FAQ deleted successfully');
       } else {
-        console.error('Failed to delete FAQ:', data.error);
+        logger.error('Failed to delete FAQ:', data.error);
         alert('FAQの削除に失敗しました: ' + (data.error || '不明なエラー'));
       }
     } catch (error) {
-      console.error('Error deleting FAQ:', error);
+      logger.error('Error deleting FAQ:', error);
       alert('FAQの削除中にエラーが発生しました');
     } finally {
       setIsDeleting(false);
@@ -309,7 +310,7 @@ export default function FaqPage() {
         );
         setRelatedFaqs(relatedData.filter(d => d.success).map(d => d.faq));
       } catch (error) {
-        console.error('Error fetching related FAQs:', error);
+        logger.error('Error fetching related FAQs:', error);
         setRelatedFaqs([]);
       }
     } else {
@@ -345,13 +346,13 @@ export default function FaqPage() {
         setEditDialogOpen(false);
         setEditingFaq(null);
         
-        console.log('FAQ updated successfully');
+        logger.debug('FAQ updated successfully');
       } else {
-        console.error('Failed to update FAQ:', data.error);
+        logger.error('Failed to update FAQ:', data.error);
         alert('FAQの更新に失敗しました: ' + (data.error || '不明なエラー'));
       }
     } catch (error) {
-      console.error('Error updating FAQ:', error);
+      logger.error('Error updating FAQ:', error);
       alert('FAQの更新中にエラーが発生しました');
     } finally {
       setIsSaving(false);
@@ -372,11 +373,11 @@ export default function FaqPage() {
         // FAQリストを再取得
         fetchFaqs();
       } else {
-        console.error('Migration failed:', data.error);
+        logger.error('Migration failed:', data.error);
         alert('移行に失敗しました: ' + (data.error || '不明なエラー'));
       }
     } catch (error) {
-      console.error('Error during migration:', error);
+      logger.error('Error during migration:', error);
       alert('移行中にエラーが発生しました');
     } finally {
       setIsMigrating(false);

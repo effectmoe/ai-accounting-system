@@ -1,3 +1,5 @@
+import { logger } from '@/lib/logger';
+
 interface PerplexitySearchRequest {
   query: string;
   max_tokens?: number;
@@ -64,7 +66,7 @@ export class PerplexityClient {
   constructor(apiKey?: string) {
     this.apiKey = apiKey || process.env.PERPLEXITY_API_KEY || '';
     if (!this.apiKey) {
-      console.warn('Perplexity API key not provided. Web search functionality will be limited.');
+      logger.warn('Perplexity API key not provided. Web search functionality will be limited.');
     }
   }
 
@@ -149,7 +151,7 @@ export class PerplexityClient {
       };
 
     } catch (error) {
-      console.error('Perplexity search error:', error);
+      logger.error('Perplexity search error:', error);
       
       return {
         content: `Search failed: ${error instanceof Error ? error.message : 'Unknown error'}`,

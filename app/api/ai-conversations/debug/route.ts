@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDatabase } from '@/lib/mongodb-client';
 import { AIConversation } from '@/types/ai-conversation';
 
+import { logger } from '@/lib/logger';
 export const dynamic = 'force-dynamic';
 
 // デバッグ用: AI会話履歴の詳細を確認
@@ -15,7 +16,7 @@ export async function GET(request: NextRequest) {
     const db = await getDatabase();
     const conversationsCollection = db.collection<AIConversation>('aiConversations');
 
-    console.log('[AI Conversations Debug] Parameters:', { limit, conversationId, invoiceId });
+    logger.debug('[AI Conversations Debug] Parameters:', { limit, conversationId, invoiceId });
 
     // 特定の会話を検索
     if (conversationId || invoiceId) {
@@ -35,12 +36,12 @@ export async function GET(request: NextRequest) {
         queries.push({ invoiceId: invoiceId });
       }
 
-      console.log('[AI Conversations Debug] Trying queries:', queries);
+      logger.debug('[AI Conversations Debug] Trying queries:', queries);
 
       for (const query of queries) {
         const result = await conversationsCollection.findOne(query);
         if (result) {
-          console.log('[AI Conversations Debug] Found with query:', query);
+          logger.debug('[AI Conversations Debug] Found with query:', query);
           return NextResponse.json({
             success: true,
             foundWithQuery: query,
@@ -57,7 +58,7 @@ export async function GET(request: NextRequest) {
           invoiceId: { $regex: invoiceId, $options: 'i' }
         });
         if (regexResult) {
-          console.log('[AI Conversations Debug] Found with regex search');
+          logger.debug('[AI Conversations Debug] Found with regex search');
           return NextResponse.json({
             success: true,
             foundWithQuery: { invoiceId: { $regex: invoiceId } },
@@ -110,7 +111,7 @@ export async function GET(request: NextRequest) {
       searchedFor: { conversationId, invoiceId },
     });
   } catch (error) {
-    console.error('デバッグエンドポイントエラー:', error);
+    logger.error('デバッグエンドポイントエラー:', error);
     return NextResponse.json(
       { success: false, error: 'デバッグ情報の取得に失敗しました', errorDetails: error },
       { status: 500 }

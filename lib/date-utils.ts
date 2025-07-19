@@ -1,6 +1,7 @@
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 
+import { logger } from '@/lib/logger';
 /**
  * 安全な日付フォーマット関数
  * 無効な日付値が渡された場合は '-' を返す
@@ -20,7 +21,7 @@ export const safeFormatDate = (
   try {
     return format(date, formatString, { locale: ja });
   } catch (error) {
-    console.warn('Date formatting error:', error, 'for value:', dateValue);
+    logger.warn('Date formatting error:', error, 'for value:', dateValue);
     return '-';
   }
 };

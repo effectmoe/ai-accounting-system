@@ -3,6 +3,7 @@ import { KnowledgeService } from '@/services/knowledge.service';
 import { getEmbeddingsService } from '@/lib/embeddings';
 import { ObjectId } from 'mongodb';
 
+import { logger } from '@/lib/logger';
 interface VectorSearchRequest {
   query: string;
   collections?: ('faq_articles' | 'knowledgeArticles')[];
@@ -57,7 +58,7 @@ export async function POST(request: NextRequest) {
     await knowledgeService.connect();
     
     // 1. クエリの埋め込みを生成
-    console.log('Generating embeddings for query:', query);
+    logger.debug('Generating embeddings for query:', query);
     const embeddingsService = getEmbeddingsService();
     const queryEmbedding = await embeddingsService.generateEmbedding(query);
     
@@ -66,7 +67,7 @@ export async function POST(request: NextRequest) {
     // 2. 各コレクションでVector Search実行
     for (const collectionName of collections) {
       try {
-        console.log(`Searching in collection: ${collectionName}`);
+        logger.debug(`Searching in collection: ${collectionName}`);
         const collection = knowledgeService.db.collection(collectionName);
         
         // Vector Search pipeline
@@ -156,10 +157,10 @@ export async function POST(request: NextRequest) {
         });
         
         results.push(...formattedResults);
-        console.log(`Found ${formattedResults.length} results in ${collectionName}`);
+        logger.debug(`Found ${formattedResults.length} results in ${collectionName}`);
         
       } catch (collectionError) {
-        console.error(`Error searching ${collectionName}:`, collectionError);
+        logger.error(`Error searching ${collectionName}:`, collectionError);
         // 個別コレクションのエラーは無視して続行
       }
     }
@@ -192,7 +193,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(response);
     
   } catch (error) {
-    console.error('Vector search error:', error);
+    logger.error('Vector search error:', error);
     await knowledgeService.disconnect();
     
     let errorMessage = 'Vector search failed';
@@ -292,7 +293,7 @@ export async function GET(request: NextRequest) {
     });
     
   } catch (error) {
-    console.error('Vector search status check error:', error);
+    logger.error('Vector search status check error:', error);
     await knowledgeService.disconnect();
     
     return NextResponse.json(

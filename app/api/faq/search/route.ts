@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { KnowledgeService } from '@/services/knowledge.service';
 
+import { logger } from '@/lib/logger';
 interface AdvancedSearchRequest {
   query?: string;
   categories?: string[];
@@ -207,7 +208,7 @@ export async function POST(request: NextRequest) {
     });
     
   } catch (error) {
-    console.error('[FAQ Advanced Search API] Error:', error);
+    logger.error('[FAQ Advanced Search API] Error:', error);
     await knowledgeService.disconnect();
     
     return NextResponse.json(

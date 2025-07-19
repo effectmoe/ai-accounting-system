@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { logger } from '@/lib/logger';
 import { 
   Send, 
   Bot, 
@@ -98,7 +99,7 @@ export default function AIChatDialog({
   // デバッグ用：音声認識の状態をコンソールに出力
   useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
-      console.log('[AIChatDialog] 音声認識デバッグ情報:', {
+      logger.debug('[AIChatDialog] 音声認識デバッグ情報:', {
         isSupported: isSpeechSupported,
         isListening,
         hasTranscript: !!transcript,
@@ -136,7 +137,7 @@ export default function AIChatDialog({
             notes: initialInvoiceData.notes || '',
             paymentMethod: initialInvoiceData.paymentMethod || 'bank_transfer'
           };
-          console.log('[AIChatDialog] Setting initial data for edit mode:', completeInitialData);
+          logger.debug('[AIChatDialog] Setting initial data for edit mode:', completeInitialData);
           setCurrentInvoiceData(completeInitialData);
         }
       
@@ -192,11 +193,11 @@ export default function AIChatDialog({
         if (!conversationId) {
           const newConversationId = generateConversationId();
           setConversationId(newConversationId);
-          console.log('[AIChatDialog] New conversation started with ID:', newConversationId);
-          console.log('[AIChatDialog] existingConversationId:', existingConversationId);
+          logger.debug('[AIChatDialog] New conversation started with ID:', newConversationId);
+          logger.debug('[AIChatDialog] existingConversationId:', existingConversationId);
         } else {
-          console.log('[AIChatDialog] Using existing conversation ID:', conversationId);
-          console.log('[AIChatDialog] Normalized from:', existingConversationId, 'to:', conversationId);
+          logger.debug('[AIChatDialog] Using existing conversation ID:', conversationId);
+          logger.debug('[AIChatDialog] Normalized from:', existingConversationId, 'to:', conversationId);
         }
       }
     }
@@ -211,7 +212,7 @@ export default function AIChatDialog({
 
   // currentInvoiceDataの変更を監視
   useEffect(() => {
-    console.log('[Frontend] currentInvoiceData changed:', currentInvoiceData);
+    logger.debug('[Frontend] currentInvoiceData changed:', currentInvoiceData);
   }, [currentInvoiceData]);
 
   // カーソル位置を保存・取得する関数
@@ -262,7 +263,7 @@ export default function AIChatDialog({
   useEffect(() => {
     if (transcript) {
       insertTextAtCursor(transcript);
-      console.log('[SpeechRecognition] Transcript inserted at cursor position:', cursorPosition);
+      logger.debug('[SpeechRecognition] Transcript inserted at cursor position:', cursorPosition);
       // 挿入後にトランスクリプトをリセットして重複を防ぐ
       resetTranscript();
     }
@@ -301,7 +302,7 @@ export default function AIChatDialog({
       }));
       conversationHistory.push({ role: 'user', content: userMessage.content });
 
-      console.log('[Frontend] Sending data to API:', {
+      logger.debug('[Frontend] Sending data to API:', {
         conversation: userMessage.content,
         currentInvoiceData,
         sessionId,
@@ -338,7 +339,7 @@ export default function AIChatDialog({
         
         try {
           const errorData = await response.json();
-          console.error('[Frontend] Error response:', errorData);
+          logger.error('[Frontend] Error response:', errorData);
           
           if (errorData.details) {
             errorMessage = errorData.details;
@@ -355,7 +356,7 @@ export default function AIChatDialog({
             }
           }
         } catch (parseError) {
-          console.error('[Frontend] Failed to parse error response');
+          logger.error('[Frontend] Failed to parse error response');
           
           if (response.status === 504) {
             errorMessage = 'リクエストがタイムアウトしました。もう一度お試しください。';
@@ -369,7 +370,7 @@ export default function AIChatDialog({
 
       const result = await response.json();
       
-      console.log('[Frontend] Received response from API:', {
+      logger.debug('[Frontend] Received response from API:', {
         message: result.message,
         data: result.data
       });
@@ -388,8 +389,8 @@ export default function AIChatDialog({
 
       // 請求書データを更新
       if (result.data) {
-        console.log('[Frontend] Updating invoice data:', result.data);
-        console.log('[Frontend] Data details:', {
+        logger.debug('[Frontend] Updating invoice data:', result.data);
+        logger.debug('[Frontend] Data details:', {
           items: result.data.items,
           subtotal: result.data.subtotal,
           taxAmount: result.data.taxAmount,
@@ -399,9 +400,9 @@ export default function AIChatDialog({
         
         // 各項目の詳細をログ出力
         if (result.data.items && result.data.items.length > 0) {
-          console.log('[Frontend] Items detail:');
+          logger.debug('[Frontend] Items detail:');
           result.data.items.forEach((item, index) => {
-            console.log(`[Frontend] Item ${index}:`, {
+            logger.debug(`[Frontend] Item ${index}:`, {
               description: item.description,
               quantity: item.quantity,
               unitPrice: item.unitPrice,
@@ -414,17 +415,17 @@ export default function AIChatDialog({
         
         // データが正しく設定されているか確認
         if (result.data.items && result.data.items.length > 0) {
-          console.log('[Frontend] Items detected, updating currentInvoiceData');
+          logger.debug('[Frontend] Items detected, updating currentInvoiceData');
         }
         if (result.data.customerName) {
-          console.log('[Frontend] Customer name detected:', result.data.customerName);
+          logger.debug('[Frontend] Customer name detected:', result.data.customerName);
         }
         
         // 完全なデータ構造で更新（既存データとマージ）
         setCurrentInvoiceData(prev => {
-          console.log('[Frontend] Previous state:', prev);
-          console.log('[Frontend] Result data from backend:', result.data);
-          console.log('[Frontend] Customer name in result:', result.data.customerName);
+          logger.debug('[Frontend] Previous state:', prev);
+          logger.debug('[Frontend] Result data from backend:', result.data);
+          logger.debug('[Frontend] Customer name in result:', result.data.customerName);
           
           // itemsの更新は、バックエンドが明示的に送信した場合のみ行う
           // バックエンドは常に完全な更新後のitemsを送信するので、そのまま使用する
@@ -445,13 +446,13 @@ export default function AIChatDialog({
             paymentMethod: result.data.paymentMethod !== undefined ? result.data.paymentMethod : prev.paymentMethod
           };
           
-          console.log('[Frontend] New state will be:', newData);
-          console.log('[Frontend] Customer name updated to:', newData.customerName);
-          console.log('[Frontend] Date fields updated:', {
+          logger.debug('[Frontend] New state will be:', newData);
+          logger.debug('[Frontend] Customer name updated to:', newData.customerName);
+          logger.debug('[Frontend] Date fields updated:', {
             invoiceDate: newData.invoiceDate,
             dueDate: newData.dueDate
           });
-          console.log('[Frontend] Items update:', {
+          logger.debug('[Frontend] Items update:', {
             prevItemsCount: prev.items?.length || 0,
             newItemsCount: newData.items?.length || 0,
             items: JSON.parse(JSON.stringify(newData.items))
@@ -460,7 +461,7 @@ export default function AIChatDialog({
           // 各アイテムの詳細を個別にログ出力
           if (newData.items && newData.items.length > 0) {
             newData.items.forEach((item, index) => {
-              console.log(`[Frontend] Item ${index} details:`, {
+              logger.debug(`[Frontend] Item ${index} details:`, {
                 description: item.description,
                 quantity: item.quantity,
                 unitPrice: item.unitPrice,
@@ -473,11 +474,11 @@ export default function AIChatDialog({
           return newData;
         });
       } else {
-        console.log('[Frontend] No data in result, not updating currentInvoiceData');
+        logger.debug('[Frontend] No data in result, not updating currentInvoiceData');
       }
 
     } catch (error) {
-      console.error('Error sending message:', error);
+      logger.error('Error sending message:', error);
       
       let errorContent = '申し訳ございません。処理中にエラーが発生しました。もう一度お試しください。';
       
@@ -507,8 +508,8 @@ export default function AIChatDialog({
   // 会話を完了して請求書データを確定
   const completeConversation = () => {
     if (currentInvoiceData && (currentInvoiceData.customerName || (currentInvoiceData.items && currentInvoiceData.items.length > 0))) {
-      console.log('[Frontend] Completing conversation with data:', JSON.parse(JSON.stringify(currentInvoiceData)));
-      console.log('[Frontend] Final data details:', {
+      logger.debug('[Frontend] Completing conversation with data:', JSON.parse(JSON.stringify(currentInvoiceData)));
+      logger.debug('[Frontend] Final data details:', {
         items: JSON.parse(JSON.stringify(currentInvoiceData.items)),
         subtotal: currentInvoiceData.subtotal,
         taxAmount: currentInvoiceData.taxAmount,
@@ -522,9 +523,9 @@ export default function AIChatDialog({
       
       // 各アイテムの詳細も個別にログ
       if (currentInvoiceData.items && currentInvoiceData.items.length > 0) {
-        console.log('[Frontend] Final items breakdown:');
+        logger.debug('[Frontend] Final items breakdown:');
         currentInvoiceData.items.forEach((item, index) => {
-          console.log(`[Frontend] Final Item ${index}:`, {
+          logger.debug(`[Frontend] Final Item ${index}:`, {
             description: item.description,
             quantity: item.quantity,
             unitPrice: item.unitPrice,
@@ -541,7 +542,7 @@ export default function AIChatDialog({
         aiConversationId: conversationId
       };
       
-      console.log('[Frontend] Complete data to be passed:', completeData);
+      logger.debug('[Frontend] Complete data to be passed:', completeData);
       
       // 新しいコールバックがある場合はそれを優先使用
       if (onDataApply) {
@@ -701,7 +702,7 @@ export default function AIChatDialog({
                 const taxAmount = currentInvoiceData.taxAmount || 0;
                 const totalAmount = currentInvoiceData.totalAmount || 0;
                 
-                console.log('[Frontend] Display calculation:', { subtotal, taxAmount, totalAmount });
+                logger.debug('[Frontend] Display calculation:', { subtotal, taxAmount, totalAmount });
                 
                 return totalAmount > 0 ? (
                   <p>合計: ¥{totalAmount.toLocaleString()}（税込）</p>
@@ -922,10 +923,10 @@ export default function AIChatDialog({
                 e.preventDefault();
                 
                 // 保存ボタンのクリック状態を確認
-                console.log('[AIChatDialog] Save button clicked');
-                console.log('[AIChatDialog] Document type:', documentType);
-                console.log('[AIChatDialog] Current data:', currentInvoiceData);
-                console.log('[AIChatDialog] Data validation:', {
+                logger.debug('[AIChatDialog] Save button clicked');
+                logger.debug('[AIChatDialog] Document type:', documentType);
+                logger.debug('[AIChatDialog] Current data:', currentInvoiceData);
+                logger.debug('[AIChatDialog] Data validation:', {
                   hasCustomerName: !!currentInvoiceData?.customerName,
                   hasItems: !!(currentInvoiceData?.items && currentInvoiceData.items.length > 0),
                   itemsCount: currentInvoiceData?.items?.length || 0,
@@ -937,9 +938,9 @@ export default function AIChatDialog({
                 
                 // 各アイテムの詳細もログ出力
                 if (currentInvoiceData?.items && currentInvoiceData.items.length > 0) {
-                  console.log('[AIChatDialog] Items details:');
+                  logger.debug('[AIChatDialog] Items details:');
                   currentInvoiceData.items.forEach((item, index) => {
-                    console.log(`[AIChatDialog] Item ${index}:`, {
+                    logger.debug(`[AIChatDialog] Item ${index}:`, {
                       description: item.description,
                       quantity: item.quantity,
                       unitPrice: item.unitPrice,
@@ -955,16 +956,16 @@ export default function AIChatDialog({
                   // conversationIdの最終チェックと正規化
                   let finalConversationId = conversationId;
                   if (!conversationId.startsWith('conv_')) {
-                    console.warn('[AIChatDialog] Invalid conversationId format:', conversationId);
+                    logger.warn('[AIChatDialog] Invalid conversationId format:', conversationId);
                     finalConversationId = `conv_${conversationId}`;
                     setConversationId(finalConversationId);
-                    console.log('[AIChatDialog] Corrected conversationId to:', finalConversationId);
+                    logger.debug('[AIChatDialog] Corrected conversationId to:', finalConversationId);
                   }
                   try {
-                    console.log('[AIChatDialog] Saving conversation with ID:', finalConversationId);
-                    console.log('[AIChatDialog] Message count:', messages.length);
-                    console.log('[AIChatDialog] Current sessionId:', sessionId);
-                    console.log('[AIChatDialog] existingConversationId prop:', existingConversationId);
+                    logger.debug('[AIChatDialog] Saving conversation with ID:', finalConversationId);
+                    logger.debug('[AIChatDialog] Message count:', messages.length);
+                    logger.debug('[AIChatDialog] Current sessionId:', sessionId);
+                    logger.debug('[AIChatDialog] existingConversationId prop:', existingConversationId);
                     
                     // 全てのメッセージを含めて保存
                     const conversationData = {
@@ -984,7 +985,7 @@ export default function AIChatDialog({
                       }
                     };
                     
-                    console.log('[AIChatDialog] Saving conversation with data:', {
+                    logger.debug('[AIChatDialog] Saving conversation with data:', {
                       conversationId: conversationData.conversationId,
                       invoiceId: conversationData.invoiceId,
                       messagesCount: conversationData.messages.length,
@@ -998,21 +999,21 @@ export default function AIChatDialog({
                     });
                     
                     if (!response.ok) {
-                      console.error('会話履歴の保存に失敗しました');
+                      logger.error('会話履歴の保存に失敗しました');
                     } else {
                       const result = await response.json();
-                      console.log('[AIChatDialog] Conversation saved successfully:', result);
-                      console.log('[AIChatDialog] Saved conversation ID:', finalConversationId);
-                      console.log('[AIChatDialog] Total messages saved:', result.messagesCount || messages.length);
+                      logger.debug('[AIChatDialog] Conversation saved successfully:', result);
+                      logger.debug('[AIChatDialog] Saved conversation ID:', finalConversationId);
+                      logger.debug('[AIChatDialog] Total messages saved:', result.messagesCount || messages.length);
                       // 保存が成功した場合、データに会話IDを追加
                       currentInvoiceData.aiConversationId = finalConversationId;
                     }
                   } catch (error) {
-                    console.error('会話履歴保存エラー:', error);
+                    logger.error('会話履歴保存エラー:', error);
                   }
                 }
                 
-                console.log('[AIChatDialog] Calling completeConversation');
+                logger.debug('[AIChatDialog] Calling completeConversation');
                 completeConversation();
               }}
               disabled={!currentInvoiceData || (!currentInvoiceData.customerName && (!currentInvoiceData.items || currentInvoiceData.items.length === 0))}

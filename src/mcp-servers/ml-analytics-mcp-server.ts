@@ -7,6 +7,7 @@
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { logger } from '@/lib/logger';
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
@@ -482,7 +483,7 @@ class MLAnalyticsMCPServer {
   async run() {
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
-    console.error('ML Analytics MCP Server running on stdio');
+    logger.error('ML Analytics MCP Server running on stdio');
   }
 }
 
@@ -490,7 +491,7 @@ class MLAnalyticsMCPServer {
 if (require.main === module) {
   const server = new MLAnalyticsMCPServer();
   server.run().catch((error) => {
-    console.error('Failed to run ML Analytics MCP Server:', error);
+    logger.error('Failed to run ML Analytics MCP Server:', error);
     process.exit(1);
   });
 }

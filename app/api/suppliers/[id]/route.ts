@@ -1,18 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { SupplierService } from '@/services/supplier.service';
 
+import { logger } from '@/lib/logger';
 // GET: 仕入先詳細取得
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    console.log('===== [Supplier API] GET Request Debug START =====');
-    console.log('[1] Requested supplier ID:', params.id);
+    logger.debug('===== [Supplier API] GET Request Debug START =====');
+    logger.debug('[1] Requested supplier ID:', params.id);
     
     const supplier = await SupplierService.getSupplierById(params.id);
     
-    console.log('[2] Retrieved supplier data:', JSON.stringify({
+    logger.debug('[2] Retrieved supplier data:', JSON.stringify({
       _id: supplier._id,
       id: supplier.id,
       supplierCode: supplier.supplierCode,
@@ -29,7 +30,7 @@ export async function GET(
       notes: supplier.notes
     }, null, 2));
     
-    console.log('[3] Field existence check:', {
+    logger.debug('[3] Field existence check:', {
       hasPhone: !!supplier.phone,
       phoneLength: supplier.phone?.length || 0,
       hasFax: !!supplier.fax,
@@ -39,11 +40,11 @@ export async function GET(
       hasPostalCode: !!supplier.postalCode
     });
     
-    console.log('===== [Supplier API] GET Request Debug END =====');
+    logger.debug('===== [Supplier API] GET Request Debug END =====');
     
     return NextResponse.json(supplier);
   } catch (error: any) {
-    console.error('Error fetching supplier:', error);
+    logger.error('Error fetching supplier:', error);
     
     if (error.message === 'Supplier not found') {
       return NextResponse.json(
@@ -73,7 +74,7 @@ export async function PUT(
     const supplier = await SupplierService.updateSupplier(params.id, updateData);
     return NextResponse.json(supplier);
   } catch (error: any) {
-    console.error('Error updating supplier:', error);
+    logger.error('Error updating supplier:', error);
     
     if (error.message === 'Supplier not found') {
       return NextResponse.json(
@@ -105,7 +106,7 @@ export async function DELETE(
     const result = await SupplierService.deleteSupplier(params.id);
     return NextResponse.json(result);
   } catch (error: any) {
-    console.error('Error deleting supplier:', error);
+    logger.error('Error deleting supplier:', error);
     
     if (error.message === 'Supplier not found') {
       return NextResponse.json(

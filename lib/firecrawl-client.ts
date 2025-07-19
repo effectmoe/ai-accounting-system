@@ -1,3 +1,5 @@
+import { logger } from '@/lib/logger';
+
 interface FirecrawlScrapeRequest {
   url: string;
   formats?: ('markdown' | 'html' | 'rawHtml' | 'links' | 'screenshot')[];
@@ -91,7 +93,7 @@ export class FirecrawlClient {
   constructor(apiKey?: string) {
     this.apiKey = apiKey || process.env.FIRECRAWL_API_KEY || '';
     if (!this.apiKey) {
-      console.warn('Firecrawl API key not provided. Web scraping functionality will be limited.');
+      logger.warn('Firecrawl API key not provided. Web scraping functionality will be limited.');
     }
   }
 
@@ -158,7 +160,7 @@ export class FirecrawlClient {
       };
 
     } catch (error) {
-      console.error('Firecrawl scrape error:', error);
+      logger.error('Firecrawl scrape error:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Scraping failed',
@@ -221,7 +223,7 @@ export class FirecrawlClient {
       };
 
     } catch (error) {
-      console.error('Firecrawl crawl error:', error);
+      logger.error('Firecrawl crawl error:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Crawling failed',
@@ -281,7 +283,7 @@ export class FirecrawlClient {
       };
 
     } catch (error) {
-      console.error('Firecrawl search error:', error);
+      logger.error('Firecrawl search error:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Search failed',

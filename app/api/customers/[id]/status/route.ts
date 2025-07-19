@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { ObjectId } from 'mongodb';
 import { getDatabase } from '@/lib/mongodb-client';
 
+import { logger } from '@/lib/logger';
 export async function PUT(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -71,7 +72,7 @@ export async function PUT(
     });
 
   } catch (error) {
-    console.error('顧客ステータス更新エラー:', error);
+    logger.error('顧客ステータス更新エラー:', error);
     return NextResponse.json(
       { success: false, error: 'サーバーエラーが発生しました' },
       { status: 500 }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { StructuredDataService } from '@/services/structured-data.service';
+import { logger } from '@/lib/logger';
 import { 
   SupportedSchemaType,
   JSONSchemaValidationResult 
@@ -92,7 +93,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Validation error:', error);
+    logger.error('Validation error:', error);
     return NextResponse.json(
       {
         success: false,
@@ -214,7 +215,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Validation rules error:', error);
+    logger.error('Validation rules error:', error);
     return NextResponse.json(
       {
         success: false,

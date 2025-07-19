@@ -1,3 +1,5 @@
+import { logger } from '@/lib/logger';
+
 /**
  * OCR AIオーケストレータ
  * Azure Form RecognizerのOCR結果を日本のビジネス文書として正しく解釈する
@@ -92,16 +94,16 @@ export class OCRAIOrchestrator {
   
   constructor() {
     const apiKey = process.env.DEEPSEEK_API_KEY;
-    console.log('[OCRAIOrchestrator] Initializing with DeepSeek API...');
-    console.log('[OCRAIOrchestrator] API Key from env:', apiKey ? `Present (${apiKey.substring(0, 10)}...)` : 'Not found');
-    console.log('[OCRAIOrchestrator] Contains test-key:', apiKey?.includes('test-key') || false);
+    logger.debug('[OCRAIOrchestrator] Initializing with DeepSeek API...');
+    logger.debug('[OCRAIOrchestrator] API Key from env:', apiKey ? `Present (${apiKey.substring(0, 10)}...)` : 'Not found');
+    logger.debug('[OCRAIOrchestrator] Contains test-key:', apiKey?.includes('test-key') || false);
     
     if (apiKey && !apiKey.includes('test-key')) {
       this.deepseekApiKey = apiKey;
       this.isAvailable = true;
-      console.log('[OCRAIOrchestrator] DeepSeek API is available');
+      logger.debug('[OCRAIOrchestrator] DeepSeek API is available');
     } else {
-      console.log('[OCRAIOrchestrator] DeepSeek API is NOT available');
+      logger.debug('[OCRAIOrchestrator] DeepSeek API is NOT available');
     }
   }
   
@@ -114,8 +116,8 @@ export class OCRAIOrchestrator {
     }
     
     try {
-      console.log('[OCRAIOrchestrator] Starting DeepSeek AI-driven OCR orchestration...');
-      console.log('[OCRAIOrchestrator] Request:', {
+      logger.debug('[OCRAIOrchestrator] Starting DeepSeek AI-driven OCR orchestration...');
+      logger.debug('[OCRAIOrchestrator] Request:', {
         documentType: request.documentType,
         companyId: request.companyId,
         ocrResultKeys: Object.keys(request.ocrResult || {})
@@ -123,19 +125,19 @@ export class OCRAIOrchestrator {
       
       // OCR結果を文字列化（コンパクトに）
       const ocrDataStr = this.compactOCRData(request.ocrResult);
-      console.log('[OCRAIOrchestrator] Compact OCR data length:', ocrDataStr.length);
-      console.log('[OCRAIOrchestrator] Compact OCR data preview:', ocrDataStr.substring(0, 500));
+      logger.debug('[OCRAIOrchestrator] Compact OCR data length:', ocrDataStr.length);
+      logger.debug('[OCRAIOrchestrator] Compact OCR data preview:', ocrDataStr.substring(0, 500));
       
       // 事前分析を実行
       const preAnalysis = this.performPreAnalysis(request.ocrResult);
-      console.log('[OCRAIOrchestrator] Pre-analysis completed:', preAnalysis);
+      logger.debug('[OCRAIOrchestrator] Pre-analysis completed:', preAnalysis);
       
       // プロンプトの構築
       const prompt = this.buildDeepSeekPrompt(request.documentType, ocrDataStr);
       
       // DeepSeek APIを使用して解析（リトライ付き）
-      console.log('[OCRAIOrchestrator] Sending request to DeepSeek API...');
-      console.log('[OCRAIOrchestrator] Prompt length:', prompt.length, 'characters');
+      logger.debug('[OCRAIOrchestrator] Sending request to DeepSeek API...');
+      logger.debug('[OCRAIOrchestrator] Prompt length:', prompt.length, 'characters');
       
       let response: DeepSeekResponse | null = null;
       let lastError: Error | null = null;
@@ -143,17 +145,17 @@ export class OCRAIOrchestrator {
       
       for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
-          console.log(`[OCRAIOrchestrator] Attempt ${attempt}/${maxRetries}...`);
+          logger.debug(`[OCRAIOrchestrator] Attempt ${attempt}/${maxRetries}...`);
           const startTime = Date.now();
           response = await this.callDeepSeekAPI(prompt);
           const elapsed = Date.now() - startTime;
-          console.log('[OCRAIOrchestrator] DeepSeek API response received in', elapsed, 'ms');
+          logger.debug('[OCRAIOrchestrator] DeepSeek API response received in', elapsed, 'ms');
           break; // 成功したらループを抜ける
         } catch (error) {
           lastError = error as Error;
-          console.error(`[OCRAIOrchestrator] Attempt ${attempt} failed:`, error);
+          logger.error(`[OCRAIOrchestrator] Attempt ${attempt} failed:`, error);
           if (attempt < maxRetries) {
-            console.log(`[OCRAIOrchestrator] Retrying in 2 seconds...`);
+            logger.debug(`[OCRAIOrchestrator] Retrying in 2 seconds...`);
             await new Promise(resolve => setTimeout(resolve, 2000));
           }
         }
@@ -165,8 +167,8 @@ export class OCRAIOrchestrator {
       
       // レスポンスから構造化データを抽出
       const content = response.choices[0].message.content;
-      console.log('[OCRAIOrchestrator] DeepSeek message content length:', content.length);
-      console.log('[OCRAIOrchestrator] DeepSeek message content preview:', content.substring(0, 500));
+      logger.debug('[OCRAIOrchestrator] DeepSeek message content length:', content.length);
+      logger.debug('[OCRAIOrchestrator] DeepSeek message content preview:', content.substring(0, 500));
       
       // JSONを抽出
       let structuredData: StructuredInvoiceData;
@@ -188,25 +190,25 @@ export class OCRAIOrchestrator {
       }
       
       if (!jsonStr) {
-        console.error('[OCRAIOrchestrator] Failed to extract JSON from content');
-        console.error('[OCRAIOrchestrator] Full content:', content);
+        logger.error('[OCRAIOrchestrator] Failed to extract JSON from content');
+        logger.error('[OCRAIOrchestrator] Full content:', content);
         throw new Error('Failed to extract JSON from DeepSeek response');
       }
       
       try {
-        console.log('[OCRAIOrchestrator] Attempting to parse JSON string:', jsonStr.substring(0, 200));
+        logger.debug('[OCRAIOrchestrator] Attempting to parse JSON string:', jsonStr.substring(0, 200));
         structuredData = JSON.parse(jsonStr) as StructuredInvoiceData;
-        console.log('[OCRAIOrchestrator] Successfully parsed JSON');
+        logger.debug('[OCRAIOrchestrator] Successfully parsed JSON');
       } catch (e) {
-        console.error('[OCRAIOrchestrator] JSON parse error:', e);
-        console.error('[OCRAIOrchestrator] Failed JSON string:', jsonStr);
+        logger.error('[OCRAIOrchestrator] JSON parse error:', e);
+        logger.error('[OCRAIOrchestrator] Failed JSON string:', jsonStr);
         throw new Error('Invalid JSON in DeepSeek response');
       }
       
       // 後処理・検証
       const validatedData = this.validateAndEnhanceData(structuredData, request.ocrResult);
       
-      console.log('[OCRAIOrchestrator] Successfully parsed structured data:', {
+      logger.debug('[OCRAIOrchestrator] Successfully parsed structured data:', {
         subject: validatedData.subject,
         vendorName: validatedData.vendor.name,
         customerName: validatedData.customer.name,
@@ -227,10 +229,10 @@ export class OCRAIOrchestrator {
       return validatedData;
       
     } catch (error) {
-      console.error('[OCRAIOrchestrator] Error:', error);
+      logger.error('[OCRAIOrchestrator] Error:', error);
       
       // フォールバック処理
-      console.log('[OCRAIOrchestrator] Attempting fallback processing...');
+      logger.debug('[OCRAIOrchestrator] Attempting fallback processing...');
       return this.fallbackProcessing(request);
     }
   }
@@ -244,10 +246,10 @@ export class OCRAIOrchestrator {
     const timeoutId = setTimeout(() => controller.abort(), 25000); // 25秒のタイムアウト
     
     try {
-      console.log('[OCRAIOrchestrator] Making DeepSeek API request with 25s timeout...');
-      console.log('[OCRAIOrchestrator] DeepSeek API endpoint:', this.deepseekEndpoint);
-      console.log('[OCRAIOrchestrator] API Key present:', !!this.deepseekApiKey);
-      console.log('[OCRAIOrchestrator] API Key prefix:', this.deepseekApiKey?.substring(0, 10));
+      logger.debug('[OCRAIOrchestrator] Making DeepSeek API request with 25s timeout...');
+      logger.debug('[OCRAIOrchestrator] DeepSeek API endpoint:', this.deepseekEndpoint);
+      logger.debug('[OCRAIOrchestrator] API Key present:', !!this.deepseekApiKey);
+      logger.debug('[OCRAIOrchestrator] API Key prefix:', this.deepseekApiKey?.substring(0, 10));
       
       const requestBody = {
         model: 'deepseek-chat', // より汎用的なチャットモデル
@@ -266,7 +268,7 @@ export class OCRAIOrchestrator {
         stream: false
       };
       
-      console.log('[OCRAIOrchestrator] Request body (without content):', {
+      logger.debug('[OCRAIOrchestrator] Request body (without content):', {
         ...requestBody,
         messages: requestBody.messages.map(m => ({ role: m.role, contentLength: m.content.length }))
       });
@@ -283,13 +285,13 @@ export class OCRAIOrchestrator {
 
       clearTimeout(timeoutId);
 
-      console.log('[OCRAIOrchestrator] Response status:', response.status);
-      console.log('[OCRAIOrchestrator] Response headers:', Object.fromEntries(response.headers.entries()));
+      logger.debug('[OCRAIOrchestrator] Response status:', response.status);
+      logger.debug('[OCRAIOrchestrator] Response headers:', Object.fromEntries(response.headers.entries()));
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('[OCRAIOrchestrator] DeepSeek API error response:', errorText);
-        console.error('[OCRAIOrchestrator] Full error details:', {
+        logger.error('[OCRAIOrchestrator] DeepSeek API error response:', errorText);
+        logger.error('[OCRAIOrchestrator] Full error details:', {
           status: response.status,
           statusText: response.statusText,
           headers: Object.fromEntries(response.headers.entries()),
@@ -299,8 +301,8 @@ export class OCRAIOrchestrator {
       }
 
       const data = await response.json();
-      console.log('[OCRAIOrchestrator] DeepSeek API request completed successfully');
-      console.log('[OCRAIOrchestrator] DeepSeek response structure:', {
+      logger.debug('[OCRAIOrchestrator] DeepSeek API request completed successfully');
+      logger.debug('[OCRAIOrchestrator] DeepSeek response structure:', {
         hasChoices: !!data.choices,
         choicesLength: data.choices?.length,
         hasUsage: !!data.usage,
@@ -313,12 +315,12 @@ export class OCRAIOrchestrator {
       clearTimeout(timeoutId);
       
       if (error instanceof Error && error.name === 'AbortError') {
-        console.error('[OCRAIOrchestrator] DeepSeek API request timed out after 25 seconds');
+        logger.error('[OCRAIOrchestrator] DeepSeek API request timed out after 25 seconds');
         throw new Error('DeepSeek API request timed out after 25 seconds');
       }
       
-      console.error('[OCRAIOrchestrator] Unexpected error:', error);
-      console.error('[OCRAIOrchestrator] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+      logger.error('[OCRAIOrchestrator] Unexpected error:', error);
+      logger.error('[OCRAIOrchestrator] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
       
       throw error;
     }
@@ -378,7 +380,7 @@ export class OCRAIOrchestrator {
    * データの検証と拡張
    */
   private validateAndEnhanceData(data: StructuredInvoiceData, ocrResult: any): StructuredInvoiceData {
-    console.log('[OCRAIOrchestrator] Validating data before enhancement:', {
+    logger.debug('[OCRAIOrchestrator] Validating data before enhancement:', {
       vendorName: data.vendor?.name,
       customerName: data.customer?.name,
       totalAmount: data.totalAmount,
@@ -390,12 +392,12 @@ export class OCRAIOrchestrator {
     if (!data.vendor?.name || data.vendor.name === '不明' || data.vendor.name === '') {
       const companyName = this.extractCompanyFromOCR(ocrResult);
       if (companyName) {
-        console.log('[OCRAIOrchestrator] Replacing vendor name with extracted:', companyName);
+        logger.debug('[OCRAIOrchestrator] Replacing vendor name with extracted:', companyName);
         data.vendor.name = companyName;
       } else {
         // デフォルトの仕入先名を設定
         data.vendor.name = '合同会社アソウタイセイプリンティング';
-        console.log('[OCRAIOrchestrator] Using default vendor name');
+        logger.debug('[OCRAIOrchestrator] Using default vendor name');
       }
     }
     
@@ -403,7 +405,7 @@ export class OCRAIOrchestrator {
     if (!data.customer?.name || data.customer.name === '不明' || data.customer.name === '') {
       const customerName = this.extractCustomerFromOCR(ocrResult);
       if (customerName) {
-        console.log('[OCRAIOrchestrator] Replacing customer name with extracted:', customerName);
+        logger.debug('[OCRAIOrchestrator] Replacing customer name with extracted:', customerName);
         data.customer.name = customerName;
       }
     }
@@ -412,7 +414,7 @@ export class OCRAIOrchestrator {
     if (!data.totalAmount || data.totalAmount === 0) {
       const amount = this.extractTotalAmountFromOCR(ocrResult);
       if (amount) {
-        console.log('[OCRAIOrchestrator] Replacing total amount with extracted:', amount);
+        logger.debug('[OCRAIOrchestrator] Replacing total amount with extracted:', amount);
         data.totalAmount = amount;
       }
     }
@@ -424,7 +426,7 @@ export class OCRAIOrchestrator {
       
       // 各アイテムを検証
       data.items.forEach((item: any, index: number) => {
-        console.log(`[OCRAIOrchestrator] Checking item ${index}:`, {
+        logger.debug(`[OCRAIOrchestrator] Checking item ${index}:`, {
           itemName: item.itemName,
           quantity: item.quantity,
           unitPrice: item.unitPrice,
@@ -435,7 +437,7 @@ export class OCRAIOrchestrator {
         if ((!item.quantity || item.quantity === 0) && 
             (!item.unitPrice || item.unitPrice === 0) && 
             (!item.amount || item.amount === 0)) {
-          console.log(`[OCRAIOrchestrator] Item ${index} "${item.itemName}" is a remark (no numeric data)`);
+          logger.debug(`[OCRAIOrchestrator] Item ${index} "${item.itemName}" is a remark (no numeric data)`);
           if (item.itemName && item.itemName.trim()) {
             remarksTexts.push(item.itemName);
           }
@@ -452,13 +454,13 @@ export class OCRAIOrchestrator {
       if (remarksTexts.length > 0) {
         const additionalNotes = remarksTexts.join('\n');
         data.notes = data.notes ? `${data.notes}\n\n${additionalNotes}` : additionalNotes;
-        console.log('[OCRAIOrchestrator] Added remarks to notes:', additionalNotes);
+        logger.debug('[OCRAIOrchestrator] Added remarks to notes:', additionalNotes);
       }
     }
     
     // アイテムが空になった場合のフォールバック
     if (!data.items || data.items.length === 0) {
-      console.log('[OCRAIOrchestrator] No valid items found, creating default item');
+      logger.debug('[OCRAIOrchestrator] No valid items found, creating default item');
       data.items = [{
         itemName: '商品',
         quantity: 1,
@@ -469,7 +471,7 @@ export class OCRAIOrchestrator {
       }];
     }
     
-    console.log('[OCRAIOrchestrator] Data after enhancement:', {
+    logger.debug('[OCRAIOrchestrator] Data after enhancement:', {
       vendorName: data.vendor?.name,
       customerName: data.customer?.name,
       totalAmount: data.totalAmount,
@@ -484,8 +486,8 @@ export class OCRAIOrchestrator {
    * フォールバック処理
    */
   private fallbackProcessing(request: OCROrchestrationRequest): StructuredInvoiceData {
-    console.log('[OCRAIOrchestrator] Executing fallback processing...');
-    console.log('[OCRAIOrchestrator] OCR Result for fallback:', JSON.stringify(request.ocrResult, null, 2));
+    logger.debug('[OCRAIOrchestrator] Executing fallback processing...');
+    logger.debug('[OCRAIOrchestrator] OCR Result for fallback:', JSON.stringify(request.ocrResult, null, 2));
     
     // OCRの生データから基本的な情報を抽出
     const lines: string[] = [];
@@ -501,7 +503,7 @@ export class OCRAIOrchestrator {
       }
     }
     
-    console.log('[OCRAIOrchestrator] Extracted lines:', lines);
+    logger.debug('[OCRAIOrchestrator] Extracted lines:', lines);
     
     // 基本的な情報の抽出
     let vendorName = this.extractCompanyFromOCR(request.ocrResult) || '合同会社アソウタイセイプリンティング';
@@ -582,7 +584,7 @@ export class OCRAIOrchestrator {
       notes: 'DeepSeek AI解析に失敗したため、フォールバック処理を実行'
     };
     
-    console.log('[OCRAIOrchestrator] Fallback data created:', fallbackData);
+    logger.debug('[OCRAIOrchestrator] Fallback data created:', fallbackData);
     return fallbackData;
   }
   

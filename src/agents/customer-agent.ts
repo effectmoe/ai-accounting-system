@@ -3,6 +3,7 @@ import { createAgent } from '@mastra/core';
 import { DatabaseService, Collections } from '@/lib/mongodb-client';
 import { ObjectId } from 'mongodb';
 
+import { logger } from '@/lib/logger';
 // 顧客情報スキーマ
 const customerSchema = z.object({
   _id: z.string().optional(),
@@ -155,7 +156,7 @@ export const customerAgent = createAgent({
           };
           
         } catch (error) {
-          console.error('Customer creation error:', error);
+          logger.error('Customer creation error:', error);
           return {
             success: false,
             error: error.message
@@ -187,7 +188,7 @@ export const customerAgent = createAgent({
           };
           
         } catch (error) {
-          console.error('Invoice number validation error:', error);
+          logger.error('Invoice number validation error:', error);
           return {
             success: false,
             error: error.message,
@@ -254,7 +255,7 @@ export const customerAgent = createAgent({
           };
           
         } catch (error) {
-          console.error('Customer search error:', error);
+          logger.error('Customer search error:', error);
           return {
             success: false,
             error: error.message
@@ -309,7 +310,7 @@ export const customerAgent = createAgent({
           };
           
         } catch (error) {
-          console.error('Customer update error:', error);
+          logger.error('Customer update error:', error);
           return {
             success: false,
             error: error.message
@@ -469,7 +470,7 @@ export const customerAgent = createAgent({
           };
           
         } catch (error) {
-          console.error('Customer analysis error:', error);
+          logger.error('Customer analysis error:', error);
           return {
             success: false,
             error: error.message
@@ -591,7 +592,7 @@ export const customerAgent = createAgent({
           };
           
         } catch (error) {
-          console.error('Credit risk calculation error:', error);
+          logger.error('Credit risk calculation error:', error);
           return {
             success: false,
             error: error.message
@@ -686,7 +687,7 @@ export const customerAgent = createAgent({
           return result;
           
         } catch (error) {
-          console.error('Customer export error:', error);
+          logger.error('Customer export error:', error);
           return {
             success: false,
             error: error.message
@@ -699,7 +700,7 @@ export const customerAgent = createAgent({
   // メイン実行ロジック
   execute: async ({ input, tools }) => {
     try {
-      console.log('[Customer Agent] Starting operation:', input.operation);
+      logger.debug('[Customer Agent] Starting operation:', input.operation);
       
       switch (input.operation) {
         case 'create':
@@ -803,7 +804,7 @@ export const customerAgent = createAgent({
       }
       
     } catch (error) {
-      console.error('[Customer Agent] Error:', error);
+      logger.error('[Customer Agent] Error:', error);
       return {
         success: false,
         operation: input.operation,

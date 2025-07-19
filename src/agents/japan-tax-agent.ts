@@ -3,6 +3,7 @@ import { createAgent } from '@mastra/core';
 import { DatabaseService, Collections } from '@/lib/mongodb-client';
 import { ObjectId } from 'mongodb';
 
+import { logger } from '@/lib/logger';
 // 源泉徴収スキーマ
 const withholdingTaxSchema = z.object({
   paymentType: z.enum(['salary', 'bonus', 'retirement', 'freelance', 'dividend', 'interest']),
@@ -213,7 +214,7 @@ export const japanTaxAgent = createAgent({
           };
           
         } catch (error) {
-          console.error('Withholding tax calculation error:', error);
+          logger.error('Withholding tax calculation error:', error);
           return {
             success: false,
             error: error.message
@@ -626,7 +627,7 @@ export const japanTaxAgent = createAgent({
   // メイン実行ロジック
   execute: async ({ input, tools, mcpClient }) => {
     try {
-      console.log('[Japan Tax Agent] Starting operation:', input.operation);
+      logger.debug('[Japan Tax Agent] Starting operation:', input.operation);
       
       switch (input.operation) {
         case 'calculate_withholding':
@@ -730,7 +731,7 @@ export const japanTaxAgent = createAgent({
       }
       
     } catch (error) {
-      console.error('[Japan Tax Agent] Error:', error);
+      logger.error('[Japan Tax Agent] Error:', error);
       throw error;
     }
   },

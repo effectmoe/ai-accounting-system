@@ -8,6 +8,7 @@
 import { spawn } from 'child_process';
 import path from 'path';
 
+import { logger } from '@/lib/logger';
 const serverPath = path.join(__dirname, 'external/github-mcp-server');
 
 // 環境変数の設定
@@ -23,12 +24,12 @@ const githubServer = spawn('node', [path.join(serverPath, 'dist/index.js')], {
 });
 
 githubServer.on('error', (error) => {
-  console.error('Failed to start GitHub MCP server:', error);
+  logger.error('Failed to start GitHub MCP server:', error);
   process.exit(1);
 });
 
 githubServer.on('exit', (code) => {
-  console.log(`GitHub MCP server exited with code ${code}`);
+  logger.debug(`GitHub MCP server exited with code ${code}`);
   process.exit(code || 0);
 });
 

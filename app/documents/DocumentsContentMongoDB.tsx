@@ -7,6 +7,7 @@ import { FileText, Download, Send, CheckCircle, Filter, Plus, Paperclip, Bell, E
 import { toast } from 'react-hot-toast';
 import AccountCategoryEditor from './components/AccountCategoryEditor';
 
+import { logger } from '@/lib/logger';
 const documentTypeLabels = {
   estimate: '見積書',
   invoice: '請求書',
@@ -94,18 +95,18 @@ export default function DocumentsContentMongoDB() {
       
       if (data.success) {
         // デバッグ用：取得したデータを確認
-        console.log('Fetched documents:', data.documents);
+        logger.debug('Fetched documents:', data.documents);
         if (data.documents.length > 0) {
-          console.log('First document sample:', data.documents[0]);
-          console.log('vendor_name value:', data.documents[0].vendor_name);
-          console.log('gridfs_file_id value:', data.documents[0].gridfs_file_id);
+          logger.debug('First document sample:', data.documents[0]);
+          logger.debug('vendor_name value:', data.documents[0].vendor_name);
+          logger.debug('gridfs_file_id value:', data.documents[0].gridfs_file_id);
         }
         setDocuments(data.documents);
       } else {
         throw new Error(data.error || 'Failed to load documents');
       }
     } catch (error) {
-      console.error('Error loading documents:', error);
+      logger.error('Error loading documents:', error);
       toast.error('書類の読み込みに失敗しました');
     } finally {
       setLoading(false);
@@ -160,15 +161,15 @@ export default function DocumentsContentMongoDB() {
       setSelectedDocuments(new Set());
       fetchDocuments();
     } catch (error) {
-      console.error('Error deleting documents:', error);
+      logger.error('Error deleting documents:', error);
       toast.error('削除に失敗しました');
     }
   };
 
   const handleCreateJournalEntry = async (doc: any) => {
     try {
-      console.log('=== Creating journal entry ===');
-      console.log('Document data:', {
+      logger.debug('=== Creating journal entry ===');
+      logger.debug('Document data:', {
         id: doc.id,
         category: doc.category,
         vendor: doc.vendor_name,
@@ -196,7 +197,7 @@ export default function DocumentsContentMongoDB() {
         description: `${doc.vendor_name || doc.partner_name || '店舗名不明'} - 領収書`
       };
       
-      console.log('Request body:', requestBody);
+      logger.debug('Request body:', requestBody);
       
       const response = await fetch('/api/journals/create', {
         method: 'POST',
@@ -204,23 +205,23 @@ export default function DocumentsContentMongoDB() {
         body: JSON.stringify(requestBody)
       });
       
-      console.log('Response status:', response.status);
+      logger.debug('Response status:', response.status);
       
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('Journal creation failed:', errorData);
+        logger.error('Journal creation failed:', errorData);
         throw new Error(errorData.error || '仕訳作成に失敗しました');
       }
       
       const result = await response.json();
-      console.log('Journal creation response:', result);
+      logger.debug('Journal creation response:', result);
       
       if (result.success && result.journal) {
         const journal = result.journal;
         const debitLine = journal.lines?.[0];
         const creditLine = journal.lines?.[1];
         
-        console.log('Journal created successfully:', {
+        logger.debug('Journal created successfully:', {
           journalId: journal.id,
           debitAccount: debitLine?.accountName,
           creditAccount: creditLine?.accountName,
@@ -230,7 +231,7 @@ export default function DocumentsContentMongoDB() {
         toast.success(`仕訳を作成しました\n借方: ${debitLine?.accountName || '不明'} ¥${(doc.total_amount || 0).toLocaleString()}\n貸方: ${creditLine?.accountName || '現金'} ¥${(doc.total_amount || 0).toLocaleString()}`);
         
         // ステータス更新は不要（仕訳作成時に自動的に処理される）
-        console.log('Journal created, refreshing document list...');
+        logger.debug('Journal created, refreshing document list...');
         
         // リストを更新
         fetchDocuments();
@@ -239,8 +240,8 @@ export default function DocumentsContentMongoDB() {
       }
       
     } catch (error) {
-      console.error('=== Journal creation error ===');
-      console.error('Error details:', error);
+      logger.error('=== Journal creation error ===');
+      logger.error('Error details:', error);
       toast.error('仕訳作成に失敗しました: ' + (error instanceof Error ? error.message : '不明なエラー'));
     } finally {
       // ボタンを元に戻す
@@ -254,7 +255,7 @@ export default function DocumentsContentMongoDB() {
 
   const handleEditDocument = (doc: any) => {
     // デバッグ用：編集ボタンクリック時の情報
-    console.log('Edit button clicked for document:', {
+    logger.debug('Edit button clicked for document:', {
       id: doc.id,
       ocr_status: doc.ocr_status,
       document_type: doc.document_type,
@@ -264,10 +265,10 @@ export default function DocumentsContentMongoDB() {
     
     // OCRドキュメントかどうかで編集ページを分ける
     if (doc.ocr_status === 'completed') {
-      console.log('Navigating to OCR edit page:', `/documents/ocr/${doc.id}/edit`);
+      logger.debug('Navigating to OCR edit page:', `/documents/ocr/${doc.id}/edit`);
       router.push(`/documents/ocr/${doc.id}/edit`);
     } else {
-      console.log('Navigating to standard edit page:', `/documents/${doc.id}/edit`);
+      logger.debug('Navigating to standard edit page:', `/documents/${doc.id}/edit`);
       router.push(`/documents/${doc.id}/edit`);
     }
   };
@@ -278,13 +279,13 @@ export default function DocumentsContentMongoDB() {
     }
 
     try {
-      console.log('Deleting document:', docId);
+      logger.debug('Deleting document:', docId);
       const response = await fetch(`/api/documents/${docId}`, {
         method: 'DELETE'
       });
 
       const responseText = await response.text();
-      console.log('Delete response:', response.status, responseText);
+      logger.debug('Delete response:', response.status, responseText);
 
       if (!response.ok) {
         let errorMessage = '削除に失敗しました';
@@ -300,7 +301,7 @@ export default function DocumentsContentMongoDB() {
       toast.success('書類を削除しました');
       fetchDocuments();
     } catch (error) {
-      console.error('削除エラー:', error);
+      logger.error('削除エラー:', error);
       toast.error(error instanceof Error ? error.message : '削除に失敗しました');
     }
   };
@@ -311,8 +312,8 @@ export default function DocumentsContentMongoDB() {
     }
 
     try {
-      console.log('Reverting to OCR - Full document:', doc);
-      console.log('Reverting to OCR - Key fields:', {
+      logger.debug('Reverting to OCR - Full document:', doc);
+      logger.debug('Reverting to OCR - Key fields:', {
         documentId: doc.id,
         journalId: doc.journalId,
         sourceDocumentId: doc.sourceDocumentId || doc.source_document_id,
@@ -324,7 +325,7 @@ export default function DocumentsContentMongoDB() {
         sourceDocumentId: doc.sourceDocumentId || doc.source_document_id
       };
       
-      console.log('Revert request body:', requestBody);
+      logger.debug('Revert request body:', requestBody);
 
       const response = await fetch(`/api/documents/${doc.id}/revert-to-ocr`, {
         method: 'POST',
@@ -332,27 +333,27 @@ export default function DocumentsContentMongoDB() {
         body: JSON.stringify(requestBody)
       });
 
-      console.log('Revert response status:', response.status);
+      logger.debug('Revert response status:', response.status);
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('Revert failed:', errorData);
+        logger.error('Revert failed:', errorData);
         throw new Error(errorData.error || 'OCR結果への復元に失敗しました');
       }
 
       const result = await response.json();
-      console.log('Revert response:', result);
+      logger.debug('Revert response:', result);
       
       if (result.success) {
         toast.success('OCR結果に戻しました');
-        console.log('Revert successful, refreshing documents...');
+        logger.debug('Revert successful, refreshing documents...');
         fetchDocuments();
       } else {
         throw new Error(result.error || 'OCR結果への復元に失敗しました');
       }
       
     } catch (error) {
-      console.error('OCR復元エラー:', error);
+      logger.error('OCR復元エラー:', error);
       toast.error(error instanceof Error ? error.message : 'OCR結果への復元に失敗しました');
     }
   };
@@ -366,7 +367,7 @@ export default function DocumentsContentMongoDB() {
              !doc.journalId &&
              doc.hiddenFromList !== true; // 明示的にtrueでない場合は表示
       if (isOcrDoc) {
-        console.log('OCR document included in filter:', {
+        logger.debug('OCR document included in filter:', {
           id: doc.id,
           vendor_name: doc.vendor_name,
           ocr_status: doc.ocr_status,
@@ -473,7 +474,7 @@ export default function DocumentsContentMongoDB() {
                     <h3 className="font-semibold text-lg">
                       {(() => {
                         const displayName = doc.vendor_name || doc.partner_name || doc.file_name || 'Unknown';
-                        console.log('Document display name:', {
+                        logger.debug('Document display name:', {
                           id: doc.id,
                           vendor_name: doc.vendor_name,
                           partner_name: doc.partner_name,
@@ -570,8 +571,8 @@ export default function DocumentsContentMongoDB() {
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800"
                           onClick={async (e) => {
-                            console.log('Clicking file link with ID:', doc.gridfs_file_id);
-                            console.log('Full document data:', doc);
+                            logger.debug('Clicking file link with ID:', doc.gridfs_file_id);
+                            logger.debug('Full document data:', doc);
                             
                             // ファイルが存在するかチェック
                             try {
@@ -582,7 +583,7 @@ export default function DocumentsContentMongoDB() {
                                 return;
                               }
                             } catch (error) {
-                              console.error('File check error:', error);
+                              logger.error('File check error:', error);
                               e.preventDefault();
                               toast.error('元画像ファイルへのアクセスに失敗しました');
                               return;
@@ -601,7 +602,7 @@ export default function DocumentsContentMongoDB() {
                     {doc.document_type !== 'journal_entry' && (
                       <button
                         onClick={() => {
-                          console.log('文書化する button clicked - Document data:', {
+                          logger.debug('文書化する button clicked - Document data:', {
                             id: doc.id,
                             document_type: doc.document_type,
                             ocr_status: doc.ocr_status,
@@ -618,7 +619,7 @@ export default function DocumentsContentMongoDB() {
                     {doc.document_type === 'journal_entry' && doc.journalId && (
                       <button
                         onClick={() => {
-                          console.log('OCR結果に戻す button clicked - Document data:', {
+                          logger.debug('OCR結果に戻す button clicked - Document data:', {
                             id: doc.id,
                             document_type: doc.document_type,
                             journalId: doc.journalId,
@@ -710,8 +711,8 @@ export default function DocumentsContentMongoDB() {
                             className="text-blue-600 hover:text-blue-800 p-1"
                             title="元画像を表示"
                             onClick={async (e) => {
-                              console.log('List view - Clicking file link with ID:', doc.gridfs_file_id);
-                              console.log('List view - Full document data:', doc);
+                              logger.debug('List view - Clicking file link with ID:', doc.gridfs_file_id);
+                              logger.debug('List view - Full document data:', doc);
                               
                               // ファイルが存在するかチェック
                               try {
@@ -722,7 +723,7 @@ export default function DocumentsContentMongoDB() {
                                   return;
                                 }
                               } catch (error) {
-                                console.error('File check error:', error);
+                                logger.error('File check error:', error);
                                 e.preventDefault();
                                 toast.error('元画像ファイルへのアクセスに失敗しました');
                                 return;

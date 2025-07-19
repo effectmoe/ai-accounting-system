@@ -7,6 +7,7 @@ import { Plus, Search, Filter, Edit, Trash2, Calendar, Building, FileText, Dolla
 import { toast } from 'react-hot-toast';
 import { PurchaseInvoice, PurchaseInvoiceStatus, Supplier } from '@/types/collections';
 
+import { logger } from '@/lib/logger';
 interface PurchaseInvoiceSearchResult {
   invoices: PurchaseInvoice[];
   total: number;
@@ -114,7 +115,7 @@ function PurchaseInvoicesPageContent() {
       const data = await response.json();
       setSuppliers(data.suppliers || []);
     } catch (error) {
-      console.error('Error fetching suppliers:', error);
+      logger.error('Error fetching suppliers:', error);
     }
   }, []);
 
@@ -147,7 +148,7 @@ function PurchaseInvoicesPageContent() {
       setTotal(data.total);
       setTotalAmount(data.totalAmount);
     } catch (error) {
-      console.error('Error fetching purchase invoices:', error);
+      logger.error('Error fetching purchase invoices:', error);
       const errorMessage = error instanceof Error ? error.message : '仕入請求書の取得に失敗しました';
       setError(errorMessage);
       toast.error(errorMessage);
@@ -234,7 +235,7 @@ function PurchaseInvoicesPageContent() {
       toast.success('仕入請求書を削除しました');
       fetchPurchaseInvoices(currentPage);
     } catch (error) {
-      console.error('Error deleting purchase invoice:', error);
+      logger.error('Error deleting purchase invoice:', error);
       toast.error('仕入請求書の削除に失敗しました');
     }
   };
@@ -253,7 +254,7 @@ function PurchaseInvoicesPageContent() {
       toast.success('ステータスを更新しました');
       fetchPurchaseInvoices(currentPage);
     } catch (error) {
-      console.error('Error updating status:', error);
+      logger.error('Error updating status:', error);
       toast.error('ステータスの更新に失敗しました');
     }
   };

@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+import { logger } from '@/lib/logger';
 // モックエージェントの実装（Mastraのインポート問題を回避）
 const createMockAgent = (name: string) => ({
   execute: async (input: any) => {
-    console.log(`[${name}] Executing with input:`, input);
+    logger.debug(`[${name}] Executing with input:`, input);
     
     switch (name) {
       case 'ocr':
@@ -73,7 +74,7 @@ const agents = {
 // 完全な文書処理ワークフロー
 async function executeDocumentWorkflow(input: any) {
   try {
-    console.log('🚀 Starting document workflow:', input);
+    logger.debug('🚀 Starting document workflow:', input);
 
     // Step 1: OCR Processing
     const ocrResult = await agents['ocr'].execute({ input });
@@ -93,7 +94,7 @@ async function executeDocumentWorkflow(input: any) {
           },
         });
       } catch (error) {
-        console.warn('Tax context fetch failed:', error);
+        logger.warn('Tax context fetch failed:', error);
       }
     }
 
@@ -163,7 +164,7 @@ async function executeDocumentWorkflow(input: any) {
       },
     };
   } catch (error: any) {
-    console.error('❌ Workflow error:', error);
+    logger.error('❌ Workflow error:', error);
     return {
       success: false,
       workflow: 'document_processing',
@@ -297,7 +298,7 @@ export async function POST(req: NextRequest) {
         });
     }
   } catch (error: any) {
-    console.error('Orchestrator API error:', error);
+    logger.error('Orchestrator API error:', error);
     return NextResponse.json({
       success: false,
       error: error.message || 'Internal server error',

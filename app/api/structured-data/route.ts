@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ObjectId } from 'mongodb';
 import { StructuredDataService } from '@/services/structured-data.service';
+import { logger } from '@/lib/logger';
 import { 
   SupportedSchemaType,
   StructuredDataInput,
@@ -52,7 +53,7 @@ export async function GET(request: NextRequest) {
       });
     }
   } catch (error) {
-    console.error('Structured data GET error:', error);
+    logger.error('Structured data GET error:', error);
     return NextResponse.json(
       {
         success: false,
@@ -147,7 +148,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Structured data POST error:', error);
+    logger.error('Structured data POST error:', error);
     return NextResponse.json(
       {
         success: false,
@@ -218,7 +219,7 @@ export async function PUT(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Structured data PUT error:', error);
+    logger.error('Structured data PUT error:', error);
     return NextResponse.json(
       {
         success: false,
@@ -257,7 +258,7 @@ export async function DELETE(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Structured data DELETE error:', error);
+    logger.error('Structured data DELETE error:', error);
     return NextResponse.json(
       {
         success: false,

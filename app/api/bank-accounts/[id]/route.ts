@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { BankAccountService } from '@/services/bank-account.service';
 
+import { logger } from '@/lib/logger';
 // データベースのキャメルケースからAPIのスネークケースへ変換
 function transformBankAccountToApi(account: any) {
   return {
@@ -86,7 +87,7 @@ export async function PUT(
       message: '銀行口座を更新しました',
     });
   } catch (error) {
-    console.error('Error updating bank account:', error);
+    logger.error('Error updating bank account:', error);
     return NextResponse.json(
       {
         success: false,
@@ -121,7 +122,7 @@ export async function DELETE(
       message: '銀行口座を削除しました',
     });
   } catch (error) {
-    console.error('Error deleting bank account:', error);
+    logger.error('Error deleting bank account:', error);
     return NextResponse.json(
       {
         success: false,

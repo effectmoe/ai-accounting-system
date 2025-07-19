@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { KnowledgeService } from '@/services/knowledge.service';
 
+import { logger } from '@/lib/logger';
 const knowledgeService = new KnowledgeService();
 
 // DeepSeek APIを直接呼び出す関数
@@ -8,11 +9,11 @@ async function callDeepSeekAPI(messages: Array<{role: string, content: string}>,
   const apiKey = process.env.DEEPSEEK_API_KEY;
   
   if (!apiKey) {
-    console.error('[DeepSeek] API key is not configured');
+    logger.error('[DeepSeek] API key is not configured');
     throw new Error('DeepSeek API key is not configured');
   }
   
-  console.log('[DeepSeek] Calling API for knowledge chat');
+  logger.debug('[DeepSeek] Calling API for knowledge chat');
   
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 10000);
@@ -40,7 +41,7 @@ async function callDeepSeekAPI(messages: Array<{role: string, content: string}>,
     }
     
     const data = await response.json();
-    console.log('[DeepSeek] Knowledge chat API response received');
+    logger.debug('[DeepSeek] Knowledge chat API response received');
     return data;
   } catch (error) {
     clearTimeout(timeoutId);
@@ -50,7 +51,7 @@ async function callDeepSeekAPI(messages: Array<{role: string, content: string}>,
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('[Knowledge Chat] API called at', new Date().toISOString());
+    logger.debug('[Knowledge Chat] API called at', new Date().toISOString());
     
     const body = await request.json();
     const { 
@@ -86,7 +87,7 @@ export async function POST(request: NextRequest) {
     let knowledgeContext = '';
 
     if (includeKnowledge) {
-      console.log('[Knowledge Chat] Searching for relevant knowledge...');
+      logger.debug('[Knowledge Chat] Searching for relevant knowledge...');
       
       const searchResult = await knowledgeService.searchArticles({
         text: conversation,
@@ -161,7 +162,7 @@ ${knowledgeContext}
     // 現在の質問を追加
     messages.push({ role: 'user', content: conversation });
 
-    console.log('[Knowledge Chat] Prepared', messages.length, 'messages for AI');
+    logger.debug('[Knowledge Chat] Prepared', messages.length, 'messages for AI');
 
     // DeepSeek APIを使用して回答生成
     const aiResponse = await callDeepSeekAPI(messages, 0.7, 1500);
@@ -216,9 +217,9 @@ ${knowledgeContext}
     // 会話履歴を保存（エラーが発生しても処理を継続）
     try {
       // await saveConversationHistory(conversationData);
-      console.log('[Knowledge Chat] Conversation history would be saved');
+      logger.debug('[Knowledge Chat] Conversation history would be saved');
     } catch (error) {
-      console.error('[Knowledge Chat] Failed to save conversation history:', error);
+      logger.error('[Knowledge Chat] Failed to save conversation history:', error);
     }
 
     const result = {
@@ -248,11 +249,11 @@ ${knowledgeContext}
       }
     };
 
-    console.log('[Knowledge Chat] Response generated successfully');
+    logger.debug('[Knowledge Chat] Response generated successfully');
     return NextResponse.json(result);
 
   } catch (error) {
-    console.error('[Knowledge Chat] Error:', error);
+    logger.error('[Knowledge Chat] Error:', error);
     return NextResponse.json(
       { 
         error: 'Failed to process knowledge chat',
@@ -284,7 +285,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('[Knowledge Chat] Get conversation error:', error);
+    logger.error('[Knowledge Chat] Get conversation error:', error);
     return NextResponse.json(
       { error: 'Failed to get conversation history' },
       { status: 500 }

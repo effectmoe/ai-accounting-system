@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDatabase } from '@/lib/mongodb-client';
 import { AIConversation } from '@/types/ai-conversation';
 
+import { logger } from '@/lib/logger';
 // 既存のAI会話データのconversationIdを正規化するマイグレーション
 export async function POST(request: NextRequest) {
   try {
@@ -21,7 +22,7 @@ export async function POST(request: NextRequest) {
       conversationId: { $type: 'number' }
     }).toArray();
 
-    console.log('[Migration] Found numeric conversationIds:', numericConversations.length);
+    logger.debug('[Migration] Found numeric conversationIds:', numericConversations.length);
 
     let migratedCount = 0;
     const errors = [];
@@ -43,7 +44,7 @@ export async function POST(request: NextRequest) {
         );
         
         migratedCount++;
-        console.log(`[Migration] Migrated: ${conversation.conversationId} -> ${normalizedId}`);
+        logger.debug(`[Migration] Migrated: ${conversation.conversationId} -> ${normalizedId}`);
       } catch (error) {
         errors.push({
           _id: conversation._id,
@@ -61,7 +62,7 @@ export async function POST(request: NextRequest) {
       message: `Successfully migrated ${migratedCount} out of ${numericConversations.length} conversations`
     });
   } catch (error) {
-    console.error('Migration error:', error);
+    logger.error('Migration error:', error);
     return NextResponse.json(
       { success: false, error: 'Migration failed', details: error.message },
       { status: 500 }
@@ -121,7 +122,7 @@ export async function GET(request: NextRequest) {
       }
     });
   } catch (error) {
-    console.error('Migration status error:', error);
+    logger.error('Migration status error:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to get migration status', details: error.message },
       { status: 500 }

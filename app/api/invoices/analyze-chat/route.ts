@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { format } from 'date-fns';
 import { calculateDueDate, getPaymentTermsDescription } from '@/utils/payment-terms';
 
+import { logger } from '@/lib/logger';
 // AI クライアントの初期化
 let openaiClient: OpenAI | null = null;
 
@@ -15,13 +16,13 @@ async function callDeepSeekAPI(messages: Array<{role: string, content: string}>,
   const apiKey = process.env.DEEPSEEK_API_KEY;
   
   if (!apiKey) {
-    console.error('[DeepSeek] API key is not configured');
+    logger.error('[DeepSeek] API key is not configured');
     throw new Error('DeepSeek API key is not configured');
   }
   
-  console.log('[DeepSeek] Calling API with fetch');
-  console.log('[DeepSeek] API key length:', apiKey.length);
-  console.log('[DeepSeek] API key prefix:', apiKey.substring(0, 10) + '...');
+  logger.debug('[DeepSeek] Calling API with fetch');
+  logger.debug('[DeepSeek] API key length:', apiKey.length);
+  logger.debug('[DeepSeek] API key prefix:', apiKey.substring(0, 10) + '...');
   
   // タイムアウトを設定（8秒）
   const controller = new AbortController();
@@ -47,20 +48,20 @@ async function callDeepSeekAPI(messages: Array<{role: string, content: string}>,
     
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('[DeepSeek] API error:', response.status);
+      logger.error('[DeepSeek] API error:', response.status);
       throw new Error(`DeepSeek API error: ${response.status}`);
     }
     
     const data = await response.json();
-    console.log('[DeepSeek] API response received');
+    logger.debug('[DeepSeek] API response received');
     return data;
   } catch (error) {
     clearTimeout(timeoutId);
     if (error instanceof Error && error.name === 'AbortError') {
-      console.error('[DeepSeek] Request timeout');
+      logger.error('[DeepSeek] Request timeout');
       throw new Error('DeepSeek API request timeout');
     }
-    console.error('[DeepSeek] Fetch error:', error);
+    logger.error('[DeepSeek] Fetch error:', error);
     throw error;
   }
 }
@@ -114,10 +115,10 @@ export async function POST(request: NextRequest) {
   headers.set('Content-Type', 'application/json');
   
   try {
-    console.log('[API Start] analyze-chat endpoint called at', new Date().toISOString());
+    logger.debug('[API Start] analyze-chat endpoint called at', new Date().toISOString());
     
     const body = await request.json();
-    console.log('Analyze chat request body:', body);
+    logger.debug('Analyze chat request body:', body);
     
     const { 
       conversation, 
@@ -129,23 +130,23 @@ export async function POST(request: NextRequest) {
     } = body;
     
     if (!conversation || typeof conversation !== 'string') {
-      console.log('Invalid conversation data:', conversation);
+      logger.debug('Invalid conversation data:', conversation);
       return NextResponse.json(
         { error: 'Conversation text is required' },
         { status: 400 }
       );
     }
     
-    console.log('Conversation to analyze:', conversation);
-    console.log('Session ID:', sessionId);
-    console.log('Mode:', mode);
-    console.log('[DEBUG] Current invoice data received:', JSON.stringify(currentInvoiceData, null, 2));
+    logger.debug('Conversation to analyze:', conversation);
+    logger.debug('Session ID:', sessionId);
+    logger.debug('Mode:', mode);
+    logger.debug('[DEBUG] Current invoice data received:', JSON.stringify(currentInvoiceData, null, 2));
     
     // 重要：currentInvoiceDataのitemsを確認
     if (currentInvoiceData && currentInvoiceData.items) {
-      console.log('[DEBUG] Current items count:', currentInvoiceData.items.length);
+      logger.debug('[DEBUG] Current items count:', currentInvoiceData.items.length);
       currentInvoiceData.items.forEach((item, index) => {
-        console.log(`[DEBUG] Item ${index + 1}:`, {
+        logger.debug(`[DEBUG] Item ${index + 1}:`, {
           description: item.description,
           amount: item.amount,
           taxAmount: item.taxAmount
@@ -157,7 +158,7 @@ export async function POST(request: NextRequest) {
     const deepseekApiKey = process.env.DEEPSEEK_API_KEY;
     const openaiApiKey = process.env.OPENAI_API_KEY || process.env.AZURE_OPENAI_API_KEY;
     
-    console.log('API Keys status:', {
+    logger.debug('API Keys status:', {
       hasDeepSeekKey: !!deepseekApiKey,
       hasOpenAIKey: !!openaiApiKey,
       deepseekKeyLength: deepseekApiKey?.length || 0
@@ -174,7 +175,7 @@ export async function POST(request: NextRequest) {
         getOpenAIClient();
         hasOpenAI = true;
       } catch (error) {
-        console.log('OpenAI API key is invalid or not configured properly');
+        logger.debug('OpenAI API key is invalid or not configured properly');
         hasOpenAI = false;
       }
     }
@@ -182,7 +183,7 @@ export async function POST(request: NextRequest) {
     // AI APIを使用する場合（DeepSeek最優先、OpenAIはフォールバック）
     if (hasDeepSeek || hasOpenAI) {
       const usingDeepSeek = hasDeepSeek;
-      console.log(`Using ${usingDeepSeek ? 'DeepSeek' : 'OpenAI'} API for conversation analysis`);
+      logger.debug(`Using ${usingDeepSeek ? 'DeepSeek' : 'OpenAI'} API for conversation analysis`);
       
       // 会社情報から支払い条件を取得
       let paymentTerms = '';
@@ -195,7 +196,7 @@ export async function POST(request: NextRequest) {
           companyInvoiceNotes = companyInfo.invoiceNotes || '';
         }
       } catch (error) {
-        console.error('Error fetching company info:', error);
+        logger.error('Error fetching company info:', error);
       }
 
       // 現在の日付を取得
@@ -251,7 +252,7 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
       }
 
       try {
-        console.log('[AI] Starting AI processing', { usingDeepSeek });
+        logger.debug('[AI] Starting AI processing', { usingDeepSeek });
         
         // 会話履歴を含むメッセージを構築（最大10メッセージに制限）
         const messages = [{ role: 'system', content: systemPrompt }];
@@ -270,7 +271,7 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
         // 最新のユーザー入力を追加
         messages.push({ role: 'user', content: conversation });
 
-        console.log('Sending to AI with messages:', messages.length);
+        logger.debug('Sending to AI with messages:', messages.length);
 
         try {
           let modelName = 'unknown';
@@ -279,7 +280,7 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
             modelName = 'deepseek-chat';
             const deepseekResponse = await callDeepSeekAPI(messages, 0.7, 500);
             aiResponse = deepseekResponse.choices?.[0]?.message?.content || '';
-            console.log('[DeepSeek] Response received');
+            logger.debug('[DeepSeek] Response received');
           } else {
             // OpenAI APIを使用
             const aiClient = getOpenAIClient();
@@ -291,10 +292,10 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
               max_tokens: 500
             });
             aiResponse = completion.choices[0]?.message?.content || '';
-            console.log('[OpenAI] Response received');
+            logger.debug('[OpenAI] Response received');
           }
         } catch (apiError) {
-          console.error('[AI] API call failed:', {
+          logger.error('[AI] API call failed:', {
             error: apiError instanceof Error ? apiError.message : 'Unknown error',
             stack: apiError instanceof Error ? apiError.stack : undefined,
             model: usingDeepSeek ? 'deepseek-chat' : (process.env.AZURE_OPENAI_DEPLOYMENT_NAME || 'gpt-4'),
@@ -305,7 +306,7 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
           
           // DeepSeekが失敗した場合、OpenAIを試す
           if (usingDeepSeek && hasOpenAI) {
-            console.log('[AI] DeepSeek failed, trying OpenAI as fallback');
+            logger.debug('[AI] DeepSeek failed, trying OpenAI as fallback');
             try {
               const openaiClient = getOpenAIClient();
               const openaiModel = process.env.AZURE_OPENAI_DEPLOYMENT_NAME || 'gpt-4';
@@ -316,15 +317,15 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
                 max_tokens: 500
               });
               aiResponse = openaiCompletion.choices[0]?.message?.content || '';
-              console.log('[AI] OpenAI fallback successful');
+              logger.debug('[AI] OpenAI fallback successful');
             } catch (openaiError) {
-              console.error('[AI] OpenAI fallback also failed:', openaiError);
+              logger.error('[AI] OpenAI fallback also failed:', openaiError);
               // 両方失敗した場合はパターンマッチングに進む
-              console.log('Both AI services failed, falling back to pattern matching logic');
+              logger.debug('Both AI services failed, falling back to pattern matching logic');
             }
           } else {
             // APIエラーの場合はフォールバックロジックに進む
-            console.log('Falling back to pattern matching logic due to API error');
+            logger.debug('Falling back to pattern matching logic due to API error');
           }
         }
         
@@ -336,8 +337,8 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
         };
         
         if (aiResponse) {
-          console.log('[AI] Processing AI response for data extraction');
-          console.log('[AI] AI Response:', aiResponse);
+          logger.debug('[AI] Processing AI response for data extraction');
+          logger.debug('[AI] AI Response:', aiResponse);
           
           // シンプルなキーワードベースの抽出
           const lines = aiResponse.split('\n');
@@ -349,7 +350,7 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
           if (mode === 'edit') {
             // 初期データから元の顧客名を取得
             const originalCustomerName = initialInvoiceData?.customerName || currentInvoiceData?.customerName || '';
-            console.log('[AI] Edit mode - Original customer name:', originalCustomerName);
+            logger.debug('[AI] Edit mode - Original customer name:', originalCustomerName);
             
             // AIの応答から顧客名の変更指示を探す（複数パターンに対応）
             const customerNamePatterns = [
@@ -378,8 +379,8 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
                 
                 if (extractedName && extractedName !== 'Unknown Customer' && extractedName !== '未設定') {
                   matchFound = true;
-                  console.log('[AI] Customer name change detected with pattern:', pattern.source);
-                  console.log('[AI] Extracted customer name:', extractedName);
+                  logger.debug('[AI] Customer name change detected with pattern:', pattern.source);
+                  logger.debug('[AI] Extracted customer name:', extractedName);
                   break;
                 }
               }
@@ -387,7 +388,7 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
             
             if (matchFound) {
               updatedData.customerName = extractedName;
-              console.log('[AI] Customer name explicitly changed to:', updatedData.customerName);
+              logger.debug('[AI] Customer name explicitly changed to:', updatedData.customerName);
             } else {
               // ユーザーの会話からも顧客名変更の指示を探す
               const userConversationPatterns = [
@@ -401,18 +402,18 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
                 const match = conversation.match(pattern);
                 if (match && match[1]) {
                   userRequestedName = match[1].trim();
-                  console.log('[AI] User requested customer name from conversation:', userRequestedName);
+                  logger.debug('[AI] User requested customer name from conversation:', userRequestedName);
                   break;
                 }
               }
               
               if (userRequestedName && userRequestedName !== originalCustomerName) {
                 updatedData.customerName = userRequestedName;
-                console.log('[AI] Customer name changed based on user request:', updatedData.customerName);
+                logger.debug('[AI] Customer name changed based on user request:', updatedData.customerName);
               } else {
                 // 顧客名の変更指示がない場合は元の顧客名を維持
                 updatedData.customerName = originalCustomerName;
-                console.log('[AI] No customer name change detected, keeping original:', originalCustomerName);
+                logger.debug('[AI] No customer name change detected, keeping original:', originalCustomerName);
               }
             }
           }
@@ -422,24 +423,24 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
             const customerMatch = conversation.match(/([^に]+)(?:さん|様)?に/);
             if (customerMatch) {
               updatedData.customerName = customerMatch[1].replace(/さん|様/g, '').trim();
-              console.log('[AI] Extracted customer name from conversation:', updatedData.customerName);
+              logger.debug('[AI] Extracted customer name from conversation:', updatedData.customerName);
             }
           }
           
           // まず、ユーザーの入力メッセージから金額変更の指示を確認
-          console.log('[AI] Checking user conversation for amount:', conversation);
+          logger.debug('[AI] Checking user conversation for amount:', conversation);
           const userAmountMatch = conversation.match(/([\d万,]+)円\s*(?:の\s*)?(?:税別|税抜)/);
           if (userAmountMatch && mode === 'edit') {
             const amountStr = userAmountMatch[1].replace(/万/g, '0000').replace(/,/g, '');
             const amount = parseInt(amountStr);
-            console.log(`[AI] Found amount in user input: ${amount}円 (tax excluded)`);
-            console.log('[AI] Current invoice items before update:', JSON.stringify(currentInvoiceData?.items, null, 2));
+            logger.debug(`[AI] Found amount in user input: ${amount}円 (tax excluded)`);
+            logger.debug('[AI] Current invoice items before update:', JSON.stringify(currentInvoiceData?.items, null, 2));
             
             // 既存のアイテムを更新
             if (currentInvoiceData?.items && currentInvoiceData.items.length > 0) {
               newItems = currentInvoiceData.items.map((item, index) => {
                 if (index === 0) { // 最初のアイテムの金額を更新
-                  console.log('[AI] Updating item:', {
+                  logger.debug('[AI] Updating item:', {
                     originalUnitPrice: item.unitPrice,
                     newUnitPrice: amount,
                     quantity: item.quantity,
@@ -455,10 +456,10 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
                 return item;
               });
               foundItemList = true;
-              console.log('[AI] Updated items based on user input:', JSON.stringify(newItems, null, 2));
+              logger.debug('[AI] Updated items based on user input:', JSON.stringify(newItems, null, 2));
             }
           } else {
-            console.log('[AI] No amount found in user input or not in edit mode. Mode:', mode);
+            logger.debug('[AI] No amount found in user input or not in edit mode. Mode:', mode);
           }
           
           // 番号付き項目を探す（例：1. システム構築費：1,200,000円）
@@ -470,7 +471,7 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
               const description = itemMatch[2].trim();
               const amount = parseInt(itemMatch[3].replace(/,/g, ''));
               
-              console.log(`[AI] Found item ${itemNumber}: ${description} = ${amount}円`);
+              logger.debug(`[AI] Found item ${itemNumber}: ${description} = ${amount}円`);
               
               newItems.push({
                 description: description,
@@ -491,7 +492,7 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
             if (taxExcludedMatch) {
               const amountStr = taxExcludedMatch[1].replace(/万/g, '0000').replace(/,/g, '');
               const amount = parseInt(amountStr);
-              console.log(`[AI] Found tax-excluded amount update request: ${amount}円`);
+              logger.debug(`[AI] Found tax-excluded amount update request: ${amount}円`);
               amountUpdateFound = true;
               
               // 既存のアイテムまたは新規アイテムを更新
@@ -516,7 +517,7 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
             if (taxSeparateMatch && !amountUpdateFound) {
               const amountStr = taxSeparateMatch[1].replace(/万/g, '0000').replace(/,/g, '');
               const amount = parseInt(amountStr);
-              console.log(`[AI] Found tax-separate amount pattern: ${amount}円 (tax excluded)`);
+              logger.debug(`[AI] Found tax-separate amount pattern: ${amount}円 (tax excluded)`);
               amountUpdateFound = true;
               
               // 既存のアイテムまたは新規アイテムを更新
@@ -541,7 +542,7 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
             if (changeMatch) {
               const taxExcludedStr = changeMatch[2].replace(/万/g, '0000').replace(/,/g, '');
               const amount = parseInt(taxExcludedStr);
-              console.log(`[AI] Found amount change: ${amount}円 (tax excluded)`);
+              logger.debug(`[AI] Found amount change: ${amount}円 (tax excluded)`);
               amountUpdateFound = true;
               
               // 既存のアイテムまたは新規アイテムを更新
@@ -566,7 +567,7 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
             if (itemUpdateMatch) {
               const description = itemUpdateMatch[2].trim();
               const taxExcluded = parseInt(itemUpdateMatch[4].replace(/,/g, ''));
-              console.log(`[AI] Found item with tax info: ${description} = ${taxExcluded}円 (tax excluded)`);
+              logger.debug(`[AI] Found item with tax info: ${description} = ${taxExcluded}円 (tax excluded)`);
               
               // この項目で既存のアイテムを更新
               newItems = [{
@@ -584,7 +585,7 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
           
           // 金額変更が見つかった場合のログ
           if (amountUpdateFound) {
-            console.log('[AI] Amount update found, newItems:', JSON.stringify(newItems, null, 2));
+            logger.debug('[AI] Amount update found, newItems:', JSON.stringify(newItems, null, 2));
           }
           
           // 合計金額の確認（税込み）
@@ -593,7 +594,7 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
             const totalMatch = line.match(/合計金額は[\d,]+円（税抜）で、消費税10%を加えると([\d,]+)円/);
             if (totalMatch) {
               totalWithTax = parseInt(totalMatch[1].replace(/,/g, ''));
-              console.log('[AI] Found total with tax:', totalWithTax);
+              logger.debug('[AI] Found total with tax:', totalWithTax);
               break;
             }
           }
@@ -601,7 +602,7 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
           // 項目が見つかった場合は、既存の項目を置き換える
           if (foundItemList && newItems.length > 0) {
             updatedData.items = newItems;
-            console.log('[AI] Updated items from AI response:', JSON.stringify(newItems, null, 2));
+            logger.debug('[AI] Updated items from AI response:', JSON.stringify(newItems, null, 2));
           }
           
           // 編集モードの場合、日付も抽出
@@ -610,25 +611,25 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
             const invoiceDateMatch = aiResponse.match(/請求日[：:]\s*(\d{4}-\d{2}-\d{2})/);
             if (invoiceDateMatch) {
               updatedData.invoiceDate = invoiceDateMatch[1];
-              console.log('[AI] Extracted invoice date from AI response:', updatedData.invoiceDate);
+              logger.debug('[AI] Extracted invoice date from AI response:', updatedData.invoiceDate);
             }
             
             // 支払期限の抽出（例：「支払期限: 2025-08-31」）
             const dueDateMatch = aiResponse.match(/支払期限[：:]\s*(\d{4}-\d{2}-\d{2})/);
             if (dueDateMatch) {
               updatedData.dueDate = dueDateMatch[1];
-              console.log('[AI] Extracted due date from AI response:', updatedData.dueDate);
+              logger.debug('[AI] Extracted due date from AI response:', updatedData.dueDate);
             }
           }
           
           // extractedDataに更新されたデータを設定
           extractedData = updatedData;
-          console.log('[AI] Final extracted data:', JSON.stringify(extractedData, null, 2));
+          logger.debug('[AI] Final extracted data:', JSON.stringify(extractedData, null, 2));
         }
         
         // フォールバック処理 - AIが番号付き項目を出力しなかった場合
         if (!extractedData || !extractedData.items || extractedData.items.length === 0) {
-          console.log('[AI] No items found in AI response, keeping current data');
+          logger.debug('[AI] No items found in AI response, keeping current data');
           extractedData = currentInvoiceData || {};
         }
         
@@ -653,7 +654,7 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
             bankAccountInfo = `お振込先：\n${defaultAccount.bankName} ${defaultAccount.branchName}\n${accountTypeText} ${defaultAccount.accountNumber}\n口座名義：${defaultAccount.accountHolder}\n\n`;
           }
         } catch (error) {
-          console.error('Error fetching bank account:', error);
+          logger.error('Error fetching bank account:', error);
           // エラーが発生しても処理は続行
         }
         
@@ -699,7 +700,7 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
         const totalAmount = subtotal + taxAmount;
         
         // デバッグログ
-        console.log('[API/AI] Final data before response:', {
+        logger.debug('[API/AI] Final data before response:', {
           finalDataSource: extractedData ? 'extractedData' : 'updatedData',
           items: finalData.items,
           subtotal,
@@ -724,7 +725,7 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
         cleanMessage = cleanMessage.replace(/\n\n+/g, '\n\n').trim();
         
         // デバッグログを追加
-        console.log('[API/AI] Final data for response generation:', {
+        logger.debug('[API/AI] Final data for response generation:', {
           mode,
           finalDataCustomerName: finalData.customerName,
           currentDataCustomerName: currentInvoiceData?.customerName,
@@ -759,7 +760,7 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
           totalAmount,
         };
         
-        console.log('[API/AI] Response data customer name:', responseData.customerName);
+        logger.debug('[API/AI] Response data customer name:', responseData.customerName);
         
         const response = {
           success: true,
@@ -768,16 +769,16 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
           aiConversationId: sessionId || Date.now().toString(),
         };
 
-        console.log('[API] Final response being sent:', JSON.stringify(response, null, 2));
-        console.log('[API] Response items count:', response.data.items?.length || 0);
-        console.log('[API] Response subtotal:', response.data.subtotal);
-        console.log('[API] Response total:', response.data.totalAmount);
+        logger.debug('[API] Final response being sent:', JSON.stringify(response, null, 2));
+        logger.debug('[API] Response items count:', response.data.items?.length || 0);
+        logger.debug('[API] Response subtotal:', response.data.subtotal);
+        logger.debug('[API] Response total:', response.data.totalAmount);
         
         // 各アイテムの詳細をログ
         if (response.data.items && response.data.items.length > 0) {
-          console.log('[API] Response items detail:');
+          logger.debug('[API] Response items detail:');
           response.data.items.forEach((item, index) => {
-            console.log(`[API] Item ${index}:`, {
+            logger.debug(`[API] Item ${index}:`, {
               description: item.description,
               quantity: item.quantity,
               unitPrice: item.unitPrice,
@@ -790,8 +791,8 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
         
         return NextResponse.json(response);
       } catch (error) {
-        console.error(`${usingDeepSeek ? 'DeepSeek' : 'OpenAI'} API error:`, error);
-        console.error('[DEBUG] Error details:', {
+        logger.error(`${usingDeepSeek ? 'DeepSeek' : 'OpenAI'} API error:`, error);
+        logger.error('[DEBUG] Error details:', {
           message: error instanceof Error ? error.message : 'Unknown error',
           apiKeyExists: !!process.env.OPENAI_API_KEY,
           apiKeyLength: process.env.OPENAI_API_KEY?.length || 0,
@@ -799,14 +800,14 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
           deepSeekApiKeyLength: process.env.DEEPSEEK_API_KEY?.length || 0,
           usingDeepSeek
         });
-        console.log(`${usingDeepSeek ? 'DeepSeek' : 'OpenAI'} API failed, falling back to placeholder implementation`);
+        logger.debug(`${usingDeepSeek ? 'DeepSeek' : 'OpenAI'} API failed, falling back to placeholder implementation`);
         // フォールバック：プレースホルダー実装へ続く
       }
     }
     
     // プレースホルダー実装（AIが使えない場合の最小限のフォールバック）
-    console.log('[DEBUG] Using minimal placeholder implementation - AI models not available or failed');
-    console.log('[DEBUG] Environment check:', {
+    logger.debug('[DEBUG] Using minimal placeholder implementation - AI models not available or failed');
+    logger.debug('[DEBUG] Environment check:', {
       openAIKeyExists: !!process.env.OPENAI_API_KEY,
       deepSeekKeyExists: !!process.env.DEEPSEEK_API_KEY,
       nodeEnv: process.env.NODE_ENV
@@ -829,7 +830,7 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
           parseInt(numStr);
       }
       
-      console.log('[Placeholder] Minimal extraction:', {
+      logger.debug('[Placeholder] Minimal extraction:', {
         conversation,
         amount,
         customerName
@@ -914,7 +915,7 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
             customerName = matchedCustomers[0].companyName;
           }
         } catch (err) {
-          console.error('Customer search error:', err);
+          logger.error('Customer search error:', err);
         }
       }
       
@@ -1019,7 +1020,7 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
       const totalTaxAmount = invoiceData.items.reduce((sum, item) => sum + (item.taxAmount || 0), 0);
       const totalAmount = subtotal + totalTaxAmount;
       
-      console.log('[API] Response data calculation:', {
+      logger.debug('[API] Response data calculation:', {
         items: invoiceData.items,
         subtotal,
         totalTaxAmount,
@@ -1066,7 +1067,7 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
       
       return NextResponse.json(response);
   } catch (error) {
-    console.error('Error analyzing conversation:', error);
+    logger.error('Error analyzing conversation:', error);
     
     // タイムアウトエラーを明確に返す
     if (error instanceof Error && (error.message.includes('timeout') || error.name === 'AbortError')) {

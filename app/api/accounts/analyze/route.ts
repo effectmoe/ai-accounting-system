@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AccountLearningSystem } from '@/lib/account-learning-system';
 
+import { logger } from '@/lib/logger';
 const learningSystem = new AccountLearningSystem();
 
 /**
@@ -177,19 +178,19 @@ JSONフォーマットで以下の形式で回答してください：
               }
             }
           } catch (parseError) {
-            console.error('AI response parsing error:', parseError);
+            logger.error('AI response parsing error:', parseError);
             // パースエラーの場合は既存の判定を使用
           }
         }
       } catch (aiError) {
-        console.error('Azure OpenAI error:', aiError);
+        logger.error('Azure OpenAI error:', aiError);
         // AIエラーの場合は既存の判定を使用
       }
     }
     
     // Azure OpenAIが設定されていない場合、または失敗した場合の詳細分析
     if (!primarySuggestion || primarySuggestion.confidence < 0.7) {
-      console.log('Using enhanced rule-based analysis');
+      logger.debug('Using enhanced rule-based analysis');
       
       // 複数のキーワードマッチによる詳細分析
       const detailedAnalysis = performDetailedAnalysis(searchText, vendorName, amount);
@@ -256,7 +257,7 @@ JSONフォーマットで以下の形式で回答してください：
     });
 
   } catch (error) {
-    console.error('Account analysis error:', error);
+    logger.error('Account analysis error:', error);
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to analyze account category'

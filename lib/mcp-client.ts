@@ -1,3 +1,5 @@
+import { logger } from '@/lib/logger';
+
 // MCP クライアントの統合管理
 export class McpClient {
   private perplexityApiKey: string;
@@ -43,7 +45,7 @@ export class McpClient {
       const data = await response.json();
       return data.choices[0].message.content;
     } catch (error) {
-      console.error('Perplexity search error:', error);
+      logger.error('Perplexity search error:', error);
       return null;
     }
   }
@@ -62,7 +64,7 @@ export class McpClient {
 
       return guidelines.join('\n');
     } catch (error) {
-      console.error('Tax guidelines search error:', error);
+      logger.error('Tax guidelines search error:', error);
       return '';
     }
   }
@@ -91,7 +93,7 @@ export class McpClient {
 
       return JSON.stringify(practices[industry] || {});
     } catch (error) {
-      console.error('Industry practices search error:', error);
+      logger.error('Industry practices search error:', error);
       return '{}';
     }
   }
@@ -129,7 +131,7 @@ export class McpClient {
 
       return documentsWithCategories || [];
     } catch (error) {
-      console.error('Similar transactions search error:', error);
+      logger.error('Similar transactions search error:', error);
       return [];
     }
   }

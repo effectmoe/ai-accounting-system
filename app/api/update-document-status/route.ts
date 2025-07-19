@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { vercelDb } from '@/lib/mongodb-client';
 
+import { logger } from '@/lib/logger';
 export async function POST(request: NextRequest) {
   try {
     // MongoDBを使用してステータスを更新
@@ -15,7 +16,7 @@ export async function POST(request: NextRequest) {
     const result = await vercelDb.updateMany('documents', filter, update);
 
     if (!result || result.modifiedCount === undefined) {
-      console.error('Update failed: No result returned');
+      logger.error('Update failed: No result returned');
       return NextResponse.json(
         { error: 'ステータス更新に失敗しました', details: 'No result returned' },
         { status: 500 }
@@ -29,7 +30,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('API error:', error);
+    logger.error('API error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

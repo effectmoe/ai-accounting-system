@@ -3,6 +3,7 @@ import { parse } from 'csv-parse/sync';
 import * as fs from 'fs/promises';
 import * as iconv from 'iconv-lite';
 import { z } from 'zod';
+import { logger } from '@/lib/logger';
 // import { getSupabaseClient } from '@/lib/supabase-singleton';
 import { vercelDb } from '@/lib/mongodb-client';
 import { ObjectId } from 'mongodb';
@@ -118,14 +119,14 @@ export class FreeeImporter {
   constructor(supabaseUrl?: string, supabaseKey?: string) {
     // supabaseUrl と supabaseKey が提供された場合は警告を表示
     if (supabaseUrl || supabaseKey) {
-      console.warn('FreeeImporter: supabaseUrl and supabaseKey parameters are deprecated. Using MongoDB.');
+      logger.warn('FreeeImporter: supabaseUrl and supabaseKey parameters are deprecated. Using MongoDB.');
     }
   }
   
   async importFile(filePath: string, options: ImportOptions) {
     const { fileType, encoding = 'sjis', dryRun = false, companyId } = options;
     
-    console.log(`[Freee Import] Starting import of ${fileType} from ${filePath}`);
+    logger.debug(`[Freee Import] Starting import of ${fileType} from ${filePath}`);
     
     // Read and decode file
     const buffer = await fs.readFile(filePath);
@@ -142,17 +143,17 @@ export class FreeeImporter {
     
     // Debug: Log first record keys
     if (records.length > 0) {
-      console.log('[Freee Import] CSV headers:', Object.keys(records[0]));
-      console.log('[Freee Import] First record:', records[0]);
+      logger.debug('[Freee Import] CSV headers:', Object.keys(records[0]));
+      logger.debug('[Freee Import] First record:', records[0]);
       
       // Additional debug for partner import
       if (fileType === 'partners') {
-        console.log('[Freee Import] Debug - Looking for field "名前（通称）"');
-        console.log('[Freee Import] Debug - Available fields:', Object.keys(records[0]).map(k => `"${k}"`).join(', '));
+        logger.debug('[Freee Import] Debug - Looking for field "名前（通称）"');
+        logger.debug('[Freee Import] Debug - Available fields:', Object.keys(records[0]).map(k => `"${k}"`).join(', '));
       }
     }
     
-    console.log(`[Freee Import] Found ${records.length} records`);
+    logger.debug(`[Freee Import] Found ${records.length} records`);
     
     switch (fileType) {
       case 'partners':
@@ -218,11 +219,11 @@ export class FreeeImporter {
           }
         }
         
-        console.log(`[Freee Import] Imported partner: ${customerData.name}`);
+        logger.debug(`[Freee Import] Imported partner: ${customerData.name}`);
         results.success++;
         
       } catch (error) {
-        console.error(`[Freee Import] Failed to import partner:`, error);
+        logger.error(`[Freee Import] Failed to import partner:`, error);
         results.failed++;
         results.errors.push({ record, error });
       }
@@ -304,11 +305,11 @@ export class FreeeImporter {
           }
         }
         
-        console.log(`[Freee Import] Imported account: ${accountData.name}`);
+        logger.debug(`[Freee Import] Imported account: ${accountData.name}`);
         results.success++;
         
       } catch (error) {
-        console.error(`[Freee Import] Failed to import account:`, error);
+        logger.error(`[Freee Import] Failed to import account:`, error);
         results.failed++;
         results.errors.push({ record, error });
       }
@@ -366,7 +367,7 @@ export class FreeeImporter {
           });
             
           if (!account) {
-            console.warn(`Account not found: ${validated['勘定科目']}`);
+            logger.warn(`Account not found: ${validated['勘定科目']}`);
           } else {
             // Create transaction line
             const lineData = {
@@ -384,11 +385,11 @@ export class FreeeImporter {
           }
         }
         
-        console.log(`[Freee Import] Imported transaction: ${transactionData.description}`);
+        logger.debug(`[Freee Import] Imported transaction: ${transactionData.description}`);
         results.success++;
         
       } catch (error) {
-        console.error(`[Freee Import] Failed to import transaction:`, error);
+        logger.error(`[Freee Import] Failed to import transaction:`, error);
         results.failed++;
         results.errors.push({ record, error });
       }
@@ -545,11 +546,11 @@ export class FreeeImporter {
           }
         }
         
-        console.log(`[Freee Import] Imported item: ${itemData.name}`);
+        logger.debug(`[Freee Import] Imported item: ${itemData.name}`);
         results.success++;
         
       } catch (error) {
-        console.error(`[Freee Import] Failed to import item:`, error);
+        logger.error(`[Freee Import] Failed to import item:`, error);
         results.failed++;
         results.errors.push({ record, error });
       }
@@ -588,11 +589,11 @@ export class FreeeImporter {
           }
         }
         
-        console.log(`[Freee Import] Imported memo tag: ${tagData.name}`);
+        logger.debug(`[Freee Import] Imported memo tag: ${tagData.name}`);
         results.success++;
         
       } catch (error) {
-        console.error(`[Freee Import] Failed to import memo tag:`, error);
+        logger.error(`[Freee Import] Failed to import memo tag:`, error);
         results.failed++;
         results.errors.push({ record, error });
       }
@@ -639,11 +640,11 @@ export class FreeeImporter {
           }
         }
         
-        console.log(`[Freee Import] Imported department: ${departmentData.name}`);
+        logger.debug(`[Freee Import] Imported department: ${departmentData.name}`);
         results.success++;
         
       } catch (error) {
-        console.error(`[Freee Import] Failed to import department:`, error);
+        logger.error(`[Freee Import] Failed to import department:`, error);
         results.failed++;
         results.errors.push({ record, error });
       }

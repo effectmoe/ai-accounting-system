@@ -3,6 +3,7 @@ import { ObjectId } from 'mongodb';
 import { Invoice, InvoiceStatus, InvoiceItem, Customer, BankAccount } from '@/types/collections';
 import { CompanyInfoService } from './company-info.service';
 
+import { logger } from '@/lib/logger';
 export interface InvoiceSearchParams {
   customerId?: string;
   status?: InvoiceStatus;
@@ -112,7 +113,7 @@ export class InvoiceService {
         hasMore,
       };
     } catch (error) {
-      console.error('Error in searchInvoices:', error);
+      logger.error('Error in searchInvoices:', error);
       throw new Error('請求書の検索に失敗しました');
     }
   }
@@ -159,7 +160,7 @@ export class InvoiceService {
       const created = await db.create<Invoice>(this.collectionName, invoice);
       return created;
     } catch (error) {
-      console.error('Error in createInvoice:', error);
+      logger.error('Error in createInvoice:', error);
       throw error instanceof Error ? error : new Error('請求書の作成に失敗しました');
     }
   }
@@ -169,17 +170,17 @@ export class InvoiceService {
    */
   async getInvoice(id: string): Promise<Invoice | null> {
     try {
-      console.log('[InvoiceService] getInvoice called with ID:', id);
-      console.log('[InvoiceService] ID type:', typeof id, 'Length:', id?.length);
+      logger.debug('[InvoiceService] getInvoice called with ID:', id);
+      logger.debug('[InvoiceService] ID type:', typeof id, 'Length:', id?.length);
       
       const invoice = await db.findById<Invoice>(this.collectionName, id);
       
       if (!invoice) {
-        console.log('[InvoiceService] No invoice found for ID:', id);
+        logger.debug('[InvoiceService] No invoice found for ID:', id);
         return null;
       }
       
-      console.log('[InvoiceService] Invoice found:', {
+      logger.debug('[InvoiceService] Invoice found:', {
         _id: invoice._id,
         invoiceNumber: invoice.invoiceNumber
       });
@@ -196,7 +197,7 @@ export class InvoiceService {
 
       return invoice;
     } catch (error) {
-      console.error('Error in getInvoice:', error);
+      logger.error('Error in getInvoice:', error);
       throw new Error('請求書の取得に失敗しました');
     }
   }
@@ -206,7 +207,7 @@ export class InvoiceService {
    */
   async updateInvoice(id: string, updateData: Partial<Invoice>): Promise<Invoice | null> {
     try {
-      console.log('[InvoiceService] updateInvoice called with:', {
+      logger.debug('[InvoiceService] updateInvoice called with:', {
         id,
         updateData: JSON.stringify(updateData, null, 2)
       });
@@ -241,7 +242,7 @@ export class InvoiceService {
         }
       }
 
-      console.log('[InvoiceService] Calling db.update with:', {
+      logger.debug('[InvoiceService] Calling db.update with:', {
         collection: this.collectionName,
         id,
         dataToUpdate: JSON.stringify(dataToUpdate, null, 2)
@@ -249,7 +250,7 @@ export class InvoiceService {
       
       const updated = await db.update<Invoice>(this.collectionName, id, dataToUpdate);
       
-      console.log('[InvoiceService] Updated invoice:', updated ? 'Success' : 'Failed');
+      logger.debug('[InvoiceService] Updated invoice:', updated ? 'Success' : 'Failed');
       
       if (updated) {
         // 顧客情報を取得
@@ -265,7 +266,7 @@ export class InvoiceService {
 
       return updated;
     } catch (error) {
-      console.error('Error in updateInvoice:', error);
+      logger.error('Error in updateInvoice:', error);
       throw error instanceof Error ? error : new Error('請求書の更新に失敗しました');
     }
   }
@@ -277,7 +278,7 @@ export class InvoiceService {
     try {
       return await db.delete(this.collectionName, id);
     } catch (error) {
-      console.error('Error in deleteInvoice:', error);
+      logger.error('Error in deleteInvoice:', error);
       throw new Error('請求書の削除に失敗しました');
     }
   }
@@ -298,7 +299,7 @@ export class InvoiceService {
 
       return await this.updateInvoice(id, updateData);
     } catch (error) {
-      console.error('Error in updateInvoiceStatus:', error);
+      logger.error('Error in updateInvoiceStatus:', error);
       throw new Error('請求書ステータスの更新に失敗しました');
     }
   }
@@ -349,7 +350,7 @@ export class InvoiceService {
       
       return invoiceNumber;
     } catch (error) {
-      console.error('Error in generateInvoiceNumber:', error);
+      logger.error('Error in generateInvoiceNumber:', error);
       // エラーの場合はタイムスタンプベースの番号を生成
       const timestamp = new Date().getTime();
       return `INV-${timestamp}`;
@@ -377,7 +378,7 @@ export class InvoiceService {
 
       return await this.updateInvoice(id, updateData);
     } catch (error) {
-      console.error('Error in recordPayment:', error);
+      logger.error('Error in recordPayment:', error);
       throw new Error('支払い記録の更新に失敗しました');
     }
   }
@@ -393,7 +394,7 @@ export class InvoiceService {
 
       return await this.updateInvoice(id, updateData);
     } catch (error) {
-      console.error('Error in cancelInvoice:', error);
+      logger.error('Error in cancelInvoice:', error);
       throw new Error('請求書のキャンセルに失敗しました');
     }
   }
@@ -437,7 +438,7 @@ export class InvoiceService {
 
       return await db.aggregate(this.collectionName, pipeline);
     } catch (error) {
-      console.error('Error in getMonthlyAggregation:', error);
+      logger.error('Error in getMonthlyAggregation:', error);
       throw new Error('月次集計の取得に失敗しました');
     }
   }

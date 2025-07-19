@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { SupplierService } from '@/services/supplier.service';
 import { SupplierStatus } from '@/types/collections';
 
+import { logger } from '@/lib/logger';
 // GET: 仕入先一覧取得
 export async function GET(request: NextRequest) {
   try {
@@ -20,7 +21,7 @@ export async function GET(request: NextRequest) {
     
     return NextResponse.json(result);
   } catch (error) {
-    console.error('Error fetching suppliers:', error);
+    logger.error('Error fetching suppliers:', error);
     return NextResponse.json(
       { error: 'Failed to fetch suppliers' },
       { status: 500 }
@@ -50,7 +51,7 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json(supplier, { status: 201 });
   } catch (error: any) {
-    console.error('Error creating supplier:', error);
+    logger.error('Error creating supplier:', error);
     
     if (error.message === 'Supplier code already exists') {
       return NextResponse.json(

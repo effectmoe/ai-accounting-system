@@ -5,6 +5,7 @@ import { toast } from 'react-hot-toast';
 import { Mic, Save, Plus, Edit2, Trash2, ToggleLeft, ToggleRight, ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
+import { logger } from '@/lib/logger';
 interface SpeechDictionaryEntry {
   id: string;
   incorrect: string;
@@ -85,7 +86,7 @@ export default function SpeechSettingsPage() {
         });
       }
     } catch (error) {
-      console.error('Error fetching speech settings:', error);
+      logger.error('Error fetching speech settings:', error);
       toast.error('音声認識設定の取得に失敗しました');
     } finally {
       setLoading(false);
@@ -123,7 +124,7 @@ export default function SpeechSettingsPage() {
         throw new Error(data.error || '更新に失敗しました');
       }
     } catch (error) {
-      console.error('Error updating speech settings:', error);
+      logger.error('Error updating speech settings:', error);
       toast.error('音声認識設定の更新に失敗しました');
     } finally {
       setSaving(false);

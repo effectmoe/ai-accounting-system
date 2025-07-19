@@ -5,6 +5,7 @@ import { db, getDatabase } from '@/lib/mongodb-client';
 import { ObjectId } from 'mongodb';
 import { cleanPhoneNumber } from '@/lib/phone-utils';
 
+import { logger } from '@/lib/logger';
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic';
 
@@ -37,7 +38,7 @@ export async function GET(request: NextRequest) {
     
     return NextResponse.json(result);
   } catch (error) {
-    console.error('Error in GET /api/purchase-invoices:', error);
+    logger.error('Error in GET /api/purchase-invoices:', error);
     return NextResponse.json(
       { error: 'Failed to fetch purchase invoices' },
       { status: 500 }
@@ -52,14 +53,14 @@ export async function POST(request: NextRequest) {
     const purchaseInvoiceService = new PurchaseInvoiceService();
     
     // デバッグ: 受信したデータ全体をログ出力
-    console.log('===== [Purchase Invoice POST] Full Request Data =====');
-    console.log(JSON.stringify(invoiceData, null, 2));
-    console.log('===== [Purchase Invoice POST] Bank Transfer Info =====');
-    console.log('Has bankTransferInfo:', !!invoiceData.bankTransferInfo);
+    logger.debug('===== [Purchase Invoice POST] Full Request Data =====');
+    logger.debug(JSON.stringify(invoiceData, null, 2));
+    logger.debug('===== [Purchase Invoice POST] Bank Transfer Info =====');
+    logger.debug('Has bankTransferInfo:', !!invoiceData.bankTransferInfo);
     if (invoiceData.bankTransferInfo) {
-      console.log('Bank Transfer Info:', JSON.stringify(invoiceData.bankTransferInfo, null, 2));
+      logger.debug('Bank Transfer Info:', JSON.stringify(invoiceData.bankTransferInfo, null, 2));
     }
-    console.log('===== [Purchase Invoice POST] End Full Request Data =====');
+    logger.debug('===== [Purchase Invoice POST] End Full Request Data =====');
     
     // 仕入先の処理
     let supplierId = invoiceData.supplierId;
@@ -69,14 +70,14 @@ export async function POST(request: NextRequest) {
     if (!supplierId && vendorName) {
       try {
         // 既存の仕入先を検索
-        console.log('[Purchase Invoice] Searching for existing supplier:', vendorName);
+        logger.debug('[Purchase Invoice] Searching for existing supplier:', vendorName);
         const existingSupplier = await db.findOne('suppliers', {
           companyName: vendorName
         });
         
         if (existingSupplier) {
           supplierId = existingSupplier._id;
-          console.log(`[Purchase Invoice] Found existing supplier:`, JSON.stringify({
+          logger.debug(`[Purchase Invoice] Found existing supplier:`, JSON.stringify({
             _id: existingSupplier._id,
             companyName: existingSupplier.companyName,
             phone: existingSupplier.phone,
@@ -139,7 +140,7 @@ export async function POST(request: NextRequest) {
           
           // 振込先情報が新規または更新されている場合
           if (invoiceData.bankTransferInfo && Array.isArray(invoiceData.bankTransferInfo)) {
-            console.log('[Purchase Invoice] Found bank transfer info in invoice data:', invoiceData.bankTransferInfo);
+            logger.debug('[Purchase Invoice] Found bank transfer info in invoice data:', invoiceData.bankTransferInfo);
             // 既存の振込先情報と比較して、新しい情報があれば追加
             if (!existingSupplier.bankTransferInfo || !Array.isArray(existingSupplier.bankTransferInfo)) {
               updateData.bankTransferInfo = invoiceData.bankTransferInfo;
@@ -161,10 +162,10 @@ export async function POST(request: NextRequest) {
           
           // 更新が必要な場合のみ実行
           if (needsUpdate) {
-            console.log('[Purchase Invoice] Updating existing supplier with new OCR data:', JSON.stringify(updateData, null, 2));
+            logger.debug('[Purchase Invoice] Updating existing supplier with new OCR data:', JSON.stringify(updateData, null, 2));
             try {
               const updatedSupplier = await SupplierService.updateSupplier(supplierId.toString(), updateData);
-              console.log('[Purchase Invoice] Successfully updated supplier:', JSON.stringify({
+              logger.debug('[Purchase Invoice] Successfully updated supplier:', JSON.stringify({
                 _id: updatedSupplier._id,
                 companyName: updatedSupplier.companyName,
                 phone: updatedSupplier.phone,
@@ -176,14 +177,14 @@ export async function POST(request: NextRequest) {
                 bankTransferInfo: updatedSupplier.bankTransferInfo
               }, null, 2));
             } catch (updateError) {
-              console.error('[Purchase Invoice] Error updating supplier:', updateError);
+              logger.error('[Purchase Invoice] Error updating supplier:', updateError);
               // 更新に失敗しても処理は続行（既存のsupplierIdを使用）
             }
           } else {
-            console.log('[Purchase Invoice] No updates needed for existing supplier');
+            logger.debug('[Purchase Invoice] No updates needed for existing supplier');
           }
         } else {
-          console.log('[Purchase Invoice] No existing supplier found, will create new one');
+          logger.debug('[Purchase Invoice] No existing supplier found, will create new one');
           // OCRから抽出された仕入先情報を使用
           // vendor オブジェクトから情報を取得（AI Orchestratorからの場合）
           const vendorInfo = invoiceData.vendor || {};
@@ -205,8 +206,8 @@ export async function POST(request: NextRequest) {
           }
           
           // Comprehensive logging for OCR data flow
-          console.log('===== [Purchase Invoice] OCR Data Flow Debug START =====');
-          console.log('[1] Raw invoice data received:', JSON.stringify({
+          logger.debug('===== [Purchase Invoice] OCR Data Flow Debug START =====');
+          logger.debug('[1] Raw invoice data received:', JSON.stringify({
             vendorName: invoiceData.vendorName,
             vendorAddress: invoiceData.vendorAddress,
             vendorPhone: invoiceData.vendorPhone,
@@ -217,7 +218,7 @@ export async function POST(request: NextRequest) {
             fullInvoiceData: invoiceData
           }, null, 2));
           
-          console.log('[2] Extracted vendor info:', JSON.stringify({
+          logger.debug('[2] Extracted vendor info:', JSON.stringify({
             vendorInfo,
             vendorAddress,
             rawVendorPhone,
@@ -227,13 +228,13 @@ export async function POST(request: NextRequest) {
             vendorWebsite
           }, null, 2));
           
-          console.log('[3] Processed address data:', JSON.stringify({
+          logger.debug('[3] Processed address data:', JSON.stringify({
             originalAddress: vendorAddress,
             postalCode: postalCode,
             cleanAddress: cleanAddress
           }, null, 2));
           
-          console.log('[4] Creating new supplier with data:', JSON.stringify({
+          logger.debug('[4] Creating new supplier with data:', JSON.stringify({
             companyName: vendorName,
             address1: cleanAddress,
             postalCode: postalCode,
@@ -262,13 +263,13 @@ export async function POST(request: NextRequest) {
               : undefined
           };
           
-          console.log('[5] Supplier data to be saved:', JSON.stringify(supplierData, null, 2));
+          logger.debug('[5] Supplier data to be saved:', JSON.stringify(supplierData, null, 2));
           
           // SupplierService.createSupplierを使用して正しく作成
           const newSupplier = await SupplierService.createSupplier(supplierData);
           supplierId = newSupplier._id;
           
-          console.log('[6] Created supplier result:', JSON.stringify({
+          logger.debug('[6] Created supplier result:', JSON.stringify({
             _id: newSupplier._id,
             supplierCode: newSupplier.supplierCode,
             companyName: newSupplier.companyName,
@@ -285,7 +286,7 @@ export async function POST(request: NextRequest) {
           
           // 作成直後に再度データベースから取得して確認
           const verifySupplier = await db.findOne('suppliers', { _id: newSupplier._id });
-          console.log('[7] Verification - Supplier from DB:', JSON.stringify({
+          logger.debug('[7] Verification - Supplier from DB:', JSON.stringify({
             _id: verifySupplier?._id,
             companyName: verifySupplier?.companyName,
             phone: verifySupplier?.phone,
@@ -300,7 +301,7 @@ export async function POST(request: NextRequest) {
           // MongoDBに直接クエリして確認
           const mongoDb = await getDatabase();
           const directSupplier = await mongoDb.collection('suppliers').findOne({ _id: newSupplier._id });
-          console.log('[8] Direct MongoDB query result:', JSON.stringify({
+          logger.debug('[8] Direct MongoDB query result:', JSON.stringify({
             _id: directSupplier?._id,
             companyName: directSupplier?.companyName,
             phone: directSupplier?.phone,
@@ -313,10 +314,10 @@ export async function POST(request: NextRequest) {
             allFields: Object.keys(directSupplier || {})
           }, null, 2));
           
-          console.log('===== [Purchase Invoice] OCR Data Flow Debug END =====');
+          logger.debug('===== [Purchase Invoice] OCR Data Flow Debug END =====');
         }
       } catch (error) {
-        console.error('[Purchase Invoice] Error handling supplier:', error);
+        logger.error('[Purchase Invoice] Error handling supplier:', error);
         // 仕入先処理に失敗した場合はデフォルト仕入先を使用
         const defaultSupplier = await db.findOne('suppliers', {
           companyName: 'OCR自動登録仕入先'
@@ -358,13 +359,13 @@ export async function POST(request: NextRequest) {
     
     // 振込先情報は仕入先に保存するため、請求書データからは削除
     if (finalInvoiceData.bankTransferInfo) {
-      console.log('[Purchase Invoice] Removing bankTransferInfo from invoice data (already saved to supplier)');
+      logger.debug('[Purchase Invoice] Removing bankTransferInfo from invoice data (already saved to supplier)');
       delete finalInvoiceData.bankTransferInfo;
     }
     
     // fileIdが含まれている場合はログに記録
     if (finalInvoiceData.fileId) {
-      console.log('[Purchase Invoice] Including fileId in invoice data:', finalInvoiceData.fileId);
+      logger.debug('[Purchase Invoice] Including fileId in invoice data:', finalInvoiceData.fileId);
     }
     
     // 請求書番号が指定されていない場合は自動生成
@@ -376,7 +377,7 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json(invoice, { status: 201 });
   } catch (error) {
-    console.error('Error in POST /api/purchase-invoices:', error);
+    logger.error('Error in POST /api/purchase-invoices:', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to create purchase invoice' },
       { status: 500 }

@@ -1,17 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ProductService } from '@/services/product.service';
-
+import { logger } from '@/lib/logger';
+import { 
+  withErrorHandler, 
+  validateRequired, 
+  validatePagination,
+  validateAmount,
+  ApiErrorResponse 
+} from '@/lib/unified-error-handler';
 const productService = new ProductService();
 
 // 商品一覧取得
-export async function GET(request: NextRequest) {
-  try {
+export const GET = withErrorHandler(async (request: NextRequest) => {
     const { searchParams } = new URL(request.url);
     
     // ページネーション
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '20');
-    const skip = (page - 1) * limit;
+    const { page, limit, skip } = validatePagination(searchParams);
     
     // 検索クエリ
     const q = searchParams.get('q') || undefined;
@@ -98,48 +102,24 @@ export async function GET(request: NextRequest) {
       products: result.products,
       total: result.total
     });
-  } catch (error) {
-    console.error('商品一覧取得エラー:', error);
-    return NextResponse.json(
-      { error: '商品一覧の取得に失敗しました' },
-      { status: 500 }
-    );
-  }
-}
+});
 
 // 商品新規作成
-export async function POST(request: NextRequest) {
-  try {
+export const POST = withErrorHandler(async (request: NextRequest) => {
     const body = await request.json();
     
     // 必須フィールドの検証
-    if (!body.productName || !body.productCode || !body.category || !body.unit) {
-      return NextResponse.json(
-        { error: '必須フィールドが不足しています' },
-        { status: 400 }
-      );
-    }
+    validateRequired(body, ['productName', 'productCode', 'category', 'unit']);
 
     // 数値フィールドの検証
-    if (typeof body.unitPrice !== 'number' || body.unitPrice < 0) {
-      return NextResponse.json(
-        { error: '単価は0以上の数値である必要があります' },
-        { status: 400 }
-      );
-    }
+    body.unitPrice = validateAmount(body.unitPrice);
 
     if (typeof body.taxRate !== 'number' || body.taxRate < 0 || body.taxRate > 1) {
-      return NextResponse.json(
-        { error: '税率は0から1の間の数値である必要があります' },
-        { status: 400 }
-      );
+      throw new ApiErrorResponse('税率は0から1の間の数値である必要があります', 400, 'INVALID_TAX_RATE');
     }
 
-    if (body.stockQuantity !== undefined && (typeof body.stockQuantity !== 'number' || body.stockQuantity < 0)) {
-      return NextResponse.json(
-        { error: '在庫数は0以上の数値である必要があります' },
-        { status: 400 }
-      );
+    if (body.stockQuantity !== undefined) {
+      body.stockQuantity = validateAmount(body.stockQuantity);
     }
 
     const productData = {
@@ -157,21 +137,13 @@ export async function POST(request: NextRequest) {
       tags: body.tags || []
     };
 
-    const product = await productService.createProduct(productData);
-    return NextResponse.json(product);
-  } catch (error) {
-    console.error('商品作成エラー:', error);
-    
-    if (error instanceof Error && error.message === '商品コードが重複しています') {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 409 }
-      );
+    try {
+      const product = await productService.createProduct(productData);
+      return NextResponse.json(product);
+    } catch (error) {
+      if (error instanceof Error && error.message === '商品コードが重複しています') {
+        throw new ApiErrorResponse(error.message, 409, 'DUPLICATE_PRODUCT_CODE');
+      }
+      throw error;
     }
-
-    return NextResponse.json(
-      { error: '商品の作成に失敗しました' },
-      { status: 500 }
-    );
-  }
-}
+});

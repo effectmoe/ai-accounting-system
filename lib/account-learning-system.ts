@@ -1,6 +1,7 @@
 import { db } from './mongodb-client';
 import { ObjectId } from 'mongodb';
 
+import { logger } from '@/lib/logger';
 /**
  * 勘定科目学習システム
  * ユーザーが確定した勘定科目の判定を学習し、今後の判定精度を向上させる
@@ -239,7 +240,7 @@ export class AccountLearningSystem {
       await db.deleteMany(this.collectionName, { companyId });
       return true;
     } catch (error) {
-      console.error('Failed to clear learning data:', error);
+      logger.error('Failed to clear learning data:', error);
       return false;
     }
   }

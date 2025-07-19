@@ -7,6 +7,7 @@
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { logger } from '@/lib/logger';
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
@@ -868,7 +869,7 @@ class MCPCoordinator extends EventEmitter {
       try {
         await this.checkAllServersHealth();
       } catch (error) {
-        console.error('Health check monitoring error:', error);
+        logger.error('Health check monitoring error:', error);
       }
     }, 30000); // 30秒ごと
   }
@@ -909,7 +910,7 @@ class MCPCoordinator extends EventEmitter {
   async run() {
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
-    console.error('MCP Coordinator running on stdio');
+    logger.error('MCP Coordinator running on stdio');
   }
 
   async shutdown() {
@@ -920,7 +921,7 @@ class MCPCoordinator extends EventEmitter {
     // 全サーバーを停止
     const stopPromises = Array.from(this.servers.keys()).map(serverName => 
       this.stopServer(serverName).catch(error => 
-        console.error(`Failed to stop server ${serverName}:`, error)
+        logger.error(`Failed to stop server ${serverName}:`, error)
       )
     );
 
@@ -933,19 +934,19 @@ if (require.main === module) {
   const coordinator = new MCPCoordinator();
   
   coordinator.run().catch((error) => {
-    console.error('Failed to run MCP Coordinator:', error);
+    logger.error('Failed to run MCP Coordinator:', error);
     process.exit(1);
   });
 
   // グレースフルシャットダウン
   process.on('SIGINT', async () => {
-    console.log('Shutting down MCP Coordinator...');
+    logger.debug('Shutting down MCP Coordinator...');
     await coordinator.shutdown();
     process.exit(0);
   });
 
   process.on('SIGTERM', async () => {
-    console.log('Shutting down MCP Coordinator...');
+    logger.debug('Shutting down MCP Coordinator...');
     await coordinator.shutdown();
     process.exit(0);
   });

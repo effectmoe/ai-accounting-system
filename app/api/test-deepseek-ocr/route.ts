@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { OCRAIOrchestrator } from '@/lib/ocr-ai-orchestrator';
 
+import { logger } from '@/lib/logger';
 export async function POST(request: NextRequest) {
   try {
-    console.log('[TEST-DEEPSEEK-OCR] Starting DeepSeek OCR test...');
+    logger.debug('[TEST-DEEPSEEK-OCR] Starting DeepSeek OCR test...');
     
     const body = await request.json();
     const { ocrResult, documentType = 'supplier-quote' } = body;
@@ -18,7 +19,7 @@ export async function POST(request: NextRequest) {
     // DeepSeek OCR Orchestratorを初期化
     const orchestrator = new OCRAIOrchestrator();
     
-    console.log('[TEST-DEEPSEEK-OCR] Initialized DeepSeek OCR Orchestrator');
+    logger.debug('[TEST-DEEPSEEK-OCR] Initialized DeepSeek OCR Orchestrator');
     
     // OCR結果を処理
     const structuredData = await orchestrator.orchestrateOCRResult({
@@ -27,8 +28,8 @@ export async function POST(request: NextRequest) {
       companyId: 'test-company'
     });
     
-    console.log('[TEST-DEEPSEEK-OCR] Successfully processed OCR result');
-    console.log('[TEST-DEEPSEEK-OCR] Structured data:', {
+    logger.debug('[TEST-DEEPSEEK-OCR] Successfully processed OCR result');
+    logger.debug('[TEST-DEEPSEEK-OCR] Structured data:', {
       vendor: structuredData.vendor.name,
       customer: structuredData.customer.name,
       subject: structuredData.subject,
@@ -43,7 +44,7 @@ export async function POST(request: NextRequest) {
     });
     
   } catch (error) {
-    console.error('[TEST-DEEPSEEK-OCR] Error:', error);
+    logger.error('[TEST-DEEPSEEK-OCR] Error:', error);
     
     return NextResponse.json(
       {
@@ -57,7 +58,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    console.log('[TEST-DEEPSEEK-OCR] Starting GET test with mock data...');
+    logger.debug('[TEST-DEEPSEEK-OCR] Starting GET test with mock data...');
     
     // モックのOCR結果
     const mockOcrResult = {
@@ -122,17 +123,17 @@ TEL: 03-xxxx-xxxx FAX: 03-xxxx-xxxx
       vercel: process.env.VERCEL || 'false'
     };
     
-    console.log('[TEST-DEEPSEEK-OCR] Status check:', status);
+    logger.debug('[TEST-DEEPSEEK-OCR] Status check:', status);
     
     // AI Orchestratorのテスト
     let testResult = null;
     let testError = null;
     
     try {
-      console.log('[TEST-DEEPSEEK-OCR] Creating orchestrator...');
+      logger.debug('[TEST-DEEPSEEK-OCR] Creating orchestrator...');
       const orchestrator = new OCRAIOrchestrator();
       
-      console.log('[TEST-DEEPSEEK-OCR] Calling orchestrateOCRResult...');
+      logger.debug('[TEST-DEEPSEEK-OCR] Calling orchestrateOCRResult...');
       const structuredData = await orchestrator.orchestrateOCRResult({
         ocrResult: mockOcrResult,
         documentType: 'supplier-quote',
@@ -151,9 +152,9 @@ TEL: 03-xxxx-xxxx FAX: 03-xxxx-xxxx
         }
       };
       
-      console.log('[TEST-DEEPSEEK-OCR] Test completed successfully');
+      logger.debug('[TEST-DEEPSEEK-OCR] Test completed successfully');
     } catch (error) {
-      console.error('[TEST-DEEPSEEK-OCR] Test error:', error);
+      logger.error('[TEST-DEEPSEEK-OCR] Test error:', error);
       testError = {
         message: error instanceof Error ? error.message : 'Unknown error',
         type: error?.constructor?.name || 'UnknownError',
@@ -171,7 +172,7 @@ TEL: 03-xxxx-xxxx FAX: 03-xxxx-xxxx
     });
     
   } catch (error) {
-    console.error('[TEST-DEEPSEEK-OCR] Status check error:', error);
+    logger.error('[TEST-DEEPSEEK-OCR] Status check error:', error);
     
     return NextResponse.json(
       {

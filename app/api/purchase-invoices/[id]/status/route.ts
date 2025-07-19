@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { PurchaseInvoiceService } from '@/services/purchase-invoice.service';
 import { PurchaseInvoiceStatus } from '@/types/collections';
 
+import { logger } from '@/lib/logger';
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic';
 
@@ -32,7 +33,7 @@ export async function PATCH(
     
     return NextResponse.json(invoice);
   } catch (error) {
-    console.error('Error in PATCH /api/purchase-invoices/[id]/status:', error);
+    logger.error('Error in PATCH /api/purchase-invoices/[id]/status:', error);
     return NextResponse.json(
       { error: 'Failed to update purchase invoice status' },
       { status: 500 }

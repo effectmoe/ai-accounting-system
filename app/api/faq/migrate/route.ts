@@ -4,6 +4,7 @@ import { StructuredDataService } from '@/services/structured-data.service';
 import { FaqArticle } from '@/types/collections';
 import { ObjectId } from 'mongodb';
 
+import { logger } from '@/lib/logger';
 export async function POST(request: NextRequest) {
   const knowledgeService = new KnowledgeService();
   
@@ -18,7 +19,7 @@ export async function POST(request: NextRequest) {
       .find({ status: 'active' })
       .toArray();
     
-    console.log(`[FAQ Migration] Found ${simpleFaqs.length} FAQs to migrate`);
+    logger.debug(`[FAQ Migration] Found ${simpleFaqs.length} FAQs to migrate`);
     
     let migratedCount = 0;
     let failedCount = 0;
@@ -35,7 +36,7 @@ export async function POST(request: NextRequest) {
         });
         
         if (existing) {
-          console.log(`[FAQ Migration] FAQ already migrated: ${simpleFaq.question}`);
+          logger.debug(`[FAQ Migration] FAQ already migrated: ${simpleFaq.question}`);
           continue;
         }
         
@@ -135,7 +136,7 @@ export async function POST(request: NextRequest) {
           
           await structuredDataService.close();
         } catch (structuredError) {
-          console.error(`Failed to generate structured data for migrated FAQ:`, structuredError);
+          logger.error(`Failed to generate structured data for migrated FAQ:`, structuredError);
         }
         
         // 元のFAQを非アクティブに更新
@@ -151,13 +152,13 @@ export async function POST(request: NextRequest) {
         );
         
         migratedCount++;
-        console.log(`[FAQ Migration] Successfully migrated: ${simpleFaq.question}`);
+        logger.debug(`[FAQ Migration] Successfully migrated: ${simpleFaq.question}`);
         
       } catch (error) {
         failedCount++;
         const errorMessage = `Failed to migrate FAQ "${simpleFaq.question}": ${error instanceof Error ? error.message : 'Unknown error'}`;
         errors.push(errorMessage);
-        console.error(`[FAQ Migration] ${errorMessage}`);
+        logger.error(`[FAQ Migration] ${errorMessage}`);
       }
     }
     
@@ -173,7 +174,7 @@ export async function POST(request: NextRequest) {
     });
     
   } catch (error) {
-    console.error('[FAQ Migration] Error:', error);
+    logger.error('[FAQ Migration] Error:', error);
     await knowledgeService.disconnect();
     
     return NextResponse.json(

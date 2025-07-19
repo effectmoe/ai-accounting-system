@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { logger } from '@/lib/logger';
 import {
   Select,
   SelectContent,
@@ -69,7 +70,7 @@ export default function NewSupplierPage() {
         alert(error.error || '仕入先の作成に失敗しました');
       }
     } catch (error) {
-      console.error('Error creating supplier:', error);
+      logger.error('Error creating supplier:', error);
       alert('仕入先の作成に失敗しました');
     } finally {
       setLoading(false);

@@ -1,3 +1,5 @@
+import { logger } from '@/lib/logger';
+
 // AI会話ID管理のヘルパー関数
 
 /**
@@ -56,6 +58,6 @@ export function migrateConversationId(oldId: string | number | undefined): strin
   }
   
   // その他の場合は新しいIDを生成
-  console.warn(`[AI Conversation Helper] Invalid conversation ID format: ${oldIdStr}, generating new ID`);
+  logger.warn(`[AI Conversation Helper] Invalid conversation ID format: ${oldIdStr}, generating new ID`);
   return generateConversationId();
 }

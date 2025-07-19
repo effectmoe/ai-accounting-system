@@ -7,6 +7,7 @@
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { logger } from '@/lib/logger';
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
@@ -582,7 +583,7 @@ class WebSocketMCPServer {
   async run() {
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
-    console.error('WebSocket MCP Server running on stdio');
+    logger.error('WebSocket MCP Server running on stdio');
   }
 }
 
@@ -590,7 +591,7 @@ class WebSocketMCPServer {
 if (require.main === module) {
   const server = new WebSocketMCPServer();
   server.run().catch((error) => {
-    console.error('Failed to run WebSocket MCP Server:', error);
+    logger.error('Failed to run WebSocket MCP Server:', error);
     process.exit(1);
   });
 }

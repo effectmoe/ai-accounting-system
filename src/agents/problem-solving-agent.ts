@@ -7,6 +7,7 @@ import { MLAnalyticsManager } from '@/lib/ml-analytics-manager';
 import { getWebSocketManager, updateProgress } from '@/lib/websocket-manager';
 import { ObjectId } from 'mongodb';
 
+import { logger } from '@/lib/logger';
 // 問題解決要求スキーマ
 const problemSolvingSchema = z.object({
   problem: z.string().describe('解決すべき問題の詳細な説明'),
@@ -284,7 +285,7 @@ const tools = {
         providerUsed: 'AI-enhanced sequential thinking',
       };
     } catch (error) {
-      console.warn('AI sequential thinking failed, falling back to template:', error);
+      logger.warn('AI sequential thinking failed, falling back to template:', error);
       
       // フォールバック: テンプレートベースの段階的思考
       const steps = [
@@ -510,7 +511,7 @@ const tools = {
         try {
           recentInfo = await perplexityClient.searchRecent(`${topic} latest news updates`, 'week');
         } catch (error) {
-          console.warn('Recent search failed:', error);
+          logger.warn('Recent search failed:', error);
         }
       }
 
@@ -1258,7 +1259,7 @@ export async function solveProblem(operation: string, data: any): Promise<Proble
   try {
     // WebSocket サーバーの開始（必要に応じて）
     await wsManager.start().catch(() => {
-      console.warn('WebSocket server already running or failed to start');
+      logger.warn('WebSocket server already running or failed to start');
     });
 
     // 初期進捗通知
@@ -1442,7 +1443,7 @@ export async function solveProblem(operation: string, data: any): Promise<Proble
               includeRecent: researchData.parameters?.includeRecent ?? true,
             });
           } catch (error) {
-            console.warn('Web research failed:', error);
+            logger.warn('Web research failed:', error);
           }
         }
         
@@ -1753,7 +1754,7 @@ export async function solveProblem(operation: string, data: any): Promise<Proble
         companyId: data.companyId,
       });
     } catch (logError) {
-      console.warn('Failed to log error:', logError);
+      logger.warn('Failed to log error:', logError);
     }
 
     const errorResult = {

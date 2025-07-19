@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 // import { orchestrator } from '@/mastra-orchestrator';
 
 export async function POST(request: NextRequest) {
@@ -23,7 +24,7 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('NLP API Error:', error);
+    logger.error('NLP API Error:', error);
     return NextResponse.json(
       { 
         error: 'Internal server error',
@@ -59,7 +60,7 @@ export async function GET() {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    console.error('Health check error:', error);
+    logger.error('Health check error:', error);
     return NextResponse.json(
       { error: 'Service unavailable' },
       { status: 503 }

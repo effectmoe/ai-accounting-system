@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DatabaseService, Collections } from '@/lib/mongodb-client';
 
+import { logger } from '@/lib/logger';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    console.log('Received request body:', JSON.stringify(body, null, 2));
+    logger.debug('Received request body:', JSON.stringify(body, null, 2));
     const {
       ocrResultId,
       document_type = 'receipt',
@@ -72,7 +73,7 @@ export async function POST(request: NextRequest) {
         updatedAt: new Date()
     };
     
-    console.log('Document data to save:', JSON.stringify(documentData, null, 2));
+    logger.debug('Document data to save:', JSON.stringify(documentData, null, 2));
     
     // MongoDBに保存
     const savedDoc = await db.create(Collections.DOCUMENTS, documentData);
@@ -98,9 +99,9 @@ export async function POST(request: NextRequest) {
           status: 'processed',
           updatedAt: new Date()
         });
-        console.log('OCR result updated successfully:', ocrResultId);
+        logger.debug('OCR result updated successfully:', ocrResultId);
       } catch (updateError) {
-        console.error('OCR result update error:', updateError);
+        logger.error('OCR result update error:', updateError);
         // エラーがあってもレスポンスは成功として返す（文書は作成済みのため）
       }
     }
@@ -126,13 +127,13 @@ export async function POST(request: NextRequest) {
       }).then(async (inference) => {
         if (inference) {
           await agent.saveInference(savedDoc.id, inference);
-          console.log('勘定科目推論完了:', inference);
+          logger.debug('勘定科目推論完了:', inference);
         }
       }).catch((error) => {
-        console.error('勘定科目推論エラー:', error);
+        logger.error('勘定科目推論エラー:', error);
       });
     } catch (error) {
-      console.error('Agent initialization error:', error);
+      logger.error('Agent initialization error:', error);
       // エラーが発生しても文書作成は成功とする
     }
     */
@@ -151,8 +152,8 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Create document error:', error);
-    console.error('Error details:', {
+    logger.error('Create document error:', error);
+    logger.error('Error details:', {
       message: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined,
       error: error

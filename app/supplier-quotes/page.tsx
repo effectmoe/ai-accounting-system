@@ -7,6 +7,7 @@ import { Plus, Search, Filter, Edit, Trash2, Calendar, Building, FileText, Trend
 import { toast } from 'react-hot-toast';
 import { SupplierQuote, SupplierQuoteStatus, Supplier } from '@/types/collections';
 
+import { logger } from '@/lib/logger';
 interface SupplierQuoteSearchResult {
   supplierQuotes: SupplierQuote[];
   total: number;
@@ -70,7 +71,7 @@ export default function SupplierQuotesPage() {
       const data = await response.json();
       setSuppliers(data.suppliers || []);
     } catch (error) {
-      console.error('Error fetching suppliers:', error);
+      logger.error('Error fetching suppliers:', error);
     }
   }, []);
 
@@ -97,7 +98,7 @@ export default function SupplierQuotesPage() {
       setTotal(data.total);
       setHasMore(data.hasMore);
     } catch (error) {
-      console.error('Error fetching supplier quotes:', error);
+      logger.error('Error fetching supplier quotes:', error);
       toast.error('仕入先見積書の取得に失敗しました');
     } finally {
       setLoading(false);
@@ -146,7 +147,7 @@ export default function SupplierQuotesPage() {
       toast.success('仕入先見積書を削除しました');
       fetchSupplierQuotes(currentPage);
     } catch (error) {
-      console.error('Error deleting supplier quote:', error);
+      logger.error('Error deleting supplier quote:', error);
       toast.error('仕入先見積書の削除に失敗しました');
     }
   };

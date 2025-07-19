@@ -1,6 +1,7 @@
 import { Workflow } from '@mastra/core';
 import deploymentAgent from '../agents/deployment-agent';
 
+import { logger } from '@/lib/logger';
 const deploymentWorkflow = new Workflow({
   name: 'deployment-workflow',
   description: 'Complete deployment workflow for the accounting automation system',
@@ -45,21 +46,21 @@ const deploymentWorkflow = new Workflow({
   // Workflow hooks
   hooks: {
     beforeWorkflow: async (context: any) => {
-      console.log('[Deployment Workflow] Starting deployment workflow...');
+      logger.debug('[Deployment Workflow] Starting deployment workflow...');
     },
     
     afterWorkflow: async (context: any, result: any) => {
-      console.log('[Deployment Workflow] Workflow completed');
+      logger.debug('[Deployment Workflow] Workflow completed');
       
       if (result.success) {
-        console.log(`[Deployment Workflow] Successfully deployed to: ${result.url}`);
+        logger.debug(`[Deployment Workflow] Successfully deployed to: ${result.url}`);
       } else {
-        console.error(`[Deployment Workflow] Deployment failed: ${result.error}`);
+        logger.error(`[Deployment Workflow] Deployment failed: ${result.error}`);
       }
     },
     
     onError: async (error: any, context: any) => {
-      console.error(`[Deployment Workflow] Error in step ${context.currentStep}:`, error);
+      logger.error(`[Deployment Workflow] Error in step ${context.currentStep}:`, error);
     }
   }
 });

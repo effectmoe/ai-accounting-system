@@ -3,6 +3,7 @@ import { QuoteService } from '@/services/quote.service';
 import { CompanyInfoService } from '@/services/company-info.service';
 import { generateCompactQuoteHTML, generateQuoteFilename, generateSafeQuoteFilename } from '@/lib/pdf-quote-html-generator';
 
+import { logger } from '@/lib/logger';
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -21,14 +22,14 @@ export async function GET(
     const companyInfo = await companyInfoService.getCompanyInfo();
 
     // HTMLを生成（コンパクト版を使用）
-    console.log('Generating compact quote HTML for:', quote.quoteNumber);
+    logger.debug('Generating compact quote HTML for:', quote.quoteNumber);
     const htmlContent = generateCompactQuoteHTML(quote, companyInfo);
     
     // 新しい命名規則でファイル名を生成: 発行日_帳表名_顧客名
     const filename = generateQuoteFilename(quote);
     const safeFilename = generateSafeQuoteFilename(quote);
-    console.log('Generated filename:', filename);
-    console.log('Safe filename for header:', safeFilename);
+    logger.debug('Generated filename:', filename);
+    logger.debug('Safe filename for header:', safeFilename);
     
     // URLクエリパラメータでダウンロードモードを判定
     const url = new URL(request.url);
@@ -72,8 +73,8 @@ export async function GET(
       },
     });
   } catch (error) {
-    console.error('Quote PDF generation error:', error);
-    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    logger.error('Quote PDF generation error:', error);
+    logger.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     
     // 詳細なエラー情報を返す
     if (error instanceof Error) {

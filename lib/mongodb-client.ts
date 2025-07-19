@@ -1,5 +1,6 @@
 import { MongoClient, Db, Collection, ObjectId, GridFSBucket } from 'mongodb';
 
+import { logger } from '@/lib/logger';
 // カスタムエラークラス
 export class DatabaseError extends Error {
   constructor(message: string, public code: string) {
@@ -23,7 +24,7 @@ let cached = global._mongoClientPromise;
 function getMongoDBUri(): string {
   const uri = process.env.MONGODB_URI;
   if (!uri) {
-    console.error('Environment variables:', {
+    logger.error('Environment variables:', {
       MONGODB_URI: !!process.env.MONGODB_URI,
       NODE_ENV: process.env.NODE_ENV,
       VERCEL: process.env.VERCEL,
@@ -32,6 +33,23 @@ function getMongoDBUri(): string {
     throw new Error('MONGODB_URI is not defined in environment variables');
   }
   return uri;
+}
+
+// MongoDB URIから機密情報をマスクする関数
+function sanitizeMongoUri(uri: string): string {
+  try {
+    const url = new URL(uri);
+    if (url.username) {
+      url.username = '***';
+    }
+    if (url.password) {
+      url.password = '***';
+    }
+    return url.toString();
+  } catch {
+    // URLのパースに失敗した場合は、安全のため全体をマスク
+    return 'mongodb://***:***@***';
+  }
 }
 
 // Vercel推奨のMongoDB接続パターン
@@ -43,10 +61,10 @@ async function connectToDatabase(): Promise<{ client: MongoClient; db: Db }> {
       
       // 接続が生きているか確認
       await db.admin().ping();
-      console.log('Reusing cached MongoDB connection');
+      logger.debug('Reusing cached MongoDB connection');
       return { client, db };
     } catch (error) {
-      console.log('Cached connection is stale, creating new connection...');
+      logger.debug('Cached connection is stale, creating new connection...');
       cached = undefined;
       global._mongoClientPromise = undefined;
     }
@@ -55,8 +73,8 @@ async function connectToDatabase(): Promise<{ client: MongoClient; db: Db }> {
   try {
     const uri = getMongoDBUri();
     
-    console.log('Creating new MongoDB connection...');
-    console.log('MongoDB URI configured:', uri.replace(/\/\/[^:]*:[^@]*@/, '//***:***@')); // パスワードを隠してログ出力
+    logger.debug('Creating new MongoDB connection...');
+    logger.debug('MongoDB URI configured:', sanitizeMongoUri(uri)); // パスワードを隠してログ出力
     
     // Vercel推奨の接続オプション
     const options = {
@@ -76,12 +94,12 @@ async function connectToDatabase(): Promise<{ client: MongoClient; db: Db }> {
     
     // 接続を確認
     await db.admin().ping();
-    console.log('MongoDB connection verified with ping');
+    logger.debug('MongoDB connection verified with ping');
     
     return { client: connectedClient, db };
   } catch (error) {
-    console.error('MongoDB connection error:', error);
-    console.error('Connection error details:', {
+    logger.error('MongoDB connection error:', error);
+    logger.error('Connection error details:', {
       name: error instanceof Error ? error.name : 'Unknown',
       message: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined
@@ -104,7 +122,7 @@ export async function getDatabase(): Promise<Db> {
     const { db } = await connectToDatabase();
     return db;
   } catch (error) {
-    console.error('getDatabase error:', error);
+    logger.error('getDatabase error:', error);
     throw new DatabaseError(
       `Failed to get database instance: ${error instanceof Error ? error.message : 'Unknown error'}`,
       'DATABASE_ACCESS_ERROR'
@@ -123,7 +141,7 @@ export async function getCollection<T = any>(collectionName: string): Promise<Co
       await collection.estimatedDocumentCount();
       return collection;
     } catch (error) {
-      console.error(`Collection ${collectionName} test failed:`, error);
+      logger.error(`Collection ${collectionName} test failed:`, error);
       // 接続をリセット
       cached = undefined;
       global._mongoClientPromise = undefined;
@@ -133,7 +151,7 @@ export async function getCollection<T = any>(collectionName: string): Promise<Co
       return retryDb.collection<T>(collectionName);
     }
   } catch (error) {
-    console.error(`getCollection error for ${collectionName}:`, error);
+    logger.error(`getCollection error for ${collectionName}:`, error);
     throw new DatabaseError(
       `Failed to get collection ${collectionName}: ${error instanceof Error ? error.message : 'Unknown error'}`,
       'COLLECTION_ACCESS_ERROR'
@@ -200,8 +218,8 @@ export class DatabaseService {
    */
   async create<T>(collectionName: string, document: Omit<T, '_id'>): Promise<T> {
     try {
-      console.log(`===== [DatabaseService] Create Operation Debug START (${collectionName}) =====`);
-      console.log('[1] Document to create:', JSON.stringify(document, null, 2));
+      logger.debug(`===== [DatabaseService] Create Operation Debug START (${collectionName}) =====`);
+      logger.debug('[1] Document to create:', JSON.stringify(document, null, 2));
       
       const collection = await getCollection<T>(collectionName);
       const now = new Date();
@@ -211,21 +229,21 @@ export class DatabaseService {
         updatedAt: now,
       };
       
-      console.log('[2] Document with timestamps:', JSON.stringify(doc, null, 2));
+      logger.debug('[2] Document with timestamps:', JSON.stringify(doc, null, 2));
       
       const result = await collection.insertOne(doc as any);
       const createdDoc = { ...doc, _id: result.insertedId } as T;
       
-      console.log('[3] Created document result:', JSON.stringify({
+      logger.debug('[3] Created document result:', JSON.stringify({
         _id: result.insertedId,
         ...doc
       }, null, 2));
       
-      console.log(`===== [DatabaseService] Create Operation Debug END (${collectionName}) =====`);
+      logger.debug(`===== [DatabaseService] Create Operation Debug END (${collectionName}) =====`);
       
       return createdDoc;
     } catch (error) {
-      console.error(`MongoDB create error in collection ${collectionName}:`, error);
+      logger.error(`MongoDB create error in collection ${collectionName}:`, error);
       throw new DatabaseError(
         `Failed to create document in ${collectionName}: ${error instanceof Error ? error.message : 'Unknown error'}`,
         'CREATE_ERROR'
@@ -238,26 +256,26 @@ export class DatabaseService {
    */
   async findById<T>(collectionName: string, id: string | ObjectId): Promise<T | null> {
     try {
-      console.log(`[MongoDB] findById called for collection: ${collectionName}, id: ${id}`);
-      console.log(`[MongoDB] ID type: ${typeof id}, length: ${id?.toString()?.length}`);
+      logger.debug(`[MongoDB] findById called for collection: ${collectionName}, id: ${id}`);
+      logger.debug(`[MongoDB] ID type: ${typeof id}, length: ${id?.toString()?.length}`);
       
       const collection = await getCollection<T>(collectionName);
       const objectId = typeof id === 'string' ? new ObjectId(id) : id;
       
-      console.log(`[MongoDB] Converted ObjectId: ${objectId}`);
+      logger.debug(`[MongoDB] Converted ObjectId: ${objectId}`);
       
       const result = await collection.findOne({ _id: objectId } as any);
       
-      console.log(`[MongoDB] findById result: ${result ? 'found' : 'not found'}`);
+      logger.debug(`[MongoDB] findById result: ${result ? 'found' : 'not found'}`);
       if (result) {
-        console.log(`[MongoDB] Found document with _id: ${result._id}`);
+        logger.debug(`[MongoDB] Found document with _id: ${result._id}`);
       }
       
       return result;
     } catch (error) {
-      console.error(`[MongoDB] findById error for ${collectionName}:`, error);
+      logger.error(`[MongoDB] findById error for ${collectionName}:`, error);
       if (error instanceof Error && error.message.includes('invalid ObjectId')) {
-        console.error(`[MongoDB] Invalid ObjectId format: ${id}`);
+        logger.error(`[MongoDB] Invalid ObjectId format: ${id}`);
       }
       throw error;
     }
@@ -302,8 +320,8 @@ export class DatabaseService {
       // _idフィールドを除外
       const { _id, ...updateData } = update as any;
       
-      console.log(`Updating document in ${collectionName} with ID: ${objectId}`);
-      console.log('Update data keys:', Object.keys(updateData));
+      logger.debug(`Updating document in ${collectionName} with ID: ${objectId}`);
+      logger.debug('Update data keys:', Object.keys(updateData));
       
       const result = await collection.findOneAndUpdate(
         { _id: objectId } as any,
@@ -316,21 +334,21 @@ export class DatabaseService {
         { returnDocument: 'after' }
       );
 
-      console.log(`[MongoDB] findOneAndUpdate raw result:`, result);
-      console.log(`[MongoDB] findOneAndUpdate result type:`, typeof result);
-      console.log(`[MongoDB] findOneAndUpdate result keys:`, result ? Object.keys(result) : 'null');
+      logger.debug(`[MongoDB] findOneAndUpdate raw result:`, result);
+      logger.debug(`[MongoDB] findOneAndUpdate result type:`, typeof result);
+      logger.debug(`[MongoDB] findOneAndUpdate result keys:`, result ? Object.keys(result) : 'null');
 
       // MongoDB driver v6では、結果が直接ドキュメントを返す
       if (!result) {
-        console.error(`No document found with ID ${objectId} in collection ${collectionName}`);
+        logger.error(`No document found with ID ${objectId} in collection ${collectionName}`);
         return null;
       }
 
-      console.log(`Document updated successfully in ${collectionName}`);
-      console.log(`Updated document ID: ${result._id?.toString()}`);
+      logger.debug(`Document updated successfully in ${collectionName}`);
+      logger.debug(`Updated document ID: ${result._id?.toString()}`);
       return result;
     } catch (error) {
-      console.error(`MongoDB update error in collection ${collectionName}:`, error);
+      logger.error(`MongoDB update error in collection ${collectionName}:`, error);
       throw new DatabaseError(
         `Failed to update document in ${collectionName}: ${error instanceof Error ? error.message : 'Unknown error'}`,
         'UPDATE_ERROR'
@@ -462,7 +480,7 @@ export class DatabaseService {
 
       return result.modifiedCount;
     } catch (error) {
-      console.error(`MongoDB updateMany error in collection ${collectionName}:`, error);
+      logger.error(`MongoDB updateMany error in collection ${collectionName}:`, error);
       throw new DatabaseError(
         `Failed to update documents in ${collectionName}: ${error instanceof Error ? error.message : 'Unknown error'}`,
         'UPDATE_MANY_ERROR'
@@ -487,24 +505,24 @@ export class DatabaseService {
 // ヘルスチェック（シンプル化）
 export async function checkConnection(): Promise<boolean> {
   try {
-    console.log('MongoDB connection check...');
+    logger.debug('MongoDB connection check...');
     
     // 環境変数を確認
     const mongoUri = process.env.MONGODB_URI;
     if (!mongoUri) {
-      console.error('MONGODB_URI is not defined!');
+      logger.error('MONGODB_URI is not defined!');
       return false;
     }
     
     const { db } = await connectToDatabase();
     await db.command({ ping: 1 });
-    console.log('MongoDB connection successful');
+    logger.debug('MongoDB connection successful');
     return true;
     
   } catch (error) {
-    console.error('MongoDB connection check failed:', error);
+    logger.error('MongoDB connection check failed:', error);
     if (error instanceof Error) {
-      console.error('Error details:', {
+      logger.error('Error details:', {
         name: error.name,
         message: error.message
       });
@@ -580,18 +598,18 @@ export class VercelDatabaseService extends DatabaseService {
         throw new Error('Insert operation failed - no inserted ID returned');
       }
       
-      console.log(`Document created successfully in ${collectionName} with ID: ${result.insertedId}`);
+      logger.debug(`Document created successfully in ${collectionName} with ID: ${result.insertedId}`);
       return { ...doc, _id: result.insertedId } as T;
       
     } catch (error) {
-      console.error(`MongoDB create error in collection ${collectionName}:`, error);
+      logger.error(`MongoDB create error in collection ${collectionName}:`, error);
       
       // 接続エラーの場合はキャッシュをクリアして再試行
       if (error instanceof Error && 
           (error.message.includes('connection') || 
            error.message.includes('client') ||
            error.message.includes('topology'))) {
-        console.log('Clearing MongoDB connection cache due to connection error');
+        logger.debug('Clearing MongoDB connection cache due to connection error');
         cached = undefined;
         global._mongoClientPromise = undefined;
         

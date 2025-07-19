@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { KnowledgeService } from '@/services/knowledge.service';
 
+import { logger } from '@/lib/logger';
 /**
  * GET /api/knowledge/health
  * ナレッジサービスの動作確認
@@ -28,7 +29,7 @@ export async function GET(request: NextRequest) {
       mongoStatus = 'connected';
       articlesFound = testSearch.total;
     } catch (mongoError) {
-      console.error('MongoDB test error:', mongoError);
+      logger.error('MongoDB test error:', mongoError);
       mongoStatus = `error: ${mongoError instanceof Error ? mongoError.message : 'Unknown error'}`;
     }
     
@@ -69,7 +70,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Health check error:', error);
+    logger.error('Health check error:', error);
     
     return NextResponse.json({
       status: 'error',

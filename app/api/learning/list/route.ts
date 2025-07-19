@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/mongodb-client';
 
+import { logger } from '@/lib/logger';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
@@ -88,7 +89,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Learning list error:', error);
+    logger.error('Learning list error:', error);
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to fetch learning data'

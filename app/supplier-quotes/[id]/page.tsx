@@ -7,6 +7,7 @@ import { ArrowLeft, Edit, Trash2, FileText, Building, Calendar, DollarSign, Cloc
 import { toast } from 'react-hot-toast';
 import { SupplierQuote, SupplierQuoteStatus } from '@/types/collections';
 
+import { logger } from '@/lib/logger';
 // ステータス表示用のスタイル
 const statusStyles = {
   pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
@@ -63,7 +64,7 @@ export default function SupplierQuoteDetailPage() {
         const data = await response.json();
         setQuote(data);
       } catch (error) {
-        console.error('Error fetching quote:', error);
+        logger.error('Error fetching quote:', error);
         toast.error('見積書の取得に失敗しました');
       } finally {
         setLoading(false);
@@ -110,7 +111,7 @@ export default function SupplierQuoteDetailPage() {
       setQuote(updatedQuote);
       toast.success('ステータスを更新しました');
     } catch (error) {
-      console.error('Error updating status:', error);
+      logger.error('Error updating status:', error);
       toast.error('ステータスの更新に失敗しました');
     } finally {
       setUpdating(false);
@@ -133,7 +134,7 @@ export default function SupplierQuoteDetailPage() {
       toast.success('見積書を削除しました');
       router.push('/supplier-quotes');
     } catch (error) {
-      console.error('Error deleting quote:', error);
+      logger.error('Error deleting quote:', error);
       toast.error('見積書の削除に失敗しました');
     }
   };

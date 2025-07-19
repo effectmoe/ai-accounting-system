@@ -3,6 +3,7 @@ import { ObjectId } from 'mongodb';
 import { DeliveryNote, DeliveryNoteStatus } from '@/types/collections';
 import { getDatabase } from '@/lib/mongodb';
 
+import { logger } from '@/lib/logger';
 // GET - 納品書一覧取得
 export async function GET(request: NextRequest) {
   try {
@@ -57,7 +58,7 @@ export async function GET(request: NextRequest) {
       }
     });
   } catch (error) {
-    console.error('Error fetching delivery notes:', error);
+    logger.error('Error fetching delivery notes:', error);
     return NextResponse.json(
       { error: 'Failed to fetch delivery notes' },
       { status: 500 }
@@ -111,7 +112,7 @@ export async function POST(request: NextRequest) {
       ...newDeliveryNote
     }, { status: 201 });
   } catch (error) {
-    console.error('Error creating delivery note:', error);
+    logger.error('Error creating delivery note:', error);
     return NextResponse.json(
       { error: 'Failed to create delivery note' },
       { status: 500 }

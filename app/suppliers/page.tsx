@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { logger } from '@/lib/logger';
 import {
   Table,
   TableBody,
@@ -90,7 +91,7 @@ function SuppliersPageContent() {
       // キャッシュをチェック
       const cachedData = cache.get<any>(cacheKey);
       if (cachedData) {
-        console.log('[Suppliers] Using cached data');
+        logger.debug('[Suppliers] Using cached data');
         setSuppliers(cachedData.suppliers);
         setTotalPages(cachedData.totalPages);
         setLoading(false);
@@ -110,7 +111,7 @@ function SuppliersPageContent() {
         throw new Error(data.error || 'データの取得に失敗しました');
       }
     } catch (error) {
-      console.error('Error fetching suppliers:', error);
+      logger.error('Error fetching suppliers:', error);
       setError(error instanceof Error ? error.message : 'データの取得に失敗しました。再度お試しください。');
       // Sentryがインストールされている場合、エラーを送信
       if (typeof window !== 'undefined' && (window as any).Sentry) {
@@ -146,7 +147,7 @@ function SuppliersPageContent() {
         throw new Error('統計情報の取得に失敗しました');
       }
     } catch (error) {
-      console.error('Error fetching supplier stats:', error);
+      logger.error('Error fetching supplier stats:', error);
       setError('統計情報の取得に失敗しました。');
       if (typeof window !== 'undefined' && (window as any).Sentry) {
         (window as any).Sentry.captureException(error);
@@ -193,7 +194,7 @@ function SuppliersPageContent() {
         throw new Error(data.error || '削除に失敗しました');
       }
     } catch (error) {
-      console.error('Error deleting supplier:', error);
+      logger.error('Error deleting supplier:', error);
       setError(error instanceof Error ? error.message : '仕入先の削除に失敗しました。');
       if (typeof window !== 'undefined' && (window as any).Sentry) {
         (window as any).Sentry.captureException(error);

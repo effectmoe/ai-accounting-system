@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/mongodb-client';
 import { ObjectId } from 'mongodb';
 
+import { logger } from '@/lib/logger';
 export async function POST(request: NextRequest) {
   try {
     // 環境変数チェック
@@ -34,13 +35,13 @@ export async function POST(request: NextRequest) {
     if (documentId) {
       try {
         sourceDocument = await db.findOne('documents', { _id: new ObjectId(documentId) });
-        console.log('Source document:', {
+        logger.debug('Source document:', {
           id: sourceDocument?._id,
           category: sourceDocument?.category,
           gridfsFileId: sourceDocument?.gridfsFileId
         });
       } catch (e) {
-        console.error('Failed to fetch source document:', e);
+        logger.error('Failed to fetch source document:', e);
       }
     }
     
@@ -152,7 +153,7 @@ export async function POST(request: NextRequest) {
     };
 
     const savedJournalDocument = await db.create('documents', journalDocument);
-    console.log('Created journal document:', {
+    logger.debug('Created journal document:', {
       id: savedJournalDocument._id,
       documentType: journalDocument.documentType,
       sourceDocumentId: journalDocument.sourceDocumentId
@@ -165,7 +166,7 @@ export async function POST(request: NextRequest) {
         journalId: savedJournal._id,
         updatedAt: new Date()
       });
-      console.log('Hidden original OCR document:', documentId);
+      logger.debug('Hidden original OCR document:', documentId);
     }
 
     return NextResponse.json({
@@ -178,7 +179,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Journal creation error:', error);
+    logger.error('Journal creation error:', error);
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to create journal entry'

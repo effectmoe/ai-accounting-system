@@ -3,24 +3,25 @@ import { InvoiceService } from '@/services/invoice.service';
 import { CompanyInfoService } from '@/services/company-info.service';
 import { InvoiceStatus } from '@/types/collections';
 
+import { logger } from '@/lib/logger';
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    console.log('[GET /api/invoices/[id]] Request for ID:', params.id);
+    logger.debug('[GET /api/invoices/[id]] Request for ID:', params.id);
     const invoiceService = new InvoiceService();
     const invoice = await invoiceService.getInvoice(params.id);
     
     if (!invoice) {
-      console.log('[GET /api/invoices/[id]] Invoice not found for ID:', params.id);
+      logger.debug('[GET /api/invoices/[id]] Invoice not found for ID:', params.id);
       return NextResponse.json(
         { error: 'Invoice not found' },
         { status: 404 }
       );
     }
     
-    console.log('[GET /api/invoices/[id]] Invoice found:', {
+    logger.debug('[GET /api/invoices/[id]] Invoice found:', {
       id: invoice._id,
       status: invoice.status,
       convertedToDeliveryNoteId: invoice.convertedToDeliveryNoteId,
@@ -77,12 +78,12 @@ export async function GET(
       }
     };
     
-    console.log('[GET /api/invoices/[id]] Formatted invoice status:', formattedInvoice.status);
-    console.log('[GET /api/invoices/[id]] Formatted invoice convertedToDeliveryNoteId:', formattedInvoice.convertedToDeliveryNoteId);
+    logger.debug('[GET /api/invoices/[id]] Formatted invoice status:', formattedInvoice.status);
+    logger.debug('[GET /api/invoices/[id]] Formatted invoice convertedToDeliveryNoteId:', formattedInvoice.convertedToDeliveryNoteId);
     
     return NextResponse.json(formattedInvoice);
   } catch (error) {
-    console.error('Error fetching invoice:', error);
+    logger.error('Error fetching invoice:', error);
     return NextResponse.json(
       { error: 'Failed to fetch invoice' },
       { status: 500 }
@@ -95,24 +96,24 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    console.log('[PUT /api/invoices/[id]] Request for ID:', params.id);
+    logger.debug('[PUT /api/invoices/[id]] Request for ID:', params.id);
     const body = await request.json();
-    console.log('[PUT /api/invoices/[id]] Request body:', body);
+    logger.debug('[PUT /api/invoices/[id]] Request body:', body);
     
     const invoiceService = new InvoiceService();
     
     // ステータス更新の場合
     if (body.status && Object.keys(body).length === 1) {
-      console.log('Updating invoice status:', params.id, body.status);
+      logger.debug('Updating invoice status:', params.id, body.status);
       const invoice = await invoiceService.updateInvoiceStatus(params.id, body.status as InvoiceStatus);
       if (!invoice) {
-        console.log('Invoice not found for status update:', params.id);
+        logger.debug('Invoice not found for status update:', params.id);
         return NextResponse.json(
           { error: 'Invoice not found' },
           { status: 404 }
         );
       }
-      console.log('Invoice status updated successfully');
+      logger.debug('Invoice status updated successfully');
       return NextResponse.json(invoice);
     }
     
@@ -133,7 +134,7 @@ export async function PUT(
     }
     
     // 通常の更新
-    console.log('Updating invoice with data:', body);
+    logger.debug('Updating invoice with data:', body);
     
     // 請求書データの整形
     const updateData: any = {};
@@ -168,24 +169,24 @@ export async function PUT(
       updateData.totalAmount = subtotal + taxAmount;
     }
     
-    console.log('[PUT /api/invoices/[id]] Calling updateInvoice with ID:', params.id);
-    console.log('[PUT /api/invoices/[id]] Update data:', JSON.stringify(updateData, null, 2));
+    logger.debug('[PUT /api/invoices/[id]] Calling updateInvoice with ID:', params.id);
+    logger.debug('[PUT /api/invoices/[id]] Update data:', JSON.stringify(updateData, null, 2));
     
     const invoice = await invoiceService.updateInvoice(params.id, updateData);
     if (!invoice) {
-      console.error('[PUT /api/invoices/[id]] Invoice not found. ID:', params.id);
-      console.error('[PUT /api/invoices/[id]] Attempted update data:', updateData);
+      logger.error('[PUT /api/invoices/[id]] Invoice not found. ID:', params.id);
+      logger.error('[PUT /api/invoices/[id]] Attempted update data:', updateData);
       return NextResponse.json(
         { error: 'Invoice not found' },
         { status: 404 }
       );
     }
     
-    console.log('[PUT /api/invoices/[id]] Invoice updated successfully');
+    logger.debug('[PUT /api/invoices/[id]] Invoice updated successfully');
     return NextResponse.json(invoice);
   } catch (error) {
-    console.error('Error updating invoice:', error);
-    console.error('Error details:', {
+    logger.error('Error updating invoice:', error);
+    logger.error('Error details:', {
       message: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined
     });
@@ -217,7 +218,7 @@ export async function DELETE(
     
     return NextResponse.json({ success: true, invoice });
   } catch (error) {
-    console.error('Error cancelling invoice:', error);
+    logger.error('Error cancelling invoice:', error);
     return NextResponse.json(
       { error: 'Failed to cancel invoice' },
       { status: 500 }

@@ -3,6 +3,7 @@ import { getMongoClient } from '@/lib/mongodb-client';
 import { ObjectId } from 'mongodb';
 import { DashboardProfitData } from '@/types/collections';
 
+import { logger } from '@/lib/logger';
 const DB_NAME = process.env.MONGODB_DB_NAME || 'accounting-app';
 
 // Force dynamic rendering for this route
@@ -246,7 +247,7 @@ export async function GET(request: NextRequest) {
     
     return NextResponse.json(result);
   } catch (error) {
-    console.error('Error fetching profit stats:', error);
+    logger.error('Error fetching profit stats:', error);
     return NextResponse.json(
       { error: 'Failed to fetch profit statistics' },
       { status: 500 }

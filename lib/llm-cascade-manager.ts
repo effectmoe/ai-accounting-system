@@ -1,6 +1,7 @@
 import OpenAI from 'openai';
 import Anthropic from '@anthropic-ai/sdk';
 
+import { logger } from '@/lib/logger';
 // DeepSeek用のOpenAI互換クライアント
 interface LLMProvider {
   name: string;
@@ -102,7 +103,7 @@ export class LLMCascadeManager {
     // 優先度順にソート
     this.providers.sort((a, b) => a.priority - b.priority);
     
-    console.log(`[LLM Cascade] Initialized ${this.providers.length} providers:`, 
+    logger.debug(`[LLM Cascade] Initialized ${this.providers.length} providers:`, 
       this.providers.map(p => `${p.name}(${p.priority})`).join(', '));
   }
 
@@ -119,11 +120,11 @@ export class LLMCascadeManager {
       }
 
       try {
-        console.log(`[LLM Cascade] Trying ${provider.name}...`);
+        logger.debug(`[LLM Cascade] Trying ${provider.name}...`);
         
         const response = await this.callProvider(provider, request);
         
-        console.log(`[LLM Cascade] Success with ${provider.name} (${Date.now() - startTime}ms)`);
+        logger.debug(`[LLM Cascade] Success with ${provider.name} (${Date.now() - startTime}ms)`);
         
         return {
           ...response,
@@ -134,7 +135,7 @@ export class LLMCascadeManager {
 
       } catch (error) {
         lastError = error instanceof Error ? error.message : 'Unknown error';
-        console.warn(`[LLM Cascade] ${provider.name} failed:`, lastError);
+        logger.warn(`[LLM Cascade] ${provider.name} failed:`, lastError);
         
         // プロバイダーを一時的に無効化（レート制限等の場合）
         if (lastError.includes('rate_limit') || lastError.includes('quota')) {
@@ -142,7 +143,7 @@ export class LLMCascadeManager {
           // 5分後に再有効化
           setTimeout(() => {
             provider.available = true;
-            console.log(`[LLM Cascade] Re-enabled ${provider.name}`);
+            logger.debug(`[LLM Cascade] Re-enabled ${provider.name}`);
           }, 5 * 60 * 1000);
         }
         
@@ -260,7 +261,7 @@ export class LLMCascadeManager {
       provider.available = false;
       setTimeout(() => {
         provider.available = true;
-        console.log(`[LLM Cascade] Re-enabled ${providerName}`);
+        logger.debug(`[LLM Cascade] Re-enabled ${providerName}`);
       }, durationMs);
     }
   }

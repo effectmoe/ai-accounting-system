@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { refactorAgent } from '../../../src/agents/refactor-agent';
 
+import { logger } from '@/lib/logger';
 export async function POST(request: Request) {
   try {
     const { code, refactorType = 'basic' } = await request.json();
@@ -28,8 +29,8 @@ function processData(d) {
   return b;
 }`;
 
-    console.log('RefactorAgent テスト開始...');
-    console.log('リファクタリングタイプ:', refactorType);
+    logger.debug('RefactorAgent テスト開始...');
+    logger.debug('リファクタリングタイプ:', refactorType);
 
     // RefactorAgentを実行
     const result = await refactorAgent.execute({
@@ -40,7 +41,7 @@ function processData(d) {
       code: testCode, // コードを直接渡す
     } as any);
 
-    console.log('RefactorAgent 実行結果:', result);
+    logger.debug('RefactorAgent 実行結果:', result);
 
     return NextResponse.json({
       success: result.success,
@@ -48,7 +49,7 @@ function processData(d) {
     });
 
   } catch (error) {
-    console.error('RefactorAgent エラー:', error);
+    logger.error('RefactorAgent エラー:', error);
     return NextResponse.json(
       { 
         error: 'リファクタリング中にエラーが発生しました',

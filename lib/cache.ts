@@ -81,12 +81,12 @@ export async function fetchWithCache<T>(
   if (!options?.force) {
     const cached = cache.get<T>(key);
     if (cached) {
-      console.log(`[Cache] Hit: ${key}`);
+      logger.debug(`[Cache] Hit: ${key}`);
       return cached;
     }
   }
 
-  console.log(`[Cache] Miss: ${key}`);
+  logger.debug(`[Cache] Miss: ${key}`);
   
   try {
     const data = await fetcher();
@@ -96,7 +96,7 @@ export async function fetchWithCache<T>(
     // エラー時はキャッシュから古いデータを返す（あれば）
     const staleData = cache.get<T>(key);
     if (staleData) {
-      console.log(`[Cache] Returning stale data due to error: ${key}`);
+      logger.debug(`[Cache] Returning stale data due to error: ${key}`);
       return staleData;
     }
     throw error;
@@ -106,6 +106,7 @@ export async function fetchWithCache<T>(
 // React Hook: キャッシュを使用したデータフェッチ
 import { useState, useEffect, useCallback } from 'react';
 
+import { logger } from '@/lib/logger';
 interface UseCachedFetchResult<T> {
   data: T | null;
   loading: boolean;

@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AccountLearningSystem } from '@/lib/account-learning-system';
 
+import { logger } from '@/lib/logger';
 const learningSystem = new AccountLearningSystem();
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('Learn API - MongoDB URI exists:', !!process.env.MONGODB_URI);
+    logger.debug('Learn API - MongoDB URI exists:', !!process.env.MONGODB_URI);
     const body = await request.json();
     const {
       companyId,
@@ -51,8 +52,8 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Account learning error:', error);
-    console.error('Error details:', {
+    logger.error('Account learning error:', error);
+    logger.error('Error details:', {
       name: error instanceof Error ? error.name : 'Unknown',
       message: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined
@@ -110,7 +111,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Account prediction error:', error);
+    logger.error('Account prediction error:', error);
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to predict account category'

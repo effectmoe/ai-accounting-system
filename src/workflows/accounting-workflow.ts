@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { createWorkflow } from '@mastra/core';
 
+import { logger } from '@/lib/logger';
 // 会計ワークフローの入力スキーマ
 const accountingWorkflowInputSchema = z.object({
   workflowType: z.enum(['transaction_processing', 'invoice_generation', 'monthly_report', 'tax_calculation']),
@@ -216,7 +217,7 @@ export const accountingWorkflow = createWorkflow({
   // 実行ロジック
   execute: async ({ input, agents, context }) => {
     try {
-      console.log('[Accounting Workflow] Starting workflow:', input.workflowType);
+      logger.debug('[Accounting Workflow] Starting workflow:', input.workflowType);
       
       const results: any = {};
       
@@ -224,11 +225,11 @@ export const accountingWorkflow = createWorkflow({
       for (const step of accountingWorkflow.steps) {
         // 条件チェック
         if (step.condition && !step.condition(input)) {
-          console.log(`[Accounting Workflow] Skipping step: ${step.name}`);
+          logger.debug(`[Accounting Workflow] Skipping step: ${step.name}`);
           continue;
         }
         
-        console.log(`[Accounting Workflow] Executing step: ${step.name}`);
+        logger.debug(`[Accounting Workflow] Executing step: ${step.name}`);
         
         // ステップの入力データを準備
         const stepInput = step.input(input, results);
@@ -255,11 +256,11 @@ export const accountingWorkflow = createWorkflow({
       };
       
     } catch (error) {
-      console.error('[Accounting Workflow] Error:', error);
+      logger.error('[Accounting Workflow] Error:', error);
       
       // エラー処理とロールバック
       if (accountingWorkflow.errorHandling.compensation) {
-        console.log('[Accounting Workflow] Initiating rollback...');
+        logger.debug('[Accounting Workflow] Initiating rollback...');
         // 補償アクションを実行
       }
       

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongodb-client';
 
+import { logger } from '@/lib/logger';
 export async function DELETE() {
   try {
     const client = await clientPromise;
@@ -39,7 +40,7 @@ export async function DELETE() {
     });
 
   } catch (error) {
-    console.error('Cleanup error:', error);
+    logger.error('Cleanup error:', error);
     return NextResponse.json(
       { error: 'クリーンアップに失敗しました' },
       { status: 500 }

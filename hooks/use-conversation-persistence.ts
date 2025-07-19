@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { AIMessage } from '@/types/ai-conversation';
 
+import { logger } from '@/lib/logger';
 interface UseConversationPersistenceProps {
   conversationId: string | null;
   companyId?: string;
@@ -24,7 +25,7 @@ export function useConversationPersistence({
     }
 
     try {
-      console.log('[ConversationPersistence] Saving conversation:', {
+      logger.debug('[ConversationPersistence] Saving conversation:', {
         conversationId,
         messagesCount: messages.length
       });
@@ -42,13 +43,13 @@ export function useConversationPersistence({
       });
 
       if (!response.ok) {
-        console.error('[ConversationPersistence] Failed to save conversation');
+        logger.error('[ConversationPersistence] Failed to save conversation');
       } else {
         const result = await response.json();
-        console.log('[ConversationPersistence] Conversation saved:', result);
+        logger.debug('[ConversationPersistence] Conversation saved:', result);
       }
     } catch (error) {
-      console.error('[ConversationPersistence] Error saving conversation:', error);
+      logger.error('[ConversationPersistence] Error saving conversation:', error);
     }
   }, [conversationId, companyId, invoiceId, enabled]);
 

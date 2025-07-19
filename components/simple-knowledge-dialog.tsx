@@ -7,6 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
+import { logger } from '@/lib/logger';
 import { 
   Send, 
   Bot, 
@@ -162,12 +163,12 @@ export default function SimpleKnowledgeDialog({
                 
                 // セッションIDが返された場合は更新
                 if (parsed.sessionId && isNewChat) {
-                  console.log('[simple-knowledge-dialog] サーバーからセッションID取得:', parsed.sessionId);
+                  logger.debug('[simple-knowledge-dialog] サーバーからセッションID取得:', parsed.sessionId);
                   setSessionId(parsed.sessionId);
                   setIsNewChat(false);
                 }
               } catch (e) {
-                console.error('Failed to parse SSE data:', e);
+                logger.error('Failed to parse SSE data:', e);
               }
             }
           }
@@ -189,7 +190,7 @@ export default function SimpleKnowledgeDialog({
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
       setError(`回答の生成に失敗しました: ${errorMessage}`);
-      console.error('Chat error details:', {
+      logger.error('Chat error details:', {
         error: err,
         sessionId,
         messagesCount: messages.length
@@ -206,13 +207,13 @@ export default function SimpleKnowledgeDialog({
       const response = await fetch('/api/chat-history/list?category=tax');
       if (response.ok) {
         const data = await response.json();
-        console.log('[simple-knowledge-dialog] 取得した履歴:', data.sessions?.length || 0, '件');
+        logger.debug('[simple-knowledge-dialog] 取得した履歴:', data.sessions?.length || 0, '件');
         setChatHistory(data.sessions || []);
       } else {
-        console.error('履歴の取得に失敗しました');
+        logger.error('履歴の取得に失敗しました');
       }
     } catch (error) {
-      console.error('履歴取得エラー:', error);
+      logger.error('履歴取得エラー:', error);
     } finally {
       setIsLoadingHistory(false);
     }
@@ -228,11 +229,11 @@ export default function SimpleKnowledgeDialog({
   const loadHistorySession = async (sessionId: string) => {
     try {
       const response = await fetch(`/api/chat-history/${sessionId}`);
-      console.log('[simple-knowledge-dialog] 履歴セッション読込みレスポンス:', response.status);
+      logger.debug('[simple-knowledge-dialog] 履歴セッション読込みレスポンス:', response.status);
       
       if (response.ok) {
         const result = await response.json();
-        console.log('[simple-knowledge-dialog] 履歴セッションデータ:', result);
+        logger.debug('[simple-knowledge-dialog] 履歴セッションデータ:', result);
         
         if (result.success && result.data) {
           const sessionData = result.data;
@@ -250,15 +251,15 @@ export default function SimpleKnowledgeDialog({
             setIsNewChat(false); // 既存セッションを読み込んだのでfalseに
             setShowHistory(false);
           } else {
-            console.warn('セッションにメッセージが含まれていません');
+            logger.warn('セッションにメッセージが含まれていません');
           }
         }
       } else {
         const errorData = await response.json();
-        console.error('履歴セッション読込みエラー:', errorData);
+        logger.error('履歴セッション読込みエラー:', errorData);
       }
     } catch (error) {
-      console.error('履歴セッション読込みエラー:', error);
+      logger.error('履歴セッション読込みエラー:', error);
     }
   };
 
@@ -270,7 +271,7 @@ export default function SimpleKnowledgeDialog({
   };
 
   const handleSaveToFaq = (message: Message) => {
-    console.log('FAQ保存が要求されました:', message);
+    logger.debug('FAQ保存が要求されました:', message);
     setSelectedMessage(message);
     setShowFaqSaveDialog(true);
   };
@@ -287,7 +288,7 @@ export default function SimpleKnowledgeDialog({
         timestamp: selectedMessage.timestamp
       };
       
-      console.log('FAQ保存リクエスト開始:', requestData);
+      logger.debug('FAQ保存リクエスト開始:', requestData);
       
       const response = await fetch('/api/faq/save', {
         method: 'POST',
@@ -297,21 +298,21 @@ export default function SimpleKnowledgeDialog({
         body: JSON.stringify(requestData),
       });
 
-      console.log('FAQ保存レスポンス:', response.status, response.statusText);
+      logger.debug('FAQ保存レスポンス:', response.status, response.statusText);
       
       const responseData = await response.json();
-      console.log('FAQ保存レスポンスデータ:', responseData);
+      logger.debug('FAQ保存レスポンスデータ:', responseData);
 
       if (response.ok) {
-        console.log('FAQ保存成功:', responseData.id);
+        logger.debug('FAQ保存成功:', responseData.id);
         alert('FAQに保存されました！\n\n保存したFAQは「FAQ管理」ページで確認できます。');
         // TODO: FAQ一覧ページへのリンクまたは表示機能を追加
       } else {
-        console.error('FAQ保存失敗:', responseData.error);
+        logger.error('FAQ保存失敗:', responseData.error);
         alert(`FAQの保存に失敗しました: ${responseData.error}`);
       }
     } catch (error) {
-      console.error('FAQ保存エラー:', error);
+      logger.error('FAQ保存エラー:', error);
       alert('FAQ保存中にエラーが発生しました。詳細はコンソールを確認してください。');
     } finally {
       setShowFaqSaveDialog(false);

@@ -7,6 +7,7 @@ import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { Customer, Contact } from '@/types/collections';
 
+import { logger } from '@/lib/logger';
 interface CustomerForm {
   customerId: string;
   companyName: string;
@@ -116,7 +117,7 @@ export default function NewCustomerPage() {
         throw new Error(data.error || '顧客の登録に失敗しました');
       }
     } catch (error) {
-      console.error('Error creating customer:', error);
+      logger.error('Error creating customer:', error);
       toast.error(error instanceof Error ? error.message : '顧客の登録に失敗しました');
     } finally {
       setLoading(false);

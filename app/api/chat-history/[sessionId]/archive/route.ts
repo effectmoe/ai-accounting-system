@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getChatHistoryService } from '@/services/chat-history.service';
 
+import { logger } from '@/lib/logger';
 /**
  * POST /api/chat-history/[sessionId]/archive
  * セッションをアーカイブ
@@ -20,7 +21,7 @@ export async function POST(
     });
 
   } catch (error) {
-    console.error('Archive session error:', error);
+    logger.error('Archive session error:', error);
     return NextResponse.json(
       {
         success: false,

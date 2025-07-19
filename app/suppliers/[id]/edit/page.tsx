@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { logger } from '@/lib/logger';
 import {
   Select,
   SelectContent,
@@ -103,7 +104,7 @@ export default function EditSupplierPage() {
         }
         
         const supplier = await response.json();
-        console.log('Fetched supplier:', supplier);
+        logger.debug('Fetched supplier:', supplier);
         
         setFormData({
           supplierCode: supplier.supplierCode || '',
@@ -135,7 +136,7 @@ export default function EditSupplierPage() {
           bankTransferInfo: supplier.bankTransferInfo || [],
         });
       } catch (error) {
-        console.error('Error loading supplier:', error);
+        logger.error('Error loading supplier:', error);
         alert('仕入先データの読み込みに失敗しました');
         router.push('/suppliers');
       } finally {
@@ -169,7 +170,7 @@ export default function EditSupplierPage() {
         alert(error.error || '仕入先の更新に失敗しました');
       }
     } catch (error) {
-      console.error('Error updating supplier:', error);
+      logger.error('Error updating supplier:', error);
       alert('仕入先の更新に失敗しました');
     } finally {
       setSaving(false);

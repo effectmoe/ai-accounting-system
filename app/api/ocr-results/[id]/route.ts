@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/mongodb-client';
 import { ObjectId } from 'mongodb';
 
+import { logger } from '@/lib/logger';
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -32,7 +33,7 @@ export async function GET(
     });
 
   } catch (error) {
-    console.error('Server error:', error);
+    logger.error('Server error:', error);
     return NextResponse.json(
       { error: 'サーバーエラーが発生しました' },
       { status: 500 }
@@ -70,7 +71,7 @@ export async function DELETE(
     });
 
   } catch (error) {
-    console.error('Server error:', error);
+    logger.error('Server error:', error);
     return NextResponse.json(
       { error: 'サーバーエラーが発生しました' },
       { status: 500 }

@@ -12,6 +12,7 @@ import { Plus, Search, FileText, Loader2, Sparkles, FileDown, CheckCircle, Calcu
 import { safeFormatDate } from '@/lib/date-utils';
 import { cache, SimpleCache } from '@/lib/cache';
 
+import { logger } from '@/lib/logger';
 interface Quote {
   _id: string;
   quoteNumber: string;
@@ -132,7 +133,7 @@ function QuotesPageContent() {
       // キャッシュをチェック
       const cachedData = cache.get<any>(cacheKey);
       if (cachedData) {
-        console.log('[Quotes] Using cached data');
+        logger.debug('[Quotes] Using cached data');
         setQuotes(cachedData.quotes || []);
         setTotalCount(cachedData.total || 0);
         setIsLoading(false);
@@ -152,7 +153,7 @@ function QuotesPageContent() {
         throw new Error(data.error || 'データの取得に失敗しました');
       }
     } catch (error) {
-      console.error('Error fetching quotes:', error);
+      logger.error('Error fetching quotes:', error);
       setError(error instanceof Error ? error.message : 'データの取得に失敗しました。再度お試しください。');
       if (typeof window !== 'undefined' && (window as any).Sentry) {
         (window as any).Sentry.captureException(error);
@@ -204,7 +205,7 @@ function QuotesPageContent() {
         throw new Error(data.details || data.error || '変換に失敗しました');
       }
     } catch (error) {
-      console.error('Error converting quote to invoice:', error);
+      logger.error('Error converting quote to invoice:', error);
       alert(`変換エラー: ${error instanceof Error ? error.message : '不明なエラー'}`);
       // Sentryでエラーをキャプチャ
       if (typeof window !== 'undefined' && (window as any).Sentry) {

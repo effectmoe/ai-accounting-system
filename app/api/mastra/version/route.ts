@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getGitHubIntegration, MastraVersion } from '@/services/github-integration';
 
+import { logger } from '@/lib/logger';
 // バージョンの保存
 export async function POST(request: NextRequest) {
   try {
@@ -31,7 +32,7 @@ export async function POST(request: NextRequest) {
       ...result
     });
   } catch (error) {
-    console.error('Version save error:', error);
+    logger.error('Version save error:', error);
     return NextResponse.json(
       { 
         error: 'Failed to save version',
@@ -57,7 +58,7 @@ export async function GET() {
 
     return NextResponse.json(version);
   } catch (error) {
-    console.error('Get version error:', error);
+    logger.error('Get version error:', error);
     return NextResponse.json(
       { 
         error: 'Failed to get version',

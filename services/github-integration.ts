@@ -2,6 +2,7 @@ import { Octokit } from '@octokit/rest';
 import { throttling } from '@octokit/plugin-throttling';
 import { retry } from '@octokit/plugin-retry';
 
+import { logger } from '@/lib/logger';
 // GitHubクライアントの設定
 const MyOctokit = Octokit.plugin(throttling, retry);
 
@@ -29,11 +30,11 @@ export class GitHubIntegration {
       auth: token,
       throttle: {
         onRateLimit: (retryAfter: number, options: any) => {
-          console.warn(`Request quota exhausted for request ${options.method} ${options.url}`);
+          logger.warn(`Request quota exhausted for request ${options.method} ${options.url}`);
           return true;
         },
         onSecondaryRateLimit: (retryAfter: number, options: any) => {
-          console.warn(`Abuse detected for request ${options.method} ${options.url}`);
+          logger.warn(`Abuse detected for request ${options.method} ${options.url}`);
           return true;
         },
       },
@@ -100,7 +101,7 @@ export class GitHubIntegration {
         url: data.content?.html_url || '',
       };
     } catch (error) {
-      console.error('GitHub save error:', error);
+      logger.error('GitHub save error:', error);
       throw new Error(`Failed to save logs to GitHub: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -131,7 +132,7 @@ export class GitHubIntegration {
       if (error.status === 404) {
         return [];
       }
-      console.error('GitHub get error:', error);
+      logger.error('GitHub get error:', error);
       throw new Error(`Failed to get logs from GitHub: ${error.message}`);
     }
   }
@@ -149,7 +150,7 @@ export class GitHubIntegration {
         inputs,
       });
     } catch (error) {
-      console.error('Workflow trigger error:', error);
+      logger.error('Workflow trigger error:', error);
       throw new Error(`Failed to trigger workflow: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -165,7 +166,7 @@ export class GitHubIntegration {
       });
       return data;
     } catch (error) {
-      console.error('Get repo info error:', error);
+      logger.error('Get repo info error:', error);
       throw new Error(`Failed to get repository info: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -194,7 +195,7 @@ export class GitHubIntegration {
         date: commit.commit.author?.date || new Date().toISOString(),
       };
     } catch (error) {
-      console.error('Get latest commit error:', error);
+      logger.error('Get latest commit error:', error);
       throw new Error(`Failed to get latest commit: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }

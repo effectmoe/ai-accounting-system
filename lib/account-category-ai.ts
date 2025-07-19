@@ -2,6 +2,7 @@ import { OCRResult } from './ocr-processor';
 import { getMcpClient } from './mcp-client';
 import { problemSolvingAgent } from '@/agents/problem-solving-agent';
 
+import { logger } from '@/lib/logger';
 export interface AccountCategoryPrediction {
   category: string;
   confidence: number;
@@ -54,7 +55,7 @@ export class AccountCategoryAI {
       return complexAnalysis;
       
     } catch (error) {
-      console.error('AI prediction error:', error);
+      logger.error('AI prediction error:', error);
       // エラーの場合は高度なフォールバック
       return this.intelligentFallback(ocrResult);
     }
@@ -491,13 +492,13 @@ export class AccountCategoryAI {
         return this.parseSolutionToPrediction(solution, ocrResult);
         
       } catch (agentError) {
-        console.warn('Problem Solving Agent not available, falling back to rule-based analysis:', agentError);
+        logger.warn('Problem Solving Agent not available, falling back to rule-based analysis:', agentError);
         // Problem Solving Agentが利用できない場合は、直接フォールバック分析を実行
         return this.intelligentFallback(ocrResult);
       }
       
     } catch (error) {
-      console.error('Complex analysis failed:', error);
+      logger.error('Complex analysis failed:', error);
       // フォールバック
       return this.intelligentFallback(ocrResult);
     }
@@ -520,7 +521,7 @@ export class AccountCategoryAI {
     
     // Problem Solving Agentが失敗した場合のフォールバック
     if (!solution.success) {
-      console.log('Problem Solving Agent failed, using fallback logic');
+      logger.debug('Problem Solving Agent failed, using fallback logic');
       return this.intelligentFallback(ocrResult);
     }
     
@@ -984,7 +985,7 @@ export class AccountCategoryAI {
         };
       }
     } catch (error) {
-      console.log('Learning data not available, using AI prediction only');
+      logger.debug('Learning data not available, using AI prediction only');
     }
     
     return prediction;

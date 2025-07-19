@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import GitHubSection from './github-section';
 import ProblemSolvingSection from './problem-solving-section';
 
+import { logger } from '@/lib/logger';
 interface AgentStatus {
   name: string;
   status: 'active' | 'idle' | 'error';
@@ -92,7 +93,7 @@ export default function MastraAdminPage() {
 
       setIsLoading(false);
     } catch (error) {
-      console.error('Dashboard data load error:', error);
+      logger.error('Dashboard data load error:', error);
       setIsLoading(false);
     }
   };

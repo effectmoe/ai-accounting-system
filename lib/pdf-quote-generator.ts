@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf';
 import { Quote, CompanyInfo } from '@/types/collections';
 
+import { logger } from '@/lib/logger';
 // 日本語フォントを追加するためのヘルパー関数
 function addJapaneseFont(doc: jsPDF) {
   // フォント設定（日本語文字化け対策）
@@ -8,7 +9,7 @@ function addJapaneseFont(doc: jsPDF) {
     // デフォルトフォントを使用（日本語サポート改善のため）
     doc.setFont('helvetica');
   } catch (error) {
-    console.warn('Font setting error, using default font:', error);
+    logger.warn('Font setting error, using default font:', error);
   }
 }
 
@@ -253,7 +254,7 @@ export async function generateQuotePDF(quote: Quote, companyInfo: CompanyInfo): 
       resolve(Buffer.from(pdfOutput));
       
     } catch (error) {
-      console.error('PDF generation error:', error);
+      logger.error('PDF generation error:', error);
       reject(error);
     }
   });

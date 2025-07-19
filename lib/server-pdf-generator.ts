@@ -1,16 +1,17 @@
 import { DocumentData } from './document-generator';
 
+import { logger } from '@/lib/logger';
 // 日本語対応のPDF生成（pdfkitベース）
 export async function generateServerSidePDF(data: DocumentData): Promise<string> {
-  console.log('PDF generation started for document:', data.documentNumber);
+  logger.debug('PDF generation started for document:', data.documentNumber);
   
   try {
     const PDFDocument = await import('pdfkit');
-    console.log('PDFDocument imported successfully');
+    logger.debug('PDFDocument imported successfully');
     
     return new Promise((resolve, reject) => {
       try {
-        console.log('Creating PDF document...');
+        logger.debug('Creating PDF document...');
         // Vercelのサーバーレス環境向けの設定
         const doc = new (PDFDocument.default)({ 
         size: 'A4',
@@ -30,26 +31,26 @@ export async function generateServerSidePDF(data: DocumentData): Promise<string>
       });
       
       doc.on('end', () => {
-        console.log('PDF generation completed, chunks:', chunks.length);
+        logger.debug('PDF generation completed, chunks:', chunks.length);
         const pdfBuffer = Buffer.concat(chunks);
         const base64 = pdfBuffer.toString('base64');
-        console.log('PDF base64 length:', base64.length);
+        logger.debug('PDF base64 length:', base64.length);
         resolve(base64);
       });
 
       doc.on('error', (error) => {
-        console.error('PDF generation error:', error);
+        logger.error('PDF generation error:', error);
         reject(error);
       });
 
       // 日本語対応のPDF生成
-      console.log('Starting PDF content generation...');
+      logger.debug('Starting PDF content generation...');
       try {
         doc.fontSize(24)
            .text(data.documentType === 'quote' ? '見積書' : '請求書', { align: 'center' });
-        console.log('Title added successfully');
+        logger.debug('Title added successfully');
       } catch (error) {
-        console.error('Error adding title:', error);
+        logger.error('Error adding title:', error);
         throw error;
       }
       
@@ -98,15 +99,15 @@ export async function generateServerSidePDF(data: DocumentData): Promise<string>
            .text(data.bankAccount.accountHolder);
       }
 
-      console.log('Finalizing PDF document...');
+      logger.debug('Finalizing PDF document...');
       doc.end();
     } catch (error) {
-      console.error('PDF creation error:', error);
+      logger.error('PDF creation error:', error);
       reject(error);
     }
   });
   } catch (error) {
-    console.error('PDF generation outer error:', error);
+    logger.error('PDF generation outer error:', error);
     throw error;
   }
 }

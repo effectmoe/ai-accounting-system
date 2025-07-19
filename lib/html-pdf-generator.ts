@@ -1,5 +1,6 @@
 import { DocumentData } from './document-generator';
 
+import { logger } from '@/lib/logger';
 // HTML形式の見積書/請求書テンプレート
 function generateHTMLTemplate(data: DocumentData): string {
   const isQuote = data.documentType === 'quote';
@@ -181,8 +182,8 @@ function generateHTMLTemplate(data: DocumentData): string {
 
 // シンプルなHTML to PDF変換（Vercel対応）
 export async function generateHTMLPDF(data: DocumentData): Promise<string> {
-  console.log('=== HTML PDF Generation START ===');
-  console.log('Document:', data.documentNumber);
+  logger.debug('=== HTML PDF Generation START ===');
+  logger.debug('Document:', data.documentNumber);
   
   try {
     // HTMLテンプレートを生成
@@ -256,11 +257,11 @@ ${345 + html.length + 50}
 %%EOF`;
 
     const base64 = Buffer.from(pdfContent).toString('base64');
-    console.log('PDF generated successfully, size:', base64.length);
+    logger.debug('PDF generated successfully, size:', base64.length);
     
     return base64;
   } catch (error) {
-    console.error('HTML PDF generation error:', error);
+    logger.error('HTML PDF generation error:', error);
     throw error;
   }
 }

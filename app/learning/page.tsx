@@ -5,6 +5,7 @@ import { Brain, Search, Edit, Trash2, BarChart3, ChevronDown, ChevronUp } from '
 import { toast } from 'react-hot-toast';
 import Link from 'next/link';
 
+import { logger } from '@/lib/logger';
 interface Learning {
   id: string;
   vendorName: string;
@@ -57,7 +58,7 @@ export default function LearningManagementPage() {
         throw new Error(data.error);
       }
     } catch (error) {
-      console.error('Error fetching learnings:', error);
+      logger.error('Error fetching learnings:', error);
       toast.error('学習データの取得に失敗しました');
     } finally {
       setLoading(false);
@@ -101,7 +102,7 @@ export default function LearningManagementPage() {
         throw new Error(data.error);
       }
     } catch (error) {
-      console.error('Error updating learning:', error);
+      logger.error('Error updating learning:', error);
       toast.error('更新に失敗しました');
     }
   };
@@ -128,7 +129,7 @@ export default function LearningManagementPage() {
         throw new Error(data.error);
       }
     } catch (error) {
-      console.error('Error deleting learning:', error);
+      logger.error('Error deleting learning:', error);
       toast.error('削除に失敗しました');
     }
   };

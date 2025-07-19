@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { logger } from '@/lib/logger';
 import { 
   Plus, 
   Search, 
@@ -92,7 +93,7 @@ export default function DeliveryNotesPage() {
       setTotalPages(data.pagination.totalPages);
       setTotalCount(data.pagination.total);
     } catch (error) {
-      console.error('Error fetching delivery notes:', error);
+      logger.error('Error fetching delivery notes:', error);
       setError('納品書の取得に失敗しました');
     } finally {
       setIsLoading(false);

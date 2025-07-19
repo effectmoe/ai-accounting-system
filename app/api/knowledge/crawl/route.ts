@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { KnowledgeService } from '@/services/knowledge.service';
 
+import { logger } from '@/lib/logger';
 const knowledgeService = new KnowledgeService();
 
 export async function POST(request: NextRequest) {
@@ -66,7 +67,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Knowledge crawl error:', error);
+    logger.error('Knowledge crawl error:', error);
     return NextResponse.json(
       {
         error: 'Failed to crawl source',
@@ -114,7 +115,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Knowledge crawl status error:', error);
+    logger.error('Knowledge crawl status error:', error);
     return NextResponse.json(
       { error: 'Failed to get crawl status' },
       { status: 500 }

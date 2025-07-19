@@ -5,6 +5,7 @@ import { ReportGenerator, SalesReport, JournalReport, TaxReport } from '@/lib/re
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { FileText, TrendingUp, Calculator, Download } from 'lucide-react';
 
+import { logger } from '@/lib/logger';
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
 type ReportType = 'sales' | 'journal' | 'tax';
@@ -57,7 +58,7 @@ export default function ReportsPage() {
           break;
       }
     } catch (error) {
-      console.error('Error loading report:', error);
+      logger.error('Error loading report:', error);
     } finally {
       setLoading(false);
     }

@@ -3,6 +3,7 @@ import { getMongoClient } from '@/lib/mongodb-client';
 import { ObjectId } from 'mongodb';
 import { ProductWithSupplierInfo } from '@/types/collections';
 
+import { logger } from '@/lib/logger';
 const DB_NAME = process.env.MONGODB_DB_NAME || 'accounting-app';
 
 // Force dynamic rendering for this route
@@ -121,7 +122,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(results);
     }
   } catch (error) {
-    console.error('Error fetching products with supplier info:', error);
+    logger.error('Error fetching products with supplier info:', error);
     return NextResponse.json(
       { error: 'Failed to fetch products with supplier info' },
       { status: 500 }
@@ -191,7 +192,7 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error updating product supplier info:', error);
+    logger.error('Error updating product supplier info:', error);
     return NextResponse.json(
       { error: 'Failed to update product supplier info' },
       { status: 500 }
@@ -230,7 +231,7 @@ export async function DELETE(request: NextRequest) {
     
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error deleting product supplier info:', error);
+    logger.error('Error deleting product supplier info:', error);
     return NextResponse.json(
       { error: 'Failed to delete product supplier info' },
       { status: 500 }

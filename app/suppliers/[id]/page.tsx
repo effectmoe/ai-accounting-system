@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { logger } from '@/lib/logger';
 import {
   ArrowLeft,
   Building2,
@@ -35,16 +36,16 @@ export default function SupplierDetailPage() {
         const response = await fetch(`/api/suppliers/${supplierId}`);
         if (response.ok) {
           const data = await response.json();
-          console.log('Fetched supplier data:', data);
-          console.log('Bank transfer info:', data.bankTransferInfo);
-          console.log('Has bank transfer info:', !!data.bankTransferInfo);
-          console.log('Bank transfer info length:', data.bankTransferInfo?.length);
+          logger.debug('Fetched supplier data:', data);
+          logger.debug('Bank transfer info:', data.bankTransferInfo);
+          logger.debug('Has bank transfer info:', !!data.bankTransferInfo);
+          logger.debug('Bank transfer info length:', data.bankTransferInfo?.length);
           setSupplier(data);
         } else {
-          console.error('Failed to fetch supplier');
+          logger.error('Failed to fetch supplier');
         }
       } catch (error) {
-        console.error('Error fetching supplier:', error);
+        logger.error('Error fetching supplier:', error);
       } finally {
         setLoading(false);
       }
@@ -58,7 +59,7 @@ export default function SupplierDetailPage() {
           setStats(data);
         }
       } catch (error) {
-        console.error('Error fetching stats:', error);
+        logger.error('Error fetching stats:', error);
       }
     };
 
@@ -311,7 +312,7 @@ export default function SupplierDetailPage() {
 
           {/* 振込先情報 */}
           {(() => {
-            console.log('Bank transfer info check:', {
+            logger.debug('Bank transfer info check:', {
               exists: !!supplier.bankTransferInfo,
               isArray: Array.isArray(supplier.bankTransferInfo),
               length: supplier.bankTransferInfo?.length,

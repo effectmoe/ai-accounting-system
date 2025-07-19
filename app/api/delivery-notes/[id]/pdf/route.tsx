@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { ObjectId } from 'mongodb';
 import { getDatabase } from '@/lib/mongodb';
 
+import { logger } from '@/lib/logger';
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -82,12 +83,12 @@ export async function GET(
                 .then(response => response.json())
                 .then(data => {
                     // クライアントサイドPDF生成ライブラリを使用
-                    console.log('Delivery note data:', data);
+                    logger.debug('Delivery note data:', data);
                     document.body.innerHTML = '<p>PDF生成中...</p>';
                     // TODO: implement client-side PDF generation
                 })
                 .catch(error => {
-                    console.error('Error:', error);
+                    logger.error('Error:', error);
                     document.body.innerHTML = '<p>エラーが発生しました</p>';
                 });
         };
@@ -104,7 +105,7 @@ export async function GET(
       },
     });
   } catch (error) {
-    console.error('Error generating delivery note PDF:', error);
+    logger.error('Error generating delivery note PDF:', error);
     return NextResponse.json(
       { error: 'Failed to generate PDF' },
       { status: 500 }

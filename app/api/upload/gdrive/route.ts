@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { google } from 'googleapis';
 import { Readable } from 'stream';
 
+import { logger } from '@/lib/logger';
 // Google Drive APIの設定
 // 環境変数が設定されていない場合のダミー認証
 const authConfig = process.env.GOOGLE_CLIENT_EMAIL ? {
@@ -27,7 +28,7 @@ const drive = google.drive({ version: 'v3', auth });
 export async function POST(request: NextRequest) {
   // Google Drive認証が設定されていない場合はエラーを返す
   if (!process.env.GOOGLE_CLIENT_EMAIL) {
-    console.log('環境変数の確認:', {
+    logger.debug('環境変数の確認:', {
       hasProjectId: !!process.env.GOOGLE_CLOUD_PROJECT_ID,
       hasPrivateKeyId: !!process.env.GOOGLE_PRIVATE_KEY_ID,
       hasPrivateKey: !!process.env.GOOGLE_PRIVATE_KEY,
@@ -83,7 +84,7 @@ export async function POST(request: NextRequest) {
       fields: 'id, name, webViewLink',
     });
 
-    console.log('File uploaded to Google Drive:', response.data);
+    logger.debug('File uploaded to Google Drive:', response.data);
 
     // GASのOCR処理を呼び出す
     if (process.env.GAS_OCR_URL) {
@@ -99,9 +100,9 @@ export async function POST(request: NextRequest) {
         });
         
         const gasResult = await gasResponse.json();
-        console.log('GAS OCR処理結果:', gasResult);
+        logger.debug('GAS OCR処理結果:', gasResult);
       } catch (error) {
-        console.error('GAS OCR呼び出しエラー:', error);
+        logger.error('GAS OCR呼び出しエラー:', error);
       }
     }
 
@@ -114,7 +115,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Google Drive upload error:', error);
+    logger.error('Google Drive upload error:', error);
     return NextResponse.json(
       { 
         error: 'Google Driveへのアップロードに失敗しました',

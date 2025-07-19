@@ -1,6 +1,7 @@
 import { MCPServerConfig } from './mcp-client';
 import path from 'path';
 
+import { logger } from '@/lib/logger';
 const projectRoot = path.resolve(process.cwd());
 
 export const mcpServers: Record<string, MCPServerConfig> = {
@@ -53,14 +54,14 @@ export async function initializeMCPServers() {
       if (required) {
         const missing = required.filter(v => !process.env[v]);
         if (missing.length > 0) {
-          console.warn(`Skipping ${name} MCP server: Missing environment variables: ${missing.join(', ')}`);
+          logger.warn(`Skipping ${name} MCP server: Missing environment variables: ${missing.join(', ')}`);
           continue;
         }
       }
       
       await mcpManager.connectServer(name, config);
     } catch (error) {
-      console.error(`Failed to initialize ${name} MCP server:`, error);
+      logger.error(`Failed to initialize ${name} MCP server:`, error);
     }
   }
 }

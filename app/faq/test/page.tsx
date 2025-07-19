@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
+import { logger } from '@/lib/logger';
 export default function FaqTestPage() {
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState('');
@@ -28,7 +29,7 @@ export default function FaqTestPage() {
     setResult(null);
 
     try {
-      console.log('FAQ保存テスト開始...');
+      logger.debug('FAQ保存テスト開始...');
       
       const requestData = {
         question: question.trim(),
@@ -37,7 +38,7 @@ export default function FaqTestPage() {
         timestamp: new Date().toISOString()
       };
 
-      console.log('リクエストデータ:', requestData);
+      logger.debug('リクエストデータ:', requestData);
 
       const response = await fetch('/api/faq/save', {
         method: 'POST',
@@ -47,10 +48,10 @@ export default function FaqTestPage() {
         body: JSON.stringify(requestData),
       });
 
-      console.log('レスポンス:', response.status, response.statusText);
+      logger.debug('レスポンス:', response.status, response.statusText);
 
       const responseData = await response.json();
-      console.log('レスポンスデータ:', responseData);
+      logger.debug('レスポンスデータ:', responseData);
 
       setResult({
         status: response.status,
@@ -60,13 +61,13 @@ export default function FaqTestPage() {
       });
 
       if (response.ok) {
-        console.log('FAQ保存成功!');
+        logger.debug('FAQ保存成功!');
       } else {
         setError(`FAQ保存失敗: ${responseData.error}`);
       }
 
     } catch (err) {
-      console.error('ネットワークエラー:', err);
+      logger.error('ネットワークエラー:', err);
       setError(`ネットワークエラー: ${err instanceof Error ? err.message : '不明なエラー'}`);
     } finally {
       setIsLoading(false);

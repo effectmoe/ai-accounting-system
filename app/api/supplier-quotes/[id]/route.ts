@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { SupplierQuoteService } from '@/services/supplier-quote.service';
 
+import { logger } from '@/lib/logger';
 // GET: 仕入先見積書詳細取得
 export async function GET(
   request: NextRequest,
@@ -19,7 +20,7 @@ export async function GET(
     
     return NextResponse.json(quote);
   } catch (error) {
-    console.error('Error in GET /api/supplier-quotes/[id]:', error);
+    logger.error('Error in GET /api/supplier-quotes/[id]:', error);
     return NextResponse.json(
       { error: 'Failed to fetch supplier quote' },
       { status: 500 }
@@ -47,7 +48,7 @@ export async function PUT(
     
     return NextResponse.json(quote);
   } catch (error) {
-    console.error('Error in PUT /api/supplier-quotes/[id]:', error);
+    logger.error('Error in PUT /api/supplier-quotes/[id]:', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to update supplier quote' },
       { status: 500 }
@@ -73,7 +74,7 @@ export async function DELETE(
     
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error in DELETE /api/supplier-quotes/[id]:', error);
+    logger.error('Error in DELETE /api/supplier-quotes/[id]:', error);
     return NextResponse.json(
       { error: 'Failed to delete supplier quote' },
       { status: 500 }

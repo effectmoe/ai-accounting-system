@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/mongodb-client';
 import { ObjectId } from 'mongodb';
 
+import { logger } from '@/lib/logger';
 export async function POST(request: NextRequest) {
   try {
     // 環境変数チェック
@@ -78,7 +79,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Document creation error:', error);
+    logger.error('Document creation error:', error);
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : '予期しないエラーが発生しました'

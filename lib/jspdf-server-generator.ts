@@ -1,9 +1,10 @@
 import { DocumentData } from './document-generator';
 
+import { logger } from '@/lib/logger';
 // サーバーサイドでjsPDFを使用するための設定
 export async function generateJsPDFDocument(data: DocumentData): Promise<string> {
-  console.log('=== jsPDF Server Generation START ===');
-  console.log('Document:', data.documentNumber);
+  logger.debug('=== jsPDF Server Generation START ===');
+  logger.debug('Document:', data.documentNumber);
   
   try {
     // jsPDFの動的インポート（サーバーサイド用）
@@ -143,11 +144,11 @@ export async function generateJsPDFDocument(data: DocumentData): Promise<string>
     
     // PDFをBase64文字列として出力
     const pdfBase64 = doc.output('datauristring').split(',')[1];
-    console.log('jsPDF generated successfully, size:', pdfBase64.length);
+    logger.debug('jsPDF generated successfully, size:', pdfBase64.length);
     
     return pdfBase64;
   } catch (error) {
-    console.error('jsPDF generation error:', error);
+    logger.error('jsPDF generation error:', error);
     throw error;
   }
 }

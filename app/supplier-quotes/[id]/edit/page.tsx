@@ -7,6 +7,7 @@ import { ArrowLeft, Save, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { SupplierQuote, SupplierQuoteItem, SupplierQuoteStatus, Supplier } from '@/types/collections';
 
+import { logger } from '@/lib/logger';
 export default function EditSupplierQuotePage() {
   const params = useParams();
   const router = useRouter();
@@ -52,7 +53,7 @@ export default function EditSupplierQuotePage() {
         setSuppliers(suppliersData.suppliers || []);
         
       } catch (error) {
-        console.error('Error fetching data:', error);
+        logger.error('Error fetching data:', error);
         toast.error('データの取得に失敗しました');
       } finally {
         setLoading(false);
@@ -175,7 +176,7 @@ export default function EditSupplierQuotePage() {
       toast.success('見積書を更新しました');
       router.push(`/supplier-quotes/${quoteId}`);
     } catch (error) {
-      console.error('Error updating supplier quote:', error);
+      logger.error('Error updating supplier quote:', error);
       toast.error(error instanceof Error ? error.message : '見積書の更新に失敗しました');
     } finally {
       setSaving(false);

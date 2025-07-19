@@ -1,5 +1,6 @@
 import { DocumentData } from './document-generator';
 
+import { logger } from '@/lib/logger';
 // UTF-8文字列を適切にエンコードする関数
 function encodeText(text: string): string {
   // 基本的なASCII文字のみを使用し、日本語は英語表記にする
@@ -10,10 +11,10 @@ function encodeText(text: string): string {
 
 // 日本語PDF生成（Vercel環境対応 - 軽量HTML版）
 export async function generateSimplePDF(data: DocumentData): Promise<string> {
-  console.log('=== VERCEL HTML PDF GENERATION START ===');
-  console.log('Document:', data.documentNumber);
-  console.log('Customer name:', data.customerName);
-  console.log('Company info:', data.companyInfo);
+  logger.debug('=== VERCEL HTML PDF GENERATION START ===');
+  logger.debug('Document:', data.documentNumber);
+  logger.debug('Customer name:', data.customerName);
+  logger.debug('Company info:', data.companyInfo);
   
   try {
     // HTML文字列からPDFを生成する方法（軽量）
@@ -104,7 +105,7 @@ export async function generateSimplePDF(data: DocumentData): Promise<string> {
     `;
 
     // HTMLからBase64 PDFを生成（簡易実装）
-    console.log('Generated HTML content, converting to PDF...');
+    logger.debug('Generated HTML content, converting to PDF...');
     
     // 詳細なPDFコンテンツを作成
     const itemsText = (data.items || []).map((item, index) => 
@@ -217,11 +218,11 @@ startxref
 %%EOF`;
 
     const base64PDF = Buffer.from(pdfHeader).toString('base64');
-    console.log('PDF generated successfully, base64 length:', base64PDF.length);
+    logger.debug('PDF generated successfully, base64 length:', base64PDF.length);
     
     return base64PDF;
   } catch (error) {
-    console.error('Vercel PDF generation error:', error);
+    logger.error('Vercel PDF generation error:', error);
     throw error;
   }
 }

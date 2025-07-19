@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { KnowledgeService } from '@/services/knowledge.service';
 
+import { logger } from '@/lib/logger';
 export async function POST(request: NextRequest) {
   const knowledgeService = new KnowledgeService();
 
@@ -46,7 +47,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Feedback API error:', error);
+    logger.error('Feedback API error:', error);
     await knowledgeService.disconnect();
     
     return NextResponse.json(

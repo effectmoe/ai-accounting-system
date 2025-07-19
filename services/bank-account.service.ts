@@ -1,6 +1,7 @@
 import { db, Collections } from '@/lib/mongodb-client';
 import { ObjectId } from 'mongodb';
 
+import { logger } from '@/lib/logger';
 export interface BankAccount {
   _id?: ObjectId;
   bankName: string;
@@ -26,7 +27,7 @@ export class BankAccountService {
       });
       return accounts;
     } catch (error) {
-      console.error('Error in getAllBankAccounts:', error);
+      logger.error('Error in getAllBankAccounts:', error);
       throw new Error('銀行口座の取得に失敗しました');
     }
   }
@@ -38,7 +39,7 @@ export class BankAccountService {
     try {
       return await db.findById<BankAccount>(this.collectionName, id);
     } catch (error) {
-      console.error('Error in getBankAccountById:', error);
+      logger.error('Error in getBankAccountById:', error);
       throw new Error('銀行口座の取得に失敗しました');
     }
   }
@@ -56,7 +57,7 @@ export class BankAccountService {
       const account = await db.create<BankAccount>(this.collectionName, accountData);
       return account;
     } catch (error) {
-      console.error('Error in createBankAccount:', error);
+      logger.error('Error in createBankAccount:', error);
       throw new Error('銀行口座の作成に失敗しました');
     }
   }
@@ -77,7 +78,7 @@ export class BankAccountService {
       const updated = await db.update<BankAccount>(this.collectionName, id, dataToUpdate);
       return updated;
     } catch (error) {
-      console.error('Error in updateBankAccount:', error);
+      logger.error('Error in updateBankAccount:', error);
       throw new Error('銀行口座の更新に失敗しました');
     }
   }
@@ -89,7 +90,7 @@ export class BankAccountService {
     try {
       return await db.delete(this.collectionName, id);
     } catch (error) {
-      console.error('Error in deleteBankAccount:', error);
+      logger.error('Error in deleteBankAccount:', error);
       throw new Error('銀行口座の削除に失敗しました');
     }
   }
@@ -101,7 +102,7 @@ export class BankAccountService {
     try {
       return await db.findOne<BankAccount>(this.collectionName, { isDefault: true });
     } catch (error) {
-      console.error('Error in getDefaultAccount:', error);
+      logger.error('Error in getDefaultAccount:', error);
       throw new Error('デフォルト口座の取得に失敗しました');
     }
   }
@@ -121,7 +122,7 @@ export class BankAccountService {
 
       await collection.updateMany(filter, { $set: { isDefault: false } });
     } catch (error) {
-      console.error('Error in unsetDefaultAccounts:', error);
+      logger.error('Error in unsetDefaultAccounts:', error);
       throw new Error('デフォルトフラグの解除に失敗しました');
     }
   }

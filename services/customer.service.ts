@@ -2,6 +2,7 @@ import { db, Collections } from '@/lib/mongodb-client';
 import { ObjectId } from 'mongodb';
 import { Customer, Contact } from '@/types/collections';
 
+import { logger } from '@/lib/logger';
 export interface CustomerSearchParams {
   query?: string;
   isActive?: boolean;
@@ -66,7 +67,7 @@ export class CustomerService {
         hasMore,
       };
     } catch (error) {
-      console.error('Error in searchCustomers:', error);
+      logger.error('Error in searchCustomers:', error);
       throw new Error('顧客の検索に失敗しました');
     }
   }
@@ -81,7 +82,7 @@ export class CustomerService {
         sort: { companyName: 1 }
       });
     } catch (error) {
-      console.error('Error in getAllCustomers:', error);
+      logger.error('Error in getAllCustomers:', error);
       throw new Error('顧客一覧の取得に失敗しました');
     }
   }
@@ -114,7 +115,7 @@ export class CustomerService {
       const created = await db.create<Customer>(this.collectionName, customer);
       return created;
     } catch (error) {
-      console.error('Error in createCustomer:', error);
+      logger.error('Error in createCustomer:', error);
       throw error instanceof Error ? error : new Error('顧客の作成に失敗しました');
     }
   }
@@ -126,7 +127,7 @@ export class CustomerService {
     try {
       return await db.findById<Customer>(this.collectionName, id);
     } catch (error) {
-      console.error('Error in getCustomer:', error);
+      logger.error('Error in getCustomer:', error);
       throw new Error('顧客の取得に失敗しました');
     }
   }
@@ -154,7 +155,7 @@ export class CustomerService {
       const updated = await db.update<Customer>(this.collectionName, id, dataToUpdate);
       return updated;
     } catch (error) {
-      console.error('Error in updateCustomer:', error);
+      logger.error('Error in updateCustomer:', error);
       throw error instanceof Error ? error : new Error('顧客の更新に失敗しました');
     }
   }
@@ -175,7 +176,7 @@ export class CustomerService {
 
       return await db.delete(this.collectionName, id);
     } catch (error) {
-      console.error('Error in deleteCustomer:', error);
+      logger.error('Error in deleteCustomer:', error);
       throw error instanceof Error ? error : new Error('顧客の削除に失敗しました');
     }
   }
@@ -194,7 +195,7 @@ export class CustomerService {
         isActive: !customer.isActive
       });
     } catch (error) {
-      console.error('Error in toggleCustomerStatus:', error);
+      logger.error('Error in toggleCustomerStatus:', error);
       throw error instanceof Error ? error : new Error('顧客ステータスの切り替えに失敗しました');
     }
   }
@@ -220,7 +221,7 @@ export class CustomerService {
 
       return await this.updateCustomer(customerId, { contacts });
     } catch (error) {
-      console.error('Error in addContact:', error);
+      logger.error('Error in addContact:', error);
       throw error instanceof Error ? error : new Error('連絡先の追加に失敗しました');
     }
   }
@@ -253,7 +254,7 @@ export class CustomerService {
 
       return await this.updateCustomer(customerId, { contacts });
     } catch (error) {
-      console.error('Error in updateContact:', error);
+      logger.error('Error in updateContact:', error);
       throw error instanceof Error ? error : new Error('連絡先の更新に失敗しました');
     }
   }
@@ -277,7 +278,7 @@ export class CustomerService {
 
       return await this.updateCustomer(customerId, { contacts });
     } catch (error) {
-      console.error('Error in removeContact:', error);
+      logger.error('Error in removeContact:', error);
       throw error instanceof Error ? error : new Error('連絡先の削除に失敗しました');
     }
   }
@@ -299,7 +300,7 @@ export class CustomerService {
 
       return await this.updateCustomer(customerId, { tags });
     } catch (error) {
-      console.error('Error in addTag:', error);
+      logger.error('Error in addTag:', error);
       throw error instanceof Error ? error : new Error('タグの追加に失敗しました');
     }
   }
@@ -318,7 +319,7 @@ export class CustomerService {
 
       return await this.updateCustomer(customerId, { tags });
     } catch (error) {
-      console.error('Error in removeTag:', error);
+      logger.error('Error in removeTag:', error);
       throw error instanceof Error ? error : new Error('タグの削除に失敗しました');
     }
   }
@@ -337,7 +338,7 @@ export class CustomerService {
       const result = await db.aggregate<{ _id: string }>(this.collectionName, pipeline);
       return result.map(item => item._id);
     } catch (error) {
-      console.error('Error in getAllTags:', error);
+      logger.error('Error in getAllTags:', error);
       throw new Error('タグ一覧の取得に失敗しました');
     }
   }

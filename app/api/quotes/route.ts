@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { QuoteService } from '@/services/quote.service';
 import { QuoteStatus } from '@/types/collections';
 
+import { logger } from '@/lib/logger';
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
@@ -28,7 +29,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(result);
   } catch (error) {
-    console.error('Error fetching quotes:', error);
+    logger.error('Error fetching quotes:', error);
     return NextResponse.json(
       { error: 'Failed to fetch quotes' },
       { status: 500 }
@@ -39,7 +40,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    console.log('Quote creation request:', JSON.stringify(body, null, 2));
+    logger.debug('Quote creation request:', JSON.stringify(body, null, 2));
     
     const quoteService = new QuoteService();
     
@@ -83,7 +84,7 @@ export async function POST(request: NextRequest) {
     quoteData.taxAmount = taxAmount;
     quoteData.totalAmount = subtotal + taxAmount;
     
-    console.log('Processed quote data:', JSON.stringify(quoteData, null, 2));
+    logger.debug('Processed quote data:', JSON.stringify(quoteData, null, 2));
     
     // AI会話からの作成の場合も含めて、追加のデータをセット
     if (body.isGeneratedByAI && body.aiConversationId) {
@@ -93,11 +94,11 @@ export async function POST(request: NextRequest) {
     
     // 見積書を作成
     const quote = await quoteService.createQuote(quoteData);
-    console.log('Quote created:', quote);
+    logger.debug('Quote created:', quote);
     return NextResponse.json(quote);
   } catch (error) {
-    console.error('Error creating quote:', error);
-    console.error('Error details:', {
+    logger.error('Error creating quote:', error);
+    logger.error('Error details:', {
       message: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined
     });

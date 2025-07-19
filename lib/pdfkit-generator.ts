@@ -1,12 +1,13 @@
 import { DocumentData } from './document-generator';
+import { logger } from '@/lib/logger';
 const PDFDocument = require('pdfkit');
 import path from 'path';
 import fs from 'fs';
 
 export async function generatePDFKitDocument(data: DocumentData): Promise<string> {
-  console.log('=== PDFKit Japanese PDF Generation START ===');
-  console.log('Document:', data.documentNumber);
-  console.log('Customer:', data.customerName);
+  logger.debug('=== PDFKit Japanese PDF Generation START ===');
+  logger.debug('Document:', data.documentNumber);
+  logger.debug('Customer:', data.customerName);
   
   return new Promise((resolve, reject) => {
     try {
@@ -27,7 +28,7 @@ export async function generatePDFKitDocument(data: DocumentData): Promise<string
       doc.on('end', () => {
         const pdfBuffer = Buffer.concat(chunks);
         const base64 = pdfBuffer.toString('base64');
-        console.log('PDF generated successfully, size:', base64.length);
+        logger.debug('PDF generated successfully, size:', base64.length);
         resolve(base64);
       });
 
@@ -39,11 +40,11 @@ export async function generatePDFKitDocument(data: DocumentData): Promise<string
           doc.registerFont('NotoSansJP', fontPath);
           doc.font('NotoSansJP');
         } else {
-          console.log('Font file not found, using built-in font');
+          logger.debug('Font file not found, using built-in font');
           doc.font('Helvetica');
         }
       } catch (error) {
-        console.log('Font loading error:', error);
+        logger.debug('Font loading error:', error);
         doc.font('Helvetica');
       }
 
@@ -149,7 +150,7 @@ export async function generatePDFKitDocument(data: DocumentData): Promise<string
       // Finalize PDF
       doc.end();
     } catch (error) {
-      console.error('PDFKit generation error:', error);
+      logger.error('PDFKit generation error:', error);
       reject(error);
     }
   });

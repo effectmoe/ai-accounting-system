@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { MongoClient } from 'mongodb';
 
+import { logger } from '@/lib/logger';
 const MONGODB_URI = process.env.MONGODB_URI;
 
 // Force dynamic rendering for this route
@@ -11,11 +12,11 @@ export async function GET(request: NextRequest) {
 
   try {
     // 環境変数チェック
-    console.log('MONGODB_URI check:', MONGODB_URI ? 'Set' : 'Not set');
-    console.log('MONGODB_URI value:', MONGODB_URI);
+    logger.debug('MONGODB_URI check:', MONGODB_URI ? 'Set' : 'Not set');
+    logger.debug('MONGODB_URI value:', MONGODB_URI);
     
     if (!MONGODB_URI) {
-      console.error('MONGODB_URI is not set');
+      logger.error('MONGODB_URI is not set');
       return NextResponse.json(
         { success: false, error: 'Database configuration error', sessions: [] },
         { status: 500 }
@@ -25,12 +26,12 @@ export async function GET(request: NextRequest) {
     const { searchParams } = request.nextUrl;
     const category = searchParams.get('category') || 'tax';
     
-    console.log('Fetching chat history for category:', category);
+    logger.debug('Fetching chat history for category:', category);
     
     // MongoDB接続
     client = new MongoClient(MONGODB_URI);
     await client.connect();
-    console.log('MongoDB connected successfully');
+    logger.debug('MongoDB connected successfully');
     const db = client.db('accounting-automation');
     const sessionsCollection = db.collection('chat_sessions');
 
@@ -70,7 +71,7 @@ export async function GET(request: NextRequest) {
       };
     }
     
-    console.log('Query:', JSON.stringify(query));
+    logger.debug('Query:', JSON.stringify(query));
     
     const sessions = await sessionsCollection
       .find(query)
@@ -78,11 +79,11 @@ export async function GET(request: NextRequest) {
       .limit(100) // より多くのセッションを取得
       .toArray();
       
-    console.log(`Found ${sessions.length} sessions`);
+    logger.debug(`Found ${sessions.length} sessions`);
     
     // デバッグ用：最初の3件のセッション情報を出力
     if (sessions.length > 0) {
-      console.log('Sample sessions:', sessions.slice(0, 3).map(s => ({
+      logger.debug('Sample sessions:', sessions.slice(0, 3).map(s => ({
         _id: s._id,
         sessionId: s.sessionId,
         title: s.title,
@@ -106,8 +107,8 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('チャット履歴一覧取得エラー:', error);
-    console.error('エラー詳細:', error instanceof Error ? error.stack : 'Unknown error');
+    logger.error('チャット履歴一覧取得エラー:', error);
+    logger.error('エラー詳細:', error instanceof Error ? error.stack : 'Unknown error');
     return NextResponse.json(
       { 
         success: false, 

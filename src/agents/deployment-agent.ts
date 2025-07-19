@@ -2,6 +2,7 @@ import { execSync } from 'child_process';
 import { existsSync } from 'fs';
 import path from 'path';
 
+import { logger } from '@/lib/logger';
 export interface DeploymentConfig {
   platform: 'vercel' | 'netlify' | 'aws' | 'gcp' | 'azure';
   environment: 'development' | 'staging' | 'production';
@@ -34,7 +35,7 @@ const deploymentAgent = {
       const startTime = Date.now();
       
       try {
-        console.log('[Deployment Agent] Starting Vercel deployment...');
+        logger.debug('[Deployment Agent] Starting Vercel deployment...');
         
         // Check if Vercel CLI is installed
         try {
@@ -47,7 +48,7 @@ const deploymentAgent = {
         }
 
         // Build the application
-        console.log('[Deployment Agent] Building application...');
+        logger.debug('[Deployment Agent] Building application...');
         const buildCommand = config.buildCommand || 'npm run build';
         const buildResult = execSync(buildCommand, { 
           encoding: 'utf8',
@@ -55,14 +56,14 @@ const deploymentAgent = {
           stdio: 'pipe'
         });
 
-        console.log('[Deployment Agent] Build completed successfully');
+        logger.debug('[Deployment Agent] Build completed successfully');
 
         // Deploy to Vercel
         const deployCommand = config.environment === 'production' 
           ? 'npx vercel --prod --yes' 
           : 'npx vercel --yes';
 
-        console.log(`[Deployment Agent] Deploying to ${config.environment}...`);
+        logger.debug(`[Deployment Agent] Deploying to ${config.environment}...`);
         const deployResult = execSync(deployCommand, {
           encoding: 'utf8',
           cwd: process.cwd(),
@@ -127,11 +128,11 @@ const deploymentAgent = {
       error?: string;
     }> => {
       try {
-        console.log(`[Deployment Agent] Setting environment variables for ${environment}...`);
+        logger.debug(`[Deployment Agent] Setting environment variables for ${environment}...`);
         
         for (const [key, value] of Object.entries(variables)) {
           const command = `npx vercel env add ${key} ${environment}`;
-          console.log(`[Deployment Agent] Setting ${key}...`);
+          logger.debug(`[Deployment Agent] Setting ${key}...`);
           
           // Note: This is a simplified implementation
           // In practice, you'd need to handle the interactive prompts
@@ -159,7 +160,7 @@ const deploymentAgent = {
       const startTime = Date.now();
       
       try {
-        console.log('[Deployment Agent] Rolling back deployment...');
+        logger.debug('[Deployment Agent] Rolling back deployment...');
         
         // Get previous deployment
         const deploymentsResult = execSync('npx vercel ls', {

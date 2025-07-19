@@ -5,6 +5,7 @@
 
 import OpenAI from 'openai';
 
+import { logger } from '@/lib/logger';
 export interface EmbeddingResult {
   embedding: number[];
   text: string;
@@ -48,7 +49,7 @@ export class EmbeddingsService {
         tokens: response.usage.total_tokens
       };
     } catch (error) {
-      console.error('Embedding generation error:', error);
+      logger.error('Embedding generation error:', error);
       throw new Error(`Failed to generate embedding: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -100,7 +101,7 @@ export class EmbeddingsService {
       };
 
     } catch (error) {
-      console.error('Batch embedding generation error:', error);
+      logger.error('Batch embedding generation error:', error);
       throw new Error(`Failed to generate batch embeddings: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
@@ -217,7 +218,7 @@ export async function addEmbeddingsToDocument(
       }
     };
   } catch (error) {
-    console.error(`Failed to add embeddings to document:`, error);
+    logger.error(`Failed to add embeddings to document:`, error);
     return document;
   }
 }
@@ -240,7 +241,7 @@ export async function addEmbeddingsToFaq(faq: any): Promise<any> {
       }
     };
   } catch (error) {
-    console.error(`Failed to add embeddings to FAQ:`, error);
+    logger.error(`Failed to add embeddings to FAQ:`, error);
     return faq;
   }
 }

@@ -1,5 +1,6 @@
 import { ExternalAPIError, TimeoutError, createTimeoutPromise, retryWithBackoff } from './api-error-handler';
 
+import { logger } from '@/lib/logger';
 interface DeepSeekMessage {
   role: 'system' | 'user' | 'assistant';
   content: string;
@@ -101,7 +102,7 @@ export class DeepSeekClient {
 
             if (!res.ok) {
               const errorText = await res.text();
-              console.error('DeepSeek API error response:', errorText);
+              logger.error('DeepSeek API error response:', errorText);
               
               // レート制限エラー
               if (res.status === 429) {
@@ -198,7 +199,7 @@ export class DeepSeekClient {
                 yield content;
               }
             } catch (e) {
-              console.error('Failed to parse SSE data:', e);
+              logger.error('Failed to parse SSE data:', e);
             }
           }
         }

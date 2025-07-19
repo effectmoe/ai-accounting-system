@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Brain, Search, Check, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
+import { logger } from '@/lib/logger';
 interface AccountCategoryEditorProps {
   documentId: string;
   vendorName: string;
@@ -82,11 +83,11 @@ export default function AccountCategoryEditor({
           onCategoryUpdate(selectedCategory);
         }
       } else {
-        console.error('Learning failed:', data);
+        logger.error('Learning failed:', data);
         toast.error(`学習に失敗しました: ${data.error || '不明なエラー'}`);
       }
     } catch (error) {
-      console.error('Learning error:', error);
+      logger.error('Learning error:', error);
       toast.error('学習中にエラーが発生しました');
     }
   };
@@ -135,7 +136,7 @@ export default function AccountCategoryEditor({
         toast.error('精査に失敗しました: ' + (data.error || '不明なエラー'));
       }
     } catch (error) {
-      console.error('Analysis error:', error);
+      logger.error('Analysis error:', error);
       toast.error('精査中にエラーが発生しました');
     } finally {
       setIsAnalyzing(false);

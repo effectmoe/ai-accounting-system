@@ -3,6 +3,7 @@ import { createAgent } from '@mastra/core';
 import { DatabaseService, Collections } from '@/lib/mongodb-client';
 import { ObjectId } from 'mongodb';
 
+import { logger } from '@/lib/logger';
 // OCR結果のスキーマ定義
 const ocrResultSchema = z.object({
   text: z.string(),
@@ -117,7 +118,7 @@ export const ocrAgent = createAgent({
           };
           
         } catch (error) {
-          console.error('Azure Form Recognizer OCR failed:', error);
+          logger.error('Azure Form Recognizer OCR failed:', error);
           throw error;
         }
       },
@@ -161,7 +162,7 @@ export const ocrAgent = createAgent({
             lines: result.lines || [],
           };
         } catch (error) {
-          console.error('HandwritingOCR failed:', error);
+          logger.error('HandwritingOCR failed:', error);
           throw error;
         }
       },
@@ -278,7 +279,7 @@ export const ocrAgent = createAgent({
           };
           
         } catch (error) {
-          console.error('OCR result save error:', error);
+          logger.error('OCR result save error:', error);
           return {
             success: false,
             error: error.message
@@ -306,7 +307,7 @@ export const ocrAgent = createAgent({
           const result = await db.update(Collections.DOCUMENTS, fileId, updateData);
           
           if (!result) {
-            console.warn(`File document not found for ID: ${fileId}`);
+            logger.warn(`File document not found for ID: ${fileId}`);
           }
           
           return {
@@ -315,7 +316,7 @@ export const ocrAgent = createAgent({
           };
           
         } catch (error) {
-          console.error('File metadata update error:', error);
+          logger.error('File metadata update error:', error);
           return {
             success: false,
             error: error.message
@@ -328,7 +329,7 @@ export const ocrAgent = createAgent({
   // メイン実行ロジック
   execute: async ({ input, tools }) => {
     try {
-      console.log('[OCR Agent] Starting OCR processing:', {
+      logger.debug('[OCR Agent] Starting OCR processing:', {
         fileId: input.fileId,
         extractType: input.extractType,
         hasFileData: !!input.fileData
@@ -369,26 +370,26 @@ export const ocrAgent = createAgent({
       
       // Azure Form Recognizerを最初に試す
       try {
-        console.log('[OCR Agent] Using Azure Form Recognizer');
+        logger.debug('[OCR Agent] Using Azure Form Recognizer');
         ocrResult = await tools.azureFormRecognizerOCR({
           fileData,
           extractType: input.extractType,
         });
         ocrText = ocrResult.text;
       } catch (azureError) {
-        console.warn('Azure Form Recognizer failed:', azureError);
+        logger.warn('Azure Form Recognizer failed:', azureError);
         
         // 手書きの場合はHandwritingOCRにフォールバック
         if (isHandwritten && process.env.HANDWRITING_OCR_API_TOKEN) {
           try {
-            console.log('[OCR Agent] Falling back to HandwritingOCR');
+            logger.debug('[OCR Agent] Falling back to HandwritingOCR');
             ocrResult = await tools.handwritingOCR({
               fileData,
               language: input.language,
             });
             ocrText = ocrResult.text;
           } catch (handwritingError) {
-            console.error('HandwritingOCR also failed:', handwritingError);
+            logger.error('HandwritingOCR also failed:', handwritingError);
             throw new Error(`All OCR services failed. Azure: ${azureError.message}, Handwriting: ${handwritingError.message}`);
           }
         } else {
@@ -441,7 +442,7 @@ export const ocrAgent = createAgent({
         message: 'OCR処理が完了しました'
       };
       
-      console.log('[OCR Agent] OCR processing completed:', {
+      logger.debug('[OCR Agent] OCR processing completed:', {
         textLength: ocrText.length,
         vendor: result.vendor,
         amount: result.amount,
@@ -451,7 +452,7 @@ export const ocrAgent = createAgent({
       return result;
       
     } catch (error) {
-      console.error('[OCR Agent] Error:', error);
+      logger.error('[OCR Agent] Error:', error);
       return {
         success: false,
         error: error.message,

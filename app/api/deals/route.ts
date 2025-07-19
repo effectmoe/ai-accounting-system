@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { DealService } from '@/services/deal.service';
 import { DealStatus } from '@/types/collections';
 
+import { logger } from '@/lib/logger';
 // GET: 案件一覧取得
 export async function GET(request: NextRequest) {
   try {
@@ -32,7 +33,7 @@ export async function GET(request: NextRequest) {
     
     return NextResponse.json(result);
   } catch (error) {
-    console.error('Error fetching deals:', error);
+    logger.error('Error fetching deals:', error);
     return NextResponse.json(
       { error: 'Failed to fetch deals' },
       { status: 500 }
@@ -61,7 +62,7 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json(deal, { status: 201 });
   } catch (error) {
-    console.error('Error creating deal:', error);
+    logger.error('Error creating deal:', error);
     return NextResponse.json(
       { error: 'Failed to create deal' },
       { status: 500 }

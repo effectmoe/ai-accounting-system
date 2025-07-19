@@ -4,6 +4,7 @@ import { StructuredDataService } from '@/services/structured-data.service';
 import { FaqArticle, FaqUsageLog } from '@/types/collections';
 import { ObjectId } from 'mongodb';
 
+import { logger } from '@/lib/logger';
 interface SearchFaqRequest {
   query?: string;
   category?: string;
@@ -171,7 +172,7 @@ export async function GET(request: NextRequest) {
         
         await structuredDataService.close();
       } catch (structuredError) {
-        console.error('Failed to get structured data for FAQs:', structuredError);
+        logger.error('Failed to get structured data for FAQs:', structuredError);
         // 構造化データ取得エラーは検索結果を停止しない
       }
     }
@@ -214,7 +215,7 @@ export async function GET(request: NextRequest) {
     });
     
   } catch (error) {
-    console.error('[FAQ API] Search error:', error);
+    logger.error('[FAQ API] Search error:', error);
     await knowledgeService.disconnect();
     
     return NextResponse.json(
@@ -343,12 +344,12 @@ export async function POST(request: NextRequest) {
           },
           structuredResult.metadata || {}
         );
-        console.log('Structured data generated for FAQ:', result.insertedId);
+        logger.debug('Structured data generated for FAQ:', result.insertedId);
       }
       
       await structuredDataService.close();
     } catch (structuredError) {
-      console.error('Failed to generate structured data for FAQ:', structuredError);
+      logger.error('Failed to generate structured data for FAQ:', structuredError);
       // 構造化データの生成エラーはFAQ作成を停止しない
     }
     
@@ -361,7 +362,7 @@ export async function POST(request: NextRequest) {
     });
     
   } catch (error) {
-    console.error('[FAQ API] Create error:', error);
+    logger.error('[FAQ API] Create error:', error);
     await knowledgeService.disconnect();
     
     return NextResponse.json(
@@ -382,8 +383,8 @@ export async function PUT(request: NextRequest) {
     const body = await request.json();
     const { id, ...updateData } = body;
     
-    console.log('[FAQ API] PUT request - id:', id);
-    console.log('[FAQ API] PUT request - updateData keys:', Object.keys(updateData));
+    logger.debug('[FAQ API] PUT request - id:', id);
+    logger.debug('[FAQ API] PUT request - updateData keys:', Object.keys(updateData));
     
     if (!id) {
       return NextResponse.json(
@@ -404,7 +405,7 @@ export async function PUT(request: NextRequest) {
     try {
       objectId = new ObjectId(id);
     } catch (error) {
-      console.error('[FAQ API] Invalid ObjectId:', id, error);
+      logger.error('[FAQ API] Invalid ObjectId:', id, error);
       return NextResponse.json(
         { 
           success: false,
@@ -419,14 +420,14 @@ export async function PUT(request: NextRequest) {
     
     // faq_articlesで見つからない場合、faqコレクションも確認
     if (!currentFaq) {
-      console.log('[FAQ API] FAQ not found in faq_articles with id:', id);
+      logger.debug('[FAQ API] FAQ not found in faq_articles with id:', id);
       
       // 旧FAQコレクションを確認
       const simpleFaqCollection = knowledgeService.db.collection('faq');
       const simpleFaq = await simpleFaqCollection.findOne({ _id: objectId });
       
       if (simpleFaq) {
-        console.log('[FAQ API] FAQ found in simple faq collection, but update is not supported for simple FAQs');
+        logger.debug('[FAQ API] FAQ found in simple faq collection, but update is not supported for simple FAQs');
         return NextResponse.json(
           { 
             success: false,
@@ -436,7 +437,7 @@ export async function PUT(request: NextRequest) {
         );
       }
       
-      console.log('[FAQ API] FAQ not found in any collection with id:', id);
+      logger.debug('[FAQ API] FAQ not found in any collection with id:', id);
       return NextResponse.json(
         { 
           success: false,
@@ -503,7 +504,7 @@ export async function PUT(request: NextRequest) {
         
         await structuredDataService.close();
       } catch (structuredError) {
-        console.error('Failed to update structured data for FAQ:', structuredError);
+        logger.error('Failed to update structured data for FAQ:', structuredError);
       }
     }
     
@@ -522,7 +523,7 @@ export async function PUT(request: NextRequest) {
     });
     
   } catch (error) {
-    console.error('[FAQ API] Update error:', error);
+    logger.error('[FAQ API] Update error:', error);
     await knowledgeService.disconnect();
     
     return NextResponse.json(
@@ -570,7 +571,7 @@ export async function DELETE(request: NextRequest) {
     });
     
   } catch (error) {
-    console.error('[FAQ API] Delete error:', error);
+    logger.error('[FAQ API] Delete error:', error);
     await knowledgeService.disconnect();
     
     return NextResponse.json(

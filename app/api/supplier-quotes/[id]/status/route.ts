@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { SupplierQuoteService } from '@/services/supplier-quote.service';
 import { SupplierQuoteStatus } from '@/types/collections';
 
+import { logger } from '@/lib/logger';
 // PUT: 仕入先見積書ステータス更新
 export async function PUT(
   request: NextRequest,
@@ -33,7 +34,7 @@ export async function PUT(
     
     return NextResponse.json(quote);
   } catch (error) {
-    console.error('Error in PUT /api/supplier-quotes/[id]/status:', error);
+    logger.error('Error in PUT /api/supplier-quotes/[id]/status:', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to update supplier quote status' },
       { status: 500 }

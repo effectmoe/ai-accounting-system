@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { processNaturalLanguage } from '@/lib/mastra-integration';
 
+import { logger } from '@/lib/logger';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -18,7 +19,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(result);
   } catch (error) {
-    console.error('Mastra API Error:', error);
+    logger.error('Mastra API Error:', error);
     return NextResponse.json(
       { 
         error: 'Internal server error',

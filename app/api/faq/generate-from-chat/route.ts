@@ -3,6 +3,7 @@ import { KnowledgeService } from '@/services/knowledge.service';
 import { FaqArticle } from '@/types/collections';
 import { ObjectId } from 'mongodb';
 
+import { logger } from '@/lib/logger';
 interface GenerateFaqRequest {
   chatSessionId: string;
   userMessage: string;
@@ -86,7 +87,7 @@ async function generateFaqMetadata(question: string, answer: string) {
     return JSON.parse(jsonMatch[0].replace(/```json|```/g, '').trim());
     
   } catch (error) {
-    console.error('Error generating FAQ metadata:', error);
+    logger.error('Error generating FAQ metadata:', error);
     // フォールバック用のデフォルトメタデータ
     return {
       category: 'general',
@@ -124,7 +125,7 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    console.log('[FAQ Generator] Generating FAQ from chat...');
+    logger.debug('[FAQ Generator] Generating FAQ from chat...');
     
     // DeepSeek APIを使用してメタデータを生成
     const metadata = await generateFaqMetadata(userMessage, assistantMessage);
@@ -201,7 +202,7 @@ export async function POST(request: NextRequest) {
     
     await knowledgeService.disconnect();
     
-    console.log(`[FAQ Generator] FAQ created with ID: ${result.insertedId}`);
+    logger.debug(`[FAQ Generator] FAQ created with ID: ${result.insertedId}`);
     
     return NextResponse.json({
       success: true,
@@ -216,7 +217,7 @@ export async function POST(request: NextRequest) {
     });
     
   } catch (error) {
-    console.error('[FAQ Generator] Error:', error);
+    logger.error('[FAQ Generator] Error:', error);
     await knowledgeService.disconnect();
     
     return NextResponse.json(
@@ -265,7 +266,7 @@ export async function GET(request: NextRequest) {
     });
     
   } catch (error) {
-    console.error('[FAQ Generator] Get FAQs error:', error);
+    logger.error('[FAQ Generator] Get FAQs error:', error);
     return NextResponse.json(
       { error: 'Failed to get FAQ list' },
       { status: 500 }

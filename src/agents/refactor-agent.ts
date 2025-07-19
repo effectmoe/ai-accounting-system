@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import { logger } from '@/lib/logger';
 import { 
   RefactorInputSchema, 
   RefactorResult, 
@@ -209,7 +210,7 @@ ${code}
 
     try {
       // 進捗通知
-      console.log('[RefactorAgent] ファイルを読み込んでいます...');
+      logger.debug('[RefactorAgent] ファイルを読み込んでいます...');
 
       // ファイル読み込み（または直接渡されたコードを使用）
       if (input.code) {
@@ -226,18 +227,18 @@ ${code}
 
       // バックアップ作成
       if (input.createBackup && !input.code) {
-        console.log('[RefactorAgent] バックアップを作成しています...');
+        logger.debug('[RefactorAgent] バックアップを作成しています...');
         try {
           const backupPath = await refactoringUtils.createBackup(input.filePath);
           result.backupPath = backupPath;
         } catch (error) {
-          console.error('バックアップ作成エラー:', error);
+          logger.error('バックアップ作成エラー:', error);
           // バックアップ失敗は警告として扱い、処理は継続
         }
       }
 
       // コード解析
-      console.log('[RefactorAgent] コードを解析しています...');
+      logger.debug('[RefactorAgent] コードを解析しています...');
       const analysisResult = await tools.analyzeCode.execute({ code: result.originalFile });
       if (!analysisResult.success) {
         throw new Error(analysisResult.error);
@@ -247,7 +248,7 @@ ${code}
       result.metrics.linesOfCodeBefore = analysisResult.metrics.linesOfCode;
 
       // AIリファクタリング提案生成
-      console.log('[RefactorAgent] AIがリファクタリング提案を生成しています...');
+      logger.debug('[RefactorAgent] AIがリファクタリング提案を生成しています...');
       const suggestionResult = await tools.generateRefactoringSuggestions.execute({
         code: result.originalFile,
         refactorType: input.refactorType,
@@ -269,7 +270,7 @@ ${code}
       }
 
       // 変更内容の生成
-      console.log('[RefactorAgent] 変更内容を解析しています...');
+      logger.debug('[RefactorAgent] 変更内容を解析しています...');
       const changesResult = await tools.generateChanges.execute({
         originalCode: result.originalFile,
         refactoredCode: result.refactoredFile,
@@ -281,7 +282,7 @@ ${code}
 
       // ファイル書き込み（オプション - コードが直接渡された場合はスキップ）
       if (!input.code && (!input.preserveComments || input.refactorType !== 'maintainability')) {
-        console.log('[RefactorAgent] ファイルを更新しています...');
+        logger.debug('[RefactorAgent] ファイルを更新しています...');
         const writeResult = await tools.writeFile.execute({
           filePath: input.filePath,
           content: result.refactoredFile,
@@ -293,13 +294,13 @@ ${code}
       }
 
       result.success = true;
-      console.log('[RefactorAgent] リファクタリングが完了しました');
+      logger.debug('[RefactorAgent] リファクタリングが完了しました');
 
       return result;
 
     } catch (error) {
       result.error = error.message;
-      console.error('[RefactorAgent] エラー:', error.message);
+      logger.error('[RefactorAgent] エラー:', error.message);
       return result;
     }
   },

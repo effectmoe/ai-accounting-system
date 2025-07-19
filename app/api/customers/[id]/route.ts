@@ -3,6 +3,7 @@ import { getDatabase } from '@/lib/mongodb-client';
 import { Customer } from '@/types/collections';
 import { ObjectId } from 'mongodb';
 
+import { logger } from '@/lib/logger';
 // GET: 顧客詳細取得
 export async function GET(
   request: NextRequest,
@@ -44,7 +45,7 @@ export async function GET(
       customer: formattedCustomer,
     });
   } catch (error) {
-    console.error('Error fetching customer:', error);
+    logger.error('Error fetching customer:', error);
     return NextResponse.json(
       { success: false, error: '顧客データの取得に失敗しました' },
       { status: 500 }
@@ -163,7 +164,7 @@ export async function PUT(
       },
     });
   } catch (error) {
-    console.error('Error updating customer:', error);
+    logger.error('Error updating customer:', error);
     return NextResponse.json(
       { success: false, error: '顧客情報の更新に失敗しました' },
       { status: 500 }
@@ -205,7 +206,7 @@ export async function DELETE(
       message: '顧客を削除しました',
     });
   } catch (error) {
-    console.error('Error deleting customer:', error);
+    logger.error('Error deleting customer:', error);
     return NextResponse.json(
       { success: false, error: '顧客の削除に失敗しました' },
       { status: 500 }

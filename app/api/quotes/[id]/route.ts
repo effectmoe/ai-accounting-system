@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { QuoteService } from '@/services/quote.service';
 import { CompanyInfoService } from '@/services/company-info.service';
 
+import { logger } from '@/lib/logger';
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
     const { id } = params;
-    console.log('[GET /api/quotes/[id]] Quote ID:', id);
+    logger.debug('[GET /api/quotes/[id]] Quote ID:', id);
     
     const quoteService = new QuoteService();
     const quote = await quoteService.getQuote(id);
@@ -45,7 +46,7 @@ export async function GET(
     
     return NextResponse.json(quoteWithCompanySnapshot);
   } catch (error) {
-    console.error('Error fetching quote:', error);
+    logger.error('Error fetching quote:', error);
     return NextResponse.json(
       { error: 'Failed to fetch quote' },
       { status: 500 }
@@ -60,8 +61,8 @@ export async function PUT(
   try {
     const { id } = params;
     const body = await request.json();
-    console.log('[PUT /api/quotes/[id]] Quote ID:', id);
-    console.log('[PUT /api/quotes/[id]] Update data:', JSON.stringify(body, null, 2));
+    logger.debug('[PUT /api/quotes/[id]] Quote ID:', id);
+    logger.debug('[PUT /api/quotes/[id]] Update data:', JSON.stringify(body, null, 2));
     
     const quoteService = new QuoteService();
     
@@ -111,7 +112,7 @@ export async function PUT(
     
     return NextResponse.json(updatedQuote);
   } catch (error) {
-    console.error('Error updating quote:', error);
+    logger.error('Error updating quote:', error);
     return NextResponse.json(
       { 
         error: 'Failed to update quote',
@@ -128,7 +129,7 @@ export async function DELETE(
 ) {
   try {
     const { id } = params;
-    console.log('[DELETE /api/quotes/[id]] Quote ID:', id);
+    logger.debug('[DELETE /api/quotes/[id]] Quote ID:', id);
     
     const quoteService = new QuoteService();
     const deleted = await quoteService.deleteQuote(id);
@@ -142,7 +143,7 @@ export async function DELETE(
     
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error deleting quote:', error);
+    logger.error('Error deleting quote:', error);
     return NextResponse.json(
       { error: 'Failed to delete quote' },
       { status: 500 }

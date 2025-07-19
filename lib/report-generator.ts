@@ -1,6 +1,7 @@
 import { TaxCalculator } from './tax-calculator';
 import { calculateMonthlyTaxSummary } from './tax-utils';
 
+import { logger } from '@/lib/logger';
 export interface SalesReport {
   period: {
     start: string;
@@ -180,7 +181,7 @@ export class ReportGenerator {
         monthlyTrend
       };
     } catch (error) {
-      console.error('Error generating sales report:', error);
+      logger.error('Error generating sales report:', error);
       throw error;
     }
   }
@@ -261,7 +262,7 @@ export class ReportGenerator {
         bySource
       };
     } catch (error) {
-      console.error('Error generating journal report:', error);
+      logger.error('Error generating journal report:', error);
       throw error;
     }
   }
@@ -402,7 +403,7 @@ export class ReportGenerator {
         }
       };
     } catch (error) {
-      console.error('Error generating tax report:', error);
+      logger.error('Error generating tax report:', error);
       throw error;
     }
   }

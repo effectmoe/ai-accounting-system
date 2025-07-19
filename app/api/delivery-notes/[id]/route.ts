@@ -3,6 +3,7 @@ import { ObjectId } from 'mongodb';
 import { DeliveryNote, DeliveryNoteStatus } from '@/types/collections';
 import { getDatabase } from '@/lib/mongodb';
 
+import { logger } from '@/lib/logger';
 // GET - 個別納品書取得
 export async function GET(
   request: NextRequest,
@@ -63,7 +64,7 @@ export async function GET(
 
     return NextResponse.json(result);
   } catch (error) {
-    console.error('Error fetching delivery note:', error);
+    logger.error('Error fetching delivery note:', error);
     return NextResponse.json(
       { error: 'Failed to fetch delivery note' },
       { status: 500 }
@@ -150,7 +151,7 @@ export async function PUT(
 
     return NextResponse.json(updatedDeliveryNote[0]);
   } catch (error) {
-    console.error('Error updating delivery note:', error);
+    logger.error('Error updating delivery note:', error);
     return NextResponse.json(
       { error: 'Failed to update delivery note' },
       { status: 500 }
@@ -187,7 +188,7 @@ export async function DELETE(
 
     return NextResponse.json({ message: 'Delivery note cancelled successfully' });
   } catch (error) {
-    console.error('Error cancelling delivery note:', error);
+    logger.error('Error cancelling delivery note:', error);
     return NextResponse.json(
       { error: 'Failed to cancel delivery note' },
       { status: 500 }

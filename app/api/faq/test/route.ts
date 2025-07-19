@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { MongoClient } from 'mongodb';
 
+import { logger } from '@/lib/logger';
 const MONGODB_URI = process.env.MONGODB_URI;
 
 export async function GET() {
   let client: MongoClient | null = null;
 
   try {
-    console.log('FAQ test API called');
+    logger.debug('FAQ test API called');
     
     // 環境変数チェック
     const envCheck = {
@@ -16,7 +17,7 @@ export async function GET() {
       NODE_ENV: process.env.NODE_ENV,
     };
     
-    console.log('Environment check:', envCheck);
+    logger.debug('Environment check:', envCheck);
 
     if (!MONGODB_URI) {
       return NextResponse.json({
@@ -26,18 +27,18 @@ export async function GET() {
       }, { status: 500 });
     }
 
-    console.log('Attempting MongoDB connection...');
+    logger.debug('Attempting MongoDB connection...');
     
     // MongoDB接続
     client = new MongoClient(MONGODB_URI);
     await client.connect();
-    console.log('MongoDB connected successfully');
+    logger.debug('MongoDB connected successfully');
     
     const db = client.db('accounting');
-    console.log('Database selected: accounting-automation');
+    logger.debug('Database selected: accounting-automation');
     
     const faqCollection = db.collection('faq');
-    console.log('FAQ collection selected');
+    logger.debug('FAQ collection selected');
 
     // コレクション情報の取得
     const documentCount = await faqCollection.countDocuments();
@@ -48,10 +49,10 @@ export async function GET() {
     try {
       collectionStats = await db.command({ collStats: 'faq' });
     } catch (error) {
-      console.log('Stats command not available:', error);
+      logger.debug('Stats command not available:', error);
     }
 
-    console.log('Collection stats:', { documentCount, sampleDocument: !!sampleDocument });
+    logger.debug('Collection stats:', { documentCount, sampleDocument: !!sampleDocument });
 
     return NextResponse.json({
       success: true,
@@ -73,7 +74,7 @@ export async function GET() {
     });
 
   } catch (error) {
-    console.error('FAQ test error:', error);
+    logger.error('FAQ test error:', error);
     
     return NextResponse.json({
       success: false,
@@ -87,9 +88,9 @@ export async function GET() {
     if (client) {
       try {
         await client.close();
-        console.log('MongoDB connection closed');
+        logger.debug('MongoDB connection closed');
       } catch (closeError) {
-        console.error('Error closing MongoDB connection:', closeError);
+        logger.error('Error closing MongoDB connection:', closeError);
       }
     }
   }
@@ -99,7 +100,7 @@ export async function POST(request: NextRequest) {
   let client: MongoClient | null = null;
 
   try {
-    console.log('FAQ test POST API called');
+    logger.debug('FAQ test POST API called');
     
     const { testData } = await request.json();
     
@@ -130,14 +131,14 @@ export async function POST(request: NextRequest) {
     };
 
     const insertResult = await faqCollection.insertOne(testEntry);
-    console.log('Test document inserted:', insertResult.insertedId);
+    logger.debug('Test document inserted:', insertResult.insertedId);
 
     // 挿入したドキュメントを確認
     const retrievedDoc = await faqCollection.findOne({ _id: insertResult.insertedId });
     
     // テストデータを削除
     await faqCollection.deleteOne({ _id: insertResult.insertedId });
-    console.log('Test document deleted');
+    logger.debug('Test document deleted');
 
     return NextResponse.json({
       success: true,
@@ -151,7 +152,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('FAQ test POST error:', error);
+    logger.error('FAQ test POST error:', error);
     
     return NextResponse.json({
       success: false,
@@ -164,7 +165,7 @@ export async function POST(request: NextRequest) {
       try {
         await client.close();
       } catch (closeError) {
-        console.error('Error closing MongoDB connection:', closeError);
+        logger.error('Error closing MongoDB connection:', closeError);
       }
     }
   }

@@ -13,6 +13,7 @@ import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { safeFormatDate } from '@/lib/date-utils';
 
+import { logger } from '@/lib/logger';
 interface Invoice {
   _id: string;
   invoiceNumber: string;
@@ -91,7 +92,7 @@ export default function InvoicesPage() {
         setTotalCount(data.total || 0);
       }
     } catch (error) {
-      console.error('Error fetching invoices:', error);
+      logger.error('Error fetching invoices:', error);
     } finally {
       setIsLoading(false);
     }
@@ -99,7 +100,7 @@ export default function InvoicesPage() {
 
   const handleSearch = () => {
     // TODO: 検索機能の実装
-    console.log('Search:', searchQuery);
+    logger.debug('Search:', searchQuery);
   };
 
   const getStatusBadge = (status: string) => {

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { toast } from 'react-hot-toast';
 import { Building, Upload, Stamp, Save } from 'lucide-react';
 
+import { logger } from '@/lib/logger';
 interface CompanyInfo {
   id?: string;
   name: string;
@@ -56,7 +57,7 @@ export default function CompanySettingsPage() {
         setCompanyInfo(data.companyInfo);
       }
     } catch (error) {
-      console.error('Error fetching company info:', error);
+      logger.error('Error fetching company info:', error);
       toast.error('自社情報の取得に失敗しました');
     } finally {
       setLoading(false);
@@ -97,7 +98,7 @@ export default function CompanySettingsPage() {
         throw new Error(data.error || '更新に失敗しました');
       }
     } catch (error) {
-      console.error('Error updating company info:', error);
+      logger.error('Error updating company info:', error);
       toast.error('自社情報の更新に失敗しました');
     } finally {
       setSaving(false);

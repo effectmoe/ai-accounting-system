@@ -7,6 +7,7 @@ import { ArrowLeft, Save, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { SupplierQuote, SupplierQuoteItem, SupplierQuoteStatus, Supplier } from '@/types/collections';
 
+import { logger } from '@/lib/logger';
 export default function NewSupplierQuotePage() {
   const router = useRouter();
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -44,7 +45,7 @@ export default function NewSupplierQuotePage() {
         const data = await response.json();
         setSuppliers(data.suppliers || []);
       } catch (error) {
-        console.error('Error fetching suppliers:', error);
+        logger.error('Error fetching suppliers:', error);
         toast.error('仕入先の取得に失敗しました');
       }
     };
@@ -63,7 +64,7 @@ export default function NewSupplierQuotePage() {
         const data = await response.json();
         setFormData(prev => ({ ...prev, quoteNumber: data.quoteNumber }));
       } catch (error) {
-        console.error('Error generating quote number:', error);
+        logger.error('Error generating quote number:', error);
         // エラーの場合はタイムスタンプベースの番号を生成
         const timestamp = new Date().getTime();
         setFormData(prev => ({ ...prev, quoteNumber: `SQ-${timestamp}` }));
@@ -185,7 +186,7 @@ export default function NewSupplierQuotePage() {
       toast.success('見積書を作成しました');
       router.push(`/supplier-quotes/${createdQuote._id}`);
     } catch (error) {
-      console.error('Error creating supplier quote:', error);
+      logger.error('Error creating supplier quote:', error);
       toast.error(error instanceof Error ? error.message : '見積書の作成に失敗しました');
     } finally {
       setLoading(false);

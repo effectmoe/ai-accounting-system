@@ -5,20 +5,21 @@ import { getGridFSBucket } from '@/lib/mongodb-client';
 import { ObjectId } from 'mongodb';
 import { Readable } from 'stream';
 
+import { logger } from '@/lib/logger';
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
   
   try {
-    console.log('[OCR API] Starting OCR analysis...');
-    console.log('[OCR API] Request started at:', new Date().toISOString());
+    logger.debug('[OCR API] Starting OCR analysis...');
+    logger.debug('[OCR API] Request started at:', new Date().toISOString());
     
     const formData = await request.formData();
     const file = formData.get('file') as File;
     const documentType = formData.get('documentType') as string || 'invoice';
     const companyId = formData.get('companyId') as string || '11111111-1111-1111-1111-111111111111';
     
-    console.log('[OCR API] File size:', file?.size || 0, 'bytes');
-    console.log('[OCR API] Document type:', documentType);
+    logger.debug('[OCR API] File size:', file?.size || 0, 'bytes');
+    logger.debug('[OCR API] Document type:', documentType);
     
     if (!file) {
       return NextResponse.json(
@@ -33,7 +34,7 @@ export async function POST(request: NextRequest) {
     const azureEndpoint = process.env.AZURE_FORM_RECOGNIZER_ENDPOINT;
     const azureKey = process.env.AZURE_FORM_RECOGNIZER_KEY;
     
-    console.log('[OCR API] Azure config check:', {
+    logger.debug('[OCR API] Azure config check:', {
       hasEndpoint: !!azureEndpoint,
       endpointValue: azureEndpoint || 'not set',
       hasKey: !!azureKey,
@@ -42,7 +43,7 @@ export async function POST(request: NextRequest) {
     });
     
     if (azureEndpoint && azureKey && !azureEndpoint.includes('your-fr-endpoint') && !azureKey.includes('your-azure-key')) {
-      console.log('[OCR API] Using Azure Form Recognizer...');
+      logger.debug('[OCR API] Using Azure Form Recognizer...');
       
       const client = new DocumentAnalysisClient(
         azureEndpoint,
@@ -59,10 +60,10 @@ export async function POST(request: NextRequest) {
       azureOcrResult = await poller.pollUntilDone();
       
       const azureElapsed = Date.now() - startTime;
-      console.log('[OCR API] Azure Form Recognizer completed in', azureElapsed, 'ms');
+      logger.debug('[OCR API] Azure Form Recognizer completed in', azureElapsed, 'ms');
     } else {
-      console.log('[OCR API] Azure Form Recognizer not configured properly, using mock data');
-      console.log('[OCR API] Mock data reason:', {
+      logger.debug('[OCR API] Azure Form Recognizer not configured properly, using mock data');
+      logger.debug('[OCR API] Mock data reason:', {
         noEndpoint: !azureEndpoint,
         noKey: !azureKey,
         isTestEndpoint: azureEndpoint?.includes('your-fr-endpoint'),
@@ -132,7 +133,7 @@ TEL: 03-xxxx-xxxx FAX: 03-xxxx-xxxx
     }
     
     // AI駆動のOCRオーケストレーター を使用
-    console.log('[OCR API] Starting AI-driven orchestration...');
+    logger.debug('[OCR API] Starting AI-driven orchestration...');
     
     const orchestrator = new OCRAIOrchestrator();
     
@@ -143,12 +144,12 @@ TEL: 03-xxxx-xxxx FAX: 03-xxxx-xxxx
     });
     
     const totalElapsed = Date.now() - startTime;
-    console.log('[OCR API] AI orchestration completed successfully in', totalElapsed, 'ms total');
+    logger.debug('[OCR API] AI orchestration completed successfully in', totalElapsed, 'ms total');
     
     // ファイルをGridFSに保存
     let gridfsFileId: string | null = null;
     try {
-      console.log('[OCR API] Saving file to GridFS...');
+      logger.debug('[OCR API] Saving file to GridFS...');
       const fileBuffer = await file.arrayBuffer();
       const bucket = await getGridFSBucket();
       
@@ -165,7 +166,7 @@ TEL: 03-xxxx-xxxx FAX: 03-xxxx-xxxx
       
       // ファイルIDを取得
       gridfsFileId = uploadStream.id.toString();
-      console.log('[OCR API] GridFS file ID:', gridfsFileId);
+      logger.debug('[OCR API] GridFS file ID:', gridfsFileId);
       
       // BufferをStreamに変換してアップロード
       const readableStream = Readable.from(Buffer.from(fileBuffer));
@@ -176,9 +177,9 @@ TEL: 03-xxxx-xxxx FAX: 03-xxxx-xxxx
           .on('finish', resolve);
       });
       
-      console.log('[OCR API] File saved to GridFS successfully');
+      logger.debug('[OCR API] File saved to GridFS successfully');
     } catch (gridfsError) {
-      console.error('[OCR API] Error saving to GridFS:', gridfsError);
+      logger.error('[OCR API] Error saving to GridFS:', gridfsError);
       // GridFS保存に失敗しても処理は続行（fileIdはnullのまま）
     }
     
@@ -197,9 +198,9 @@ TEL: 03-xxxx-xxxx FAX: 03-xxxx-xxxx
     
   } catch (error) {
     const totalElapsed = Date.now() - startTime;
-    console.error('[OCR API] Error after', totalElapsed, 'ms:', error);
-    console.error('[OCR API] Error type:', error?.constructor?.name);
-    console.error('[OCR API] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    logger.error('[OCR API] Error after', totalElapsed, 'ms:', error);
+    logger.error('[OCR API] Error type:', error?.constructor?.name);
+    logger.error('[OCR API] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     
     // タイムアウトエラーの場合は特別な処理
     if (error instanceof Error && error.message.includes('timed out')) {

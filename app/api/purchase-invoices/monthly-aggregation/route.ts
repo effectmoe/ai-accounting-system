@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PurchaseInvoiceService } from '@/services/purchase-invoice.service';
 
+import { logger } from '@/lib/logger';
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic';
 
@@ -26,7 +27,7 @@ export async function GET(request: NextRequest) {
     
     return NextResponse.json(aggregation);
   } catch (error) {
-    console.error('Error in GET /api/purchase-invoices/monthly-aggregation:', error);
+    logger.error('Error in GET /api/purchase-invoices/monthly-aggregation:', error);
     return NextResponse.json(
       { error: 'Failed to get monthly aggregation' },
       { status: 500 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { CompanyInfoService } from '@/services/company-info.service';
 
+import { logger } from '@/lib/logger';
 // PUT: 音声認識設定のみを更新
 export async function PUT(request: NextRequest) {
   try {
@@ -47,7 +48,7 @@ export async function PUT(request: NextRequest) {
       } : null,
     };
 
-    console.log('Updating speech settings:', updateData);
+    logger.debug('Updating speech settings:', updateData);
 
     const updatedInfo = await companyInfoService.updateCompanyInfo(updateData);
 
@@ -81,7 +82,7 @@ export async function PUT(request: NextRequest) {
       message: '音声認識設定を更新しました',
     });
   } catch (error) {
-    console.error('Error updating speech settings:', error);
+    logger.error('Error updating speech settings:', error);
     return NextResponse.json(
       {
         success: false,
