@@ -1294,6 +1294,16 @@ export interface PurchaseInvoice {
   taxRate: number;
   totalAmount: number;
   
+  // 繰越・請求関連情報
+  previousBalance?: number; // 前回請求額
+  currentPayment?: number; // 今回入金額
+  carryoverAmount?: number; // 繰越金額
+  currentSales?: number; // 今回売上高
+  currentInvoiceAmount?: number; // 今回請求額（繰越金額 + 今回売上高）
+  
+  // その他
+  notes?: string; // 備考
+  
   // ステータス
   status: PurchaseInvoiceStatus;
   

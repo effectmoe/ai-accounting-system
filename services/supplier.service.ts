@@ -1,5 +1,5 @@
 import { ObjectId } from 'mongodb';
-import { getDatabase } from '@/lib/mongodb-client';
+import { getDatabase, db } from '@/lib/mongodb-client';
 import { Supplier, SupplierStatus } from '@/types/collections';
 
 // MongoDB接続はgetDatabase()で'accounting'データベースを使用するため、この定数は不要
@@ -161,12 +161,11 @@ export class SupplierService {
       updatedAt: now
     };
 
-    const result = await collection.insertOne(supplier as any);
+    const result = await db.create(COLLECTION_NAME, supplier);
     
     return {
-      ...supplier,
-      _id: result.insertedId,
-      id: result.insertedId.toString()
+      ...result,
+      id: result._id.toString()
     };
   }
 
@@ -249,9 +248,9 @@ export class SupplierService {
     }
 
     // 関連データがない場合は削除
-    const result = await collection.deleteOne({ _id: new ObjectId(id) });
+    const result = await db.delete(COLLECTION_NAME, id);
     
-    if (result.deletedCount === 0) {
+    if (!result) {
       throw new Error('Supplier not found');
     }
 

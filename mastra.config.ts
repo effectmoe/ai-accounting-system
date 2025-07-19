@@ -1,4 +1,4 @@
-import { MastraConfig } from './src/lib/mastra-runtime';
+import { MastraConfig } from './lib/mastra-runtime';
 import { DatabaseService, Collections } from './src/lib/mongodb-client';
 import * as dotenv from 'dotenv';
 import path from 'path';
@@ -19,6 +19,7 @@ import ocrAgent from './src/agents/ocr-agent';
 import productAgent from './src/agents/product-agent';
 import uiAgent from './src/agents/ui-agent';
 import problemSolvingAgent from './src/agents/problem-solving-agent';
+import refactorAgent from './src/agents/refactor-agent';
 
 // Import workflows
 import accountingWorkflow from './src/workflows/accounting-workflow';
@@ -41,6 +42,7 @@ const config: MastraConfig = {
     productAgent,
     uiAgent,
     problemSolvingAgent,
+    refactorAgent,
   ],
   
   // Workflow configurations

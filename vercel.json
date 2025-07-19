@@ -62,6 +62,9 @@
     },
     "app/api/delivery-notes/[id]/pdf/route.tsx": {
       "maxDuration": 30
+    },
+    "app/api/test-refactor/route.ts": {
+      "maxDuration": 60
     }
   },
   "public": true,

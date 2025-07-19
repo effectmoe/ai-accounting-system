@@ -322,6 +322,51 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: { id: st
               ))}
             </tbody>
             <tfoot className="bg-gray-50">
+              {invoice.previousBalance !== undefined && (
+                <>
+                  <tr>
+                    <td colSpan={4} className="px-6 py-4 text-sm font-medium text-gray-900 text-right">
+                      前回請求額
+                    </td>
+                    <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                      ¥{invoice.previousBalance.toLocaleString()}
+                    </td>
+                  </tr>
+                  {invoice.currentPayment !== undefined && (
+                    <tr>
+                      <td colSpan={4} className="px-6 py-4 text-sm font-medium text-gray-900 text-right">
+                        今回入金額
+                      </td>
+                      <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                        ¥{invoice.currentPayment.toLocaleString()}
+                      </td>
+                    </tr>
+                  )}
+                  {invoice.carryoverAmount !== undefined && (
+                    <tr>
+                      <td colSpan={4} className="px-6 py-4 text-sm font-medium text-gray-900 text-right">
+                        繰越金額
+                      </td>
+                      <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                        ¥{invoice.carryoverAmount.toLocaleString()}
+                      </td>
+                    </tr>
+                  )}
+                  {invoice.currentSales !== undefined && (
+                    <tr>
+                      <td colSpan={4} className="px-6 py-4 text-sm font-medium text-gray-900 text-right">
+                        今回売上高
+                      </td>
+                      <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                        ¥{invoice.currentSales.toLocaleString()}
+                      </td>
+                    </tr>
+                  )}
+                  <tr className="border-t-2 border-gray-300">
+                    <td colSpan={5} className="py-2"></td>
+                  </tr>
+                </>
+              )}
               <tr>
                 <td colSpan={4} className="px-6 py-4 text-sm font-medium text-gray-900 text-right">
                   小計
@@ -350,6 +395,16 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: { id: st
           </table>
         </div>
       </div>
+
+      {/* 備考 */}
+      {invoice.notes && (
+        <div className="bg-white shadow rounded-lg p-6">
+          <h2 className="text-lg font-medium text-gray-900 mb-4">備考</h2>
+          <div className="text-sm text-gray-700 whitespace-pre-wrap">
+            {invoice.notes}
+          </div>
+        </div>
+      )}
 
       {/* 支払情報 */}
       <div className="bg-white shadow rounded-lg p-6">

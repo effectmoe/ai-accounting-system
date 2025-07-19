@@ -722,6 +722,12 @@ CRITICAL RULES:
 4. IMPORTANT: Rows in product table with text in name column but EMPTY quantity, unit price, AND amount are NOT products - these are remarks/notes
 5. Only treat rows as products if they have at least ONE of: quantity, unit price, or amount
 6. Extract content from 備考 columns as notes
+7. For invoices (請求書), extract balance/carryover information:
+   - 前回請求額 = previousBalance
+   - 今回入金額 = currentPayment  
+   - 繰越金額 = carryoverAmount
+   - 今回売上高 = currentSales
+   - 今回請求額 = currentInvoiceAmount
 
 Example:
 - "CROP様分" with no quantity/price/amount → This is a REMARK, not a product
@@ -756,6 +762,11 @@ Return ONLY JSON:
     "amount": 5000,
     "remarks": "string"
   }],
+  "previousBalance": 25260,
+  "currentPayment": 2250,
+  "carryoverAmount": 23010,
+  "currentSales": 107863,
+  "currentInvoiceAmount": 130873,
   "subtotal": 5000,
   "taxAmount": 500,
   "totalAmount": 5500,

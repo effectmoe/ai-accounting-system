@@ -540,7 +540,7 @@ export class StructuredDataService {
       updatedAt: new Date()
     };
 
-    const result = await this.structuredDataCollection.insertOne(document);
+    const result = await this.structuredDataCollection.insertOne(document as any);
     return { ...document, _id: result.insertedId };
   }
 

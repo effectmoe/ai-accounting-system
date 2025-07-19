@@ -86,3 +86,6 @@ mcp-chrome-server/
 
 # Test environment files
 .env.test
+
+# scripts with secrets
+add-env-vars.sh

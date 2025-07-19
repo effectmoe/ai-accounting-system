@@ -173,7 +173,13 @@ async function convertOCRToPurchaseInvoice(ocrResult: any) {
       vendorPhone: vendorInfo.phone,
       vendorEmail: vendorInfo.email,
       vendorFax: vendorInfo.fax,
-      vendor: vendorInfo
+      vendor: vendorInfo,
+      // 繰越関連情報を追加
+      previousBalance: extractedData.previousBalance,
+      currentPayment: extractedData.currentPayment,
+      carryoverAmount: extractedData.carryoverAmount,
+      currentSales: extractedData.currentSales,
+      currentInvoiceAmount: extractedData.currentInvoiceAmount
     };
     
     console.log('[convertOCRToPurchaseInvoice] 仕入請求書データ:', purchaseInvoiceData);

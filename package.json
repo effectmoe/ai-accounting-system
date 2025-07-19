@@ -28,7 +28,7 @@
     "workflow:run": "tsx scripts/run-workflow.ts",
     "mastra:dev": "tsx --watch src/index.ts",
     "mastra:start": "tsx src/index.ts",
-    "setup:vercel-env": "bash ./scripts/setup-vercel-env.sh",
+    "setup:vercel-env": "tsx scripts/setup-vercel-env.ts",
     "env:check": "curl http://localhost:3000/api/env-check",
     "mastra:api": "tsx src/api.ts",
     "mastra:build": "tsc --build",
@@ -53,7 +53,6 @@
     "gas:update-direct": "tsx src/scripts/direct-gas-update.ts",
     "test:integration": "tsx tests/integration-test.ts",
     "test:integration:deploy": "DEPLOY_TEST=true tsx tests/integration-test.ts",
-    "setup:vercel-env": "tsx scripts/setup-vercel-env.ts",
     "setup:mongodb": "tsx scripts/mongodb-setup.ts",
     "migrate:supabase-to-mongodb": "tsx scripts/migrate-supabase-to-mongodb.ts",
     "test:azure-mongodb": "tsx scripts/test-azure-mongodb.ts",
@@ -63,7 +62,9 @@
     "mcp:debug:coordinator": "node src/debug/mcp-servers/aam-debug-coordinator.js",
     "mcp:debug:ocr": "node src/debug/mcp-servers/ocr-agent-monitor.js",
     "mcp:debug:install": "cd src/debug/mcp-servers && npm install",
-    "migrate:supplier-fields": "tsx scripts/migrate-supplier-address-fields.ts"
+    "migrate:supplier-fields": "tsx scripts/migrate-supplier-address-fields.ts",
+    "refactor": "tsx src/scripts/test-refactor-agent.ts",
+    "refactor:watch": "tsx watch src/scripts/test-refactor-agent.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.27.3",
@@ -126,6 +127,7 @@
     "pdf2pic": "^3.2.0",
     "pdfkit": "^0.17.1",
     "postcss": "^8.4.35",
+    "prettier": "^3.6.2",
     "react": "^18.2.0",
     "react-day-picker": "^9.8.0",
     "react-dom": "^18.2.0",
@@ -133,6 +135,7 @@
     "react-hot-toast": "^2.5.2",
     "react-markdown": "^10.1.0",
     "react-syntax-highlighter": "^15.6.1",
+    "recast": "^0.23.11",
     "recharts": "^3.0.2",
     "sharp": "^0.33.2",
     "supabase-mcp": "^1.5.0",
@@ -145,6 +148,8 @@
     "zustand": "^4.5.0"
   },
   "devDependencies": {
+    "@babel/parser": "^7.28.0",
+    "@babel/types": "^7.28.1",
     "@types/form-data": "^2.2.1",
     "@types/uuid": "^9.0.8",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
