@@ -54,6 +54,11 @@ export async function POST(request: NextRequest) {
     // デバッグ: 受信したデータ全体をログ出力
     console.log('===== [Purchase Invoice POST] Full Request Data =====');
     console.log(JSON.stringify(invoiceData, null, 2));
+    console.log('===== [Purchase Invoice POST] Bank Transfer Info =====');
+    console.log('Has bankTransferInfo:', !!invoiceData.bankTransferInfo);
+    if (invoiceData.bankTransferInfo) {
+      console.log('Bank Transfer Info:', JSON.stringify(invoiceData.bankTransferInfo, null, 2));
+    }
     console.log('===== [Purchase Invoice POST] End Full Request Data =====');
     
     // 仕入先の処理

@@ -87,6 +87,16 @@ export class PurchaseInvoiceService {
     if (data.currentInvoiceAmount !== undefined) {
       invoice.currentInvoiceAmount = data.currentInvoiceAmount;
     }
+    
+    // 振込先情報の処理
+    if (data.bankTransferInfo) {
+      invoice.bankTransferInfo = data.bankTransferInfo;
+    }
+    
+    // 備考の処理
+    if (data.notes) {
+      invoice.notes = data.notes;
+    }
 
     // 金額計算
     if (invoice.items && invoice.items.length > 0) {
@@ -134,6 +144,12 @@ export class PurchaseInvoiceService {
 
     const result = await db.create(this.collection, invoice);
     console.log('[PurchaseInvoiceService] Created purchase invoice:', result._id);
+    console.log('[PurchaseInvoiceService] Created invoice data:', {
+      id: result._id,
+      hasNotes: !!result.notes,
+      hasBankTransferInfo: !!result.bankTransferInfo,
+      bankTransferInfo: result.bankTransferInfo
+    });
     
     return result as PurchaseInvoice;
   }
