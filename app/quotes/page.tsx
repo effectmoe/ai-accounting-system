@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Search, FileText, Loader2, Sparkles, FileDown, CheckCircle, Calculator } from 'lucide-react';
 import { safeFormatDate } from '@/lib/date-utils';
+import { cache, SimpleCache } from '@/lib/cache';
 
 interface Quote {
   _id: string;
@@ -50,6 +51,7 @@ const statusColors: Record<string, string> = {
 
 export default function QuotesPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -60,6 +62,21 @@ export default function QuotesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [convertingQuotes, setConvertingQuotes] = useState<Set<string>>(new Set());
   const itemsPerPage = 20;
+  const [error, setError] = useState<string | null>(null);
+
+  // URLパラメータから初期値を設定
+  useEffect(() => {
+    const search = searchParams.get('search') || '';
+    const status = searchParams.get('status') || 'all';
+    const aiOnly = searchParams.get('aiOnly') === 'true';
+    const page = parseInt(searchParams.get('page') || '1', 10);
+
+    setSearchQuery(search);
+    setDebouncedSearchQuery(search);
+    setStatusFilter(status);
+    setAiOnlyFilter(aiOnly);
+    setCurrentPage(page);
+  }, [searchParams]);
 
   // デバウンス処理
   useEffect(() => {
@@ -80,33 +97,66 @@ export default function QuotesPage() {
     fetchQuotes();
   }, [statusFilter, aiOnlyFilter, currentPage, debouncedSearchQuery]);
 
+  // URLパラメータを更新
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (debouncedSearchQuery) params.set('search', debouncedSearchQuery);
+    if (statusFilter !== 'all') params.set('status', statusFilter);
+    if (aiOnlyFilter) params.set('aiOnly', 'true');
+    if (currentPage > 1) params.set('page', currentPage.toString());
+
+    const queryString = params.toString();
+    const newUrl = queryString ? `?${queryString}` : window.location.pathname;
+    
+    // URLが変わる場合のみ更新
+    if (window.location.search !== (queryString ? `?${queryString}` : '')) {
+      router.replace(newUrl, { scroll: false });
+    }
+  }, [debouncedSearchQuery, statusFilter, aiOnlyFilter, currentPage, router]);
+
   const fetchQuotes = async () => {
     setIsLoading(true);
+    setError(null);
     try {
-      const params = new URLSearchParams({
+      const params = {
         limit: itemsPerPage.toString(),
         skip: ((currentPage - 1) * itemsPerPage).toString(),
-      });
+        ...(debouncedSearchQuery && { search: debouncedSearchQuery }),
+        ...(statusFilter !== 'all' && { status: statusFilter }),
+        ...(aiOnlyFilter && { isGeneratedByAI: 'true' }),
+      };
 
-      if (debouncedSearchQuery) {
-        params.append('search', debouncedSearchQuery);
-      }
-      if (statusFilter !== 'all') {
-        params.append('status', statusFilter);
-      }
-      if (aiOnlyFilter) {
-        params.append('isGeneratedByAI', 'true');
+      // キャッシュキーを生成
+      const cacheKey = SimpleCache.createKey('quotes', params);
+      
+      // キャッシュをチェック
+      const cachedData = cache.get<any>(cacheKey);
+      if (cachedData) {
+        console.log('[Quotes] Using cached data');
+        setQuotes(cachedData.quotes || []);
+        setTotalCount(cachedData.total || 0);
+        setIsLoading(false);
+        return;
       }
 
-      const response = await fetch(`/api/quotes?${params}`);
+      const queryParams = new URLSearchParams(params);
+      const response = await fetch(`/api/quotes?${queryParams}`);
       const data = await response.json();
       
       if (response.ok) {
         setQuotes(data.quotes || []);
         setTotalCount(data.total || 0);
+        // キャッシュに保存
+        cache.set(cacheKey, data, 5 * 60 * 1000); // 5分間キャッシュ
+      } else {
+        throw new Error(data.error || 'データの取得に失敗しました');
       }
     } catch (error) {
       console.error('Error fetching quotes:', error);
+      setError(error instanceof Error ? error.message : 'データの取得に失敗しました。再度お試しください。');
+      if (typeof window !== 'undefined' && (window as any).Sentry) {
+        (window as any).Sentry.captureException(error);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -143,6 +193,8 @@ export default function QuotesPage() {
 
       if (response.ok) {
         alert('請求書への変換が完了しました！');
+        // キャッシュを無効化
+        cache.invalidate('quotes');
         fetchQuotes(); // リストを再読み込み
         // 作成された請求書ページに遷移するかオプションで確認
         if (confirm('作成された請求書を確認しますか？')) {
@@ -223,6 +275,8 @@ export default function QuotesPage() {
                 placeholder="見積書番号、顧客名で検索..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                aria-label="見積書検索"
+                aria-describedby="quote-search-help"
               />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -249,6 +303,24 @@ export default function QuotesPage() {
           </div>
         </CardContent>
       </Card>
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md" role="alert">
+          <div className="flex">
+            <div className="py-1">
+              <svg className="fill-current h-6 w-6 text-red-500 mr-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                <path d="M2.93 17.07A10 10 0 1 1 17.07 2.93 10 10 0 0 1 2.93 17.07zm12.73-1.41A8 8 0 1 0 4.34 4.34a8 8 0 0 0 11.32 11.32zM9 11V9h2v6H9v-4zm0-6h2v2H9V5z"/>
+              </svg>
+            </div>
+            <div>
+              <p className="font-bold">エラー</p>
+              <p className="text-sm">{error}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <span className="sr-only" id="quote-search-help">見積書を検索するための入力フィールドです。見積書番号や顧客名で検索できます。</span>
 
       {/* 見積書リスト */}
       <Card>

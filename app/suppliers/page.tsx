@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -34,6 +34,7 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import { Supplier, SupplierStatus } from '@/types/collections';
+import { cache, SimpleCache } from '@/lib/cache';
 import {
   Dialog,
   DialogContent,
@@ -46,6 +47,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function SuppliersPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -57,26 +59,63 @@ export default function SuppliersPage() {
   const [supplierToDelete, setSupplierToDelete] = useState<Supplier | null>(null);
   const [stats, setStats] = useState<any>(null);
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  const [error, setError] = useState<string | null>(null);
+
+  // URLパラメータから初期値を設定
+  useEffect(() => {
+    const search = searchParams.get('search') || '';
+    const status = searchParams.get('status') || 'all';
+    const page = parseInt(searchParams.get('page') || '1', 10);
+
+    setSearchTerm(search);
+    setDebouncedSearchTerm(search);
+    setStatusFilter(status as SupplierStatus | 'all');
+    setCurrentPage(page);
+  }, [searchParams]);
 
   const fetchSuppliers = useCallback(async () => {
     try {
       setLoading(true);
-      const params = new URLSearchParams({
+      setError(null);
+      const params = {
         page: currentPage.toString(),
         limit: '20',
         ...(debouncedSearchTerm && { search: debouncedSearchTerm }),
         ...(statusFilter !== 'all' && { status: statusFilter }),
-      });
+      };
 
-      const response = await fetch(`/api/suppliers?${params}`);
+      // キャッシュキーを生成
+      const cacheKey = SimpleCache.createKey('suppliers', params);
+      
+      // キャッシュをチェック
+      const cachedData = cache.get<any>(cacheKey);
+      if (cachedData) {
+        console.log('[Suppliers] Using cached data');
+        setSuppliers(cachedData.suppliers);
+        setTotalPages(cachedData.totalPages);
+        setLoading(false);
+        return;
+      }
+
+      const queryParams = new URLSearchParams(params);
+      const response = await fetch(`/api/suppliers?${queryParams}`);
       const data = await response.json();
 
       if (response.ok) {
         setSuppliers(data.suppliers);
         setTotalPages(data.totalPages);
+        // キャッシュに保存
+        cache.set(cacheKey, data, 5 * 60 * 1000); // 5分間キャッシュ
+      } else {
+        throw new Error(data.error || 'データの取得に失敗しました');
       }
     } catch (error) {
       console.error('Error fetching suppliers:', error);
+      setError(error instanceof Error ? error.message : 'データの取得に失敗しました。再度お試しください。');
+      // Sentryがインストールされている場合、エラーを送信
+      if (typeof window !== 'undefined' && (window as any).Sentry) {
+        (window as any).Sentry.captureException(error);
+      }
     } finally {
       setLoading(false);
     }
@@ -103,15 +142,37 @@ export default function SuppliersPage() {
       if (response.ok) {
         const data = await response.json();
         setStats(data);
+      } else {
+        throw new Error('統計情報の取得に失敗しました');
       }
     } catch (error) {
       console.error('Error fetching supplier stats:', error);
+      setError('統計情報の取得に失敗しました。');
+      if (typeof window !== 'undefined' && (window as any).Sentry) {
+        (window as any).Sentry.captureException(error);
+      }
     }
   };
 
   useEffect(() => {
     fetchSuppliers();
   }, [fetchSuppliers]);
+
+  // URLパラメータを更新
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (debouncedSearchTerm) params.set('search', debouncedSearchTerm);
+    if (statusFilter !== 'all') params.set('status', statusFilter);
+    if (currentPage > 1) params.set('page', currentPage.toString());
+
+    const queryString = params.toString();
+    const newUrl = queryString ? `?${queryString}` : window.location.pathname;
+    
+    // URLが変わる場合のみ更新
+    if (window.location.search !== (queryString ? `?${queryString}` : '')) {
+      router.replace(newUrl, { scroll: false });
+    }
+  }, [debouncedSearchTerm, statusFilter, currentPage, router]);
 
   const handleDelete = async () => {
     if (!supplierToDelete) return;
@@ -122,12 +183,21 @@ export default function SuppliersPage() {
       });
 
       if (response.ok) {
+        // キャッシュを無効化
+        cache.invalidate('suppliers');
         await fetchSuppliers();
         setShowDeleteDialog(false);
         setSupplierToDelete(null);
+      } else {
+        const data = await response.json();
+        throw new Error(data.error || '削除に失敗しました');
       }
     } catch (error) {
       console.error('Error deleting supplier:', error);
+      setError(error instanceof Error ? error.message : '仕入先の削除に失敗しました。');
+      if (typeof window !== 'undefined' && (window as any).Sentry) {
+        (window as any).Sentry.captureException(error);
+      }
     }
   };
 
@@ -182,6 +252,8 @@ export default function SuppliersPage() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="pl-10"
+            aria-label="仕入先検索"
+            aria-describedby="search-help"
           />
         </div>
         <Select value={statusFilter} onValueChange={(value: any) => setStatusFilter(value)}>
@@ -196,6 +268,24 @@ export default function SuppliersPage() {
           </SelectContent>
         </Select>
       </div>
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md" role="alert">
+          <div className="flex">
+            <div className="py-1">
+              <svg className="fill-current h-6 w-6 text-red-500 mr-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                <path d="M2.93 17.07A10 10 0 1 1 17.07 2.93 10 10 0 0 1 2.93 17.07zm12.73-1.41A8 8 0 1 0 4.34 4.34a8 8 0 0 0 11.32 11.32zM9 11V9h2v6H9v-4zm0-6h2v2H9V5z"/>
+              </svg>
+            </div>
+            <div>
+              <p className="font-bold">エラー</p>
+              <p className="text-sm">{error}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <span className="sr-only" id="search-help">仕入先を検索するための入力フィールドです。会社名、仕入先コード、メールアドレスで検索できます。</span>
 
       <div className="border rounded-lg">
         <Table>

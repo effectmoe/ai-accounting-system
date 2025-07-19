@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Plus, Search, Filter, Edit, Trash2, Calendar, Building, FileText, DollarSign, ChevronLeft, ChevronRight, Upload, ScanLine, CheckCircle, Clock } from 'lucide-react';
 import { toast } from 'react-hot-toast';
@@ -57,6 +57,7 @@ const paymentStatusLabels = {
 
 export default function PurchaseInvoicesPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [purchaseInvoices, setPurchaseInvoices] = useState<PurchaseInvoice[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [total, setTotal] = useState(0);
@@ -74,6 +75,36 @@ export default function PurchaseInvoicesPage() {
     dateTo: '',
     isGeneratedByAI: '',
   });
+  const [error, setError] = useState<string | null>(null);
+
+  // URLパラメータから初期値を設定
+  useEffect(() => {
+    const search = searchParams.get('search') || '';
+    const page = parseInt(searchParams.get('page') || '1', 10);
+    const supplierId = searchParams.get('supplierId') || '';
+    const status = searchParams.get('status') || '';
+    const paymentStatus = searchParams.get('paymentStatus') || '';
+    const dateFrom = searchParams.get('dateFrom') || '';
+    const dateTo = searchParams.get('dateTo') || '';
+    const isGeneratedByAI = searchParams.get('isGeneratedByAI') || '';
+
+    setSearchTerm(search);
+    setDebouncedSearchTerm(search);
+    setCurrentPage(page);
+    setFilters({
+      supplierId,
+      status: status as PurchaseInvoiceStatus | '',
+      paymentStatus: paymentStatus as any,
+      dateFrom,
+      dateTo,
+      isGeneratedByAI: isGeneratedByAI as any,
+    });
+
+    // フィルターが設定されている場合はフィルターパネルを開く
+    if (supplierId || status || paymentStatus || dateFrom || dateTo || isGeneratedByAI) {
+      setShowFilters(true);
+    }
+  }, [searchParams]);
 
   // 仕入先データの取得
   const fetchSuppliers = useCallback(async () => {
@@ -90,6 +121,7 @@ export default function PurchaseInvoicesPage() {
   // 仕入請求書データの取得
   const fetchPurchaseInvoices = useCallback(async (page: number = 1) => {
     setLoading(true);
+    setError(null);
     try {
       const params = new URLSearchParams({
         limit: ITEMS_PER_PAGE.toString(),
@@ -105,7 +137,10 @@ export default function PurchaseInvoicesPage() {
       if (filters.isGeneratedByAI) params.append('isGeneratedByAI', filters.isGeneratedByAI);
 
       const response = await fetch(`/api/purchase-invoices?${params}`);
-      if (!response.ok) throw new Error('Failed to fetch purchase invoices');
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to fetch purchase invoices');
+      }
       
       const data: PurchaseInvoiceSearchResult = await response.json();
       setPurchaseInvoices(data.invoices);
@@ -113,7 +148,12 @@ export default function PurchaseInvoicesPage() {
       setTotalAmount(data.totalAmount);
     } catch (error) {
       console.error('Error fetching purchase invoices:', error);
-      toast.error('仕入請求書の取得に失敗しました');
+      const errorMessage = error instanceof Error ? error.message : '仕入請求書の取得に失敗しました';
+      setError(errorMessage);
+      toast.error(errorMessage);
+      if (typeof window !== 'undefined' && (window as any).Sentry) {
+        (window as any).Sentry.captureException(error);
+      }
     } finally {
       setLoading(false);
     }
@@ -142,6 +182,27 @@ export default function PurchaseInvoicesPage() {
   useEffect(() => {
     fetchPurchaseInvoices(currentPage);
   }, [fetchPurchaseInvoices, currentPage]);
+
+  // URLパラメータを更新
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (debouncedSearchTerm) params.set('search', debouncedSearchTerm);
+    if (filters.supplierId) params.set('supplierId', filters.supplierId);
+    if (filters.status) params.set('status', filters.status);
+    if (filters.paymentStatus) params.set('paymentStatus', filters.paymentStatus);
+    if (filters.dateFrom) params.set('dateFrom', filters.dateFrom);
+    if (filters.dateTo) params.set('dateTo', filters.dateTo);
+    if (filters.isGeneratedByAI) params.set('isGeneratedByAI', filters.isGeneratedByAI);
+    if (currentPage > 1) params.set('page', currentPage.toString());
+
+    const queryString = params.toString();
+    const newUrl = queryString ? `?${queryString}` : window.location.pathname;
+    
+    // URLが変わる場合のみ更新
+    if (window.location.search !== (queryString ? `?${queryString}` : '')) {
+      router.replace(newUrl, { scroll: false });
+    }
+  }, [debouncedSearchTerm, filters, currentPage, router]);
 
 
   // フィルターのリセット
@@ -237,6 +298,8 @@ export default function PurchaseInvoicesPage() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+              aria-label="仕入請求書検索"
+              aria-describedby="purchase-invoice-search-help"
             />
             <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
           </div>
@@ -346,6 +409,24 @@ export default function PurchaseInvoicesPage() {
           </div>
         )}
       </div>
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md" role="alert">
+          <div className="flex">
+            <div className="py-1">
+              <svg className="fill-current h-6 w-6 text-red-500 mr-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                <path d="M2.93 17.07A10 10 0 1 1 17.07 2.93 10 10 0 0 1 2.93 17.07zm12.73-1.41A8 8 0 1 0 4.34 4.34a8 8 0 0 0 11.32 11.32zM9 11V9h2v6H9v-4zm0-6h2v2H9V5z"/>
+              </svg>
+            </div>
+            <div>
+              <p className="font-bold">エラー</p>
+              <p className="text-sm">{error}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <span className="sr-only" id="purchase-invoice-search-help">仕入請求書を検索するための入力フィールドです。請求書番号や仕入先名で検索できます。</span>
 
       {/* 統計情報 */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
