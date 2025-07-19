@@ -65,6 +65,7 @@ export default function PurchaseInvoicesPage() {
   const [loading, setLoading] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [filters, setFilters] = useState<FilterState>({
     supplierId: '',
     status: '',
@@ -95,6 +96,7 @@ export default function PurchaseInvoicesPage() {
         skip: ((page - 1) * ITEMS_PER_PAGE).toString(),
       });
 
+      if (debouncedSearchTerm) params.append('search', debouncedSearchTerm);
       if (filters.supplierId) params.append('supplierId', filters.supplierId);
       if (filters.status) params.append('status', filters.status);
       if (filters.paymentStatus) params.append('paymentStatus', filters.paymentStatus);
@@ -115,22 +117,32 @@ export default function PurchaseInvoicesPage() {
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  }, [filters, debouncedSearchTerm]);
 
   // 初期データの取得
   useEffect(() => {
     fetchSuppliers();
   }, [fetchSuppliers]);
 
+  // デバウンス処理
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      setCurrentPage(1); // 検索時はページを1に戻す
+    }, 500); // 500ms後に検索実行
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // フィルター変更時もページを1に戻す
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters]);
+
   useEffect(() => {
     fetchPurchaseInvoices(currentPage);
   }, [fetchPurchaseInvoices, currentPage]);
 
-  // 検索の実行
-  const handleSearch = () => {
-    setCurrentPage(1);
-    fetchPurchaseInvoices(1);
-  };
 
   // フィルターのリセット
   const handleResetFilters = () => {
@@ -143,6 +155,7 @@ export default function PurchaseInvoicesPage() {
       isGeneratedByAI: '',
     });
     setSearchTerm('');
+    setDebouncedSearchTerm('');
     setCurrentPage(1);
   };
 
@@ -223,7 +236,6 @@ export default function PurchaseInvoicesPage() {
               placeholder="請求書番号、仕入先名で検索..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
             />
             <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />

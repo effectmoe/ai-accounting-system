@@ -56,6 +56,7 @@ export default function SuppliersPage() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [supplierToDelete, setSupplierToDelete] = useState<Supplier | null>(null);
   const [stats, setStats] = useState<any>(null);
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
 
   const fetchSuppliers = useCallback(async () => {
     try {
@@ -63,7 +64,7 @@ export default function SuppliersPage() {
       const params = new URLSearchParams({
         page: currentPage.toString(),
         limit: '20',
-        ...(searchTerm && { search: searchTerm }),
+        ...(debouncedSearchTerm && { search: debouncedSearchTerm }),
         ...(statusFilter !== 'all' && { status: statusFilter }),
       });
 
@@ -79,7 +80,22 @@ export default function SuppliersPage() {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, searchTerm, statusFilter]);
+  }, [currentPage, debouncedSearchTerm, statusFilter]);
+
+  // デバウンス処理
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      setCurrentPage(1); // 検索時はページを1に戻す
+    }, 500); // 500ms後に検索実行
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // ステータスフィルター変更時もページを1に戻す
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter]);
 
   const fetchSupplierStats = async (supplierId: string) => {
     try {

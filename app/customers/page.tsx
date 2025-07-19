@@ -225,6 +225,7 @@ function CustomersPageContent() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [selectedCustomers, setSelectedCustomers] = useState<Set<string>>(new Set());
@@ -445,7 +446,7 @@ function CustomersPageContent() {
       const params = new URLSearchParams({
         page: currentPage.toString(),
         limit: ITEMS_PER_PAGE.toString(),
-        search: searchTerm,
+        search: debouncedSearchTerm,
         sortBy: sortBy,
         sortOrder: sortOrder,
       });
@@ -493,7 +494,7 @@ function CustomersPageContent() {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, searchTerm, sortBy, sortOrder, filters]);
+  }, [currentPage, debouncedSearchTerm, sortBy, sortOrder, filters]);
 
   // URLパラメータから初期状態を設定
   useEffect(() => {
@@ -563,6 +564,21 @@ function CustomersPageContent() {
     const hasFilters = Object.keys(newFilters).length > 0;
     setShowFilters(hasFilters);
   }, [searchParams]);
+
+  // デバウンス処理
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      setCurrentPage(1); // 検索時はページを1に戻す
+    }, 500); // 500ms後に検索実行
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // フィルター変更時もページを1に戻す
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters]);
 
   useEffect(() => {
     fetchCustomers();
@@ -1000,20 +1016,7 @@ function CustomersPageContent() {
             <input
               type="text"
               value={searchTerm}
-              onChange={(e) => {
-                const value = e.target.value;
-                setSearchTerm(value);
-                
-                // 検索のデバウンス処理
-                if (searchDebounceRef.current) {
-                  clearTimeout(searchDebounceRef.current);
-                }
-                
-                searchDebounceRef.current = setTimeout(() => {
-                  setCurrentPage(1);
-                  // fetchCustomersは依存関係で自動実行される
-                }, 300);
-              }}
+              onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="顧客コード、会社名、メールアドレス、部署名で検索..."
               className="w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
