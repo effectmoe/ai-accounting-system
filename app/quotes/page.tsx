@@ -54,15 +54,31 @@ export default function QuotesPage() {
   const [totalCount, setTotalCount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [aiOnlyFilter, setAiOnlyFilter] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [convertingQuotes, setConvertingQuotes] = useState<Set<string>>(new Set());
   const itemsPerPage = 20;
 
+  // デバウンス処理
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+      setCurrentPage(1); // 検索時はページを1に戻す
+    }, 500); // 500ms後に検索実行
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // フィルター変更時もページを1に戻す
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter, aiOnlyFilter]);
+
   useEffect(() => {
     fetchQuotes();
-  }, [statusFilter, aiOnlyFilter, currentPage]);
+  }, [statusFilter, aiOnlyFilter, currentPage, debouncedSearchQuery]);
 
   const fetchQuotes = async () => {
     setIsLoading(true);
@@ -72,6 +88,9 @@ export default function QuotesPage() {
         skip: ((currentPage - 1) * itemsPerPage).toString(),
       });
 
+      if (debouncedSearchQuery) {
+        params.append('search', debouncedSearchQuery);
+      }
       if (statusFilter !== 'all') {
         params.append('status', statusFilter);
       }
@@ -93,10 +112,6 @@ export default function QuotesPage() {
     }
   };
 
-  const handleSearch = () => {
-    // TODO: 検索機能の実装
-    console.log('Search:', searchQuery);
-  };
 
   const getStatusBadge = (status: string) => {
     return (
@@ -208,7 +223,6 @@ export default function QuotesPage() {
                 placeholder="見積書番号、顧客名で検索..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
               />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>

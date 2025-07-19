@@ -46,7 +46,7 @@ export class KnowledgeService {
       processingStatus: 'pending'
     };
 
-    const result = await this.articlesCollection.insertOne(newArticle);
+    const result = await this.db.collection('knowledgeArticles').insertOne(newArticle);
     return { ...newArticle, _id: result.insertedId };
   }
 

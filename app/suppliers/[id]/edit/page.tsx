@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ArrowLeft, Save, Building2 } from 'lucide-react';
+import { ArrowLeft, Save, Building2, Plus, Trash2 } from 'lucide-react';
 import { SupplierStatus, PaymentMethod } from '@/types/collections';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 // import { toast } from 'react-hot-toast';
@@ -44,6 +44,15 @@ interface SupplierFormData {
     email: string;
     phone: string;
     isPrimary: boolean;
+  }[];
+  bankTransferInfo: {
+    bankName?: string;
+    branchName?: string;
+    accountType?: string;
+    accountNumber?: string;
+    accountName?: string;
+    swiftCode?: string;
+    additionalInfo?: string;
   }[];
 }
 
@@ -80,6 +89,7 @@ export default function EditSupplierPage() {
       phone: '',
       isPrimary: true,
     }],
+    bankTransferInfo: [],
   });
 
   // 仕入先データを取得
@@ -122,6 +132,7 @@ export default function EditSupplierPage() {
             phone: '',
             isPrimary: true,
           }],
+          bankTransferInfo: supplier.bankTransferInfo || [],
         });
       } catch (error) {
         console.error('Error loading supplier:', error);
@@ -181,6 +192,43 @@ export default function EditSupplierPage() {
     setFormData(prev => ({
       ...prev,
       contacts: newContacts,
+    }));
+  };
+
+  const handleBankInfoChange = (index: number, field: string, value: any) => {
+    const newBankInfo = [...formData.bankTransferInfo];
+    newBankInfo[index] = {
+      ...newBankInfo[index],
+      [field]: value,
+    };
+    setFormData(prev => ({
+      ...prev,
+      bankTransferInfo: newBankInfo,
+    }));
+  };
+
+  const addBankInfo = () => {
+    setFormData(prev => ({
+      ...prev,
+      bankTransferInfo: [
+        ...prev.bankTransferInfo,
+        {
+          bankName: '',
+          branchName: '',
+          accountType: '',
+          accountNumber: '',
+          accountName: '',
+          swiftCode: '',
+          additionalInfo: '',
+        },
+      ],
+    }));
+  };
+
+  const removeBankInfo = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      bankTransferInfo: prev.bankTransferInfo.filter((_, i) => i !== index),
     }));
   };
 
@@ -490,6 +538,118 @@ export default function EditSupplierPage() {
                 disabled={loading || saving}
               />
             </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>振込先情報</CardTitle>
+            <CardDescription>支払い時に使用する振込先口座情報</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {formData.bankTransferInfo.map((bank, index) => (
+              <div key={index} className="border rounded-lg p-4 space-y-4">
+                <div className="flex justify-between items-center mb-2">
+                  <h4 className="font-medium">振込先 {index + 1}</h4>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeBankInfo(index)}
+                    disabled={loading || saving}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor={`bankName-${index}`}>銀行名</Label>
+                    <Input
+                      id={`bankName-${index}`}
+                      value={bank.bankName || ''}
+                      onChange={(e) => handleBankInfoChange(index, 'bankName', e.target.value)}
+                      placeholder="例: みずほ銀行"
+                      disabled={loading || saving}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor={`branchName-${index}`}>支店名</Label>
+                    <Input
+                      id={`branchName-${index}`}
+                      value={bank.branchName || ''}
+                      onChange={(e) => handleBankInfoChange(index, 'branchName', e.target.value)}
+                      placeholder="例: 東京支店"
+                      disabled={loading || saving}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor={`accountType-${index}`}>口座種別</Label>
+                    <Select
+                      value={bank.accountType || ''}
+                      onValueChange={(value) => handleBankInfoChange(index, 'accountType', value)}
+                      disabled={loading || saving}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="選択してください" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="普通">普通</SelectItem>
+                        <SelectItem value="当座">当座</SelectItem>
+                        <SelectItem value="貯蓄">貯蓄</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor={`accountNumber-${index}`}>口座番号</Label>
+                    <Input
+                      id={`accountNumber-${index}`}
+                      value={bank.accountNumber || ''}
+                      onChange={(e) => handleBankInfoChange(index, 'accountNumber', e.target.value)}
+                      placeholder="例: 1234567"
+                      disabled={loading || saving}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor={`accountName-${index}`}>口座名義</Label>
+                  <Input
+                    id={`accountName-${index}`}
+                    value={bank.accountName || ''}
+                    onChange={(e) => handleBankInfoChange(index, 'accountName', e.target.value)}
+                    placeholder="例: カブシキガイシャ エービーシー"
+                    disabled={loading || saving}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor={`additionalInfo-${index}`}>その他情報</Label>
+                  <Textarea
+                    id={`additionalInfo-${index}`}
+                    value={bank.additionalInfo || ''}
+                    onChange={(e) => handleBankInfoChange(index, 'additionalInfo', e.target.value)}
+                    rows={2}
+                    placeholder="特記事項があれば入力"
+                    disabled={loading || saving}
+                  />
+                </div>
+              </div>
+            ))}
+
+            <Button
+              type="button"
+              variant="outline"
+              onClick={addBankInfo}
+              disabled={loading || saving}
+              className="w-full"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              振込先を追加
+            </Button>
           </CardContent>
         </Card>
 
