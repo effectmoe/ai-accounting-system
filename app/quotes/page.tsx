@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -49,7 +49,7 @@ const statusColors: Record<string, string> = {
   converted: 'bg-purple-100 text-purple-800',
 };
 
-export default function QuotesPage() {
+function QuotesPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [quotes, setQuotes] = useState<Quote[]>([]);
@@ -473,5 +473,13 @@ export default function QuotesPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function QuotesPage() {
+  return (
+    <Suspense fallback={<div className="container mx-auto p-6"><div className="flex justify-center items-center h-64"><div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-gray-600" /></div></div>}>
+      <QuotesPageContent />
+    </Suspense>
   );
 }

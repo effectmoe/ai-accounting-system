@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Plus, Search, Filter, Edit, Trash2, Calendar, Building, FileText, DollarSign, ChevronLeft, ChevronRight, Upload, ScanLine, CheckCircle, Clock } from 'lucide-react';
@@ -55,7 +55,7 @@ const paymentStatusLabels = {
   paid: '支払済み',
 };
 
-export default function PurchaseInvoicesPage() {
+function PurchaseInvoicesPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [purchaseInvoices, setPurchaseInvoices] = useState<PurchaseInvoice[]>([]);
@@ -663,5 +663,13 @@ export default function PurchaseInvoicesPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function PurchaseInvoicesPage() {
+  return (
+    <Suspense fallback={<div className="space-y-6"><div className="text-center py-12"><div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div><p className="mt-2 text-gray-500">読み込み中...</p></div></div>}>
+      <PurchaseInvoicesPageContent />
+    </Suspense>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -45,7 +45,7 @@ import {
 } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-export default function SuppliersPage() {
+function SuppliersPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -587,5 +587,13 @@ export default function SuppliersPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+export default function SuppliersPage() {
+  return (
+    <Suspense fallback={<div className="container mx-auto py-6 space-y-6"><div className="text-center py-8">読み込み中...</div></div>}>
+      <SuppliersPageContent />
+    </Suspense>
   );
 }
