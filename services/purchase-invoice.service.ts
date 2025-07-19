@@ -88,10 +88,6 @@ export class PurchaseInvoiceService {
       invoice.currentInvoiceAmount = data.currentInvoiceAmount;
     }
     
-    // 振込先情報の処理
-    if (data.bankTransferInfo) {
-      invoice.bankTransferInfo = data.bankTransferInfo;
-    }
     
     // 備考の処理
     if (data.notes) {
@@ -147,16 +143,7 @@ export class PurchaseInvoiceService {
     console.log('[PurchaseInvoiceService] Created invoice data:', {
       id: result._id,
       hasNotes: !!result.notes,
-      hasBankTransferInfo: !!result.bankTransferInfo,
-      bankTransferInfo: result.bankTransferInfo
-    });
-    
-    // 作成直後にデータベースから再取得して確認
-    const verifyInvoice = await db.findOne(this.collection, { _id: result._id });
-    console.log('[PurchaseInvoiceService] Verification - Invoice from DB:', {
-      id: verifyInvoice?._id,
-      hasBankTransferInfo: !!verifyInvoice?.bankTransferInfo,
-      bankTransferInfo: verifyInvoice?.bankTransferInfo
+      hasSupplierId: !!result.supplierId
     });
     
     return result as PurchaseInvoice;
@@ -171,8 +158,8 @@ export class PurchaseInvoiceService {
     
     console.log('[PurchaseInvoiceService] Retrieved invoice:', {
       id: invoice._id,
-      hasBankTransferInfo: !!invoice.bankTransferInfo,
-      bankTransferInfo: invoice.bankTransferInfo
+      supplierId: invoice.supplierId,
+      hasSupplier: !!invoice.supplier
     });
 
     // 仕入先情報をpopulate

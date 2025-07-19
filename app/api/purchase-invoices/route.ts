@@ -137,6 +137,28 @@ export async function POST(request: NextRequest) {
             needsUpdate = true;
           }
           
+          // 振込先情報が新規または更新されている場合
+          if (invoiceData.bankTransferInfo && Array.isArray(invoiceData.bankTransferInfo)) {
+            console.log('[Purchase Invoice] Found bank transfer info in invoice data:', invoiceData.bankTransferInfo);
+            // 既存の振込先情報と比較して、新しい情報があれば追加
+            if (!existingSupplier.bankTransferInfo || !Array.isArray(existingSupplier.bankTransferInfo)) {
+              updateData.bankTransferInfo = invoiceData.bankTransferInfo;
+              needsUpdate = true;
+            } else {
+              // 既存の振込先情報と新しい情報をマージ（重複を避ける）
+              const existingBanks = new Set(existingSupplier.bankTransferInfo.map(b => 
+                `${b.bankName}-${b.branchName}-${b.accountNumber}`
+              ));
+              const newBankInfo = invoiceData.bankTransferInfo.filter(b => 
+                !existingBanks.has(`${b.bankName}-${b.branchName}-${b.accountNumber}`)
+              );
+              if (newBankInfo.length > 0) {
+                updateData.bankTransferInfo = [...existingSupplier.bankTransferInfo, ...newBankInfo];
+                needsUpdate = true;
+              }
+            }
+          }
+          
           // 更新が必要な場合のみ実行
           if (needsUpdate) {
             console.log('[Purchase Invoice] Updating existing supplier with new OCR data:', JSON.stringify(updateData, null, 2));
@@ -232,7 +254,11 @@ export async function POST(request: NextRequest) {
             address1: cleanAddress, // address1フィールドに保存
             postalCode: postalCode, // 抽出した郵便番号
             status: 'active' as const,
-            notes: 'OCRで自動作成された仕入先（請求書）'
+            notes: 'OCRで自動作成された仕入先（請求書）',
+            // 振込先情報を追加
+            bankTransferInfo: invoiceData.bankTransferInfo && Array.isArray(invoiceData.bankTransferInfo) 
+              ? invoiceData.bankTransferInfo 
+              : undefined
           };
           
           console.log('[5] Supplier data to be saved:', JSON.stringify(supplierData, null, 2));
@@ -329,10 +355,10 @@ export async function POST(request: NextRequest) {
     // vendorNameを削除（supplierIdで管理するため）
     delete finalInvoiceData.vendorName;
     
-    // 振込先情報が含まれているか確認
-    console.log('[Purchase Invoice] Final invoice data contains bankTransferInfo:', !!finalInvoiceData.bankTransferInfo);
+    // 振込先情報は仕入先に保存するため、請求書データからは削除
     if (finalInvoiceData.bankTransferInfo) {
-      console.log('[Purchase Invoice] bankTransferInfo details:', JSON.stringify(finalInvoiceData.bankTransferInfo, null, 2));
+      console.log('[Purchase Invoice] Removing bankTransferInfo from invoice data (already saved to supplier)');
+      delete finalInvoiceData.bankTransferInfo;
     }
     
     // fileIdが含まれている場合はログに記録

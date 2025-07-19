@@ -1013,6 +1013,16 @@ export interface Supplier {
   totalPurchaseAmount?: number; // 累計仕入額
   lastPurchaseDate?: Date; // 最終仕入日
   evaluationScore?: number; // 評価スコア (1-5)
+  // 振込先情報（複数の銀行口座を持つ場合があるため配列）
+  bankTransferInfo?: {
+    bankName?: string;
+    branchName?: string;
+    accountType?: string;
+    accountNumber?: string;
+    accountName?: string;
+    swiftCode?: string;
+    additionalInfo?: string;
+  }[];
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -1303,17 +1313,6 @@ export interface PurchaseInvoice {
   
   // その他
   notes?: string; // 備考
-  
-  // 振込先情報
-  bankTransferInfo?: {
-    bankName?: string; // 銀行名
-    branchName?: string; // 支店名
-    accountType?: string; // 口座種別（普通・当座など）
-    accountNumber?: string; // 口座番号
-    accountName?: string; // 口座名義
-    swiftCode?: string; // SWIFTコード（国際送金用）
-    additionalInfo?: string; // その他振込情報
-  };
   
   // ステータス
   status: PurchaseInvoiceStatus;
