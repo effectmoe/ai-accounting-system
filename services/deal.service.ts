@@ -1,5 +1,5 @@
 import { ObjectId } from 'mongodb';
-import { getMongoClient } from '@/lib/mongodb-client';
+import { getMongoClient, db } from '@/lib/mongodb-client';
 import { Deal, DealStatus, DealItem, DealActivity } from '@/types/collections';
 
 const DB_NAME = process.env.MONGODB_DB_NAME || 'accounting-app';
@@ -201,12 +201,11 @@ export class DealService {
       metadata: { status: 'lead' }
     });
 
-    const result = await collection.insertOne(deal as any);
+    const result = await db.create(COLLECTION_NAME, deal);
     
     return {
-      ...deal,
-      _id: result.insertedId,
-      id: result.insertedId.toString()
+      ...result,
+      id: result._id.toString()
     };
   }
 
@@ -286,13 +285,9 @@ export class DealService {
 
   // 案件削除
   static async deleteDeal(id: string) {
-    const client = await getMongoClient();
-    const db = client.db(DB_NAME);
-    const collection = db.collection<Deal>(COLLECTION_NAME);
-
-    const result = await collection.deleteOne({ _id: new ObjectId(id) });
+    const result = await db.delete(COLLECTION_NAME, id);
     
-    if (result.deletedCount === 0) {
+    if (!result) {
       throw new Error('Deal not found');
     }
 

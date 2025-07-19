@@ -37,11 +37,19 @@ interface LLMResponse {
 }
 
 export class LLMCascadeManager {
+  private static instance: LLMCascadeManager;
   private providers: LLMProvider[] = [];
   private currentProviderIndex = 0;
 
-  constructor() {
+  private constructor() {
     this.initializeProviders();
+  }
+
+  static getInstance(): LLMCascadeManager {
+    if (!LLMCascadeManager.instance) {
+      LLMCascadeManager.instance = new LLMCascadeManager();
+    }
+    return LLMCascadeManager.instance;
   }
 
   private initializeProviders() {
@@ -288,6 +296,48 @@ export class LLMCascadeManager {
     });
 
     return response.content;
+  }
+
+  /**
+   * executeCascadeメソッド（RefactorAgent用）
+   */
+  async executeCascade(params: {
+    instruction: string;
+    prompt: string;
+    preferredProvider?: string;
+    maxTokens?: number;
+    temperature?: number;
+  }): Promise<string> {
+    const messages: LLMRequest['messages'] = [
+      { role: 'system', content: params.instruction },
+      { role: 'user', content: params.prompt }
+    ];
+
+    // preferredProviderが指定されている場合、そのプロバイダーを優先
+    if (params.preferredProvider) {
+      const preferredIndex = this.providers.findIndex(p => 
+        p.name === params.preferredProvider && p.available
+      );
+      if (preferredIndex !== -1) {
+        // 一時的に優先プロバイダーを先頭に
+        const temp = this.providers[0];
+        this.providers[0] = this.providers[preferredIndex];
+        this.providers[preferredIndex] = temp;
+      }
+    }
+
+    try {
+      const response = await this.generateResponse({
+        messages,
+        maxTokens: params.maxTokens || 4000,
+        temperature: params.temperature || 0.7,
+      });
+
+      return response.content;
+    } finally {
+      // プロバイダーの順序を元に戻す（必要に応じて）
+      this.providers.sort((a, b) => a.priority - b.priority);
+    }
   }
 
   /**

@@ -71,6 +71,23 @@ export class PurchaseInvoiceService {
       invoice.dueDate.setDate(invoice.dueDate.getDate() + paymentTerms);
     }
 
+    // 繰越関連フィールドの処理
+    if (data.previousBalance !== undefined) {
+      invoice.previousBalance = data.previousBalance;
+    }
+    if (data.currentPayment !== undefined) {
+      invoice.currentPayment = data.currentPayment;
+    }
+    if (data.carryoverAmount !== undefined) {
+      invoice.carryoverAmount = data.carryoverAmount;
+    }
+    if (data.currentSales !== undefined) {
+      invoice.currentSales = data.currentSales;
+    }
+    if (data.currentInvoiceAmount !== undefined) {
+      invoice.currentInvoiceAmount = data.currentInvoiceAmount;
+    }
+
     // 金額計算
     if (invoice.items && invoice.items.length > 0) {
       let subtotal = 0;
@@ -79,7 +96,15 @@ export class PurchaseInvoiceService {
 
       invoice.items = invoice.items.map(item => {
         const itemAmount = item.quantity * item.unitPrice;
-        const itemTaxRate = item.taxRate !== undefined ? item.taxRate : defaultTaxRate;
+        let itemTaxRate = item.taxRate !== undefined ? item.taxRate : defaultTaxRate;
+        
+        // 税率の正規化: 10% -> 0.1に変換
+        if (itemTaxRate > 1) {
+          console.log(`[PurchaseInvoiceService] Normalizing tax rate from ${itemTaxRate}% to ${itemTaxRate / 100}`);
+          itemTaxRate = itemTaxRate / 100;
+        }
+        
+        // 通常は税抜きから税込みを計算
         const itemTaxAmount = Math.floor(itemAmount * itemTaxRate);
         
         subtotal += itemAmount;
@@ -95,10 +120,19 @@ export class PurchaseInvoiceService {
 
       invoice.subtotal = subtotal;
       invoice.taxAmount = taxAmount;
-      invoice.totalAmount = subtotal + taxAmount;
+      
+      // totalAmountが既に設定されている場合（OCRから）はそれを使用
+      if (!invoice.totalAmount || invoice.totalAmount === 0) {
+        invoice.totalAmount = subtotal + taxAmount;
+      }
+      
+      // currentInvoiceAmountが設定されている場合は、それが最終請求額
+      if (invoice.currentInvoiceAmount) {
+        invoice.totalAmount = invoice.currentInvoiceAmount;
+      }
     }
 
-    const result = await db.insertOne(this.collection, invoice);
+    const result = await db.create(this.collection, invoice);
     console.log('[PurchaseInvoiceService] Created purchase invoice:', result._id);
     
     return result as PurchaseInvoice;
@@ -152,7 +186,15 @@ export class PurchaseInvoiceService {
 
       updateData.items = updateData.items.map(item => {
         const itemAmount = item.quantity * item.unitPrice;
-        const itemTaxRate = item.taxRate !== undefined ? item.taxRate : defaultTaxRate;
+        let itemTaxRate = item.taxRate !== undefined ? item.taxRate : defaultTaxRate;
+        
+        // 税率の正規化: 10% -> 0.1に変換
+        if (itemTaxRate > 1) {
+          console.log(`[PurchaseInvoiceService] Normalizing tax rate from ${itemTaxRate}% to ${itemTaxRate / 100}`);
+          itemTaxRate = itemTaxRate / 100;
+        }
+        
+        // 通常は税抜きから税込みを計算
         const itemTaxAmount = Math.floor(itemAmount * itemTaxRate);
         
         subtotal += itemAmount;
@@ -168,16 +210,25 @@ export class PurchaseInvoiceService {
 
       updateData.subtotal = subtotal;
       updateData.taxAmount = taxAmount;
-      updateData.totalAmount = subtotal + taxAmount;
+      
+      // totalAmountが既に設定されている場合（手動修正）はそれを使用
+      if (!updateData.totalAmount || updateData.totalAmount === 0) {
+        updateData.totalAmount = subtotal + taxAmount;
+      }
+      
+      // currentInvoiceAmountが設定されている場合は、それが最終請求額
+      if (updateData.currentInvoiceAmount) {
+        updateData.totalAmount = updateData.currentInvoiceAmount;
+      }
     }
 
-    const result = await db.updateOne(
+    const result = await db.update(
       this.collection,
-      { _id: new ObjectId(id) },
-      { $set: updateData }
+      id,
+      updateData
     );
 
-    if (result.modifiedCount === 0) {
+    if (!result) {
       return null;
     }
 
@@ -254,8 +305,8 @@ export class PurchaseInvoiceService {
    * 仕入請求書を削除
    */
   async deletePurchaseInvoice(id: string): Promise<boolean> {
-    const result = await db.deleteOne(this.collection, { _id: new ObjectId(id) });
-    return result.deletedCount > 0;
+    const result = await db.delete(this.collection, id);
+    return result;
   }
 
   /**
@@ -278,13 +329,13 @@ export class PurchaseInvoiceService {
       updateData.approvedAt = new Date();
     }
 
-    const result = await db.updateOne(
+    const result = await db.update(
       this.collection,
-      { _id: new ObjectId(id) },
-      { $set: updateData }
+      id,
+      updateData
     );
 
-    if (result.modifiedCount === 0) {
+    if (!result) {
       return null;
     }
 
@@ -315,13 +366,13 @@ export class PurchaseInvoiceService {
       }
     }
 
-    const result = await db.updateOne(
+    const result = await db.update(
       this.collection,
-      { _id: new ObjectId(id) },
-      { $set: updateData }
+      id,
+      updateData
     );
 
-    if (result.modifiedCount === 0) {
+    if (!result) {
       return null;
     }
 
