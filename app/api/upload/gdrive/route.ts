@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { google } from 'googleapis';
+import { GoogleAuth } from 'google-auth-library';
 import { Readable } from 'stream';
 
 import { logger } from '@/lib/logger';
+
 // Google Drive APIの設定
 // 環境変数が設定されていない場合のダミー認証
 const authConfig = process.env.GOOGLE_CLIENT_EMAIL ? {
@@ -21,9 +22,32 @@ const authConfig = process.env.GOOGLE_CLIENT_EMAIL ? {
   scopes: ['https://www.googleapis.com/auth/drive.file'],
 };
 
-const auth = new google.auth.GoogleAuth(authConfig);
+const auth = new GoogleAuth(authConfig);
 
-const drive = google.drive({ version: 'v3', auth });
+// ファイルアップロード用のマルチパートリクエストを作成
+function createMultipartBody(
+  metadata: any,
+  fileBuffer: Buffer,
+  mimeType: string,
+  boundary: string
+): Buffer {
+  const metadataString = JSON.stringify(metadata);
+  
+  const parts = [
+    `--${boundary}`,
+    'Content-Type: application/json; charset=UTF-8',
+    '',
+    metadataString,
+    `--${boundary}`,
+    `Content-Type: ${mimeType}`,
+    'Content-Transfer-Encoding: base64',
+    '',
+    fileBuffer.toString('base64'),
+    `--${boundary}--`,
+  ];
+  
+  return Buffer.from(parts.join('\r\n'), 'utf-8');
+}
 
 export async function POST(request: NextRequest) {
   // Google Drive認証が設定されていない場合はエラーを返す
@@ -68,23 +92,46 @@ export async function POST(request: NextRequest) {
       parents: [FOLDER_ID],
     };
 
-    // ファイルをアップロード
-    const stream = new Readable();
-    stream.push(buffer);
-    stream.push(null);
+    // 認証クライアントを取得
+    const client = await auth.getClient();
+    const accessToken = await client.getAccessToken();
 
-    const media = {
-      mimeType: file.type,
-      body: stream,
-    };
+    if (!accessToken || !accessToken.token) {
+      throw new Error('アクセストークンの取得に失敗しました');
+    }
 
-    const response = await drive.files.create({
-      requestBody: fileMetadata,
-      media: media,
-      fields: 'id, name, webViewLink',
-    });
+    // マルチパートアップロード用のboundary
+    const boundary = '-------314159265358979323846';
+    
+    // マルチパートボディを作成
+    const multipartBody = createMultipartBody(
+      fileMetadata,
+      buffer,
+      file.type || 'application/octet-stream',
+      boundary
+    );
 
-    logger.debug('File uploaded to Google Drive:', response.data);
+    // Google Drive APIを直接呼び出し
+    const uploadResponse = await fetch(
+      'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,name,webViewLink',
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken.token}`,
+          'Content-Type': `multipart/related; boundary=${boundary}`,
+          'Content-Length': multipartBody.length.toString(),
+        },
+        body: multipartBody,
+      }
+    );
+
+    if (!uploadResponse.ok) {
+      const errorText = await uploadResponse.text();
+      throw new Error(`Google Drive API error: ${uploadResponse.status} - ${errorText}`);
+    }
+
+    const responseData = await uploadResponse.json();
+    logger.debug('File uploaded to Google Drive:', responseData);
 
     // GASのOCR処理を呼び出す
     if (process.env.GAS_OCR_URL) {
@@ -95,7 +142,7 @@ export async function POST(request: NextRequest) {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            fileIds: [response.data.id]
+            fileIds: [responseData.id]
           }),
         });
         
@@ -108,9 +155,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      fileId: response.data.id,
-      fileName: response.data.name,
-      webViewLink: response.data.webViewLink,
+      fileId: responseData.id,
+      fileName: responseData.name,
+      webViewLink: responseData.webViewLink,
       message: 'ファイルがGoogle Driveにアップロードされました。OCR処理を開始します。',
     });
 

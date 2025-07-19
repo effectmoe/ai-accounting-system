@@ -1,4 +1,15 @@
 import { ObjectId } from 'mongodb';
+import { 
+  BaseDocument, 
+  TimestampedDocument, 
+  Address, 
+  ContactInfo,
+  MoneyAmount,
+  TaxCalculation,
+  TaggableDocument,
+  DateString,
+  ObjectIdString
+} from './database';
 
 // 支払い方法
 export type PaymentMethod = 'cash' | 'credit_card' | 'bank_transfer' | 'invoice' | 'other';
@@ -45,8 +56,7 @@ export type QuoteStatus = 'draft' | 'sent' | 'saved' | 'accepted' | 'rejected' |
 export type DeliveryNoteStatus = 'draft' | 'saved' | 'delivered' | 'received' | 'cancelled';
 
 // 顧客インターフェース
-export interface Customer {
-  _id?: ObjectId;
+export interface Customer extends TimestampedDocument, TaggableDocument {
   id?: string; // フロントエンド用のIDフィールド
   customerId?: string; // 顧客コード
   companyName: string;
