@@ -406,6 +406,51 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: { id: st
         </div>
       )}
 
+      {/* 振込先情報 */}
+      {invoice.bankTransferInfo && (
+        <div className="bg-white shadow rounded-lg p-6">
+          <h2 className="text-lg font-medium text-gray-900 mb-4">振込先情報</h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {invoice.bankTransferInfo.bankName && (
+              <div>
+                <p className="text-sm text-gray-500">銀行名</p>
+                <p className="mt-1 text-sm font-medium text-gray-900">{invoice.bankTransferInfo.bankName}</p>
+              </div>
+            )}
+            {invoice.bankTransferInfo.branchName && (
+              <div>
+                <p className="text-sm text-gray-500">支店名</p>
+                <p className="mt-1 text-sm font-medium text-gray-900">{invoice.bankTransferInfo.branchName}</p>
+              </div>
+            )}
+            {invoice.bankTransferInfo.accountType && (
+              <div>
+                <p className="text-sm text-gray-500">口座種別</p>
+                <p className="mt-1 text-sm font-medium text-gray-900">{invoice.bankTransferInfo.accountType}</p>
+              </div>
+            )}
+            {invoice.bankTransferInfo.accountNumber && (
+              <div>
+                <p className="text-sm text-gray-500">口座番号</p>
+                <p className="mt-1 text-sm font-medium text-gray-900">{invoice.bankTransferInfo.accountNumber}</p>
+              </div>
+            )}
+            {invoice.bankTransferInfo.accountName && (
+              <div className="md:col-span-2">
+                <p className="text-sm text-gray-500">口座名義</p>
+                <p className="mt-1 text-sm font-medium text-gray-900">{invoice.bankTransferInfo.accountName}</p>
+              </div>
+            )}
+            {invoice.bankTransferInfo.additionalInfo && (
+              <div className="md:col-span-3">
+                <p className="text-sm text-gray-500">その他振込情報</p>
+                <p className="mt-1 text-sm text-gray-700">{invoice.bankTransferInfo.additionalInfo}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* 支払情報 */}
       <div className="bg-white shadow rounded-lg p-6">
         <div className="flex justify-between items-center mb-4">
