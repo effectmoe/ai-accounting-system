@@ -246,10 +246,6 @@ export default function QuotesPage() {
               <Sparkles className="mr-2 h-4 w-4" />
               AI作成のみ
             </Button>
-            <Button onClick={handleSearch}>
-              <Search className="mr-2 h-4 w-4" />
-              検索
-            </Button>
           </div>
         </CardContent>
       </Card>
