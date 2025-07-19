@@ -418,6 +418,9 @@ export default function PurchaseInvoicesPage() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       種別
                     </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      作成日時
+                    </th>
                     <th className="relative px-6 py-3">
                       <span className="sr-only">Actions</span>
                     </th>
@@ -425,7 +428,17 @@ export default function PurchaseInvoicesPage() {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {purchaseInvoices.map((invoice) => (
-                    <tr key={invoice._id?.toString()} className="hover:bg-gray-50">
+                    <tr 
+                      key={invoice._id?.toString()} 
+                      className="hover:bg-gray-50 cursor-pointer"
+                      onClick={(e) => {
+                        // アクションボタンがクリックされた場合は行クリックを無効化
+                        if ((e.target as HTMLElement).closest('button') || (e.target as HTMLElement).closest('a')) {
+                          return;
+                        }
+                        router.push(`/purchase-invoices/${invoice._id}`);
+                      }}
+                    >
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                         {invoice.invoiceNumber}
                       </td>
@@ -458,6 +471,18 @@ export default function PurchaseInvoicesPage() {
                           <span className="text-gray-400">手動</span>
                         )}
                       </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {invoice.createdAt ? (
+                          <div>
+                            <div>{new Date(invoice.createdAt).toLocaleDateString('ja-JP')}</div>
+                            <div className="text-xs text-gray-400">
+                              {new Date(invoice.createdAt).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex items-center justify-end space-x-2">
                           <Link
@@ -467,7 +492,10 @@ export default function PurchaseInvoicesPage() {
                             <Edit className="w-4 h-4" />
                           </Link>
                           <button
-                            onClick={() => handleDeleteInvoice(invoice._id!.toString())}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteInvoice(invoice._id!.toString());
+                            }}
                             className="text-red-600 hover:text-red-900"
                           >
                             <Trash2 className="w-4 h-4" />
