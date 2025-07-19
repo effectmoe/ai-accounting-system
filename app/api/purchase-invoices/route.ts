@@ -172,7 +172,8 @@ export async function POST(request: NextRequest) {
                 email: updatedSupplier.email,
                 website: updatedSupplier.website,
                 address1: updatedSupplier.address1,
-                postalCode: updatedSupplier.postalCode
+                postalCode: updatedSupplier.postalCode,
+                bankTransferInfo: updatedSupplier.bankTransferInfo
               }, null, 2));
             } catch (updateError) {
               console.error('[Purchase Invoice] Error updating supplier:', updateError);
