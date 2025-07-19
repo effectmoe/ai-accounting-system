@@ -329,6 +329,12 @@ export async function POST(request: NextRequest) {
     // vendorNameを削除（supplierIdで管理するため）
     delete finalInvoiceData.vendorName;
     
+    // 振込先情報が含まれているか確認
+    console.log('[Purchase Invoice] Final invoice data contains bankTransferInfo:', !!finalInvoiceData.bankTransferInfo);
+    if (finalInvoiceData.bankTransferInfo) {
+      console.log('[Purchase Invoice] bankTransferInfo details:', JSON.stringify(finalInvoiceData.bankTransferInfo, null, 2));
+    }
+    
     // fileIdが含まれている場合はログに記録
     if (finalInvoiceData.fileId) {
       console.log('[Purchase Invoice] Including fileId in invoice data:', finalInvoiceData.fileId);

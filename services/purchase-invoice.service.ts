@@ -151,6 +151,14 @@ export class PurchaseInvoiceService {
       bankTransferInfo: result.bankTransferInfo
     });
     
+    // 作成直後にデータベースから再取得して確認
+    const verifyInvoice = await db.findOne(this.collection, { _id: result._id });
+    console.log('[PurchaseInvoiceService] Verification - Invoice from DB:', {
+      id: verifyInvoice?._id,
+      hasBankTransferInfo: !!verifyInvoice?.bankTransferInfo,
+      bankTransferInfo: verifyInvoice?.bankTransferInfo
+    });
+    
     return result as PurchaseInvoice;
   }
 
@@ -160,6 +168,12 @@ export class PurchaseInvoiceService {
   async getPurchaseInvoice(id: string): Promise<PurchaseInvoice | null> {
     const invoice = await db.findOne(this.collection, { _id: new ObjectId(id) });
     if (!invoice) return null;
+    
+    console.log('[PurchaseInvoiceService] Retrieved invoice:', {
+      id: invoice._id,
+      hasBankTransferInfo: !!invoice.bankTransferInfo,
+      bankTransferInfo: invoice.bankTransferInfo
+    });
 
     // 仕入先情報をpopulate
     if (invoice.supplierId) {
