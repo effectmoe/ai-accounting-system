@@ -211,7 +211,17 @@ export class OCRAIOrchestrator {
         vendorName: validatedData.vendor.name,
         customerName: validatedData.customer.name,
         itemsCount: validatedData.items.length,
-        totalAmount: validatedData.totalAmount
+        totalAmount: validatedData.totalAmount,
+        hasBankTransferInfo: !!validatedData.bankTransferInfo,
+        bankTransferInfo: validatedData.bankTransferInfo,
+        hasCarryoverInfo: !!(validatedData.previousBalance || validatedData.currentPayment || validatedData.carryoverAmount),
+        carryoverInfo: {
+          previousBalance: validatedData.previousBalance,
+          currentPayment: validatedData.currentPayment,
+          carryoverAmount: validatedData.carryoverAmount,
+          currentSales: validatedData.currentSales,
+          currentInvoiceAmount: validatedData.currentInvoiceAmount
+        }
       });
       
       return validatedData;
@@ -739,13 +749,20 @@ CRITICAL RULES:
    - 繰越金額 = carryoverAmount
    - 今回売上高 = currentSales
    - 今回請求額 = currentInvoiceAmount
-8. Extract bank transfer information (振込先):
-   - 銀行名 = bankName
-   - 支店名 = branchName
-   - 口座種別 (普通/当座) = accountType
-   - 口座番号 = accountNumber
-   - 口座名義 = accountName
-   - Additional transfer info = additionalInfo
+8. Extract bank transfer information (振込先) - IMPORTANT: Look for these patterns:
+   - "振込先", "お振込先", "振込先情報", "銀行口座"
+   - Bank names often end with "銀行", "信用金庫", "信用組合"
+   - Branch names often end with "支店", "本店"
+   - Account types: "普通", "当座", "普通預金", "当座預金"
+   - Account numbers are typically 7 digits
+   - Look in footer area, notes section, or separate box
+   - Extract as:
+     - 銀行名 = bankName (e.g., "三菱UFJ銀行")
+     - 支店名 = branchName (e.g., "新宿支店")
+     - 口座種別 = accountType (e.g., "普通")
+     - 口座番号 = accountNumber (e.g., "1234567")
+     - 口座名義 = accountName (e.g., "カ）アソウタイセイプリンティング")
+     - Additional info = additionalInfo (e.g., "振込手数料はお客様負担")
 
 Example:
 - "CROP様分" with no quantity/price/amount → This is a REMARK, not a product
