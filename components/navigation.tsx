@@ -74,7 +74,7 @@ const Navigation = () => {
   const mainNavItems = [
     { href: '/', label: 'ダッシュボード' },
     { href: '/documents', label: '書類管理' },
-    { href: '/purchase-invoices', label: '仕入請求書' },
+    { href: '/deals', label: '案件管理' },
   ];
 
   const isActive = (href: string) => {

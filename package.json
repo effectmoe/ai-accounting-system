@@ -88,6 +88,7 @@
     "@radix-ui/react-switch": "^1.2.5",
     "@radix-ui/react-tabs": "^1.1.12",
     "@react-pdf/renderer": "^3.1.14",
+    "@sentry/nextjs": "^9.40.0",
     "@supabase/supabase-js": "^2.50.3",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.3",
