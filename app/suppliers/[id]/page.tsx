@@ -305,6 +305,65 @@ export default function SupplierDetailPage() {
             </Card>
           </div>
 
+          {/* 振込先情報 */}
+          {supplier.bankTransferInfo && supplier.bankTransferInfo.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>振込先情報</CardTitle>
+                <CardDescription>
+                  支払い時に使用する振込先口座情報
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {supplier.bankTransferInfo.map((bank, index) => (
+                    <div key={index} className="border rounded-lg p-4">
+                      <h4 className="font-medium mb-3">振込先 {index + 1}</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {bank.bankName && (
+                          <div>
+                            <label className="text-sm font-medium text-muted-foreground">銀行名</label>
+                            <p>{bank.bankName}</p>
+                          </div>
+                        )}
+                        {bank.branchName && (
+                          <div>
+                            <label className="text-sm font-medium text-muted-foreground">支店名</label>
+                            <p>{bank.branchName}</p>
+                          </div>
+                        )}
+                        {bank.accountType && (
+                          <div>
+                            <label className="text-sm font-medium text-muted-foreground">口座種別</label>
+                            <p>{bank.accountType}</p>
+                          </div>
+                        )}
+                        {bank.accountNumber && (
+                          <div>
+                            <label className="text-sm font-medium text-muted-foreground">口座番号</label>
+                            <p>{bank.accountNumber}</p>
+                          </div>
+                        )}
+                        {bank.accountName && (
+                          <div className="md:col-span-2">
+                            <label className="text-sm font-medium text-muted-foreground">口座名義</label>
+                            <p>{bank.accountName}</p>
+                          </div>
+                        )}
+                        {bank.additionalInfo && (
+                          <div className="md:col-span-2">
+                            <label className="text-sm font-medium text-muted-foreground">その他情報</label>
+                            <p className="text-sm text-muted-foreground">{bank.additionalInfo}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {supplier.contacts && supplier.contacts.length > 0 && (
             <Card>
               <CardHeader>
