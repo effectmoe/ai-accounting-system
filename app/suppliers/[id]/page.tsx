@@ -35,6 +35,10 @@ export default function SupplierDetailPage() {
         const response = await fetch(`/api/suppliers/${supplierId}`);
         if (response.ok) {
           const data = await response.json();
+          console.log('Fetched supplier data:', data);
+          console.log('Bank transfer info:', data.bankTransferInfo);
+          console.log('Has bank transfer info:', !!data.bankTransferInfo);
+          console.log('Bank transfer info length:', data.bankTransferInfo?.length);
           setSupplier(data);
         } else {
           console.error('Failed to fetch supplier');
@@ -306,7 +310,16 @@ export default function SupplierDetailPage() {
           </div>
 
           {/* 振込先情報 */}
-          {supplier.bankTransferInfo && supplier.bankTransferInfo.length > 0 && (
+          {(() => {
+            console.log('Bank transfer info check:', {
+              exists: !!supplier.bankTransferInfo,
+              isArray: Array.isArray(supplier.bankTransferInfo),
+              length: supplier.bankTransferInfo?.length,
+              data: supplier.bankTransferInfo
+            });
+            return null;
+          })()}
+          {supplier.bankTransferInfo && Array.isArray(supplier.bankTransferInfo) && supplier.bankTransferInfo.length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle>振込先情報</CardTitle>
