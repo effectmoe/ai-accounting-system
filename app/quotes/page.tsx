@@ -206,6 +206,18 @@ function QuotesPageContent() {
     } catch (error) {
       console.error('Error converting quote to invoice:', error);
       alert(`変換エラー: ${error instanceof Error ? error.message : '不明なエラー'}`);
+      // Sentryでエラーをキャプチャ
+      if (typeof window !== 'undefined' && (window as any).Sentry) {
+        (window as any).Sentry.captureException(error, {
+          tags: {
+            operation: 'quote_to_invoice_conversion',
+            quoteId: quoteId,
+          },
+          extra: {
+            errorMessage: error instanceof Error ? error.message : String(error),
+          },
+        });
+      }
     } finally {
       setConvertingQuotes(prev => {
         const newSet = new Set(prev);
