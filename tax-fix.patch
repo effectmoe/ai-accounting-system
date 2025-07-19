@@ -1,0 +1,505 @@
+From 5d2a687f82b4bbf8140abb289c2722b7072afcf6 Mon Sep 17 00:00:00 2001
+From: Claude <claude@anthropic.com>
+Date: Sat, 19 Jul 2025 18:43:22 +0900
+Subject: [PATCH 1/2] =?UTF-8?q?=E4=BF=AE=E6=AD=A3:=20=E4=BB=95=E5=85=A5?=
+ =?UTF-8?q?=E8=AB=8B=E6=B1=82=E6=9B=B8=E3=81=AE=E7=A8=8E=E8=A8=88=E7=AE=97?=
+ =?UTF-8?q?=E3=81=A8=E5=82=99=E8=80=83=E6=AC=84=E8=A1=A8=E7=A4=BA?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+- 税率の正規化処理を追加（10% -> 0.1に変換）
+- 仕入請求書詳細画面に備考欄を追加
+- PurchaseInvoice型にnotesフィールドを追加
+- OCRから抽出した繰越情報をAPIに渡すよう修正
+
+🤖 Generated with [Claude Code](https://claude.ai/code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+---
+ app/api/faq/save/route.ts            | 45 +++------------------
+ app/documents/new/page.tsx           |  8 +++-
+ app/purchase-invoices/[id]/page.tsx  | 55 ++++++++++++++++++++++++++
+ lib/ocr-ai-orchestrator.ts           | 11 ++++++
+ services/deal.service.ts             | 17 +++-----
+ services/purchase-invoice.service.ts | 59 ++++++++++++++++++++++++++--
+ services/structured-data.service.ts  |  2 +-
+ services/supplier.service.ts         | 13 +++---
+ types/collections.ts                 | 10 +++++
+ 9 files changed, 156 insertions(+), 64 deletions(-)
+
+diff --git a/app/api/faq/save/route.ts b/app/api/faq/save/route.ts
+index 505b44fe2..4118db320 100644
+--- a/app/api/faq/save/route.ts
++++ b/app/api/faq/save/route.ts
+@@ -1,24 +1,9 @@
+ import { NextRequest, NextResponse } from 'next/server';
+-import { MongoClient } from 'mongodb';
+-
+-const MONGODB_URI = process.env.MONGODB_URI;
++import { db } from '@/lib/mongodb-client';
+ 
+ export async function POST(request: NextRequest) {
+-  let client: MongoClient | null = null;
+-
+   try {
+     console.log('[FAQ API] FAQ save API called');
+-    
+-    // 環境変数チェック
+-    if (!MONGODB_URI) {
+-      console.error('[FAQ API] MONGODB_URI環境変数が設定されていません');
+-      return NextResponse.json(
+-        { success: false, error: 'Database configuration error' },
+-        { status: 500 }
+-      );
+-    }
+-    
+-    console.log('[FAQ API] MongoDB URIが設定されています');
+ 
+     const body = await request.json();
+     console.log('[FAQ API] リクエストボディ:', JSON.stringify(body));
+@@ -33,18 +18,7 @@ export async function POST(request: NextRequest) {
+       );
+     }
+ 
+-    console.log('[FAQ API] MongoDB接続を開始...');
+-    
+-    // MongoDB接続
+-    client = new MongoClient(MONGODB_URI);
+-    await client.connect();
+-    console.log('[FAQ API] MongoDB接続成功');
+-    
+-    const db = client.db('accounting');
+-    console.log('[FAQ API] データベース選択: accounting');
+-    
+-    const faqCollection = db.collection('faq');
+-    console.log('[FAQ API] FAQコレクション選択完了');
++    console.log('[FAQ API] データベース接続を確認中...');
+ 
+     // FAQ保存
+     const faqEntry = {
+@@ -60,14 +34,14 @@ export async function POST(request: NextRequest) {
+ 
+     console.log('[FAQ API] FAQエントリを挿入:', JSON.stringify(faqEntry));
+     
+-    const result = await faqCollection.insertOne(faqEntry);
++    const result = await db.create('faq', faqEntry);
+ 
+-    console.log('[FAQ API] FAQ保存成功 ID:', result.insertedId);
++    console.log('[FAQ API] FAQ保存成功 ID:', result._id);
+ 
+     return NextResponse.json({
+       success: true,
+       message: 'FAQに保存されました',
+-      id: result.insertedId
++      id: result._id
+     });
+ 
+   } catch (error) {
+@@ -82,14 +56,5 @@ export async function POST(request: NextRequest) {
+       },
+       { status: 500 }
+     );
+-  } finally {
+-    if (client) {
+-      try {
+-        await client.close();
+-        console.log('[FAQ API] MongoDB接続をクローズ');
+-      } catch (closeError) {
+-        console.error('[FAQ API] MongoDB接続クローズエラー:', closeError);
+-      }
+-    }
+   }
+ }
+\ No newline at end of file
+diff --git a/app/documents/new/page.tsx b/app/documents/new/page.tsx
+index 896f88cda..94c42c0c2 100644
+--- a/app/documents/new/page.tsx
++++ b/app/documents/new/page.tsx
+@@ -173,7 +173,13 @@ async function convertOCRToPurchaseInvoice(ocrResult: any) {
+       vendorPhone: vendorInfo.phone,
+       vendorEmail: vendorInfo.email,
+       vendorFax: vendorInfo.fax,
+-      vendor: vendorInfo
++      vendor: vendorInfo,
++      // 繰越関連情報を追加
++      previousBalance: extractedData.previousBalance,
++      currentPayment: extractedData.currentPayment,
++      carryoverAmount: extractedData.carryoverAmount,
++      currentSales: extractedData.currentSales,
++      currentInvoiceAmount: extractedData.currentInvoiceAmount
+     };
+     
+     console.log('[convertOCRToPurchaseInvoice] 仕入請求書データ:', purchaseInvoiceData);
+diff --git a/app/purchase-invoices/[id]/page.tsx b/app/purchase-invoices/[id]/page.tsx
+index 8e82ff9a2..5efb7f89a 100644
+--- a/app/purchase-invoices/[id]/page.tsx
++++ b/app/purchase-invoices/[id]/page.tsx
+@@ -322,6 +322,51 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: { id: st
+               ))}
+             </tbody>
+             <tfoot className="bg-gray-50">
++              {invoice.previousBalance !== undefined && (
++                <>
++                  <tr>
++                    <td colSpan={4} className="px-6 py-4 text-sm font-medium text-gray-900 text-right">
++                      前回請求額
++                    </td>
++                    <td className="px-6 py-4 text-sm font-medium text-gray-900">
++                      ¥{invoice.previousBalance.toLocaleString()}
++                    </td>
++                  </tr>
++                  {invoice.currentPayment !== undefined && (
++                    <tr>
++                      <td colSpan={4} className="px-6 py-4 text-sm font-medium text-gray-900 text-right">
++                        今回入金額
++                      </td>
++                      <td className="px-6 py-4 text-sm font-medium text-gray-900">
++                        ¥{invoice.currentPayment.toLocaleString()}
++                      </td>
++                    </tr>
++                  )}
++                  {invoice.carryoverAmount !== undefined && (
++                    <tr>
++                      <td colSpan={4} className="px-6 py-4 text-sm font-medium text-gray-900 text-right">
++                        繰越金額
++                      </td>
++                      <td className="px-6 py-4 text-sm font-medium text-gray-900">
++                        ¥{invoice.carryoverAmount.toLocaleString()}
++                      </td>
++                    </tr>
++                  )}
++                  {invoice.currentSales !== undefined && (
++                    <tr>
++                      <td colSpan={4} className="px-6 py-4 text-sm font-medium text-gray-900 text-right">
++                        今回売上高
++                      </td>
++                      <td className="px-6 py-4 text-sm font-medium text-gray-900">
++                        ¥{invoice.currentSales.toLocaleString()}
++                      </td>
++                    </tr>
++                  )}
++                  <tr className="border-t-2 border-gray-300">
++                    <td colSpan={5} className="py-2"></td>
++                  </tr>
++                </>
++              )}
+               <tr>
+                 <td colSpan={4} className="px-6 py-4 text-sm font-medium text-gray-900 text-right">
+                   小計
+@@ -351,6 +396,16 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: { id: st
+         </div>
+       </div>
+ 
++      {/* 備考 */}
++      {invoice.notes && (
++        <div className="bg-white shadow rounded-lg p-6">
++          <h2 className="text-lg font-medium text-gray-900 mb-4">備考</h2>
++          <div className="text-sm text-gray-700 whitespace-pre-wrap">
++            {invoice.notes}
++          </div>
++        </div>
++      )}
++
+       {/* 支払情報 */}
+       <div className="bg-white shadow rounded-lg p-6">
+         <div className="flex justify-between items-center mb-4">
+diff --git a/lib/ocr-ai-orchestrator.ts b/lib/ocr-ai-orchestrator.ts
+index 4c52eedb9..18f19d67b 100644
+--- a/lib/ocr-ai-orchestrator.ts
++++ b/lib/ocr-ai-orchestrator.ts
+@@ -722,6 +722,12 @@ CRITICAL RULES:
+ 4. IMPORTANT: Rows in product table with text in name column but EMPTY quantity, unit price, AND amount are NOT products - these are remarks/notes
+ 5. Only treat rows as products if they have at least ONE of: quantity, unit price, or amount
+ 6. Extract content from 備考 columns as notes
++7. For invoices (請求書), extract balance/carryover information:
++   - 前回請求額 = previousBalance
++   - 今回入金額 = currentPayment  
++   - 繰越金額 = carryoverAmount
++   - 今回売上高 = currentSales
++   - 今回請求額 = currentInvoiceAmount
+ 
+ Example:
+ - "CROP様分" with no quantity/price/amount → This is a REMARK, not a product
+@@ -756,6 +762,11 @@ Return ONLY JSON:
+     "amount": 5000,
+     "remarks": "string"
+   }],
++  "previousBalance": 25260,
++  "currentPayment": 2250,
++  "carryoverAmount": 23010,
++  "currentSales": 107863,
++  "currentInvoiceAmount": 130873,
+   "subtotal": 5000,
+   "taxAmount": 500,
+   "totalAmount": 5500,
+diff --git a/services/deal.service.ts b/services/deal.service.ts
+index b25259cc5..0d178b699 100644
+--- a/services/deal.service.ts
++++ b/services/deal.service.ts
+@@ -1,5 +1,5 @@
+ import { ObjectId } from 'mongodb';
+-import { getMongoClient } from '@/lib/mongodb-client';
++import { getMongoClient, db } from '@/lib/mongodb-client';
+ import { Deal, DealStatus, DealItem, DealActivity } from '@/types/collections';
+ 
+ const DB_NAME = process.env.MONGODB_DB_NAME || 'accounting-app';
+@@ -201,12 +201,11 @@ export class DealService {
+       metadata: { status: 'lead' }
+     });
+ 
+-    const result = await collection.insertOne(deal as any);
++    const result = await db.create(COLLECTION_NAME, deal);
+     
+     return {
+-      ...deal,
+-      _id: result.insertedId,
+-      id: result.insertedId.toString()
++      ...result,
++      id: result._id.toString()
+     };
+   }
+ 
+@@ -286,13 +285,9 @@ export class DealService {
+ 
+   // 案件削除
+   static async deleteDeal(id: string) {
+-    const client = await getMongoClient();
+-    const db = client.db(DB_NAME);
+-    const collection = db.collection<Deal>(COLLECTION_NAME);
+-
+-    const result = await collection.deleteOne({ _id: new ObjectId(id) });
++    const result = await db.delete(COLLECTION_NAME, id);
+     
+-    if (result.deletedCount === 0) {
++    if (!result) {
+       throw new Error('Deal not found');
+     }
+ 
+diff --git a/services/purchase-invoice.service.ts b/services/purchase-invoice.service.ts
+index ec95d9566..c74dee0c2 100644
+--- a/services/purchase-invoice.service.ts
++++ b/services/purchase-invoice.service.ts
+@@ -71,6 +71,23 @@ export class PurchaseInvoiceService {
+       invoice.dueDate.setDate(invoice.dueDate.getDate() + paymentTerms);
+     }
+ 
++    // 繰越関連フィールドの処理
++    if (data.previousBalance !== undefined) {
++      invoice.previousBalance = data.previousBalance;
++    }
++    if (data.currentPayment !== undefined) {
++      invoice.currentPayment = data.currentPayment;
++    }
++    if (data.carryoverAmount !== undefined) {
++      invoice.carryoverAmount = data.carryoverAmount;
++    }
++    if (data.currentSales !== undefined) {
++      invoice.currentSales = data.currentSales;
++    }
++    if (data.currentInvoiceAmount !== undefined) {
++      invoice.currentInvoiceAmount = data.currentInvoiceAmount;
++    }
++
+     // 金額計算
+     if (invoice.items && invoice.items.length > 0) {
+       let subtotal = 0;
+@@ -79,7 +96,15 @@ export class PurchaseInvoiceService {
+ 
+       invoice.items = invoice.items.map(item => {
+         const itemAmount = item.quantity * item.unitPrice;
+-        const itemTaxRate = item.taxRate !== undefined ? item.taxRate : defaultTaxRate;
++        let itemTaxRate = item.taxRate !== undefined ? item.taxRate : defaultTaxRate;
++        
++        // 税率の正規化: 10% -> 0.1に変換
++        if (itemTaxRate > 1) {
++          console.log(`[PurchaseInvoiceService] Normalizing tax rate from ${itemTaxRate}% to ${itemTaxRate / 100}`);
++          itemTaxRate = itemTaxRate / 100;
++        }
++        
++        // 通常は税抜きから税込みを計算
+         const itemTaxAmount = Math.floor(itemAmount * itemTaxRate);
+         
+         subtotal += itemAmount;
+@@ -95,7 +120,16 @@ export class PurchaseInvoiceService {
+ 
+       invoice.subtotal = subtotal;
+       invoice.taxAmount = taxAmount;
+-      invoice.totalAmount = subtotal + taxAmount;
++      
++      // totalAmountが既に設定されている場合（OCRから）はそれを使用
++      if (!invoice.totalAmount || invoice.totalAmount === 0) {
++        invoice.totalAmount = subtotal + taxAmount;
++      }
++      
++      // currentInvoiceAmountが設定されている場合は、それが最終請求額
++      if (invoice.currentInvoiceAmount) {
++        invoice.totalAmount = invoice.currentInvoiceAmount;
++      }
+     }
+ 
+     const result = await db.create(this.collection, invoice);
+@@ -152,7 +186,15 @@ export class PurchaseInvoiceService {
+ 
+       updateData.items = updateData.items.map(item => {
+         const itemAmount = item.quantity * item.unitPrice;
+-        const itemTaxRate = item.taxRate !== undefined ? item.taxRate : defaultTaxRate;
++        let itemTaxRate = item.taxRate !== undefined ? item.taxRate : defaultTaxRate;
++        
++        // 税率の正規化: 10% -> 0.1に変換
++        if (itemTaxRate > 1) {
++          console.log(`[PurchaseInvoiceService] Normalizing tax rate from ${itemTaxRate}% to ${itemTaxRate / 100}`);
++          itemTaxRate = itemTaxRate / 100;
++        }
++        
++        // 通常は税抜きから税込みを計算
+         const itemTaxAmount = Math.floor(itemAmount * itemTaxRate);
+         
+         subtotal += itemAmount;
+@@ -168,7 +210,16 @@ export class PurchaseInvoiceService {
+ 
+       updateData.subtotal = subtotal;
+       updateData.taxAmount = taxAmount;
+-      updateData.totalAmount = subtotal + taxAmount;
++      
++      // totalAmountが既に設定されている場合（手動修正）はそれを使用
++      if (!updateData.totalAmount || updateData.totalAmount === 0) {
++        updateData.totalAmount = subtotal + taxAmount;
++      }
++      
++      // currentInvoiceAmountが設定されている場合は、それが最終請求額
++      if (updateData.currentInvoiceAmount) {
++        updateData.totalAmount = updateData.currentInvoiceAmount;
++      }
+     }
+ 
+     const result = await db.update(
+diff --git a/services/structured-data.service.ts b/services/structured-data.service.ts
+index c2212528b..6a6e15db3 100644
+--- a/services/structured-data.service.ts
++++ b/services/structured-data.service.ts
+@@ -540,7 +540,7 @@ export class StructuredDataService {
+       updatedAt: new Date()
+     };
+ 
+-    const result = await this.structuredDataCollection.insertOne(document);
++    const result = await this.structuredDataCollection.insertOne(document as any);
+     return { ...document, _id: result.insertedId };
+   }
+ 
+diff --git a/services/supplier.service.ts b/services/supplier.service.ts
+index ff8f2fc6c..c7a328b83 100644
+--- a/services/supplier.service.ts
++++ b/services/supplier.service.ts
+@@ -1,5 +1,5 @@
+ import { ObjectId } from 'mongodb';
+-import { getDatabase } from '@/lib/mongodb-client';
++import { getDatabase, db } from '@/lib/mongodb-client';
+ import { Supplier, SupplierStatus } from '@/types/collections';
+ 
+ // MongoDB接続はgetDatabase()で'accounting'データベースを使用するため、この定数は不要
+@@ -161,12 +161,11 @@ export class SupplierService {
+       updatedAt: now
+     };
+ 
+-    const result = await collection.insertOne(supplier as any);
++    const result = await db.create(COLLECTION_NAME, supplier);
+     
+     return {
+-      ...supplier,
+-      _id: result.insertedId,
+-      id: result.insertedId.toString()
++      ...result,
++      id: result._id.toString()
+     };
+   }
+ 
+@@ -249,9 +248,9 @@ export class SupplierService {
+     }
+ 
+     // 関連データがない場合は削除
+-    const result = await collection.deleteOne({ _id: new ObjectId(id) });
++    const result = await db.delete(COLLECTION_NAME, id);
+     
+-    if (result.deletedCount === 0) {
++    if (!result) {
+       throw new Error('Supplier not found');
+     }
+ 
+diff --git a/types/collections.ts b/types/collections.ts
+index d7c273017..b997a7c67 100644
+--- a/types/collections.ts
++++ b/types/collections.ts
+@@ -1294,6 +1294,16 @@ export interface PurchaseInvoice {
+   taxRate: number;
+   totalAmount: number;
+   
++  // 繰越・請求関連情報
++  previousBalance?: number; // 前回請求額
++  currentPayment?: number; // 今回入金額
++  carryoverAmount?: number; // 繰越金額
++  currentSales?: number; // 今回売上高
++  currentInvoiceAmount?: number; // 今回請求額（繰越金額 + 今回売上高）
++  
++  // その他
++  notes?: string; // 備考
++  
+   // ステータス
+   status: PurchaseInvoiceStatus;
+   
+-- 
+2.49.0
+
+
+From d7150cefde9f5074dd060a33e59e882469770632 Mon Sep 17 00:00:00 2001
+From: Claude <claude@anthropic.com>
+Date: Sat, 19 Jul 2025 19:29:51 +0900
+Subject: [PATCH 2/2] chore: add add-env-vars.sh to gitignore
+
+---
+ .gitignore      |  5 ++++-
+ add-env-vars.sh | 16 ----------------
+ 2 files changed, 4 insertions(+), 17 deletions(-)
+ delete mode 100755 add-env-vars.sh
+
+diff --git a/.gitignore b/.gitignore
+index 220f07bb8..e7993bdb9 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -85,4 +85,7 @@ src/mcp-servers/external/
+ mcp-chrome-server/
+ 
+ # Test environment files
+-.env.test
+\ No newline at end of file
++.env.test
++
++# scripts with secrets
++add-env-vars.sh
+\ No newline at end of file
+diff --git a/add-env-vars.sh b/add-env-vars.sh
+deleted file mode 100755
+index 358fa2c80..000000000
+--- a/add-env-vars.sh
++++ /dev/null
+@@ -1,16 +0,0 @@
+-#!/bin/bash
+-
+-# Vercel環境変数追加スクリプト
+-
+-echo "環境変数を追加しています..."
+-
+-# ANTHROPIC_API_KEY
+-echo "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" | vercel env add ANTHROPIC_API_KEY production
+-
+-# OPENAI_API_KEY
+-echo "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" | vercel env add OPENAI_API_KEY production
+-
+-# SENTRY_DSN (オプション)
+-echo "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" | vercel env add SENTRY_DSN production
+-
+-echo "環境変数の追加が完了しました"
+\ No newline at end of file
+-- 
+2.49.0
+
