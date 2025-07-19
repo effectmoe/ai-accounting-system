@@ -324,45 +324,58 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: { id: st
             <tfoot className="bg-gray-50">
               {invoice.previousBalance !== undefined && (
                 <>
-                  <tr>
-                    <td colSpan={4} className="px-6 py-4 text-sm font-medium text-gray-900 text-right">
-                      前回請求額
+                  {/* 前月繰越セクション */}
+                  <tr className="bg-gray-100">
+                    <td colSpan={5} className="px-6 py-2 text-sm font-bold text-gray-700">
+                      【前月からの繰越】
                     </td>
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                  </tr>
+                  <tr>
+                    <td colSpan={4} className="px-6 py-3 text-sm text-gray-600 text-right">
+                      前月末時点の請求残高
+                    </td>
+                    <td className="px-6 py-3 text-sm font-medium text-gray-900">
                       ¥{invoice.previousBalance.toLocaleString()}
                     </td>
                   </tr>
                   {invoice.currentPayment !== undefined && (
                     <tr>
-                      <td colSpan={4} className="px-6 py-4 text-sm font-medium text-gray-900 text-right">
-                        今回入金額
+                      <td colSpan={4} className="px-6 py-3 text-sm text-gray-600 text-right">
+                        今月ご入金いただいた金額
                       </td>
-                      <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                        ¥{invoice.currentPayment.toLocaleString()}
+                      <td className="px-6 py-3 text-sm font-medium text-gray-900">
+                        -¥{invoice.currentPayment.toLocaleString()}
                       </td>
                     </tr>
                   )}
                   {invoice.carryoverAmount !== undefined && (
                     <tr>
-                      <td colSpan={4} className="px-6 py-4 text-sm font-medium text-gray-900 text-right">
-                        繰越金額
+                      <td colSpan={4} className="px-6 py-3 text-sm text-gray-600 text-right font-medium">
+                        差引繰越額
                       </td>
-                      <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                      <td className="px-6 py-3 text-sm font-bold text-gray-900 border-t border-gray-400">
                         ¥{invoice.carryoverAmount.toLocaleString()}
                       </td>
                     </tr>
                   )}
+                  
+                  {/* 今月分セクション */}
+                  <tr className="bg-gray-100">
+                    <td colSpan={5} className="px-6 py-2 text-sm font-bold text-gray-700">
+                      【今月のお取引】
+                    </td>
+                  </tr>
                   {invoice.currentSales !== undefined && (
                     <tr>
-                      <td colSpan={4} className="px-6 py-4 text-sm font-medium text-gray-900 text-right">
-                        今回売上高
+                      <td colSpan={4} className="px-6 py-3 text-sm text-gray-600 text-right">
+                        今月の売上高
                       </td>
-                      <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                      <td className="px-6 py-3 text-sm font-medium text-gray-900">
                         ¥{invoice.currentSales.toLocaleString()}
                       </td>
                     </tr>
                   )}
-                  <tr className="border-t-2 border-gray-300">
+                  <tr className="border-t-2 border-gray-400">
                     <td colSpan={5} className="py-2"></td>
                   </tr>
                 </>
@@ -385,12 +398,22 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: { id: st
               </tr>
               <tr>
                 <td colSpan={4} className="px-6 py-4 text-sm font-medium text-gray-900 text-right">
-                  合計
+                  合計（税込）
                 </td>
                 <td className="px-6 py-4 text-lg font-bold text-gray-900">
                   ¥{invoice.totalAmount.toLocaleString()}
                 </td>
               </tr>
+              {invoice.currentInvoiceAmount !== undefined && (
+                <tr className="bg-blue-50 border-t-2 border-blue-400">
+                  <td colSpan={4} className="px-6 py-4 text-base font-bold text-blue-900 text-right">
+                    今回ご請求額
+                  </td>
+                  <td className="px-6 py-4 text-xl font-bold text-blue-900">
+                    ¥{invoice.currentInvoiceAmount.toLocaleString()}
+                  </td>
+                </tr>
+              )}
             </tfoot>
           </table>
         </div>
