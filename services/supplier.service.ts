@@ -132,7 +132,9 @@ export class SupplierService {
       phone: result.phone,
       fax: result.fax,
       address1: result.address1,
-      postalCode: result.postalCode
+      postalCode: result.postalCode,
+      bankTransferInfo: result.bankTransferInfo,
+      hasBankTransferInfo: !!result.bankTransferInfo
     }, null, 2));
     
     console.log('===== [SupplierService] getSupplierById Debug END =====');
