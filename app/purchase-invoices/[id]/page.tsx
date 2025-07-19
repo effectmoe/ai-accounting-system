@@ -341,7 +341,7 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: { id: st
                   {invoice.currentPayment !== undefined && (
                     <tr>
                       <td colSpan={4} className="px-6 py-3 text-sm text-gray-600 text-right">
-                        今月ご入金いただいた金額
+                        前回入金額
                       </td>
                       <td className="px-6 py-3 text-sm font-medium text-gray-900">
                         -¥{invoice.currentPayment.toLocaleString()}
