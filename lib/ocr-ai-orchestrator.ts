@@ -72,6 +72,17 @@ export interface StructuredInvoiceData {
   paymentTerms?: string;
   quotationValidity?: string;
   notes?: string;
+  
+  // 振込先情報
+  bankTransferInfo?: {
+    bankName?: string;
+    branchName?: string;
+    accountType?: string;
+    accountNumber?: string;
+    accountName?: string;
+    swiftCode?: string;
+    additionalInfo?: string;
+  };
 }
 
 export class OCRAIOrchestrator {
@@ -728,6 +739,13 @@ CRITICAL RULES:
    - 繰越金額 = carryoverAmount
    - 今回売上高 = currentSales
    - 今回請求額 = currentInvoiceAmount
+8. Extract bank transfer information (振込先):
+   - 銀行名 = bankName
+   - 支店名 = branchName
+   - 口座種別 (普通/当座) = accountType
+   - 口座番号 = accountNumber
+   - 口座名義 = accountName
+   - Additional transfer info = additionalInfo
 
 Example:
 - "CROP様分" with no quantity/price/amount → This is a REMARK, not a product
@@ -773,7 +791,15 @@ Return ONLY JSON:
   "notes": "string (combined remarks/notes from non-product rows and 備考 column)",
   "deliveryLocation": "string",
   "paymentTerms": "string",
-  "quotationValidity": "string"
+  "quotationValidity": "string",
+  "bankTransferInfo": {
+    "bankName": "銀行名",
+    "branchName": "支店名",
+    "accountType": "普通",
+    "accountNumber": "1234567",
+    "accountName": "口座名義",
+    "additionalInfo": "振込手数料はお客様負担"
+  }
 }
 \`\`\``;
   }

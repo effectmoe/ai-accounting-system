@@ -179,7 +179,9 @@ async function convertOCRToPurchaseInvoice(ocrResult: any) {
       currentPayment: extractedData.currentPayment,
       carryoverAmount: extractedData.carryoverAmount,
       currentSales: extractedData.currentSales,
-      currentInvoiceAmount: extractedData.currentInvoiceAmount
+      currentInvoiceAmount: extractedData.currentInvoiceAmount,
+      // 振込先情報を追加
+      bankTransferInfo: extractedData.bankTransferInfo
     };
     
     console.log('[convertOCRToPurchaseInvoice] 仕入請求書データ:', purchaseInvoiceData);
