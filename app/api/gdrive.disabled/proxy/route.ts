@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { google } from 'googleapis';
 
+import { logger } from '@/lib/logger';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
@@ -64,7 +65,7 @@ export async function GET(request: NextRequest) {
           resolve(new NextResponse(buffer, { headers }));
         })
         .on('error', (err) => {
-          console.error('Stream error:', err);
+          logger.error('Stream error:', err);
           resolve(NextResponse.json(
             { error: 'Failed to fetch file' },
             { status: 500 }
@@ -73,7 +74,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error: any) {
-    console.error('Google Drive proxy error:', error);
+    logger.error('Google Drive proxy error:', error);
     return NextResponse.json(
       { 
         error: 'Failed to fetch file from Google Drive',

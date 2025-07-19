@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { logger } from '@/lib/logger';
 import { 
   ArrowLeft, 
   Download, 
@@ -81,7 +82,7 @@ export default function DeliveryNoteDetailPage({ params }: { params: { id: strin
       const data = await response.json();
       setDeliveryNote(data);
     } catch (error) {
-      console.error('Error fetching delivery note:', error);
+      logger.error('Error fetching delivery note:', error);
       setError('納品書の取得に失敗しました');
     } finally {
       setIsLoading(false);
@@ -111,7 +112,7 @@ export default function DeliveryNoteDetailPage({ params }: { params: { id: strin
       const updatedDeliveryNote = await response.json();
       setDeliveryNote(updatedDeliveryNote);
     } catch (error) {
-      console.error('Error updating status:', error);
+      logger.error('Error updating status:', error);
       setError('ステータスの更新に失敗しました');
     } finally {
       setIsUpdating(false);
@@ -135,7 +136,7 @@ export default function DeliveryNoteDetailPage({ params }: { params: { id: strin
       
       router.push('/delivery-notes');
     } catch (error) {
-      console.error('Error cancelling delivery note:', error);
+      logger.error('Error cancelling delivery note:', error);
       setError('納品書のキャンセルに失敗しました');
     } finally {
       setIsUpdating(false);
@@ -171,7 +172,7 @@ export default function DeliveryNoteDetailPage({ params }: { params: { id: strin
         throw new Error(data.details || data.error || '変換に失敗しました');
       }
     } catch (error) {
-      console.error('Error converting delivery note to invoice:', error);
+      logger.error('Error converting delivery note to invoice:', error);
       alert(`変換エラー: ${error instanceof Error ? error.message : '不明なエラー'}`);
     } finally {
       setIsUpdating(false);
@@ -235,7 +236,7 @@ export default function DeliveryNoteDetailPage({ params }: { params: { id: strin
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
     } catch (error) {
-      console.error('PDFダウンロードエラー:', error);
+      logger.error('PDFダウンロードエラー:', error);
       alert('PDFのダウンロードに失敗しました');
     }
   };
@@ -292,7 +293,7 @@ export default function DeliveryNoteDetailPage({ params }: { params: { id: strin
       setPdfPreviewUrl(url);
       setShowPdfPreview(true);
     } catch (error) {
-      console.error('PDFプレビューエラー:', error);
+      logger.error('PDFプレビューエラー:', error);
       alert('PDFプレビューに失敗しました');
     }
   };

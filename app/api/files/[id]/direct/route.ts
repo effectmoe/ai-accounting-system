@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { getDatabase } from '@/lib/mongodb-client';
 import { ObjectId, GridFSBucket } from 'mongodb';
 
+import { logger } from '@/lib/logger';
 interface RouteParams {
   params: {
     id: string;
@@ -15,7 +16,7 @@ export const maxDuration = 60; // 60秒のタイムアウト
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const fileId = params.id;
-    console.log('Direct file API called with ID:', fileId);
+    logger.debug('Direct file API called with ID:', fileId);
     
     if (!fileId || !ObjectId.isValid(fileId)) {
       return new Response('Invalid file ID', { status: 400 });
@@ -49,7 +50,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         });
         
         downloadStream.on('error', (error) => {
-          console.error('Stream error:', error);
+          logger.error('Stream error:', error);
           controller.error(error);
         });
       },
@@ -70,7 +71,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     });
 
   } catch (error) {
-    console.error('Direct file error:', error);
+    logger.error('Direct file error:', error);
     return new Response('Internal Server Error', { status: 500 });
   }
 }

@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/mongodb-client';
 
+import { logger } from '@/lib/logger';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
     // MongoDB接続確認
-    console.log('Journals list API - MongoDB URI exists:', !!process.env.MONGODB_URI);
+    logger.debug('Journals list API - MongoDB URI exists:', !!process.env.MONGODB_URI);
 
     // クエリパラメータを取得
     const searchParams = request.nextUrl.searchParams;
@@ -42,7 +43,7 @@ export async function GET(request: NextRequest) {
       sort: { entryDate: -1, createdAt: -1 }
     });
 
-    console.log('Raw journals from database:', journals.length);
+    logger.debug('Raw journals from database:', journals.length);
 
     // 総数を取得
     const totalCount = await db.count('journals', filter);
@@ -56,8 +57,8 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Journal list error:', error);
-    console.error('Error details:', {
+    logger.error('Journal list error:', error);
+    logger.error('Error details:', {
       name: error instanceof Error ? error.name : 'Unknown',
       message: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined

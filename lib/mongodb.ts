@@ -1,5 +1,6 @@
 import { MongoClient, Db } from 'mongodb';
 
+import { logger } from '@/lib/logger';
 const uri = process.env.MONGODB_URI;
 if (!uri) {
   throw new Error('Please add your MongoDB URI to .env.local');
@@ -24,7 +25,7 @@ export async function connectToDatabase(): Promise<{ client: MongoClient; db: Db
     const db = client.db('accounting');
     return { client, db };
   } catch (error) {
-    console.error('MongoDB connection error:', error);
+    logger.error('MongoDB connection error:', error);
     clientPromise = null;
     throw error;
   }

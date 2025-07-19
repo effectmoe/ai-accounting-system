@@ -5,6 +5,7 @@ import { generatePDFBase64 } from '@/lib/pdf-export';
 import { DocumentData } from '@/lib/document-generator';
 import nodemailer from 'nodemailer';
 
+import { logger } from '@/lib/logger';
 // 日本語フォント処理のためにNode.js Runtimeを使用
 export const runtime = 'nodejs';
 
@@ -59,7 +60,7 @@ async function sendEmail(options: {
       }))
     };
 
-    console.log('Sending email via Gmail:', {
+    logger.debug('Sending email via Gmail:', {
       to: options.to,
       cc: options.cc,
       bcc: options.bcc,
@@ -69,10 +70,10 @@ async function sendEmail(options: {
 
     const info = await transporter.sendMail(mailOptions);
     
-    console.log('Email sent successfully:', info.messageId);
+    logger.debug('Email sent successfully:', info.messageId);
     return { success: true, messageId: info.messageId };
   } catch (error) {
-    console.error('Gmail送信エラー:', error);
+    logger.error('Gmail送信エラー:', error);
     throw new Error(`メール送信に失敗しました: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
@@ -153,22 +154,22 @@ ${deliveryDate ? `<strong>納品日：</strong>${deliveryDate}<br/>` : ''}
 }
 
 export async function POST(request: NextRequest) {
-  console.log('=== EMAIL SEND API CALLED ===');
+  logger.debug('=== EMAIL SEND API CALLED ===');
   try {
     const body: EmailRequest = await request.json();
-    console.log('Request body:', body);
+    logger.debug('Request body:', body);
     const { documentType, documentId, to, cc, bcc, subject, body: customBody, attachPdf = true, pdfBase64 } = body;
 
     // ドキュメントを取得
-    console.log('Fetching document...', { documentType, documentId });
+    logger.debug('Fetching document...', { documentType, documentId });
     let document: any;
     let documentData: DocumentData;
     
     if (documentType === 'quote') {
-      console.log('Fetching quote document...');
+      logger.debug('Fetching quote document...');
       const quoteService = new QuoteService();
       document = await quoteService.getQuote(documentId);
-      console.log('Quote fetched:', document ? 'SUCCESS' : 'FAILED');
+      logger.debug('Quote fetched:', document ? 'SUCCESS' : 'FAILED');
       
       if (!document) {
         return NextResponse.json({ error: '見積書が見つかりません' }, { status: 404 });
@@ -237,7 +238,7 @@ export async function POST(request: NextRequest) {
       };
     } else {
       // delivery-note の場合
-      console.log('Fetching delivery note document...');
+      logger.debug('Fetching delivery note document...');
       const response = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/delivery-notes/${documentId}`);
       
       if (!response.ok) {
@@ -245,7 +246,7 @@ export async function POST(request: NextRequest) {
       }
       
       document = await response.json();
-      console.log('Delivery note fetched:', document ? 'SUCCESS' : 'FAILED');
+      logger.debug('Delivery note fetched:', document ? 'SUCCESS' : 'FAILED');
       
       // DocumentData形式に変換
       documentData = {
@@ -292,27 +293,27 @@ export async function POST(request: NextRequest) {
     const emailBody = customBody || defaultTemplate.body;
 
     // 添付ファイルの準備
-    console.log('=== ATTACHMENT PREPARATION START ===');
-    console.log('Preparing attachments...', { attachPdf, hasPdfBase64: !!pdfBase64 });
+    logger.debug('=== ATTACHMENT PREPARATION START ===');
+    logger.debug('Preparing attachments...', { attachPdf, hasPdfBase64: !!pdfBase64 });
     const attachments = [];
     if (attachPdf) {
-      console.log('PDF attachment requested');
+      logger.debug('PDF attachment requested');
       
       // クライアントから送られたPDFデータがある場合は使用
       if (pdfBase64) {
-        console.log('Using client-generated PDF, size:', pdfBase64.length);
+        logger.debug('Using client-generated PDF, size:', pdfBase64.length);
         const attachment = {
           filename: `${documentData.documentNumber}.pdf`,
           content: pdfBase64,
           contentType: 'application/pdf',
         };
         attachments.push(attachment);
-        console.log('Client PDF attachment added to array');
+        logger.debug('Client PDF attachment added to array');
       } else {
         // クライアントからPDFが送られていない場合はサーバー側で生成を試みる
         try {
-          console.log('No client PDF provided, generating on server...');
-          console.log('Document data summary:', {
+          logger.debug('No client PDF provided, generating on server...');
+          logger.debug('Document data summary:', {
             documentType: documentData.documentType,
             documentNumber: documentData.documentNumber,
             customerName: documentData.customerName,
@@ -321,7 +322,7 @@ export async function POST(request: NextRequest) {
           });
           
           const serverPdfBase64 = await generatePDFBase64(documentData);
-          console.log('Server PDF generated successfully, size:', serverPdfBase64.length, 'characters');
+          logger.debug('Server PDF generated successfully, size:', serverPdfBase64.length, 'characters');
           
           const attachment = {
             filename: `${documentData.documentNumber}.pdf`,
@@ -329,11 +330,11 @@ export async function POST(request: NextRequest) {
             contentType: 'application/pdf',
           };
           attachments.push(attachment);
-          console.log('Server PDF attachment added to array');
+          logger.debug('Server PDF attachment added to array');
         } catch (pdfError) {
-          console.error('=== SERVER PDF GENERATION FAILED ===');
-          console.error('Server PDF generation failed:', pdfError);
-          console.error('PDF error details:', {
+          logger.error('=== SERVER PDF GENERATION FAILED ===');
+          logger.error('Server PDF generation failed:', pdfError);
+          logger.error('PDF error details:', {
             message: pdfError instanceof Error ? pdfError.message : String(pdfError),
             stack: pdfError instanceof Error ? pdfError.stack : null,
             type: pdfError instanceof Error ? pdfError.constructor.name : typeof pdfError
@@ -347,15 +348,15 @@ export async function POST(request: NextRequest) {
         }
       }
     } else {
-      console.log('PDF attachment not requested (attachPdf is false)');
+      logger.debug('PDF attachment not requested (attachPdf is false)');
     }
     
-    console.log('=== ATTACHMENT PREPARATION END ===');
-    console.log('Final attachments array:', attachments.map(a => ({ filename: a.filename, size: a.content.length })));
+    logger.debug('=== ATTACHMENT PREPARATION END ===');
+    logger.debug('Final attachments array:', attachments.map(a => ({ filename: a.filename, size: a.content.length })));
 
     // メール送信
-    console.log('Sending email with attachments count:', attachments.length);
-    console.log('Email attachments:', attachments.map(a => ({ filename: a.filename, size: a.content.length })));
+    logger.debug('Sending email with attachments count:', attachments.length);
+    logger.debug('Email attachments:', attachments.map(a => ({ filename: a.filename, size: a.content.length })));
     
     const result = await sendEmail({
       to,
@@ -366,7 +367,7 @@ export async function POST(request: NextRequest) {
       attachments,
     });
     
-    console.log('Email sent successfully:', result);
+    logger.debug('Email sent successfully:', result);
 
     if (!result.success) {
       throw new Error('メール送信に失敗しました');
@@ -391,7 +392,7 @@ export async function POST(request: NextRequest) {
         });
         
         if (!updateResponse.ok) {
-          console.error('Failed to update delivery note status');
+          logger.error('Failed to update delivery note status');
         }
       }
     }
@@ -414,8 +415,8 @@ export async function POST(request: NextRequest) {
       messageId: result.messageId,
     });
   } catch (error) {
-    console.error('Email sending error:', error);
-    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    logger.error('Email sending error:', error);
+    logger.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     
     // より詳細なエラー情報を返す
     const errorMessage = error instanceof Error ? error.message : String(error);

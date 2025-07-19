@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { SupplierQuoteService } from '@/services/supplier-quote.service';
 
+import { logger } from '@/lib/logger';
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic';
 
@@ -33,7 +34,7 @@ export async function GET(request: NextRequest) {
     
     return NextResponse.json(aggregation);
   } catch (error) {
-    console.error('Error in GET /api/supplier-quotes/monthly-aggregation:', error);
+    logger.error('Error in GET /api/supplier-quotes/monthly-aggregation:', error);
     return NextResponse.json(
       { error: 'Failed to fetch monthly aggregation' },
       { status: 500 }

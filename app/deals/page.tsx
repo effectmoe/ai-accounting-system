@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { logger } from '@/lib/logger';
 import {
   Table,
   TableBody,
@@ -76,7 +77,7 @@ export default function DealsPage() {
         setTotalPages(data.totalPages);
       }
     } catch (error) {
-      console.error('Error fetching deals:', error);
+      logger.error('Error fetching deals:', error);
     } finally {
       setLoading(false);
     }
@@ -90,7 +91,7 @@ export default function DealsPage() {
         setStats(data);
       }
     } catch (error) {
-      console.error('Error fetching deal stats:', error);
+      logger.error('Error fetching deal stats:', error);
     }
   };
 
@@ -114,7 +115,7 @@ export default function DealsPage() {
         setDealToDelete(null);
       }
     } catch (error) {
-      console.error('Error deleting deal:', error);
+      logger.error('Error deleting deal:', error);
     }
   };
 

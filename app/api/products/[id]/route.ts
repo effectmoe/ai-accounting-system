@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ProductService } from '@/services/product.service';
 
+import { logger } from '@/lib/logger';
 const productService = new ProductService();
 
 // 商品詳細取得
@@ -20,7 +21,7 @@ export async function GET(
 
     return NextResponse.json(product);
   } catch (error) {
-    console.error('商品取得エラー:', error);
+    logger.error('商品取得エラー:', error);
     return NextResponse.json(
       { error: '商品の取得に失敗しました' },
       { status: 500 }
@@ -83,7 +84,7 @@ export async function PUT(
 
     return NextResponse.json(product);
   } catch (error) {
-    console.error('商品更新エラー:', error);
+    logger.error('商品更新エラー:', error);
     
     if (error instanceof Error && error.message === '商品コードが重複しています') {
       return NextResponse.json(
@@ -116,7 +117,7 @@ export async function DELETE(
 
     return NextResponse.json({ message: '商品が削除されました' });
   } catch (error) {
-    console.error('商品削除エラー:', error);
+    logger.error('商品削除エラー:', error);
     return NextResponse.json(
       { error: '商品の削除に失敗しました' },
       { status: 500 }

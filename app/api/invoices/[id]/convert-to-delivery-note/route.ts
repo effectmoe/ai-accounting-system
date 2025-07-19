@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { MongoClient, ObjectId } from 'mongodb';
 import { format } from 'date-fns';
 
+import { logger } from '@/lib/logger';
 const uri = process.env.MONGODB_URI;
 if (!uri) {
   throw new Error('Please add your MongoDB URI to .env.local');
@@ -121,7 +122,7 @@ export async function POST(
     }, { status: 201 });
 
   } catch (error) {
-    console.error('Error converting invoice to delivery note:', error);
+    logger.error('Error converting invoice to delivery note:', error);
     return NextResponse.json(
       { 
         error: 'Failed to convert invoice to delivery note',

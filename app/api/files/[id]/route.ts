@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDatabase } from '@/lib/mongodb-client';
 import { ObjectId, GridFSBucket } from 'mongodb';
 
+import { logger } from '@/lib/logger';
 interface RouteParams {
   params: {
     id: string;
@@ -46,7 +47,7 @@ export async function HEAD(request: NextRequest, { params }: RouteParams) {
     });
 
   } catch (error) {
-    console.error('File HEAD request error:', error);
+    logger.error('File HEAD request error:', error);
     return new NextResponse(null, { status: 500 });
   }
 }
@@ -54,14 +55,14 @@ export async function HEAD(request: NextRequest, { params }: RouteParams) {
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const fileId = params.id;
-    console.log('File API GET called with ID:', fileId);
+    logger.debug('File API GET called with ID:', fileId);
     
     // Check if this is a browser request or API request
     const acceptHeader = request.headers.get('accept') || '';
     const isBrowserRequest = acceptHeader.includes('text/html') || acceptHeader.includes('image/');
 
     if (!fileId || !ObjectId.isValid(fileId)) {
-      console.log('Invalid file ID:', fileId);
+      logger.debug('Invalid file ID:', fileId);
       
       if (isBrowserRequest) {
         return new NextResponse('Invalid file ID', { status: 400 });
@@ -84,10 +85,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const findPromise = bucket.find({ _id: new ObjectId(fileId) }).limit(1).toArray();
     
     const files = await Promise.race([findPromise, timeoutPromise]);
-    console.log('Found files:', files.length);
+    logger.debug('Found files:', files.length);
     
     if (files.length === 0) {
-      console.log('File not found in GridFS');
+      logger.debug('File not found in GridFS');
       
       if (isBrowserRequest) {
         return new NextResponse('File not found', { status: 404 });
@@ -100,7 +101,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     }
 
     const file = files[0];
-    console.log('File found:', {
+    logger.debug('File found:', {
       id: file._id,
       filename: file.filename,
       contentType: file.contentType,
@@ -126,7 +127,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       contentType = mimeTypes[ext] || contentType;
     }
     
-    console.log('Serving file with content type:', contentType);
+    logger.debug('Serving file with content type:', contentType);
     
     // ストリーミングレスポンスを作成
     const downloadStream = bucket.openDownloadStream(new ObjectId(fileId));
@@ -139,12 +140,12 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         });
         
         downloadStream.on('end', () => {
-          console.log('Stream ended successfully');
+          logger.debug('Stream ended successfully');
           controller.close();
         });
         
         downloadStream.on('error', (error) => {
-          console.error('Stream error:', error);
+          logger.error('Stream error:', error);
           controller.error(error);
         });
       },
@@ -165,7 +166,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     });
 
   } catch (error) {
-    console.error('File retrieval error:', error);
+    logger.error('File retrieval error:', error);
     
     const isBrowserRequest = request.headers.get('accept')?.includes('text/html') || 
                             request.headers.get('accept')?.includes('image/');

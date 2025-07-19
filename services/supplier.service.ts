@@ -2,6 +2,7 @@ import { ObjectId } from 'mongodb';
 import { getDatabase, db } from '@/lib/mongodb-client';
 import { Supplier, SupplierStatus } from '@/types/collections';
 
+import { logger } from '@/lib/logger';
 // MongoDB接続はgetDatabase()で'accounting'データベースを使用するため、この定数は不要
 const COLLECTION_NAME = 'suppliers';
 
@@ -70,19 +71,19 @@ export class SupplierService {
 
   // 仕入先詳細取得
   static async getSupplierById(id: string) {
-    console.log('===== [SupplierService] getSupplierById Debug START =====');
-    console.log('[1] Looking for supplier with ID:', id);
+    logger.debug('===== [SupplierService] getSupplierById Debug START =====');
+    logger.debug('[1] Looking for supplier with ID:', id);
     
     const db = await getDatabase();
     const collection = db.collection<Supplier>(COLLECTION_NAME);
 
     const supplier = await collection.findOne({ _id: new ObjectId(id) });
     if (!supplier) {
-      console.log('[2] Supplier not found in database');
+      logger.debug('[2] Supplier not found in database');
       throw new Error('Supplier not found');
     }
     
-    console.log('[2] Raw supplier from MongoDB:', JSON.stringify({
+    logger.debug('[2] Raw supplier from MongoDB:', JSON.stringify({
       _id: supplier._id,
       supplierCode: supplier.supplierCode,
       companyName: supplier.companyName,
@@ -100,7 +101,7 @@ export class SupplierService {
       updatedAt: supplier.updatedAt
     }, null, 2));
     
-    console.log('[3] MongoDB field types:', {
+    logger.debug('[3] MongoDB field types:', {
       phoneType: typeof supplier.phone,
       phoneValue: supplier.phone,
       faxType: typeof supplier.fax,
@@ -126,7 +127,7 @@ export class SupplierService {
       id: supplier._id?.toString()
     };
     
-    console.log('[4] Final supplier object to return:', JSON.stringify({
+    logger.debug('[4] Final supplier object to return:', JSON.stringify({
       _id: result._id,
       id: result.id,
       phone: result.phone,
@@ -137,7 +138,7 @@ export class SupplierService {
       hasBankTransferInfo: !!result.bankTransferInfo
     }, null, 2));
     
-    console.log('===== [SupplierService] getSupplierById Debug END =====');
+    logger.debug('===== [SupplierService] getSupplierById Debug END =====');
     
     return result;
   }

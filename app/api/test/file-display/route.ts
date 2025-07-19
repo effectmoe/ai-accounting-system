@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/mongodb-client';
 import { SupplierQuote } from '@/types/collections';
 
+import { logger } from '@/lib/logger';
 export async function GET(request: NextRequest) {
   try {
     // 最新のfileIdを持つ仕入先見積書を1件取得
@@ -32,7 +33,7 @@ export async function GET(request: NextRequest) {
       createdAt: quote.createdAt
     });
   } catch (error) {
-    console.error('Error in test file display:', error);
+    logger.error('Error in test file display:', error);
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'

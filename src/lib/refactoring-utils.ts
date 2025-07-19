@@ -5,6 +5,7 @@ import { DuplicateBlock, NameSuggestion, FunctionInfo } from '../types/refactor-
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
+import { logger } from '@/lib/logger';
 export const refactoringUtils = {
   /**
    * コードの複雑度を計算
@@ -44,7 +45,7 @@ export const refactoringUtils = {
       
       return complexity;
     } catch (error) {
-      console.error('Error calculating complexity:', error);
+      logger.error('Error calculating complexity:', error);
       return 1;
     }
   },
@@ -87,7 +88,7 @@ export const refactoringUtils = {
       });
       return formatted;
     } catch (error) {
-      console.error('Error formatting code:', error);
+      logger.error('Error formatting code:', error);
       return code;
     }
   },

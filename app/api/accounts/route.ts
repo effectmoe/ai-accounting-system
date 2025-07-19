@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getDatabase } from '@/lib/mongodb-client';
 
+import { logger } from '@/lib/logger';
 interface Account {
   id: string;
   code: string;
@@ -43,7 +44,7 @@ export async function GET(request: NextRequest) {
       accounts: formattedAccounts,
     });
   } catch (error) {
-    console.error('Error fetching accounts:', error);
+    logger.error('Error fetching accounts:', error);
     return NextResponse.json(
       { success: false, error: '勘定科目データの取得に失敗しました' },
       { status: 500 }

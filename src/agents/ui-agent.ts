@@ -3,6 +3,7 @@ import { createAgent } from '@mastra/core';
 import { DatabaseService, Collections } from '@/lib/mongodb-client';
 import { ObjectId } from 'mongodb';
 
+import { logger } from '@/lib/logger';
 // UIコンポーネントスキーマ
 const uiComponentSchema = z.object({
   type: z.enum(['page', 'component', 'layout', 'widget']),
@@ -534,7 +535,7 @@ export default function InvoiceViewer({ invoice, onStatusUpdate }) {
           };
           
         } catch (error) {
-          console.error('Component generation error:', error);
+          logger.error('Component generation error:', error);
           return {
             success: false,
             error: error.message
@@ -600,7 +601,7 @@ export default function AccountingDashboard() {
       const data = await Promise.all(responses.map(r => r.json()));
       setMetrics(data);
     } catch (error) {
-      console.error('Failed to fetch metrics:', error);
+      logger.error('Failed to fetch metrics:', error);
     } finally {
       setLoading(false);
     }
@@ -647,7 +648,7 @@ export default function AccountingDashboard() {
           };
           
         } catch (error) {
-          console.error('Dashboard creation error:', error);
+          logger.error('Dashboard creation error:', error);
           return {
             success: false,
             error: error.message
@@ -758,7 +759,7 @@ export default function AccountingDashboard() {
           };
           
         } catch (error) {
-          console.error('Design system generation error:', error);
+          logger.error('Design system generation error:', error);
           return {
             success: false,
             error: error.message
@@ -832,7 +833,7 @@ export default function ${pageName.replace(/\s+/g, '')}Page() {
           };
           
         } catch (error) {
-          console.error('Page generation error:', error);
+          logger.error('Page generation error:', error);
           return {
             success: false,
             error: error.message
@@ -883,7 +884,7 @@ export default function ${pageName.replace(/\s+/g, '')}Page() {
           };
           
         } catch (error) {
-          console.error('UI optimization error:', error);
+          logger.error('UI optimization error:', error);
           return {
             success: false,
             error: error.message
@@ -896,7 +897,7 @@ export default function ${pageName.replace(/\s+/g, '')}Page() {
   // メイン実行ロジック
   execute: async ({ input, tools }) => {
     try {
-      console.log('[UI Agent] Starting operation:', input.operation);
+      logger.debug('[UI Agent] Starting operation:', input.operation);
       
       switch (input.operation) {
         case 'generate_component':
@@ -1001,7 +1002,7 @@ export default function ${pageName.replace(/\s+/g, '')}Page() {
       }
       
     } catch (error) {
-      console.error('[UI Agent] Error:', error);
+      logger.error('[UI Agent] Error:', error);
       return {
         success: false,
         error: error.message

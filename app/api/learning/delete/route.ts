@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/mongodb-client';
 
+import { logger } from '@/lib/logger';
 export async function DELETE(request: NextRequest) {
   try {
     const body = await request.json();
@@ -29,7 +30,7 @@ export async function DELETE(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Learning deletion error:', error);
+    logger.error('Learning deletion error:', error);
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to delete learning data'

@@ -2,6 +2,7 @@ import { db, Collections } from '@/lib/mongodb-client';
 import { ObjectId } from 'mongodb';
 import { Product } from '@/types/collections';
 
+import { logger } from '@/lib/logger';
 export interface ProductSearchParams {
   query?: string;
   category?: string;
@@ -78,7 +79,7 @@ export class ProductService {
         hasMore,
       };
     } catch (error) {
-      console.error('Error in searchProducts:', error);
+      logger.error('Error in searchProducts:', error);
       throw new Error('商品の検索に失敗しました');
     }
   }
@@ -93,7 +94,7 @@ export class ProductService {
         sort: { productCode: 1, productName: 1 }
       });
     } catch (error) {
-      console.error('Error in getAllProducts:', error);
+      logger.error('Error in getAllProducts:', error);
       throw new Error('商品一覧の取得に失敗しました');
     }
   }
@@ -123,7 +124,7 @@ export class ProductService {
       const created = await db.create<Product>(this.collectionName, product);
       return created;
     } catch (error) {
-      console.error('Error in createProduct:', error);
+      logger.error('Error in createProduct:', error);
       throw error instanceof Error ? error : new Error('商品の作成に失敗しました');
     }
   }
@@ -135,7 +136,7 @@ export class ProductService {
     try {
       return await db.findById<Product>(this.collectionName, id);
     } catch (error) {
-      console.error('Error in getProduct:', error);
+      logger.error('Error in getProduct:', error);
       throw new Error('商品の取得に失敗しました');
     }
   }
@@ -147,7 +148,7 @@ export class ProductService {
     try {
       return await db.findOne<Product>(this.collectionName, { productCode });
     } catch (error) {
-      console.error('Error in getProductByCode:', error);
+      logger.error('Error in getProductByCode:', error);
       throw new Error('商品の取得に失敗しました');
     }
   }
@@ -175,7 +176,7 @@ export class ProductService {
       const updated = await db.update<Product>(this.collectionName, id, dataToUpdate);
       return updated;
     } catch (error) {
-      console.error('Error in updateProduct:', error);
+      logger.error('Error in updateProduct:', error);
       throw error instanceof Error ? error : new Error('商品の更新に失敗しました');
     }
   }
@@ -199,7 +200,7 @@ export class ProductService {
 
       return await db.delete(this.collectionName, id);
     } catch (error) {
-      console.error('Error in deleteProduct:', error);
+      logger.error('Error in deleteProduct:', error);
       throw new Error('商品の削除に失敗しました');
     }
   }
@@ -218,7 +219,7 @@ export class ProductService {
         isActive: !product.isActive
       });
     } catch (error) {
-      console.error('Error in toggleProductStatus:', error);
+      logger.error('Error in toggleProductStatus:', error);
       throw error instanceof Error ? error : new Error('商品ステータスの切り替えに失敗しました');
     }
   }
@@ -237,7 +238,7 @@ export class ProductService {
       const result = await db.aggregate<{ _id: string }>(this.collectionName, pipeline);
       return result.map(item => item._id).filter(Boolean);
     } catch (error) {
-      console.error('Error in getCategories:', error);
+      logger.error('Error in getCategories:', error);
       throw new Error('カテゴリ一覧の取得に失敗しました');
     }
   }
@@ -259,7 +260,7 @@ export class ProductService {
 
       return await this.updateProduct(productId, { tags });
     } catch (error) {
-      console.error('Error in addTag:', error);
+      logger.error('Error in addTag:', error);
       throw error instanceof Error ? error : new Error('タグの追加に失敗しました');
     }
   }
@@ -278,7 +279,7 @@ export class ProductService {
 
       return await this.updateProduct(productId, { tags });
     } catch (error) {
-      console.error('Error in removeTag:', error);
+      logger.error('Error in removeTag:', error);
       throw error instanceof Error ? error : new Error('タグの削除に失敗しました');
     }
   }
@@ -297,7 +298,7 @@ export class ProductService {
       const result = await db.aggregate<{ _id: string }>(this.collectionName, pipeline);
       return result.map(item => item._id);
     } catch (error) {
-      console.error('Error in getAllTags:', error);
+      logger.error('Error in getAllTags:', error);
       throw new Error('タグ一覧の取得に失敗しました');
     }
   }
@@ -310,7 +311,7 @@ export class ProductService {
       // 在庫管理機能が追加された場合の実装
       throw new Error('在庫管理機能は未実装です');
     } catch (error) {
-      console.error('Error in updateStock:', error);
+      logger.error('Error in updateStock:', error);
       throw error instanceof Error ? error : new Error('在庫の更新に失敗しました');
     }
   }
@@ -348,7 +349,7 @@ export class ProductService {
         hasMore,
       };
     } catch (error) {
-      console.error('Error in getProductsWithFilters:', error);
+      logger.error('Error in getProductsWithFilters:', error);
       throw new Error('商品の取得に失敗しました');
     }
   }

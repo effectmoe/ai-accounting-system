@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { processUserInput as nlpProcessUserInput } from '@/nlp-orchestrator-wrapper';
 
+import { logger } from '@/lib/logger';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -21,7 +22,7 @@ export async function POST(request: NextRequest) {
       data: result,
     });
   } catch (error) {
-    console.error('NLP Mock API Error:', error);
+    logger.error('NLP Mock API Error:', error);
     return NextResponse.json(
       { 
         error: 'Internal server error',

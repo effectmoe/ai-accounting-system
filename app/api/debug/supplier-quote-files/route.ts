@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/mongodb-client';
 import { SupplierQuote } from '@/types/collections';
 
+import { logger } from '@/lib/logger';
 export async function GET(request: NextRequest) {
   try {
     // 最新の10件の仕入先見積書を取得
@@ -29,7 +30,7 @@ export async function GET(request: NextRequest) {
       message: 'fileIdの状態をチェックしました'
     });
   } catch (error) {
-    console.error('Error checking supplier quote files:', error);
+    logger.error('Error checking supplier quote files:', error);
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'

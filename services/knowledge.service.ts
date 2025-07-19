@@ -1,4 +1,5 @@
 import { MongoClient, Db, Collection, ObjectId } from 'mongodb';
+import { logger } from '@/lib/logger';
 import { 
   KnowledgeArticle, 
   KnowledgeSource, 
@@ -119,7 +120,7 @@ export class KnowledgeService {
 
       return { articles, total };
     } catch (error) {
-      console.error('Search articles error:', error);
+      logger.error('Search articles error:', error);
       // エラーが発生した場合は空の結果を返す
       return { articles: [], total: 0 };
     }
@@ -237,7 +238,7 @@ export class KnowledgeService {
     try {
       // ベクトル類似度検索の前に、ベクトルが適切な配列であることを確認
       if (!Array.isArray(vector) || vector.length === 0) {
-        console.warn('Invalid vector provided for similarity search');
+        logger.warn('Invalid vector provided for similarity search');
         return [];
       }
 
@@ -269,7 +270,7 @@ export class KnowledgeService {
 
       return await this.embeddingsCollection.aggregate(pipeline).toArray();
     } catch (error) {
-      console.error('Vector search error:', error);
+      logger.error('Vector search error:', error);
       // ベクトル検索が失敗した場合は空配列を返す
       return [];
     }

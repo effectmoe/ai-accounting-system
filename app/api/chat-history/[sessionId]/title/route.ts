@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getChatHistoryService } from '@/services/chat-history.service';
 
+import { logger } from '@/lib/logger';
 /**
  * POST /api/chat-history/[sessionId]/title
  * セッションのタイトルを自動生成
@@ -20,7 +21,7 @@ export async function POST(
     });
 
   } catch (error) {
-    console.error('Generate title error:', error);
+    logger.error('Generate title error:', error);
     return NextResponse.json(
       {
         success: false,

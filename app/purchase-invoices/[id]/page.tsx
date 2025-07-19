@@ -7,6 +7,7 @@ import { ArrowLeft, Edit, Trash2, FileText, Building, Calendar, DollarSign, Chec
 import { toast } from 'react-hot-toast';
 import { PurchaseInvoice, PurchaseInvoiceStatus } from '@/types/collections';
 
+import { logger } from '@/lib/logger';
 const statusStyles = {
   draft: 'bg-gray-100 text-gray-800 border-gray-200',
   received: 'bg-blue-100 text-blue-800 border-blue-200',
@@ -65,7 +66,7 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: { id: st
         paidAmount: data.totalAmount || 0,
       }));
     } catch (error) {
-      console.error('Error fetching invoice:', error);
+      logger.error('Error fetching invoice:', error);
       toast.error('請求書の取得に失敗しました');
       router.push('/purchase-invoices');
     } finally {
@@ -89,7 +90,7 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: { id: st
       toast.success('ステータスを更新しました');
       fetchInvoice();
     } catch (error) {
-      console.error('Error updating status:', error);
+      logger.error('Error updating status:', error);
       toast.error('ステータスの更新に失敗しました');
     } finally {
       setUpdating(false);
@@ -118,7 +119,7 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: { id: st
       setShowPaymentModal(false);
       fetchInvoice();
     } catch (error) {
-      console.error('Error updating payment:', error);
+      logger.error('Error updating payment:', error);
       toast.error('支払情報の更新に失敗しました');
     } finally {
       setUpdating(false);
@@ -138,7 +139,7 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: { id: st
       toast.success('請求書を削除しました');
       router.push('/purchase-invoices');
     } catch (error) {
-      console.error('Error deleting invoice:', error);
+      logger.error('Error deleting invoice:', error);
       toast.error('請求書の削除に失敗しました');
     }
   };

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { BankAccountService } from '@/services/bank-account.service';
 
+import { logger } from '@/lib/logger';
 // データベースのキャメルケースからAPIのスネークケースへ変換
 function transformBankAccountToApi(account: any) {
   return {
@@ -62,7 +63,7 @@ export async function GET(request: NextRequest) {
       accounts: transformedAccounts,
     });
   } catch (error) {
-    console.error('Error fetching bank accounts:', error);
+    logger.error('Error fetching bank accounts:', error);
     return NextResponse.json(
       {
         success: false,
@@ -132,7 +133,7 @@ export async function POST(request: NextRequest) {
       message: '銀行口座を追加しました',
     });
   } catch (error) {
-    console.error('Error creating bank account:', error);
+    logger.error('Error creating bank account:', error);
     return NextResponse.json(
       {
         success: false,

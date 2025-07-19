@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Product } from '@/types/collections';
 
+import { logger } from '@/lib/logger';
 export default function EditProductPage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const [categories, setCategories] = useState<string[]>([]);
@@ -47,7 +48,7 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
         tags: product.tags || []
       });
     } catch (err) {
-      console.error('商品取得エラー:', err);
+      logger.error('商品取得エラー:', err);
       setError(err instanceof Error ? err.message : '商品の取得に失敗しました');
     } finally {
       setLoading(false);
@@ -63,7 +64,7 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
         setCategories(data);
       }
     } catch (err) {
-      console.error('カテゴリ一覧取得エラー:', err);
+      logger.error('カテゴリ一覧取得エラー:', err);
     }
   };
 
@@ -89,7 +90,7 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
 
       router.push('/products');
     } catch (err) {
-      console.error('商品更新エラー:', err);
+      logger.error('商品更新エラー:', err);
       setError(err instanceof Error ? err.message : '商品の更新に失敗しました');
     } finally {
       setSaving(false);

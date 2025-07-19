@@ -2,13 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/mongodb-client';
 import { ObjectId, GridFSBucket } from 'mongodb';
 
+import { logger } from '@/lib/logger';
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
     const { id } = params;
-    console.log('Getting document with ID:', id);
+    logger.debug('Getting document with ID:', id);
 
     if (!id || !ObjectId.isValid(id)) {
       return NextResponse.json({
@@ -62,7 +63,7 @@ export async function GET(
       journalId: document.journalId?.toString()
     };
 
-    console.log('Formatted document:', formattedDocument);
+    logger.debug('Formatted document:', formattedDocument);
 
     return NextResponse.json({
       success: true,
@@ -70,7 +71,7 @@ export async function GET(
     });
 
   } catch (error) {
-    console.error('Document fetch error:', error);
+    logger.error('Document fetch error:', error);
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to fetch document'
@@ -84,7 +85,7 @@ export async function DELETE(
 ) {
   try {
     const { id } = params;
-    console.log('Delete request for document ID:', id);
+    logger.debug('Delete request for document ID:', id);
 
     // IDの検証をより柔軟に
     if (!id || id.length === 0) {
@@ -102,7 +103,7 @@ export async function DELETE(
         isValidObjectId = true;
       }
     } catch (e) {
-      console.log('Not a valid ObjectId:', id);
+      logger.debug('Not a valid ObjectId:', id);
     }
 
     if (!isValidObjectId) {
@@ -128,7 +129,7 @@ export async function DELETE(
         const bucket = new GridFSBucket(db.getDb(), { bucketName: 'uploads' });
         await bucket.delete(new ObjectId(document.gridfs_file_id));
       } catch (error) {
-        console.error('GridFS deletion error:', error);
+        logger.error('GridFS deletion error:', error);
         // GridFS削除エラーは無視して続行
       }
     }
@@ -138,7 +139,7 @@ export async function DELETE(
       try {
         await db.delete('journals', document.journalId.toString());
       } catch (error) {
-        console.error('Journal deletion error:', error);
+        logger.error('Journal deletion error:', error);
         // 仕訳削除エラーも無視して続行
       }
     }
@@ -152,7 +153,7 @@ export async function DELETE(
     });
 
   } catch (error) {
-    console.error('Document deletion error:', error);
+    logger.error('Document deletion error:', error);
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to delete document'
@@ -168,8 +169,8 @@ export async function PATCH(
     const { id } = params;
     const body = await request.json();
     
-    console.log('Updating document with ID:', id);
-    console.log('Update data:', body);
+    logger.debug('Updating document with ID:', id);
+    logger.debug('Update data:', body);
 
     if (!ObjectId.isValid(id)) {
       return NextResponse.json({
@@ -181,7 +182,7 @@ export async function PATCH(
     // まずドキュメントが存在するか確認
     const existingDoc = await db.findById('documents', id);
     if (!existingDoc) {
-      console.log('Document not found for update:', id);
+      logger.debug('Document not found for update:', id);
       return NextResponse.json({
         success: false,
         error: 'Document not found'
@@ -194,7 +195,7 @@ export async function PATCH(
       updatedAt: new Date()
     });
 
-    console.log('Update result:', result);
+    logger.debug('Update result:', result);
 
     if (!result) {
       // updateが失敗した場合でも、ドキュメントが存在することは確認済みなので
@@ -219,7 +220,7 @@ export async function PATCH(
     });
 
   } catch (error) {
-    console.error('Document update error:', error);
+    logger.error('Document update error:', error);
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to update document'

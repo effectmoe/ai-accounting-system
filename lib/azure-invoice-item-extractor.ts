@@ -1,5 +1,6 @@
 import { AnalysisResult } from './azure-form-recognizer';
 
+import { logger } from '@/lib/logger';
 /**
  * 日本の請求書・見積書から商品明細を抽出するためのヘルパークラス
  */
@@ -10,7 +11,7 @@ export class InvoiceItemExtractor {
   static extractItems(analysisResult: AnalysisResult): any[] {
     const items: any[] = [];
     
-    console.log('[InvoiceItemExtractor] 商品抽出開始:', {
+    logger.debug('[InvoiceItemExtractor] 商品抽出開始:', {
       hasFields: !!analysisResult.fields,
       fieldsCount: analysisResult.fields ? Object.keys(analysisResult.fields).length : 0,
       hasRawResult: !!analysisResult.rawResult,
@@ -20,7 +21,7 @@ export class InvoiceItemExtractor {
     
     // 1. 標準のitemsフィールドから抽出を試行
     if (analysisResult.fields?.items && Array.isArray(analysisResult.fields.items)) {
-      console.log('[InvoiceItemExtractor] 標準itemsフィールドから抽出');
+      logger.debug('[InvoiceItemExtractor] 標準itemsフィールドから抽出');
       return analysisResult.fields.items;
     }
     
@@ -28,7 +29,7 @@ export class InvoiceItemExtractor {
     if (analysisResult.rawResult) {
       const rawItems = this.extractItemsFromRawResult(analysisResult.rawResult);
       if (rawItems.length > 0) {
-        console.log('[InvoiceItemExtractor] rawResultから商品明細を抽出:', rawItems);
+        logger.debug('[InvoiceItemExtractor] rawResultから商品明細を抽出:', rawItems);
         return rawItems;
       }
     }
@@ -37,7 +38,7 @@ export class InvoiceItemExtractor {
     if (analysisResult.fields?.customFields) {
       const customItems = this.extractItemsFromCustomFields(analysisResult.fields.customFields);
       if (customItems.length > 0) {
-        console.log('[InvoiceItemExtractor] customFieldsから商品明細を抽出:', customItems);
+        logger.debug('[InvoiceItemExtractor] customFieldsから商品明細を抽出:', customItems);
         return customItems;
       }
     }
@@ -46,7 +47,7 @@ export class InvoiceItemExtractor {
     if (analysisResult.pages && analysisResult.pages.length > 0) {
       const pageItems = this.extractItemsFromPages(analysisResult.pages);
       if (pageItems.length > 0) {
-        console.log('[InvoiceItemExtractor] ページコンテンツから商品明細を抽出:', pageItems);
+        logger.debug('[InvoiceItemExtractor] ページコンテンツから商品明細を抽出:', pageItems);
         return pageItems;
       }
     }
@@ -55,13 +56,13 @@ export class InvoiceItemExtractor {
     if (analysisResult.tables && analysisResult.tables.length > 0) {
       const tableItems = this.extractItemsFromTables(analysisResult.tables);
       if (tableItems.length > 0) {
-        console.log('[InvoiceItemExtractor] テーブルから商品明細を抽出:', tableItems);
+        logger.debug('[InvoiceItemExtractor] テーブルから商品明細を抽出:', tableItems);
         return tableItems;
       }
     }
     
     // 商品情報が全く見つからない場合は空配列を返す
-    console.warn('[InvoiceItemExtractor] 商品明細を抽出できませんでした');
+    logger.warn('[InvoiceItemExtractor] 商品明細を抽出できませんでした');
     return [];
   }
   
@@ -96,7 +97,7 @@ export class InvoiceItemExtractor {
       }
       
     } catch (error) {
-      console.error('[InvoiceItemExtractor] rawResult解析エラー:', error);
+      logger.error('[InvoiceItemExtractor] rawResult解析エラー:', error);
     }
     
     return items;
@@ -137,7 +138,7 @@ export class InvoiceItemExtractor {
         }
       }
     } catch (error) {
-      console.error('[InvoiceItemExtractor] customFields解析エラー:', error);
+      logger.error('[InvoiceItemExtractor] customFields解析エラー:', error);
     }
     
     return items;
@@ -150,11 +151,11 @@ export class InvoiceItemExtractor {
     const items: any[] = [];
     
     try {
-      console.log('[InvoiceItemExtractor] ページ数:', pages.length);
+      logger.debug('[InvoiceItemExtractor] ページ数:', pages.length);
       
       for (const page of pages) {
         if (page.lines && Array.isArray(page.lines)) {
-          console.log('[InvoiceItemExtractor] ページの行数:', page.lines.length);
+          logger.debug('[InvoiceItemExtractor] ページの行数:', page.lines.length);
           
           // すべての行をログ出力（商品情報を探すため）
           page.lines.forEach((line: any, index: number) => {
@@ -163,7 +164,7 @@ export class InvoiceItemExtractor {
             if (content.includes('【') || content.includes('用紙') || 
                 content.includes('印刷') || content.includes('枚') || 
                 content.includes('¥') || /\d{1,3}(?:,\d{3})*/.test(content)) {
-              console.log(`[InvoiceItemExtractor] 行[${index}]:`, content);
+              logger.debug(`[InvoiceItemExtractor] 行[${index}]:`, content);
             }
           });
           
@@ -173,7 +174,7 @@ export class InvoiceItemExtractor {
         }
       }
     } catch (error) {
-      console.error('[InvoiceItemExtractor] ページ解析エラー:', error);
+      logger.error('[InvoiceItemExtractor] ページ解析エラー:', error);
     }
     
     return items;
@@ -249,7 +250,7 @@ export class InvoiceItemExtractor {
             // 有効な商品情報のみ追加
             if (item.amount > 0 || item.unitPrice > 0) {
               items.push(item);
-              console.log('[InvoiceItemExtractor] テキストから商品を抽出:', item);
+              logger.debug('[InvoiceItemExtractor] テキストから商品を抽出:', item);
             }
           }
         }
@@ -278,13 +279,13 @@ export class InvoiceItemExtractor {
               amount: amount,
             });
             
-            console.log('[InvoiceItemExtractor] 特定パターンから商品を抽出:', itemName);
+            logger.debug('[InvoiceItemExtractor] 特定パターンから商品を抽出:', itemName);
           }
         }
       }
       
     } catch (error) {
-      console.error('[InvoiceItemExtractor] テキスト解析エラー:', error);
+      logger.error('[InvoiceItemExtractor] テキスト解析エラー:', error);
     }
     
     return items;
@@ -314,7 +315,7 @@ export class InvoiceItemExtractor {
         }
       }
     } catch (error) {
-      console.error('[InvoiceItemExtractor] テーブル解析エラー:', error);
+      logger.error('[InvoiceItemExtractor] テーブル解析エラー:', error);
     }
     
     return items;

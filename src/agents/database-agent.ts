@@ -3,6 +3,7 @@ import { createAgent } from '@mastra/core';
 import { DatabaseService, Collections } from '@/lib/mongodb-client';
 import { ObjectId } from 'mongodb';
 
+import { logger } from '@/lib/logger';
 // データベース操作の基本スキーマ
 const databaseOperationSchema = z.object({
   operation: z.enum(['create', 'read', 'update', 'delete', 'query', 'migrate', 'aggregate']),
@@ -199,7 +200,7 @@ export const databaseAgent = createAgent({
               throw new Error(`Unknown operation: ${op}`);
           }
         } catch (error) {
-          console.error('Database operation error:', error);
+          logger.error('Database operation error:', error);
           return {
             success: false,
             operation: operation.operation,
@@ -240,7 +241,7 @@ export const databaseAgent = createAgent({
           };
           
         } catch (error) {
-          console.error('Transaction error:', error);
+          logger.error('Transaction error:', error);
           return {
             success: false,
             type: 'transaction',
@@ -319,7 +320,7 @@ export const databaseAgent = createAgent({
           }
           
         } catch (error) {
-          console.error('Index management error:', error);
+          logger.error('Index management error:', error);
           return {
             success: false,
             operation: `index_${type}`,
@@ -352,7 +353,7 @@ export const databaseAgent = createAgent({
           };
           
         } catch (error) {
-          console.error('Aggregation error:', error);
+          logger.error('Aggregation error:', error);
           return {
             success: false,
             operation: 'aggregation',
@@ -404,7 +405,7 @@ export const databaseAgent = createAgent({
           };
           
         } catch (error) {
-          console.error('Bulk operation error:', error);
+          logger.error('Bulk operation error:', error);
           return {
             success: false,
             operation: 'bulk',
@@ -496,7 +497,7 @@ export const databaseAgent = createAgent({
           };
           
         } catch (error) {
-          console.error('Data validation error:', error);
+          logger.error('Data validation error:', error);
           return {
             valid: false,
             message: `Validation error: ${error.message}`,
@@ -588,7 +589,7 @@ export const databaseAgent = createAgent({
           }
           
         } catch (error) {
-          console.error('Special operation error:', error);
+          logger.error('Special operation error:', error);
           return {
             success: false,
             operation: type,
@@ -602,7 +603,7 @@ export const databaseAgent = createAgent({
   // メイン実行ロジック
   execute: async ({ input, tools }) => {
     try {
-      console.log('[Database Agent] Starting operation');
+      logger.debug('[Database Agent] Starting operation');
       
       // 単一操作の場合
       if (input.operation) {
@@ -716,7 +717,7 @@ export const databaseAgent = createAgent({
       };
       
     } catch (error) {
-      console.error('[Database Agent] Error:', error);
+      logger.error('[Database Agent] Error:', error);
       return {
         success: false,
         error: error.message,

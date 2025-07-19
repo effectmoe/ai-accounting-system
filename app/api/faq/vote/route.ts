@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { KnowledgeService } from '@/services/knowledge.service';
 import { ObjectId } from 'mongodb';
 
+import { logger } from '@/lib/logger';
 interface VoteRequest {
   faqId: string;
   voteType: 'helpful' | 'unhelpful';
@@ -71,7 +72,7 @@ export async function POST(request: NextRequest) {
     });
     
   } catch (error) {
-    console.error('[FAQ Vote] Error:', error);
+    logger.error('[FAQ Vote] Error:', error);
     await knowledgeService.disconnect();
     
     return NextResponse.json(

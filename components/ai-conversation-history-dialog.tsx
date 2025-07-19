@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card } from '@/components/ui/card';
+import { logger } from '@/lib/logger';
 import { 
   Bot, 
   User, 
@@ -49,7 +50,7 @@ export default function AIConversationHistoryDialog({
     setConversation(null); // 前の状態をクリア
     
     try {
-      console.log('[AIConversationHistoryDialog] Fetching conversation with:', {
+      logger.debug('[AIConversationHistoryDialog] Fetching conversation with:', {
         conversationId,
         conversationIdType: typeof conversationId,
         conversationIdLength: conversationId?.length,
@@ -61,12 +62,12 @@ export default function AIConversationHistoryDialog({
       if (conversationId) params.append('conversationId', String(conversationId)); // 文字列として送信
       if (invoiceId) params.append('invoiceId', invoiceId);
       
-      console.log('[AIConversationHistoryDialog] Request URL:', `/api/ai-conversations?${params.toString()}`);
+      logger.debug('[AIConversationHistoryDialog] Request URL:', `/api/ai-conversations?${params.toString()}`);
       
       const response = await fetch(`/api/ai-conversations?${params.toString()}`);
       const data = await response.json();
       
-      console.log('[AIConversationHistoryDialog] API Response:', {
+      logger.debug('[AIConversationHistoryDialog] API Response:', {
         status: response.status,
         ok: response.ok,
         dataSuccess: data.success,
@@ -77,15 +78,15 @@ export default function AIConversationHistoryDialog({
       });
       
       if (!response.ok || !data.success) {
-        console.error('[AIConversationHistoryDialog] API Error:', data.error);
+        logger.error('[AIConversationHistoryDialog] API Error:', data.error);
         throw new Error(data.error || '会話履歴の取得に失敗しました');
       }
       
-      console.log('[AIConversationHistoryDialog] Setting conversation:', data.conversation);
+      logger.debug('[AIConversationHistoryDialog] Setting conversation:', data.conversation);
       setConversation(data.conversation);
-      console.log('[AIConversationHistoryDialog] Conversation set successfully');
+      logger.debug('[AIConversationHistoryDialog] Conversation set successfully');
     } catch (error) {
-      console.error('会話履歴取得エラー:', error);
+      logger.error('会話履歴取得エラー:', error);
       setError(error instanceof Error ? error.message : '会話履歴の取得に失敗しました');
     } finally {
       setIsLoading(false);
@@ -160,7 +161,7 @@ export default function AIConversationHistoryDialog({
             </div>
           ) : conversation ? (
             <div className="space-y-4">
-              {console.log('[AIConversationHistoryDialog] Rendering conversation with messages:', conversation.messages?.length)}
+              {logger.debug('[AIConversationHistoryDialog] Rendering conversation with messages:', conversation.messages?.length)}
               {conversation.messages?.length > 0 ? conversation.messages.map((message, index) => (
                 <div
                   key={index}

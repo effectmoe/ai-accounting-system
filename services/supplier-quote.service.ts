@@ -2,6 +2,7 @@ import { db, Collections } from '@/lib/mongodb-client';
 import { ObjectId } from 'mongodb';
 import { SupplierQuote, SupplierQuoteStatus, SupplierQuoteItem, Supplier } from '@/types/collections';
 
+import { logger } from '@/lib/logger';
 export interface SupplierQuoteSearchParams {
   supplierId?: string;
   status?: SupplierQuoteStatus;
@@ -93,7 +94,7 @@ export class SupplierQuoteService {
         hasMore,
       };
     } catch (error) {
-      console.error('Error in searchSupplierQuotes:', error);
+      logger.error('Error in searchSupplierQuotes:', error);
       throw new Error('仕入先見積書の検索に失敗しました');
     }
   }
@@ -110,10 +111,10 @@ export class SupplierQuoteService {
       });
 
       if (existing) {
-        console.log(`[SupplierQuoteService] Duplicate quote number detected: ${quoteData.quoteNumber}`);
+        logger.debug(`[SupplierQuoteService] Duplicate quote number detected: ${quoteData.quoteNumber}`);
         // 重複が検出された場合、新しい番号を生成
         finalQuoteNumber = await this.generateSupplierQuoteNumber();
-        console.log(`[SupplierQuoteService] Generated new quote number: ${finalQuoteNumber}`);
+        logger.debug(`[SupplierQuoteService] Generated new quote number: ${finalQuoteNumber}`);
       }
 
       // 仕入先の存在確認
@@ -141,7 +142,7 @@ export class SupplierQuoteService {
       const created = await db.create<SupplierQuote>(this.collectionName, quote);
       return created;
     } catch (error) {
-      console.error('Error in createSupplierQuote:', error);
+      logger.error('Error in createSupplierQuote:', error);
       throw error instanceof Error ? error : new Error('仕入先見積書の作成に失敗しました');
     }
   }
@@ -151,28 +152,28 @@ export class SupplierQuoteService {
    */
   async getSupplierQuote(id: string): Promise<SupplierQuote | null> {
     try {
-      console.log('[SupplierQuoteService] getSupplierQuote called with ID:', id);
+      logger.debug('[SupplierQuoteService] getSupplierQuote called with ID:', id);
       
       // IDの検証
       if (!id || id === 'undefined' || id === 'null') {
-        console.log('[SupplierQuoteService] Invalid ID provided:', id);
+        logger.debug('[SupplierQuoteService] Invalid ID provided:', id);
         return null;
       }
 
       // IDの長さチェック（ObjectIdは24文字）
       if (id.length !== 24) {
-        console.log('[SupplierQuoteService] Invalid ObjectId length:', id.length);
+        logger.debug('[SupplierQuoteService] Invalid ObjectId length:', id.length);
         return null;
       }
       
       const quote = await db.findById<SupplierQuote>(this.collectionName, id);
       
       if (!quote) {
-        console.log('[SupplierQuoteService] No supplier quote found for ID:', id);
+        logger.debug('[SupplierQuoteService] No supplier quote found for ID:', id);
         return null;
       }
       
-      console.log('[SupplierQuoteService] Supplier quote found:', {
+      logger.debug('[SupplierQuoteService] Supplier quote found:', {
         _id: quote._id,
         quoteNumber: quote.quoteNumber
       });
@@ -182,16 +183,16 @@ export class SupplierQuoteService {
         try {
           quote.supplier = await db.findById<Supplier>('suppliers', quote.supplierId);
         } catch (error) {
-          console.error('Error fetching supplier:', error);
+          logger.error('Error fetching supplier:', error);
           // 仕入先の取得に失敗しても処理を続行
         }
       }
 
       return quote;
     } catch (error) {
-      console.error('Error in getSupplierQuote:', error);
+      logger.error('Error in getSupplierQuote:', error);
       if (error instanceof Error && error.message.includes('must be a valid ObjectId')) {
-        console.error('Invalid ObjectId format:', id);
+        logger.error('Invalid ObjectId format:', id);
         return null;
       }
       throw new Error('仕入先見積書の取得に失敗しました');
@@ -203,7 +204,7 @@ export class SupplierQuoteService {
    */
   async updateSupplierQuote(id: string, updateData: Partial<SupplierQuote>): Promise<SupplierQuote | null> {
     try {
-      console.log('[SupplierQuoteService] updateSupplierQuote called with:', {
+      logger.debug('[SupplierQuoteService] updateSupplierQuote called with:', {
         id,
         updateData: JSON.stringify(updateData, null, 2)
       });
@@ -253,7 +254,7 @@ export class SupplierQuoteService {
 
       return updated;
     } catch (error) {
-      console.error('Error in updateSupplierQuote:', error);
+      logger.error('Error in updateSupplierQuote:', error);
       throw error instanceof Error ? error : new Error('仕入先見積書の更新に失敗しました');
     }
   }
@@ -265,7 +266,7 @@ export class SupplierQuoteService {
     try {
       return await db.delete(this.collectionName, id);
     } catch (error) {
-      console.error('Error in deleteSupplierQuote:', error);
+      logger.error('Error in deleteSupplierQuote:', error);
       throw new Error('仕入先見積書の削除に失敗しました');
     }
   }
@@ -289,7 +290,7 @@ export class SupplierQuoteService {
 
       return await this.updateSupplierQuote(id, updateData);
     } catch (error) {
-      console.error('Error in updateSupplierQuoteStatus:', error);
+      logger.error('Error in updateSupplierQuoteStatus:', error);
       throw new Error('仕入先見積書ステータスの更新に失敗しました');
     }
   }
@@ -345,12 +346,12 @@ export class SupplierQuoteService {
       }
       
       // 100回試しても重複が解消されない場合は、タイムスタンプを追加
-      console.warn('Failed to generate unique quote number after 100 attempts');
+      logger.warn('Failed to generate unique quote number after 100 attempts');
       const timestamp = Date.now().toString().slice(-6);
       return `${prefix}-${seq.toString().padStart(3, '0')}-${timestamp}`;
       
     } catch (error) {
-      console.error('Error in generateSupplierQuoteNumber:', error);
+      logger.error('Error in generateSupplierQuoteNumber:', error);
       // エラーの場合はタイムスタンプベースの番号を生成
       const timestamp = new Date().getTime();
       return `SQ-${timestamp}`;
@@ -396,7 +397,7 @@ export class SupplierQuoteService {
 
       return await db.aggregate(this.collectionName, pipeline);
     } catch (error) {
-      console.error('Error in getMonthlyAggregation:', error);
+      logger.error('Error in getMonthlyAggregation:', error);
       throw new Error('月次集計の取得に失敗しました');
     }
   }

@@ -14,6 +14,7 @@ import { Quote, QuoteItem, Customer } from '@/types/collections';
 import AIChatDialog from '@/components/ai-chat-dialog';
 import AIConversationHistoryDialog from '@/components/ai-conversation-history-dialog';
 
+import { logger } from '@/lib/logger';
 interface QuoteEditPageProps {
   params: { id: string };
 }
@@ -97,7 +98,7 @@ function QuoteEditPageContent({ params }: QuoteEditPageProps) {
         router.push('/quotes');
       }
     } catch (error) {
-      console.error('Error fetching quote:', error);
+      logger.error('Error fetching quote:', error);
       setError('見積書の取得に失敗しました');
     } finally {
       setIsLoading(false);
@@ -112,7 +113,7 @@ function QuoteEditPageContent({ params }: QuoteEditPageProps) {
         setCustomers(data.customers || []);
       }
     } catch (error) {
-      console.error('Error fetching customers:', error);
+      logger.error('Error fetching customers:', error);
     }
   };
 
@@ -124,7 +125,7 @@ function QuoteEditPageContent({ params }: QuoteEditPageProps) {
         setProducts(data.products || []);
       }
     } catch (error) {
-      console.error('Error fetching products:', error);
+      logger.error('Error fetching products:', error);
     }
   };
 
@@ -198,7 +199,7 @@ function QuoteEditPageContent({ params }: QuoteEditPageProps) {
 
   // AI会話からデータを適用する関数
   const handleAIDataApply = (data: any) => {
-    console.log('AI chat data received:', data);
+    logger.debug('AI chat data received:', data);
     
     // 顧客情報の更新
     if (data.customerId && data.customerId !== selectedCustomerId) {
@@ -294,7 +295,7 @@ function QuoteEditPageContent({ params }: QuoteEditPageProps) {
         throw new Error(data.details || data.error || '見積書の更新に失敗しました');
       }
     } catch (error) {
-      console.error('Error updating quote:', error);
+      logger.error('Error updating quote:', error);
       setError(error instanceof Error ? error.message : '見積書の更新に失敗しました');
     } finally {
       setIsSaving(false);

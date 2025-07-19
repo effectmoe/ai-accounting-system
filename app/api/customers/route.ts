@@ -2,17 +2,21 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDatabase } from '@/lib/mongodb-client';
 import { Customer, SortableField, SortOrder, FilterState } from '@/types/collections';
 import { v4 as uuidv4 } from 'uuid';
-
+import { logger } from '@/lib/logger';
+import { 
+  withErrorHandler, 
+  validateRequired, 
+  validatePagination, 
+  validateEmail,
+  ApiErrorResponse 
+} from '@/lib/unified-error-handler';
 // GET: 顧客一覧取得
-export async function GET(request: NextRequest) {
-  try {
+export const GET = withErrorHandler(async (request: NextRequest) => {
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '10');
+    const { page, limit, skip } = validatePagination(searchParams);
     const search = searchParams.get('search') || '';
     const sortBy = (searchParams.get('sortBy') as SortableField) || 'createdAt';
     const sortOrder = (searchParams.get('sortOrder') as SortOrder) || 'desc';
-    const skip = (page - 1) * limit;
 
     // フィルターパラメータの取得
     const filters: FilterState = {};
@@ -277,37 +281,18 @@ export async function GET(request: NextRequest) {
       sortOrder: validSortOrder,
       filters,
     });
-  } catch (error) {
-    console.error('Error fetching customers:', error);
-    return NextResponse.json(
-      { success: false, error: '顧客データの取得に失敗しました' },
-      { status: 500 }
-    );
-  }
-}
+});
 
 // POST: 新規顧客作成
-export async function POST(request: NextRequest) {
-  try {
+export const POST = withErrorHandler(async (request: NextRequest) => {
     const body = await request.json();
     
     // 必須フィールドのチェック
-    if (!body.companyName) {
-      return NextResponse.json(
-        { success: false, error: '会社名は必須です' },
-        { status: 400 }
-      );
-    }
+    validateRequired(body, ['companyName']);
 
     // メールアドレスの形式チェック（メールアドレスが提供された場合のみ）
-    if (body.email) {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(body.email)) {
-        return NextResponse.json(
-          { success: false, error: '有効なメールアドレスを入力してください' },
-          { status: 400 }
-        );
-      }
+    if (body.email && !validateEmail(body.email)) {
+      throw new ApiErrorResponse('有効なメールアドレスを入力してください', 400, 'INVALID_EMAIL');
     }
 
     const db = await getDatabase();
@@ -317,10 +302,7 @@ export async function POST(request: NextRequest) {
     if (body.email) {
       const existingCustomer = await collection.findOne({ email: body.email });
       if (existingCustomer) {
-        return NextResponse.json(
-          { success: false, error: 'このメールアドレスは既に登録されています' },
-          { status: 400 }
-        );
+        throw new ApiErrorResponse('このメールアドレスは既に登録されています', 409, 'EMAIL_ALREADY_EXISTS');
       }
     }
 
@@ -328,10 +310,7 @@ export async function POST(request: NextRequest) {
     if (body.customerId) {
       const existingCustomer = await collection.findOne({ customerId: body.customerId });
       if (existingCustomer) {
-        return NextResponse.json(
-          { success: false, error: 'この顧客コードは既に登録されています' },
-          { status: 400 }
-        );
+        throw new ApiErrorResponse('この顧客コードは既に登録されています', 409, 'CUSTOMER_ID_ALREADY_EXISTS');
       }
     }
 
@@ -369,11 +348,4 @@ export async function POST(request: NextRequest) {
       id: result.insertedId.toString(),
       ...newCustomer,
     });
-  } catch (error) {
-    console.error('Error creating customer:', error);
-    return NextResponse.json(
-      { success: false, error: '顧客の作成に失敗しました' },
-      { status: 500 }
-    );
-  }
-}
+});

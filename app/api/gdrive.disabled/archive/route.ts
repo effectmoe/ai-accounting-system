@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { google } from 'googleapis';
 
+import { logger } from '@/lib/logger';
 // Google Drive APIの認証設定
 const auth = new google.auth.GoogleAuth({
   credentials: {
@@ -67,7 +68,7 @@ export async function POST(request: NextRequest) {
       
       // 重複フォルダがある場合は警告をログに出力
       if (archiveFolderQuery.data.files.length > 1) {
-        console.warn(`警告: ${archiveFolderQuery.data.files.length}個の重複した「${archiveFolderName}」フォルダが見つかりました。ID: ${selectedFolder.id} を使用します。`);
+        logger.warn(`警告: ${archiveFolderQuery.data.files.length}個の重複した「${archiveFolderName}」フォルダが見つかりました。ID: ${selectedFolder.id} を使用します。`);
       }
     } else {
       // アーカイブフォルダを作成
@@ -106,7 +107,7 @@ export async function POST(request: NextRequest) {
       archiveFolderName
     });
   } catch (error) {
-    console.error('Archive error:', error);
+    logger.error('Archive error:', error);
     return NextResponse.json(
       { 
         error: 'アーカイブ処理に失敗しました',

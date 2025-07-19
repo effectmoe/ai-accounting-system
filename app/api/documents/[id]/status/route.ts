@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/mongodb-client';
 import { ObjectId } from 'mongodb';
 
+import { logger } from '@/lib/logger';
 export async function PATCH(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -43,7 +44,7 @@ export async function PATCH(
     });
 
   } catch (error) {
-    console.error('Status update error:', error);
+    logger.error('Status update error:', error);
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to update status'

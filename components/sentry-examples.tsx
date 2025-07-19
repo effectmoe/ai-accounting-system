@@ -3,6 +3,7 @@
 import * as Sentry from "@sentry/nextjs";
 import { trackUIAction, trackAPICall, logger } from "@/lib/sentry-utils";
 
+import { logger } from '@/lib/logger';
 /**
  * Sentryの実装例を示すコンポーネント
  */
@@ -18,7 +19,7 @@ export function SentryExamples() {
       },
       () => {
         // 実際の保存処理
-        console.log("Invoice saved");
+        logger.debug("Invoice saved");
       }
     );
   };
@@ -35,10 +36,10 @@ export function SentryExamples() {
           return response.json();
         }
       );
-      console.log("Data fetched:", data);
+      logger.debug("Data fetched:", data);
     } catch (error) {
       // エラーは自動的にSentryに送信される
-      console.error("Failed to fetch data");
+      logger.error("Failed to fetch data");
     }
   };
 

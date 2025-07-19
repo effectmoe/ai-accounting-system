@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import toast from 'react-hot-toast';
 
+import { logger } from '@/lib/logger';
 export default function OCRUploadAzure() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [results, setResults] = useState<any[]>([]);
@@ -13,7 +14,7 @@ export default function OCRUploadAzure() {
 
   const createSupplierQuote = async (ocrData: any, fileId: string) => {
     try {
-      console.log('[OCR Upload] Creating supplier quote with fileId:', fileId);
+      logger.debug('[OCR Upload] Creating supplier quote with fileId:', fileId);
       
       // OCRデータを仕入先見積書形式に変換
       const supplierQuoteData = {
@@ -71,7 +72,7 @@ export default function OCRUploadAzure() {
         status: 'draft'
       };
       
-      console.log('[OCR Upload] Supplier quote data:', supplierQuoteData);
+      logger.debug('[OCR Upload] Supplier quote data:', supplierQuoteData);
       
       // 仕入先見積書APIを呼び出し
       const response = await fetch('/api/supplier-quotes', {
@@ -88,7 +89,7 @@ export default function OCRUploadAzure() {
       }
 
       const createdQuote = await response.json();
-      console.log('[OCR Upload] Created supplier quote:', createdQuote);
+      logger.debug('[OCR Upload] Created supplier quote:', createdQuote);
       
       toast.success('仕入先見積書が作成されました！', { duration: 4000 });
       
@@ -96,14 +97,14 @@ export default function OCRUploadAzure() {
       // window.location.href = `/supplier-quotes/${createdQuote._id}`;
       
     } catch (error) {
-      console.error('[OCR Upload] Error creating supplier quote:', error);
+      logger.error('[OCR Upload] Error creating supplier quote:', error);
       toast.error(`仕入先見積書の作成に失敗: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
   
   const createPurchaseInvoice = async (ocrData: any, fileId: string) => {
     try {
-      console.log('[OCR Upload] Creating purchase invoice with fileId:', fileId);
+      logger.debug('[OCR Upload] Creating purchase invoice with fileId:', fileId);
       
       // OCRデータを仕入請求書形式に変換
       const purchaseInvoiceData = {
@@ -156,7 +157,7 @@ export default function OCRUploadAzure() {
         paymentStatus: 'pending'
       };
       
-      console.log('[OCR Upload] Purchase invoice data:', purchaseInvoiceData);
+      logger.debug('[OCR Upload] Purchase invoice data:', purchaseInvoiceData);
       
       // 仕入請求書APIを呼び出し
       const response = await fetch('/api/purchase-invoices', {
@@ -173,7 +174,7 @@ export default function OCRUploadAzure() {
       }
 
       const createdInvoice = await response.json();
-      console.log('[OCR Upload] Created purchase invoice:', createdInvoice);
+      logger.debug('[OCR Upload] Created purchase invoice:', createdInvoice);
       
       toast.success('仕入請求書が作成されました！', { duration: 4000 });
       
@@ -181,7 +182,7 @@ export default function OCRUploadAzure() {
       // window.location.href = `/purchase-invoices/${createdInvoice._id}`;
       
     } catch (error) {
-      console.error('[OCR Upload] Error creating purchase invoice:', error);
+      logger.error('[OCR Upload] Error creating purchase invoice:', error);
       toast.error(`仕入請求書の作成に失敗: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };

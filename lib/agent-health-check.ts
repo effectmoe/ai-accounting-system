@@ -4,6 +4,7 @@ import { FirecrawlClient } from './firecrawl-client';
 import { MLAnalyticsManager } from './ml-analytics-manager';
 import { getWebSocketManager } from './websocket-manager';
 
+import { logger } from '@/lib/logger';
 interface HealthCheckResult {
   component: string;
   status: 'healthy' | 'warning' | 'error';
@@ -45,7 +46,7 @@ export class AgentHealthCheck {
     const startTime = Date.now();
     const results: HealthCheckResult[] = [];
 
-    console.log('🔍 Starting comprehensive system health check...');
+    logger.debug('🔍 Starting comprehensive system health check...');
 
     // 1. LLM Cascade Manager のチェック
     try {
@@ -145,7 +146,7 @@ export class AgentHealthCheck {
     const recommendations = this.generateRecommendations(results);
 
     const totalTime = Date.now() - startTime;
-    console.log(`✅ Health check completed in ${totalTime}ms`);
+    logger.debug(`✅ Health check completed in ${totalTime}ms`);
 
     return {
       overallStatus,

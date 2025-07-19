@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Plus, Edit, Trash2, Search, Filter, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, ChevronsUpDown, X, Columns, GripVertical } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { Product, ProductSortableField, SortOrder, ProductFilterState } from '@/types/collections';
+import { logger } from '@/lib/logger';
 import {
   DndContext,
   closestCenter,
@@ -87,7 +88,7 @@ function useColumnVisibility() {
         }
       }
     } catch (error) {
-      console.error('Failed to load column visibility settings:', error);
+      logger.error('Failed to load column visibility settings:', error);
     }
   }, []);
 
@@ -101,7 +102,7 @@ function useColumnVisibility() {
       };
       localStorage.setItem(COLUMN_VISIBILITY_STORAGE_KEY, JSON.stringify(data));
     } catch (error) {
-      console.error('Failed to save column visibility settings:', error);
+      logger.error('Failed to save column visibility settings:', error);
     }
   }, []);
 
@@ -398,7 +399,7 @@ function ProductsPageContent() {
         throw new Error('予期しないレスポンス形式');
       }
     } catch (error) {
-      console.error('Error loading products:', error);
+      logger.error('Error loading products:', error);
       toast.error('商品データの読み込みに失敗しました');
     } finally {
       setLoading(false);
@@ -417,7 +418,7 @@ function ProductsPageContent() {
         setCategories(data);
       }
     } catch (err) {
-      console.error('カテゴリ一覧取得エラー:', err);
+      logger.error('カテゴリ一覧取得エラー:', err);
     }
   }, []);
 
@@ -604,7 +605,7 @@ function ProductsPageContent() {
       toast.success('商品を削除しました');
       fetchProducts();
     } catch (error) {
-      console.error('削除エラー:', error);
+      logger.error('削除エラー:', error);
       toast.error('商品の削除に失敗しました');
     }
   };
@@ -666,7 +667,7 @@ function ProductsPageContent() {
       }
 
     } catch (error) {
-      console.error('ステータス更新エラー:', error);
+      logger.error('ステータス更新エラー:', error);
       
       // エラー時は元の状態に戻す
       setProducts(originalProducts);
@@ -730,7 +731,7 @@ function ProductsPageContent() {
       setSelectedProducts(new Set());
       fetchProducts();
     } catch (error) {
-      console.error('Error deleting products:', error);
+      logger.error('Error deleting products:', error);
       toast.error('削除に失敗しました');
     }
   };
@@ -764,7 +765,7 @@ function ProductsPageContent() {
       setSelectedProducts(new Set());
       fetchProducts();
     } catch (error) {
-      console.error('Error updating products:', error);
+      logger.error('Error updating products:', error);
       toast.error('更新に失敗しました');
     }
   };

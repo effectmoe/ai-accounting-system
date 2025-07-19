@@ -1,3 +1,5 @@
+import { logger } from '@/lib/logger';
+
 interface Account {
   id: string;
   code: string;
@@ -36,7 +38,7 @@ export default async function AccountsPage() {
       throw new Error(data.error || 'Failed to fetch accounts');
     }
   } catch (error) {
-    console.error('Error fetching accounts:', error);
+    logger.error('Error fetching accounts:', error);
     
     // エラー時はモックデータを使用
     accounts = [

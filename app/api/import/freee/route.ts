@@ -4,6 +4,7 @@ import { writeFile, unlink } from 'fs/promises';
 import { join } from 'path';
 import { tmpdir } from 'os';
 
+import { logger } from '@/lib/logger';
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
@@ -49,11 +50,11 @@ export async function POST(request: NextRequest) {
       try {
         await unlink(tempPath);
       } catch (error) {
-        console.error('Failed to delete temp file:', error);
+        logger.error('Failed to delete temp file:', error);
       }
     }
   } catch (error) {
-    console.error('Import error:', error);
+    logger.error('Import error:', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'インポートに失敗しました' },
       { status: 500 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { CompanyInfoService } from '@/services/company-info.service';
 
+import { logger } from '@/lib/logger';
 // GET: 会社情報取得
 export async function GET(request: NextRequest) {
   try {
@@ -38,7 +39,7 @@ export async function GET(request: NextRequest) {
       quote_validity_days: companyInfo.quoteValidityDays,
     } : null;
 
-    console.log('GET response - Key fields:', {
+    logger.debug('GET response - Key fields:', {
       established_date: formattedInfo?.established_date,
       capital: formattedInfo?.capital,
       fiscal_year_end: formattedInfo?.fiscal_year_end,
@@ -49,7 +50,7 @@ export async function GET(request: NextRequest) {
       companyInfo: formattedInfo,
     });
   } catch (error) {
-    console.error('Error fetching company info:', error);
+    logger.error('Error fetching company info:', error);
     return NextResponse.json(
       {
         success: false,
@@ -127,7 +128,7 @@ export async function POST(request: NextRequest) {
       message: '会社情報を保存しました',
     });
   } catch (error) {
-    console.error('Error saving company info:', error);
+    logger.error('Error saving company info:', error);
     return NextResponse.json(
       {
         success: false,
@@ -180,7 +181,7 @@ export async function PUT(request: NextRequest) {
       const existingInfo = await companyInfoService.getCompanyInfo();
       if (!existingInfo) {
         // 会社情報が存在しない場合は、最小限の会社情報で初期化
-        console.log('Creating minimal company info for speech settings');
+        logger.debug('Creating minimal company info for speech settings');
         const minimalCompanyInfo = await companyInfoService.upsertCompanyInfo({
           companyName: 'デフォルト会社',
           postalCode: '000-0000',
@@ -227,7 +228,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // デバッグログ
-    console.log('PUT request body:', {
+    logger.debug('PUT request body:', {
       ...body,
       logo_image: body.logo_image ? '[BASE64_IMAGE]' : null,
       stamp_image: body.stamp_image ? '[BASE64_IMAGE]' : null,
@@ -293,7 +294,7 @@ export async function PUT(request: NextRequest) {
       };
     }
 
-    console.log('Prepared update data:', {
+    logger.debug('Prepared update data:', {
       ...updateData,
       logoImage: updateData.logoImage ? '[BASE64_IMAGE]' : null,
       stampImage: updateData.stampImage ? '[BASE64_IMAGE]' : null,
@@ -353,7 +354,7 @@ export async function PUT(request: NextRequest) {
       message: '会社情報を更新しました',
     });
   } catch (error) {
-    console.error('Error updating company info:', error);
+    logger.error('Error updating company info:', error);
     return NextResponse.json(
       {
         success: false,

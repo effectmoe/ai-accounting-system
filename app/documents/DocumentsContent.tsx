@@ -7,6 +7,7 @@ import { DocumentService, SavedDocument } from '@/services/document-service';
 import { FileText, Download, Send, CheckCircle, Filter, Plus, Paperclip, Bell, Edit, FileCheck, Archive, Grid3X3, List, Trash2, Image } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
+import { logger } from '@/lib/logger';
 const documentTypeLabels = {
   estimate: '見積書',
   invoice: '請求書',
@@ -86,15 +87,15 @@ export default function DocumentsContent() {
       const data = await response.json();
       
       if (data.success) {
-        console.log('Fetched OCR results:', data.data);
+        logger.debug('Fetched OCR results:', data.data);
         setOcrResults(data.data || []);
         setTotalPages(Math.ceil((data.total || 0) / documentsPerPage));
       } else {
-        console.error('Failed to fetch OCR results:', data.error);
+        logger.error('Failed to fetch OCR results:', data.error);
         toast.error('OCR結果の取得に失敗しました');
       }
     } catch (error) {
-      console.error('Error fetching OCR results:', error);
+      logger.error('Error fetching OCR results:', error);
       toast.error('OCR結果の取得中にエラーが発生しました');
     }
   }, [currentPage]);
@@ -133,11 +134,11 @@ export default function DocumentsContent() {
         setDocuments(data.documents || []);
         setTotalPages(data.totalPages || 1);
       } else {
-        console.error('Error fetching documents:', data.error);
+        logger.error('Error fetching documents:', data.error);
         toast.error('文書の取得に失敗しました');
       }
     } catch (error) {
-      console.error('Error fetching documents:', error);
+      logger.error('Error fetching documents:', error);
       toast.error('文書の取得中にエラーが発生しました');
     }
   }, [filters, currentPage]);
@@ -172,7 +173,7 @@ export default function DocumentsContent() {
       });
 
       const result = await response.json();
-      console.log('Document creation response:', result);
+      logger.debug('Document creation response:', result);
       
       if (response.ok) {
         toast.success(`${result.message || '領収書を作成しました'}`);
@@ -186,11 +187,11 @@ export default function DocumentsContent() {
         await fetchDocuments();
         
       } else {
-        console.error('Document creation error:', result);
+        logger.error('Document creation error:', result);
         toast.error(result.error || '文書の作成に失敗しました');
       }
     } catch (error) {
-      console.error('Document creation error:', error);
+      logger.error('Document creation error:', error);
       toast.error('文書の作成中にエラーが発生しました');
     }
   };
@@ -214,7 +215,7 @@ export default function DocumentsContent() {
         toast.error(error.error || 'ステータスの更新に失敗しました');
       }
     } catch (error) {
-      console.error('Status update error:', error);
+      logger.error('Status update error:', error);
       toast.error('ステータスの更新中にエラーが発生しました');
     }
   };
@@ -236,7 +237,7 @@ export default function DocumentsContent() {
       toast.success('OCR結果を削除しました');
       await fetchOcrResults();
     } catch (error) {
-      console.error('Delete error:', error);
+      logger.error('Delete error:', error);
       toast.error(error instanceof Error ? error.message : '削除に失敗しました');
     }
   };

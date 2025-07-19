@@ -1,3 +1,5 @@
+import { logger } from '@/lib/logger';
+
 export interface OCRResult {
   text: string;
   confidence: number;
@@ -45,8 +47,8 @@ export class OCRProcessor {
         
         return result;
       } catch (error) {
-        console.error('GAS OCR API error:', error);
-        console.log('Falling back to mock data');
+        logger.error('GAS OCR API error:', error);
+        logger.debug('Falling back to mock data');
       }
     }
     
@@ -165,11 +167,11 @@ export class OCRProcessor {
           
           return result;
         } catch (error) {
-          console.error('GAS OCR API error:', error);
-          console.log('PDF processing now handled by Azure Form Recognizer');
+          logger.error('GAS OCR API error:', error);
+          logger.debug('PDF processing now handled by Azure Form Recognizer');
           // GASエラーの詳細をログに記録
           if (error instanceof Error) {
-            console.error('GAS OCR Error details:', error.message);
+            logger.error('GAS OCR Error details:', error.message);
           }
         }
       }
@@ -267,7 +269,7 @@ export class OCRProcessor {
       
       return mockPDFResults.default;
     } catch (error) {
-      console.error('PDF processing error:', error);
+      logger.error('PDF processing error:', error);
       throw new Error('PDFファイルの処理中にエラーが発生しました。');
     }
   }
@@ -338,27 +340,27 @@ export class OCRProcessor {
     
     // textフィールドの検証と正規化
     if (!ocrResult.text || typeof ocrResult.text !== 'string') {
-      console.warn('OCRResult.textが無効です:', ocrResult.text);
+      logger.warn('OCRResult.textが無効です:', ocrResult.text);
       ocrResult.text = '';
     }
     
     // textフィールドの検証と正規化
     if (!ocrResult.text || typeof ocrResult.text !== 'string') {
-      console.warn('OCRResult.textが無効です:', ocrResult.text);
+      logger.warn('OCRResult.textが無効です:', ocrResult.text);
       ocrResult.text = '';
     }
     
     // vendorフィールドの検証と正規化
     if (!ocrResult.vendor || typeof ocrResult.vendor !== 'string' || ocrResult.vendor.trim() === '') {
-      console.warn('OCRResult.vendorが無効です:', ocrResult.vendor);
+      logger.warn('OCRResult.vendorが無効です:', ocrResult.vendor);
       ocrResult.vendor = '店舗名不明';
     } else {
       // 文字列として有効な場合はトリムして正規化
       ocrResult.vendor = ocrResult.vendor.trim();
     }
     
-    console.error('[OCR-Processor] 使用するベンダー名:', ocrResult.vendor);
-    console.error('[OCR-Processor] textフィールド長:', ocrResult.text?.length || 0);
+    logger.error('[OCR-Processor] 使用するベンダー名:', ocrResult.vendor);
+    logger.error('[OCR-Processor] textフィールド長:', ocrResult.text?.length || 0);
     
     // OCR結果から仕訳データを生成
     const description = `${ocrResult.vendor || '店舗名不明'} - ${ocrResult.items?.map(i => i.name).join(', ') || ''}`;
@@ -382,16 +384,16 @@ export class OCRProcessor {
         
         // 税務関連のメモがあれば保存
         if (prediction.taxNotes) {
-          console.log('Tax notes:', prediction.taxNotes);
+          logger.debug('Tax notes:', prediction.taxNotes);
         }
         
         // 使用したソースを記録
         if (prediction.sources && prediction.sources.length > 0) {
-          console.log('Sources used:', prediction.sources.join(', '));
+          logger.debug('Sources used:', prediction.sources.join(', '));
         }
       }
     } catch (error) {
-      console.error('AI category prediction failed:', error);
+      logger.error('AI category prediction failed:', error);
       
       // フォールバック: 従来のキーワードベースの判定
       if (ocrResult.vendor && typeof ocrResult.vendor === 'string') {

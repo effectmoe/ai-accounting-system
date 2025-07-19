@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getGitHubIntegration, MastraLog } from '@/services/github-integration';
 
+import { logger } from '@/lib/logger';
 // ログの保存
 export async function POST(request: NextRequest) {
   try {
@@ -22,7 +23,7 @@ export async function POST(request: NextRequest) {
       ...result
     });
   } catch (error) {
-    console.error('Log save error:', error);
+    logger.error('Log save error:', error);
     return NextResponse.json(
       { 
         error: 'Failed to save logs',
@@ -55,7 +56,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(result);
   } catch (error) {
-    console.error('Report generation error:', error);
+    logger.error('Report generation error:', error);
     return NextResponse.json(
       { 
         error: 'Failed to generate report',

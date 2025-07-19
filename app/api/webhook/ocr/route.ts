@@ -2,31 +2,32 @@ import { NextRequest, NextResponse } from 'next/server';
 import { vercelDb, checkConnection } from '@/lib/mongodb-client';
 import { ObjectId } from 'mongodb';
 
+import { logger } from '@/lib/logger';
 // Node.js Runtimeを使用
 export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('OCR Webhook received - start');
+    logger.debug('OCR Webhook received - start');
     const data = await request.json();
-    console.log('OCR Webhook data:', JSON.stringify(data, null, 2));
+    logger.debug('OCR Webhook data:', JSON.stringify(data, null, 2));
 
     // MongoDBのみを使用（Supabaseは削除）
     {
       // MongoDB処理
-      console.log('MongoDB処理を開始');
+      logger.debug('MongoDB処理を開始');
       
       // MongoDB接続確認
       let mongoConnected = false;
       try {
-        console.log('Checking MongoDB connection...');
-        console.log('MONGODB_URI exists:', !!process.env.MONGODB_URI);
-        console.log('NODE_ENV:', process.env.NODE_ENV);
+        logger.debug('Checking MongoDB connection...');
+        logger.debug('MONGODB_URI exists:', !!process.env.MONGODB_URI);
+        logger.debug('NODE_ENV:', process.env.NODE_ENV);
         
         mongoConnected = await checkConnection();
       } catch (connectionError) {
-        console.error('MongoDB接続チェックエラー:', connectionError);
-        console.error('Error stack:', connectionError instanceof Error ? connectionError.stack : 'No stack trace');
+        logger.error('MongoDB接続チェックエラー:', connectionError);
+        logger.error('Error stack:', connectionError instanceof Error ? connectionError.stack : 'No stack trace');
         return NextResponse.json({
           success: false,
           error: 'データベース接続チェックエラー',
@@ -36,13 +37,13 @@ export async function POST(request: NextRequest) {
       }
       
       if (!mongoConnected) {
-        console.error('MongoDB接続に失敗しました');
+        logger.error('MongoDB接続に失敗しました');
         return NextResponse.json({
           success: false,
           error: 'データベース接続エラー: MongoDBに接続できません'
         }, { status: 500 });
       }
-      console.log('MongoDB接続確認完了');
+      logger.debug('MongoDB接続確認完了');
 
       // OCR結果をMongoDBに保存
       const ocrResult = {
@@ -64,9 +65,9 @@ export async function POST(request: NextRequest) {
       let savedOcrResult;
       try {
         savedOcrResult = await vercelDb.create('ocr_results', ocrResult);
-        console.log('OCR結果をMongoDBに保存しました:', savedOcrResult._id.toString());
+        logger.debug('OCR結果をMongoDBに保存しました:', savedOcrResult._id.toString());
       } catch (mongoError) {
-        console.error('MongoDB OCR結果保存エラー:', mongoError);
+        logger.error('MongoDB OCR結果保存エラー:', mongoError);
         return NextResponse.json({
           success: false,
           error: 'OCR結果の保存に失敗しました',
@@ -101,9 +102,9 @@ export async function POST(request: NextRequest) {
       
       try {
         const savedDocument = await vercelDb.create('documents', documentData);
-        console.log('Document saved to MongoDB:', savedDocument._id.toString());
+        logger.debug('Document saved to MongoDB:', savedDocument._id.toString());
       } catch (mongoError) {
-        console.error('MongoDB documents保存エラー:', mongoError);
+        logger.error('MongoDB documents保存エラー:', mongoError);
         return NextResponse.json({
           success: false,
           error: 'ドキュメントの保存に失敗しました',
@@ -119,8 +120,8 @@ export async function POST(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('Webhook処理エラー:', error);
-    console.error('エラーの詳細:', {
+    logger.error('Webhook処理エラー:', error);
+    logger.error('エラーの詳細:', {
       name: error instanceof Error ? error.name : 'Unknown',
       message: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined

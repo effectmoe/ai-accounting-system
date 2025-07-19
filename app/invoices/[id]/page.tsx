@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { logger } from '@/lib/logger';
 import { 
   ArrowLeft, 
   Download, 
@@ -126,12 +127,12 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
         throw new Error('Failed to fetch invoice');
       }
       const data = await response.json();
-      console.log('Invoice data received:', data);
-      console.log('Invoice status:', data.status);
-      console.log('Invoice convertedToDeliveryNoteId:', data.convertedToDeliveryNoteId);
+      logger.debug('Invoice data received:', data);
+      logger.debug('Invoice status:', data.status);
+      logger.debug('Invoice convertedToDeliveryNoteId:', data.convertedToDeliveryNoteId);
       setInvoice(data);
     } catch (error) {
-      console.error('Error fetching invoice:', error);
+      logger.error('Error fetching invoice:', error);
       setError('請求書の取得に失敗しました');
     } finally {
       setIsLoading(false);
@@ -154,7 +155,7 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
       const updatedInvoice = await response.json();
       setInvoice(updatedInvoice);
     } catch (error) {
-      console.error('Error updating status:', error);
+      logger.error('Error updating status:', error);
       setError('ステータスの更新に失敗しました');
     } finally {
       setIsUpdating(false);
@@ -178,7 +179,7 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
       
       router.push('/invoices');
     } catch (error) {
-      console.error('Error cancelling invoice:', error);
+      logger.error('Error cancelling invoice:', error);
       setError('請求書のキャンセルに失敗しました');
     } finally {
       setIsUpdating(false);
@@ -213,7 +214,7 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
         }
       }, 3000);
     } catch (error) {
-      console.error('Error updating invoice:', error);
+      logger.error('Error updating invoice:', error);
       setError('請求書の更新に失敗しました');
     } finally {
       setIsUpdating(false);
@@ -250,7 +251,7 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
         throw new Error(data.details || data.error || '変換に失敗しました');
       }
     } catch (error) {
-      console.error('Error converting invoice to delivery note:', error);
+      logger.error('Error converting invoice to delivery note:', error);
       alert(`変換エラー: ${error instanceof Error ? error.message : '不明なエラー'}`);
     } finally {
       setIsUpdating(false);

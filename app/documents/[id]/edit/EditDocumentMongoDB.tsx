@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { ArrowLeft, Save, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
+import { logger } from '@/lib/logger';
 interface Document {
   _id: string;
   company_id: string;
@@ -47,22 +48,22 @@ export default function EditDocumentMongoDB() {
 
   const fetchDocument = async () => {
     try {
-      console.log('Fetching document with ID:', documentId);
+      logger.debug('Fetching document with ID:', documentId);
       
       // 単一ドキュメントを取得するためのAPIエンドポイントを使用
       const response = await fetch(`/api/documents/${documentId}`);
       const data = await response.json();
       
-      console.log('Single document response:', data);
+      logger.debug('Single document response:', data);
       
       if (data.success) {
-        console.log('Found document:', data.document);
+        logger.debug('Found document:', data.document);
         setDocument(data.document);
       } else {
         throw new Error(data.error || 'Failed to fetch document');
       }
     } catch (error) {
-      console.error('Error fetching document:', error);
+      logger.error('Error fetching document:', error);
       toast.error('ドキュメントの読み込みに失敗しました');
       router.push('/documents');
     } finally {
@@ -98,7 +99,7 @@ export default function EditDocumentMongoDB() {
       toast.success('ドキュメントを更新しました');
       router.push('/documents');
     } catch (error) {
-      console.error('Error updating document:', error);
+      logger.error('Error updating document:', error);
       toast.error('更新に失敗しました');
     } finally {
       setSaving(false);

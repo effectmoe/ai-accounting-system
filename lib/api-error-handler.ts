@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 
+import { logger } from '@/lib/logger';
 // カスタムエラークラス
 export class APIError extends Error {
   constructor(
@@ -36,7 +37,7 @@ export class ExternalAPIError extends APIError {
 
 // エラーレスポンスの標準化
 export function createErrorResponse(error: unknown) {
-  console.error('API Error:', error);
+  logger.error('API Error:', error);
 
   // タイムアウトエラー
   if (error instanceof TimeoutError) {
@@ -170,7 +171,7 @@ export async function retryWithBackoff<T>(
       }
 
       const delay = initialDelay * Math.pow(2, i);
-      console.log(`Retry attempt ${i + 1}/${maxRetries} after ${delay}ms`);
+      logger.debug(`Retry attempt ${i + 1}/${maxRetries} after ${delay}ms`);
       await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }

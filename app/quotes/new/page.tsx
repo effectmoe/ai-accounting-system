@@ -15,6 +15,7 @@ import { ja } from 'date-fns/locale';
 import AIChatDialog from '@/components/ai-chat-dialog';
 import { calculateDueDate } from '@/utils/payment-terms';
 
+import { logger } from '@/lib/logger';
 interface QuoteItem {
   description: string;
   quantity: number;
@@ -118,7 +119,7 @@ function NewQuoteContent() {
         }
       }
     } catch (error) {
-      console.error('Error fetching company info:', error);
+      logger.error('Error fetching company info:', error);
     }
   };
 
@@ -130,7 +131,7 @@ function NewQuoteContent() {
         setCustomers(data.customers || []);
       }
     } catch (error) {
-      console.error('Error fetching customers:', error);
+      logger.error('Error fetching customers:', error);
     }
   };
 
@@ -142,7 +143,7 @@ function NewQuoteContent() {
         setProducts(data.products || []);
       }
     } catch (error) {
-      console.error('Error fetching products:', error);
+      logger.error('Error fetching products:', error);
     }
   };
 
@@ -157,7 +158,7 @@ function NewQuoteContent() {
         }
       }
     } catch (error) {
-      console.error('Error fetching bank accounts:', error);
+      logger.error('Error fetching bank accounts:', error);
     }
   };
 
@@ -268,9 +269,9 @@ function NewQuoteContent() {
       aiConversationId: aiConversationId,
     };
 
-    console.log('Submitting quote data:', quoteData);
-    console.log('aiConversationId value:', aiConversationId);
-    console.log('isGeneratedByAI value:', aiDataApplied);
+    logger.debug('Submitting quote data:', quoteData);
+    logger.debug('aiConversationId value:', aiConversationId);
+    logger.debug('isGeneratedByAI value:', aiDataApplied);
 
     try {
       const response = await fetch('/api/quotes', {
@@ -292,7 +293,7 @@ function NewQuoteContent() {
         throw new Error(data.details || data.error || '見積書の作成に失敗しました');
       }
     } catch (error) {
-      console.error('Error creating quote:', error);
+      logger.error('Error creating quote:', error);
       setError(error instanceof Error ? error.message : '見積書の作成に失敗しました');
     } finally {
       setIsLoading(false);
@@ -300,11 +301,11 @@ function NewQuoteContent() {
   };
 
   const handleAIDataApply = (data: any) => {
-    console.log('=== AI Data Apply Debug ===');
-    console.log('AI data received:', data);
-    console.log('AI conversation ID from data:', data.aiConversationId);
-    console.log('Data keys:', Object.keys(data));
-    console.log('conversationId (alternative):', data.conversationId);
+    logger.debug('=== AI Data Apply Debug ===');
+    logger.debug('AI data received:', data);
+    logger.debug('AI conversation ID from data:', data.aiConversationId);
+    logger.debug('Data keys:', Object.keys(data));
+    logger.debug('conversationId (alternative):', data.conversationId);
     
     if (data.customerId) {
       setSelectedCustomerId(data.customerId);
@@ -342,12 +343,12 @@ function NewQuoteContent() {
     
     // Try both possible conversation ID fields
     const conversationId = data.aiConversationId || data.conversationId;
-    console.log('Final conversation ID to set:', conversationId);
-    console.log('Setting AI conversation ID to:', conversationId);
+    logger.debug('Final conversation ID to set:', conversationId);
+    logger.debug('Setting AI conversation ID to:', conversationId);
     setAiConversationId(conversationId || null);
     setAiDataApplied(true);
     setShowAIChat(false);
-    console.log('=== End AI Data Apply Debug ===');
+    logger.debug('=== End AI Data Apply Debug ===');
   };
 
   const totals = getTotalAmount();

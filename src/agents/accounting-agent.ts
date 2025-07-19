@@ -3,6 +3,7 @@ import { createAgent } from '@mastra/core';
 import { DatabaseService, Collections } from '@/lib/mongodb-client';
 import { ObjectId } from 'mongodb';
 
+import { logger } from '@/lib/logger';
 // 仕訳エントリスキーマ
 const journalEntrySchema = z.object({
   description: z.string(),
@@ -143,7 +144,7 @@ export const accountingAgent = createAgent({
           return fallbackCategory;
           
         } catch (error) {
-          console.error('Transaction categorization error:', error);
+          logger.error('Transaction categorization error:', error);
           return {
             success: false,
             error: error.message,
@@ -254,7 +255,7 @@ export const accountingAgent = createAgent({
           };
           
         } catch (error) {
-          console.error('Journal entry creation error:', error);
+          logger.error('Journal entry creation error:', error);
           return {
             success: false,
             error: error.message
@@ -344,7 +345,7 @@ export const accountingAgent = createAgent({
           };
           
         } catch (error) {
-          console.error('Invoice creation error:', error);
+          logger.error('Invoice creation error:', error);
           return {
             success: false,
             error: error.message
@@ -400,7 +401,7 @@ export const accountingAgent = createAgent({
           };
           
         } catch (error) {
-          console.error('Invoice data extraction error:', error);
+          logger.error('Invoice data extraction error:', error);
           return {
             success: false,
             error: error.message
@@ -522,7 +523,7 @@ export const accountingAgent = createAgent({
           };
           
         } catch (error) {
-          console.error('Report generation error:', error);
+          logger.error('Report generation error:', error);
           return {
             success: false,
             error: error.message
@@ -602,7 +603,7 @@ export const accountingAgent = createAgent({
           };
           
         } catch (error) {
-          console.error('Financial analysis error:', error);
+          logger.error('Financial analysis error:', error);
           return {
             success: false,
             error: error.message
@@ -615,7 +616,7 @@ export const accountingAgent = createAgent({
   // メイン実行ロジック
   execute: async ({ input, tools }) => {
     try {
-      console.log('[Accounting Agent] Starting operation:', input.operation);
+      logger.debug('[Accounting Agent] Starting operation:', input.operation);
       
       switch (input.operation) {
         case 'categorize':
@@ -720,7 +721,7 @@ export const accountingAgent = createAgent({
       }
       
     } catch (error) {
-      console.error('[Accounting Agent] Error:', error);
+      logger.error('[Accounting Agent] Error:', error);
       return {
         success: false,
         operation: input.operation,

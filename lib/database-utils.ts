@@ -1,5 +1,6 @@
 import { getSupabaseClient } from './supabase-singleton';
 
+import { logger } from '@/lib/logger';
 /**
  * Supabaseの更新を確実に行うユーティリティ
  */
@@ -33,7 +34,7 @@ export async function reliableUpdate(
         return { success: true, data };
       }
     } catch (error) {
-      console.error(`Update attempt ${i + 1} failed:`, error);
+      logger.error(`Update attempt ${i + 1} failed:`, error);
       if (i === maxRetries - 1) {
         return { success: false, error };
       }
@@ -78,7 +79,7 @@ export class OptimisticStateManager<T> {
       this.pendingUpdates.delete(id);
     } else {
       // 同期失敗時の処理
-      console.error('Sync failed for', id);
+      logger.error('Sync failed for', id);
     }
   }
   

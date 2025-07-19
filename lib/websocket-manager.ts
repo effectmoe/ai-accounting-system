@@ -2,6 +2,7 @@ import { WebSocketServer, WebSocket } from 'ws';
 import { createServer } from 'http';
 import { parse } from 'url';
 
+import { logger } from '@/lib/logger';
 interface NotificationMessage {
   type: 'progress' | 'status' | 'result' | 'error' | 'log';
   sessionId: string;
@@ -60,12 +61,12 @@ export class WebSocketManager {
 
         this.server.listen(this.port, () => {
           this.isRunning = true;
-          console.log(`WebSocket server started on port ${this.port}`);
+          logger.debug(`WebSocket server started on port ${this.port}`);
           resolve();
         });
 
         this.server.on('error', (error: Error) => {
-          console.error('WebSocket server error:', error);
+          logger.error('WebSocket server error:', error);
           reject(error);
         });
 
@@ -105,7 +106,7 @@ export class WebSocketManager {
           if (this.server) {
             this.server.close(() => {
               this.isRunning = false;
-              console.log('WebSocket server stopped');
+              logger.debug('WebSocket server stopped');
               resolve();
             });
           } else {
@@ -141,7 +142,7 @@ export class WebSocketManager {
     }
     this.connections.get(sessionId)!.push(connection);
 
-    console.log(`WebSocket connected: sessionId=${sessionId}, subscriptions=${subscriptions.join(',')}`);
+    logger.debug(`WebSocket connected: sessionId=${sessionId}, subscriptions=${subscriptions.join(',')}`);
 
     // 接続確認メッセージを送信
     this.sendToConnection(connection, {
@@ -162,19 +163,19 @@ export class WebSocketManager {
         const message = JSON.parse(data.toString());
         this.handleClientMessage(connection, message);
       } catch (error) {
-        console.error('Invalid WebSocket message:', error);
+        logger.error('Invalid WebSocket message:', error);
       }
     });
 
     // 接続終了処理
     ws.on('close', () => {
       this.removeConnection(sessionId, connection);
-      console.log(`WebSocket disconnected: sessionId=${sessionId}`);
+      logger.debug(`WebSocket disconnected: sessionId=${sessionId}`);
     });
 
     // エラー処理
     ws.on('error', (error) => {
-      console.error(`WebSocket error for session ${sessionId}:`, error);
+      logger.error(`WebSocket error for session ${sessionId}:`, error);
       this.removeConnection(sessionId, connection);
     });
 
@@ -223,7 +224,7 @@ export class WebSocketManager {
         break;
 
       default:
-        console.warn('Unknown message type:', message.type);
+        logger.warn('Unknown message type:', message.type);
     }
   }
 
@@ -367,7 +368,7 @@ export class WebSocketManager {
     try {
       connection.ws.send(JSON.stringify(message));
     } catch (error) {
-      console.error('Failed to send WebSocket message:', error);
+      logger.error('Failed to send WebSocket message:', error);
       this.removeConnection(connection.sessionId, connection);
     }
   }

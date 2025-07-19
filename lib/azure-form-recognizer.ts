@@ -3,6 +3,7 @@ import { GridFSBucket } from 'mongodb';
 import { getDatabase } from './mongodb-client';
 import { InvoiceItemExtractor } from './azure-invoice-item-extractor';
 
+import { logger } from '@/lib/logger';
 export interface FormRecognizerConfig {
   endpoint: string;
   apiKey: string;
@@ -77,7 +78,7 @@ export class FormRecognizerService {
       };
       
       // rawResultを保存してデバッグ
-      console.log('[Azure Form Recognizer] Raw result structure:', {
+      logger.debug('[Azure Form Recognizer] Raw result structure:', {
         hasDocuments: !!result?.documents,
         documentsCount: result?.documents?.length || 0,
         hasPages: !!result?.pages,
@@ -104,9 +105,9 @@ export class FormRecognizerService {
       const fields = document.fields || {};
       
       // フィールドの詳細をログ出力
-      console.log('[Azure Form Recognizer] Extracted fields:', Object.keys(fields));
+      logger.debug('[Azure Form Recognizer] Extracted fields:', Object.keys(fields));
       if (fields.Items) {
-        console.log('[Azure Form Recognizer] Items field details:', {
+        logger.debug('[Azure Form Recognizer] Items field details:', {
           type: fields.Items.type,
           hasValues: !!fields.Items.values,
           valuesCount: fields.Items.values?.length || 0
@@ -156,56 +157,56 @@ export class FormRecognizerService {
       };
 
       // 日本語見積書に最適化された行ベース抽出を最優先で実行
-      console.log('[Azure Form Recognizer] 行ベース抽出を開始（最優先）');
+      logger.debug('[Azure Form Recognizer] 行ベース抽出を開始（最優先）');
       
       // 元のcontentを確認
       if (result.content) {
-        console.log('[Azure Form Recognizer] 元のcontent（最初の1000文字）:', result.content.substring(0, 1000));
+        logger.debug('[Azure Form Recognizer] 元のcontent（最初の1000文字）:', result.content.substring(0, 1000));
       }
       
       // ページ情報も確認
       if (result.pages && result.pages.length > 0) {
-        console.log('[Azure Form Recognizer] ページ情報:');
+        logger.debug('[Azure Form Recognizer] ページ情報:');
         result.pages.forEach((page, index) => {
-          console.log(`  ページ${index + 1}: ${page.lines?.length || 0}行`);
+          logger.debug(`  ページ${index + 1}: ${page.lines?.length || 0}行`);
           if (page.lines && page.lines.length > 0) {
-            console.log(`  最初の10行:`, page.lines.slice(0, 10).map(line => line.content));
+            logger.debug(`  最初の10行:`, page.lines.slice(0, 10).map(line => line.content));
           }
         });
       }
       
       // 最優先：行ベース抽出（日本語見積書用）
       if (result.pages && result.pages.length > 0) {
-        console.log('[Azure Form Recognizer] 行ベース抽出を実行');
+        logger.debug('[Azure Form Recognizer] 行ベース抽出を実行');
         const pageItems = this.extractItemsFromPages(result.pages);
         if (pageItems.length > 0) {
           extractedData.fields.items = pageItems;
-          console.log(`[Azure Form Recognizer] 行ベース抽出で${pageItems.length}個の商品を抽出`);
+          logger.debug(`[Azure Form Recognizer] 行ベース抽出で${pageItems.length}個の商品を抽出`);
         } else {
-          console.log('[Azure Form Recognizer] 行ベース抽出で商品が見つかりませんでした');
+          logger.debug('[Azure Form Recognizer] 行ベース抽出で商品が見つかりませんでした');
         }
       } else {
-        console.log('[Azure Form Recognizer] pages情報が利用できません。行ベース抽出をスキップ');
+        logger.debug('[Azure Form Recognizer] pages情報が利用できません。行ベース抽出をスキップ');
       }
       
       // 商品が行ベースで抽出されなかった場合、コンテンツから検索
       if (extractedData.fields.items.length === 0) {
-        console.log('[Azure Form Recognizer] 行ベース抽出失敗のため、コンテンツから直接検索');
+        logger.debug('[Azure Form Recognizer] 行ベース抽出失敗のため、コンテンツから直接検索');
         
         if (result.content) {
           const directItems = this.extractItemsFromContent(result.content);
           if (directItems.length > 0) {
             extractedData.fields.items = directItems;
-            console.log(`[Azure Form Recognizer] コンテンツから${directItems.length}個の商品を抽出`);
+            logger.debug(`[Azure Form Recognizer] コンテンツから${directItems.length}個の商品を抽出`);
           }
         }
       }
       
       // 最後の手段：強化版エクストラクター
       if (extractedData.fields.items.length === 0) {
-        console.log('[Azure Form Recognizer] 最後の手段として強化版エクストラクターを実行');
+        logger.debug('[Azure Form Recognizer] 最後の手段として強化版エクストラクターを実行');
         extractedData.fields.items = InvoiceItemExtractor.extractItems(extractedData);
-        console.log(`[Azure Form Recognizer] 強化版エクストラクターで${extractedData.fields.items.length}個の商品を抽出`);
+        logger.debug(`[Azure Form Recognizer] 強化版エクストラクターで${extractedData.fields.items.length}個の商品を抽出`);
       }
 
       // ページコンテンツから追加フィールドを抽出
@@ -237,8 +238,8 @@ export class FormRecognizerService {
           extractedData.fields.vendorEmail = additionalFields.vendorEmail;
         }
         
-        console.log('[Azure Form Recognizer] 追加フィールドを抽出:', additionalFields);
-        console.log('[Azure Form Recognizer] 最終的な抽出データ:', {
+        logger.debug('[Azure Form Recognizer] 追加フィールドを抽出:', additionalFields);
+        logger.debug('[Azure Form Recognizer] 最終的な抽出データ:', {
           vendorAddress: extractedData.fields.vendorAddress,
           vendorPhoneNumber: extractedData.fields.vendorPhoneNumber,
           vendorEmail: extractedData.fields.vendorEmail,
@@ -260,7 +261,7 @@ export class FormRecognizerService {
 
       return extractedData;
     } catch (error) {
-      console.error('Invoice analysis error:', error);
+      logger.error('Invoice analysis error:', error);
       throw new Error(`Failed to analyze invoice: ${error.message}`);
     }
   }
@@ -272,10 +273,10 @@ export class FormRecognizerService {
     try {
       // ファイルサイズチェック
       if (fileBuffer.length < 1024) {
-        console.warn(`File ${fileName} is very small (${fileBuffer.length} bytes), might cause issues`);
+        logger.warn(`File ${fileName} is very small (${fileBuffer.length} bytes), might cause issues`);
       }
 
-      console.log(`Starting receipt analysis for ${fileName} (${fileBuffer.length} bytes)`);
+      logger.debug(`Starting receipt analysis for ${fileName} (${fileBuffer.length} bytes)`);
       
       // Step 1: prebuilt-receiptモデルで基本情報を抽出
       const receiptPoller = await this.client.beginAnalyzeDocument(
@@ -297,7 +298,7 @@ export class FormRecognizerService {
       const receiptFields = receiptDocument.fields || {};
 
       // Step 2: prebuilt-layoutモデルで詳細なテキスト情報を抽出
-      console.log(`Starting layout analysis for enhanced company name extraction...`);
+      logger.debug(`Starting layout analysis for enhanced company name extraction...`);
       const layoutPoller = await this.client.beginAnalyzeDocument(
         'prebuilt-layout',
         fileBuffer,
@@ -364,8 +365,8 @@ export class FormRecognizerService {
           extractedData.fields.merchantEmail = additionalFields.vendorEmail;
         }
         
-        console.log('[Azure Form Recognizer] 領収書追加フィールドを抽出:', additionalFields);
-        console.log('[Azure Form Recognizer] 領収書最終的な抽出データ:', {
+        logger.debug('[Azure Form Recognizer] 領収書追加フィールドを抽出:', additionalFields);
+        logger.debug('[Azure Form Recognizer] 領収書最終的な抽出データ:', {
           merchantAddress: extractedData.fields.merchantAddress,
           merchantPhoneNumber: extractedData.fields.merchantPhoneNumber,
           merchantEmail: extractedData.fields.merchantEmail
@@ -374,11 +375,11 @@ export class FormRecognizerService {
 
       return extractedData;
     } catch (error) {
-      console.error('Receipt analysis error:', error);
+      logger.error('Receipt analysis error:', error);
       
       // Azure固有のエラー情報を取得
       if (error.response) {
-        console.error('Azure API Response:', {
+        logger.error('Azure API Response:', {
           status: error.response.status,
           statusText: error.response.statusText,
           headers: error.response.headers,
@@ -424,7 +425,7 @@ export class FormRecognizerService {
 
       return extractedData;
     } catch (error) {
-      console.error('Document analysis error:', error);
+      logger.error('Document analysis error:', error);
       throw new Error(`Failed to analyze document: ${error.message}`);
     }
   }
@@ -555,7 +556,7 @@ export class FormRecognizerService {
         unitPrice = Math.round(amount / quantity);
       }
       
-      console.log(`[Azure Form Recognizer] 明細項目${index + 1}:`, {
+      logger.debug(`[Azure Form Recognizer] 明細項目${index + 1}:`, {
         description,
         quantity,
         unitPrice,
@@ -633,7 +634,7 @@ export class FormRecognizerService {
         price = Math.round(totalPrice / quantity);
       }
       
-      console.log(`[Azure Form Recognizer] 領収書明細項目${index + 1}:`, {
+      logger.debug(`[Azure Form Recognizer] 領収書明細項目${index + 1}:`, {
         name,
         quantity,
         price,
@@ -673,7 +674,7 @@ export class FormRecognizerService {
       const table = fullResult.tables[0];
       if (!table.cells) return [];
 
-      console.log('[Azure Form Recognizer] テーブルから商品情報を抽出:', {
+      logger.debug('[Azure Form Recognizer] テーブルから商品情報を抽出:', {
         tableCount: fullResult.tables.length,
         cellCount: table.cells.length
       });
@@ -704,7 +705,7 @@ export class FormRecognizerService {
         }
       }
 
-      console.log('[Azure Form Recognizer] テーブル列構造:', {
+      logger.debug('[Azure Form Recognizer] テーブル列構造:', {
         headerRow,
         descriptionCol,
         quantityCol,
@@ -752,7 +753,7 @@ export class FormRecognizerService {
             tax: null
           });
 
-          console.log(`[Azure Form Recognizer] テーブル行${rowIndex}から抽出:`, {
+          logger.debug(`[Azure Form Recognizer] テーブル行${rowIndex}から抽出:`, {
             description: rowData.description,
             quantity,
             unitPrice,
@@ -762,7 +763,7 @@ export class FormRecognizerService {
       }
 
     } catch (error) {
-      console.error('[Azure Form Recognizer] テーブル解析エラー:', error);
+      logger.error('[Azure Form Recognizer] テーブル解析エラー:', error);
     }
 
     return items;
@@ -795,7 +796,7 @@ export class FormRecognizerService {
       const match = content.match(pattern);
       if (match) {
         const productName = match[0].trim();
-        console.log(`[Azure Form Recognizer] 特定パターンで商品名抽出: "${productName}"`);
+        logger.debug(`[Azure Form Recognizer] 特定パターンで商品名抽出: "${productName}"`);
         return productName;
       }
     }
@@ -814,7 +815,7 @@ export class FormRecognizerService {
     if (productName.length < 15) {
       const enrichedName = this.enrichProductNameWithContext(productName, allLines, currentLineIndex);
       if (enrichedName.length > productName.length) {
-        console.log(`[Azure Form Recognizer] 上下文で商品名を拡張: "${productName}" → "${enrichedName}"`);
+        logger.debug(`[Azure Form Recognizer] 上下文で商品名を拡張: "${productName}" → "${enrichedName}"`);
         return enrichedName;
       }
     }
@@ -884,7 +885,7 @@ export class FormRecognizerService {
       for (const page of pages) {
         if (!page.lines || page.lines.length === 0) continue;
         
-        console.log(`[Azure Form Recognizer] ページ処理開始: ${page.lines.length}行`);
+        logger.debug(`[Azure Form Recognizer] ページ処理開始: ${page.lines.length}行`);
         
         // 数量・単価・金額が含まれる行を特定
         const quantityPriceLines: { lineIndex: number, content: string, quantity?: number, unitPrice?: number, amount?: number }[] = [];
@@ -918,7 +919,7 @@ export class FormRecognizerService {
                 amount
               });
               
-              console.log(`[Azure Form Recognizer] 数量・金額行を発見:`, {
+              logger.debug(`[Azure Form Recognizer] 数量・金額行を発見:`, {
                 line: i,
                 content,
                 quantity,
@@ -936,11 +937,11 @@ export class FormRecognizerService {
           // 同じ行から商品名を抽出（数値以外の部分）
           let productName = this.extractProductNameFromLine(content, page.lines, lineIndex);
           
-          console.log(`[Azure Form Recognizer] 同じ行から商品名抽出: "${productName}"`);
+          logger.debug(`[Azure Form Recognizer] 同じ行から商品名抽出: "${productName}"`);
           
           // 商品名が短い場合、前後の行を確認してマルチライン商品名を構築
           if (productName.length < 15) {
-            console.log(`[Azure Form Recognizer] 商品名が短いため、前後の行を確認: "${productName}"`);
+            logger.debug(`[Azure Form Recognizer] 商品名が短いため、前後の行を確認: "${productName}"`);
             
             // 前の行を確認（数量・金額情報がない行を商品名として結合）
             for (let j = lineIndex - 1; j >= 0 && j >= lineIndex - 3; j--) {
@@ -951,7 +952,7 @@ export class FormRecognizerService {
                 // 前の行に数量・金額情報がない場合、商品名の一部として結合
                 if (!/(\d{1,3}(?:,\d{3})*)\s*(?:枚|個|本|箱|セット|点|台|つ|円)|￥(\d{1,3}(?:,\d{3})*)|単価|金額/.test(prevContent)) {
                   productName = prevContent + ' ' + productName;
-                  console.log(`[Azure Form Recognizer] 前の行を結合: "${prevContent}" → "${productName}"`);
+                  logger.debug(`[Azure Form Recognizer] 前の行を結合: "${prevContent}" → "${productName}"`);
                 } else {
                   break; // 数量・金額情報がある行に到達したら停止
                 }
@@ -967,7 +968,7 @@ export class FormRecognizerService {
                 // 次の行に数量・金額情報がない場合、商品名の一部として結合
                 if (!/(\d{1,3}(?:,\d{3})*)\s*(?:枚|個|本|箱|セット|点|台|つ|円)|￥(\d{1,3}(?:,\d{3})*)|単価|金額/.test(nextContent)) {
                   productName = productName + ' ' + nextContent;
-                  console.log(`[Azure Form Recognizer] 次の行を結合: "${nextContent}" → "${productName}"`);
+                  logger.debug(`[Azure Form Recognizer] 次の行を結合: "${nextContent}" → "${productName}"`);
                 } else {
                   break; // 数量・金額情報がある行に到達したら停止
                 }
@@ -1002,18 +1003,18 @@ export class FormRecognizerService {
             };
             
             items.push(item);
-            console.log(`[Azure Form Recognizer] 商品ユニットを作成:`, item);
+            logger.debug(`[Azure Form Recognizer] 商品ユニットを作成:`, item);
           } else {
-            console.log(`[Azure Form Recognizer] 商品名が短すぎるためスキップ: "${productName}"`);
+            logger.debug(`[Azure Form Recognizer] 商品名が短すぎるためスキップ: "${productName}"`);
           }
         }
       }
       
     } catch (error) {
-      console.error('[Azure Form Recognizer] ページ商品抽出エラー:', error);
+      logger.error('[Azure Form Recognizer] ページ商品抽出エラー:', error);
     }
     
-    console.log(`[Azure Form Recognizer] 行ベース抽出完了: ${items.length}個の商品を抽出`);
+    logger.debug(`[Azure Form Recognizer] 行ベース抽出完了: ${items.length}個の商品を抽出`);
     return items;
   }
 
@@ -1024,7 +1025,7 @@ export class FormRecognizerService {
     const items: any[] = [];
     
     try {
-      console.log('[Azure Form Recognizer] 全コンテンツ:', content);
+      logger.debug('[Azure Form Recognizer] 全コンテンツ:', content);
       
       // 汎用的な商品名抽出パターン（見積書の実際の構造に基づく）
       const productPatterns = [
@@ -1091,7 +1092,7 @@ export class FormRecognizerService {
       
       // 見積書の特定のケースを処理（既製品印刷加工の場合）
       if (content.includes('既製品印刷加工') && content.includes('2,000') && content.includes('11.20')) {
-        console.log('[Azure Form Recognizer] 既製品印刷加工の見積書を検出');
+        logger.debug('[Azure Form Recognizer] 既製品印刷加工の見積書を検出');
         
         // 特定の商品名を構築
         const productParts = [];
@@ -1104,23 +1105,23 @@ export class FormRecognizerService {
         
         if (productParts.length > 0) {
           productName = productParts.join(' ');
-          console.log(`[Azure Form Recognizer] 構築された商品名: ${productName}`);
+          logger.debug(`[Azure Form Recognizer] 構築された商品名: ${productName}`);
         }
         
         // 特定の値を直接設定
         if (content.includes('2,000')) {
           quantity = 2000;
-          console.log(`[Azure Form Recognizer] 数量を直接設定: ${quantity}`);
+          logger.debug(`[Azure Form Recognizer] 数量を直接設定: ${quantity}`);
         }
         
         if (content.includes('11.20')) {
           unitPrice = 11.20;
-          console.log(`[Azure Form Recognizer] 単価を直接設定: ${unitPrice}`);
+          logger.debug(`[Azure Form Recognizer] 単価を直接設定: ${unitPrice}`);
         }
         
         if (content.includes('22,400')) {
           totalAmount = 22400;
-          console.log(`[Azure Form Recognizer] 総額を直接設定: ${totalAmount}`);
+          logger.debug(`[Azure Form Recognizer] 総額を直接設定: ${totalAmount}`);
         }
       }
       
@@ -1131,7 +1132,7 @@ export class FormRecognizerService {
           if (match) {
             productName = match[1] ? match[1].trim() : match[0].trim();
             if (productName && productName.length > 3) {
-              console.log(`[Azure Form Recognizer] 商品名抽出成功: ${productName}`);
+              logger.debug(`[Azure Form Recognizer] 商品名抽出成功: ${productName}`);
               break;
             }
           }
@@ -1148,7 +1149,7 @@ export class FormRecognizerService {
             } else if (match[1]) {
               quantity = parseInt(match[1].replace(/,/g, ''));
             }
-            console.log(`[Azure Form Recognizer] 数量抽出成功: ${quantity}`);
+            logger.debug(`[Azure Form Recognizer] 数量抽出成功: ${quantity}`);
             break;
           }
         }
@@ -1164,7 +1165,7 @@ export class FormRecognizerService {
             } else if (match[1]) {
               unitPrice = parseFloat(match[1]);
             }
-            console.log(`[Azure Form Recognizer] 単価抽出成功: ${unitPrice}`);
+            logger.debug(`[Azure Form Recognizer] 単価抽出成功: ${unitPrice}`);
             break;
           }
         }
@@ -1185,7 +1186,7 @@ export class FormRecognizerService {
         
         if (amounts.length > 0) {
           totalAmount = Math.max(...amounts);
-          console.log(`[Azure Form Recognizer] 総額抽出成功: ${totalAmount}`);
+          logger.debug(`[Azure Form Recognizer] 総額抽出成功: ${totalAmount}`);
         }
       }
       
@@ -1193,7 +1194,7 @@ export class FormRecognizerService {
       if (unitPrice === 0 && totalAmount > 0 && quantity > 0) {
         const subtotal = Math.round(totalAmount / 1.1); // 税抜き
         unitPrice = subtotal / quantity;
-        console.log(`[Azure Form Recognizer] 総額から単価を逆算: ${totalAmount}円 ÷ ${quantity} = ${unitPrice}円`);
+        logger.debug(`[Azure Form Recognizer] 総額から単価を逆算: ${totalAmount}円 ÷ ${quantity} = ${unitPrice}円`);
       }
       
       // 商品情報が抽出できた場合、アイテムを作成
@@ -1210,13 +1211,13 @@ export class FormRecognizerService {
         };
         
         items.push(item);
-        console.log(`[Azure Form Recognizer] 商品を抽出:`, item);
+        logger.debug(`[Azure Form Recognizer] 商品を抽出:`, item);
       } else {
-        console.log('[Azure Form Recognizer] 商品名が抽出できませんでした');
+        logger.debug('[Azure Form Recognizer] 商品名が抽出できませんでした');
       }
       
     } catch (error) {
-      console.error('[Azure Form Recognizer] 商品抽出エラー:', error);
+      logger.error('[Azure Form Recognizer] 商品抽出エラー:', error);
     }
     
     return items;
@@ -1229,8 +1230,8 @@ export class FormRecognizerService {
     const fields: Record<string, any> = {};
     
     try {
-      console.log('[Azure Form Recognizer] 追加フィールド抽出開始');
-      console.log('[Azure Form Recognizer] 抽出対象のコンテンツ（最初の500文字）:', content.substring(0, 500));
+      logger.debug('[Azure Form Recognizer] 追加フィールド抽出開始');
+      logger.debug('[Azure Form Recognizer] 抽出対象のコンテンツ（最初の500文字）:', content.substring(0, 500));
       
       // 件名の抽出（複数のパターンを試す）
       const subjectPatterns = [
@@ -1243,7 +1244,7 @@ export class FormRecognizerService {
         const match = content.match(pattern);
         if (match) {
           fields.subject = match[1] ? match[1].trim() : match[0].trim();
-          console.log(`[Azure Form Recognizer] 件名抽出: ${fields.subject}`);
+          logger.debug(`[Azure Form Recognizer] 件名抽出: ${fields.subject}`);
           break;
         }
       }
@@ -1258,7 +1259,7 @@ export class FormRecognizerService {
         const match = content.match(pattern);
         if (match) {
           fields.deliveryLocation = match[1].trim();
-          console.log(`[Azure Form Recognizer] 納入場所抽出: ${fields.deliveryLocation}`);
+          logger.debug(`[Azure Form Recognizer] 納入場所抽出: ${fields.deliveryLocation}`);
           break;
         }
       }
@@ -1273,7 +1274,7 @@ export class FormRecognizerService {
         const match = content.match(pattern);
         if (match) {
           fields.paymentTerms = match[1].trim();
-          console.log(`[Azure Form Recognizer] 支払条件抽出: ${fields.paymentTerms}`);
+          logger.debug(`[Azure Form Recognizer] 支払条件抽出: ${fields.paymentTerms}`);
           break;
         }
       }
@@ -1288,7 +1289,7 @@ export class FormRecognizerService {
         const match = content.match(pattern);
         if (match) {
           fields.quotationValidity = match[1].trim();
-          console.log(`[Azure Form Recognizer] 見積有効期限抽出: ${fields.quotationValidity}`);
+          logger.debug(`[Azure Form Recognizer] 見積有効期限抽出: ${fields.quotationValidity}`);
           break;
         }
       }
@@ -1314,13 +1315,13 @@ export class FormRecognizerService {
           } else {
             fields.vendorAddress = match[1].trim();
           }
-          console.log(`[Azure Form Recognizer] 住所抽出成功: ${fields.vendorAddress} (パターン: ${pattern})`);
+          logger.debug(`[Azure Form Recognizer] 住所抽出成功: ${fields.vendorAddress} (パターン: ${pattern})`);
           break;
         }
       }
       
       if (!fields.vendorAddress) {
-        console.log('[Azure Form Recognizer] 住所が見つかりませんでした');
+        logger.debug('[Azure Form Recognizer] 住所が見つかりませんでした');
       }
       
       // 電話番号の抽出
@@ -1339,13 +1340,13 @@ export class FormRecognizerService {
         const match = content.match(pattern);
         if (match) {
           fields.vendorPhoneNumber = match[1].trim();
-          console.log(`[Azure Form Recognizer] 電話番号抽出成功: ${fields.vendorPhoneNumber} (パターン: ${pattern})`);
+          logger.debug(`[Azure Form Recognizer] 電話番号抽出成功: ${fields.vendorPhoneNumber} (パターン: ${pattern})`);
           break;
         }
       }
       
       if (!fields.vendorPhoneNumber) {
-        console.log('[Azure Form Recognizer] 電話番号が見つかりませんでした');
+        logger.debug('[Azure Form Recognizer] 電話番号が見つかりませんでした');
       }
       
       // メールアドレスの抽出
@@ -1358,17 +1359,17 @@ export class FormRecognizerService {
         const match = content.match(pattern);
         if (match) {
           fields.vendorEmail = match[1].trim();
-          console.log(`[Azure Form Recognizer] メールアドレス抽出成功: ${fields.vendorEmail} (パターン: ${pattern})`);
+          logger.debug(`[Azure Form Recognizer] メールアドレス抽出成功: ${fields.vendorEmail} (パターン: ${pattern})`);
           break;
         }
       }
       
       if (!fields.vendorEmail) {
-        console.log('[Azure Form Recognizer] メールアドレスが見つかりませんでした');
+        logger.debug('[Azure Form Recognizer] メールアドレスが見つかりませんでした');
       }
       
     } catch (error) {
-      console.error('[Azure Form Recognizer] 追加フィールド抽出エラー:', error);
+      logger.error('[Azure Form Recognizer] 追加フィールド抽出エラー:', error);
     }
     
     return fields;
@@ -1458,7 +1459,7 @@ export class FormRecognizerService {
             
             // 候補の品質チェック
             if (this.isValidCompanyName(candidateName, originalMerchantName)) {
-              console.log(`Enhanced merchant name found: "${candidateName}" (from line: "${trimmedLine}")`);
+              logger.debug(`Enhanced merchant name found: "${candidateName}" (from line: "${trimmedLine}")`);
               return candidateName;
             }
           }
@@ -1475,7 +1476,7 @@ export class FormRecognizerService {
               trimmedLine.length > originalMerchantName.length &&
               trimmedLine.length <= 20 && // 適度な長さ
               this.isValidCompanyName(trimmedLine, originalMerchantName)) {
-            console.log(`Enhanced merchant name from expansion: "${trimmedLine}"`);
+            logger.debug(`Enhanced merchant name from expansion: "${trimmedLine}"`);
             return trimmedLine;
           }
         }
@@ -1484,7 +1485,7 @@ export class FormRecognizerService {
       // 最終的に見つからない場合は元の会社名を返す
       return originalMerchantName || null;
     } catch (error) {
-      console.error('Error extracting enhanced merchant name:', error);
+      logger.error('Error extracting enhanced merchant name:', error);
       return originalMerchantName || null;
     }
   }
@@ -1561,7 +1562,7 @@ export class FormRecognizerService {
         }
       } catch (error) {
         lastError = error;
-        console.error(`Attempt ${attempt} failed:`, error.message);
+        logger.error(`Attempt ${attempt} failed:`, error.message);
         
         if (attempt < maxRetries) {
           // 指数バックオフ
@@ -1584,7 +1585,7 @@ export function getFormRecognizerService(): FormRecognizerService {
     const apiKey = process.env.AZURE_FORM_RECOGNIZER_KEY;
     
     if (!endpoint || !apiKey) {
-      console.error('Azure Form Recognizer configuration missing:', {
+      logger.error('Azure Form Recognizer configuration missing:', {
         endpoint: endpoint ? 'Present' : 'Missing',
         apiKey: apiKey ? 'Present' : 'Missing',
       });
@@ -1596,9 +1597,9 @@ export function getFormRecognizerService(): FormRecognizerService {
         endpoint,
         apiKey,
       });
-      console.log('Azure Form Recognizer service initialized successfully');
+      logger.debug('Azure Form Recognizer service initialized successfully');
     } catch (error) {
-      console.error('Failed to initialize Azure Form Recognizer:', error);
+      logger.error('Failed to initialize Azure Form Recognizer:', error);
       throw new Error(`Failed to initialize Azure Form Recognizer: ${error.message}`);
     }
   }

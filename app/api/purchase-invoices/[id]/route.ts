@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PurchaseInvoiceService } from '@/services/purchase-invoice.service';
 
+import { logger } from '@/lib/logger';
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic';
 
@@ -22,7 +23,7 @@ export async function GET(
     
     return NextResponse.json(invoice);
   } catch (error) {
-    console.error('Error in GET /api/purchase-invoices/[id]:', error);
+    logger.error('Error in GET /api/purchase-invoices/[id]:', error);
     return NextResponse.json(
       { error: 'Failed to fetch purchase invoice' },
       { status: 500 }
@@ -39,7 +40,7 @@ export async function PUT(
     const invoiceData = await request.json();
     const purchaseInvoiceService = new PurchaseInvoiceService();
     
-    console.log('[Purchase Invoice PUT] Updating invoice:', params.id, JSON.stringify(invoiceData, null, 2));
+    logger.debug('[Purchase Invoice PUT] Updating invoice:', params.id, JSON.stringify(invoiceData, null, 2));
     
     const invoice = await purchaseInvoiceService.updatePurchaseInvoice(params.id, invoiceData);
     
@@ -52,7 +53,7 @@ export async function PUT(
     
     return NextResponse.json(invoice);
   } catch (error) {
-    console.error('Error in PUT /api/purchase-invoices/[id]:', error);
+    logger.error('Error in PUT /api/purchase-invoices/[id]:', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to update purchase invoice' },
       { status: 500 }
@@ -78,7 +79,7 @@ export async function DELETE(
     
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error in DELETE /api/purchase-invoices/[id]:', error);
+    logger.error('Error in DELETE /api/purchase-invoices/[id]:', error);
     return NextResponse.json(
       { error: 'Failed to delete purchase invoice' },
       { status: 500 }

@@ -7,6 +7,7 @@
 
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import { logger } from '@/lib/logger';
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
@@ -842,7 +843,7 @@ class EnhancedFirecrawlMCPServer {
   async run() {
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
-    console.error('Enhanced Firecrawl MCP Server running on stdio');
+    logger.error('Enhanced Firecrawl MCP Server running on stdio');
   }
 }
 
@@ -850,7 +851,7 @@ class EnhancedFirecrawlMCPServer {
 if (require.main === module) {
   const server = new EnhancedFirecrawlMCPServer();
   server.run().catch((error) => {
-    console.error('Failed to run Enhanced Firecrawl MCP Server:', error);
+    logger.error('Failed to run Enhanced Firecrawl MCP Server:', error);
     process.exit(1);
   });
 }

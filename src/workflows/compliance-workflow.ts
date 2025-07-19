@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { createWorkflow } from '@mastra/core';
 
+import { logger } from '@/lib/logger';
 // コンプライアンスワークフローの入力スキーマ
 const complianceWorkflowInputSchema = z.object({
   complianceType: z.enum(['tax_return', 'invoice_compliance', 'monthly_compliance', 'annual_audit']),
@@ -240,7 +241,7 @@ export const complianceWorkflow = createWorkflow({
   // 実行ロジック
   execute: async ({ input, agents, context }) => {
     try {
-      console.log('[Compliance Workflow] Starting compliance check:', input.complianceType);
+      logger.debug('[Compliance Workflow] Starting compliance check:', input.complianceType);
       
       const results: any = {};
       
@@ -248,11 +249,11 @@ export const complianceWorkflow = createWorkflow({
       for (const step of complianceWorkflow.steps) {
         // 条件チェック
         if (step.condition && !step.condition(input, results)) {
-          console.log(`[Compliance Workflow] Skipping step: ${step.name}`);
+          logger.debug(`[Compliance Workflow] Skipping step: ${step.name}`);
           continue;
         }
         
-        console.log(`[Compliance Workflow] Executing step: ${step.name}`);
+        logger.debug(`[Compliance Workflow] Executing step: ${step.name}`);
         
         // ステップの入力データを準備
         const stepInput = step.input(input, results);
@@ -267,7 +268,7 @@ export const complianceWorkflow = createWorkflow({
         
         // エラーチェック
         if (!stepResult.success) {
-          console.warn(`[Compliance Workflow] Step ${step.name} completed with issues:`, stepResult.error);
+          logger.warn(`[Compliance Workflow] Step ${step.name} completed with issues:`, stepResult.error);
           // コンプライアンスワークフローでは、一部のステップが失敗してもワークフローを続行
         }
       }
@@ -285,7 +286,7 @@ export const complianceWorkflow = createWorkflow({
       };
       
     } catch (error) {
-      console.error('[Compliance Workflow] Error:', error);
+      logger.error('[Compliance Workflow] Error:', error);
       throw error;
     }
   },

@@ -1,6 +1,7 @@
 import { MongoClient, Db, Collection } from 'mongodb';
 import { DatabaseConnectionError } from './api-error-handler';
 
+import { logger } from '@/lib/logger';
 // MongoDB接続設定
 const DB_NAME = 'accounting';
 const CONNECTION_TIMEOUT_MS = 10000; // 10秒
@@ -45,7 +46,7 @@ async function isConnectionHealthy(): Promise<boolean> {
       connectionState.lastPingTime = now;
       return true;
     } catch (error) {
-      console.error('MongoDB ping failed:', error);
+      logger.error('MongoDB ping failed:', error);
       return false;
     }
   }
@@ -57,13 +58,13 @@ async function isConnectionHealthy(): Promise<boolean> {
 async function connectToDatabase(): Promise<{ client: MongoClient; db: Db }> {
   // 既存の健全な接続があれば再利用
   if (await isConnectionHealthy()) {
-    console.log('Reusing healthy MongoDB connection');
+    logger.debug('Reusing healthy MongoDB connection');
     return { client: connectionState.client!, db: connectionState.db! };
   }
 
   // 他のリクエストが接続中の場合は待機
   if (connectionState.isConnecting) {
-    console.log('Waiting for ongoing connection attempt...');
+    logger.debug('Waiting for ongoing connection attempt...');
     let waitCount = 0;
     while (connectionState.isConnecting && waitCount < 50) {
       await new Promise(resolve => setTimeout(resolve, 100));
@@ -80,18 +81,18 @@ async function connectToDatabase(): Promise<{ client: MongoClient; db: Db }> {
   try {
     // 既存の接続をクリーンアップ
     if (connectionState.client) {
-      console.log('Closing stale MongoDB connection');
+      logger.debug('Closing stale MongoDB connection');
       try {
         await connectionState.client.close();
       } catch (error) {
-        console.error('Error closing MongoDB client:', error);
+        logger.error('Error closing MongoDB client:', error);
       }
       connectionState.client = null;
       connectionState.db = null;
     }
 
     const uri = getMongoDBUri();
-    console.log('Creating new MongoDB connection...');
+    logger.debug('Creating new MongoDB connection...');
     
     // Vercel環境に最適化された接続オプション
     const options = {
@@ -118,7 +119,7 @@ async function connectToDatabase(): Promise<{ client: MongoClient; db: Db }> {
     
     // 接続を確認
     await db.admin().ping();
-    console.log('MongoDB connection established successfully');
+    logger.debug('MongoDB connection established successfully');
     
     // 接続状態を更新
     connectionState.client = client;
@@ -127,7 +128,7 @@ async function connectToDatabase(): Promise<{ client: MongoClient; db: Db }> {
     
     return { client, db };
   } catch (error) {
-    console.error('MongoDB connection error:', error);
+    logger.error('MongoDB connection error:', error);
     throw new DatabaseConnectionError(
       `MongoDB connection failed: ${error instanceof Error ? error.message : 'Unknown error'}`
     );
@@ -156,9 +157,9 @@ export async function closeConnection(): Promise<void> {
       connectionState.client = null;
       connectionState.db = null;
       connectionState.lastPingTime = 0;
-      console.log('MongoDB connection closed');
+      logger.debug('MongoDB connection closed');
     } catch (error) {
-      console.error('Error closing MongoDB connection:', error);
+      logger.error('Error closing MongoDB connection:', error);
     }
   }
 }
@@ -170,7 +171,7 @@ export async function checkConnection(): Promise<boolean> {
     await db.command({ ping: 1 });
     return true;
   } catch (error) {
-    console.error('MongoDB health check failed:', error);
+    logger.error('MongoDB health check failed:', error);
     return false;
   }
 }
@@ -179,7 +180,7 @@ export async function checkConnection(): Promise<boolean> {
 if (process.env.VERCEL) {
   // Vercelの場合、プロセス終了時にクリーンアップ
   process.on('SIGTERM', async () => {
-    console.log('SIGTERM received, closing MongoDB connection');
+    logger.debug('SIGTERM received, closing MongoDB connection');
     await closeConnection();
   });
 }

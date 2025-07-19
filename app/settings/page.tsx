@@ -5,6 +5,7 @@ import { toast } from 'react-hot-toast';
 import { Building, Upload, Stamp, Save, CreditCard, Plus, Edit2, Trash2, Check, X, Settings, Mic } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
+import { logger } from '@/lib/logger';
 interface CompanyInfo {
   id?: string;
   name: string;
@@ -134,7 +135,7 @@ export default function SettingsPage() {
         setCompanyInfo(formattedInfo);
       }
     } catch (error) {
-      console.error('Error fetching company info:', error);
+      logger.error('Error fetching company info:', error);
       toast.error('自社情報の取得に失敗しました');
     } finally {
       setLoading(false);
@@ -152,7 +153,7 @@ export default function SettingsPage() {
         setAccounts(data.accounts);
       }
     } catch (error) {
-      console.error('Error fetching bank accounts:', error);
+      logger.error('Error fetching bank accounts:', error);
       toast.error('銀行口座の取得に失敗しました');
     }
   };
@@ -189,7 +190,7 @@ export default function SettingsPage() {
       };
       
       // デバッグログ
-      console.log('Submitting company info:', {
+      logger.debug('Submitting company info:', {
         ...dataToSubmit,
         logo_image: dataToSubmit.logo_image ? '[BASE64_IMAGE]' : null,
         stamp_image: dataToSubmit.stamp_image ? '[BASE64_IMAGE]' : null,
@@ -202,7 +203,7 @@ export default function SettingsPage() {
       });
 
       const responseData = await response.json();
-      console.log('Response from server:', responseData);
+      logger.debug('Response from server:', responseData);
 
       if (!response.ok) {
         throw new Error(responseData.error || 'Failed to update company info');
@@ -216,7 +217,7 @@ export default function SettingsPage() {
         throw new Error(responseData.error || '更新に失敗しました');
       }
     } catch (error) {
-      console.error('Error updating company info:', error);
+      logger.error('Error updating company info:', error);
       toast.error(error instanceof Error ? error.message : '自社情報の更新に失敗しました');
     } finally {
       setSaving(false);
@@ -329,7 +330,7 @@ export default function SettingsPage() {
         throw new Error(data.error || '保存に失敗しました');
       }
     } catch (error) {
-      console.error('Error saving bank account:', error);
+      logger.error('Error saving bank account:', error);
       toast.error('銀行口座の保存に失敗しました');
     } finally {
       setSaving(false);
@@ -350,7 +351,7 @@ export default function SettingsPage() {
       toast.success('銀行口座を削除しました');
       fetchBankAccounts();
     } catch (error) {
-      console.error('Error deleting bank account:', error);
+      logger.error('Error deleting bank account:', error);
       toast.error('銀行口座の削除に失敗しました');
     }
   };
@@ -369,7 +370,7 @@ export default function SettingsPage() {
       toast.success('デフォルト口座を設定しました');
       fetchBankAccounts();
     } catch (error) {
-      console.error('Error setting default account:', error);
+      logger.error('Error setting default account:', error);
       toast.error('デフォルト口座の設定に失敗しました');
     }
   };

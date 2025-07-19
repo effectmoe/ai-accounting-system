@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { InvoiceService } from '@/services/invoice.service';
 import { InvoiceStatus } from '@/types/collections';
 
+import { logger } from '@/lib/logger';
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
@@ -28,7 +29,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(result);
   } catch (error) {
-    console.error('Error fetching invoices:', error);
+    logger.error('Error fetching invoices:', error);
     return NextResponse.json(
       { error: 'Failed to fetch invoices' },
       { status: 500 }
@@ -39,7 +40,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    console.log('Invoice creation request:', JSON.stringify(body, null, 2));
+    logger.debug('Invoice creation request:', JSON.stringify(body, null, 2));
     
     const invoiceService = new InvoiceService();
     
@@ -83,7 +84,7 @@ export async function POST(request: NextRequest) {
     invoiceData.taxAmount = taxAmount;
     invoiceData.totalAmount = subtotal + taxAmount;
     
-    console.log('Processed invoice data:', JSON.stringify(invoiceData, null, 2));
+    logger.debug('Processed invoice data:', JSON.stringify(invoiceData, null, 2));
     
     // AI会話からの作成の場合も含めて、追加のデータをセット
     if (body.isGeneratedByAI && body.aiConversationId) {
@@ -93,11 +94,11 @@ export async function POST(request: NextRequest) {
     
     // 請求書を作成
     const invoice = await invoiceService.createInvoice(invoiceData);
-    console.log('Invoice created:', invoice);
+    logger.debug('Invoice created:', invoice);
     return NextResponse.json(invoice);
   } catch (error) {
-    console.error('Error creating invoice:', error);
-    console.error('Error details:', {
+    logger.error('Error creating invoice:', error);
+    logger.error('Error details:', {
       message: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined
     });

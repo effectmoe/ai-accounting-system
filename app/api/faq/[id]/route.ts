@@ -4,6 +4,7 @@ import { StructuredDataService } from '@/services/structured-data.service';
 import { FaqArticle } from '@/types/collections';
 import { ObjectId } from 'mongodb';
 
+import { logger } from '@/lib/logger';
 // GET: FAQ詳細取得
 export async function GET(
   request: NextRequest,
@@ -13,11 +14,11 @@ export async function GET(
   
   try {
     const { id } = params;
-    console.log('[FAQ API] GET request for ID:', id);
+    logger.debug('[FAQ API] GET request for ID:', id);
     
     // Validate ObjectId
     if (!ObjectId.isValid(id)) {
-      console.error('[FAQ API] Invalid FAQ ID format:', id);
+      logger.error('[FAQ API] Invalid FAQ ID format:', id);
       return NextResponse.json(
         { success: false, error: 'Invalid FAQ ID format' },
         { status: 400 }
@@ -121,7 +122,7 @@ export async function GET(
     );
     
   } catch (error) {
-    console.error('[FAQ API] GET error:', error);
+    logger.error('[FAQ API] GET error:', error);
     await knowledgeService.disconnect();
     
     return NextResponse.json(
@@ -146,12 +147,12 @@ export async function PUT(
     const { id } = params;
     const updateData = await request.json();
     
-    console.log('[FAQ API] PUT request for ID:', id);
-    console.log('[FAQ API] Update data keys:', Object.keys(updateData));
+    logger.debug('[FAQ API] PUT request for ID:', id);
+    logger.debug('[FAQ API] Update data keys:', Object.keys(updateData));
     
     // Validate ObjectId
     if (!ObjectId.isValid(id)) {
-      console.error('[FAQ API] Invalid FAQ ID format:', id);
+      logger.error('[FAQ API] Invalid FAQ ID format:', id);
       return NextResponse.json(
         { success: false, error: 'Invalid FAQ ID format' },
         { status: 400 }
@@ -168,13 +169,13 @@ export async function PUT(
     
     // faq_articlesで見つからない場合、旧faqコレクションを確認
     if (!currentFaq) {
-      console.log('[FAQ API] FAQ not found in faq_articles, checking old faq collection');
+      logger.debug('[FAQ API] FAQ not found in faq_articles, checking old faq collection');
       
       const simpleFaqCollection = knowledgeService.db.collection('faq');
       const simpleFaq = await simpleFaqCollection.findOne({ _id: objectId });
       
       if (simpleFaq) {
-        console.log('[FAQ API] Found FAQ in old collection, converting to new format');
+        logger.debug('[FAQ API] Found FAQ in old collection, converting to new format');
         
         // 旧形式から新形式に変換して保存
         const newFaqArticle: Omit<FaqArticle, '_id'> = {
@@ -240,7 +241,7 @@ export async function PUT(
         // 旧形式を削除
         await simpleFaqCollection.deleteOne({ _id: objectId });
         
-        console.log('[FAQ API] Successfully migrated FAQ to new format');
+        logger.debug('[FAQ API] Successfully migrated FAQ to new format');
         
         // 構造化データを生成
         try {
@@ -277,7 +278,7 @@ export async function PUT(
           
           await structuredDataService.close();
         } catch (structuredError) {
-          console.error('[FAQ API] Failed to generate structured data:', structuredError);
+          logger.error('[FAQ API] Failed to generate structured data:', structuredError);
         }
         
         await knowledgeService.disconnect();
@@ -359,7 +360,7 @@ export async function PUT(
         
         await structuredDataService.close();
       } catch (structuredError) {
-        console.error('[FAQ API] Failed to update structured data:', structuredError);
+        logger.error('[FAQ API] Failed to update structured data:', structuredError);
       }
     }
     
@@ -372,7 +373,7 @@ export async function PUT(
     });
     
   } catch (error) {
-    console.error('[FAQ API] PUT error:', error);
+    logger.error('[FAQ API] PUT error:', error);
     await knowledgeService.disconnect();
     
     return NextResponse.json(
@@ -395,11 +396,11 @@ export async function DELETE(
   
   try {
     const { id } = params;
-    console.log('[FAQ Delete API] Starting deletion for ID:', id);
+    logger.debug('[FAQ Delete API] Starting deletion for ID:', id);
 
     // Validate ObjectId
     if (!ObjectId.isValid(id)) {
-      console.error('[FAQ Delete API] Invalid FAQ ID format:', id);
+      logger.error('[FAQ Delete API] Invalid FAQ ID format:', id);
       return NextResponse.json(
         { success: false, error: 'Invalid FAQ ID format' },
         { status: 400 }
@@ -413,14 +414,14 @@ export async function DELETE(
       _id: new ObjectId(id)
     });
 
-    console.log('[FAQ Delete API] FAQ articles deletion result:', faqArticlesResult);
+    logger.debug('[FAQ Delete API] FAQ articles deletion result:', faqArticlesResult);
 
     // Also try to delete from old faq collection
     const faqResult = await knowledgeService.db.collection('faq').deleteOne({
       _id: new ObjectId(id)
     });
 
-    console.log('[FAQ Delete API] FAQ deletion result:', faqResult);
+    logger.debug('[FAQ Delete API] FAQ deletion result:', faqResult);
 
     // Delete associated structured data
     try {
@@ -430,31 +431,31 @@ export async function DELETE(
         sourceId: new ObjectId(id),
         sourceType: 'faq'
       });
-      console.log('[FAQ Delete API] Structured data deletion result:', structuredDataResult);
+      logger.debug('[FAQ Delete API] Structured data deletion result:', structuredDataResult);
       await structuredDataService.close();
     } catch (structuredError) {
-      console.error('[FAQ Delete API] Error deleting structured data:', structuredError);
+      logger.error('[FAQ Delete API] Error deleting structured data:', structuredError);
       // Continue with FAQ deletion even if structured data deletion fails
     }
 
     await knowledgeService.disconnect();
 
     if (faqArticlesResult.deletedCount === 0 && faqResult.deletedCount === 0) {
-      console.warn('[FAQ Delete API] FAQ not found with ID:', id);
+      logger.warn('[FAQ Delete API] FAQ not found with ID:', id);
       return NextResponse.json(
         { success: false, error: 'FAQ not found' },
         { status: 404 }
       );
     }
 
-    console.log('[FAQ Delete API] Successfully deleted FAQ and associated data');
+    logger.debug('[FAQ Delete API] Successfully deleted FAQ and associated data');
     return NextResponse.json({
       success: true,
       deletedFaqArticle: faqArticlesResult.deletedCount,
       deletedFaq: faqResult.deletedCount
     });
   } catch (error) {
-    console.error('[FAQ Delete API] Error deleting FAQ:', error);
+    logger.error('[FAQ Delete API] Error deleting FAQ:', error);
     await knowledgeService.disconnect();
     
     return NextResponse.json(

@@ -4,13 +4,14 @@ import { AIConversation, SaveConversationRequest } from '@/types/ai-conversation
 import { v4 as uuidv4 } from 'uuid';
 import { normalizeConversationId } from '@/lib/ai-conversation-helper';
 
+import { logger } from '@/lib/logger';
 // AI会話履歴を保存
 export async function POST(request: NextRequest) {
   try {
     const body: SaveConversationRequest = await request.json();
     const { conversationId, invoiceId, companyId, messages, metadata } = body;
 
-    console.log('[AI Conversations API - POST] Received data:', {
+    logger.debug('[AI Conversations API - POST] Received data:', {
       conversationId,
       invoiceId,
       companyId,
@@ -37,7 +38,7 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    console.log('[AI Conversations API - POST] Normalizing conversationId:', {
+    logger.debug('[AI Conversations API - POST] Normalizing conversationId:', {
       original: conversationId,
       originalType: typeof conversationId,
       normalized: normalizedConversationId,
@@ -53,9 +54,9 @@ export async function POST(request: NextRequest) {
     
     if (existingConversation) {
       // 既存の会話がある場合は更新（メッセージを完全に置き換え）
-      console.log('[AI Conversations API - POST] Updating existing conversation:', normalizedConversationId);
-      console.log('[AI Conversations API - POST] Existing messages count:', existingConversation.messages?.length || 0);
-      console.log('[AI Conversations API - POST] New messages count:', messages.length);
+      logger.debug('[AI Conversations API - POST] Updating existing conversation:', normalizedConversationId);
+      logger.debug('[AI Conversations API - POST] Existing messages count:', existingConversation.messages?.length || 0);
+      logger.debug('[AI Conversations API - POST] New messages count:', messages.length);
       
       // メッセージを完全に置き換える（追加ではなく）
       const updatedMessages = messages;
@@ -83,7 +84,7 @@ export async function POST(request: NextRequest) {
       });
     } else {
       // 新規会話の場合
-      console.log('[AI Conversations API - POST] Creating new conversation:', normalizedConversationId);
+      logger.debug('[AI Conversations API - POST] Creating new conversation:', normalizedConversationId);
       
       const conversation: AIConversation = {
         conversationId: normalizedConversationId,
@@ -106,7 +107,7 @@ export async function POST(request: NextRequest) {
       });
     }
   } catch (error) {
-    console.error('AI会話履歴の保存エラー:', error);
+    logger.error('AI会話履歴の保存エラー:', error);
     return NextResponse.json(
       { success: false, error: 'AI会話履歴の保存に失敗しました' },
       { status: 500 }
@@ -121,7 +122,7 @@ export async function GET(request: NextRequest) {
     const conversationId = searchParams.get('conversationId');
     const invoiceId = searchParams.get('invoiceId');
 
-    console.log('[AI Conversations API - GET] Search params:', {
+    logger.debug('[AI Conversations API - GET] Search params:', {
       conversationId,
       invoiceId
     });
@@ -152,7 +153,7 @@ export async function GET(request: NextRequest) {
       ];
       
       for (const query of queries) {
-        console.log('[AI Conversations API - GET] Trying query:', query);
+        logger.debug('[AI Conversations API - GET] Trying query:', query);
         
         // 複数のマッチがある場合、テストデータ以外を優先
         const conversations = await conversationsCollection.find(query).toArray();
@@ -160,30 +161,30 @@ export async function GET(request: NextRequest) {
         if (conversations.length > 0) {
           // テストデータでないものを優先
           conversation = conversations.find(c => !c.metadata?.testData) || conversations[0];
-          console.log('[AI Conversations API - GET] Found conversations:', conversations.length);
-          console.log('[AI Conversations API - GET] Selected conversation ID:', conversation._id);
-          console.log('[AI Conversations API - GET] Is test data:', !!conversation.metadata?.testData);
+          logger.debug('[AI Conversations API - GET] Found conversations:', conversations.length);
+          logger.debug('[AI Conversations API - GET] Selected conversation ID:', conversation._id);
+          logger.debug('[AI Conversations API - GET] Is test data:', !!conversation.metadata?.testData);
           break;
         }
       }
     } else if (invoiceId) {
-      console.log('[AI Conversations API - GET] Searching by invoiceId:', invoiceId);
+      logger.debug('[AI Conversations API - GET] Searching by invoiceId:', invoiceId);
       
       // invoiceIdでの検索でも複数のマッチがある場合、テストデータ以外を優先
       const conversations = await conversationsCollection.find({ invoiceId }).toArray();
       
       if (conversations.length > 0) {
         conversation = conversations.find(c => !c.metadata?.testData) || conversations[0];
-        console.log('[AI Conversations API - GET] Found conversations by invoiceId:', conversations.length);
-        console.log('[AI Conversations API - GET] Selected conversation ID:', conversation._id);
-        console.log('[AI Conversations API - GET] Is test data:', !!conversation.metadata?.testData);
+        logger.debug('[AI Conversations API - GET] Found conversations by invoiceId:', conversations.length);
+        logger.debug('[AI Conversations API - GET] Selected conversation ID:', conversation._id);
+        logger.debug('[AI Conversations API - GET] Is test data:', !!conversation.metadata?.testData);
       }
     }
 
     if (!conversation) {
       // デバッグ用: すべての会話を取得してログ出力
       const allConversations = await conversationsCollection.find({}).limit(5).toArray();
-      console.log('[AI Conversations API - GET] No conversation found. Sample conversations:', 
+      logger.debug('[AI Conversations API - GET] No conversation found. Sample conversations:', 
         allConversations.map(c => ({ 
           conversationId: c.conversationId,
           conversationIdType: typeof c.conversationId,
@@ -198,7 +199,7 @@ export async function GET(request: NextRequest) {
         const searchByInvoiceId = await conversationsCollection.find({ 
           invoiceId: { $regex: invoiceId, $options: 'i' } 
         }).limit(5).toArray();
-        console.log('[AI Conversations API - GET] Search by invoiceId pattern:', 
+        logger.debug('[AI Conversations API - GET] Search by invoiceId pattern:', 
           searchByInvoiceId.map(c => ({ 
             conversationId: c.conversationId,
             invoiceId: c.invoiceId 
@@ -217,7 +218,7 @@ export async function GET(request: NextRequest) {
       conversation,
     });
   } catch (error) {
-    console.error('AI会話履歴の取得エラー:', error);
+    logger.error('AI会話履歴の取得エラー:', error);
     return NextResponse.json(
       { success: false, error: 'AI会話履歴の取得に失敗しました' },
       { status: 500 }

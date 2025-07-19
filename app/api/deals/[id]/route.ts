@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DealService } from '@/services/deal.service';
 
+import { logger } from '@/lib/logger';
 // GET: 案件詳細取得
 export async function GET(
   request: NextRequest,
@@ -10,7 +11,7 @@ export async function GET(
     const deal = await DealService.getDealById(params.id);
     return NextResponse.json(deal);
   } catch (error: any) {
-    console.error('Error fetching deal:', error);
+    logger.error('Error fetching deal:', error);
     
     if (error.message === 'Deal not found') {
       return NextResponse.json(
@@ -40,7 +41,7 @@ export async function PUT(
     const deal = await DealService.updateDeal(params.id, updateData);
     return NextResponse.json(deal);
   } catch (error: any) {
-    console.error('Error updating deal:', error);
+    logger.error('Error updating deal:', error);
     
     if (error.message === 'Deal not found') {
       return NextResponse.json(
@@ -65,7 +66,7 @@ export async function DELETE(
     const result = await DealService.deleteDeal(params.id);
     return NextResponse.json(result);
   } catch (error: any) {
-    console.error('Error deleting deal:', error);
+    logger.error('Error deleting deal:', error);
     
     if (error.message === 'Deal not found') {
       return NextResponse.json(
@@ -99,7 +100,7 @@ export async function POST(
       { status: 400 }
     );
   } catch (error: any) {
-    console.error('Error processing deal action:', error);
+    logger.error('Error processing deal action:', error);
     
     if (error.message === 'Deal not found') {
       return NextResponse.json(

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { KnowledgeService } from '@/services/knowledge.service';
 
+import { logger } from '@/lib/logger';
 const knowledgeService = new KnowledgeService();
 
 export async function POST(request: NextRequest) {
@@ -92,7 +93,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Knowledge search error:', error);
+    logger.error('Knowledge search error:', error);
     return NextResponse.json(
       { error: 'Search failed' },
       { status: 500 }
@@ -129,7 +130,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(result);
 
   } catch (error) {
-    console.error('Knowledge search error:', error);
+    logger.error('Knowledge search error:', error);
     return NextResponse.json(
       { error: 'Search failed' },
       { status: 500 }

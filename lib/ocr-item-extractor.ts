@@ -1,3 +1,5 @@
+import { logger } from '@/lib/logger';
+
 /**
  * OCR結果から商品情報を抽出するユーティリティ
  */
@@ -22,20 +24,20 @@ export class OCRItemExtractor {
     
     // 0. 最優先：tablesデータから抽出（構造化されたデータ）
     if (ocrData.tables && Array.isArray(ocrData.tables) && ocrData.tables.length > 0) {
-      console.log('[OCRItemExtractor] tablesデータから商品情報を抽出します');
+      logger.debug('[OCRItemExtractor] tablesデータから商品情報を抽出します');
       const tableItems = this.extractItemsFromTables(ocrData.tables);
       if (tableItems.length > 0) {
-        console.log(`[OCRItemExtractor] テーブルから${tableItems.length}個の商品を抽出しました`);
+        logger.debug(`[OCRItemExtractor] テーブルから${tableItems.length}個の商品を抽出しました`);
         return tableItems;
       }
     }
     
     // 1. 次にpagesデータから抽出（行ベースのデータ）
     if (ocrData.pages && Array.isArray(ocrData.pages) && ocrData.pages.length > 0) {
-      console.log('[OCRItemExtractor] pagesデータから商品情報を抽出します');
+      logger.debug('[OCRItemExtractor] pagesデータから商品情報を抽出します');
       const pageItems = this.extractItemsFromPages(ocrData.pages);
       if (pageItems.length > 0) {
-        console.log(`[OCRItemExtractor] ページから${pageItems.length}個の商品を抽出しました`);
+        logger.debug(`[OCRItemExtractor] ページから${pageItems.length}個の商品を抽出しました`);
         return pageItems;
       }
     }
@@ -52,7 +54,7 @@ export class OCRItemExtractor {
     
     // 3. itemsが空または不完全な場合、OCR全体から商品情報を探す
     if (items.length === 0 || items.every(item => this.isDefaultItemName(item.itemName))) {
-      console.log('[OCRItemExtractor] itemsフィールドが不完全。OCR全体から商品情報を抽出します');
+      logger.debug('[OCRItemExtractor] itemsフィールドが不完全。OCR全体から商品情報を抽出します');
       
       // OCRデータ全体を文字列として検索
       const fullText = this.extractFullText(ocrData);
@@ -238,7 +240,7 @@ export class OCRItemExtractor {
     const remarks: string[] = []; // 備考行を収集
     
     for (const table of tables) {
-      console.log(`[OCRItemExtractor] テーブル: ${table.rowCount}行 x ${table.columnCount}列`);
+      logger.debug(`[OCRItemExtractor] テーブル: ${table.rowCount}行 x ${table.columnCount}列`);
       
       // テーブルのヘッダー行をスキップして、データ行を処理
       const rows = this.groupCellsByRow(table.cells);
@@ -283,7 +285,7 @@ export class OCRItemExtractor {
         
         // 重要: 数量、単価、金額が全て0または未設定の場合は備考として扱う
         if (!hasNumericData || (quantity === 0 && unitPrice === 0 && amount === 0)) {
-          console.log(`[OCRItemExtractor] 備考として認識: "${productName}"`);
+          logger.debug(`[OCRItemExtractor] 備考として認識: "${productName}"`);
           remarks.push(productName);
           continue;
         }
@@ -311,7 +313,7 @@ export class OCRItemExtractor {
             remarks: ''
           });
           
-          console.log(`[OCRItemExtractor] テーブルから商品抽出: ${productName}, 数量: ${quantity}, 単価: ${unitPrice}, 金額: ${amount}`);
+          logger.debug(`[OCRItemExtractor] テーブルから商品抽出: ${productName}, 数量: ${quantity}, 単価: ${unitPrice}, 金額: ${amount}`);
         }
       }
     }
@@ -321,7 +323,7 @@ export class OCRItemExtractor {
       const combinedRemarks = remarks.join('\n');
       // 最後の商品に備考を追加
       items[items.length - 1].remarks = combinedRemarks;
-      console.log(`[OCRItemExtractor] 備考を追加: ${combinedRemarks}`);
+      logger.debug(`[OCRItemExtractor] 備考を追加: ${combinedRemarks}`);
     }
     
     return items;
@@ -361,7 +363,7 @@ export class OCRItemExtractor {
     for (const page of pages) {
       if (!page.lines || page.lines.length === 0) continue;
       
-      console.log(`[OCRItemExtractor] ページの行数: ${page.lines.length}`);
+      logger.debug(`[OCRItemExtractor] ページの行数: ${page.lines.length}`);
       
       for (let i = 0; i < page.lines.length; i++) {
         const line = page.lines[i];
@@ -402,7 +404,7 @@ export class OCRItemExtractor {
                 taxAmount: Math.floor(amount * 0.1)
               });
               
-              console.log(`[OCRItemExtractor] ページから商品抽出: ${productName}, 金額: ${amount}`);
+              logger.debug(`[OCRItemExtractor] ページから商品抽出: ${productName}, 金額: ${amount}`);
             }
           }
         }
@@ -448,11 +450,11 @@ export class OCRItemExtractor {
             processedKeys.add(`${path}.${field}`);
             if (typeof obj[field] === 'string') {
               texts.push(obj[field]);
-              console.log(`[OCRItemExtractor] 重要フィールド発見 ${field}:`, obj[field]);
+              logger.debug(`[OCRItemExtractor] 重要フィールド発見 ${field}:`, obj[field]);
             } else if (obj[field]?.content || obj[field]?.value) {
               const value = obj[field].content || obj[field].value;
               texts.push(String(value));
-              console.log(`[OCRItemExtractor] 重要フィールド発見 ${field}:`, value);
+              logger.debug(`[OCRItemExtractor] 重要フィールド発見 ${field}:`, value);
             }
           }
         }
@@ -468,7 +470,7 @@ export class OCRItemExtractor {
     
     extract(ocrData);
     const fullText = texts.join(' ');
-    console.log('[OCRItemExtractor] 抽出されたテキスト総数:', texts.length);
+    logger.debug('[OCRItemExtractor] 抽出されたテキスト総数:', texts.length);
     return fullText;
   }
   
@@ -478,8 +480,8 @@ export class OCRItemExtractor {
   private static extractItemsFromFullText(fullText: string, ocrData: any): ExtractedItem[] {
     const items: ExtractedItem[] = [];
     
-    console.log('[OCRItemExtractor] フルテキスト:', fullText);
-    console.log('[OCRItemExtractor] OCRデータ構造:', JSON.stringify(ocrData, null, 2));
+    logger.debug('[OCRItemExtractor] フルテキスト:', fullText);
+    logger.debug('[OCRItemExtractor] OCRデータ構造:', JSON.stringify(ocrData, null, 2));
     
     // 商品名パターン（より具体的なパターンを追加）
     const productPatterns = [
@@ -497,14 +499,14 @@ export class OCRItemExtractor {
     // 最も長い一致を見つける
     for (const pattern of productPatterns) {
       const matches = fullText.match(pattern);
-      console.log(`[OCRItemExtractor] パターン ${pattern} の結果:`, matches);
+      logger.debug(`[OCRItemExtractor] パターン ${pattern} の結果:`, matches);
       if (matches) {
         for (const match of matches) {
           const cleaned = match.replace(/[【】]/g, '').trim();
           if (cleaned.length > bestMatchLength && cleaned.length > 5) {
             bestMatch = cleaned;
             bestMatchLength = cleaned.length;
-            console.log(`[OCRItemExtractor] より良い商品名を発見: "${bestMatch}" (長さ: ${bestMatchLength})`);
+            logger.debug(`[OCRItemExtractor] より良い商品名を発見: "${bestMatch}" (長さ: ${bestMatchLength})`);
           }
         }
       }

@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { logger } from '@/lib/logger';
 import { 
   ArrowLeft, 
   Save, 
@@ -71,7 +72,7 @@ export default function CreateDeliveryNotePage() {
       const data = await response.json();
       setCustomers(data.customers || []);
     } catch (error) {
-      console.error('Error fetching customers:', error);
+      logger.error('Error fetching customers:', error);
       setError('顧客データの取得に失敗しました');
     }
   };
@@ -131,7 +132,7 @@ export default function CreateDeliveryNotePage() {
       const createdDeliveryNote = await response.json();
       router.push(`/delivery-notes/${createdDeliveryNote._id}`);
     } catch (error) {
-      console.error('Error creating delivery note:', error);
+      logger.error('Error creating delivery note:', error);
       setError('納品書の作成に失敗しました');
     } finally {
       setIsLoading(false);

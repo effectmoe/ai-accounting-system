@@ -2,12 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getGridFSBucket, getDatabase } from '@/lib/mongodb-client';
 import { ObjectId } from 'mongodb';
 
+import { logger } from '@/lib/logger';
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
     const action = searchParams.get('action') || 'list';
     
-    console.log('[Debug File Flow] Action:', action);
+    logger.debug('[Debug File Flow] Action:', action);
     
     const bucket = await getGridFSBucket();
     const db = await getDatabase();
@@ -15,7 +16,7 @@ export async function GET(request: NextRequest) {
     if (action === 'list') {
       // List all GridFS files
       const files = await bucket.find({}).toArray();
-      console.log('[Debug File Flow] Found GridFS files:', files.length);
+      logger.debug('[Debug File Flow] Found GridFS files:', files.length);
       
       // List all supplier quotes with their fileIds
       const supplierQuotes = await db.collection('supplierQuotes')
@@ -23,7 +24,7 @@ export async function GET(request: NextRequest) {
         .project({ _id: 1, quoteNumber: 1, fileId: 1, attachments: 1 })
         .toArray();
       
-      console.log('[Debug File Flow] Found supplier quotes:', supplierQuotes.length);
+      logger.debug('[Debug File Flow] Found supplier quotes:', supplierQuotes.length);
       
       return NextResponse.json({
         success: true,
@@ -59,7 +60,7 @@ export async function GET(request: NextRequest) {
       });
       
       const fileId = uploadStream.id.toString();
-      console.log('[Debug File Flow] Test upload - File ID:', fileId);
+      logger.debug('[Debug File Flow] Test upload - File ID:', fileId);
       
       // Upload the test file
       const { Readable } = require('stream');
@@ -71,7 +72,7 @@ export async function GET(request: NextRequest) {
           .on('finish', resolve);
       });
       
-      console.log('[Debug File Flow] Test file uploaded successfully');
+      logger.debug('[Debug File Flow] Test file uploaded successfully');
       
       return NextResponse.json({
         success: true,
@@ -89,7 +90,7 @@ export async function GET(request: NextRequest) {
         }, { status: 400 });
       }
       
-      console.log('[Debug File Flow] Test download - File ID:', fileId);
+      logger.debug('[Debug File Flow] Test download - File ID:', fileId);
       
       try {
         // Check if file exists
@@ -104,7 +105,7 @@ export async function GET(request: NextRequest) {
         }
         
         const file = files[0];
-        console.log('[Debug File Flow] File found:', {
+        logger.debug('[Debug File Flow] File found:', {
           filename: file.filename,
           length: file.length,
           contentType: file.contentType || file.metadata?.contentType
@@ -124,7 +125,7 @@ export async function GET(request: NextRequest) {
         });
         
         const content = Buffer.concat(chunks);
-        console.log('[Debug File Flow] File content downloaded:', content.length, 'bytes');
+        logger.debug('[Debug File Flow] File content downloaded:', content.length, 'bytes');
         
         // Check if this is a browser request
         const userAgent = request.headers.get('user-agent') || '';
@@ -155,7 +156,7 @@ export async function GET(request: NextRequest) {
         }
         
       } catch (error) {
-        console.error('[Debug File Flow] Error downloading file:', error);
+        logger.error('[Debug File Flow] Error downloading file:', error);
         return NextResponse.json({
           success: false,
           error: error instanceof Error ? error.message : 'Unknown error',
@@ -170,7 +171,7 @@ export async function GET(request: NextRequest) {
     }, { status: 400 });
     
   } catch (error) {
-    console.error('[Debug File Flow] Error:', error);
+    logger.error('[Debug File Flow] Error:', error);
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'

@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/mongodb-client';
 
+import { logger } from '@/lib/logger';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
     // MongoDB接続確認
-    console.log('Documents list API - MongoDB URI exists:', !!process.env.MONGODB_URI);
+    logger.debug('Documents list API - MongoDB URI exists:', !!process.env.MONGODB_URI);
 
     // クエリパラメータを取得
     const searchParams = request.nextUrl.searchParams;
@@ -68,13 +69,13 @@ export async function GET(request: NextRequest) {
       sort: { createdAt: -1 }
     });
 
-    console.log('Raw documents from database:', documents.length);
+    logger.debug('Raw documents from database:', documents.length);
     if (documents.length > 0) {
-      console.log('First document raw data:', documents[0]);
+      logger.debug('First document raw data:', documents[0]);
       // Check for journal entries specifically
       const journalEntries = documents.filter(doc => doc.documentType === 'journal_entry');
       if (journalEntries.length > 0) {
-        console.log('First journal entry raw data:', {
+        logger.debug('First journal entry raw data:', {
           _id: journalEntries[0]._id,
           documentType: journalEntries[0].documentType,
           sourceDocumentId: journalEntries[0].sourceDocumentId,
@@ -120,9 +121,9 @@ export async function GET(request: NextRequest) {
       source_document_id: doc.sourceDocumentId?.toString() // 互換性のため両方の形式で提供
     }));
 
-    console.log('Formatted documents:', formattedDocuments.length);
+    logger.debug('Formatted documents:', formattedDocuments.length);
     if (formattedDocuments.length > 0) {
-      console.log('First formatted document:', formattedDocuments[0]);
+      logger.debug('First formatted document:', formattedDocuments[0]);
     }
 
     // 総数を取得
@@ -137,8 +138,8 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Document list error:', error);
-    console.error('Error details:', {
+    logger.error('Document list error:', error);
+    logger.error('Error details:', {
       name: error instanceof Error ? error.name : 'Unknown',
       message: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined

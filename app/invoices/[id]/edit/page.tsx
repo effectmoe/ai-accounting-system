@@ -16,6 +16,7 @@ import AIChatDialog from '@/components/ai-chat-dialog';
 import AIConversationHistoryDialog from '@/components/ai-conversation-history-dialog';
 import { calculateDueDate } from '@/utils/payment-terms';
 
+import { logger } from '@/lib/logger';
 interface InvoiceItem {
   description: string;
   quantity: number;
@@ -105,18 +106,18 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
 
   const fetchInvoice = async () => {
     try {
-      console.log('[EditPage] fetchInvoice called with ID:', params.id);
-      console.log('[EditPage] ID type:', typeof params.id, 'Length:', params.id?.length);
+      logger.debug('[EditPage] fetchInvoice called with ID:', params.id);
+      logger.debug('[EditPage] ID type:', typeof params.id, 'Length:', params.id?.length);
       
       const response = await fetch(`/api/invoices/${params.id}`);
       if (!response.ok) {
-        console.error('[EditPage] Failed to fetch invoice. Status:', response.status);
-        console.error('[EditPage] Response:', await response.text());
+        logger.error('[EditPage] Failed to fetch invoice. Status:', response.status);
+        logger.error('[EditPage] Response:', await response.text());
         throw new Error('Failed to fetch invoice');
       }
       const data = await response.json();
       
-      console.log('[EditPage] Invoice data received:', {
+      logger.debug('[EditPage] Invoice data received:', {
         id: data._id,
         hasAiConversationId: !!data.aiConversationId,
         aiConversationId: data.aiConversationId
@@ -143,7 +144,7 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
       setPaymentMethod(data.paymentMethod || 'bank_transfer');
       setAiDataApplied(data.isGeneratedByAI || false);
     } catch (error) {
-      console.error('Error fetching invoice:', error);
+      logger.error('Error fetching invoice:', error);
       setError('請求書の取得に失敗しました');
     }
   };
@@ -159,7 +160,7 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
         setCustomers(validCustomers);
       }
     } catch (error) {
-      console.error('Error fetching customers:', error);
+      logger.error('Error fetching customers:', error);
     }
   };
 
@@ -171,7 +172,7 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
         setProducts(data.products.filter((p: Product) => p.isActive !== false));
       }
     } catch (error) {
-      console.error('Error fetching products:', error);
+      logger.error('Error fetching products:', error);
     }
   };
 
@@ -196,7 +197,7 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
     setError(null);
 
     try {
-      console.log('[EditPage] Saving invoice with:', {
+      logger.debug('[EditPage] Saving invoice with:', {
         selectedCustomerId,
         customerName,
         invoiceDate,
@@ -216,7 +217,7 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
         // 元の請求書の顧客名と比較
         const originalCustomerName = invoice?.customer?.companyName || invoice?.customer?.name || invoice?.customerSnapshot?.companyName;
         
-        console.log('[EditPage] Customer name comparison:', {
+        logger.debug('[EditPage] Customer name comparison:', {
           current: customerName,
           original: originalCustomerName,
           isSame: customerName === originalCustomerName,
@@ -226,7 +227,7 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
         // 顧客名が変更されていない場合は元の顧客IDを使用
         if (customerName === originalCustomerName && invoice?.customerId) {
           customerId = invoice.customerId;
-          console.log('[EditPage] Using original customer ID:', customerId);
+          logger.debug('[EditPage] Using original customer ID:', customerId);
         } else {
           // 既存顧客リストから検索
           const existingCustomer = customers.find(c => 
@@ -234,11 +235,11 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
           );
           
           if (existingCustomer) {
-            console.log('[EditPage] Found existing customer:', existingCustomer._id);
+            logger.debug('[EditPage] Found existing customer:', existingCustomer._id);
             customerId = existingCustomer._id;
           } else {
             // 新規顧客として作成
-            console.log('[EditPage] Creating new customer:', customerName);
+            logger.debug('[EditPage] Creating new customer:', customerName);
             const customerResponse = await fetch('/api/customers', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -254,7 +255,7 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
             
             const newCustomer = await customerResponse.json();
             customerId = newCustomer._id;
-            console.log('[EditPage] New customer created with ID:', customerId);
+            logger.debug('[EditPage] New customer created with ID:', customerId);
           }
         }
       }
@@ -270,10 +271,10 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
         aiConversationId: invoice?.aiConversationId || undefined,
       };
       
-      console.log('[EditPage] Sending invoice update:', JSON.stringify(invoiceData, null, 2));
+      logger.debug('[EditPage] Sending invoice update:', JSON.stringify(invoiceData, null, 2));
 
-      console.log('[EditPage] Making PUT request to:', `/api/invoices/${params.id}`);
-      console.log('[EditPage] Params ID:', params.id);
+      logger.debug('[EditPage] Making PUT request to:', `/api/invoices/${params.id}`);
+      logger.debug('[EditPage] Params ID:', params.id);
       
       const response = await fetch(`/api/invoices/${params.id}`, {
         method: 'PUT',
@@ -289,7 +290,7 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
       const updatedInvoice = await response.json();
       router.push(`/invoices/${updatedInvoice._id}`);
     } catch (error) {
-      console.error('Error updating invoice:', error);
+      logger.error('Error updating invoice:', error);
       setError(error instanceof Error ? error.message : '請求書の更新に失敗しました');
     } finally {
       setIsLoading(false);
@@ -390,7 +391,7 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
       setSuccessMessage('商品を登録しました');
       setTimeout(() => setSuccessMessage(null), 3000);
     } catch (error) {
-      console.error('Error registering product:', error);
+      logger.error('Error registering product:', error);
       setError('商品の登録に失敗しました');
     }
   };
@@ -415,16 +416,16 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
 
   // AI会話からのデータを適用
   const handleAIComplete = (data: any) => {
-    console.log('[EditPage] AI Complete data received:', data);
-    console.log('[EditPage] Current customer name state:', customerName);
-    console.log('[EditPage] Current selected customer ID:', selectedCustomerId);
+    logger.debug('[EditPage] AI Complete data received:', data);
+    logger.debug('[EditPage] Current customer name state:', customerName);
+    logger.debug('[EditPage] Current selected customer ID:', selectedCustomerId);
     
     // itemsデータの詳細をログ出力
     if (data.items && Array.isArray(data.items)) {
-      console.log('[EditPage] Items received from AI:', data.items.length);
-      console.log('[EditPage] Raw items data:', JSON.stringify(data.items, null, 2));
+      logger.debug('[EditPage] Items received from AI:', data.items.length);
+      logger.debug('[EditPage] Raw items data:', JSON.stringify(data.items, null, 2));
       data.items.forEach((item, index) => {
-        console.log(`[EditPage] Item ${index}:`, JSON.stringify({
+        logger.debug(`[EditPage] Item ${index}:`, JSON.stringify({
           description: item.description,
           quantity: item.quantity,
           unitPrice: item.unitPrice,
@@ -434,13 +435,13 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
         }, null, 2));
       });
     } else {
-      console.log('[EditPage] No items data received from AI');
+      logger.debug('[EditPage] No items data received from AI');
     }
     
     // 顧客名は明示的に変更された場合のみ更新（Unknown Customerは無視）
     if (data.customerName && data.customerName !== 'Unknown Customer' && data.customerName !== '未設定顧客') {
-      console.log('[EditPage] Updating customer name to:', data.customerName);
-      console.log('[EditPage] Previous customer name was:', customerName);
+      logger.debug('[EditPage] Updating customer name to:', data.customerName);
+      logger.debug('[EditPage] Previous customer name was:', customerName);
       
       // まず既存顧客リストから該当する顧客を探す
       const existingCustomer = customers.find(c => 
@@ -448,21 +449,21 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
       );
       
       if (existingCustomer) {
-        console.log('[EditPage] Found existing customer:', existingCustomer._id, existingCustomer.companyName || existingCustomer.name);
+        logger.debug('[EditPage] Found existing customer:', existingCustomer._id, existingCustomer.companyName || existingCustomer.name);
         // 既存顧客として選択
         setSelectedCustomerId(existingCustomer._id);
         setCustomerName(''); // 新規顧客名はクリア
-        console.log('[EditPage] Selected existing customer ID:', existingCustomer._id);
+        logger.debug('[EditPage] Selected existing customer ID:', existingCustomer._id);
       } else {
-        console.log('[EditPage] Customer not found in existing list, setting as new customer');
+        logger.debug('[EditPage] Customer not found in existing list, setting as new customer');
         // 新規顧客として設定
         setCustomerName(data.customerName);
         setSelectedCustomerId('');
-        console.log('[EditPage] Set as new customer name:', data.customerName);
+        logger.debug('[EditPage] Set as new customer name:', data.customerName);
       }
     } else {
-      console.log('[EditPage] Customer name not updated. Current:', data.customerName);
-      console.log('[EditPage] Reason: either null/empty, Unknown Customer, or 未設定顧客');
+      logger.debug('[EditPage] Customer name not updated. Current:', data.customerName);
+      logger.debug('[EditPage] Reason: either null/empty, Unknown Customer, or 未設定顧客');
       // 顧客名が空の場合、既存の顧客情報を保持
       if (!data.customerName && invoice) {
         if (invoice.customerId && !selectedCustomerId) {
@@ -475,33 +476,33 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
     
     // 日付は有効な値の場合のみ更新（1970-01-01は無視）
     if (data.invoiceDate && data.invoiceDate !== '1970-01-01' && new Date(data.invoiceDate).getFullYear() > 2000) {
-      console.log('[EditPage] Updating invoice date to:', data.invoiceDate);
+      logger.debug('[EditPage] Updating invoice date to:', data.invoiceDate);
       // 日付フォーマットを統一（yyyy-MM-dd形式）
       const invoiceDateFormatted = data.invoiceDate.includes('T') 
         ? format(new Date(data.invoiceDate), 'yyyy-MM-dd')
         : data.invoiceDate;
       setInvoiceDate(invoiceDateFormatted);
     } else {
-      console.log('[EditPage] Invoice date not updated. Current:', data.invoiceDate);
+      logger.debug('[EditPage] Invoice date not updated. Current:', data.invoiceDate);
     }
     
     if (data.dueDate && data.dueDate !== '1970-01-01' && new Date(data.dueDate).getFullYear() > 2000) {
-      console.log('[EditPage] Updating due date to:', data.dueDate);
+      logger.debug('[EditPage] Updating due date to:', data.dueDate);
       // 日付フォーマットを統一（yyyy-MM-dd形式）
       const dueDateFormatted = data.dueDate.includes('T') 
         ? format(new Date(data.dueDate), 'yyyy-MM-dd')
         : data.dueDate;
       setDueDate(dueDateFormatted);
     } else {
-      console.log('[EditPage] Due date not updated. Current:', data.dueDate);
+      logger.debug('[EditPage] Due date not updated. Current:', data.dueDate);
     }
     
     // itemsは常に更新（AIが明示的に変更したもの）
     if (data.items && Array.isArray(data.items) && data.items.length > 0) {
-      console.log('[EditPage] Updating items from AI:', JSON.stringify(data.items, null, 2));
-      console.log('[EditPage] Items detail:');
+      logger.debug('[EditPage] Updating items from AI:', JSON.stringify(data.items, null, 2));
+      logger.debug('[EditPage] Items detail:');
       data.items.forEach((item, index) => {
-        console.log(`[EditPage] Item ${index}:`, JSON.stringify({
+        logger.debug(`[EditPage] Item ${index}:`, JSON.stringify({
           description: item.description,
           quantity: item.quantity,
           unitPrice: item.unitPrice,
@@ -512,7 +513,7 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
       });
       setItems(data.items);
     } else {
-      console.log('[EditPage] No items to update from AI data');
+      logger.debug('[EditPage] No items to update from AI data');
     }
     
     // 備考は内容がある場合のみ更新
@@ -527,7 +528,7 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
     
     // AI会話IDを更新
     if (data.aiConversationId) {
-      console.log('[EditPage] Updating aiConversationId to:', data.aiConversationId);
+      logger.debug('[EditPage] Updating aiConversationId to:', data.aiConversationId);
       setInvoice(prev => prev ? { ...prev, aiConversationId: data.aiConversationId } : prev);
     }
     

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/mongodb-client';
 import { ObjectId } from 'mongodb';
 
+import { logger } from '@/lib/logger';
 // Test endpoint to check supplier fields
 export async function GET(request: NextRequest) {
   try {
@@ -57,7 +58,7 @@ export async function GET(request: NextRequest) {
       }
     });
   } catch (error) {
-    console.error('Error in GET /api/suppliers/test-fields:', error);
+    logger.error('Error in GET /api/suppliers/test-fields:', error);
     return NextResponse.json(
       { error: 'Failed to fetch supplier', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }

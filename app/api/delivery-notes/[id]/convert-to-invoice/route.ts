@@ -3,6 +3,7 @@ import { ObjectId } from 'mongodb';
 import { format } from 'date-fns';
 import { getDatabase } from '@/lib/mongodb';
 
+import { logger } from '@/lib/logger';
 // POST - 納品書から請求書への変換
 export async function POST(
   request: NextRequest,
@@ -90,7 +91,7 @@ export async function POST(
       message: '請求書への変換が完了しました'
     });
   } catch (error) {
-    console.error('Error converting delivery note to invoice:', error);
+    logger.error('Error converting delivery note to invoice:', error);
     return NextResponse.json(
       { error: 'Failed to convert delivery note to invoice' },
       { status: 500 }

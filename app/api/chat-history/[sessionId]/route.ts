@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getChatHistoryService } from '@/services/chat-history.service';
 
+import { logger } from '@/lib/logger';
 /**
  * GET /api/chat-history/[sessionId]
  * 特定のセッション情報を取得
@@ -12,7 +13,7 @@ export async function GET(
   const chatHistoryService = getChatHistoryService();
   
   try {
-    console.log(`[API] GET /api/chat-history/${params.sessionId}`);
+    logger.debug(`[API] GET /api/chat-history/${params.sessionId}`);
     
     // MongoDBに接続
     await chatHistoryService.connect();
@@ -20,22 +21,22 @@ export async function GET(
     const session = await chatHistoryService.getSession(params.sessionId);
     
     if (!session) {
-      console.log(`[API] セッションが見つかりません: ${params.sessionId}`);
+      logger.debug(`[API] セッションが見つかりません: ${params.sessionId}`);
       return NextResponse.json(
         { success: false, error: 'Session not found' },
         { status: 404 }
       );
     }
 
-    console.log(`[API] セッション取得成功: ${params.sessionId}`);
+    logger.debug(`[API] セッション取得成功: ${params.sessionId}`);
     return NextResponse.json({
       success: true,
       data: session
     });
 
   } catch (error) {
-    console.error('[API] Chat history GET error:', error);
-    console.error('[API] エラー詳細:', error instanceof Error ? error.stack : 'Unknown error');
+    logger.error('[API] Chat history GET error:', error);
+    logger.error('[API] エラー詳細:', error instanceof Error ? error.stack : 'Unknown error');
     return NextResponse.json(
       {
         success: false,
@@ -57,12 +58,12 @@ export async function PATCH(
   const chatHistoryService = getChatHistoryService();
   
   try {
-    console.log(`[API] PATCH /api/chat-history/${params.sessionId}`);
+    logger.debug(`[API] PATCH /api/chat-history/${params.sessionId}`);
     
     const body = await request.json();
     const { title, category, specialization } = body;
     
-    console.log('[API] 更新データ:', { title, category, specialization });
+    logger.debug('[API] 更新データ:', { title, category, specialization });
 
     await chatHistoryService.connect();
     const db = (chatHistoryService as any).db;
@@ -97,11 +98,11 @@ export async function PATCH(
           }
         );
       } catch (e) {
-        console.log('[API] ObjectId変換エラー:', e);
+        logger.debug('[API] ObjectId変換エラー:', e);
       }
     }
 
-    console.log(`[API] 更新結果: ${result.modifiedCount > 0 ? '成功' : '失敗'}`);
+    logger.debug(`[API] 更新結果: ${result.modifiedCount > 0 ? '成功' : '失敗'}`);
     
     return NextResponse.json({
       success: result.modifiedCount > 0,
@@ -109,8 +110,8 @@ export async function PATCH(
     });
 
   } catch (error) {
-    console.error('[API] Chat history PATCH error:', error);
-    console.error('[API] エラー詳細:', error instanceof Error ? error.stack : 'Unknown error');
+    logger.error('[API] Chat history PATCH error:', error);
+    logger.error('[API] エラー詳細:', error instanceof Error ? error.stack : 'Unknown error');
     return NextResponse.json(
       {
         success: false,

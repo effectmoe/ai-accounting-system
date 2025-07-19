@@ -10,6 +10,7 @@ import { generatePDFBase64 } from '@/lib/pdf-export';
 import { DocumentData } from '@/lib/document-generator';
 import { formatCustomerNameForEmail } from '@/lib/honorific-utils';
 
+import { logger } from '@/lib/logger';
 interface EmailSendModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -191,11 +192,11 @@ ${deliveryDate ? `納品日：${deliveryDate}` : ''}
           };
           
           // クライアントサイドでPDF生成
-          console.log('Generating PDF on client side...');
+          logger.debug('Generating PDF on client side...');
           pdfBase64 = await generatePDFBase64(documentData);
-          console.log('PDF generated successfully');
+          logger.debug('PDF generated successfully');
         } catch (pdfError) {
-          console.error('PDF generation error:', pdfError);
+          logger.error('PDF generation error:', pdfError);
           setError('PDF生成に失敗しました。PDFなしで送信しますか？');
           setIsSending(false);
           return;
@@ -240,7 +241,7 @@ ${deliveryDate ? `納品日：${deliveryDate}` : ''}
         onSuccess();
       }
     } catch (error) {
-      console.error('Email send error:', error);
+      logger.error('Email send error:', error);
       setError(error instanceof Error ? error.message : 'メール送信に失敗しました');
     } finally {
       setIsSending(false);

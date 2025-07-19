@@ -2,6 +2,7 @@ import { db, Collections } from '@/lib/mongodb-client';
 import { ObjectId } from 'mongodb';
 import { DocumentData } from '@/lib/document-generator';
 
+import { logger } from '@/lib/logger';
 export interface Document {
   _id?: ObjectId;
   documentNumber: string;
@@ -45,7 +46,7 @@ export class DocumentService {
       });
       return document;
     } catch (error) {
-      console.error('Error in createDocument:', error);
+      logger.error('Error in createDocument:', error);
       throw new Error('ドキュメントの作成に失敗しました');
     }
   }
@@ -107,7 +108,7 @@ export class DocumentService {
 
       return await this.createDocument(documentData);
     } catch (error) {
-      console.error('Error in createFromOCR:', error);
+      logger.error('Error in createFromOCR:', error);
       throw new Error('OCRデータからのドキュメント作成に失敗しました');
     }
   }
@@ -119,7 +120,7 @@ export class DocumentService {
     try {
       return await db.findById<Document>(this.collectionName, id);
     } catch (error) {
-      console.error('Error in getDocument:', error);
+      logger.error('Error in getDocument:', error);
       throw new Error('ドキュメントの取得に失敗しました');
     }
   }
@@ -134,7 +135,7 @@ export class DocumentService {
         ...options,
       });
     } catch (error) {
-      console.error('Error in getDocuments:', error);
+      logger.error('Error in getDocuments:', error);
       throw new Error('ドキュメント一覧の取得に失敗しました');
     }
   }
@@ -156,7 +157,7 @@ export class DocumentService {
 
       return await db.update<Document>(this.collectionName, id, dataToUpdate);
     } catch (error) {
-      console.error('Error in updateDocument:', error);
+      logger.error('Error in updateDocument:', error);
       throw new Error('ドキュメントの更新に失敗しました');
     }
   }
@@ -168,7 +169,7 @@ export class DocumentService {
     try {
       return await db.delete(this.collectionName, id);
     } catch (error) {
-      console.error('Error in deleteDocument:', error);
+      logger.error('Error in deleteDocument:', error);
       throw new Error('ドキュメントの削除に失敗しました');
     }
   }
@@ -180,7 +181,7 @@ export class DocumentService {
     try {
       return await this.updateDocument(id, { status });
     } catch (error) {
-      console.error('Error in updateDocumentStatus:', error);
+      logger.error('Error in updateDocumentStatus:', error);
       throw new Error('ドキュメントステータスの更新に失敗しました');
     }
   }
@@ -195,7 +196,7 @@ export class DocumentService {
     try {
       return await db.findOne<Document>(this.collectionName, { ocrResultId });
     } catch (error) {
-      console.error('Error in getDocumentByOCRResultId:', error);
+      logger.error('Error in getDocumentByOCRResultId:', error);
       throw new Error('OCR結果IDでのドキュメント検索に失敗しました');
     }
   }
@@ -230,7 +231,7 @@ export class DocumentService {
 
       return await db.aggregate(this.collectionName, pipeline);
     } catch (error) {
-      console.error('Error in getMonthlyAggregation:', error);
+      logger.error('Error in getMonthlyAggregation:', error);
       throw new Error('月次集計の取得に失敗しました');
     }
   }

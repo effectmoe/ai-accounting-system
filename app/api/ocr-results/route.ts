@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/mongodb-client';
 
+import { logger } from '@/lib/logger';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
@@ -55,7 +56,7 @@ export async function GET(request: NextRequest) {
     // 総数を取得
     const total = await db.count('documents', filter);
 
-    console.log('Fetched OCR results:', formattedResults.length, 'total:', total);
+    logger.debug('Fetched OCR results:', formattedResults.length, 'total:', total);
 
     return NextResponse.json({
       success: true,
@@ -65,7 +66,7 @@ export async function GET(request: NextRequest) {
       limit
     });
   } catch (error) {
-    console.error('OCR results API error:', error);
+    logger.error('OCR results API error:', error);
     return NextResponse.json(
       { 
         error: 'Internal server error',

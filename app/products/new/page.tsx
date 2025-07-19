@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Product } from '@/types/collections';
 
+import { logger } from '@/lib/logger';
 export default function NewProductPage() {
   const router = useRouter();
   const [categories, setCategories] = useState<string[]>([]);
@@ -32,7 +33,7 @@ export default function NewProductPage() {
         setCategories(data);
       }
     } catch (err) {
-      console.error('カテゴリ一覧取得エラー:', err);
+      logger.error('カテゴリ一覧取得エラー:', err);
     }
   };
 
@@ -58,7 +59,7 @@ export default function NewProductPage() {
 
       router.push('/products');
     } catch (err) {
-      console.error('商品作成エラー:', err);
+      logger.error('商品作成エラー:', err);
       setError(err instanceof Error ? err.message : '商品の作成に失敗しました');
     } finally {
       setLoading(false);

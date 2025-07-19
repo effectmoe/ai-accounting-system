@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { logger } from '@/lib/logger';
 import { 
   ArrowLeft, 
   Save, 
@@ -80,7 +81,7 @@ export default function EditDeliveryNotePage({ params }: { params: { id: string 
         status: data.status || 'draft'
       });
     } catch (error) {
-      console.error('Error fetching delivery note:', error);
+      logger.error('Error fetching delivery note:', error);
       setError('納品書の取得に失敗しました');
     } finally {
       setIsLoading(false);
@@ -94,7 +95,7 @@ export default function EditDeliveryNotePage({ params }: { params: { id: string 
       const data = await response.json();
       setCustomers(data.customers || []);
     } catch (error) {
-      console.error('Error fetching customers:', error);
+      logger.error('Error fetching customers:', error);
     }
   };
 
@@ -152,7 +153,7 @@ export default function EditDeliveryNotePage({ params }: { params: { id: string 
 
       router.push(`/delivery-notes/${params.id}`);
     } catch (error) {
-      console.error('Error updating delivery note:', error);
+      logger.error('Error updating delivery note:', error);
       setError('納品書の更新に失敗しました');
     } finally {
       setIsSaving(false);

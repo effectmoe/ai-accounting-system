@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { solveProblem, analyzeData, generateReport } from '@/src/agents/problem-solving-agent';
 
+import { logger } from '@/lib/logger';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -37,7 +38,7 @@ export async function POST(request: NextRequest) {
       data.companyId = '11111111-1111-1111-1111-111111111111';
     }
 
-    console.log('Problem Solver API - Request:', {
+    logger.debug('Problem Solver API - Request:', {
       operation: operation,
       dataType: typeof data,
       timestamp: new Date().toISOString(),
@@ -63,7 +64,7 @@ export async function POST(request: NextRequest) {
         );
     }
 
-    console.log('Problem Solver API - Result:', {
+    logger.debug('Problem Solver API - Result:', {
       success: result.success,
       executionTime: result.executionTime,
       resourcesUsed: result.resourcesUsed,
@@ -103,7 +104,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(legacyResponse);
 
   } catch (error) {
-    console.error('Problem Solver API Error:', error);
+    logger.error('Problem Solver API Error:', error);
     
     return NextResponse.json(
       {
@@ -171,7 +172,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ success: true, status });
   } catch (error) {
-    console.error('Problem Solver GET API Error:', error);
+    logger.error('Problem Solver GET API Error:', error);
     return NextResponse.json(
       { 
         success: false, 

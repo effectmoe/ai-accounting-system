@@ -3,23 +3,24 @@ import { DocumentService } from '@/services/document-service';
 import { DocumentData } from '@/lib/document-generator';
 import { OCRAIOrchestrator, StructuredInvoiceData } from '@/lib/ocr-ai-orchestrator';
 
+import { logger } from '@/lib/logger';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    console.log('[Create Document] Received request body:', body);
+    logger.debug('[Create Document] Received request body:', body);
     
     // AI駆動のOCRオーケストレーターを使用した構造化データの処理
     if (body.aiStructuredData) {
-      console.log('[Create Document] Using AI-driven structured data');
+      logger.debug('[Create Document] Using AI-driven structured data');
       return await handleAIStructuredData(body.aiStructuredData, body.companyId);
     }
     
     // 従来のOCRデータの処理（後方互換性のため）
-    console.log('[Create Document] Using legacy OCR data format');
+    logger.debug('[Create Document] Using legacy OCR data format');
     return await handleLegacyOCRData(body);
     
   } catch (error) {
-    console.error('Create document from OCR error:', error);
+    logger.error('Create document from OCR error:', error);
     const errorMessage = error instanceof Error ? error.message : '文書の作成に失敗しました';
     return NextResponse.json(
       { error: errorMessage, details: error instanceof Error ? error.stack : undefined },
@@ -32,7 +33,7 @@ export async function POST(request: NextRequest) {
  * AI駆動のOCRオーケストレーターによる構造化データを処理
  */
 async function handleAIStructuredData(aiData: StructuredInvoiceData, companyId: string) {
-  console.log('[Create Document] Processing AI structured data:', {
+  logger.debug('[Create Document] Processing AI structured data:', {
     subject: aiData.subject,
     vendorName: aiData.vendor.name,
     customerName: aiData.customer.name,

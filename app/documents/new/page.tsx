@@ -8,6 +8,7 @@ import { toast } from 'react-hot-toast';
 import { OCRItemExtractor } from '@/lib/ocr-item-extractor';
 import { cleanPhoneNumber } from '@/lib/phone-utils';
 
+import { logger } from '@/lib/logger';
 // 仕入先情報抽出関数（改善版）
 function extractVendorInformation(extractedData: any): {name: string, address: string, phone: string, email: string, fax: string} {
   const vendorInfo = {
@@ -18,7 +19,7 @@ function extractVendorInformation(extractedData: any): {name: string, address: s
     fax: ''
   };
   
-  console.log('[extractVendorInformation] 入力データ:', {
+  logger.debug('[extractVendorInformation] 入力データ:', {
     vendorName: extractedData.vendorName,
     customerName: extractedData.customerName,
     VendorAddressRecipient: extractedData.VendorAddressRecipient,
@@ -41,7 +42,7 @@ function extractVendorInformation(extractedData: any): {name: string, address: s
   for (const candidate of vendorNameCandidates) {
     if (candidate && typeof candidate === 'string' && !candidate.includes('御中')) {
       vendorInfo.name = candidate.trim();
-      console.log(`[extractVendorInformation] 仕入先名を決定: "${vendorInfo.name}"`);
+      logger.debug(`[extractVendorInformation] 仕入先名を決定: "${vendorInfo.name}"`);
       break;
     }
   }
@@ -52,7 +53,7 @@ function extractVendorInformation(extractedData: any): {name: string, address: s
       if (candidate && typeof candidate === 'string') {
         vendorInfo.name = candidate.replace(/\s*御中\s*$/, '').trim();
         if (vendorInfo.name) {
-          console.log(`[extractVendorInformation] 「御中」を除去して仕入先名を決定: "${vendorInfo.name}"`);
+          logger.debug(`[extractVendorInformation] 「御中」を除去して仕入先名を決定: "${vendorInfo.name}"`);
           break;
         }
       }
@@ -73,7 +74,7 @@ function extractVendorInformation(extractedData: any): {name: string, address: s
   const rawFax = extractedData.vendor?.fax || extractedData.vendorFax || extractedData.VendorFax || '';
   vendorInfo.fax = cleanPhoneNumber(rawFax);
   
-  console.log('[extractVendorInformation] 最終仕入先情報:', {
+  logger.debug('[extractVendorInformation] 最終仕入先情報:', {
     ...vendorInfo,
     rawPhone,
     rawFax
@@ -84,19 +85,19 @@ function extractVendorInformation(extractedData: any): {name: string, address: s
 
 // OCR結果を仕入請求書に変換する関数
 async function convertOCRToPurchaseInvoice(ocrResult: any) {
-  console.log('[convertOCRToPurchaseInvoice] OCR結果全体:', JSON.stringify(ocrResult, null, 2));
+  logger.debug('[convertOCRToPurchaseInvoice] OCR結果全体:', JSON.stringify(ocrResult, null, 2));
   
   try {
     // OCR結果から仕入請求書データを抽出
     const extractedData = ocrResult.data || ocrResult.extractedData || {};
     
-    console.log('[convertOCRToPurchaseInvoice] 全抽出データ:', extractedData);
+    logger.debug('[convertOCRToPurchaseInvoice] 全抽出データ:', extractedData);
     
     // 仕入先情報の抽出
     const vendorInfo = extractVendorInformation(extractedData);
     let vendorName = vendorInfo.name;
     
-    console.log('[convertOCRToPurchaseInvoice] 最終仕入先名:', vendorName);
+    logger.debug('[convertOCRToPurchaseInvoice] 最終仕入先名:', vendorName);
     
     // 項目の抽出
     let items = OCRItemExtractor.extractItemsFromOCR(extractedData);
@@ -136,7 +137,7 @@ async function convertOCRToPurchaseInvoice(ocrResult: any) {
           issueDate = parsedDate.toISOString();
         }
       } catch (e) {
-        console.log('[convertOCRToPurchaseInvoice] issueDateパースエラー:', e);
+        logger.debug('[convertOCRToPurchaseInvoice] issueDateパースエラー:', e);
       }
     }
     
@@ -149,7 +150,7 @@ async function convertOCRToPurchaseInvoice(ocrResult: any) {
           dueDate = parsedDate.toISOString();
         }
       } catch (e) {
-        console.log('[convertOCRToPurchaseInvoice] dueDateパースエラー:', e);
+        logger.debug('[convertOCRToPurchaseInvoice] dueDateパースエラー:', e);
       }
     }
     
@@ -184,7 +185,7 @@ async function convertOCRToPurchaseInvoice(ocrResult: any) {
       bankTransferInfo: extractedData.bankTransferInfo
     };
     
-    console.log('[convertOCRToPurchaseInvoice] 仕入請求書データ:', purchaseInvoiceData);
+    logger.debug('[convertOCRToPurchaseInvoice] 仕入請求書データ:', purchaseInvoiceData);
     
     // 仕入請求書APIに送信
     const response = await fetch('/api/purchase-invoices', {
@@ -197,12 +198,12 @@ async function convertOCRToPurchaseInvoice(ocrResult: any) {
     
     if (!response.ok) {
       const errorData = await response.text();
-      console.error('[convertOCRToPurchaseInvoice] API Error:', errorData);
+      logger.error('[convertOCRToPurchaseInvoice] API Error:', errorData);
       throw new Error('仕入請求書の作成に失敗しました');
     }
     
     const result = await response.json();
-    console.log('[convertOCRToPurchaseInvoice] API Response:', result);
+    logger.debug('[convertOCRToPurchaseInvoice] API Response:', result);
     
     // IDの確認
     if (result._id && !result.id) {
@@ -211,14 +212,14 @@ async function convertOCRToPurchaseInvoice(ocrResult: any) {
     
     return result;
   } catch (error) {
-    console.error('[convertOCRToPurchaseInvoice] エラー詳細:', error);
+    logger.error('[convertOCRToPurchaseInvoice] エラー詳細:', error);
     throw error;
   }
 }
 
 // OCR結果を仕入先見積書に変換する関数
 async function convertOCRToSupplierQuote(ocrResult: any) {
-  console.log('[convertOCRToSupplierQuote] OCR結果全体:', JSON.stringify(ocrResult, null, 2));
+  logger.debug('[convertOCRToSupplierQuote] OCR結果全体:', JSON.stringify(ocrResult, null, 2));
   
   try {
   
@@ -226,8 +227,8 @@ async function convertOCRToSupplierQuote(ocrResult: any) {
   // DeepSeek AIの場合はresult.dataに格納されている
   const extractedData = ocrResult.data || ocrResult.extractedData || {};
   
-  console.log('[convertOCRToSupplierQuote] 全抽出データ:', extractedData);
-  console.log('[convertOCRToSupplierQuote] vendorNameフィールドの値:', extractedData.vendorName);
+  logger.debug('[convertOCRToSupplierQuote] 全抽出データ:', extractedData);
+  logger.debug('[convertOCRToSupplierQuote] vendorNameフィールドの値:', extractedData.vendorName);
   
   // 仕入先情報の改善された抽出
   const vendorInfo = extractVendorInformation(extractedData);
@@ -236,19 +237,19 @@ async function convertOCRToSupplierQuote(ocrResult: any) {
   // 特定のケースの修正：株式会社 ピアソラは顧客なので、正しい仕入先に修正
   if (vendorName === '株式会社 ピアソラ' || vendorName === '株式会社ピアソラ') {
     vendorName = '合同会社アソウタイセイプリンティング';
-    console.log('[convertOCRToSupplierQuote] 仕入先名を修正: 株式会社 ピアソラ → 合同会社アソウタイセイプリンティング');
+    logger.debug('[convertOCRToSupplierQuote] 仕入先名を修正: 株式会社 ピアソラ → 合同会社アソウタイセイプリンティング');
   }
   
-  console.log('[convertOCRToSupplierQuote] 最終仕入先名:', vendorName);
+  logger.debug('[convertOCRToSupplierQuote] 最終仕入先名:', vendorName);
   
   // 項目の抽出（改善されたエクストラクターを使用）
-  console.log('[convertOCRToSupplierQuote] OCRデータ全体:', JSON.stringify(extractedData, null, 2));
+  logger.debug('[convertOCRToSupplierQuote] OCRデータ全体:', JSON.stringify(extractedData, null, 2));
   
   // itemsフィールドの内容を詳しく確認
   if (extractedData.items && Array.isArray(extractedData.items)) {
-    console.log('[convertOCRToSupplierQuote] items配列の詳細:');
+    logger.debug('[convertOCRToSupplierQuote] items配列の詳細:');
     extractedData.items.forEach((item: any, index: number) => {
-      console.log(`  アイテム[${index}]:`, JSON.stringify(item, null, 2));
+      logger.debug(`  アイテム[${index}]:`, JSON.stringify(item, null, 2));
     });
   }
   
@@ -256,13 +257,13 @@ async function convertOCRToSupplierQuote(ocrResult: any) {
   const tableFields = ['tables', 'Tables', 'lineItems', 'LineItems', 'invoiceItems', 'InvoiceItems'];
   for (const field of tableFields) {
     if (extractedData[field]) {
-      console.log(`[convertOCRToSupplierQuote] ${field}フィールド発見:`, JSON.stringify(extractedData[field], null, 2));
+      logger.debug(`[convertOCRToSupplierQuote] ${field}フィールド発見:`, JSON.stringify(extractedData[field], null, 2));
     }
   }
   
   // まずtablesとpagesデータを確認
-  console.log('[convertOCRToSupplierQuote] tablesデータ:', extractedData.tables);
-  console.log('[convertOCRToSupplierQuote] pagesデータ:', extractedData.pages);
+  logger.debug('[convertOCRToSupplierQuote] tablesデータ:', extractedData.tables);
+  logger.debug('[convertOCRToSupplierQuote] pagesデータ:', extractedData.pages);
   
   // OCRItemExtractorを使用して商品情報を抽出
   let items = OCRItemExtractor.extractItemsFromOCR(extractedData);
@@ -273,7 +274,7 @@ async function convertOCRToSupplierQuote(ocrResult: any) {
     remarks: item.remarks || ''
   }));
   
-  console.log('[convertOCRToSupplierQuote] 抽出された項目:', items);
+  logger.debug('[convertOCRToSupplierQuote] 抽出された項目:', items);
   
   // 金額抽出の改善（複数のフィールドを確認）
   const extractAmount = (value: any): number => {
@@ -297,15 +298,15 @@ async function convertOCRToSupplierQuote(ocrResult: any) {
   
   if (typeof extractedData.totalAmount === 'number') {
     totalAmountFromOCR = extractedData.totalAmount;
-    console.log('[convertOCRToSupplierQuote] DeepSeek AI totalAmount:', totalAmountFromOCR);
+    logger.debug('[convertOCRToSupplierQuote] DeepSeek AI totalAmount:', totalAmountFromOCR);
   }
   if (typeof extractedData.taxAmount === 'number') {
     taxAmountFromOCR = extractedData.taxAmount;
-    console.log('[convertOCRToSupplierQuote] DeepSeek AI taxAmount:', taxAmountFromOCR);
+    logger.debug('[convertOCRToSupplierQuote] DeepSeek AI taxAmount:', taxAmountFromOCR);
   }
   if (typeof extractedData.subtotal === 'number') {
     subtotalFromOCR = extractedData.subtotal;
-    console.log('[convertOCRToSupplierQuote] DeepSeek AI subtotal:', subtotalFromOCR);
+    logger.debug('[convertOCRToSupplierQuote] DeepSeek AI subtotal:', subtotalFromOCR);
   }
   
   // フォールバックとして他のフィールドも確認
@@ -321,7 +322,7 @@ async function convertOCRToSupplierQuote(ocrResult: any) {
                        extractAmount(extractedData.TotalTax) || 0;
   }
 
-  console.log('[convertOCRToSupplierQuote] 抽出された金額:', {
+  logger.debug('[convertOCRToSupplierQuote] 抽出された金額:', {
     totalAmountFromOCR,
     taxAmountFromOCR,
     originalData: {
@@ -350,7 +351,7 @@ async function convertOCRToSupplierQuote(ocrResult: any) {
         remarks: ''
       });
       
-      console.log('[convertOCRToSupplierQuote] 新規項目を作成:', items[0]);
+      logger.debug('[convertOCRToSupplierQuote] 新規項目を作成:', items[0]);
     }
   }
   
@@ -365,7 +366,7 @@ async function convertOCRToSupplierQuote(ocrResult: any) {
     subtotal = subtotalFromOCR;
     taxAmount = taxAmountFromOCR;
     totalAmount = totalAmountFromOCR;
-    console.log('[convertOCRToSupplierQuote] DeepSeek AIの金額を使用');
+    logger.debug('[convertOCRToSupplierQuote] DeepSeek AIの金額を使用');
   } else {
     // アイテムから計算
     subtotal = items.reduce((sum: number, item: any) => sum + (item.amount || 0), 0);
@@ -393,7 +394,7 @@ async function convertOCRToSupplierQuote(ocrResult: any) {
     }
   }
   
-  console.log('[convertOCRToSupplierQuote] 最終計算:', {
+  logger.debug('[convertOCRToSupplierQuote] 最終計算:', {
     subtotal,
     calculatedTaxAmount,
     taxAmountFromOCR,
@@ -411,10 +412,10 @@ async function convertOCRToSupplierQuote(ocrResult: any) {
       const parsedDate = new Date(extractedData.issueDate);
       if (!isNaN(parsedDate.getTime())) {
         issueDate = parsedDate.toISOString();
-        console.log('[convertOCRToSupplierQuote] DeepSeek AI issueDate:', issueDate);
+        logger.debug('[convertOCRToSupplierQuote] DeepSeek AI issueDate:', issueDate);
       }
     } catch (e) {
-      console.log('[convertOCRToSupplierQuote] issueDateパースエラー:', e);
+      logger.debug('[convertOCRToSupplierQuote] issueDateパースエラー:', e);
     }
   }
   
@@ -427,7 +428,7 @@ async function convertOCRToSupplierQuote(ocrResult: any) {
     extractedData.date
   ];
   
-  console.log('[convertOCRToSupplierQuote] 日付フィールドの確認:', dateFields);
+  logger.debug('[convertOCRToSupplierQuote] 日付フィールドの確認:', dateFields);
   
   for (const dateField of dateFields) {
     if (dateField && typeof dateField === 'string') {
@@ -447,7 +448,7 @@ async function convertOCRToSupplierQuote(ocrResult: any) {
         const parsedDate = new Date(normalizedDate);
         if (!isNaN(parsedDate.getTime()) && parsedDate.getFullYear() > 2000) {
           issueDate = parsedDate.toISOString();
-          console.log('[convertOCRToSupplierQuote] 発行日を正常に抽出:', {
+          logger.debug('[convertOCRToSupplierQuote] 発行日を正常に抽出:', {
             original: dateField,
             normalized: normalizedDate,
             parsed: issueDate
@@ -455,7 +456,7 @@ async function convertOCRToSupplierQuote(ocrResult: any) {
           break;
         }
       } catch (error) {
-        console.log('[convertOCRToSupplierQuote] 日付変換エラー:', dateField, error);
+        logger.debug('[convertOCRToSupplierQuote] 日付変換エラー:', dateField, error);
       }
     }
   }
@@ -467,7 +468,7 @@ async function convertOCRToSupplierQuote(ocrResult: any) {
                       extractedData.paymentTerm || extractedData.PaymentTerm || '';
   const quotationValidity = extractedData.quotationValidity || extractedData.QuotationValidity || '';
   
-  console.log('[convertOCRToSupplierQuote] 追加フィールド:', {
+  logger.debug('[convertOCRToSupplierQuote] 追加フィールド:', {
     subject,
     deliveryLocation,
     paymentTerms,
@@ -503,7 +504,7 @@ async function convertOCRToSupplierQuote(ocrResult: any) {
   };
   
   // デバッグログ: 仕入先情報の詳細を出力
-  console.log('[convertOCRToSupplierQuote] 仕入先情報の詳細:', {
+  logger.debug('[convertOCRToSupplierQuote] 仕入先情報の詳細:', {
     vendorName,
     vendorAddress: vendorInfo.address,
     vendorPhone: vendorInfo.phone,
@@ -534,12 +535,12 @@ async function convertOCRToSupplierQuote(ocrResult: any) {
       
       if (vendorResponse.ok) {
         const vendor = await vendorResponse.json();
-        console.log('[convertOCRToSupplierQuote] 仕入先を作成:', vendor);
+        logger.debug('[convertOCRToSupplierQuote] 仕入先を作成:', vendor);
       } else {
-        console.log('[convertOCRToSupplierQuote] 仕入先作成失敗（既存の可能性）');
+        logger.debug('[convertOCRToSupplierQuote] 仕入先作成失敗（既存の可能性）');
       }
     } catch (error) {
-      console.error('[convertOCRToSupplierQuote] 仕入先作成エラー:', error);
+      logger.error('[convertOCRToSupplierQuote] 仕入先作成エラー:', error);
     }
   }
   
@@ -554,16 +555,16 @@ async function convertOCRToSupplierQuote(ocrResult: any) {
   
   if (!response.ok) {
     const errorData = await response.text();
-    console.error('[convertOCRToSupplierQuote] API Error:', errorData);
+    logger.error('[convertOCRToSupplierQuote] API Error:', errorData);
     throw new Error('仕入先見積書の作成に失敗しました');
   }
   
   const result = await response.json();
-  console.log('[convertOCRToSupplierQuote] API Response:', result);
+  logger.debug('[convertOCRToSupplierQuote] API Response:', result);
   
   // IDの確認
   if (!result._id && !result.id) {
-    console.error('[convertOCRToSupplierQuote] No ID in response:', result);
+    logger.error('[convertOCRToSupplierQuote] No ID in response:', result);
   }
   
   // _idをidに変換（フロントエンドで一貫性を保つため）
@@ -573,7 +574,7 @@ async function convertOCRToSupplierQuote(ocrResult: any) {
   
   return result;
   } catch (error) {
-    console.error('[convertOCRToSupplierQuote] エラー詳細:', {
+    logger.error('[convertOCRToSupplierQuote] エラー詳細:', {
       error: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined,
       ocrResult: ocrResult
@@ -637,7 +638,7 @@ function NewDocumentContent() {
 
       const result = await response.json();
       
-      console.log('[Documents New] OCR Response:', result);
+      logger.debug('[Documents New] OCR Response:', result);
       
       if (result.success) {
         toast.success(successMessage);
@@ -647,7 +648,7 @@ function NewDocumentContent() {
           try {
             // DeepSeek AIの結果にファイルIDを追加
             if (result.fileId || result.file || result.documentId) {
-              console.log('[Documents New] File ID found in OCR result:', {
+              logger.debug('[Documents New] File ID found in OCR result:', {
                 fileId: result.fileId,
                 file: result.file,
                 documentId: result.documentId
@@ -655,10 +656,10 @@ function NewDocumentContent() {
             }
             
             const supplierQuoteData = await convertOCRToSupplierQuote(result);
-            console.log('[Documents New] Created supplier quote:', supplierQuoteData.id);
+            logger.debug('[Documents New] Created supplier quote:', supplierQuoteData.id);
             router.push(`/supplier-quotes/${supplierQuoteData.id}`);
           } catch (error) {
-            console.error('Supplier quote creation error:', error);
+            logger.error('Supplier quote creation error:', error);
             toast.error('仕入先見積書の作成に失敗しました');
             router.push(redirectPath);
           }
@@ -666,7 +667,7 @@ function NewDocumentContent() {
           try {
             // DeepSeek AIの結果にファイルIDを追加
             if (result.fileId || result.file || result.documentId) {
-              console.log('[Documents New] File ID found in OCR result:', {
+              logger.debug('[Documents New] File ID found in OCR result:', {
                 fileId: result.fileId,
                 file: result.file,
                 documentId: result.documentId
@@ -674,10 +675,10 @@ function NewDocumentContent() {
             }
             
             const purchaseInvoiceData = await convertOCRToPurchaseInvoice(result);
-            console.log('[Documents New] Created purchase invoice:', purchaseInvoiceData.id);
+            logger.debug('[Documents New] Created purchase invoice:', purchaseInvoiceData.id);
             router.push(`/purchase-invoices/${purchaseInvoiceData.id}`);
           } catch (error) {
-            console.error('Purchase invoice creation error:', error);
+            logger.error('Purchase invoice creation error:', error);
             toast.error('仕入請求書の作成に失敗しました');
             router.push(redirectPath);
           }
@@ -688,7 +689,7 @@ function NewDocumentContent() {
         throw new Error(result.error || 'OCR処理に失敗しました');
       }
     } catch (error) {
-      console.error('Upload error:', error);
+      logger.error('Upload error:', error);
       toast.error(error instanceof Error ? error.message : 'アップロードに失敗しました');
     } finally {
       setLoading(false);

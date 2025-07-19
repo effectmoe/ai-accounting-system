@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import { logger } from '@/lib/logger';
 import { 
   Send, 
   Bot, 
@@ -177,7 +178,7 @@ export default function KnowledgeChatDialog({
       setMessages(prev => [...prev, assistantMessage]);
 
     } catch (error) {
-      console.error('Knowledge chat error:', error);
+      logger.error('Knowledge chat error:', error);
       setError(error instanceof Error ? error.message : 'エラーが発生しました');
     } finally {
       setIsLoading(false);

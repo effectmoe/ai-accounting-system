@@ -1,5 +1,6 @@
 import { OCRResult } from './ocr-processor';
 
+import { logger } from '@/lib/logger';
 export class GASWebAppOCRProcessor {
   private gasOcrUrl: string;
 
@@ -37,7 +38,7 @@ export class GASWebAppOCRProcessor {
       } catch (jsonError) {
         // JSONパースに失敗した場合、レスポンスをテキストとして取得してエラーを詳しく記録
         const responseText = await response.text();
-        console.error('GAS OCR Response (not JSON):', responseText.substring(0, 200));
+        logger.error('GAS OCR Response (not JSON):', responseText.substring(0, 200));
         throw new Error(`GAS OCRがJSONを返しませんでした: ${responseText.substring(0, 100)}...`);
       }
 
@@ -54,7 +55,7 @@ export class GASWebAppOCRProcessor {
         ...structuredData,
       };
     } catch (error) {
-      console.error('GAS OCR処理エラー:', error);
+      logger.error('GAS OCR処理エラー:', error);
       throw new Error(`OCR処理に失敗しました: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }

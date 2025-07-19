@@ -2,6 +2,7 @@ import { db, Collections } from '@/lib/mongodb-client';
 import { ObjectId } from 'mongodb';
 import { SpeechSettings } from '@/types/collections';
 
+import { logger } from '@/lib/logger';
 export interface CompanyInfo {
   _id?: ObjectId;
   companyName: string;
@@ -43,7 +44,7 @@ export class CompanyInfoService {
       const companies = await db.find<CompanyInfo>(this.collectionName, {}, { limit: 1 });
       return companies.length > 0 ? companies[0] : null;
     } catch (error) {
-      console.error('Error in getCompanyInfo:', error);
+      logger.error('Error in getCompanyInfo:', error);
       throw new Error('会社情報の取得に失敗しました');
     }
   }
@@ -53,7 +54,7 @@ export class CompanyInfoService {
    */
   async upsertCompanyInfo(companyData: Omit<CompanyInfo, '_id' | 'createdAt' | 'updatedAt'>): Promise<CompanyInfo> {
     try {
-      console.log('upsertCompanyInfo called with data:', {
+      logger.debug('upsertCompanyInfo called with data:', {
         ...companyData,
         logoImage: companyData.logoImage ? '[BASE64_IMAGE]' : null,
         stampImage: companyData.stampImage ? '[BASE64_IMAGE]' : null,
@@ -61,15 +62,15 @@ export class CompanyInfoService {
 
       // 既存の会社情報を取得
       const existingInfo = await this.getCompanyInfo();
-      console.log('Existing company info found:', !!existingInfo);
+      logger.debug('Existing company info found:', !!existingInfo);
 
       if (existingInfo && existingInfo._id) {
         // 更新
-        console.log('Updating existing company info with ID:', existingInfo._id);
+        logger.debug('Updating existing company info with ID:', existingInfo._id);
         
         // _idフィールドを除外して更新データを準備
         const { _id, createdAt, updatedAt, ...updateData } = { ...companyData } as any;
-        console.log('Update data prepared:', {
+        logger.debug('Update data prepared:', {
           ...updateData,
           logoImage: updateData.logoImage ? '[BASE64_IMAGE]' : null,
           stampImage: updateData.stampImage ? '[BASE64_IMAGE]' : null,
@@ -85,17 +86,17 @@ export class CompanyInfoService {
           throw new Error('会社情報の更新に失敗しました');
         }
         
-        console.log('Company info updated successfully');
+        logger.debug('Company info updated successfully');
         return updated;
       } else {
         // 新規作成
-        console.log('Creating new company info');
+        logger.debug('Creating new company info');
         const created = await db.create<CompanyInfo>(this.collectionName, companyData);
-        console.log('Company info created successfully');
+        logger.debug('Company info created successfully');
         return created;
       }
     } catch (error) {
-      console.error('Error in upsertCompanyInfo:', error);
+      logger.error('Error in upsertCompanyInfo:', error);
       throw new Error('会社情報の保存に失敗しました');
     }
   }
@@ -122,7 +123,7 @@ export class CompanyInfoService {
 
       return updated;
     } catch (error) {
-      console.error('Error in updateCompanyInfo:', error);
+      logger.error('Error in updateCompanyInfo:', error);
       throw new Error('会社情報の更新に失敗しました');
     }
   }
@@ -140,7 +141,7 @@ export class CompanyInfoService {
 
       return await db.delete(this.collectionName, existingInfo._id);
     } catch (error) {
-      console.error('Error in deleteCompanyInfo:', error);
+      logger.error('Error in deleteCompanyInfo:', error);
       throw new Error('会社情報の削除に失敗しました');
     }
   }
@@ -184,7 +185,7 @@ export class CompanyInfoService {
       
       return invoiceNumber;
     } catch (error) {
-      console.error('Error in generateInvoiceNumber:', error);
+      logger.error('Error in generateInvoiceNumber:', error);
       // エラーの場合はデフォルトフォーマットで生成
       const timestamp = new Date().getTime();
       return `INV-${timestamp}`;

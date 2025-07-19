@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { logger } from '@/lib/logger';
 // Selectコンポーネントは使用せず、ネイティブのselect要素を使用
 import { Loader2, Plus, Trash2, Sparkles, MessageSquare, ChevronDown, CheckCircle, FileText, Edit } from 'lucide-react';
 import { format } from 'date-fns';
@@ -118,34 +119,34 @@ function NewInvoiceContent() {
         }
       }
     } catch (error) {
-      console.error('Error fetching company info:', error);
+      logger.error('Error fetching company info:', error);
     }
   };
 
   const fetchCustomers = async () => {
     try {
-      console.log('Fetching customers...');
+      logger.debug('Fetching customers...');
       const response = await fetch('/api/customers');
-      console.log('Response status:', response.status);
+      logger.debug('Response status:', response.status);
       
       if (response.ok) {
         const data = await response.json();
-        console.log('Fetched data:', data);
-        console.log('Data type:', typeof data);
-        console.log('Is array:', Array.isArray(data));
-        console.log('Has customers property:', data && typeof data === 'object' && 'customers' in data);
+        logger.debug('Fetched data:', data);
+        logger.debug('Data type:', typeof data);
+        logger.debug('Is array:', Array.isArray(data));
+        logger.debug('Has customers property:', data && typeof data === 'object' && 'customers' in data);
         
         // データ構造に応じて顧客リストを設定
         let rawCustomers: any[] = [];
         
         if (data.customers && Array.isArray(data.customers)) {
-          console.log('Setting customers from data.customers:', data.customers);
+          logger.debug('Setting customers from data.customers:', data.customers);
           rawCustomers = data.customers;
         } else if (Array.isArray(data)) {
-          console.log('Setting customers from array:', data);
+          logger.debug('Setting customers from array:', data);
           rawCustomers = data;
         } else {
-          console.error('Unexpected customer data format:', data);
+          logger.error('Unexpected customer data format:', data);
           setError('顧客データの取得に失敗しました');
           setCustomers([]);
           return;
@@ -155,13 +156,13 @@ function NewInvoiceContent() {
         const validCustomers = rawCustomers.filter((c: any) => {
           // nullやundefinedをチェック
           if (!c || typeof c !== 'object') {
-            console.warn('Invalid customer data:', c);
+            logger.warn('Invalid customer data:', c);
             return false;
           }
           
           // _idプロパティの存在をチェック
           if (!('_id' in c) || !c._id) {
-            console.warn('Customer missing _id:', c);
+            logger.warn('Customer missing _id:', c);
             return false;
           }
           
@@ -171,26 +172,26 @@ function NewInvoiceContent() {
                          ('company' in c && c.company);
           
           if (!hasName) {
-            console.warn('Customer missing name fields:', c);
+            logger.warn('Customer missing name fields:', c);
           }
           
           return true;
         });
         
-        console.log('Valid customers count:', validCustomers.length);
+        logger.debug('Valid customers count:', validCustomers.length);
         if (validCustomers.length > 0) {
-          console.log('First valid customer structure:', validCustomers[0]);
+          logger.debug('First valid customer structure:', validCustomers[0]);
         }
         
         setCustomers(validCustomers);
       } else {
-        console.error('Failed to fetch customers:', response.status);
+        logger.error('Failed to fetch customers:', response.status);
         const errorText = await response.text();
-        console.error('Error response:', errorText);
+        logger.error('Error response:', errorText);
         setError('顧客データの取得に失敗しました');
       }
     } catch (error) {
-      console.error('Failed to fetch customers:', error);
+      logger.error('Failed to fetch customers:', error);
       setError('顧客データの取得に失敗しました');
     }
   };
@@ -201,7 +202,7 @@ function NewInvoiceContent() {
       const response = await fetch('/api/products?isActive=true');
       if (response.ok) {
         const data = await response.json();
-        console.log('Products data:', data);
+        logger.debug('Products data:', data);
         // データ構造に応じて商品リストを設定
         let rawProducts: any[] = [];
         
@@ -210,7 +211,7 @@ function NewInvoiceContent() {
         } else if (Array.isArray(data)) {
           rawProducts = data;
         } else {
-          console.error('Unexpected product data format:', data);
+          logger.error('Unexpected product data format:', data);
           setProducts([]);
           return;
         }
@@ -222,10 +223,10 @@ function NewInvoiceContent() {
         
         setProducts(validProducts);
       } else {
-        console.error('Failed to fetch products:', response.status);
+        logger.error('Failed to fetch products:', response.status);
       }
     } catch (error) {
-      console.error('Failed to fetch products:', error);
+      logger.error('Failed to fetch products:', error);
       setProducts([]);
     }
   };
@@ -265,7 +266,7 @@ function NewInvoiceContent() {
       const bankResponse = await fetch('/api/bank-accounts');
       if (bankResponse.ok) {
         const bankData = await bankResponse.json();
-        console.log('Bank data:', bankData);
+        logger.debug('Bank data:', bankData);
         
         if (bankData.success && bankData.accounts && Array.isArray(bankData.accounts)) {
           const defaultAccount = bankData.accounts.find(account => account.is_default);
@@ -291,7 +292,7 @@ function NewInvoiceContent() {
         setNotes(defaultNotes);
       }
     } catch (error) {
-      console.error('Failed to fetch default bank info:', error);
+      logger.error('Failed to fetch default bank info:', error);
     }
   };
 
@@ -325,7 +326,7 @@ function NewInvoiceContent() {
         setSuccessMessage('会話から請求内容を抽出しました。内容を確認してください。');
       }
     } catch (error) {
-      console.error('Error analyzing conversation:', error);
+      logger.error('Error analyzing conversation:', error);
       setError('会話の解析に失敗しました');
     } finally {
       setIsAnalyzing(false);
@@ -334,8 +335,8 @@ function NewInvoiceContent() {
 
   // AIチャットダイアログからのデータを適用
   const handleAIChatComplete = (invoiceData: any) => {
-    console.log('[InvoiceNew] Received data from AI chat:', invoiceData);
-    console.log('[InvoiceNew] Data details:', {
+    logger.debug('[InvoiceNew] Received data from AI chat:', invoiceData);
+    logger.debug('[InvoiceNew] Data details:', {
       items: invoiceData.items,
       subtotal: invoiceData.subtotal,
       taxAmount: invoiceData.taxAmount,
@@ -344,9 +345,9 @@ function NewInvoiceContent() {
     
     // 各項目の詳細をログ出力
     if (invoiceData.items && invoiceData.items.length > 0) {
-      console.log('[InvoiceNew] Items received:');
+      logger.debug('[InvoiceNew] Items received:');
       invoiceData.items.forEach((item: any, index: number) => {
-        console.log(`[InvoiceNew] Item ${index}:`, {
+        logger.debug(`[InvoiceNew] Item ${index}:`, {
           description: item.description,
           quantity: item.quantity,
           unitPrice: item.unitPrice,
@@ -461,7 +462,7 @@ function NewInvoiceContent() {
       // エラーメッセージをクリア
       setError(null);
     } catch (error) {
-      console.error('Error registering product:', error);
+      logger.error('Error registering product:', error);
       setError(error instanceof Error ? error.message : '商品の登録に失敗しました');
     }
   };
@@ -528,7 +529,7 @@ function NewInvoiceContent() {
       // 新規顧客の場合は先に作成
       let customerId = selectedCustomerId;
       if (!customerId && customerName) {
-        console.log('Creating new customer:', customerName);
+        logger.debug('Creating new customer:', customerName);
         const customerResponse = await fetch('/api/customers', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -540,13 +541,13 @@ function NewInvoiceContent() {
         
         if (!customerResponse.ok) {
           const errorData = await customerResponse.json();
-          console.error('Customer creation failed:', errorData);
+          logger.error('Customer creation failed:', errorData);
           throw new Error(errorData.error || 'Failed to create customer');
         }
         
         const newCustomer = await customerResponse.json();
         customerId = newCustomer._id;
-        console.log('New customer created:', customerId);
+        logger.debug('New customer created:', customerId);
       }
 
       // 請求書を作成
@@ -561,7 +562,7 @@ function NewInvoiceContent() {
         aiConversationId,
       };
 
-      console.log('Creating invoice with data:', invoiceData);
+      logger.debug('Creating invoice with data:', invoiceData);
 
       const response = await fetch('/api/invoices', {
         method: 'POST',
@@ -571,15 +572,15 @@ function NewInvoiceContent() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.error('Invoice creation failed:', errorData);
+        logger.error('Invoice creation failed:', errorData);
         throw new Error(errorData.details || errorData.error || 'Failed to create invoice');
       }
 
       const invoice = await response.json();
-      console.log('Invoice created successfully:', invoice);
+      logger.debug('Invoice created successfully:', invoice);
       router.push(`/invoices/${invoice._id}`);
     } catch (error) {
-      console.error('Error saving invoice:', error);
+      logger.error('Error saving invoice:', error);
       setError(error instanceof Error ? error.message : '請求書の作成に失敗しました');
     } finally {
       setIsLoading(false);
@@ -696,7 +697,7 @@ function NewInvoiceContent() {
                     id="customer"
                     value={selectedCustomerId}
                     onChange={(e) => {
-                      console.log('Selected customer ID:', e.target.value);
+                      logger.debug('Selected customer ID:', e.target.value);
                       setSelectedCustomerId(e.target.value);
                       // 既存顧客を選択した場合、新規顧客名をクリア
                       if (e.target.value) {

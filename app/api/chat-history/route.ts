@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getChatHistoryService } from '@/services/chat-history.service';
 
+import { logger } from '@/lib/logger';
 /**
  * GET /api/chat-history
  * チャットセッション一覧の取得
@@ -49,7 +50,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Chat history GET error:', error);
+    logger.error('Chat history GET error:', error);
     return NextResponse.json(
       {
         success: false,
@@ -79,7 +80,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Chat history POST error:', error);
+    logger.error('Chat history POST error:', error);
     return NextResponse.json(
       {
         success: false,
@@ -119,7 +120,7 @@ export async function DELETE(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Chat history DELETE error:', error);
+    logger.error('Chat history DELETE error:', error);
     return NextResponse.json(
       {
         success: false,

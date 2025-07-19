@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDatabase } from '@/lib/mongodb-client';
 import { ObjectId, GridFSBucket } from 'mongodb';
 
+import { logger } from '@/lib/logger';
 interface RouteParams {
   params: {
     id: string;
@@ -11,7 +12,7 @@ interface RouteParams {
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const fileId = params.id;
-    console.log('Test API - File ID:', fileId);
+    logger.debug('Test API - File ID:', fileId);
 
     if (!fileId || !ObjectId.isValid(fileId)) {
       return NextResponse.json({
@@ -61,7 +62,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     });
 
   } catch (error) {
-    console.error('File test error:', error);
+    logger.error('File test error:', error);
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to test file'

@@ -4,6 +4,7 @@ import { Quote, QuoteStatus, QuoteItem, Customer, BankAccount, Invoice } from '@
 import { CompanyInfoService } from './company-info.service';
 import { InvoiceService } from './invoice.service';
 
+import { logger } from '@/lib/logger';
 export interface QuoteSearchParams {
   customerId?: string;
   status?: QuoteStatus;
@@ -113,7 +114,7 @@ export class QuoteService {
         hasMore,
       };
     } catch (error) {
-      console.error('Error in searchQuotes:', error);
+      logger.error('Error in searchQuotes:', error);
       throw new Error('見積書の検索に失敗しました');
     }
   }
@@ -163,7 +164,7 @@ export class QuoteService {
       const created = await db.create<Quote>(this.collectionName, quote);
       return created;
     } catch (error) {
-      console.error('Error in createQuote:', error);
+      logger.error('Error in createQuote:', error);
       throw error instanceof Error ? error : new Error('見積書の作成に失敗しました');
     }
   }
@@ -173,16 +174,16 @@ export class QuoteService {
    */
   async getQuote(id: string): Promise<Quote | null> {
     try {
-      console.log('[QuoteService] getQuote called with ID:', id);
+      logger.debug('[QuoteService] getQuote called with ID:', id);
       
       const quote = await db.findById<Quote>(this.collectionName, id);
       
       if (!quote) {
-        console.log('[QuoteService] No quote found for ID:', id);
+        logger.debug('[QuoteService] No quote found for ID:', id);
         return null;
       }
       
-      console.log('[QuoteService] Quote found:', {
+      logger.debug('[QuoteService] Quote found:', {
         _id: quote._id,
         quoteNumber: quote.quoteNumber
       });
@@ -199,7 +200,7 @@ export class QuoteService {
 
       return quote;
     } catch (error) {
-      console.error('Error in getQuote:', error);
+      logger.error('Error in getQuote:', error);
       throw new Error('見積書の取得に失敗しました');
     }
   }
@@ -209,7 +210,7 @@ export class QuoteService {
    */
   async updateQuote(id: string, updateData: Partial<Quote>): Promise<Quote | null> {
     try {
-      console.log('[QuoteService] updateQuote called with:', {
+      logger.debug('[QuoteService] updateQuote called with:', {
         id,
         updateData: JSON.stringify(updateData, null, 2)
       });
@@ -269,7 +270,7 @@ export class QuoteService {
 
       return updated;
     } catch (error) {
-      console.error('Error in updateQuote:', error);
+      logger.error('Error in updateQuote:', error);
       throw error instanceof Error ? error : new Error('見積書の更新に失敗しました');
     }
   }
@@ -281,7 +282,7 @@ export class QuoteService {
     try {
       return await db.delete(this.collectionName, id);
     } catch (error) {
-      console.error('Error in deleteQuote:', error);
+      logger.error('Error in deleteQuote:', error);
       throw new Error('見積書の削除に失敗しました');
     }
   }
@@ -303,7 +304,7 @@ export class QuoteService {
 
       return await this.updateQuote(id, updateData);
     } catch (error) {
-      console.error('Error in updateQuoteStatus:', error);
+      logger.error('Error in updateQuoteStatus:', error);
       throw new Error('見積書ステータスの更新に失敗しました');
     }
   }
@@ -354,7 +355,7 @@ export class QuoteService {
       
       return quoteNumber;
     } catch (error) {
-      console.error('Error in generateQuoteNumber:', error);
+      logger.error('Error in generateQuoteNumber:', error);
       // エラーの場合はタイムスタンプベースの番号を生成
       const timestamp = new Date().getTime();
       return `QUO-${timestamp}`;
@@ -428,7 +429,7 @@ export class QuoteService {
 
       return invoice;
     } catch (error) {
-      console.error('Error in convertToInvoice:', error);
+      logger.error('Error in convertToInvoice:', error);
       throw error instanceof Error ? error : new Error('見積書から請求書への変換に失敗しました');
     }
   }
@@ -472,7 +473,7 @@ export class QuoteService {
 
       return await db.aggregate(this.collectionName, pipeline);
     } catch (error) {
-      console.error('Error in getMonthlyAggregation:', error);
+      logger.error('Error in getMonthlyAggregation:', error);
       throw new Error('月次集計の取得に失敗しました');
     }
   }

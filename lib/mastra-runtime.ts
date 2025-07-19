@@ -2,6 +2,7 @@
 import { Agent } from './base-agent';
 import { Workflow } from './base-workflow';
 
+import { logger } from '@/lib/logger';
 export interface MastraConfig {
   name: string;
   version: string;
@@ -34,17 +35,17 @@ export class Mastra {
   }
   
   async init(): Promise<void> {
-    console.log(`[Mastra] Initializing ${this.config.name}...`);
+    logger.debug(`[Mastra] Initializing ${this.config.name}...`);
     // Initialization logic
   }
   
   async start(): Promise<void> {
-    console.log(`[Mastra] Starting ${this.config.name}...`);
+    logger.debug(`[Mastra] Starting ${this.config.name}...`);
     // Start runtime
   }
   
   async stop(): Promise<void> {
-    console.log(`[Mastra] Stopping ${this.config.name}...`);
+    logger.debug(`[Mastra] Stopping ${this.config.name}...`);
     // Cleanup
   }
   
@@ -62,7 +63,7 @@ export class Mastra {
       throw new Error(`Agent '${agentName}' not found`);
     }
     
-    console.log(`[Mastra] Executing agent: ${agentName}`);
+    logger.debug(`[Mastra] Executing agent: ${agentName}`);
     return await agent.execute(input);
   }
   
@@ -72,7 +73,7 @@ export class Mastra {
       throw new Error(`Workflow '${workflowName}' not found`);
     }
     
-    console.log(`[Mastra] Executing workflow: ${workflowName}`);
+    logger.debug(`[Mastra] Executing workflow: ${workflowName}`);
     
     // Validate input
     const validatedInput = workflow.input.parse(input);

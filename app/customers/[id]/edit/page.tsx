@@ -7,6 +7,7 @@ import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { Customer, Contact } from '@/types/collections';
 
+import { logger } from '@/lib/logger';
 interface CustomerForm {
   customerId: string;
   companyName: string;
@@ -96,7 +97,7 @@ export default function EditCustomerPage() {
           throw new Error(data.error || '顧客データの取得に失敗しました');
         }
       } catch (error) {
-        console.error('Error loading customer:', error);
+        logger.error('Error loading customer:', error);
         toast.error('顧客データの読み込みに失敗しました');
         router.push('/customers');
       } finally {
@@ -171,7 +172,7 @@ export default function EditCustomerPage() {
         throw new Error(data.error || '顧客情報の更新に失敗しました');
       }
     } catch (error) {
-      console.error('Error updating customer:', error);
+      logger.error('Error updating customer:', error);
       toast.error(error instanceof Error ? error.message : '顧客情報の更新に失敗しました');
     } finally {
       setSaving(false);

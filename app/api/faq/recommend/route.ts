@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { KnowledgeService } from '@/services/knowledge.service';
 import { ObjectId } from 'mongodb';
 
+import { logger } from '@/lib/logger';
 interface RecommendationRequest {
   faqId?: string;
   category?: string;
@@ -142,7 +143,7 @@ export async function POST(request: NextRequest) {
     });
     
   } catch (error) {
-    console.error('[FAQ Recommend API] Error:', error);
+    logger.error('[FAQ Recommend API] Error:', error);
     await knowledgeService.disconnect();
     
     return NextResponse.json(

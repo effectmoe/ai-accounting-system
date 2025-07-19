@@ -2,6 +2,7 @@ import { ObjectId } from 'mongodb';
 import { db } from '@/lib/mongodb-client';
 import { PurchaseInvoice, PurchaseInvoiceItem, PurchaseInvoiceStatus } from '@/types/collections';
 
+import { logger } from '@/lib/logger';
 export interface SearchPurchaseInvoicesParams {
   supplierId?: string;
   status?: PurchaseInvoiceStatus;
@@ -48,7 +49,7 @@ export class PurchaseInvoiceService {
    * 仕入請求書を作成
    */
   async createPurchaseInvoice(data: Partial<PurchaseInvoice>): Promise<PurchaseInvoice> {
-    console.log('[PurchaseInvoiceService] Creating purchase invoice with data:', JSON.stringify(data, null, 2));
+    logger.debug('[PurchaseInvoiceService] Creating purchase invoice with data:', JSON.stringify(data, null, 2));
     
     const now = new Date();
     const invoice: Partial<PurchaseInvoice> = {
@@ -106,7 +107,7 @@ export class PurchaseInvoiceService {
         
         // 税率の正規化: 10% -> 0.1に変換
         if (itemTaxRate > 1) {
-          console.log(`[PurchaseInvoiceService] Normalizing tax rate from ${itemTaxRate}% to ${itemTaxRate / 100}`);
+          logger.debug(`[PurchaseInvoiceService] Normalizing tax rate from ${itemTaxRate}% to ${itemTaxRate / 100}`);
           itemTaxRate = itemTaxRate / 100;
         }
         
@@ -139,8 +140,8 @@ export class PurchaseInvoiceService {
     }
 
     const result = await db.create(this.collection, invoice);
-    console.log('[PurchaseInvoiceService] Created purchase invoice:', result._id);
-    console.log('[PurchaseInvoiceService] Created invoice data:', {
+    logger.debug('[PurchaseInvoiceService] Created purchase invoice:', result._id);
+    logger.debug('[PurchaseInvoiceService] Created invoice data:', {
       id: result._id,
       hasNotes: !!result.notes,
       hasSupplierId: !!result.supplierId
@@ -156,7 +157,7 @@ export class PurchaseInvoiceService {
     const invoice = await db.findOne(this.collection, { _id: new ObjectId(id) });
     if (!invoice) return null;
     
-    console.log('[PurchaseInvoiceService] Retrieved invoice:', {
+    logger.debug('[PurchaseInvoiceService] Retrieved invoice:', {
       id: invoice._id,
       supplierId: invoice.supplierId,
       hasSupplier: !!invoice.supplier
@@ -184,7 +185,7 @@ export class PurchaseInvoiceService {
    * 仕入請求書を更新
    */
   async updatePurchaseInvoice(id: string, data: Partial<PurchaseInvoice>): Promise<PurchaseInvoice | null> {
-    console.log('[PurchaseInvoiceService] Updating purchase invoice:', id, JSON.stringify(data, null, 2));
+    logger.debug('[PurchaseInvoiceService] Updating purchase invoice:', id, JSON.stringify(data, null, 2));
     
     const updateData = {
       ...data,
@@ -207,7 +208,7 @@ export class PurchaseInvoiceService {
         
         // 税率の正規化: 10% -> 0.1に変換
         if (itemTaxRate > 1) {
-          console.log(`[PurchaseInvoiceService] Normalizing tax rate from ${itemTaxRate}% to ${itemTaxRate / 100}`);
+          logger.debug(`[PurchaseInvoiceService] Normalizing tax rate from ${itemTaxRate}% to ${itemTaxRate / 100}`);
           itemTaxRate = itemTaxRate / 100;
         }
         
@@ -330,7 +331,7 @@ export class PurchaseInvoiceService {
    * ステータスを更新
    */
   async updateStatus(id: string, status: PurchaseInvoiceStatus): Promise<PurchaseInvoice | null> {
-    console.log('[PurchaseInvoiceService] Updating status:', id, status);
+    logger.debug('[PurchaseInvoiceService] Updating status:', id, status);
     
     const updateData: any = {
       status,
@@ -368,7 +369,7 @@ export class PurchaseInvoiceService {
     paidDate?: Date;
     paymentReference?: string;
   }): Promise<PurchaseInvoice | null> {
-    console.log('[PurchaseInvoiceService] Updating payment:', id, paymentData);
+    logger.debug('[PurchaseInvoiceService] Updating payment:', id, paymentData);
     
     const updateData: any = {
       ...paymentData,

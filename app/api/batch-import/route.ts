@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { DatabaseService, Collections } from '@/lib/mongodb-client';
 
+import { logger } from '@/lib/logger';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -30,7 +31,7 @@ export async function POST(request: NextRequest) {
       message: 'バッチインポートを開始しました',
     });
   } catch (error) {
-    console.error('Batch import error:', error);
+    logger.error('Batch import error:', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'バッチインポートの開始に失敗しました' },
       { status: 500 }
@@ -72,7 +73,7 @@ export async function GET(request: NextRequest) {
       jobs: jobs || [],
     });
   } catch (error) {
-    console.error('Get batch import status error:', error);
+    logger.error('Get batch import status error:', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'バッチ情報の取得に失敗しました' },
       { status: 500 }

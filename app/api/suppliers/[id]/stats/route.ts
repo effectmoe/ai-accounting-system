@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { SupplierService } from '@/services/supplier.service';
 
+import { logger } from '@/lib/logger';
 // GET: 仕入先統計情報取得
 export async function GET(
   request: NextRequest,
@@ -10,7 +11,7 @@ export async function GET(
     const stats = await SupplierService.getSupplierStats(params.id);
     return NextResponse.json(stats);
   } catch (error: any) {
-    console.error('Error fetching supplier stats:', error);
+    logger.error('Error fetching supplier stats:', error);
     
     return NextResponse.json(
       { error: 'Failed to fetch supplier stats' },

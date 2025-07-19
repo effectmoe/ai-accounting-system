@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { createWorkflow } from '@mastra/core';
 
+import { logger } from '@/lib/logger';
 // 請求書処理ワークフローの入力スキーマ
 const invoiceProcessingWorkflowInputSchema = z.object({
   processingType: z.enum(['incoming_invoice', 'outgoing_invoice', 'bulk_processing']),
@@ -329,7 +330,7 @@ export const invoiceProcessingWorkflow = createWorkflow({
   // 実行ロジック
   execute: async ({ input, agents, context }) => {
     try {
-      console.log('[Invoice Processing Workflow] Starting processing:', input.processingType);
+      logger.debug('[Invoice Processing Workflow] Starting processing:', input.processingType);
       
       const results: any = {};
       let processedCount = 0;
@@ -345,11 +346,11 @@ export const invoiceProcessingWorkflow = createWorkflow({
       for (const step of invoiceProcessingWorkflow.steps) {
         // 条件チェック
         if (step.condition && !step.condition(input, results)) {
-          console.log(`[Invoice Processing Workflow] Skipping step: ${step.name}`);
+          logger.debug(`[Invoice Processing Workflow] Skipping step: ${step.name}`);
           continue;
         }
         
-        console.log(`[Invoice Processing Workflow] Executing step: ${step.name}`);
+        logger.debug(`[Invoice Processing Workflow] Executing step: ${step.name}`);
         
         // ステップの入力データを準備
         const stepInput = step.input(input, results);
@@ -364,7 +365,7 @@ export const invoiceProcessingWorkflow = createWorkflow({
         
         // エラーチェック
         if (!stepResult.success) {
-          console.warn(`[Invoice Processing Workflow] Step ${step.name} completed with issues:`, stepResult.error);
+          logger.warn(`[Invoice Processing Workflow] Step ${step.name} completed with issues:`, stepResult.error);
           // 請求書処理では、一部のステップが失敗してもワークフローを続行
         }
       }
@@ -379,7 +380,7 @@ export const invoiceProcessingWorkflow = createWorkflow({
       };
       
     } catch (error) {
-      console.error('[Invoice Processing Workflow] Error:', error);
+      logger.error('[Invoice Processing Workflow] Error:', error);
       throw error;
     }
   },

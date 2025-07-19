@@ -1,3 +1,5 @@
+import { logger } from '@/lib/logger';
+
 /**
  * 電話番号のプレフィックスを削除するユーティリティ関数
  */
@@ -51,7 +53,7 @@ export function cleanPhoneNumber(phone: string | undefined | null): string {
   
   // 変換結果をログ出力（デバッグ用）
   if (originalPhone !== cleanedPhone) {
-    console.log(`[cleanPhoneNumber] Cleaned phone number: "${originalPhone}" → "${cleanedPhone}"`);
+    logger.debug(`[cleanPhoneNumber] Cleaned phone number: "${originalPhone}" → "${cleanedPhone}"`);
   }
   
   return cleanedPhone;

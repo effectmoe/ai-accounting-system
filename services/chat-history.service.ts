@@ -4,6 +4,7 @@
  */
 
 import { MongoClient, Db, Collection, ObjectId } from 'mongodb';
+import { logger } from '@/lib/logger';
 import { 
   ChatSession, 
   ChatMessage, 
@@ -24,11 +25,11 @@ export class ChatHistoryService {
     const connectionString = process.env.MONGODB_URI;
     
     if (!connectionString) {
-      console.error('[ChatHistoryService] MONGODB_URI環境変数が設定されていません');
+      logger.error('[ChatHistoryService] MONGODB_URI環境変数が設定されていません');
       throw new Error('MONGODB_URI環境変数が必要です');
     }
     
-    console.log('[ChatHistoryService] MongoDB接続を初期化中...');
+    logger.debug('[ChatHistoryService] MongoDB接続を初期化中...');
     this.client = new MongoClient(connectionString);
   }
 
@@ -40,9 +41,9 @@ export class ChatHistoryService {
         this.sessions = this.db.collection<ChatSession>('chat_sessions');
         this.knowledgeSessions = this.db.collection<KnowledgeChatSession>('chat_sessions');
         this.isConnected = true;
-        console.log('[ChatHistoryService] MongoDBに接続成功');
+        logger.debug('[ChatHistoryService] MongoDBに接続成功');
       } catch (error) {
-        console.error('[ChatHistoryService] MongoDB接続エラー:', error);
+        logger.error('[ChatHistoryService] MongoDB接続エラー:', error);
         throw error;
       }
     }
@@ -149,7 +150,7 @@ export class ChatHistoryService {
   async getSession(sessionId: string): Promise<ChatSession | null> {
     await this.connect();
     
-    console.log(`[ChatHistoryService] セッション取得: ${sessionId}`);
+    logger.debug(`[ChatHistoryService] セッション取得: ${sessionId}`);
     
     // sessionIdフィールドで検索を試みる
     let session = await this.sessions.findOne({ sessionId });
@@ -160,17 +161,17 @@ export class ChatHistoryService {
         const objectId = new ObjectId(sessionId);
         session = await this.sessions.findOne({ _id: objectId });
         if (session) {
-          console.log(`[ChatHistoryService] _idで検索してセッション発見: ${sessionId}`);
+          logger.debug(`[ChatHistoryService] _idで検索してセッション発見: ${sessionId}`);
         }
       } catch (e) {
-        console.log(`[ChatHistoryService] ${sessionId}はObjectIdとして無効`);
+        logger.debug(`[ChatHistoryService] ${sessionId}はObjectIdとして無効`);
       }
     } else {
-      console.log(`[ChatHistoryService] sessionIdで検索してセッション発見: ${sessionId}`);
+      logger.debug(`[ChatHistoryService] sessionIdで検索してセッション発見: ${sessionId}`);
     }
     
     if (!session) {
-      console.log(`[ChatHistoryService] セッションが見つかりません: ${sessionId}`);
+      logger.debug(`[ChatHistoryService] セッションが見つかりません: ${sessionId}`);
     }
     
     return session;
@@ -208,7 +209,7 @@ export class ChatHistoryService {
       filter.userId = userId;
     }
 
-    console.log('[ChatHistoryService] セッション検索フィルター:', JSON.stringify(filter));
+    logger.debug('[ChatHistoryService] セッション検索フィルター:', JSON.stringify(filter));
 
     const sortOption: any = {};
     sortOption[sortBy] = sortOrder === 'desc' ? -1 : 1;
@@ -223,7 +224,7 @@ export class ChatHistoryService {
       this.sessions.countDocuments(filter)
     ]);
 
-    console.log(`[ChatHistoryService] 検索結果: ${sessions.length}件のセッション (全${total}件)`);
+    logger.debug(`[ChatHistoryService] 検索結果: ${sessions.length}件のセッション (全${total}件)`);
 
     return { sessions, total };
   }

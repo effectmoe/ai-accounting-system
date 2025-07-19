@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { logger } from '@/lib/logger';
 import { 
   ArrowLeft, 
   Download, 
@@ -81,7 +82,7 @@ export default function QuoteDetailPage({ params }: QuoteDetailPageProps) {
       const data = await response.json();
       setQuote(data);
     } catch (error) {
-      console.error('Error fetching quote:', error);
+      logger.error('Error fetching quote:', error);
       setError('見積書の取得に失敗しました');
     } finally {
       setIsLoading(false);
@@ -113,7 +114,7 @@ export default function QuoteDetailPage({ params }: QuoteDetailPageProps) {
         throw new Error('ステータス更新に失敗しました');
       }
     } catch (error) {
-      console.error('Error updating quote status:', error);
+      logger.error('Error updating quote status:', error);
       alert('ステータスの更新に失敗しました');
     } finally {
       setIsUpdatingStatus(false);
@@ -176,7 +177,7 @@ export default function QuoteDetailPage({ params }: QuoteDetailPageProps) {
         throw new Error(data.details || data.error || '変換に失敗しました');
       }
     } catch (error) {
-      console.error('Error converting quote to invoice:', error);
+      logger.error('Error converting quote to invoice:', error);
       alert(`変換エラー: ${error instanceof Error ? error.message : '不明なエラー'}`);
     } finally {
       setIsConverting(false);
@@ -209,7 +210,7 @@ export default function QuoteDetailPage({ params }: QuoteDetailPageProps) {
         throw new Error(data.details || data.error || '変換に失敗しました');
       }
     } catch (error) {
-      console.error('Error converting quote to delivery note:', error);
+      logger.error('Error converting quote to delivery note:', error);
       alert(`変換エラー: ${error instanceof Error ? error.message : '不明なエラー'}`);
     } finally {
       setIsConverting(false);
@@ -235,7 +236,7 @@ export default function QuoteDetailPage({ params }: QuoteDetailPageProps) {
 
       router.push('/quotes');
     } catch (error) {
-      console.error('Error cancelling quote:', error);
+      logger.error('Error cancelling quote:', error);
       setError('見積書のキャンセルに失敗しました');
     } finally {
       setIsUpdatingStatus(false);
@@ -262,7 +263,7 @@ export default function QuoteDetailPage({ params }: QuoteDetailPageProps) {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
     } catch (error) {
-      console.error('PDFダウンロードエラー:', error);
+      logger.error('PDFダウンロードエラー:', error);
       alert('PDFのダウンロードに失敗しました');
     }
   };

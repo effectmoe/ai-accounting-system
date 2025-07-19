@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { logger } from '@/lib/logger';
 import { 
   SpeechRecognition,
   SpeechRecognitionConfig,
@@ -36,10 +37,10 @@ export function useSpeechRecognition(config: SpeechRecognitionConfig = {}): Spee
       setIsSupported(supported);
       
       if (!supported) {
-        console.warn('[SpeechRecognition] このブラウザはWeb Speech APIに対応していません');
+        logger.warn('[SpeechRecognition] このブラウザはWeb Speech APIに対応していません');
         setError('お使いのブラウザは音声認識に対応していません。Chrome、Edge、Safariなどのモダンブラウザをお試しください。');
       } else {
-        console.log('[SpeechRecognition] Web Speech APIが利用可能です');
+        logger.debug('[SpeechRecognition] Web Speech APIが利用可能です');
       }
     }
   }, []);
@@ -69,14 +70,14 @@ export function useSpeechRecognition(config: SpeechRecognitionConfig = {}): Spee
     recognition.onstart = () => {
       setIsListening(true);
       setError(null);
-      console.log('[SpeechRecognition] 音声認識を開始しました');
-      console.log('[SpeechRecognition] continuous設定:', recognition.continuous);
-      console.log('[SpeechRecognition] interimResults設定:', recognition.interimResults);
+      logger.debug('[SpeechRecognition] 音声認識を開始しました');
+      logger.debug('[SpeechRecognition] continuous設定:', recognition.continuous);
+      logger.debug('[SpeechRecognition] interimResults設定:', recognition.interimResults);
       
       // カスタムタイムアウトを設定
       const timeout = finalConfig.speechTimeout || 12000;
       timeoutRef.current = setTimeout(() => {
-        console.log(`[SpeechRecognition] タイムアウト（${timeout}ms）により音声認識を自動停止`);
+        logger.debug(`[SpeechRecognition] タイムアウト（${timeout}ms）により音声認識を自動停止`);
         if (recognitionRef.current) {
           recognitionRef.current.stop();
         }
@@ -84,8 +85,8 @@ export function useSpeechRecognition(config: SpeechRecognitionConfig = {}): Spee
     };
 
     recognition.onend = () => {
-      console.log('[SpeechRecognition] 音声認識を終了しました');
-      console.log('[SpeechRecognition] 終了時のfinalTranscript:', finalTranscriptRef.current);
+      logger.debug('[SpeechRecognition] 音声認識を終了しました');
+      logger.debug('[SpeechRecognition] 終了時のfinalTranscript:', finalTranscriptRef.current);
       
       // タイムアウトタイマーをクリア
       if (timeoutRef.current) {
@@ -103,8 +104,8 @@ export function useSpeechRecognition(config: SpeechRecognitionConfig = {}): Spee
     };
 
     recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-      console.error('[SpeechRecognition] エラー:', event.error);
-      console.error('[SpeechRecognition] エラーイベント詳細:', event);
+      logger.error('[SpeechRecognition] エラー:', event.error);
+      logger.error('[SpeechRecognition] エラーイベント詳細:', event);
       setIsListening(false);
       
       // タイムアウトタイマーをクリア
@@ -168,10 +169,10 @@ export function useSpeechRecognition(config: SpeechRecognitionConfig = {}): Spee
 
         if (result.isFinal) {
           finalTranscriptText += transcriptText;
-          console.log('[SpeechRecognition] 確定テキスト:', transcriptText);
+          logger.debug('[SpeechRecognition] 確定テキスト:', transcriptText);
         } else {
           interimTranscriptText += transcriptText;
-          console.log('[SpeechRecognition] 中間テキスト:', transcriptText);
+          logger.debug('[SpeechRecognition] 中間テキスト:', transcriptText);
         }
       }
 
@@ -181,28 +182,28 @@ export function useSpeechRecognition(config: SpeechRecognitionConfig = {}): Spee
     };
 
     recognition.onsoundstart = () => {
-      console.log('[SpeechRecognition] 音声検出開始');
+      logger.debug('[SpeechRecognition] 音声検出開始');
     };
 
     recognition.onsoundend = () => {
-      console.log('[SpeechRecognition] 音声検出終了');
-      console.log('[SpeechRecognition] continuous設定:', recognition.continuous);
+      logger.debug('[SpeechRecognition] 音声検出終了');
+      logger.debug('[SpeechRecognition] continuous設定:', recognition.continuous);
     };
 
     recognition.onspeechstart = () => {
-      console.log('[SpeechRecognition] 発話検出開始');
+      logger.debug('[SpeechRecognition] 発話検出開始');
     };
 
     recognition.onspeechend = () => {
-      console.log('[SpeechRecognition] 発話検出終了');
+      logger.debug('[SpeechRecognition] 発話検出終了');
     };
 
     recognition.onaudiostart = () => {
-      console.log('[SpeechRecognition] オーディオキャプチャ開始');
+      logger.debug('[SpeechRecognition] オーディオキャプチャ開始');
     };
 
     recognition.onaudioend = () => {
-      console.log('[SpeechRecognition] オーディオキャプチャ終了');
+      logger.debug('[SpeechRecognition] オーディオキャプチャ終了');
     };
 
     return recognition;
@@ -217,28 +218,28 @@ export function useSpeechRecognition(config: SpeechRecognitionConfig = {}): Spee
 
     // HTTPSチェック
     if (typeof window !== 'undefined' && window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
-      console.error('[SpeechRecognition] HTTPS接続が必要です');
+      logger.error('[SpeechRecognition] HTTPS接続が必要です');
       setError('音声認識を使用するにはHTTPS接続が必要です。HTTPSでアクセスするか、開発環境の場合はlocalhostを使用してください。');
       return;
     }
 
     if (isListening) {
-      console.log('[SpeechRecognition] 既に音声認識中です');
+      logger.debug('[SpeechRecognition] 既に音声認識中です');
       return;
     }
 
     try {
       // マイクアクセス許可を明示的に要求
-      console.log('[SpeechRecognition] マイクアクセス許可を確認中...');
+      logger.debug('[SpeechRecognition] マイクアクセス許可を確認中...');
       
       if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
         try {
           const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          console.log('[SpeechRecognition] マイクアクセス許可が取得できました');
+          logger.debug('[SpeechRecognition] マイクアクセス許可が取得できました');
           // ストリームを即座に停止（音声認識APIが独自にマイクを制御するため）
           stream.getTracks().forEach(track => track.stop());
         } catch (mediaError) {
-          console.error('[SpeechRecognition] マイクアクセスエラー:', mediaError);
+          logger.error('[SpeechRecognition] マイクアクセスエラー:', mediaError);
           const error = mediaError as any;
           let errorMessage = 'マイクへのアクセスに失敗しました';
           
@@ -260,7 +261,7 @@ export function useSpeechRecognition(config: SpeechRecognitionConfig = {}): Spee
       }
 
       // 音声認識開始前に前回の結果をクリア
-      console.log('[SpeechRecognition] 音声認識開始前にトランスクリプトをリセット');
+      logger.debug('[SpeechRecognition] 音声認識開始前にトランスクリプトをリセット');
       setTranscript('');
       setInterimTranscript('');
       finalTranscriptRef.current = '';
@@ -273,7 +274,7 @@ export function useSpeechRecognition(config: SpeechRecognitionConfig = {}): Spee
         recognition.start();
       }
     } catch (err) {
-      console.error('[SpeechRecognition] 開始エラー:', err);
+      logger.error('[SpeechRecognition] 開始エラー:', err);
       const error = err as any;
       let detailedError = '音声認識の開始に失敗しました';
       

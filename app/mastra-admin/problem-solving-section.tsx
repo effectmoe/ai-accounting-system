@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 
+import { logger } from '@/lib/logger';
 interface ProblemSolvingResult {
   success: boolean;
   solution?: any;
@@ -58,7 +59,7 @@ export default function ProblemSolvingSection() {
           setAgentStatus(data.status);
         }
       } catch (error) {
-        console.error('Failed to fetch agent status:', error);
+        logger.error('Failed to fetch agent status:', error);
       }
     };
 

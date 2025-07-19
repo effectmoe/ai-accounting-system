@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { format } from 'date-fns';
 import { calculateDueDate, getPaymentTermsDescription } from '@/utils/payment-terms';
 
+import { logger } from '@/lib/logger';
 // AI クライアントの初期化
 let openaiClient: OpenAI | null = null;
 
@@ -15,19 +16,19 @@ async function callDeepSeekAPI(messages: Array<{role: string, content: string}>,
   const apiKey = process.env.DEEPSEEK_API_KEY;
   
   if (!apiKey) {
-    console.error('[DeepSeek] API key is not configured');
+    logger.error('[DeepSeek] API key is not configured');
     throw new Error('DeepSeek API key is not configured');
   }
   
   // APIキーの基本的な検証
   if (!apiKey.startsWith('sk-') || apiKey.length < 20) {
-    console.error('[DeepSeek] API key format appears to be invalid');
-    console.error('[DeepSeek] API key should start with "sk-" and be at least 20 characters');
+    logger.error('[DeepSeek] API key format appears to be invalid');
+    logger.error('[DeepSeek] API key should start with "sk-" and be at least 20 characters');
   }
   
-  console.log('[DeepSeek] Calling API with fetch');
-  console.log('[DeepSeek] API key length:', apiKey.length);
-  console.log('[DeepSeek] API key prefix:', apiKey.substring(0, 10) + '...');
+  logger.debug('[DeepSeek] Calling API with fetch');
+  logger.debug('[DeepSeek] API key length:', apiKey.length);
+  logger.debug('[DeepSeek] API key prefix:', apiKey.substring(0, 10) + '...');
   
   // タイムアウトを設定（8秒）
   const controller = new AbortController();
@@ -53,9 +54,9 @@ async function callDeepSeekAPI(messages: Array<{role: string, content: string}>,
     
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('[DeepSeek] API error:', response.status);
-      console.error('[DeepSeek] Error response:', errorText);
-      console.error('[DeepSeek] Request details:', {
+      logger.error('[DeepSeek] API error:', response.status);
+      logger.error('[DeepSeek] Error response:', errorText);
+      logger.error('[DeepSeek] Request details:', {
         model: 'deepseek-chat',
         messagesCount: messages.length,
         temperature: temperature,
@@ -77,15 +78,15 @@ async function callDeepSeekAPI(messages: Array<{role: string, content: string}>,
     }
     
     const data = await response.json();
-    console.log('[DeepSeek] API response received');
+    logger.debug('[DeepSeek] API response received');
     return data;
   } catch (error) {
     clearTimeout(timeoutId);
     if (error instanceof Error && error.name === 'AbortError') {
-      console.error('[DeepSeek] Request timeout');
+      logger.error('[DeepSeek] Request timeout');
       throw new Error('DeepSeek API request timeout');
     }
-    console.error('[DeepSeek] Fetch error:', error);
+    logger.error('[DeepSeek] Fetch error:', error);
     throw error;
   }
 }
@@ -136,13 +137,13 @@ const QuoteDataSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
-  console.log('[API] POST /api/quotes/analyze-chat - Start');
+  logger.debug('[API] POST /api/quotes/analyze-chat - Start');
   
   let body: any;
   
   try {
     body = await request.json();
-    console.log('[API] Request body:', JSON.stringify(body, null, 2));
+    logger.debug('[API] Request body:', JSON.stringify(body, null, 2));
     
     const { conversation, conversationHistory, currentInvoiceData, sessionId, mode, initialInvoiceData } = body;
     
@@ -154,7 +155,7 @@ export async function POST(request: NextRequest) {
     const customerService = new CustomerService();
     const customersResult = await customerService.searchCustomers({ limit: 100 });
     
-    console.log('[API] Number of customers:', customersResult.customers.length);
+    logger.debug('[API] Number of customers:', customersResult.customers.length);
 
     // 会社情報の取得
     const companyInfoService = new CompanyInfoService();
@@ -199,14 +200,14 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
 金額や項目が含まれる場合は、番号付きリストで明確に表示してください。`;
 
     try {
-      console.log('[API] Calling DeepSeek API for quote analysis');
+      logger.debug('[API] Calling DeepSeek API for quote analysis');
       
       const messages = [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: conversation }
       ];
 
-      console.log('[API] Messages to send:', JSON.stringify(messages, null, 2));
+      logger.debug('[API] Messages to send:', JSON.stringify(messages, null, 2));
 
       const completion = await callDeepSeekAPI(messages, 0.7, 1000);
       
@@ -215,7 +216,7 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
       }
 
       const aiResponse = completion.choices[0].message.content;
-      console.log('[API] AI Response:', aiResponse);
+      logger.debug('[API] AI Response:', aiResponse);
 
       // 請求書APIと同じパターンでデータを抽出
       let extractedData = null;
@@ -225,7 +226,7 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
       };
 
       if (aiResponse) {
-        console.log('[API] Processing AI response for data extraction');
+        logger.debug('[API] Processing AI response for data extraction');
         
         // シンプルなキーワードベースの抽出
         const lines = aiResponse.split('\n');
@@ -237,7 +238,7 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
           const customerMatch = conversation.match(/([^に]+)(?:さん|様)?に/);
           if (customerMatch) {
             updatedData.customerName = customerMatch[1].replace(/さん|様/g, '').trim();
-            console.log('[API] Extracted customer name from conversation:', updatedData.customerName);
+            logger.debug('[API] Extracted customer name from conversation:', updatedData.customerName);
           }
         }
         
@@ -250,7 +251,7 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
             const description = itemMatch[2].trim();
             const amount = parseInt(itemMatch[3].replace(/,/g, ''));
             
-            console.log(`[API] Found item ${itemNumber}: ${description} = ${amount}円`);
+            logger.debug(`[API] Found item ${itemNumber}: ${description} = ${amount}円`);
             
             newItems.push({
               description: description,
@@ -266,7 +267,7 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
         // 項目が見つかった場合は、既存の項目を置き換える
         if (foundItemList && newItems.length > 0) {
           updatedData.items = newItems;
-          console.log('[API] Updated items from AI response:', JSON.stringify(newItems, null, 2));
+          logger.debug('[API] Updated items from AI response:', JSON.stringify(newItems, null, 2));
         }
         
         // extractedDataに更新されたデータを設定
@@ -275,7 +276,7 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
 
       // フォールバック処理
       if (!extractedData || !extractedData.items || extractedData.items.length === 0) {
-        console.log('[API] No items found in AI response, keeping current data');
+        logger.debug('[API] No items found in AI response, keeping current data');
         extractedData = currentInvoiceData || {};
       }
 
@@ -323,7 +324,7 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
       });
 
     } catch (aiError) {
-      console.error('[API] AI processing error:', aiError);
+      logger.error('[API] AI processing error:', aiError);
       
       // フォールバック応答
       return NextResponse.json({
@@ -335,9 +336,9 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
     }
 
   } catch (error) {
-    console.error('[API] Error in analyze-chat:', error);
-    console.error('[API] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
-    console.error('[API] Request data:', {
+    logger.error('[API] Error in analyze-chat:', error);
+    logger.error('[API] Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    logger.error('[API] Request data:', {
       conversation: body?.conversation?.substring(0, 100) + '...',
       mode: body?.mode,
       hasCurrentData: !!body?.currentInvoiceData,

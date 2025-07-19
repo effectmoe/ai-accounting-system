@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDatabase } from '@/lib/mongodb-client';
 import { ObjectId } from 'mongodb';
 
+import { logger } from '@/lib/logger';
 export async function GET(request: NextRequest) {
   try {
     const db = await getDatabase();
@@ -59,7 +60,7 @@ export async function GET(request: NextRequest) {
             
             gridfsFile = await filesCollection.findOne({ _id: fileId });
           } catch (e) {
-            console.error('Error finding GridFS file:', e);
+            logger.error('Error finding GridFS file:', e);
           }
         }
         
@@ -88,7 +89,7 @@ export async function GET(request: NextRequest) {
     });
     
   } catch (error) {
-    console.error('GridFS debug error:', error);
+    logger.error('GridFS debug error:', error);
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to debug GridFS'

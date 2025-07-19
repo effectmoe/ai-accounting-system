@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { google } from 'googleapis';
 import { Readable } from 'stream';
 
+import { logger } from '@/lib/logger';
 // Google Drive APIの認証設定
 const auth = new google.auth.GoogleAuth({
   credentials: {
@@ -63,7 +64,7 @@ export async function POST(request: NextRequest) {
     // GAS Webhookを呼び出してOCR処理を開始
     const gasWebhookUrl = process.env.GAS_WEBHOOK_URL;
     if (gasWebhookUrl) {
-      console.log('Calling GAS webhook:', gasWebhookUrl);
+      logger.debug('Calling GAS webhook:', gasWebhookUrl);
       try {
         const webhookResponse = await fetch(gasWebhookUrl, {
           method: 'POST',
@@ -78,13 +79,13 @@ export async function POST(request: NextRequest) {
         });
         
         const webhookResult = await webhookResponse.text();
-        console.log('GAS webhook response:', webhookResult);
+        logger.debug('GAS webhook response:', webhookResult);
       } catch (webhookError) {
-        console.error('GAS webhook error:', webhookError);
+        logger.error('GAS webhook error:', webhookError);
         // Webhookエラーがあってもアップロードは成功として扱う
       }
     } else {
-      console.warn('GAS_WEBHOOK_URL is not configured');
+      logger.warn('GAS_WEBHOOK_URL is not configured');
     }
 
     return NextResponse.json({
@@ -94,7 +95,7 @@ export async function POST(request: NextRequest) {
       webViewLink: driveResponse.data.webViewLink,
     });
   } catch (error) {
-    console.error('Google Drive upload error:', error);
+    logger.error('Google Drive upload error:', error);
     return NextResponse.json(
       { 
         error: 'アップロードに失敗しました',

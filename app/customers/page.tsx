@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Plus, Edit, Trash2, Search, Filter, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, ChevronsUpDown, X, Columns, GripVertical } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { Customer, SortableField, SortOrder, FilterState } from '@/types/collections';
+import { logger } from '@/lib/logger';
 import {
   DndContext,
   closestCenter,
@@ -150,7 +151,7 @@ function useColumnVisibility() {
         }
       }
     } catch (error) {
-      console.error('Failed to load column visibility settings:', error);
+      logger.error('Failed to load column visibility settings:', error);
     }
   }, [migrateOldFormat]);
 
@@ -164,7 +165,7 @@ function useColumnVisibility() {
       };
       localStorage.setItem(COLUMN_VISIBILITY_STORAGE_KEY, JSON.stringify(data));
     } catch (error) {
-      console.error('Failed to save column visibility settings:', error);
+      logger.error('Failed to save column visibility settings:', error);
     }
   }, []);
 
@@ -489,7 +490,7 @@ function CustomersPageContent() {
         throw new Error(data.error || '顧客データの取得に失敗しました');
       }
     } catch (error) {
-      console.error('Error loading customers:', error);
+      logger.error('Error loading customers:', error);
       toast.error('顧客データの読み込みに失敗しました');
     } finally {
       setLoading(false);
@@ -668,7 +669,7 @@ function CustomersPageContent() {
       toast.success('顧客を削除しました');
       fetchCustomers();
     } catch (error) {
-      console.error('削除エラー:', error);
+      logger.error('削除エラー:', error);
       toast.error('顧客の削除に失敗しました');
     }
   };
@@ -730,7 +731,7 @@ function CustomersPageContent() {
       }
 
     } catch (error) {
-      console.error('ステータス更新エラー:', error);
+      logger.error('ステータス更新エラー:', error);
       
       // エラー時は元の状態に戻す
       setCustomers(originalCustomers);
@@ -794,7 +795,7 @@ function CustomersPageContent() {
       setSelectedCustomers(new Set());
       fetchCustomers();
     } catch (error) {
-      console.error('Error deleting customers:', error);
+      logger.error('Error deleting customers:', error);
       toast.error('削除に失敗しました');
     }
   };

@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { KnowledgeService } from '@/services/knowledge.service';
 import { getChatHistoryService } from '@/services/chat-history.service';
 
+import { logger } from '@/lib/logger';
 export async function POST(request: NextRequest) {
   const encoder = new TextEncoder();
   const knowledgeService = new KnowledgeService();
@@ -27,7 +28,7 @@ export async function POST(request: NextRequest) {
 
     // DeepSeek API key の存在確認
     if (!process.env.DEEPSEEK_API_KEY) {
-      console.error('DeepSeek API key not configured');
+      logger.error('DeepSeek API key not configured');
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -38,7 +39,7 @@ export async function POST(request: NextRequest) {
     }
 
     // デバッグ用ログ
-    console.log('API Request:', {
+    logger.debug('API Request:', {
       hasApiKey: !!process.env.DEEPSEEK_API_KEY,
       conversationLength: Array.isArray(conversation) ? conversation.length : 1,
       includeKnowledge,
@@ -46,7 +47,7 @@ export async function POST(request: NextRequest) {
     });
 
     // conversationの詳細ログ
-    console.log('Conversation debug:', {
+    logger.debug('Conversation debug:', {
       type: typeof conversation,
       isArray: Array.isArray(conversation),
       data: JSON.stringify(conversation).slice(0, 200) + '...'
@@ -56,7 +57,7 @@ export async function POST(request: NextRequest) {
     let searchText: string;
     if (Array.isArray(conversation)) {
       const lastMessage = conversation[conversation.length - 1];
-      console.log('Last message:', { lastMessage, hasContent: !!lastMessage?.content });
+      logger.debug('Last message:', { lastMessage, hasContent: !!lastMessage?.content });
       searchText = lastMessage?.content || lastMessage?.message || String(lastMessage) || '';
     } else if (typeof conversation === 'object' && conversation?.content) {
       searchText = conversation.content;
@@ -68,7 +69,7 @@ export async function POST(request: NextRequest) {
     
     if (!searchText || searchText.trim().length === 0) {
       searchText = '税務 会計';
-      console.log('Using default searchText:', searchText);
+      logger.debug('Using default searchText:', searchText);
     }
 
     // ナレッジベースから関連記事を検索
@@ -78,7 +79,7 @@ export async function POST(request: NextRequest) {
     if (includeKnowledge) {
       await knowledgeService.connect();
       
-      console.log('Knowledge search - searchText:', searchText, 'type:', typeof searchText);
+      logger.debug('Knowledge search - searchText:', searchText, 'type:', typeof searchText);
       
       const searchResult = await knowledgeService.searchArticles({
         text: searchText,
@@ -86,7 +87,7 @@ export async function POST(request: NextRequest) {
         limit: 5
       });
       
-      console.log('Knowledge search result:', searchResult.total, 'articles found');
+      logger.debug('Knowledge search result:', searchResult.total, 'articles found');
       
       if (searchResult.articles.length > 0) {
         knowledgeUsed = searchResult.articles.map(article => ({
@@ -125,14 +126,14 @@ ${searchResult.articles.map((article, index) =>
       
       if (!activeSessionId) {
         // 新規セッション作成
-        console.log('[analyze-chat-stream] 新規セッション作成中...');
+        logger.debug('[analyze-chat-stream] 新規セッション作成中...');
         const newSession = await chatHistoryService.createKnowledgeSession(
           undefined, // userId（現在は未実装）
           'tax' // カテゴリー
         );
         activeSessionId = newSession.sessionId;
         isNewSession = true;
-        console.log('[analyze-chat-stream] 新規セッション作成完了:', activeSessionId);
+        logger.debug('[analyze-chat-stream] 新規セッション作成完了:', activeSessionId);
       }
       
       // ユーザーメッセージを保存
@@ -145,7 +146,7 @@ ${searchResult.articles.map((article, index) =>
         }
       });
     } catch (error) {
-      console.error('[analyze-chat-stream] セッション処理エラー:', error);
+      logger.error('[analyze-chat-stream] セッション処理エラー:', error);
       sessionError = error instanceof Error ? error : new Error('Session error');
       // エラーが発生してもストリーミングは続行
     }
@@ -196,7 +197,7 @@ ${knowledgeContext}
 
           if (!apiResponse.ok) {
             const errorText = await apiResponse.text();
-            console.error('DeepSeek API error:', {
+            logger.error('DeepSeek API error:', {
               status: apiResponse.status,
               statusText: apiResponse.statusText,
               error: errorText
@@ -204,7 +205,7 @@ ${knowledgeContext}
             throw new Error(`DeepSeek API error: ${apiResponse.status} - ${errorText}`);
           }
 
-          console.log('DeepSeek API response received, starting stream processing');
+          logger.debug('DeepSeek API response received, starting stream processing');
 
           const reader = apiResponse.body?.getReader();
           const decoder = new TextDecoder();
@@ -242,7 +243,7 @@ ${knowledgeContext}
                           await chatHistoryService.generateSessionTitle(activeSessionId);
                         }
                       } catch (error) {
-                        console.error('[analyze-chat-stream] メッセージ保存エラー:', error);
+                        logger.error('[analyze-chat-stream] メッセージ保存エラー:', error);
                       }
                     }
                     
@@ -269,14 +270,14 @@ ${knowledgeContext}
                       controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: fullResponse })}\n\n`));
                     }
                   } catch (e) {
-                    console.error('Failed to parse SSE data:', e);
+                    logger.error('Failed to parse SSE data:', e);
                   }
                 }
               }
             }
           }
         } catch (error) {
-          console.error('Streaming error:', error);
+          logger.error('Streaming error:', error);
           controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: 'Streaming failed' })}\n\n`));
           controller.close();
         }
@@ -295,7 +296,7 @@ ${knowledgeContext}
     });
 
   } catch (error) {
-    console.error('Knowledge chat streaming error:', error);
+    logger.error('Knowledge chat streaming error:', error);
     await knowledgeService.disconnect();
     await chatHistoryService.disconnect();
     

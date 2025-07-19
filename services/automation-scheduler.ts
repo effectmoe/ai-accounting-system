@@ -1,3 +1,5 @@
+import { logger } from '@/lib/logger';
+
 export interface ScheduledTask {
   id: string;
   name: string;
@@ -111,19 +113,19 @@ class AutomationScheduler {
       // ここで実際のタスク処理を実行
       switch (task.id) {
         case 'ocr-receipts':
-          console.log('OCR処理を実行中...');
+          logger.debug('OCR処理を実行中...');
           break;
         case 'invoice-generation':
-          console.log('請求書生成を実行中...');
+          logger.debug('請求書生成を実行中...');
           break;
         case 'tax-calculation':
-          console.log('税務計算を実行中...');
+          logger.debug('税務計算を実行中...');
           break;
         case 'report-generation':
-          console.log('レポート生成を実行中...');
+          logger.debug('レポート生成を実行中...');
           break;
         case 'backup-data':
-          console.log('データバックアップを実行中...');
+          logger.debug('データバックアップを実行中...');
           break;
       }
       

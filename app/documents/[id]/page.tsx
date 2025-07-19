@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { ArrowLeft, Download, Edit, Send, Trash2, Eye, FileText } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
+import { logger } from '@/lib/logger';
 interface Document {
   id: string;
   company_id: string;
@@ -95,7 +96,7 @@ export default function DocumentDetailPage() {
       setItems([]);
 
     } catch (error) {
-      console.error('Document load error:', error);
+      logger.error('Document load error:', error);
       setError(error instanceof Error ? error.message : '文書の読み込みに失敗しました');
       toast.error('文書の読み込みに失敗しました');
     } finally {
@@ -123,7 +124,7 @@ export default function DocumentDetailPage() {
       setDocument({ ...document, status: newStatus });
       toast.success('ステータスを更新しました');
     } catch (error) {
-      console.error('Status update error:', error);
+      logger.error('Status update error:', error);
       toast.error(error instanceof Error ? error.message : 'ステータスの更新に失敗しました');
     }
   };
@@ -144,7 +145,7 @@ export default function DocumentDetailPage() {
       toast.success('文書を削除しました');
       router.push('/documents');
     } catch (error) {
-      console.error('Delete error:', error);
+      logger.error('Delete error:', error);
       toast.error(error instanceof Error ? error.message : '文書の削除に失敗しました');
     }
   };

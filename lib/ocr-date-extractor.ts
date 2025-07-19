@@ -1,3 +1,5 @@
+import { logger } from '@/lib/logger';
+
 /**
  * OCR結果から日付を抽出するユーティリティクラス
  * 日本語の様々な日付表記に対応
@@ -172,7 +174,7 @@ export class OCRDateExtractor {
       return { date: null, confidence: 0, matchedPattern: null };
     }
 
-    console.log('検索対象テキスト（最初の500文字）:', ocrText.substring(0, 500));
+    logger.debug('検索対象テキスト（最初の500文字）:', ocrText.substring(0, 500));
 
     const candidates: Array<{
       date: Date;
@@ -211,11 +213,11 @@ export class OCRDateExtractor {
                 pattern: pattern.name
               });
             } else {
-              console.log(`OCRDateExtractor: 日付が範囲外 - ${match[0]} (2年前〜1ヶ月後の範囲外)`);
+              logger.debug(`OCRDateExtractor: 日付が範囲外 - ${match[0]} (2年前〜1ヶ月後の範囲外)`);
             }
           }
         } catch (error) {
-          console.error('日付解析エラー:', error);
+          logger.error('日付解析エラー:', error);
         }
       }
     }
@@ -231,7 +233,7 @@ export class OCRDateExtractor {
       };
     }
 
-    console.log('OCRDateExtractor: 有効な日付を見つけられませんでした');
+    logger.debug('OCRDateExtractor: 有効な日付を見つけられませんでした');
     return { date: null, confidence: 0, matchedPattern: null };
   }
 }

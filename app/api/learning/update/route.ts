@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/mongodb-client';
 import { ObjectId } from 'mongodb';
 
+import { logger } from '@/lib/logger';
 export async function PATCH(request: NextRequest) {
   try {
     const body = await request.json();
@@ -42,7 +43,7 @@ export async function PATCH(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Learning update error:', error);
+    logger.error('Learning update error:', error);
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to update learning data'

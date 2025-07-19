@@ -3,6 +3,7 @@ import { createAgent } from '@mastra/core';
 import { DatabaseService, Collections } from '@/lib/mongodb-client';
 import { ObjectId } from 'mongodb';
 
+import { logger } from '@/lib/logger';
 // 商品情報スキーマ
 const productSchema = z.object({
   id: z.string().optional(),
@@ -141,7 +142,7 @@ export const productAgent = createAgent({
           };
           
         } catch (error) {
-          console.error('Product creation error:', error);
+          logger.error('Product creation error:', error);
           return {
             success: false,
             error: error.message
@@ -211,7 +212,7 @@ export const productAgent = createAgent({
           };
           
         } catch (error) {
-          console.error('Product search error:', error);
+          logger.error('Product search error:', error);
           return {
             success: false,
             error: error.message
@@ -307,7 +308,7 @@ export const productAgent = createAgent({
           };
           
         } catch (error) {
-          console.error('Inventory transaction error:', error);
+          logger.error('Inventory transaction error:', error);
           return {
             success: false,
             error: error.message
@@ -408,7 +409,7 @@ export const productAgent = createAgent({
           return { success: true };
           
         } catch (error) {
-          console.error('Accounting entry creation error:', error);
+          logger.error('Accounting entry creation error:', error);
           return {
             success: false,
             error: error.message
@@ -596,7 +597,7 @@ export const productAgent = createAgent({
           }
           
         } catch (error) {
-          console.error('Product analysis error:', error);
+          logger.error('Product analysis error:', error);
           return {
             success: false,
             error: error.message
@@ -632,7 +633,7 @@ export const productAgent = createAgent({
           };
           
         } catch (error) {
-          console.error('Reorder alert error:', error);
+          logger.error('Reorder alert error:', error);
           return {
             success: false,
             error: error.message
@@ -645,7 +646,7 @@ export const productAgent = createAgent({
   // メイン実行ロジック
   execute: async ({ input, tools }) => {
     try {
-      console.log('[Product Agent] Starting operation:', input.operation);
+      logger.debug('[Product Agent] Starting operation:', input.operation);
       
       switch (input.operation) {
         case 'create':
@@ -730,7 +731,7 @@ export const productAgent = createAgent({
       }
       
     } catch (error) {
-      console.error('[Product Agent] Error:', error);
+      logger.error('[Product Agent] Error:', error);
       return {
         success: false,
         error: error.message

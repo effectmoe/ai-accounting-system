@@ -3,6 +3,7 @@ import { InvoiceService } from '@/services/invoice.service';
 import { CompanyInfoService } from '@/services/company-info.service';
 import { generateCompactInvoiceHTML, generateInvoiceFilename, generateSafeFilename } from '@/lib/pdf-compact-generator';
 
+import { logger } from '@/lib/logger';
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -21,14 +22,14 @@ export async function GET(
     const companyInfo = await companyInfoService.getCompanyInfo();
 
     // HTMLを生成（コンパクト版を使用）
-    console.log('Generating compact invoice HTML for:', invoice.invoiceNumber);
+    logger.debug('Generating compact invoice HTML for:', invoice.invoiceNumber);
     const htmlContent = generateCompactInvoiceHTML(invoice, companyInfo);
     
     // 新しい命名規則でファイル名を生成: 請求日_帳表名_顧客名
     const filename = generateInvoiceFilename(invoice);
     const safeFilename = generateSafeFilename(invoice);
-    console.log('Generated filename:', filename);
-    console.log('Safe filename for header:', safeFilename);
+    logger.debug('Generated filename:', filename);
+    logger.debug('Safe filename for header:', safeFilename);
     
     // URLクエリパラメータでダウンロードモードを判定
     const url = new URL(request.url);
@@ -72,8 +73,8 @@ export async function GET(
       },
     });
   } catch (error) {
-    console.error('Invoice PDF generation error:', error);
-    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    logger.error('Invoice PDF generation error:', error);
+    logger.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     
     // 詳細なエラー情報を返す
     if (error instanceof Error) {

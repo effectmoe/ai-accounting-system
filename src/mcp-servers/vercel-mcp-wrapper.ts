@@ -8,6 +8,7 @@
 import { spawn } from 'child_process';
 import path from 'path';
 
+import { logger } from '@/lib/logger';
 const serverPath = path.join(__dirname, 'external/vercel-mcp-server');
 
 // 環境変数の設定
@@ -24,12 +25,12 @@ const vercelServer = spawn('node', [path.join(serverPath, 'dist/index.js')], {
 });
 
 vercelServer.on('error', (error) => {
-  console.error('Failed to start Vercel MCP server:', error);
+  logger.error('Failed to start Vercel MCP server:', error);
   process.exit(1);
 });
 
 vercelServer.on('exit', (code) => {
-  console.log(`Vercel MCP server exited with code ${code}`);
+  logger.debug(`Vercel MCP server exited with code ${code}`);
   process.exit(code || 0);
 });
 

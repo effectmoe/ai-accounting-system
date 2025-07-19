@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { StructuredDataService } from '@/services/structured-data.service';
+import { logger } from '@/lib/logger';
 import { 
   SupportedSchemaType,
   StructuredDataInput,
@@ -130,7 +131,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Structured data generation error:', error);
+    logger.error('Structured data generation error:', error);
     return NextResponse.json(
       {
         success: false,
@@ -278,7 +279,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Schema info error:', error);
+    logger.error('Schema info error:', error);
     return NextResponse.json(
       {
         success: false,

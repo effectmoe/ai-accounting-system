@@ -1,3 +1,5 @@
+import { logger } from '@/lib/logger';
+
 /**
  * NLWeb API統合
  * AI駆動の会計システムのためのNLWeb連携
@@ -78,7 +80,7 @@ export class NLWebAPI {
         data
       };
     } catch (error) {
-      console.error('NLWeb API error:', error);
+      logger.error('NLWeb API error:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error'

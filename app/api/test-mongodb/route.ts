@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { MongoClient } from 'mongodb';
 
+import { logger } from '@/lib/logger';
 const MONGODB_URI = process.env.MONGODB_URI;
 
 export async function GET(request: NextRequest) {
-  console.log('=== MongoDB Connection Test ===');
-  console.log('MONGODB_URI set:', MONGODB_URI ? 'Yes' : 'No');
-  console.log('MONGODB_URI value:', MONGODB_URI);
+  logger.debug('=== MongoDB Connection Test ===');
+  logger.debug('MONGODB_URI set:', MONGODB_URI ? 'Yes' : 'No');
+  logger.debug('MONGODB_URI value:', MONGODB_URI);
   
   if (!MONGODB_URI) {
     return NextResponse.json({ 
@@ -25,8 +26,8 @@ export async function GET(request: NextRequest) {
     const db = client.db('accounting-automation');
     const collections = await db.listCollections().toArray();
     
-    console.log('MongoDB connection successful');
-    console.log('Available collections:', collections.map(c => c.name));
+    logger.debug('MongoDB connection successful');
+    logger.debug('Available collections:', collections.map(c => c.name));
     
     return NextResponse.json({
       success: true,
@@ -36,7 +37,7 @@ export async function GET(request: NextRequest) {
     });
     
   } catch (error) {
-    console.error('MongoDB connection error:', error);
+    logger.error('MongoDB connection error:', error);
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',

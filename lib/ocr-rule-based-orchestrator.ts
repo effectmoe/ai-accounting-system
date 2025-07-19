@@ -1,3 +1,5 @@
+import { logger } from '@/lib/logger';
+
 /**
  * ルールベースのOCRオーケストレータ
  * AIを使わずにルールベースで日本の請求書・見積書を解析
@@ -34,10 +36,10 @@ export class OCRRuleBasedOrchestrator {
     const data: any = {};
     
     try {
-      console.log('[RuleBasedOrchestrator] === オーケストレータ開始 ===');
+      logger.debug('[RuleBasedOrchestrator] === オーケストレータ開始 ===');
       
       // デバッグ: 受信したOCRデータの構造を確認
-      console.log('[RuleBasedOrchestrator] 受信したOCRデータ:', {
+      logger.debug('[RuleBasedOrchestrator] 受信したOCRデータ:', {
         hasFields: !!ocrResult.fields,
         hasTables: !!ocrResult.tables,
         hasPages: !!ocrResult.pages,
@@ -49,13 +51,13 @@ export class OCRRuleBasedOrchestrator {
       // 入力データの検証
       if (!ocrResult) {
         const error = 'OCR結果が未定義です';
-        console.error('[RuleBasedOrchestrator] ' + error);
+        logger.error('[RuleBasedOrchestrator] ' + error);
         return { success: false, errors: [error] };
       }
       
       if (!ocrResult.fields && !ocrResult.tables && !ocrResult.pages) {
         const error = 'OCR結果にfields、tables、pagesのいずれも含まれていません';
-        console.error('[RuleBasedOrchestrator] ' + error);
+        logger.error('[RuleBasedOrchestrator] ' + error);
         return { success: false, errors: [error] };
       }
       
@@ -63,7 +65,7 @@ export class OCRRuleBasedOrchestrator {
       const fields = ocrResult.fields || {};
       
       // デバッグ: フィールドの内容を確認
-      console.log('[RuleBasedOrchestrator] fieldsの内容:', {
+      logger.debug('[RuleBasedOrchestrator] fieldsの内容:', {
         vendorName: fields.vendorName,
         VendorName: fields.VendorName,
         vendorAddress: fields.vendorAddress,
@@ -85,7 +87,7 @@ export class OCRRuleBasedOrchestrator {
       const remittanceAddressRecipient = fields.RemittanceAddressRecipient || '';
       
       // デバッグ: 御中判定前の状態
-      console.log('[RuleBasedOrchestrator] 御中判定前:', {
+      logger.debug('[RuleBasedOrchestrator] 御中判定前:', {
         vendorName,
         customerName,
         vendorAddressRecipient,
@@ -94,7 +96,7 @@ export class OCRRuleBasedOrchestrator {
       
       // 日本のビジネス文書レイアウト判定ロジック
       // 基本方針：OCRテキストから正しい位置に情報を配置
-      console.log('[RuleBasedOrchestrator] 会社名・顧客名の判定を開始');
+      logger.debug('[RuleBasedOrchestrator] 会社名・顧客名の判定を開始');
       
       let identifiedCustomer = null;
       let identifiedVendor = null;
@@ -103,13 +105,13 @@ export class OCRRuleBasedOrchestrator {
       const allFields = [vendorName, customerName, vendorAddressRecipient, remittanceAddressRecipient];
       const allFieldValues = allFields.filter(field => field && field.trim());
       
-      console.log('[RuleBasedOrchestrator] 全フィールド値:', allFieldValues);
+      logger.debug('[RuleBasedOrchestrator] 全フィールド値:', allFieldValues);
       
       // 1. 「御中」で判別（確実な判定）
       for (const fieldValue of allFieldValues) {
         if (fieldValue.includes('御中')) {
           identifiedCustomer = fieldValue;
-          console.log('[RuleBasedOrchestrator] 「御中」で顧客を特定:', fieldValue);
+          logger.debug('[RuleBasedOrchestrator] 「御中」で顧客を特定:', fieldValue);
           break;
         }
       }
@@ -120,7 +122,7 @@ export class OCRRuleBasedOrchestrator {
         for (const fieldValue of allFieldValues) {
           if (fieldValue !== identifiedCustomer && this.isCompanyName(fieldValue)) {
             identifiedVendor = fieldValue;
-            console.log('[RuleBasedOrchestrator] 残りから仕入先を特定:', fieldValue);
+            logger.debug('[RuleBasedOrchestrator] 残りから仕入先を特定:', fieldValue);
             break;
           }
         }
@@ -129,7 +131,7 @@ export class OCRRuleBasedOrchestrator {
         for (const fieldValue of allFieldValues) {
           if (this.isCompanyName(fieldValue)) {
             identifiedVendor = fieldValue;
-            console.log('[RuleBasedOrchestrator] 会社形態で仕入先を特定:', fieldValue);
+            logger.debug('[RuleBasedOrchestrator] 会社形態で仕入先を特定:', fieldValue);
             break;
           }
         }
@@ -138,7 +140,7 @@ export class OCRRuleBasedOrchestrator {
         for (const fieldValue of allFieldValues) {
           if (fieldValue !== identifiedVendor) {
             identifiedCustomer = fieldValue;
-            console.log('[RuleBasedOrchestrator] 残りから顧客を特定:', fieldValue);
+            logger.debug('[RuleBasedOrchestrator] 残りから顧客を特定:', fieldValue);
             break;
           }
         }
@@ -154,7 +156,7 @@ export class OCRRuleBasedOrchestrator {
         phone: fields.vendorPhoneNumber || fields.vendorPhone
       };
       
-      console.log('[RuleBasedOrchestrator] 判定完了:', {
+      logger.debug('[RuleBasedOrchestrator] 判定完了:', {
         customer: data.customer.name,
         vendor: data.vendor.name
       });
@@ -163,7 +165,7 @@ export class OCRRuleBasedOrchestrator {
       data.items = [];
       
       if (ocrResult.tables && ocrResult.tables.length > 0) {
-        console.log('[RuleBasedOrchestrator] テーブルから商品を抽出');
+        logger.debug('[RuleBasedOrchestrator] テーブルから商品を抽出');
         
         for (const table of ocrResult.tables) {
           const items = this.extractItemsFromTable(table);
@@ -173,7 +175,7 @@ export class OCRRuleBasedOrchestrator {
       
       // 3. pagesデータから商品情報を補完
       if (data.items.length === 0 && ocrResult.pages && ocrResult.pages.length > 0) {
-        console.log('[RuleBasedOrchestrator] ページから商品を抽出');
+        logger.debug('[RuleBasedOrchestrator] ページから商品を抽出');
         
         for (const page of ocrResult.pages) {
           const items = this.extractItemsFromPage(page);
@@ -183,7 +185,7 @@ export class OCRRuleBasedOrchestrator {
       
       // 4. pagesデータから仕入先情報を補完（日本の見積書は右側が発行元）
       if ((!data.vendor || data.vendor.name === '不明') && ocrResult.pages && ocrResult.pages.length > 0) {
-        console.log('[RuleBasedOrchestrator] pagesから仕入先情報を探索');
+        logger.debug('[RuleBasedOrchestrator] pagesから仕入先情報を探索');
         
         // 右側にある会社名を優先的に収集
         const rightSideCompanies: Array<{content: string, boundingBox?: any}> = [];
@@ -227,7 +229,7 @@ export class OCRRuleBasedOrchestrator {
                   const companyInfo = { content, boundingBox: line.boundingBox };
                   allCompanies.push(companyInfo);
                   
-                  console.log('[RuleBasedOrchestrator] 会社名候補を発見:', content);
+                  logger.debug('[RuleBasedOrchestrator] 会社名候補を発見:', content);
                   
                   // boundingBoxがある場合、X座標で右側判定（ページ幅の50%以上）
                   if (line.boundingBox && line.boundingBox.length > 0) {
@@ -243,7 +245,7 @@ export class OCRRuleBasedOrchestrator {
                       xPosition = line.boundingBox[0].x;
                     }
                     
-                    console.log('[RuleBasedOrchestrator] boundingBox情報:', {
+                    logger.debug('[RuleBasedOrchestrator] boundingBox情報:', {
                       content: content,
                       boundingBox: line.boundingBox,
                       xPosition: xPosition,
@@ -256,12 +258,12 @@ export class OCRRuleBasedOrchestrator {
                     // 右側判定（ページ幅の50%以上）
                     if (xPosition > pageWidth * 0.5) {
                       rightSideCompanies.push(companyInfo);
-                      console.log('[RuleBasedOrchestrator] 右側の会社名を発見:', content, 'at x:', xPosition);
+                      logger.debug('[RuleBasedOrchestrator] 右側の会社名を発見:', content, 'at x:', xPosition);
                     } else {
-                      console.log('[RuleBasedOrchestrator] 左側の会社名:', content, 'at x:', xPosition);
+                      logger.debug('[RuleBasedOrchestrator] 左側の会社名:', content, 'at x:', xPosition);
                     }
                   } else {
-                    console.log('[RuleBasedOrchestrator] boundingBox情報なし:', content);
+                    logger.debug('[RuleBasedOrchestrator] boundingBox情報なし:', content);
                   }
                 }
               }
@@ -274,7 +276,7 @@ export class OCRRuleBasedOrchestrator {
         if (selectedCompany) {
           data.vendor = data.vendor || {};
           data.vendor.name = selectedCompany.content;
-          console.log('[RuleBasedOrchestrator] 仕入先名を決定:', selectedCompany.content);
+          logger.debug('[RuleBasedOrchestrator] 仕入先名を決定:', selectedCompany.content);
         }
         
         // 住所と電話番号の抽出（元のロジック）
@@ -290,7 +292,7 @@ export class OCRRuleBasedOrchestrator {
                     !content.includes('御中') && !data.vendor?.address) {
                   data.vendor = data.vendor || {};
                   data.vendor.address = content;
-                  console.log('[RuleBasedOrchestrator] pagesから住所を抽出:', content);
+                  logger.debug('[RuleBasedOrchestrator] pagesから住所を抽出:', content);
                 }
                 
                 // 電話番号パターン
@@ -298,7 +300,7 @@ export class OCRRuleBasedOrchestrator {
                 if (phoneMatch && !data.vendor?.phone) {
                   data.vendor = data.vendor || {};
                   data.vendor.phone = phoneMatch[0];
-                  console.log('[RuleBasedOrchestrator] pagesから電話番号を抽出:', phoneMatch[0]);
+                  logger.debug('[RuleBasedOrchestrator] pagesから電話番号を抽出:', phoneMatch[0]);
                 }
               }
             }
@@ -308,20 +310,20 @@ export class OCRRuleBasedOrchestrator {
       
       // 5. 件名を正しく抽出（pagesデータから「件名」ラベルを探す）
       if (ocrResult.pages && ocrResult.pages.length > 0) {
-        console.log('[RuleBasedOrchestrator] pagesから件名を探索');
+        logger.debug('[RuleBasedOrchestrator] pagesから件名を探索');
         
         for (const page of ocrResult.pages) {
           if (page.lines) {
             for (let i = 0; i < page.lines.length; i++) {
               const line = page.lines[i];
               if (line.content && line.content.includes('件名')) {
-                console.log('[RuleBasedOrchestrator] 「件名」ラベルを発見:', line.content);
+                logger.debug('[RuleBasedOrchestrator] 「件名」ラベルを発見:', line.content);
                 
                 // 同じ行の「件名」の後の部分を確認
                 const sameLineMatch = line.content.match(/件名[:\s：]*(.+)/);
                 if (sameLineMatch && sameLineMatch[1].trim()) {
                   data.subject = sameLineMatch[1].trim();
-                  console.log('[RuleBasedOrchestrator] 同じ行から件名を抽出:', data.subject);
+                  logger.debug('[RuleBasedOrchestrator] 同じ行から件名を抽出:', data.subject);
                   break;
                 }
                 
@@ -330,7 +332,7 @@ export class OCRRuleBasedOrchestrator {
                   const nextLine = page.lines[i + 1].content;
                   if (nextLine && !nextLine.includes('件名')) {
                     data.subject = nextLine.trim();
-                    console.log('[RuleBasedOrchestrator] 次の行から件名を抽出:', data.subject);
+                    logger.debug('[RuleBasedOrchestrator] 次の行から件名を抽出:', data.subject);
                     break;
                   }
                 }
@@ -342,7 +344,7 @@ export class OCRRuleBasedOrchestrator {
       
       // 6. 件名が「CROP様分」のような顧客向けテキストの場合は修正
       if (data.subject && data.subject.includes('様分')) {
-        console.log('[RuleBasedOrchestrator] 件名が顧客向けテキストになっています。正しい件名を再検索。');
+        logger.debug('[RuleBasedOrchestrator] 件名が顧客向けテキストになっています。正しい件名を再検索。');
         data.subject = ''; // 一旦クリアして、正しい件名がない場合は空にする
       }
       
@@ -366,7 +368,7 @@ export class OCRRuleBasedOrchestrator {
         hasValidData = true;
       }
       
-      console.log('[RuleBasedOrchestrator] 最終結果:', {
+      logger.debug('[RuleBasedOrchestrator] 最終結果:', {
         hasValidData,
         vendorName: data.vendor?.name || 'none',
         customerName: data.customer?.name || 'none',
@@ -375,7 +377,7 @@ export class OCRRuleBasedOrchestrator {
         errors: errors.length
       });
       
-      console.log('[RuleBasedOrchestrator] === オーケストレータ完了 ===');
+      logger.debug('[RuleBasedOrchestrator] === オーケストレータ完了 ===');
       
       return {
         success: hasValidData,
@@ -384,7 +386,7 @@ export class OCRRuleBasedOrchestrator {
       };
       
     } catch (error) {
-      console.error('[RuleBasedOrchestrator] エラー:', error);
+      logger.error('[RuleBasedOrchestrator] エラー:', error);
       return {
         success: false,
         errors: [error instanceof Error ? error.message : 'Unknown error']
@@ -463,7 +465,7 @@ export class OCRRuleBasedOrchestrator {
           amount: amount || (unitPrice * quantity)
         });
         
-        console.log(`[RuleBasedOrchestrator] 商品抽出: ${productName}, 数量: ${quantity}, 単価: ${unitPrice}, 金額: ${amount}`);
+        logger.debug(`[RuleBasedOrchestrator] 商品抽出: ${productName}, 数量: ${quantity}, 単価: ${unitPrice}, 金額: ${amount}`);
       }
     }
     

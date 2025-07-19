@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import { Plus, Edit2, Trash2, Check, X, CreditCard } from 'lucide-react';
 
+import { logger } from '@/lib/logger';
 interface BankAccount {
   id: string;
   bank_name: string;
@@ -62,7 +63,7 @@ export default function BankAccountsPage() {
         setAccounts(data.accounts);
       }
     } catch (error) {
-      console.error('Error fetching bank accounts:', error);
+      logger.error('Error fetching bank accounts:', error);
       toast.error('銀行口座の取得に失敗しました');
     } finally {
       setLoading(false);
@@ -169,7 +170,7 @@ export default function BankAccountsPage() {
         throw new Error(data.error || '保存に失敗しました');
       }
     } catch (error) {
-      console.error('Error saving bank account:', error);
+      logger.error('Error saving bank account:', error);
       toast.error('銀行口座の保存に失敗しました');
     } finally {
       setSaving(false);
@@ -190,7 +191,7 @@ export default function BankAccountsPage() {
       toast.success('銀行口座を削除しました');
       fetchBankAccounts();
     } catch (error) {
-      console.error('Error deleting bank account:', error);
+      logger.error('Error deleting bank account:', error);
       toast.error('銀行口座の削除に失敗しました');
     }
   };
@@ -209,7 +210,7 @@ export default function BankAccountsPage() {
       toast.success('デフォルト口座を設定しました');
       fetchBankAccounts();
     } catch (error) {
-      console.error('Error setting default account:', error);
+      logger.error('Error setting default account:', error);
       toast.error('デフォルト口座の設定に失敗しました');
     }
   };

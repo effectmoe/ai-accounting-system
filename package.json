@@ -64,7 +64,8 @@
     "mcp:debug:install": "cd src/debug/mcp-servers && npm install",
     "migrate:supplier-fields": "tsx scripts/migrate-supplier-address-fields.ts",
     "refactor": "tsx src/scripts/test-refactor-agent.ts",
-    "refactor:watch": "tsx watch src/scripts/test-refactor-agent.ts"
+    "refactor:watch": "tsx watch src/scripts/test-refactor-agent.ts",
+    "replace-console-logs": "tsx scripts/replace-console-logs.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.27.3",
@@ -152,6 +153,7 @@
     "@babel/parser": "^7.28.0",
     "@babel/types": "^7.28.1",
     "@types/form-data": "^2.2.1",
+    "@types/glob": "^8.1.0",
     "@types/uuid": "^9.0.8",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
@@ -160,6 +162,7 @@
     "eslint": "^8.56.0",
     "eslint-config-next": "14.1.0",
     "form-data": "^4.0.3",
+    "glob": "^11.0.3",
     "node-fetch": "^2.7.0",
     "null-loader": "^4.0.1",
     "tsx": "^4.7.0",

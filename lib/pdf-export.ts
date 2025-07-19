@@ -3,6 +3,7 @@ import React from 'react';
 import { DocumentPDF } from './pdf-generator';
 import { DocumentData } from './document-generator';
 
+import { logger } from '@/lib/logger';
 export async function generatePDFBlob(data: DocumentData): Promise<Blob> {
   const pdfDocument = React.createElement(DocumentPDF, { data });
   const blob = await pdf(pdfDocument as any).toBlob();
@@ -30,18 +31,18 @@ export async function downloadPDF(data: DocumentData): Promise<void> {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   } catch (error) {
-    console.error('PDF生成エラー:', error);
+    logger.error('PDF生成エラー:', error);
     throw new Error('PDFの生成に失敗しました');
   }
 }
 
 // Base64エンコードされたPDFを生成（メール送信などに使用）
 export async function generatePDFBase64(data: DocumentData): Promise<string> {
-  console.log('generatePDFBase64 called, window check:', typeof window === 'undefined');
+  logger.debug('generatePDFBase64 called, window check:', typeof window === 'undefined');
   
   // サーバーサイドで実行される場合
   if (typeof window === 'undefined') {
-    console.log('Running on server side, attempting PDF generation...');
+    logger.debug('Running on server side, attempting PDF generation...');
     // jsPDFを使用したサーバーサイドPDF生成
     const { generateJsPDFDocument } = await import('./jspdf-server-generator');
     return await generateJsPDFDocument(data);

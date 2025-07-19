@@ -1,4 +1,5 @@
 import { getDatabase, Collections, DatabaseService } from './mongodb-client';
+import { logger } from '@/lib/logger';
 import { 
   Customer, 
   CompanyInfo, 
@@ -16,12 +17,12 @@ const db = DatabaseService.getInstance();
  */
 export async function initializeDatabase() {
   try {
-    console.log('Initializing database collections and indexes...');
+    logger.debug('Initializing database collections and indexes...');
     
     const database = await getDatabase();
     
     // 1. customersコレクションのインデックス作成
-    console.log('Creating indexes for customers collection...');
+    logger.debug('Creating indexes for customers collection...');
     await db.createIndex(Collections.CUSTOMERS, { companyName: 1 });
     await db.createIndex(Collections.CUSTOMERS, { email: 1 });
     await db.createIndex(Collections.CUSTOMERS, { isActive: 1 });
@@ -35,18 +36,18 @@ export async function initializeDatabase() {
     });
     
     // 2. companyInfoコレクションのインデックス作成
-    console.log('Creating indexes for companyInfo collection...');
+    logger.debug('Creating indexes for companyInfo collection...');
     await db.createIndex(Collections.COMPANY_INFO, { isDefault: 1 });
     await db.createIndex(Collections.COMPANY_INFO, { companyName: 1 });
     
     // 3. bankAccountsコレクションのインデックス作成
-    console.log('Creating indexes for bankAccounts collection...');
+    logger.debug('Creating indexes for bankAccounts collection...');
     await db.createIndex(Collections.BANK_ACCOUNTS, { isDefault: 1 });
     await db.createIndex(Collections.BANK_ACCOUNTS, { isActive: 1 });
     await db.createIndex(Collections.BANK_ACCOUNTS, { accountName: 1 });
     
     // 4. invoicesコレクションのインデックス作成
-    console.log('Creating indexes for invoices collection...');
+    logger.debug('Creating indexes for invoices collection...');
     await db.createIndex(Collections.INVOICES, { invoiceNumber: 1 }, { unique: true });
     await db.createIndex(Collections.INVOICES, { customerId: 1 });
     await db.createIndex(Collections.INVOICES, { status: 1 });
@@ -58,10 +59,10 @@ export async function initializeDatabase() {
     await db.createIndex(Collections.INVOICES, { customerId: 1, status: 1 });
     await db.createIndex(Collections.INVOICES, { status: 1, dueDate: 1 });
     
-    console.log('Database initialization completed successfully!');
+    logger.debug('Database initialization completed successfully!');
     
   } catch (error) {
-    console.error('Error initializing database:', error);
+    logger.error('Error initializing database:', error);
     throw error;
   }
 }
@@ -71,7 +72,7 @@ export async function initializeDatabase() {
  */
 export async function createSampleData() {
   try {
-    console.log('Creating sample data...');
+    logger.debug('Creating sample data...');
     
     // 1. 自社情報のサンプル作成
     const existingCompanyInfo = await db.findOne<CompanyInfo>(Collections.COMPANY_INFO, { isDefault: true });
@@ -106,10 +107,10 @@ export async function createSampleData() {
         sealImageUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFAAAABQCAYAAACOEfKtAAAABHNCSVQICAgIfAhkiAAAAAlwSFlzAAALEgAACxIB0t1+/AAAADh0RVh0U29mdHdhcmUAbWF0cGxvdGxpYiB2ZXJzaW9uMy4xLjEsIGh0dHA6Ly9tYXRwbG90bGliLm9yZy8QZhcZAAAEV0lEQVR4nO2dW4hVVRjHf99MjqPjJWvSUiu1pIu9VERFUVlEF+hBIqILL0QPFRFFPfRQT730EkEQRRdEoouElxdBg7IICi0qvGRlZpqVo2Oa5ng55+vhrJnZZ87Z58yctfbea875/WDgzNlnr/Wtb/1nrbX3Xnt9oqoE4jNm2AYUmSDQI0GgR4JAjwSBHgkCPRIEesRJoIhcJCLrRGS9iNzmyqjRgsTtSItIG7AWOB/YBHwFXK2q33W6T3t7u44fPz7W82aTyWQAaGtr63K9l59qtVrD7ePGjetyPZvNArBz585tqjo1bg1jHexdCKxX1Q0AIvIicBlQVmA6nWbOnDkOT7V4+eWXAbjhhhu6XF+5ciUAN910U8PtH3vsMQCuueaaLtfnz58PwLJly37ub4EuvHE6sLHg701522KSySSSSbfRKfKx1QXH9sVl1LGvr8OQFZE5IrJCRFbs27fP4WnKU6vVqNVq+T+1y3an+IgzLgIXqupv/RHo4lKbgJkFf8/I5xVR1aeApwCmTJniNJQVJ3LBqnXr1gEwc+bMLtffffddAC666CLjDi3tFONytCuBWSJyhIiMAK4C3nLYXxBwOAJVNSsi84F3gDZgsap+68yyUYKLi6Kq7wPvu+yrFQgzkR4JAj3icgSWpVwfdPv27QCsXr0agEmTJjXcfvHixQBcd911Xa5XcuHnn38egGuuuYY4hCPQI0GgR5x641w8ZsyYMdr3LKSzMNQJEyY03F7u/rNmzQJgzZo1v6jqcXGfMxyBHgkCPZJIF3Y1ZlmuG9LO0BaOQI8EgR5JRAg38vV6JiYc4TkJR6BHgkCPBBf2SBDokdgCRWQm8CwwDVDgKVV9VESygCLSBmTr/UGJb9LpdG23VquZD0slz/cxE5kFblHVI4BjgZtF5EjgNmC5qs4Cluf/Dlgo18e4Y/2hR4Gq2qKqq/K/dwHf5+5zGfBMvtkzwOXGrUsQJl14N/Ao4AtgmqpuyV/aSs7FDZBMJku6ajltBw4c2FDp8LuqXrQHnQWKyATgVWCBqu4svKa5TIeSAqtVGzKZDBs2bODQoUMu1vhBr/Y6r6NJ5n7g7f50YbeAiKTIiVusqq/l8/8QkXSquk1E0sCfpe5b3hFKSN9y6S4mTqfaRaCIiAJP596uKFT1NeBGYFH++5ta35v0xukF1YTqOuXoEcKqei5wPXCuqh4NPMmhQQcXisrHxbMBJlHVcJGmQpzFNKkIa+UtAT7jLgHxnCRcoOJOJBY3eVBrv0gQGCBJoFdX7peBiPwFbAe2eb2xP6bQu92Hq2rs1x95FQiQz4/ow8ZhYtPu4MIeCQI9MiyBTw3pef3Fmt1D6QO/TQQXjokGgPD7jmFNDH8cAAD//+YNYtoelJiAAAAAAElFTkSuQmCC'
       });
       companyInfoId = companyInfo._id!.toString();
-      console.log('Created sample company info');
+      logger.debug('Created sample company info');
     } else {
       companyInfoId = existingCompanyInfo._id!.toString();
-      console.log('Using existing company info');
+      logger.debug('Using existing company info');
     }
     
     // 2. 銀行口座のサンプル作成
@@ -134,10 +135,10 @@ export async function createSampleData() {
         notes: 'メインの取引口座'
       });
       bankAccountId = bankAccount._id!.toString();
-      console.log('Created sample bank account');
+      logger.debug('Created sample bank account');
     } else {
       bankAccountId = existingBankAccount._id!.toString();
-      console.log('Using existing bank account');
+      logger.debug('Using existing bank account');
     }
     
     // 3. 顧客のサンプル作成
@@ -178,7 +179,7 @@ export async function createSampleData() {
       isActive: true,
       tags: ['重要顧客', 'IT業界']
     });
-    console.log('Created sample customer');
+    logger.debug('Created sample customer');
     
     // 4. 請求書のサンプル作成
     const invoiceDate = new Date();
@@ -251,12 +252,12 @@ export async function createSampleData() {
         }
       }
     });
-    console.log('Created sample invoice');
+    logger.debug('Created sample invoice');
     
-    console.log('Sample data creation completed!');
+    logger.debug('Sample data creation completed!');
     
   } catch (error) {
-    console.error('Error creating sample data:', error);
+    logger.error('Error creating sample data:', error);
     throw error;
   }
 }
@@ -266,7 +267,7 @@ export async function createSampleData() {
  */
 export async function setupValidationRules() {
   try {
-    console.log('Setting up database validation rules...');
+    logger.debug('Setting up database validation rules...');
     
     const database = await getDatabase();
     
@@ -301,10 +302,10 @@ export async function setupValidationRules() {
       }
     });
     
-    console.log('Validation rules setup completed!');
+    logger.debug('Validation rules setup completed!');
     
   } catch (error) {
     // バリデーションルールの設定はオプショナルなので、エラーは警告として扱う
-    console.warn('Warning: Could not set up validation rules:', error);
+    logger.warn('Warning: Could not set up validation rules:', error);
   }
 }
