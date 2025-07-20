@@ -20,7 +20,8 @@ export async function GET(request: NextRequest) {
         { linked_document_id: { $exists: false } },
         { linked_document_id: null }
       ],
-      status: { $ne: 'archived' }
+      status: { $ne: 'archived' },
+      hiddenFromList: { $ne: true }  // hiddenFromListがtrueのものを除外
     };
 
     const ocrResults = await db.find('documents', filter, {
@@ -65,7 +66,7 @@ export async function GET(request: NextRequest) {
       limit
     });
   } catch (error) {
-    logger.error('OCR results API error:', error);
+    console.error('OCR results API error:', error);
     return NextResponse.json(
       { 
         error: 'Internal server error',
