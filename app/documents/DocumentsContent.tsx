@@ -69,6 +69,15 @@ export default function DocumentsContent() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
+  const [ocrSortBy, setOcrSortBy] = useState<'date' | 'vendor' | 'amount'>('date');
+  const [ocrSortOrder, setOcrSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [ocrFilters, setOcrFilters] = useState({
+    vendor: '',
+    dateFrom: '',
+    dateTo: '',
+    minAmount: '',
+    maxAmount: ''
+  });
   const documentsPerPage = 20;
 
   // タブ変更時にURLパラメータを更新
@@ -283,16 +292,89 @@ export default function DocumentsContent() {
     });
   }, []); // 依存配列を空にして初回のみ実行
   
-  // タブ切り替え時の処理（データの再取得はしない）
+  // ページ変更時の処理（初回ロード以外）
   useEffect(() => {
-    // タブが変わってもデータは再取得しない
-    // すでに取得済みのデータを表示するだけ
-  }, [activeTab]);
+    console.log('📄 ページ変更:', currentPage, 'アクティブタブ:', activeTab);
+    // 初回ロード（currentPage=1）は既に初回useEffectで処理済みなのでスキップ
+    if (currentPage > 1) {
+      if (activeTab === 'ocr') {
+        fetchOcrResults();
+      } else {
+        fetchDocuments();
+      }
+    }
+  }, [currentPage]); // activeTabとcallback関数は依存配列から除去
 
-  // フィルター変更時
+  // フィルター変更時に文書を再取得
   useEffect(() => {
-    setCurrentPage(1); // フィルター変更時はページを1に戻す
+    console.log('🔍 フィルター変更:', filters);
+    if (activeTab === 'documents') {
+      setCurrentPage(1);
+      fetchDocuments();
+    }
   }, [filters]);
+
+  // OCR結果をソート・フィルタリング
+  const filteredAndSortedOcrResults = useCallback(() => {
+    let filtered = [...ocrResults];
+
+    // フィルタリング
+    if (ocrFilters.vendor) {
+      const vendorQuery = ocrFilters.vendor.toLowerCase();
+      filtered = filtered.filter(result => 
+        (result.vendor_name?.toLowerCase().includes(vendorQuery)) ||
+        (result.store_name?.toLowerCase().includes(vendorQuery)) ||
+        (result.company_name?.toLowerCase().includes(vendorQuery))
+      );
+    }
+
+    if (ocrFilters.dateFrom) {
+      filtered = filtered.filter(result => {
+        const resultDate = new Date(result.receipt_date);
+        const fromDate = new Date(ocrFilters.dateFrom);
+        return resultDate >= fromDate;
+      });
+    }
+
+    if (ocrFilters.dateTo) {
+      filtered = filtered.filter(result => {
+        const resultDate = new Date(result.receipt_date);
+        const toDate = new Date(ocrFilters.dateTo);
+        return resultDate <= toDate;
+      });
+    }
+
+    // ソート
+    filtered.sort((a, b) => {
+      let comparison = 0;
+
+      switch (ocrSortBy) {
+        case 'date':
+          comparison = new Date(a.receipt_date).getTime() - new Date(b.receipt_date).getTime();
+          break;
+        case 'vendor':
+          const vendorA = a.vendor_name || a.store_name || a.company_name || '';
+          const vendorB = b.vendor_name || b.store_name || b.company_name || '';
+          comparison = vendorA.localeCompare(vendorB, 'ja');
+          break;
+        case 'amount':
+          comparison = (a.total_amount || 0) - (b.total_amount || 0);
+          break;
+      }
+
+      return ocrSortOrder === 'desc' ? -comparison : comparison;
+    });
+
+    console.log('🔄 フィルタ・ソート結果:', {
+      original: ocrResults.length,
+      filtered: filtered.length,
+      sortBy: ocrSortBy,
+      sortOrder: ocrSortOrder,
+      filters: ocrFilters
+    });
+
+    return filtered;
+  }, [ocrResults, ocrSortBy, ocrSortOrder, ocrFilters]);
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -347,7 +429,7 @@ export default function DocumentsContent() {
               </nav>
             </div>
 
-            {/* フィルター（作成済み文書タブのみ） */}
+            {/* フィルター（作成済み文書タブ） */}
             {activeTab === 'documents' && (
               <div className="bg-white rounded-lg shadow mb-6 p-4">
                 <div className="flex items-center justify-between flex-wrap gap-4">
@@ -436,6 +518,96 @@ export default function DocumentsContent() {
               </div>
             )}
 
+            {/* フィルター（OCRタブ） */}
+            {activeTab === 'ocr' && (
+              <div className="bg-white rounded-lg shadow mb-6 p-4">
+                <div className="flex items-center justify-between flex-wrap gap-4">
+                  <div className="flex items-center gap-4 flex-wrap">
+                    <div className="flex items-center gap-2">
+                      <Filter className="h-4 w-4 text-gray-500" />
+                      <span className="text-sm font-medium text-gray-700">ソート・フィルター:</span>
+                    </div>
+                    
+                    <select
+                      value={ocrSortBy}
+                      onChange={(e) => setOcrSortBy(e.target.value as 'date' | 'vendor' | 'amount')}
+                      className="px-3 py-1 border border-gray-300 rounded-md text-sm"
+                    >
+                      <option value="date">日付順</option>
+                      <option value="vendor">取引先順</option>
+                      <option value="amount">金額順</option>
+                    </select>
+
+                    <select
+                      value={ocrSortOrder}
+                      onChange={(e) => setOcrSortOrder(e.target.value as 'asc' | 'desc')}
+                      className="px-3 py-1 border border-gray-300 rounded-md text-sm"
+                    >
+                      <option value="desc">降順</option>
+                      <option value="asc">昇順</option>
+                    </select>
+
+                    <input
+                      type="text"
+                      value={ocrFilters.vendor}
+                      onChange={(e) => setOcrFilters({ ...ocrFilters, vendor: e.target.value })}
+                      className="px-3 py-1 border border-gray-300 rounded-md text-sm"
+                      placeholder="取引先で検索"
+                    />
+
+                    <input
+                      type="date"
+                      value={ocrFilters.dateFrom}
+                      onChange={(e) => setOcrFilters({ ...ocrFilters, dateFrom: e.target.value })}
+                      className="px-3 py-1 border border-gray-300 rounded-md text-sm"
+                      placeholder="開始日"
+                    />
+
+                    <input
+                      type="date"
+                      value={ocrFilters.dateTo}
+                      onChange={(e) => setOcrFilters({ ...ocrFilters, dateTo: e.target.value })}
+                      className="px-3 py-1 border border-gray-300 rounded-md text-sm"
+                      placeholder="終了日"
+                    />
+
+                    <button
+                      onClick={() => setOcrFilters({ vendor: '', dateFrom: '', dateTo: '', minAmount: '', maxAmount: '' })}
+                      className="px-3 py-1 text-sm text-gray-600 hover:text-gray-900"
+                    >
+                      クリア
+                    </button>
+                  </div>
+                  
+                  {/* ビューモード切り替え */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setViewMode('card')}
+                      className={`p-2 rounded-md transition-colors ${
+                        viewMode === 'card' 
+                          ? 'bg-blue-100 text-blue-700' 
+                          : 'text-gray-500 hover:text-gray-700'
+                      }`}
+                      title="カード表示"
+                    >
+                      <Grid3X3 className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => setViewMode('table')}
+                      className={`p-2 rounded-md transition-colors ${
+                        viewMode === 'table' 
+                          ? 'bg-blue-100 text-blue-700' 
+                          : 'text-gray-500 hover:text-gray-700'
+                      }`}
+                      title="テーブル表示"
+                    >
+                      <List className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* コンテンツ */}
             <div className="bg-white rounded-lg shadow overflow-hidden">
               {loading ? (
@@ -447,14 +619,18 @@ export default function DocumentsContent() {
                 </div>
               ) : activeTab === 'ocr' ? (
                 // OCR結果（カード形式）
-                ocrResults.length === 0 ? (
-                  <div className="p-8 text-center">
-                    <FileText className="mx-auto h-12 w-12 text-gray-400" />
-                    <p className="mt-2 text-gray-600">OCR処理済みの書類がありません</p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-4 md:p-6">
-                    {ocrResults.map((result) => (
+                (() => {
+                  const displayResults = filteredAndSortedOcrResults();
+                  return displayResults.length === 0 ? (
+                    <div className="p-8 text-center">
+                      <FileText className="mx-auto h-12 w-12 text-gray-400" />
+                      <p className="mt-2 text-gray-600">
+                        {ocrResults.length === 0 ? 'OCR処理済みの書類がありません' : 'フィルター条件に一致する書類がありません'}
+                      </p>
+                    </div>
+                  ) : viewMode === 'card' ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-4 md:p-6">
+                      {displayResults.map((result) => (
                       <div key={result.id} className="bg-white border border-gray-200 rounded-lg hover:shadow-lg transition-all duration-200">
                         <div className="p-4">
                           {/* ヘッダー */}
@@ -629,9 +805,86 @@ export default function DocumentsContent() {
                           </div>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                )
+                      ))}
+                    </div>
+                  ) : (
+                    // OCRテーブル表示
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              ファイル名
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              取引先
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              日付
+                            </th>
+                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              金額
+                            </th>
+                            <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              ステータス
+                            </th>
+                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              操作
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {displayResults.map((result) => (
+                            <tr key={result.id} className="hover:bg-gray-50">
+                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                {result.receipt_number || result.file_name?.split('.')[0] || '領収書'}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {result.vendor_name || result.store_name || result.company_name || '店舗名なし'}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {result.receipt_date ? new Date(result.receipt_date).toLocaleDateString('ja-JP') : '-'}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                                ¥{(result.total_amount || 0).toLocaleString()}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-center">
+                                {result.linked_document_id ? (
+                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    文書化済
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                    未処理
+                                  </span>
+                                )}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                {result.linked_document_id ? (
+                                  <Link
+                                    href={`/documents/${result.linked_document_id}`}
+                                    className="text-blue-600 hover:text-blue-900"
+                                  >
+                                    詳細を見る
+                                  </Link>
+                                ) : (
+                                  <button
+                                    onClick={() => {
+                                      handleCreateDocument(result, 'receipt');
+                                    }}
+                                    className="text-blue-600 hover:text-blue-900"
+                                  >
+                                    文書化
+                                  </button>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  );
+                })();
               ) : (
                 // 作成済み文書
                 documents.length === 0 ? (
