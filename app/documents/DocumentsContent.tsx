@@ -7,7 +7,6 @@ import { DocumentService, SavedDocument } from '@/services/document-service';
 import { FileText, Download, Send, CheckCircle, Filter, Plus, Paperclip, Bell, Edit, FileCheck, Archive, Grid3X3, List, Trash2, Image } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
-import { logger } from '@/lib/logger';
 const documentTypeLabels = {
   estimate: '見積書',
   invoice: '請求書',
@@ -70,120 +69,35 @@ export default function DocumentsContent() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
-  const [sortField, setSortField] = useState<'createdAt' | 'issueDate' | 'fileName' | 'accountTitle'>('createdAt');
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
-  const documentsPerPage = viewMode === 'card' ? 12 : 20;
-  
-  // ビューモード変更時の処理
-  const handleViewModeChange = useCallback((mode: 'card' | 'table') => {
-    setViewMode(mode);
-    setCurrentPage(1);
-    // ページ数を再計算
-    if (activeTab === 'ocr') {
-      setTotalPages(Math.ceil(ocrResults.length / (mode === 'card' ? 12 : 20)));
-    } else {
-      setTotalPages(Math.ceil(documents.length / (mode === 'card' ? 12 : 20)));
-    }
-  }, [activeTab, ocrResults.length, documents.length]);
+  const documentsPerPage = 20;
 
   // タブ変更時にURLパラメータを更新
   const handleTabChange = useCallback((tab: string) => {
     setActiveTab(tab);
-    setCurrentPage(1); // ページをリセット
     const params = new URLSearchParams(searchParams.toString());
     params.set('tab', tab);
     router.push(`/documents?${params.toString()}`, { scroll: false });
   }, [router, searchParams]);
 
-  // ソート関数
-  const sortOcrResults = useCallback((results: OcrResult[]) => {
-    return [...results].sort((a, b) => {
-      let aValue: any, bValue: any;
-      
-      switch (sortField) {
-        case 'createdAt':
-          aValue = new Date(a.created_at || 0).getTime();
-          bValue = new Date(b.created_at || 0).getTime();
-          break;
-        case 'issueDate':
-          aValue = a.receipt_date ? new Date(a.receipt_date).getTime() : 0;
-          bValue = b.receipt_date ? new Date(b.receipt_date).getTime() : 0;
-          break;
-        case 'fileName':
-          aValue = a.file_name || '';
-          bValue = b.file_name || '';
-          break;
-        case 'accountTitle':
-          // 現在は全て未分類なので、ファイル名でソート
-          aValue = a.file_name || '';
-          bValue = b.file_name || '';
-          break;
-        default:
-          return 0;
-      }
-      
-      if (sortOrder === 'asc') {
-        return aValue > bValue ? 1 : aValue < bValue ? -1 : 0;
-      } else {
-        return aValue < bValue ? 1 : aValue > bValue ? -1 : 0;
-      }
-    });
-  }, [sortField, sortOrder]);
-
-  // OCR結果を取得（ページングとソートを考慮）
+  // OCR結果を取得
   const fetchOcrResults = useCallback(async () => {
     try {
-      console.log('Fetching OCR results...');
-      // まず全件数を取得するため、1ページ目を取得
-      const countResponse = await fetch(`/api/ocr-results?page=1&limit=1`);
-      console.log('Count response status:', countResponse.status);
+      const response = await fetch(`/api/ocr-results?page=${currentPage}&limit=${documentsPerPage}`);
+      const data = await response.json();
       
-      if (!countResponse.ok) {
-        const errorText = await countResponse.text();
-        console.error('Count response error:', errorText);
-        throw new Error(`HTTP error! status: ${countResponse.status}`);
-      }
-      
-      const countData = await countResponse.json();
-      console.log('Count data:', countData);
-      
-      if (countData.success) {
-        const total = countData.total || 0;
-        console.log('Total OCR results:', total);
-        
-        // 全件取得（ソートのため）
-        const response = await fetch(`/api/ocr-results?page=1&limit=${total || 100}`);
-        console.log('Full fetch response status:', response.status);
-        
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('Full fetch response error:', errorText);
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        console.log('Full data:', data);
-        
-        if (data.success) {
-          const results = data.data || [];
-          console.log(`Fetched OCR results: ${results.length} items`);
-          logger.info(`Fetched OCR results: ${results.length} items, documentsPerPage: ${documentsPerPage}`);
-          setOcrResults(results);
-          // 取得したデータ数に基づいてページ数を計算
-          const calculatedPages = Math.ceil(results.length / documentsPerPage);
-          logger.info(`Calculated total pages: ${calculatedPages}`);
-          setTotalPages(calculatedPages);
-        }
+      if (data.success) {
+        console.log('Fetched OCR results:', data.data);
+        setOcrResults(data.data || []);
+        setTotalPages(Math.ceil((data.total || 0) / documentsPerPage));
       } else {
-        logger.error('Failed to fetch OCR results:', countData.error);
+        console.error('Failed to fetch OCR results:', data.error);
         toast.error('OCR結果の取得に失敗しました');
       }
     } catch (error) {
       console.error('Error fetching OCR results:', error);
-      logger.error('Error fetching OCR results:', error);
-      toast.error('OCR結果の取得中にエラーが発生しました: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      toast.error('OCR結果の取得中にエラーが発生しました');
     }
-  }, [documentsPerPage]);
+  }, [currentPage]);
 
   // 文書一覧を取得
   const fetchDocuments = useCallback(async () => {
@@ -219,11 +133,11 @@ export default function DocumentsContent() {
         setDocuments(data.documents || []);
         setTotalPages(data.totalPages || 1);
       } else {
-        logger.error('Error fetching documents:', data.error);
+        console.error('Error fetching documents:', data.error);
         toast.error('文書の取得に失敗しました');
       }
     } catch (error) {
-      logger.error('Error fetching documents:', error);
+      console.error('Error fetching documents:', error);
       toast.error('文書の取得中にエラーが発生しました');
     }
   }, [filters, currentPage]);
@@ -258,7 +172,7 @@ export default function DocumentsContent() {
       });
 
       const result = await response.json();
-      logger.debug('Document creation response:', result);
+      console.log('Document creation response:', result);
       
       if (response.ok) {
         toast.success(`${result.message || '領収書を作成しました'}`);
@@ -272,11 +186,11 @@ export default function DocumentsContent() {
         await fetchDocuments();
         
       } else {
-        logger.error('Document creation error:', result);
+        console.error('Document creation error:', result);
         toast.error(result.error || '文書の作成に失敗しました');
       }
     } catch (error) {
-      logger.error('Document creation error:', error);
+      console.error('Document creation error:', error);
       toast.error('文書の作成中にエラーが発生しました');
     }
   };
@@ -300,7 +214,7 @@ export default function DocumentsContent() {
         toast.error(error.error || 'ステータスの更新に失敗しました');
       }
     } catch (error) {
-      logger.error('Status update error:', error);
+      console.error('Status update error:', error);
       toast.error('ステータスの更新中にエラーが発生しました');
     }
   };
@@ -322,19 +236,38 @@ export default function DocumentsContent() {
       toast.success('OCR結果を削除しました');
       await fetchOcrResults();
     } catch (error) {
-      logger.error('Delete error:', error);
+      console.error('Delete error:', error);
       toast.error(error instanceof Error ? error.message : '削除に失敗しました');
     }
   };
 
   // 初回ロードのみ
   useEffect(() => {
-    setLoading(true);
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        await Promise.all([
+          fetchOcrResults(),
+          fetchDocuments()
+        ]);
+      } catch (error) {
+        console.error('Data loading error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
     
-    // 初回ロード時のみ実行
-    fetchOcrResults();
-    fetchDocuments().finally(() => setLoading(false));
+    loadData();
   }, []); // 依存配列を空にして初回のみ実行
+  
+  // ページ変更時の処理
+  useEffect(() => {
+    if (activeTab === 'ocr') {
+      fetchOcrResults();
+    } else {
+      fetchDocuments();
+    }
+  }, [currentPage, activeTab]);
   
   // タブ切り替え時の処理（データの再取得はしない）
   useEffect(() => {
@@ -400,78 +333,70 @@ export default function DocumentsContent() {
               </nav>
             </div>
 
-            {/* フィルターとビューモード切り替え */}
+            {/* フィルター */}
             {(activeTab === 'documents' || activeTab === 'ocr') && (
               <div className="bg-white rounded-lg shadow mb-6 p-4">
                 <div className="flex items-center justify-between flex-wrap gap-4">
-                  {activeTab === 'documents' ? (
-                    <div className="flex items-center gap-4 flex-wrap">
-                      <div className="flex items-center gap-2">
-                        <Filter className="h-4 w-4 text-gray-500" />
-                        <span className="text-sm font-medium text-gray-700">フィルター:</span>
-                      </div>
-                      
-                      <select
-                        value={filters.documentType}
-                        onChange={(e) => setFilters({ ...filters, documentType: e.target.value })}
-                        className="px-3 py-1 border border-gray-300 rounded-md text-sm"
-                      >
-                        <option value="">すべての種類</option>
-                        <option value="estimate">見積書</option>
-                        <option value="invoice">請求書</option>
-                        <option value="delivery_note">納品書</option>
-                        <option value="receipt">領収書</option>
-                      </select>
-
-                      <select
-                        value={filters.status}
-                        onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-                        className="px-3 py-1 border border-gray-300 rounded-md text-sm"
-                      >
-                        <option value="">すべてのステータス</option>
-                        <option value="draft">下書き</option>
-                        <option value="confirmed">確定済み</option>
-                        <option value="viewed">閲覧済み</option>
-                        <option value="accepted">承認済み</option>
-                        <option value="paid">支払済み</option>
-                        <option value="cancelled">キャンセル</option>
-                      </select>
-
-                      <input
-                        type="date"
-                        value={filters.dateFrom}
-                        onChange={(e) => setFilters({ ...filters, dateFrom: e.target.value })}
-                        className="px-3 py-1 border border-gray-300 rounded-md text-sm"
-                        placeholder="開始日"
-                      />
-
-                      <input
-                        type="date"
-                        value={filters.dateTo}
-                        onChange={(e) => setFilters({ ...filters, dateTo: e.target.value })}
-                        className="px-3 py-1 border border-gray-300 rounded-md text-sm"
-                        placeholder="終了日"
-                      />
-
-                      <button
-                        onClick={() => setFilters({ documentType: '', status: '', dateFrom: '', dateTo: '' })}
-                        className="px-3 py-1 text-sm text-gray-600 hover:text-gray-900"
-                      >
-                        クリア
-                      </button>
-                    </div>
-                  ) : (
+                  <div className="flex items-center gap-4 flex-wrap">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-gray-700">
-                        {ocrResults.length}件のOCR結果
-                      </span>
+                      <Filter className="h-4 w-4 text-gray-500" />
+                      <span className="text-sm font-medium text-gray-700">フィルター:</span>
                     </div>
-                  )}
+                    
+                    <select
+                      value={filters.documentType}
+                      onChange={(e) => setFilters({ ...filters, documentType: e.target.value })}
+                      className="px-3 py-1 border border-gray-300 rounded-md text-sm"
+                    >
+                      <option value="">すべての種類</option>
+                      <option value="estimate">見積書</option>
+                      <option value="invoice">請求書</option>
+                      <option value="delivery_note">納品書</option>
+                      <option value="receipt">領収書</option>
+                    </select>
+
+                    <select
+                      value={filters.status}
+                      onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+                      className="px-3 py-1 border border-gray-300 rounded-md text-sm"
+                    >
+                      <option value="">すべてのステータス</option>
+                      <option value="draft">下書き</option>
+                      <option value="confirmed">確定済み</option>
+                      <option value="viewed">閲覧済み</option>
+                      <option value="accepted">承認済み</option>
+                      <option value="paid">支払済み</option>
+                      <option value="cancelled">キャンセル</option>
+                    </select>
+
+                    <input
+                      type="date"
+                      value={filters.dateFrom}
+                      onChange={(e) => setFilters({ ...filters, dateFrom: e.target.value })}
+                      className="px-3 py-1 border border-gray-300 rounded-md text-sm"
+                      placeholder="開始日"
+                    />
+
+                    <input
+                      type="date"
+                      value={filters.dateTo}
+                      onChange={(e) => setFilters({ ...filters, dateTo: e.target.value })}
+                      className="px-3 py-1 border border-gray-300 rounded-md text-sm"
+                      placeholder="終了日"
+                    />
+
+                    <button
+                      onClick={() => setFilters({ documentType: '', status: '', dateFrom: '', dateTo: '' })}
+                      className="px-3 py-1 text-sm text-gray-600 hover:text-gray-900"
+                    >
+                      クリア
+                    </button>
+                  </div>
                   
                   {/* ビューモード切り替え */}
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => handleViewModeChange('card')}
+                      onClick={() => setViewMode('card')}
                       className={`p-2 rounded-md transition-colors ${
                         viewMode === 'card' 
                           ? 'bg-blue-100 text-blue-700' 
@@ -482,7 +407,7 @@ export default function DocumentsContent() {
                       <Grid3X3 className="h-4 w-4" />
                     </button>
                     <button
-                      onClick={() => handleViewModeChange('table')}
+                      onClick={() => setViewMode('table')}
                       className={`p-2 rounded-md transition-colors ${
                         viewMode === 'table' 
                           ? 'bg-blue-100 text-blue-700' 
@@ -507,18 +432,15 @@ export default function DocumentsContent() {
                   </div>
                 </div>
               ) : activeTab === 'ocr' ? (
-                // OCR結果
+                // OCR結果（カード形式）
                 ocrResults.length === 0 ? (
                   <div className="p-8 text-center">
                     <FileText className="mx-auto h-12 w-12 text-gray-400" />
                     <p className="mt-2 text-gray-600">OCR処理済みの書類がありません</p>
                   </div>
-                ) : viewMode === 'card' ? (
-                  // カード形式
+                ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-4 md:p-6">
-                    {sortOcrResults(ocrResults)
-                      .slice((currentPage - 1) * documentsPerPage, currentPage * documentsPerPage)
-                      .map((result) => (
+                    {ocrResults.map((result) => (
                       <div key={result.id} className="bg-white border border-gray-200 rounded-lg hover:shadow-lg transition-all duration-200">
                         <div className="p-4">
                           {/* ヘッダー */}
@@ -694,216 +616,6 @@ export default function DocumentsContent() {
                         </div>
                       </div>
                     ))}
-                  </div>
-                ) : (
-                  // リスト形式
-                  <div>
-                    {/* ソートボタン */}
-                    <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-gray-700">並び替え:</span>
-                        <button
-                          onClick={() => {
-                            if (sortField === 'createdAt') {
-                              setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                            } else {
-                              setSortField('createdAt');
-                              setSortOrder('desc');
-                            }
-                            setCurrentPage(1);
-                          }}
-                          className={`px-3 py-1 text-sm rounded-md ${
-                            sortField === 'createdAt' 
-                              ? 'bg-blue-600 text-white' 
-                              : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                          }`}
-                        >
-                          取込日付 {sortField === 'createdAt' && (sortOrder === 'asc' ? '↑' : '↓')}
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (sortField === 'issueDate') {
-                              setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                            } else {
-                              setSortField('issueDate');
-                              setSortOrder('desc');
-                            }
-                            setCurrentPage(1);
-                          }}
-                          className={`px-3 py-1 text-sm rounded-md ${
-                            sortField === 'issueDate' 
-                              ? 'bg-blue-600 text-white' 
-                              : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                          }`}
-                        >
-                          領収書発行日 {sortField === 'issueDate' && (sortOrder === 'asc' ? '↑' : '↓')}
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (sortField === 'fileName') {
-                              setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                            } else {
-                              setSortField('fileName');
-                              setSortOrder('asc');
-                            }
-                            setCurrentPage(1);
-                          }}
-                          className={`px-3 py-1 text-sm rounded-md ${
-                            sortField === 'fileName' 
-                              ? 'bg-blue-600 text-white' 
-                              : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                          }`}
-                        >
-                          ファイル名 {sortField === 'fileName' && (sortOrder === 'asc' ? '↑' : '↓')}
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (sortField === 'accountTitle') {
-                              setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-                            } else {
-                              setSortField('accountTitle');
-                              setSortOrder('asc');
-                            }
-                            setCurrentPage(1);
-                          }}
-                          className={`px-3 py-1 text-sm rounded-md ${
-                            sortField === 'accountTitle' 
-                              ? 'bg-blue-600 text-white' 
-                              : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-                          }`}
-                        >
-                          勘定科目 {sortField === 'accountTitle' && (sortOrder === 'asc' ? '↑' : '↓')}
-                        </button>
-                      </div>
-                    </div>
-                    {/* テーブル */}
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                          <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              取込日時
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              領収書番号/ファイル名
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              店舗名
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              発行日
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              金額
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              勘定科目
-                            </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              状態
-                            </th>
-                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              アクション
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                          {sortOcrResults(ocrResults)
-                            .slice((currentPage - 1) * documentsPerPage, currentPage * documentsPerPage)
-                            .map((result) => (
-                            <tr key={result.id} className="hover:bg-gray-50">
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {result.created_at ? new Date(result.created_at).toLocaleString('ja-JP', {
-                                  year: 'numeric',
-                                  month: '2-digit',
-                                  day: '2-digit',
-                                  hour: '2-digit',
-                                  minute: '2-digit'
-                                }) : '-'}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                <div>
-                                  <div className="font-medium">{result.receipt_number || result.file_name?.split('.')[0] || '領収書'}</div>
-                                  <div className="text-xs text-gray-500">{result.file_name}</div>
-                                </div>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {result.vendor_name || result.store_name || result.company_name || '-'}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {result.receipt_date ? new Date(result.receipt_date).toLocaleDateString('ja-JP') : '-'}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                ¥{(result.total_amount || 0).toLocaleString()}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                未分類
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                {result.linked_document_id ? (
-                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                    <CheckCircle className="h-3 w-3 mr-0.5" />
-                                    文書化済
-                                  </span>
-                                ) : (
-                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                    未処理
-                                  </span>
-                                )}
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                <div className="flex justify-end gap-2">
-                                  {result.linked_document_id ? (
-                                    <>
-                                      <Link
-                                        href={`/documents/${result.linked_document_id}`}
-                                        className="text-blue-600 hover:text-blue-900"
-                                      >
-                                        詳細
-                                      </Link>
-                                      <button
-                                        onClick={() => handleDeleteOcrResult(result)}
-                                        className="text-red-600 hover:text-red-900"
-                                      >
-                                        削除
-                                      </button>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <select
-                                        id={`doc-type-list-${result.id}`}
-                                        className="text-sm border border-gray-300 rounded-md px-2 py-1"
-                                        defaultValue="receipt"
-                                      >
-                                        <option value="receipt">領収書</option>
-                                        <option value="invoice">請求書</option>
-                                        <option value="estimate">見積書</option>
-                                        <option value="delivery_note">納品書</option>
-                                      </select>
-                                      <button
-                                        onClick={() => {
-                                          const select = document.getElementById(`doc-type-list-${result.id}`) as HTMLSelectElement;
-                                          handleCreateDocument(result, select.value);
-                                        }}
-                                        className="text-blue-600 hover:text-blue-900"
-                                      >
-                                        文書化
-                                      </button>
-                                      <button
-                                        onClick={() => handleDeleteOcrResult(result)}
-                                        className="text-red-600 hover:text-red-900"
-                                      >
-                                        削除
-                                      </button>
-                                    </>
-                                  )}
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
                   </div>
                 )
               ) : (
@@ -1086,124 +798,38 @@ export default function DocumentsContent() {
 
             {/* ページネーション */}
             {totalPages > 1 && (
-              <div className="mt-6">
-                <div className="flex items-center justify-between px-4">
-                  <div className="text-sm text-gray-700">
-                    {totalPages}ページ中{currentPage}ページ目 
-                    ({activeTab === 'ocr' ? ocrResults.length : documents.length}件中
-                    {(currentPage - 1) * documentsPerPage + 1}-
-                    {Math.min(currentPage * documentsPerPage, activeTab === 'ocr' ? ocrResults.length : documents.length)}件)
-                  </div>
-                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+              <div className="mt-6 flex justify-center">
+                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                  <button
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                    className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    前へ
+                  </button>
+                  
+                  {[...Array(totalPages)].map((_, i) => (
                     <button
-                      onClick={() => {
-                        setCurrentPage(Math.max(1, currentPage - 1));
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                      }}
-                      disabled={currentPage === 1}
-                      className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      key={i + 1}
+                      onClick={() => setCurrentPage(i + 1)}
+                      className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                        currentPage === i + 1
+                          ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                          : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                      }`}
                     >
-                      前へ
+                      {i + 1}
                     </button>
-                    
-                    {/* 最初のページ */}
-                    {currentPage > 3 && (
-                      <>
-                        <button
-                          onClick={() => {
-                            setCurrentPage(1);
-                            window.scrollTo({ top: 0, behavior: 'smooth' });
-                          }}
-                          className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
-                        >
-                          1
-                        </button>
-                        {currentPage > 4 && (
-                          <span className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
-                            ...
-                          </span>
-                        )}
-                      </>
-                    )}
-                    
-                    {/* 現在のページの周辺 */}
-                    {(() => {
-                      const pages = [];
-                      let startPage = 1;
-                      let endPage = totalPages;
-                      
-                      if (totalPages <= 5) {
-                        // 5ページ以下の場合は全て表示
-                        startPage = 1;
-                        endPage = totalPages;
-                      } else {
-                        // 5ページより多い場合
-                        if (currentPage <= 3) {
-                          startPage = 1;
-                          endPage = 5;
-                        } else if (currentPage >= totalPages - 2) {
-                          startPage = totalPages - 4;
-                          endPage = totalPages;
-                        } else {
-                          startPage = currentPage - 2;
-                          endPage = currentPage + 2;
-                        }
-                      }
-                      
-                      for (let i = startPage; i <= endPage; i++) {
-                        pages.push(
-                          <button
-                            key={i}
-                            onClick={() => {
-                              setCurrentPage(i);
-                              window.scrollTo({ top: 0, behavior: 'smooth' });
-                            }}
-                            className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                              currentPage === i
-                                ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
-                                : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                            }`}
-                          >
-                            {i}
-                          </button>
-                        );
-                      }
-                      
-                      return pages;
-                    })()}
-                    
-                    {/* 最後のページ */}
-                    {currentPage < totalPages - 2 && totalPages > 5 && (
-                      <>
-                        {currentPage < totalPages - 3 && (
-                          <span className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
-                            ...
-                          </span>
-                        )}
-                        <button
-                          onClick={() => {
-                            setCurrentPage(totalPages);
-                            window.scrollTo({ top: 0, behavior: 'smooth' });
-                          }}
-                          className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
-                        >
-                          {totalPages}
-                        </button>
-                      </>
-                    )}
-                    
-                    <button
-                      onClick={() => {
-                        setCurrentPage(Math.min(totalPages, currentPage + 1));
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                      }}
-                      disabled={currentPage === totalPages}
-                      className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      次へ
-                    </button>
-                  </nav>
-                </div>
+                  ))}
+                  
+                  <button
+                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                    disabled={currentPage === totalPages}
+                    className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    次へ
+                  </button>
+                </nav>
               </div>
             )}
           </div>
