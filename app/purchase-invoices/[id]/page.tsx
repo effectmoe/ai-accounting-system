@@ -369,7 +369,7 @@ export default function PurchaseInvoiceDetailPage({ params }: { params: { id: st
                   {invoice.currentSales !== undefined && (
                     <tr>
                       <td colSpan={4} className="px-6 py-3 text-sm text-gray-600 text-right">
-                        今月の売上高
+                        今月の請求額
                       </td>
                       <td className="px-6 py-3 text-sm font-medium text-gray-900">
                         ¥{invoice.currentSales.toLocaleString()}
