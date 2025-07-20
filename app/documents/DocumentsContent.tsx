@@ -133,19 +133,40 @@ export default function DocumentsContent() {
   // OCR結果を取得（ページングとソートを考慮）
   const fetchOcrResults = useCallback(async () => {
     try {
+      console.log('Fetching OCR results...');
       // まず全件数を取得するため、1ページ目を取得
       const countResponse = await fetch(`/api/ocr-results?page=1&limit=1`);
+      console.log('Count response status:', countResponse.status);
+      
+      if (!countResponse.ok) {
+        const errorText = await countResponse.text();
+        console.error('Count response error:', errorText);
+        throw new Error(`HTTP error! status: ${countResponse.status}`);
+      }
+      
       const countData = await countResponse.json();
+      console.log('Count data:', countData);
       
       if (countData.success) {
         const total = countData.total || 0;
+        console.log('Total OCR results:', total);
         
         // 全件取得（ソートのため）
         const response = await fetch(`/api/ocr-results?page=1&limit=${total || 100}`);
+        console.log('Full fetch response status:', response.status);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Full fetch response error:', errorText);
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         const data = await response.json();
+        console.log('Full data:', data);
         
         if (data.success) {
           const results = data.data || [];
+          console.log(`Fetched OCR results: ${results.length} items`);
           logger.info(`Fetched OCR results: ${results.length} items, documentsPerPage: ${documentsPerPage}`);
           setOcrResults(results);
           // 取得したデータ数に基づいてページ数を計算
@@ -158,8 +179,9 @@ export default function DocumentsContent() {
         toast.error('OCR結果の取得に失敗しました');
       }
     } catch (error) {
+      console.error('Error fetching OCR results:', error);
       logger.error('Error fetching OCR results:', error);
-      toast.error('OCR結果の取得中にエラーが発生しました');
+      toast.error('OCR結果の取得中にエラーが発生しました: ' + (error instanceof Error ? error.message : 'Unknown error'));
     }
   }, [documentsPerPage]);
 

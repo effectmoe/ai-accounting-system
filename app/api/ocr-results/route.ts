@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/mongodb-client';
 
-import { logger } from '@/lib/logger';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
@@ -12,126 +11,51 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20');
     const skip = (page - 1) * limit;
 
-    // まず、ocr_resultsコレクションから取得を試みる（companyIdとcompany_idの両方を試す）
-    let ocrResults = await db.find('ocr_results', {
-      $and: [
-        {
-          $or: [
-            { company_id: companyId },
-            { companyId: companyId }
-          ]
-        },
-        { status: { $ne: 'deleted' } }
-      ]
-    }, {
+    // MongoDBからOCR結果を取得
+    // documentsコレクションからOCR結果として扱えるものを取得
+    const filter = {
+      companyId: companyId,
+      ocrStatus: { $exists: true },
+      $or: [
+        { linked_document_id: { $exists: false } },
+        { linked_document_id: null }
+      ],
+      status: { $ne: 'archived' }
+    };
+
+    const ocrResults = await db.find('documents', filter, {
       limit,
       skip,
-      sort: { created_at: -1, createdAt: -1 }
+      sort: { createdAt: -1 }
     });
 
-    // 先にocr_resultsコレクションの総数を取得
-    const ocrResultsCount = await db.count('ocr_results', {
-      $and: [
-        {
-          $or: [
-            { company_id: companyId },
-            { companyId: companyId }
-          ]
-        },
-        { status: { $ne: 'deleted' } }
-      ]
-    });
-
-    // documentsコレクションからも取得して結合
-    if (ocrResults.length < limit) {
-      const filter = {
-        companyId: companyId,
-        $and: [
-          {
-            $or: [
-              { ocrStatus: { $exists: true } },
-              { documentType: 'receipt' },
-              { document_type: 'receipt' }
-            ]
-          },
-          {
-            $or: [
-              { status: { $ne: 'archived' } },
-              { status: { $exists: false } }
-            ]
-          },
-          {
-            $or: [
-              { linked_document_id: { $exists: false } },
-              { linked_document_id: null }
-            ]
-          }
-        ]
-      };
-
-      const documentsResults = await db.find('documents', filter, {
-        limit: limit - ocrResults.length,
-        skip: Math.max(0, skip - ocrResultsCount),
-        sort: { createdAt: -1 }
-      });
-      
-      // 結果を結合
-      ocrResults = [...ocrResults, ...documentsResults];
-    }
-
-    // OCR結果の形式に変換（両方のコレクションに対応）
+    // OCR結果の形式に変換
     const formattedResults = ocrResults.map(doc => ({
       id: doc._id.toString(),
-      company_id: doc.company_id || companyId,
-      file_name: doc.file_name || doc.fileName || '',
-      vendor_name: doc.vendor_name || doc.vendorName || doc.partnerName || doc.store_name || '',
-      receipt_date: doc.receipt_date || doc.documentDate || doc.issueDate || doc.issue_date || doc.createdAt || doc.created_at,
-      subtotal_amount: doc.subtotal_amount || ((doc.total_amount || doc.totalAmount || 0) - (doc.tax_amount || doc.taxAmount || 0)),
-      tax_amount: doc.tax_amount || doc.taxAmount || 0,
-      total_amount: doc.total_amount || doc.totalAmount || 0,
+      company_id: companyId,
+      file_name: doc.fileName || doc.file_name || '',
+      vendor_name: doc.vendorName || doc.vendor_name || doc.partnerName || '',
+      receipt_date: doc.documentDate || doc.receipt_date || doc.issueDate || doc.createdAt,
+      subtotal_amount: doc.subtotal_amount || ((doc.totalAmount || 0) - (doc.taxAmount || 0)),
+      tax_amount: doc.taxAmount || doc.tax_amount || 0,
+      total_amount: doc.totalAmount || doc.total_amount || 0,
       payment_amount: doc.payment_amount || 0,
       change_amount: doc.change_amount || 0,
-      receipt_number: doc.receipt_number || doc.receiptNumber || doc.documentNumber || doc.document_number || '',
-      store_name: doc.store_name || doc.vendor_name || doc.vendorName || '',
+      receipt_number: doc.receiptNumber || doc.receipt_number || doc.documentNumber || '',
+      store_name: doc.store_name || doc.vendorName || '',
       store_phone: doc.store_phone || '',
       company_name: doc.company_name || '',
       notes: doc.notes || '',
-      extracted_text: doc.extracted_text || doc.extractedText || '',
-      created_at: doc.created_at || doc.createdAt,
-      status: doc.status || doc.ocrStatus || 'completed',
+      extracted_text: doc.extractedText || doc.extracted_text || '',
+      created_at: doc.createdAt,
+      status: doc.ocrStatus || 'completed',
       linked_document_id: doc.linked_document_id || null
     }));
 
-    // documentsコレクションの数も取得
-    const documentsCount = await db.count('documents', {
-        companyId: companyId,
-        $and: [
-          {
-            $or: [
-              { ocrStatus: { $exists: true } },
-              { documentType: 'receipt' },
-              { document_type: 'receipt' }
-            ]
-          },
-          {
-            $or: [
-              { status: { $ne: 'archived' } },
-              { status: { $exists: false } }
-            ]
-          },
-          {
-            $or: [
-              { linked_document_id: { $exists: false } },
-              { linked_document_id: null }
-            ]
-          }
-        ]
-    });
-    
-    // 総数は両方のコレクションの合計
-    const total = ocrResultsCount + documentsCount;
+    // 総数を取得
+    const total = await db.count('documents', filter);
 
-    logger.debug('Fetched OCR results:', formattedResults.length, 'total:', total);
+    console.log('Fetched OCR results:', formattedResults.length, 'total:', total);
 
     return NextResponse.json({
       success: true,
