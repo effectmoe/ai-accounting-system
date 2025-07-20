@@ -29,6 +29,19 @@ export async function GET(request: NextRequest) {
       sort: { created_at: -1, createdAt: -1 }
     });
 
+    // 先にocr_resultsコレクションの総数を取得
+    const ocrResultsCount = await db.count('ocr_results', {
+      $and: [
+        {
+          $or: [
+            { company_id: companyId },
+            { companyId: companyId }
+          ]
+        },
+        { status: { $ne: 'deleted' } }
+      ]
+    });
+
     // documentsコレクションからも取得して結合
     if (ocrResults.length < limit) {
       const filter = {
@@ -89,22 +102,6 @@ export async function GET(request: NextRequest) {
       linked_document_id: doc.linked_document_id || null
     }));
 
-    // 総数を取得（両方のコレクションから）
-    let total = 0;
-    
-    // まずocr_resultsコレクションの数を取得
-    const ocrResultsCount = await db.count('ocr_results', {
-      $and: [
-        {
-          $or: [
-            { company_id: companyId },
-            { companyId: companyId }
-          ]
-        },
-        { status: { $ne: 'deleted' } }
-      ]
-    });
-    
     // documentsコレクションの数も取得
     const documentsCount = await db.count('documents', {
         companyId: companyId,
@@ -132,7 +129,7 @@ export async function GET(request: NextRequest) {
     });
     
     // 総数は両方のコレクションの合計
-    total = ocrResultsCount + documentsCount;
+    const total = ocrResultsCount + documentsCount;
 
     logger.debug('Fetched OCR results:', formattedResults.length, 'total:', total);
 
