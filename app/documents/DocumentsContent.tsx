@@ -70,26 +70,77 @@ export default function DocumentsContent() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
-  const documentsPerPage = 20;
+  const [sortField, setSortField] = useState<'createdAt' | 'issueDate' | 'fileName' | 'accountTitle'>('createdAt');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const documentsPerPage = viewMode === 'card' ? 12 : 20;
+  
+  // ビューモード変更時の処理
+  const handleViewModeChange = useCallback((mode: 'card' | 'table') => {
+    setViewMode(mode);
+    setCurrentPage(1);
+    // ページ数を再計算
+    if (activeTab === 'ocr') {
+      setTotalPages(Math.ceil(ocrResults.length / (mode === 'card' ? 12 : 20)));
+    } else {
+      setTotalPages(Math.ceil(documents.length / (mode === 'card' ? 12 : 20)));
+    }
+  }, [activeTab, ocrResults.length, documents.length]);
 
   // タブ変更時にURLパラメータを更新
   const handleTabChange = useCallback((tab: string) => {
     setActiveTab(tab);
+    setCurrentPage(1); // ページをリセット
     const params = new URLSearchParams(searchParams.toString());
     params.set('tab', tab);
     router.push(`/documents?${params.toString()}`, { scroll: false });
   }, [router, searchParams]);
 
+  // ソート関数
+  const sortOcrResults = useCallback((results: OcrResult[]) => {
+    return [...results].sort((a, b) => {
+      let aValue: any, bValue: any;
+      
+      switch (sortField) {
+        case 'createdAt':
+          aValue = new Date(a.created_at || 0).getTime();
+          bValue = new Date(b.created_at || 0).getTime();
+          break;
+        case 'issueDate':
+          aValue = a.receipt_date ? new Date(a.receipt_date).getTime() : 0;
+          bValue = b.receipt_date ? new Date(b.receipt_date).getTime() : 0;
+          break;
+        case 'fileName':
+          aValue = a.file_name || '';
+          bValue = b.file_name || '';
+          break;
+        case 'accountTitle':
+          // 現在は全て未分類なので、ファイル名でソート
+          aValue = a.file_name || '';
+          bValue = b.file_name || '';
+          break;
+        default:
+          return 0;
+      }
+      
+      if (sortOrder === 'asc') {
+        return aValue > bValue ? 1 : aValue < bValue ? -1 : 0;
+      } else {
+        return aValue < bValue ? 1 : aValue > bValue ? -1 : 0;
+      }
+    });
+  }, [sortField, sortOrder]);
+
   // OCR結果を取得
   const fetchOcrResults = useCallback(async () => {
     try {
-      const response = await fetch(`/api/ocr-results?page=${currentPage}&limit=${documentsPerPage}`);
+      const response = await fetch(`/api/ocr-results?page=1&limit=1000`); // 一旦全件取得してクライアント側でページング
       const data = await response.json();
       
       if (data.success) {
         logger.debug('Fetched OCR results:', data.data);
-        setOcrResults(data.data || []);
-        setTotalPages(Math.ceil((data.total || 0) / documentsPerPage));
+        const allResults = data.data || [];
+        setOcrResults(allResults);
+        setTotalPages(Math.ceil(allResults.length / documentsPerPage));
       } else {
         logger.error('Failed to fetch OCR results:', data.error);
         toast.error('OCR結果の取得に失敗しました');
@@ -98,7 +149,7 @@ export default function DocumentsContent() {
       logger.error('Error fetching OCR results:', error);
       toast.error('OCR結果の取得中にエラーが発生しました');
     }
-  }, [currentPage]);
+  }, [documentsPerPage]);
 
   // 文書一覧を取得
   const fetchDocuments = useCallback(async () => {
@@ -378,7 +429,7 @@ export default function DocumentsContent() {
                   {/* ビューモード切り替え */}
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => setViewMode('card')}
+                      onClick={() => handleViewModeChange('card')}
                       className={`p-2 rounded-md transition-colors ${
                         viewMode === 'card' 
                           ? 'bg-blue-100 text-blue-700' 
@@ -389,7 +440,7 @@ export default function DocumentsContent() {
                       <Grid3X3 className="h-4 w-4" />
                     </button>
                     <button
-                      onClick={() => setViewMode('table')}
+                      onClick={() => handleViewModeChange('table')}
                       className={`p-2 rounded-md transition-colors ${
                         viewMode === 'table' 
                           ? 'bg-blue-100 text-blue-700' 
@@ -414,15 +465,18 @@ export default function DocumentsContent() {
                   </div>
                 </div>
               ) : activeTab === 'ocr' ? (
-                // OCR結果（カード形式）
+                // OCR結果
                 ocrResults.length === 0 ? (
                   <div className="p-8 text-center">
                     <FileText className="mx-auto h-12 w-12 text-gray-400" />
                     <p className="mt-2 text-gray-600">OCR処理済みの書類がありません</p>
                   </div>
-                ) : (
+                ) : viewMode === 'card' ? (
+                  // カード形式
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-4 md:p-6">
-                    {ocrResults.map((result) => (
+                    {sortOcrResults(ocrResults)
+                      .slice((currentPage - 1) * documentsPerPage, currentPage * documentsPerPage)
+                      .map((result) => (
                       <div key={result.id} className="bg-white border border-gray-200 rounded-lg hover:shadow-lg transition-all duration-200">
                         <div className="p-4">
                           {/* ヘッダー */}
@@ -598,6 +652,216 @@ export default function DocumentsContent() {
                         </div>
                       </div>
                     ))}
+                  </div>
+                ) : (
+                  // リスト形式
+                  <div>
+                    {/* ソートボタン */}
+                    <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-gray-700">並び替え:</span>
+                        <button
+                          onClick={() => {
+                            if (sortField === 'createdAt') {
+                              setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                            } else {
+                              setSortField('createdAt');
+                              setSortOrder('desc');
+                            }
+                            setCurrentPage(1);
+                          }}
+                          className={`px-3 py-1 text-sm rounded-md ${
+                            sortField === 'createdAt' 
+                              ? 'bg-blue-600 text-white' 
+                              : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          取込日付 {sortField === 'createdAt' && (sortOrder === 'asc' ? '↑' : '↓')}
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (sortField === 'issueDate') {
+                              setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                            } else {
+                              setSortField('issueDate');
+                              setSortOrder('desc');
+                            }
+                            setCurrentPage(1);
+                          }}
+                          className={`px-3 py-1 text-sm rounded-md ${
+                            sortField === 'issueDate' 
+                              ? 'bg-blue-600 text-white' 
+                              : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          領収書発行日 {sortField === 'issueDate' && (sortOrder === 'asc' ? '↑' : '↓')}
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (sortField === 'fileName') {
+                              setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                            } else {
+                              setSortField('fileName');
+                              setSortOrder('asc');
+                            }
+                            setCurrentPage(1);
+                          }}
+                          className={`px-3 py-1 text-sm rounded-md ${
+                            sortField === 'fileName' 
+                              ? 'bg-blue-600 text-white' 
+                              : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          ファイル名 {sortField === 'fileName' && (sortOrder === 'asc' ? '↑' : '↓')}
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (sortField === 'accountTitle') {
+                              setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+                            } else {
+                              setSortField('accountTitle');
+                              setSortOrder('asc');
+                            }
+                            setCurrentPage(1);
+                          }}
+                          className={`px-3 py-1 text-sm rounded-md ${
+                            sortField === 'accountTitle' 
+                              ? 'bg-blue-600 text-white' 
+                              : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          勘定科目 {sortField === 'accountTitle' && (sortOrder === 'asc' ? '↑' : '↓')}
+                        </button>
+                      </div>
+                    </div>
+                    {/* テーブル */}
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              取込日時
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              領収書番号/ファイル名
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              店舗名
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              発行日
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              金額
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              勘定科目
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              状態
+                            </th>
+                            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              アクション
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {sortOcrResults(ocrResults)
+                            .slice((currentPage - 1) * documentsPerPage, currentPage * documentsPerPage)
+                            .map((result) => (
+                            <tr key={result.id} className="hover:bg-gray-50">
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {result.created_at ? new Date(result.created_at).toLocaleString('ja-JP', {
+                                  year: 'numeric',
+                                  month: '2-digit',
+                                  day: '2-digit',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                }) : '-'}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                <div>
+                                  <div className="font-medium">{result.receipt_number || result.file_name?.split('.')[0] || '領収書'}</div>
+                                  <div className="text-xs text-gray-500">{result.file_name}</div>
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                {result.vendor_name || result.store_name || result.company_name || '-'}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                {result.receipt_date ? new Date(result.receipt_date).toLocaleDateString('ja-JP') : '-'}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                ¥{(result.total_amount || 0).toLocaleString()}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                未分類
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                {result.linked_document_id ? (
+                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    <CheckCircle className="h-3 w-3 mr-0.5" />
+                                    文書化済
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                    未処理
+                                  </span>
+                                )}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                <div className="flex justify-end gap-2">
+                                  {result.linked_document_id ? (
+                                    <>
+                                      <Link
+                                        href={`/documents/${result.linked_document_id}`}
+                                        className="text-blue-600 hover:text-blue-900"
+                                      >
+                                        詳細
+                                      </Link>
+                                      <button
+                                        onClick={() => handleDeleteOcrResult(result)}
+                                        className="text-red-600 hover:text-red-900"
+                                      >
+                                        削除
+                                      </button>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <select
+                                        id={`doc-type-list-${result.id}`}
+                                        className="text-sm border border-gray-300 rounded-md px-2 py-1"
+                                        defaultValue="receipt"
+                                      >
+                                        <option value="receipt">領収書</option>
+                                        <option value="invoice">請求書</option>
+                                        <option value="estimate">見積書</option>
+                                        <option value="delivery_note">納品書</option>
+                                      </select>
+                                      <button
+                                        onClick={() => {
+                                          const select = document.getElementById(`doc-type-list-${result.id}`) as HTMLSelectElement;
+                                          handleCreateDocument(result, select.value);
+                                        }}
+                                        className="text-blue-600 hover:text-blue-900"
+                                      >
+                                        文書化
+                                      </button>
+                                      <button
+                                        onClick={() => handleDeleteOcrResult(result)}
+                                        className="text-red-600 hover:text-red-900"
+                                      >
+                                        削除
+                                      </button>
+                                    </>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
                 )
               ) : (
@@ -780,38 +1044,102 @@ export default function DocumentsContent() {
 
             {/* ページネーション */}
             {totalPages > 1 && (
-              <div className="mt-6 flex justify-center">
-                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                  <button
-                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                    disabled={currentPage === 1}
-                    className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
-                  >
-                    前へ
-                  </button>
-                  
-                  {[...Array(totalPages)].map((_, i) => (
+              <div className="mt-6">
+                <div className="flex items-center justify-between px-4">
+                  <div className="text-sm text-gray-700">
+                    {totalPages}ページ中{currentPage}ページ目 
+                    ({activeTab === 'ocr' ? ocrResults.length : documents.length}件中
+                    {(currentPage - 1) * documentsPerPage + 1}-
+                    {Math.min(currentPage * documentsPerPage, activeTab === 'ocr' ? ocrResults.length : documents.length)}件)
+                  </div>
+                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
                     <button
-                      key={i + 1}
-                      onClick={() => setCurrentPage(i + 1)}
-                      className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                        currentPage === i + 1
-                          ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
-                          : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                      }`}
+                      onClick={() => {
+                        setCurrentPage(Math.max(1, currentPage - 1));
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      disabled={currentPage === 1}
+                      className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {i + 1}
+                      前へ
                     </button>
-                  ))}
-                  
-                  <button
-                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                    disabled={currentPage === totalPages}
-                    className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
-                  >
-                    次へ
-                  </button>
-                </nav>
+                    
+                    {/* 最初のページ */}
+                    {currentPage > 3 && (
+                      <>
+                        <button
+                          onClick={() => {
+                            setCurrentPage(1);
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                          }}
+                          className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+                        >
+                          1
+                        </button>
+                        {currentPage > 4 && (
+                          <span className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                            ...
+                          </span>
+                        )}
+                      </>
+                    )}
+                    
+                    {/* 現在のページの周辺 */}
+                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                      const pageNumber = Math.max(1, Math.min(currentPage - 2 + i, totalPages - 4)) + (totalPages <= 5 ? 0 : Math.min(i, 4));
+                      if (pageNumber > 0 && pageNumber <= totalPages) {
+                        return (
+                          <button
+                            key={pageNumber}
+                            onClick={() => {
+                              setCurrentPage(pageNumber);
+                              window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }}
+                            className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                              currentPage === pageNumber
+                                ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                                : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                            }`}
+                          >
+                            {pageNumber}
+                          </button>
+                        );
+                      }
+                      return null;
+                    }).filter(Boolean)}
+                    
+                    {/* 最後のページ */}
+                    {currentPage < totalPages - 2 && totalPages > 5 && (
+                      <>
+                        {currentPage < totalPages - 3 && (
+                          <span className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                            ...
+                          </span>
+                        )}
+                        <button
+                          onClick={() => {
+                            setCurrentPage(totalPages);
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                          }}
+                          className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+                        >
+                          {totalPages}
+                        </button>
+                      </>
+                    )}
+                    
+                    <button
+                      onClick={() => {
+                        setCurrentPage(Math.min(totalPages, currentPage + 1));
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      disabled={currentPage === totalPages}
+                      className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      次へ
+                    </button>
+                  </nav>
+                </div>
               </div>
             )}
           </div>

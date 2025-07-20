@@ -76,6 +76,14 @@ export default function DocumentsContentMongoDB() {
   const [activeTab, setActiveTab] = useState<'all' | 'ocr' | 'created'>('ocr');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [selectedDocuments, setSelectedDocuments] = useState<Set<string>>(new Set());
+  
+  // ページネーション状態
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(12); // グリッドビューでは12個、リストビューでは20個
+  
+  // ソート状態
+  const [sortField, setSortField] = useState<'createdAt' | 'issueDate' | 'fileName' | 'accountTitle'>('createdAt');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   // MongoDB から書類を取得
   const fetchDocuments = useCallback(async () => {
@@ -385,6 +393,62 @@ export default function DocumentsContentMongoDB() {
     return true;
   });
 
+  // ソート処理
+  const sortedDocuments = [...filteredDocuments].sort((a, b) => {
+    let aValue, bValue;
+    
+    switch (sortField) {
+      case 'createdAt':
+        aValue = new Date(a.created_at).getTime();
+        bValue = new Date(b.created_at).getTime();
+        break;
+      case 'issueDate':
+        aValue = new Date(a.receipt_date || a.issue_date).getTime();
+        bValue = new Date(b.receipt_date || b.issue_date).getTime();
+        break;
+      case 'fileName':
+        aValue = a.file_name || '';
+        bValue = b.file_name || '';
+        break;
+      case 'accountTitle':
+        aValue = a.category || '未分類';
+        bValue = b.category || '未分類';
+        break;
+      default:
+        aValue = 0;
+        bValue = 0;
+    }
+    
+    if (sortOrder === 'asc') {
+      return aValue > bValue ? 1 : -1;
+    } else {
+      return aValue < bValue ? 1 : -1;
+    }
+  });
+
+  // ページネーション処理
+  const totalPages = Math.ceil(sortedDocuments.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedDocuments = sortedDocuments.slice(startIndex, endIndex);
+
+  // ページ変更時の処理
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // ソート変更時の処理
+  const handleSort = (field: typeof sortField) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('desc');
+    }
+    setCurrentPage(1); // ソート変更時は1ページ目に戻る
+  };
+
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -439,6 +503,53 @@ export default function DocumentsContentMongoDB() {
           </div>
         </div>
 
+        {/* リストビューの場合のみソートボタンを表示 */}
+        {viewMode === 'list' && (
+          <div className="flex gap-2 mb-4">
+            <span className="text-sm text-gray-600">並び替え:</span>
+            <button
+              onClick={() => handleSort('createdAt')}
+              className={`text-sm px-3 py-1 rounded ${
+                sortField === 'createdAt' 
+                  ? 'bg-blue-600 text-white' 
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              取込日付 {sortField === 'createdAt' && (sortOrder === 'asc' ? '↑' : '↓')}
+            </button>
+            <button
+              onClick={() => handleSort('issueDate')}
+              className={`text-sm px-3 py-1 rounded ${
+                sortField === 'issueDate' 
+                  ? 'bg-blue-600 text-white' 
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              発行日 {sortField === 'issueDate' && (sortOrder === 'asc' ? '↑' : '↓')}
+            </button>
+            <button
+              onClick={() => handleSort('fileName')}
+              className={`text-sm px-3 py-1 rounded ${
+                sortField === 'fileName' 
+                  ? 'bg-blue-600 text-white' 
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              ファイル名 {sortField === 'fileName' && (sortOrder === 'asc' ? '↑' : '↓')}
+            </button>
+            <button
+              onClick={() => handleSort('accountTitle')}
+              className={`text-sm px-3 py-1 rounded ${
+                sortField === 'accountTitle' 
+                  ? 'bg-blue-600 text-white' 
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              勘定科目 {sortField === 'accountTitle' && (sortOrder === 'asc' ? '↑' : '↓')}
+            </button>
+          </div>
+        )}
+
         {selectedDocuments.size > 0 && (
           <div className="flex gap-2 items-center mb-4 p-2 bg-blue-50 rounded">
             <input
@@ -460,7 +571,7 @@ export default function DocumentsContentMongoDB() {
 
         {viewMode === 'grid' ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredDocuments.map((doc) => (
+            {paginatedDocuments.map((doc) => (
               <div key={doc.id} className="bg-white border rounded-lg p-4 hover:shadow-lg transition-shadow relative">
                 <input
                   type="checkbox"
@@ -674,7 +785,7 @@ export default function DocumentsContentMongoDB() {
                 </tr>
               </thead>
               <tbody>
-                {filteredDocuments.map((doc) => (
+                {paginatedDocuments.map((doc) => (
                   <tr key={doc.id} className="border-b hover:bg-gray-50">
                     <td className="p-2">
                       <input
@@ -753,6 +864,99 @@ export default function DocumentsContentMongoDB() {
                 ))}
               </tbody>
             </table>
+          </div>
+        )}
+        
+        {/* ページネーション */}
+        {totalPages > 1 && (
+          <div className="mt-6 flex justify-center items-center gap-2">
+            <button
+              onClick={() => handlePageChange(currentPage - 1)}
+              disabled={currentPage === 1}
+              className={`px-3 py-1 rounded ${
+                currentPage === 1
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              前へ
+            </button>
+            
+            {/* ページ番号ボタン */}
+            {(() => {
+              const pageNumbers = [];
+              const maxVisible = 5;
+              let start = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+              let end = Math.min(totalPages, start + maxVisible - 1);
+              
+              if (end - start < maxVisible - 1) {
+                start = Math.max(1, end - maxVisible + 1);
+              }
+              
+              if (start > 1) {
+                pageNumbers.push(
+                  <button
+                    key={1}
+                    onClick={() => handlePageChange(1)}
+                    className="px-3 py-1 rounded bg-gray-200 text-gray-700 hover:bg-gray-300"
+                  >
+                    1
+                  </button>
+                );
+                if (start > 2) {
+                  pageNumbers.push(<span key="dots1" className="px-2">...</span>);
+                }
+              }
+              
+              for (let i = start; i <= end; i++) {
+                pageNumbers.push(
+                  <button
+                    key={i}
+                    onClick={() => handlePageChange(i)}
+                    className={`px-3 py-1 rounded ${
+                      currentPage === i
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                  >
+                    {i}
+                  </button>
+                );
+              }
+              
+              if (end < totalPages) {
+                if (end < totalPages - 1) {
+                  pageNumbers.push(<span key="dots2" className="px-2">...</span>);
+                }
+                pageNumbers.push(
+                  <button
+                    key={totalPages}
+                    onClick={() => handlePageChange(totalPages)}
+                    className="px-3 py-1 rounded bg-gray-200 text-gray-700 hover:bg-gray-300"
+                  >
+                    {totalPages}
+                  </button>
+                );
+              }
+              
+              return pageNumbers;
+            })()}
+            
+            <button
+              onClick={() => handlePageChange(currentPage + 1)}
+              disabled={currentPage === totalPages}
+              className={`px-3 py-1 rounded ${
+                currentPage === totalPages
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              }`}
+            >
+              次へ
+            </button>
+            
+            <span className="ml-4 text-sm text-gray-600">
+              {totalPages}ページ中{currentPage}ページ目 ({sortedDocuments.length}件中{startIndex + 1}-{Math.min(endIndex, sortedDocuments.length)}件)
+            </span>
           </div>
         )}
       </div>
