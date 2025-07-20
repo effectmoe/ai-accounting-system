@@ -81,42 +81,20 @@ export default function DocumentsContent() {
 
   // OCR結果を取得
   const fetchOcrResults = useCallback(async () => {
-    console.log('🔍 OCR結果取得開始 - ページ:', currentPage, 'リミット:', documentsPerPage);
-    
     try {
-      const apiUrl = `/api/ocr-results?page=${currentPage}&limit=${documentsPerPage}`;
-      console.log('🌐 API URL:', apiUrl);
-      
-      const response = await fetch(apiUrl);
-      console.log('📡 レスポンス:', {
-        status: response.status,
-        statusText: response.statusText,
-        ok: response.ok,
-        headers: Object.fromEntries(response.headers.entries())
-      });
-      
+      const response = await fetch(`/api/ocr-results?page=${currentPage}&limit=${documentsPerPage}`);
       const data = await response.json();
-      console.log('📊 レスポンスデータ:', {
-        success: data.success,
-        dataLength: data.data?.length,
-        total: data.total,
-        page: data.page,
-        limit: data.limit,
-        error: data.error
-      });
       
       if (data.success) {
-        console.log('✅ OCR結果取得成功:', data.data?.length, '件');
+        console.log('Fetched OCR results:', data.data);
         setOcrResults(data.data || []);
         setTotalPages(Math.ceil((data.total || 0) / documentsPerPage));
-        console.log('📈 総ページ数設定:', Math.ceil((data.total || 0) / documentsPerPage));
       } else {
-        console.error('❌ OCR結果取得失敗:', data.error);
+        console.error('Failed to fetch OCR results:', data.error);
         toast.error('OCR結果の取得に失敗しました');
       }
     } catch (error) {
-      console.error('🚨 OCR結果取得エラー:', error);
-      console.error('🚨 エラースタック:', error.stack);
+      console.error('Error fetching OCR results:', error);
       toast.error('OCR結果の取得中にエラーが発生しました');
     }
   }, [currentPage]);
@@ -265,22 +243,11 @@ export default function DocumentsContent() {
 
   // 初回ロードのみ
   useEffect(() => {
-    console.log('🚀 初回ロード開始');
     setLoading(true);
     
     // 初回ロード時のみ実行
-    console.log('📋 OCR結果とドキュメント取得開始');
-    Promise.all([
-      fetchOcrResults(),
-      fetchDocuments()
-    ]).then(() => {
-      console.log('✅ 初回データ取得完了');
-    }).catch((error) => {
-      console.error('❌ 初回データ取得エラー:', error);
-    }).finally(() => {
-      console.log('🏁 ローディング終了');
-      setLoading(false);
-    });
+    fetchOcrResults();
+    fetchDocuments().finally(() => setLoading(false));
   }, []); // 依存配列を空にして初回のみ実行
   
   // タブ切り替え時の処理（データの再取得はしない）
