@@ -130,19 +130,31 @@ export default function DocumentsContent() {
     });
   }, [sortField, sortOrder]);
 
-  // OCR結果を取得
+  // OCR結果を取得（ページングとソートを考慮）
   const fetchOcrResults = useCallback(async () => {
     try {
-      const response = await fetch(`/api/ocr-results?page=1&limit=1000`); // 一旦全件取得してクライアント側でページング
-      const data = await response.json();
+      // まず全件数を取得するため、1ページ目を取得
+      const countResponse = await fetch(`/api/ocr-results?page=1&limit=1`);
+      const countData = await countResponse.json();
       
-      if (data.success) {
-        logger.debug('Fetched OCR results:', data.data);
-        const allResults = data.data || [];
-        setOcrResults(allResults);
-        setTotalPages(Math.ceil(allResults.length / documentsPerPage));
+      if (countData.success) {
+        const total = countData.total || 0;
+        
+        // 全件取得（ソートのため）
+        const response = await fetch(`/api/ocr-results?page=1&limit=${total || 100}`);
+        const data = await response.json();
+        
+        if (data.success) {
+          const results = data.data || [];
+          logger.info(`Fetched OCR results: ${results.length} items, documentsPerPage: ${documentsPerPage}`);
+          setOcrResults(results);
+          // 取得したデータ数に基づいてページ数を計算
+          const calculatedPages = Math.ceil(results.length / documentsPerPage);
+          logger.info(`Calculated total pages: ${calculatedPages}`);
+          setTotalPages(calculatedPages);
+        }
       } else {
-        logger.error('Failed to fetch OCR results:', data.error);
+        logger.error('Failed to fetch OCR results:', countData.error);
         toast.error('OCR結果の取得に失敗しました');
       }
     } catch (error) {
@@ -366,65 +378,73 @@ export default function DocumentsContent() {
               </nav>
             </div>
 
-            {/* フィルター（作成済み文書タブのみ） */}
-            {activeTab === 'documents' && (
+            {/* フィルターとビューモード切り替え */}
+            {(activeTab === 'documents' || activeTab === 'ocr') && (
               <div className="bg-white rounded-lg shadow mb-6 p-4">
                 <div className="flex items-center justify-between flex-wrap gap-4">
-                  <div className="flex items-center gap-4 flex-wrap">
-                    <div className="flex items-center gap-2">
-                      <Filter className="h-4 w-4 text-gray-500" />
-                      <span className="text-sm font-medium text-gray-700">フィルター:</span>
+                  {activeTab === 'documents' ? (
+                    <div className="flex items-center gap-4 flex-wrap">
+                      <div className="flex items-center gap-2">
+                        <Filter className="h-4 w-4 text-gray-500" />
+                        <span className="text-sm font-medium text-gray-700">フィルター:</span>
+                      </div>
+                      
+                      <select
+                        value={filters.documentType}
+                        onChange={(e) => setFilters({ ...filters, documentType: e.target.value })}
+                        className="px-3 py-1 border border-gray-300 rounded-md text-sm"
+                      >
+                        <option value="">すべての種類</option>
+                        <option value="estimate">見積書</option>
+                        <option value="invoice">請求書</option>
+                        <option value="delivery_note">納品書</option>
+                        <option value="receipt">領収書</option>
+                      </select>
+
+                      <select
+                        value={filters.status}
+                        onChange={(e) => setFilters({ ...filters, status: e.target.value })}
+                        className="px-3 py-1 border border-gray-300 rounded-md text-sm"
+                      >
+                        <option value="">すべてのステータス</option>
+                        <option value="draft">下書き</option>
+                        <option value="confirmed">確定済み</option>
+                        <option value="viewed">閲覧済み</option>
+                        <option value="accepted">承認済み</option>
+                        <option value="paid">支払済み</option>
+                        <option value="cancelled">キャンセル</option>
+                      </select>
+
+                      <input
+                        type="date"
+                        value={filters.dateFrom}
+                        onChange={(e) => setFilters({ ...filters, dateFrom: e.target.value })}
+                        className="px-3 py-1 border border-gray-300 rounded-md text-sm"
+                        placeholder="開始日"
+                      />
+
+                      <input
+                        type="date"
+                        value={filters.dateTo}
+                        onChange={(e) => setFilters({ ...filters, dateTo: e.target.value })}
+                        className="px-3 py-1 border border-gray-300 rounded-md text-sm"
+                        placeholder="終了日"
+                      />
+
+                      <button
+                        onClick={() => setFilters({ documentType: '', status: '', dateFrom: '', dateTo: '' })}
+                        className="px-3 py-1 text-sm text-gray-600 hover:text-gray-900"
+                      >
+                        クリア
+                      </button>
                     </div>
-                    
-                    <select
-                      value={filters.documentType}
-                      onChange={(e) => setFilters({ ...filters, documentType: e.target.value })}
-                      className="px-3 py-1 border border-gray-300 rounded-md text-sm"
-                    >
-                      <option value="">すべての種類</option>
-                      <option value="estimate">見積書</option>
-                      <option value="invoice">請求書</option>
-                      <option value="delivery_note">納品書</option>
-                      <option value="receipt">領収書</option>
-                    </select>
-
-                    <select
-                      value={filters.status}
-                      onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-                      className="px-3 py-1 border border-gray-300 rounded-md text-sm"
-                    >
-                      <option value="">すべてのステータス</option>
-                      <option value="draft">下書き</option>
-                      <option value="confirmed">確定済み</option>
-                      <option value="viewed">閲覧済み</option>
-                      <option value="accepted">承認済み</option>
-                      <option value="paid">支払済み</option>
-                      <option value="cancelled">キャンセル</option>
-                    </select>
-
-                    <input
-                      type="date"
-                      value={filters.dateFrom}
-                      onChange={(e) => setFilters({ ...filters, dateFrom: e.target.value })}
-                      className="px-3 py-1 border border-gray-300 rounded-md text-sm"
-                      placeholder="開始日"
-                    />
-
-                    <input
-                      type="date"
-                      value={filters.dateTo}
-                      onChange={(e) => setFilters({ ...filters, dateTo: e.target.value })}
-                      className="px-3 py-1 border border-gray-300 rounded-md text-sm"
-                      placeholder="終了日"
-                    />
-
-                    <button
-                      onClick={() => setFilters({ documentType: '', status: '', dateFrom: '', dateTo: '' })}
-                      className="px-3 py-1 text-sm text-gray-600 hover:text-gray-900"
-                    >
-                      クリア
-                    </button>
-                  </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-gray-700">
+                        {ocrResults.length}件のOCR結果
+                      </span>
+                    </div>
+                  )}
                   
                   {/* ビューモード切り替え */}
                   <div className="flex items-center gap-2">
@@ -1085,28 +1105,50 @@ export default function DocumentsContent() {
                     )}
                     
                     {/* 現在のページの周辺 */}
-                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                      const pageNumber = Math.max(1, Math.min(currentPage - 2 + i, totalPages - 4)) + (totalPages <= 5 ? 0 : Math.min(i, 4));
-                      if (pageNumber > 0 && pageNumber <= totalPages) {
-                        return (
+                    {(() => {
+                      const pages = [];
+                      let startPage = 1;
+                      let endPage = totalPages;
+                      
+                      if (totalPages <= 5) {
+                        // 5ページ以下の場合は全て表示
+                        startPage = 1;
+                        endPage = totalPages;
+                      } else {
+                        // 5ページより多い場合
+                        if (currentPage <= 3) {
+                          startPage = 1;
+                          endPage = 5;
+                        } else if (currentPage >= totalPages - 2) {
+                          startPage = totalPages - 4;
+                          endPage = totalPages;
+                        } else {
+                          startPage = currentPage - 2;
+                          endPage = currentPage + 2;
+                        }
+                      }
+                      
+                      for (let i = startPage; i <= endPage; i++) {
+                        pages.push(
                           <button
-                            key={pageNumber}
+                            key={i}
                             onClick={() => {
-                              setCurrentPage(pageNumber);
+                              setCurrentPage(i);
                               window.scrollTo({ top: 0, behavior: 'smooth' });
                             }}
                             className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                              currentPage === pageNumber
+                              currentPage === i
                                 ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
                                 : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
                             }`}
                           >
-                            {pageNumber}
+                            {i}
                           </button>
                         );
                       }
-                      return null;
-                    }).filter(Boolean)}
+                      
+                      return pages;
+                    })()}
                     
                     {/* 最後のページ */}
                     {currentPage < totalPages - 2 && totalPages > 5 && (
