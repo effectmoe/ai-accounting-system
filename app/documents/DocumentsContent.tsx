@@ -884,7 +884,7 @@ export default function DocumentsContent() {
                       </table>
                     </div>
                   );
-                })();
+                })()
               ) : (
                 // 作成済み文書
                 documents.length === 0 ? (
