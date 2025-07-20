@@ -12,33 +12,58 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20');
     const skip = (page - 1) * limit;
 
-    // まず、ocr_resultsコレクションから取得を試みる
+    // まず、ocr_resultsコレクションから取得を試みる（companyIdとcompany_idの両方を試す）
     let ocrResults = await db.find('ocr_results', {
-      company_id: companyId,
-      status: { $ne: 'deleted' }
+      $and: [
+        {
+          $or: [
+            { company_id: companyId },
+            { companyId: companyId }
+          ]
+        },
+        { status: { $ne: 'deleted' } }
+      ]
     }, {
       limit,
       skip,
-      sort: { created_at: -1 }
+      sort: { created_at: -1, createdAt: -1 }
     });
 
-    // ocr_resultsコレクションにデータがない場合は、documentsコレクションから取得
-    if (!ocrResults || ocrResults.length === 0) {
+    // documentsコレクションからも取得して結合
+    if (ocrResults.length < limit) {
       const filter = {
         companyId: companyId,
-        $or: [
-          { ocrStatus: { $exists: true } },
-          { documentType: 'receipt' },
-          { document_type: 'receipt' }
-        ],
-        status: { $ne: 'archived' }
+        $and: [
+          {
+            $or: [
+              { ocrStatus: { $exists: true } },
+              { documentType: 'receipt' },
+              { document_type: 'receipt' }
+            ]
+          },
+          {
+            $or: [
+              { status: { $ne: 'archived' } },
+              { status: { $exists: false } }
+            ]
+          },
+          {
+            $or: [
+              { linked_document_id: { $exists: false } },
+              { linked_document_id: null }
+            ]
+          }
+        ]
       };
 
-      ocrResults = await db.find('documents', filter, {
-        limit,
-        skip,
+      const documentsResults = await db.find('documents', filter, {
+        limit: limit - ocrResults.length,
+        skip: Math.max(0, skip - ocrResultsCount),
         sort: { createdAt: -1 }
       });
+      
+      // 結果を結合
+      ocrResults = [...ocrResults, ...documentsResults];
     }
 
     // OCR結果の形式に変換（両方のコレクションに対応）
@@ -69,24 +94,45 @@ export async function GET(request: NextRequest) {
     
     // まずocr_resultsコレクションの数を取得
     const ocrResultsCount = await db.count('ocr_results', {
-      company_id: companyId,
-      status: { $ne: 'deleted' }
+      $and: [
+        {
+          $or: [
+            { company_id: companyId },
+            { companyId: companyId }
+          ]
+        },
+        { status: { $ne: 'deleted' } }
+      ]
     });
     
-    if (ocrResultsCount > 0) {
-      total = ocrResultsCount;
-    } else {
-      // documentsコレクションの数を取得
-      total = await db.count('documents', {
+    // documentsコレクションの数も取得
+    const documentsCount = await db.count('documents', {
         companyId: companyId,
-        $or: [
-          { ocrStatus: { $exists: true } },
-          { documentType: 'receipt' },
-          { document_type: 'receipt' }
-        ],
-        status: { $ne: 'archived' }
-      });
-    }
+        $and: [
+          {
+            $or: [
+              { ocrStatus: { $exists: true } },
+              { documentType: 'receipt' },
+              { document_type: 'receipt' }
+            ]
+          },
+          {
+            $or: [
+              { status: { $ne: 'archived' } },
+              { status: { $exists: false } }
+            ]
+          },
+          {
+            $or: [
+              { linked_document_id: { $exists: false } },
+              { linked_document_id: null }
+            ]
+          }
+        ]
+    });
+    
+    // 総数は両方のコレクションの合計
+    total = ocrResultsCount + documentsCount;
 
     logger.debug('Fetched OCR results:', formattedResults.length, 'total:', total);
 

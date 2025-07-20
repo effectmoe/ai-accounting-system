@@ -8,12 +8,15 @@ export async function GET() {
   try {
     const companyId = '11111111-1111-1111-1111-111111111111';
     
-    // ocr_resultsコレクションのデータを取得
+    // ocr_resultsコレクションのデータを取得（companyIdとcompany_idの両方を試す）
     const ocrResults = await db.find('ocr_results', {
-      company_id: companyId
+      $or: [
+        { company_id: companyId },
+        { companyId: companyId }
+      ]
     }, {
       limit: 10,
-      sort: { created_at: -1 }
+      sort: { created_at: -1, createdAt: -1 }
     });
     
     // documentsコレクションのOCR関連データを取得
@@ -31,8 +34,10 @@ export async function GET() {
     
     // 統計情報
     const ocrResultsCount = await db.count('ocr_results', {
-      company_id: companyId,
-      status: { $ne: 'deleted' }
+      $or: [
+        { company_id: companyId },
+        { companyId: companyId }
+      ]
     });
     
     const documentsCount = await db.count('documents', {
