@@ -12,49 +12,81 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20');
     const skip = (page - 1) * limit;
 
-    // MongoDBからOCR結果を取得
-    // documentsコレクションからOCR結果として扱えるものを取得
-    const filter = {
-      companyId: companyId,
-      ocrStatus: { $exists: true },
-      $or: [
-        { linked_document_id: { $exists: false } },
-        { linked_document_id: null }
-      ],
-      status: { $ne: 'archived' }
-    };
-
-    const ocrResults = await db.find('documents', filter, {
+    // まず、ocr_resultsコレクションから取得を試みる
+    let ocrResults = await db.find('ocr_results', {
+      company_id: companyId,
+      status: { $ne: 'deleted' }
+    }, {
       limit,
       skip,
-      sort: { createdAt: -1 }
+      sort: { created_at: -1 }
     });
 
-    // OCR結果の形式に変換
+    // ocr_resultsコレクションにデータがない場合は、documentsコレクションから取得
+    if (!ocrResults || ocrResults.length === 0) {
+      const filter = {
+        companyId: companyId,
+        $or: [
+          { ocrStatus: { $exists: true } },
+          { documentType: 'receipt' },
+          { document_type: 'receipt' }
+        ],
+        status: { $ne: 'archived' }
+      };
+
+      ocrResults = await db.find('documents', filter, {
+        limit,
+        skip,
+        sort: { createdAt: -1 }
+      });
+    }
+
+    // OCR結果の形式に変換（両方のコレクションに対応）
     const formattedResults = ocrResults.map(doc => ({
       id: doc._id.toString(),
-      company_id: companyId,
-      file_name: doc.fileName || doc.file_name || '',
-      vendor_name: doc.vendorName || doc.vendor_name || doc.partnerName || '',
-      receipt_date: doc.documentDate || doc.receipt_date || doc.issueDate || doc.createdAt,
-      subtotal_amount: doc.subtotal_amount || ((doc.totalAmount || 0) - (doc.taxAmount || 0)),
-      tax_amount: doc.taxAmount || doc.tax_amount || 0,
-      total_amount: doc.totalAmount || doc.total_amount || 0,
+      company_id: doc.company_id || companyId,
+      file_name: doc.file_name || doc.fileName || '',
+      vendor_name: doc.vendor_name || doc.vendorName || doc.partnerName || doc.store_name || '',
+      receipt_date: doc.receipt_date || doc.documentDate || doc.issueDate || doc.issue_date || doc.createdAt || doc.created_at,
+      subtotal_amount: doc.subtotal_amount || ((doc.total_amount || doc.totalAmount || 0) - (doc.tax_amount || doc.taxAmount || 0)),
+      tax_amount: doc.tax_amount || doc.taxAmount || 0,
+      total_amount: doc.total_amount || doc.totalAmount || 0,
       payment_amount: doc.payment_amount || 0,
       change_amount: doc.change_amount || 0,
-      receipt_number: doc.receiptNumber || doc.receipt_number || doc.documentNumber || '',
-      store_name: doc.store_name || doc.vendorName || '',
+      receipt_number: doc.receipt_number || doc.receiptNumber || doc.documentNumber || doc.document_number || '',
+      store_name: doc.store_name || doc.vendor_name || doc.vendorName || '',
       store_phone: doc.store_phone || '',
       company_name: doc.company_name || '',
       notes: doc.notes || '',
-      extracted_text: doc.extractedText || doc.extracted_text || '',
-      created_at: doc.createdAt,
-      status: doc.ocrStatus || 'completed',
+      extracted_text: doc.extracted_text || doc.extractedText || '',
+      created_at: doc.created_at || doc.createdAt,
+      status: doc.status || doc.ocrStatus || 'completed',
       linked_document_id: doc.linked_document_id || null
     }));
 
-    // 総数を取得
-    const total = await db.count('documents', filter);
+    // 総数を取得（両方のコレクションから）
+    let total = 0;
+    
+    // まずocr_resultsコレクションの数を取得
+    const ocrResultsCount = await db.count('ocr_results', {
+      company_id: companyId,
+      status: { $ne: 'deleted' }
+    });
+    
+    if (ocrResultsCount > 0) {
+      total = ocrResultsCount;
+    } else {
+      // documentsコレクションの数を取得
+      total = await db.count('documents', {
+        companyId: companyId,
+        $or: [
+          { ocrStatus: { $exists: true } },
+          { documentType: 'receipt' },
+          { document_type: 'receipt' }
+        ],
+        status: { $ne: 'archived' }
+      });
+    }
 
     logger.debug('Fetched OCR results:', formattedResults.length, 'total:', total);
 
