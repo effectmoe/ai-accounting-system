@@ -97,7 +97,32 @@ export default function DocumentsContent() {
     console.log('🔍 OCR結果取得開始 - ページ:', currentPage, 'リミット:', documentsPerPage);
     
     try {
-      const apiUrl = `/api/ocr-results?page=${currentPage}&limit=${documentsPerPage}`;
+      // URLパラメータを構築
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: documentsPerPage.toString(),
+        sortBy: ocrSortBy,
+        sortOrder: ocrSortOrder
+      });
+      
+      // フィルターパラメータを追加
+      if (ocrFilters.vendor) {
+        params.append('vendor', ocrFilters.vendor);
+      }
+      if (ocrFilters.minAmount) {
+        params.append('minAmount', ocrFilters.minAmount);
+      }
+      if (ocrFilters.maxAmount) {
+        params.append('maxAmount', ocrFilters.maxAmount);
+      }
+      if (ocrFilters.dateFrom) {
+        params.append('startDate', ocrFilters.dateFrom);
+      }
+      if (ocrFilters.dateTo) {
+        params.append('endDate', ocrFilters.dateTo);
+      }
+      
+      const apiUrl = `/api/ocr-results?${params.toString()}`;
       console.log('🌐 API URL:', apiUrl);
       
       const response = await fetch(apiUrl);
@@ -142,7 +167,7 @@ export default function DocumentsContent() {
       console.error('🚨 エラースタック:', error.stack);
       toast.error('OCR結果の取得中にエラーが発生しました');
     }
-  }, [currentPage]);
+  }, [currentPage, documentsPerPage, ocrSortBy, ocrSortOrder, ocrFilters]);
 
   // 文書一覧を取得
   const fetchDocuments = useCallback(async () => {
@@ -315,18 +340,22 @@ export default function DocumentsContent() {
     });
   }, [fetchOcrResults, fetchDocuments]); // 関数を依存配列に追加
   
-  // ページ変更時の処理（初回ロード以外）
+  // ページ、フィルター、ソート変更時の処理
   useEffect(() => {
-    console.log('📄 ページ変更:', currentPage, 'アクティブタブ:', activeTab);
-    // 初回ロード（currentPage=1）は既に初回useEffectで処理済みなのでスキップ
-    if (currentPage > 1) {
-      if (activeTab === 'ocr') {
-        fetchOcrResults();
-      } else {
-        fetchDocuments();
-      }
+    console.log('📄 ページ/フィルター/ソート変更:', {
+      page: currentPage, 
+      tab: activeTab,
+      sortBy: ocrSortBy,
+      sortOrder: ocrSortOrder,
+      filters: ocrFilters
+    });
+    
+    if (activeTab === 'ocr') {
+      fetchOcrResults();
+    } else if (activeTab === 'documents') {
+      fetchDocuments();
     }
-  }, [currentPage]); // activeTabとcallback関数は依存配列から除去
+  }, [currentPage, activeTab, ocrSortBy, ocrSortOrder, ocrFilters, fetchOcrResults, fetchDocuments]);
 
   // フィルター変更時に文書を再取得
   useEffect(() => {
@@ -337,67 +366,10 @@ export default function DocumentsContent() {
     }
   }, [filters]);
 
-  // OCR結果をソート・フィルタリング
+  // サーバーサイドでフィルター・ソートが適用されるため、クライアント側では結果をそのまま返す
   const filteredAndSortedOcrResults = useCallback(() => {
-    let filtered = [...ocrResults];
-
-    // フィルタリング
-    if (ocrFilters.vendor) {
-      const vendorQuery = ocrFilters.vendor.toLowerCase();
-      filtered = filtered.filter(result => 
-        (result.vendor_name?.toLowerCase().includes(vendorQuery)) ||
-        (result.store_name?.toLowerCase().includes(vendorQuery)) ||
-        (result.company_name?.toLowerCase().includes(vendorQuery))
-      );
-    }
-
-    if (ocrFilters.dateFrom) {
-      filtered = filtered.filter(result => {
-        const resultDate = new Date(result.receipt_date);
-        const fromDate = new Date(ocrFilters.dateFrom);
-        return resultDate >= fromDate;
-      });
-    }
-
-    if (ocrFilters.dateTo) {
-      filtered = filtered.filter(result => {
-        const resultDate = new Date(result.receipt_date);
-        const toDate = new Date(ocrFilters.dateTo);
-        return resultDate <= toDate;
-      });
-    }
-
-    // ソート
-    filtered.sort((a, b) => {
-      let comparison = 0;
-
-      switch (ocrSortBy) {
-        case 'date':
-          comparison = new Date(a.receipt_date).getTime() - new Date(b.receipt_date).getTime();
-          break;
-        case 'vendor':
-          const vendorA = a.vendor_name || a.store_name || a.company_name || '';
-          const vendorB = b.vendor_name || b.store_name || b.company_name || '';
-          comparison = vendorA.localeCompare(vendorB, 'ja');
-          break;
-        case 'amount':
-          comparison = (a.total_amount || 0) - (b.total_amount || 0);
-          break;
-      }
-
-      return ocrSortOrder === 'desc' ? -comparison : comparison;
-    });
-
-    console.log('🔄 フィルタ・ソート結果:', {
-      original: ocrResults.length,
-      filtered: filtered.length,
-      sortBy: ocrSortBy,
-      sortOrder: ocrSortOrder,
-      filters: ocrFilters
-    });
-
-    return filtered;
-  }, [ocrResults, ocrSortBy, ocrSortOrder, ocrFilters]);
+    return ocrResults;
+  }, [ocrResults]);
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -644,7 +616,10 @@ export default function DocumentsContent() {
                     
                     <select
                       value={ocrSortBy}
-                      onChange={(e) => setOcrSortBy(e.target.value as 'date' | 'vendor' | 'amount')}
+                      onChange={(e) => {
+                        setOcrSortBy(e.target.value as 'date' | 'vendor' | 'amount');
+                        setCurrentPage(1); // ソート変更時はページを1に戻す
+                      }}
                       className="px-3 py-1 border border-gray-300 rounded-md text-sm"
                     >
                       <option value="date">日付順</option>
@@ -654,7 +629,10 @@ export default function DocumentsContent() {
 
                     <select
                       value={ocrSortOrder}
-                      onChange={(e) => setOcrSortOrder(e.target.value as 'asc' | 'desc')}
+                      onChange={(e) => {
+                        setOcrSortOrder(e.target.value as 'asc' | 'desc');
+                        setCurrentPage(1); // ソート変更時はページを1に戻す
+                      }}
                       className="px-3 py-1 border border-gray-300 rounded-md text-sm"
                     >
                       <option value="desc">降順</option>
@@ -664,7 +642,10 @@ export default function DocumentsContent() {
                     <input
                       type="text"
                       value={ocrFilters.vendor}
-                      onChange={(e) => setOcrFilters({ ...ocrFilters, vendor: e.target.value })}
+                      onChange={(e) => {
+                        setOcrFilters({ ...ocrFilters, vendor: e.target.value });
+                        setCurrentPage(1); // フィルター変更時はページを1に戻す
+                      }}
                       className="px-3 py-1 border border-gray-300 rounded-md text-sm"
                       placeholder="取引先で検索"
                     />
@@ -672,7 +653,10 @@ export default function DocumentsContent() {
                     <input
                       type="date"
                       value={ocrFilters.dateFrom}
-                      onChange={(e) => setOcrFilters({ ...ocrFilters, dateFrom: e.target.value })}
+                      onChange={(e) => {
+                        setOcrFilters({ ...ocrFilters, dateFrom: e.target.value });
+                        setCurrentPage(1); // フィルター変更時はページを1に戻す
+                      }}
                       className="px-3 py-1 border border-gray-300 rounded-md text-sm"
                       placeholder="開始日"
                     />
@@ -680,13 +664,19 @@ export default function DocumentsContent() {
                     <input
                       type="date"
                       value={ocrFilters.dateTo}
-                      onChange={(e) => setOcrFilters({ ...ocrFilters, dateTo: e.target.value })}
+                      onChange={(e) => {
+                        setOcrFilters({ ...ocrFilters, dateTo: e.target.value });
+                        setCurrentPage(1); // フィルター変更時はページを1に戻す
+                      }}
                       className="px-3 py-1 border border-gray-300 rounded-md text-sm"
                       placeholder="終了日"
                     />
 
                     <button
-                      onClick={() => setOcrFilters({ vendor: '', dateFrom: '', dateTo: '', minAmount: '', maxAmount: '' })}
+                      onClick={() => {
+                        setOcrFilters({ vendor: '', dateFrom: '', dateTo: '', minAmount: '', maxAmount: '' });
+                        setCurrentPage(1); // フィルター変更時はページを1に戻す
+                      }}
                       className="px-3 py-1 text-sm text-gray-600 hover:text-gray-900"
                     >
                       クリア
