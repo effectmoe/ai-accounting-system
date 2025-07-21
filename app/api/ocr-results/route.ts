@@ -26,22 +26,11 @@ export async function GET(request: NextRequest) {
     const endDate = searchParams.get('endDate') || '';
     const documentType = searchParams.get('documentType') || '';
 
-    // MongoDBからOCR結果を取得
-    // ocr_resultsコレクションから取得（83件のデータが存在する）
-    // フィルターを最小限にしてデータを表示
+    // MongoDBからOCR結果を取得 - フィルターなしですべてのデータを取得
     const filter: any = {};
     
-    // ベンダー名フィルター
-    if (vendorFilter) {
-      filter.$and = filter.$and || [];
-      filter.$and.push({
-        $or: [
-          { vendor_name: { $regex: vendorFilter, $options: 'i' } },
-          { vendorName: { $regex: vendorFilter, $options: 'i' } },
-          { store_name: { $regex: vendorFilter, $options: 'i' } }
-        ]
-      });
-    }
+    // フィルター無効化 - すべてのデータを表示
+    // if (vendorFilter) { ... }
     
     // 金額フィルター
     if (minAmount !== null || maxAmount !== null) {
