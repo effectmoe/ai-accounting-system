@@ -434,6 +434,37 @@ export default function DocumentsContent() {
                 >
                   リフレッシュ
                 </button>
+                <button
+                  onClick={async () => {
+                    console.log('🔍 最新OCRデータをチェック');
+                    const response = await fetch('/api/debug/check-ocr');
+                    const data = await response.json();
+                    console.log('📊 最新OCRデータ:', data);
+                    alert(`総数: ${data.total}件\n表示中: ${data.showing}件\n最新のID: ${data.documents?.[0]?._id || 'なし'}`);
+                  }}
+                  className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-sm ml-2"
+                >
+                  OCRデータ確認
+                </button>
+                <button
+                  onClick={async () => {
+                    const id = prompt('確認したいドキュメントIDを入力してください（例: 687e3501d18421a3ce4e7f53）');
+                    if (id) {
+                      console.log('🔍 特定ドキュメントをチェック:', id);
+                      const response = await fetch(`/api/debug/check-ocr?id=${id}`);
+                      const data = await response.json();
+                      console.log('📊 ドキュメント詳細:', data);
+                      if (data.found) {
+                        alert(`ドキュメントが見つかりました！\n\nID: ${data.document._id}\n作成日時: ${data.document.createdAt}\n店舗名: ${data.document.vendor_name || data.document.vendorName}\n金額: ¥${data.document.total_amount || data.document.totalAmount}`);
+                      } else {
+                        alert('ドキュメントが見つかりませんでした。');
+                      }
+                    }
+                  }}
+                  className="px-3 py-1 bg-purple-500 text-white rounded hover:bg-purple-600 text-sm ml-2"
+                >
+                  ID確認
+                </button>
               </div>
               <p>OCR結果数: {ocrResults.length}件</p>
               <p>フィルター後の結果数: {filteredAndSortedOcrResults().length}件</p>
