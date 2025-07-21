@@ -9,13 +9,35 @@ export class DatabaseError extends Error {
   }
 }
 
-// MongoDB接続設定 - 環境変数から取得するように変更
+// MongoDB接続設定 - URIから直接データベース名を取得
 function getDBName(): string {
-  const dbName = process.env.MONGODB_DB_NAME || 'accounting';
-  // 改行文字やスペースを除去
-  const cleanDbName = dbName.trim();
-  logger.debug(`[MongoDB] Database name: "${cleanDbName}" (original: "${dbName}")`);
-  return cleanDbName;
+  // MONGODB_DB_NAMEが設定されていれば優先
+  if (process.env.MONGODB_DB_NAME) {
+    const cleanDbName = process.env.MONGODB_DB_NAME.trim();
+    logger.debug(`[MongoDB] Database name from MONGODB_DB_NAME: "${cleanDbName}"`);
+    return cleanDbName;
+  }
+  
+  // MONGODB_URIからデータベース名を抽出
+  const uri = process.env.MONGODB_URI;
+  if (uri) {
+    try {
+      // MongoDB接続文字列のパース（mongodb+srv://.../<database>?...）
+      const match = uri.match(/\/([^?\/]+)(\?|$)/);
+      if (match && match[1]) {
+        const dbName = match[1].trim();
+        logger.debug(`[MongoDB] Database name extracted from URI: "${dbName}"`);
+        return dbName;
+      }
+    } catch (error) {
+      logger.error('[MongoDB] Failed to parse database name from URI:', error);
+    }
+  }
+  
+  // デフォルト値
+  const defaultDb = 'accounting';
+  logger.debug(`[MongoDB] Using default database name: "${defaultDb}"`);
+  return defaultDb;
 }
 
 // グローバル変数の宣言（Vercel推奨パターン）
