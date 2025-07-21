@@ -53,6 +53,7 @@ interface OcrResult {
   created_at: string;
   status: string;
   linked_document_id?: string;
+  document_type?: string;
 }
 
 export default function DocumentsContent() {
@@ -82,7 +83,8 @@ export default function DocumentsContent() {
     dateFrom: '',
     dateTo: '',
     minAmount: '',
-    maxAmount: ''
+    maxAmount: '',
+    documentType: ''
   });
   const documentsPerPage = 20;
 
@@ -122,6 +124,9 @@ export default function DocumentsContent() {
       }
       if (ocrFilters.dateTo) {
         params.append('endDate', ocrFilters.dateTo);
+      }
+      if (ocrFilters.documentType) {
+        params.append('documentType', ocrFilters.documentType);
       }
       
       const apiUrl = `/api/ocr-results?${params.toString()}`;
@@ -641,6 +646,22 @@ export default function DocumentsContent() {
                       <option value="asc">昇順</option>
                     </select>
 
+                    <select
+                      value={ocrFilters.documentType || ''}
+                      onChange={(e) => {
+                        setOcrFilters({ ...ocrFilters, documentType: e.target.value });
+                        setCurrentPage(1); // フィルター変更時はページを1に戻す
+                      }}
+                      className="px-3 py-1 border border-gray-300 rounded-md text-sm"
+                    >
+                      <option value="">すべての種類</option>
+                      <option value="receipt">領収書</option>
+                      <option value="invoice">請求書</option>
+                      <option value="quotation">見積書</option>
+                      <option value="delivery_note">納品書</option>
+                      <option value="purchase_order">発注書</option>
+                    </select>
+
                     <input
                       type="text"
                       value={ocrFilters.vendor}
@@ -676,7 +697,7 @@ export default function DocumentsContent() {
 
                     <button
                       onClick={() => {
-                        setOcrFilters({ vendor: '', dateFrom: '', dateTo: '', minAmount: '', maxAmount: '' });
+                        setOcrFilters({ vendor: '', dateFrom: '', dateTo: '', minAmount: '', maxAmount: '', documentType: '' });
                         setCurrentPage(1); // フィルター変更時はページを1に戻す
                       }}
                       className="px-3 py-1 text-sm text-gray-600 hover:text-gray-900"
@@ -828,10 +849,15 @@ export default function DocumentsContent() {
 
                           {/* その他情報 */}
                           <div className="flex justify-between items-center mb-3">
-                            <div className="flex items-center text-xs">
+                            <div className="flex items-center gap-2 text-xs">
                               <span className="inline-block px-2 py-0.5 bg-gray-100 text-gray-700 rounded">
                                 未分類
                               </span>
+                              {result.document_type && (
+                                <span className="inline-block px-2 py-0.5 bg-blue-100 text-blue-700 rounded">
+                                  {documentTypeLabels[result.document_type as keyof typeof documentTypeLabels] || result.document_type}
+                                </span>
+                              )}
                             </div>
                             <div className="text-xs text-gray-500">
                               処理: {result.created_at ? new Date(result.created_at).toLocaleString('ja-JP', {

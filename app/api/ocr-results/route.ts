@@ -24,6 +24,7 @@ export async function GET(request: NextRequest) {
     const maxAmount = searchParams.get('maxAmount') ? parseFloat(searchParams.get('maxAmount')!) : null;
     const startDate = searchParams.get('startDate') || '';
     const endDate = searchParams.get('endDate') || '';
+    const documentType = searchParams.get('documentType') || '';
 
     // MongoDBからOCR結果を取得
     // documentsコレクションからOCR結果として扱えるものを取得
@@ -103,6 +104,11 @@ export async function GET(request: NextRequest) {
       }
       
       filter.$and.push(dateFilter);
+    }
+    
+    // ドキュメントタイプフィルター
+    if (documentType) {
+      filter.documentType = documentType;
     }
 
     console.log('📊 [OCR-Results API] フィルター:', JSON.stringify(filter, null, 2));
