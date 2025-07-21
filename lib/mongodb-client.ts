@@ -10,7 +10,7 @@ export class DatabaseError extends Error {
 }
 
 // MongoDB接続設定
-const DB_NAME = 'accounting';
+const DB_NAME = 'accounting_system';
 
 // グローバル変数の宣言（Vercel推奨パターン）
 declare global {
