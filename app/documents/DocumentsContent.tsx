@@ -340,10 +340,18 @@ export default function DocumentsContent() {
 
   // 全選択・全解除
   const toggleSelectAll = () => {
-    if (selectedItems.size === ocrResults.length) {
-      setSelectedItems(new Set());
+    if (activeTab === 'ocr') {
+      if (selectedItems.size === ocrResults.length) {
+        setSelectedItems(new Set());
+      } else {
+        setSelectedItems(new Set(ocrResults.map(doc => doc.id)));
+      }
     } else {
-      setSelectedItems(new Set(ocrResults.map(doc => doc.id)));
+      if (selectedItems.size === documents.length) {
+        setSelectedItems(new Set());
+      } else {
+        setSelectedItems(new Set(documents.map(doc => doc.id)));
+      }
     }
   };
 
@@ -356,9 +364,13 @@ export default function DocumentsContent() {
     }
 
     try {
-      const deletePromises = Array.from(selectedItems).map(id => 
-        fetch(`/api/ocr-results/${id}`, { method: 'DELETE' })
-      );
+      const deletePromises = Array.from(selectedItems).map(id => {
+        if (activeTab === 'ocr') {
+          return fetch(`/api/ocr-results/${id}`, { method: 'DELETE' });
+        } else {
+          return fetch(`/api/documents/${id}`, { method: 'DELETE' });
+        }
+      });
 
       await Promise.all(deletePromises);
       
@@ -367,7 +379,11 @@ export default function DocumentsContent() {
       setIsSelectionMode(false);
       
       // リストを更新
-      fetchOcrResults();
+      if (activeTab === 'ocr') {
+        fetchOcrResults();
+      } else {
+        fetchDocuments();
+      }
     } catch (error) {
       console.error('Delete error:', error);
       toast.error('削除中にエラーが発生しました');
@@ -581,6 +597,45 @@ export default function DocumentsContent() {
             {/* フィルター（作成済み文書タブ） */}
             {activeTab === 'documents' && (
               <div className="bg-white rounded-lg shadow mb-6 p-4">
+                {/* 選択モードボタン */}
+                <div className="flex justify-between items-center mb-4">
+                  <div className="flex gap-2">
+                    {!isSelectionMode ? (
+                      <button
+                        onClick={toggleSelectionMode}
+                        className="px-3 py-1 border border-gray-300 rounded-md text-sm hover:bg-gray-50">
+                        <CheckSquare className="h-4 w-4 inline mr-1" />
+                        選択モード
+                      </button>
+                    ) : (
+                      <>
+                        <button
+                          onClick={toggleSelectAll}
+                          className="px-3 py-1 border border-gray-300 rounded-md text-sm hover:bg-gray-50">
+                          {selectedItems.size === documents.length ? '全解除' : '全選択'}
+                        </button>
+                        <button
+                          onClick={handleDeleteSelected}
+                          disabled={selectedItems.size === 0}
+                          className="px-3 py-1 bg-red-500 text-white rounded-md text-sm hover:bg-red-600 disabled:bg-gray-300 disabled:cursor-not-allowed">
+                          <Trash2 className="h-4 w-4 inline mr-1" />
+                          選択した{selectedItems.size}件を削除
+                        </button>
+                        <button
+                          onClick={toggleSelectionMode}
+                          className="px-3 py-1 border border-gray-300 rounded-md text-sm hover:bg-gray-50">
+                          <X className="h-4 w-4 inline mr-1" />
+                          キャンセル
+                        </button>
+                      </>
+                    )}
+                  </div>
+                  {totalPages > 1 && (
+                    <span className="text-sm text-gray-500">
+                      ページ {currentPage} / {totalPages}
+                    </span>
+                  )}
+                </div>
                 <div className="flex items-center justify-between flex-wrap gap-4">
                   <div className="flex items-center gap-4 flex-wrap">
                     <div className="flex items-center gap-2">
@@ -1216,7 +1271,24 @@ export default function DocumentsContent() {
                   // カード形式
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-4 md:p-6">
                     {documents.map((doc: any) => (
-                      <div key={doc.id} className="bg-white border border-gray-200 rounded-lg hover:shadow-lg transition-all duration-200">
+                      <div key={doc.id} className="bg-white border border-gray-200 rounded-lg hover:shadow-lg transition-all duration-200 relative">
+                        {/* 選択チェックボックス */}
+                        {isSelectionMode && (
+                          <div className="absolute top-2 left-2 z-10">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleItemSelection(doc.id);
+                              }}
+                              className="p-1 hover:bg-gray-100 rounded">
+                              {selectedItems.has(doc.id) ? (
+                                <CheckSquare className="h-5 w-5 text-blue-600" />
+                              ) : (
+                                <Square className="h-5 w-5 text-gray-400" />
+                              )}
+                            </button>
+                          </div>
+                        )}
                         <div className="p-4">
                           {/* ヘッダー */}
                           <div className="flex justify-between items-start mb-3">
