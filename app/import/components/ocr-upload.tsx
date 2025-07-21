@@ -9,67 +9,84 @@ export default function OCRUpload() {
   const [results, setResults] = useState<any[]>([]);
 
   const processImage = async (file: File) => {
+    console.log('🎯 [OCR Upload] ファイル処理開始:', file.name, 'サイズ:', file.size, 'タイプ:', file.type);
+    
     try {
       // 1. 先にGoogle Driveにアップロード
+      console.log('📤 [OCR Upload] Google Driveアップロード開始...');
       const formData = new FormData();
       formData.append('file', file);
 
-      const uploadResponse = await fetch('/api/gdrive/upload', {
+      const uploadResponse = await fetch('/api/upload/gdrive', {
         method: 'POST',
         body: formData
       });
 
+      console.log('📡 [OCR Upload] Google Driveレスポンス:', {
+        status: uploadResponse.status,
+        ok: uploadResponse.ok
+      });
+
       if (!uploadResponse.ok) {
-        throw new Error('Google Driveへのアップロードに失敗しました');
+        const errorData = await uploadResponse.json();
+        console.error('❌ [OCR Upload] Google Driveエラー:', errorData);
+        throw new Error(`Google Driveへのアップロードに失敗しました: ${errorData.error || uploadResponse.status}`);
       }
 
       const uploadResult = await uploadResponse.json();
+      console.log('✅ [OCR Upload] Google Drive成功:', uploadResult);
       const gdriveFileId = uploadResult.fileId;
 
       // 2. OCR処理を実行
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        const base64 = e.target?.result?.toString().split(',')[1];
-        if (!base64) return;
+      console.log('🔍 [OCR Upload] OCR処理開始...');
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('documentType', 'invoice');
+        formData.append('companyId', '11111111-1111-1111-1111-111111111111');
 
-        try {
-          const response = await fetch('/api/ocr', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              image: base64,
-              filename: file.name,
-              gdriveFileId: gdriveFileId // Google DriveファイルIDを渡す
-            })
-          });
+        const response = await fetch('/api/ocr/analyze', {
+          method: 'POST',
+          body: formData
+        });
 
-          const result = await response.json();
-          if (result.success) {
-            setResults(prev => [...prev, { 
-              file: file.name, 
-              gdriveFileId: gdriveFileId,
-              ...result.data 
-            }]);
-            toast.success(`${file.name} の処理が完了しました`);
-            
-            // デモモードの場合は追加のメッセージ
-            if (result.demo) {
-              toast.info('デモモード: モックデータが保存されました', { duration: 4000 });
-            }
-          } else {
-            toast.error(`${file.name} の処理に失敗: ${result.error}`);
+        console.log('📡 [OCR Upload] OCRレスポンス:', {
+          status: response.status,
+          ok: response.ok
+        });
+
+        const result = await response.json();
+        console.log('📊 [OCR Upload] OCR結果:', result);
+        
+        if (result.success) {
+          setResults(prev => [...prev, { 
+            file: file.name, 
+            gdriveFileId: gdriveFileId,
+            ...result.data 
+          }]);
+          toast.success(`${file.name} の処理が完了しました`);
+          console.log('✅ [OCR Upload] OCR処理完了!');
+          
+          // デモモードの場合は追加のメッセージ
+          if (result.demo) {
+            toast.info('デモモード: モックデータが保存されました', { duration: 4000 });
           }
-        } catch (error) {
-          toast.error(`エラー: ${error}`);
+        } else {
+          console.error('❌ [OCR Upload] OCR処理失敗:', result.error);
+          toast.error(`${file.name} の処理に失敗: ${result.error}`);
         }
-      };
-      reader.readAsDataURL(file);
+      } catch (error) {
+        console.error('❌ [OCR Upload] OCR処理エラー:', error);
+        toast.error(`エラー: ${error}`);
+      }
     } catch (error) {
+      console.error('❌ [OCR Upload] アップロードエラー:', error);
       toast.error(`${file.name} のアップロードに失敗: ${error}`);
     }
   };
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
+    console.log('📁 [OCR Upload] ファイルドロップ:', acceptedFiles.length, '個のファイル');
     setIsProcessing(true);
     
     for (const file of acceptedFiles) {
@@ -77,6 +94,7 @@ export default function OCRUpload() {
     }
     
     setIsProcessing(false);
+    console.log('🏁 [OCR Upload] 全ファイル処理完了');
   }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({

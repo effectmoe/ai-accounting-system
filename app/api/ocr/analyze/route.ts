@@ -8,6 +8,7 @@ import { Readable } from 'stream';
 import { logger } from '@/lib/logger';
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
+  console.log('🎯 [OCR API] OCR処理開始');
   
   try {
     logger.debug('[OCR API] Starting OCR analysis...');
@@ -146,6 +147,62 @@ TEL: 03-xxxx-xxxx FAX: 03-xxxx-xxxx
     const totalElapsed = Date.now() - startTime;
     logger.debug('[OCR API] AI orchestration completed successfully in', totalElapsed, 'ms total');
     
+    // MongoDBに結果を保存
+    try {
+      const { MongoClient } = await import('mongodb');
+      const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017';
+      const client = new MongoClient(uri);
+      
+      await client.connect();
+      const db = client.db('accounting_system');
+      const collection = db.collection('documents');
+      
+      // OCR結果をドキュメントとして保存
+      const ocrDocument = {
+        companyId: companyId,
+        type: documentType,
+        ocrStatus: 'completed',
+        ocrProcessedAt: new Date(),
+        ocrResult: structuredData,
+        
+        // 主要フィールドを展開
+        documentNumber: structuredData.documentNumber,
+        issueDate: structuredData.issueDate,
+        vendor_name: structuredData.vendor?.name,
+        customer_name: structuredData.customer?.name,
+        amount: structuredData.totalAmount,
+        
+        // その他のメタデータ
+        fileName: file.name,
+        fileType: file.type,
+        fileSize: file.size,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        
+        // フラグ
+        linked_document_id: null,
+        hiddenFromList: false,
+        status: 'active'
+      };
+      
+      const insertResult = await collection.insertOne(ocrDocument);
+      logger.debug('[OCR API] Document saved to MongoDB:', insertResult.insertedId);
+      console.log('✅ [OCR API] MongoDB保存成功! ID:', insertResult.insertedId);
+      console.log('📄 [OCR API] 保存したドキュメント:', JSON.stringify({
+        _id: insertResult.insertedId,
+        companyId: ocrDocument.companyId,
+        documentNumber: ocrDocument.documentNumber,
+        vendor_name: ocrDocument.vendor_name,
+        amount: ocrDocument.amount,
+        ocrStatus: ocrDocument.ocrStatus
+      }, null, 2));
+      
+      await client.close();
+    } catch (dbError) {
+      logger.error('[OCR API] MongoDB save error:', dbError);
+      // DBエラーがあっても処理は続行
+    }
+    
     // ファイルをGridFSに保存
     let gridfsFileId: string | null = null;
     try {
@@ -183,7 +240,7 @@ TEL: 03-xxxx-xxxx FAX: 03-xxxx-xxxx
       // GridFS保存に失敗しても処理は続行（fileIdはnullのまま）
     }
     
-    return NextResponse.json({
+    const response = {
       success: true,
       data: structuredData,
       fileId: gridfsFileId, // GridFSのファイルIDを返す
@@ -194,7 +251,16 @@ TEL: 03-xxxx-xxxx FAX: 03-xxxx-xxxx
         total: totalElapsed,
         azure: azureOcrResult ? (Date.now() - startTime) : 0
       }
-    });
+    };
+    
+    console.log('✅ [OCR API] OCR処理完了！レスポンス:', JSON.stringify({
+      success: response.success,
+      documentNumber: structuredData.documentNumber,
+      vendor: structuredData.vendor?.name,
+      amount: structuredData.totalAmount
+    }, null, 2));
+    
+    return NextResponse.json(response);
     
   } catch (error) {
     const totalElapsed = Date.now() - startTime;

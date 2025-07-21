@@ -163,10 +163,16 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     logger.error('Google Drive upload error:', error);
+    logger.error('Error stack:', error instanceof Error ? error.stack : 'No stack');
+    logger.error('Error type:', error?.constructor?.name);
+    
+    // より詳細なエラー情報を返す
     return NextResponse.json(
       { 
         error: 'Google Driveへのアップロードに失敗しました',
-        detail: error instanceof Error ? error.message : 'Unknown error'
+        detail: error instanceof Error ? error.message : 'Unknown error',
+        errorType: error?.constructor?.name || 'UnknownError',
+        stack: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.stack : null) : undefined
       },
       { status: 500 }
     );

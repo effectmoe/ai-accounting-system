@@ -54,9 +54,12 @@ interface OcrResult {
 }
 
 export default function DocumentsContent() {
+  console.log('🔴🔴🔴 DocumentsContent コンポーネントがマウントされました！');
+  
   const router = useRouter();
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'ocr');
+  const [debugInfo, setDebugInfo] = useState<string[]>(['DocumentsContent mounted at ' + new Date().toISOString()]);
   const [documents, setDocuments] = useState<SavedDocument[]>([]);
   const [ocrResults, setOcrResults] = useState<OcrResult[]>([]);
   const [loading, setLoading] = useState(true);
@@ -116,6 +119,11 @@ export default function DocumentsContent() {
       
       if (data.success) {
         console.log('✅ OCR結果取得成功:', data.data?.length, '件');
+        if (data.data && data.data.length > 0) {
+          console.log('🔍 最初のOCR結果詳細:', JSON.stringify(data.data[0], null, 2));
+        } else {
+          console.warn('⚠️ OCR結果は0件です。MongoDBにデータが存在するか確認してください。');
+        }
         setOcrResults(data.data || []);
         setTotalPages(Math.ceil((data.total || 0) / documentsPerPage));
         console.log('📈 総ページ数設定:', Math.ceil((data.total || 0) / documentsPerPage));
@@ -274,11 +282,12 @@ export default function DocumentsContent() {
 
   // 初回ロードのみ
   useEffect(() => {
-    console.log('🚀 初回ロード開始');
+    console.log('🚀 [DocumentsContent] 初回ロード開始');
+    console.log('🔍 [DocumentsContent] 現在のタブ:', activeTab);
     setLoading(true);
     
     // 初回ロード時のみ実行
-    console.log('📋 OCR結果とドキュメント取得開始');
+    console.log('📋 [DocumentsContent] OCR結果とドキュメント取得開始');
     Promise.all([
       fetchOcrResults(),
       fetchDocuments()
@@ -290,7 +299,7 @@ export default function DocumentsContent() {
       console.log('🏁 ローディング終了');
       setLoading(false);
     });
-  }, []); // 依存配列を空にして初回のみ実行
+  }, [fetchOcrResults, fetchDocuments]); // 関数を依存配列に追加
   
   // ページ変更時の処理（初回ロード以外）
   useEffect(() => {
@@ -403,6 +412,36 @@ export default function DocumentsContent() {
         {/* メインコンテンツ */}
         <main className="flex-1 overflow-y-auto">
           <div className="px-4 sm:px-6 lg:px-8 py-8">
+            {/* デバッグ情報 */}
+            <div className="mb-4 p-4 bg-yellow-100 border border-yellow-400 rounded">
+              <p className="font-bold">デバッグ情報:</p>
+              <p>OCR結果数: {ocrResults.length}件</p>
+              <p>フィルター後の結果数: {filteredAndSortedOcrResults().length}件</p>
+              <p>ローディング: {loading ? 'はい' : 'いいえ'}</p>
+              <p>アクティブタブ: {activeTab}</p>
+              <p>表示モード: {viewMode}</p>
+              <p>総ページ数: {totalPages}</p>
+              {ocrResults.length > 0 && (
+                <>
+                  <p>最初のOCR結果: {ocrResults[0].vendor_name} - ¥{ocrResults[0].total_amount}</p>
+                  <p>displayResults件数: {filteredAndSortedOcrResults().length}件</p>
+                  <details className="mt-2">
+                    <summary className="cursor-pointer text-sm">OCRデータ詳細（クリックで展開）</summary>
+                    <div className="mt-2 text-xs max-h-40 overflow-auto">
+                      {filteredAndSortedOcrResults().slice(0, 3).map((result, index) => (
+                        <div key={index} className="mb-2 p-2 bg-white rounded">
+                          <p>#{index + 1}: {result.vendor_name || result.store_name || '店舗名なし'}</p>
+                          <p>金額: ¥{result.total_amount || 0}</p>
+                          <p>日付: {result.receipt_date || 'なし'}</p>
+                          <p>ID: {result.id}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </details>
+                </>
+              )}
+            </div>
+            
             {/* タブ */}
             <div className="mb-6">
               <nav className="flex space-x-4">
@@ -621,6 +660,22 @@ export default function DocumentsContent() {
                 // OCR結果（カード形式）
                 (() => {
                   const displayResults = filteredAndSortedOcrResults();
+                  console.log('🎯 レンダリング時のdisplayResults:', displayResults.length, '件');
+                  console.log('🎯 viewMode:', viewMode);
+                  
+                  // デバッグ用：最初の3件のデータを確認
+                  if (displayResults.length > 0) {
+                    console.log('🎯 最初の3件のOCRデータ:');
+                    displayResults.slice(0, 3).forEach((result, index) => {
+                      console.log(`  ${index + 1}:`, {
+                        id: result.id,
+                        vendor: result.vendor_name || result.store_name || '不明',
+                        amount: result.total_amount,
+                        date: result.receipt_date
+                      });
+                    });
+                  }
+                  
                   return displayResults.length === 0 ? (
                     <div className="p-8 text-center">
                       <FileText className="mx-auto h-12 w-12 text-gray-400" />
@@ -629,6 +684,16 @@ export default function DocumentsContent() {
                       </p>
                     </div>
                   ) : viewMode === 'card' ? (
+                    <div className="p-4">
+                      <h3 className="text-lg font-bold mb-4">OCR結果一覧（デバッグ表示）</h3>
+                      {displayResults.map((result, index) => (
+                        <div key={result.id} className="mb-2 p-2 bg-gray-100 rounded">
+                          <p>{index + 1}. {result.vendor_name || result.store_name || 'ベンダー名なし'} - ¥{result.total_amount || 0}</p>
+                          <p className="text-sm text-gray-600">{result.file_name} - {new Date(result.created_at).toLocaleDateString('ja-JP')}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-4 md:p-6">
                       {displayResults.map((result) => (
                       <div key={result.id} className="bg-white border border-gray-200 rounded-lg hover:shadow-lg transition-all duration-200">
@@ -884,6 +949,7 @@ export default function DocumentsContent() {
                       </table>
                     </div>
                   );
+                })
                 })()
               ) : (
                 // 作成済み文書

@@ -604,6 +604,13 @@ function NewDocumentContent() {
   const handleFileUpload = async (selectedFile: File) => {
     if (!selectedFile) return;
 
+    console.log('📄 [Documents New] ファイルアップロード開始:', {
+      name: selectedFile.name,
+      size: selectedFile.size,
+      type: selectedFile.type,
+      documentType: documentType
+    });
+
     setLoading(true);
     try {
       const formData = new FormData();
@@ -627,20 +634,30 @@ function NewDocumentContent() {
         formData.append('documentType', 'receipt');
       }
 
+      console.log('🔍 [Documents New] OCR APIを呼び出し:', apiEndpoint);
       const response = await fetch(apiEndpoint, {
         method: 'POST',
         body: formData,
       });
 
+      console.log('📡 [Documents New] OCRレスポンス:', {
+        status: response.status,
+        ok: response.ok
+      });
+
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ [Documents New] OCRエラーレスポンス:', errorText);
         throw new Error('OCR処理に失敗しました');
       }
 
       const result = await response.json();
+      console.log('📊 [Documents New] OCR結果:', result);
       
       logger.debug('[Documents New] OCR Response:', result);
       
       if (result.success) {
+        console.log('✅ [Documents New] OCR成功!');
         toast.success(successMessage);
         
         // 仕入先見積書の場合は、OCR結果から仕入先見積書を作成
@@ -689,6 +706,7 @@ function NewDocumentContent() {
         throw new Error(result.error || 'OCR処理に失敗しました');
       }
     } catch (error) {
+      console.error('❌ [Documents New] アップロードエラー:', error);
       logger.error('Upload error:', error);
       toast.error(error instanceof Error ? error.message : 'アップロードに失敗しました');
     } finally {
