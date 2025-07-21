@@ -11,6 +11,7 @@ export async function POST(request: NextRequest) {
     logger.debug('OCR Webhook received - start');
     const data = await request.json();
     logger.debug('OCR Webhook data:', JSON.stringify(data, null, 2));
+    logger.debug('Document type from GAS:', data.documentType || 'not specified');
 
     // MongoDBのみを使用（Supabaseは削除）
     {
@@ -45,6 +46,25 @@ export async function POST(request: NextRequest) {
       }
       logger.debug('MongoDB接続確認完了');
 
+      // 文書タイプを判定（GASから送信されるか、内容から推測）
+      let detectedDocumentType = data.documentType || 'receipt';
+      
+      // OCRテキストから文書タイプを推測
+      if (!data.documentType && data.ocrText) {
+        const text = data.ocrText.toLowerCase();
+        if (text.includes('見積書') || text.includes('お見積') || text.includes('quotation') || text.includes('estimate')) {
+          detectedDocumentType = 'quotation';
+        } else if (text.includes('請求書') || text.includes('invoice') || text.includes('bill')) {
+          detectedDocumentType = 'invoice';
+        } else if (text.includes('発注書') || text.includes('注文書') || text.includes('purchase order')) {
+          detectedDocumentType = 'purchase_order';
+        } else if (text.includes('領収書') || text.includes('レシート') || text.includes('receipt')) {
+          detectedDocumentType = 'receipt';
+        }
+      }
+      
+      logger.debug('Detected document type:', detectedDocumentType);
+      
       // OCR結果をMongoDBに保存
       const ocrResult = {
         companyId: '11111111-1111-1111-1111-111111111111',
@@ -53,7 +73,7 @@ export async function POST(request: NextRequest) {
         mimeType: 'application/pdf', // デフォルト
         processedAt: new Date(),
         processingTime: 0,
-        documentType: 'receipt',
+        documentType: detectedDocumentType,
         confidence: 0.8,
         status: 'completed',
         extractedData: data.documentInfo || {},
@@ -81,7 +101,7 @@ export async function POST(request: NextRequest) {
         fileName: data.fileName,
         fileType: 'application/pdf',
         fileSize: 0,
-        documentType: 'receipt',
+        documentType: detectedDocumentType,
         vendorName: data.documentInfo?.vendorName || data.documentInfo?.storeName || '',
         totalAmount: data.documentInfo?.totalAmount || 0,
         taxAmount: data.documentInfo?.taxAmount || 0,

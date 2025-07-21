@@ -241,6 +241,7 @@ export async function GET(request: NextRequest) {
     const formattedResults = ocrResults.map(doc => ({
       id: doc._id.toString(),
       company_id: companyId,
+      document_type: doc.documentType || doc.type || 'receipt', // ドキュメントタイプを追加
       file_name: doc.fileName || doc.file_name || '',
       vendor_name: doc.vendorName || doc.vendor_name || doc.partnerName || '',
       receipt_date: doc.documentDate || doc.receipt_date || doc.issueDate || doc.createdAt,
