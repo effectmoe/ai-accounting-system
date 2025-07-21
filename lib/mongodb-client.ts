@@ -9,8 +9,10 @@ export class DatabaseError extends Error {
   }
 }
 
-// MongoDB接続設定
-const DB_NAME = 'accounting_system';
+// MongoDB接続設定 - 環境変数から取得するように変更
+function getDBName(): string {
+  return process.env.MONGODB_DB_NAME || 'accounting';
+}
 
 // グローバル変数の宣言（Vercel推奨パターン）
 declare global {
@@ -57,7 +59,7 @@ async function connectToDatabase(): Promise<{ client: MongoClient; db: Db }> {
   if (cached) {
     try {
       const client = await cached;
-      const db = client.db(DB_NAME);
+      const db = client.db(getDBName());
       
       // 接続が生きているか確認
       await db.admin().ping();
@@ -90,7 +92,7 @@ async function connectToDatabase(): Promise<{ client: MongoClient; db: Db }> {
     cached = global._mongoClientPromise = clientPromise;
     
     const connectedClient = await clientPromise;
-    const db = connectedClient.db(DB_NAME);
+    const db = connectedClient.db(getDBName());
     
     // 接続を確認
     await db.admin().ping();
