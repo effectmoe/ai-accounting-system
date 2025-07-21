@@ -144,17 +144,22 @@ export async function GET(request: NextRequest) {
     });
     
     // 両方のコレクションの結果を統合
-    const combinedResults = [...ocrResultsFromOcrResults, ...ocrResultsFromDocuments];
+    const allResults = [...ocrResultsFromOcrResults, ...ocrResultsFromDocuments];
+    
+    // 重複削除（_idベース）
+    const uniqueResults = allResults.filter((item, index, self) => 
+      index === self.findIndex(t => t._id.toString() === item._id.toString())
+    );
     
     // 日付でソート（最新順 = 降順）
-    combinedResults.sort((a, b) => {
+    uniqueResults.sort((a, b) => {
       const dateA = new Date(a.createdAt || a.created_at || 0).getTime();
       const dateB = new Date(b.createdAt || b.created_at || 0).getTime();
       return dateB - dateA; // 常に最新順
     });
     
     // ページング適用
-    const ocrResults = combinedResults.slice(skip, skip + limit);
+    const ocrResults = uniqueResults.slice(skip, skip + limit);
     
     console.log('✅ [OCR-Results API] 取得結果数:', ocrResults.length);
     
