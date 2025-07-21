@@ -208,10 +208,18 @@ TEL: 03-xxxx-xxxx FAX: 03-xxxx-xxxx
       };
       
       const insertResult = await collection.insertOne(ocrDocument);
-      mongoDbSaved = true;
-      mongoDbId = insertResult.insertedId;
-      logger.debug('[OCR API] Document saved to MongoDB:', insertResult.insertedId);
-      console.log('✅ [OCR API] MongoDB保存成功! ID:', insertResult.insertedId);
+      
+      // 保存確認
+      const savedDoc = await collection.findOne({ _id: insertResult.insertedId });
+      if (savedDoc) {
+        mongoDbSaved = true;
+        mongoDbId = insertResult.insertedId;
+        logger.debug('[OCR API] Document saved and verified:', insertResult.insertedId);
+        console.log('✅ [OCR API] MongoDB保存・確認成功! ID:', insertResult.insertedId);
+      } else {
+        mongoDbSaved = false;
+        console.log('❌ [OCR API] MongoDB保存後の確認に失敗!');
+      }
       console.log('📄 [OCR API] 保存したドキュメント:', JSON.stringify({
         _id: insertResult.insertedId,
         companyId: ocrDocument.companyId,
