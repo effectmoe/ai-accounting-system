@@ -1,486 +1,909 @@
 
-> mastra-accounting-automation@1.0.0 dev
+> mastra-accounting-automation@1.0.1 dev
 > next dev
 
    ▲ Next.js 14.1.0
    - Local:        http://localhost:3000
    - Environments: .env.local, .env
 
- ✓ Ready in 1528ms
- ⚠ Duplicate page detected. app/api/invoices/[id]/pdf/route.ts and app/api/invoices/[id]/pdf/route.tsx resolve to /api/invoices/[id]/pdf
- ⚠ Found a change in next.config.js. Restarting the server to apply the changes...
-   ▲ Next.js 14.1.0
-   - Local:        http://localhost:3000
-   - Environments: .env.local, .env
-
- ✓ Ready in 1040ms
- ⚠ Found a change in next.config.js. Restarting the server to apply the changes...
-   ▲ Next.js 14.1.0
-   - Local:        http://localhost:3000
-   - Environments: .env.local, .env
-
- ✓ Ready in 1437ms
- ⚠ Duplicate page detected. app/api/invoices/[id]/pdf/route.ts and app/api/invoices/[id]/pdf/route.tsx resolve to /api/invoices/[id]/pdf
-   Reload env: .env
-   Reload env: .env
-   Reload env: .env
-   Reload env: .env
-   Reload env: .env
- ✓ Compiled /middleware in 145ms (64 modules)
- ✓ Compiled /api/accounts in 118ms (40 modules)
-Creating new MongoDB connection...
-MongoDB URI configured: mongodb+srv://***:***@accounting-cluster.nld0j20.mongodb.net/accounting?retryWrites=true&w=majority&appName=accounting-cluster
-MongoDB connection verified with ping
-Reusing cached MongoDB connection
-Reusing cached MongoDB connection
-Reusing cached MongoDB connection
-Reusing cached MongoDB connection
-Reusing cached MongoDB connection
-Reusing cached MongoDB connection
- ✓ Compiled in 512ms (254 modules)
- ✓ Compiled in 46ms (254 modules)
- ✓ Compiled /api/accounts in 14ms (40 modules)
-Reusing cached MongoDB connection
-Reusing cached MongoDB connection
-Reusing cached MongoDB connection
- ✓ Compiled /api/ai-conversations/debug in 25ms (40 modules)
- ⨯ Error: Cannot find module './chunks/vendor-chunks/next.js'
-Require stack:
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/app/api/ai-conversations/debug/route.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/utils.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-middleware.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-reloader-webpack.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js
-    at Function.<anonymous> (node:internal/modules/cjs/loader:1405:15)
-    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require-hook.js:55:36
-    at defaultResolveImpl (node:internal/modules/cjs/loader:1061:19)
-    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1066:22)
-    at Function._load (node:internal/modules/cjs/loader:1215:37)
-    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
-    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
-    at Module.<anonymous> (node:internal/modules/cjs/loader:1491:12)
-    at mod.require (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require-hook.js:65:28)
-    at require (node:internal/modules/helpers:135:16)
-    at t.f.require (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:1:1420)
-    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:1:879
-    at Array.reduce (<anonymous>)
-    at t.e (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:1:858)
-    at Array.map (<anonymous>)
-    at t.X (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:1:1179)
-    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/app/api/ai-conversations/debug/route.js:73:47
-    at Object.<anonymous> (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/app/api/ai-conversations/debug/route.js:76:3)
-    at Module._compile (node:internal/modules/cjs/loader:1734:14)
-    at Object..js (node:internal/modules/cjs/loader:1899:10)
-    at Module.load (node:internal/modules/cjs/loader:1469:32)
-    at Function._load (node:internal/modules/cjs/loader:1286:12)
-    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
-    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
-    at Module.<anonymous> (node:internal/modules/cjs/loader:1491:12)
-    at mod.require (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require-hook.js:65:28)
-    at require (node:internal/modules/helpers:135:16)
-    at requirePage (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js:109:84)
-    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js:74:84
-    at async loadComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js:74:26)
-    at async DevServer.findPageComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:675:36) {
-  code: 'MODULE_NOT_FOUND',
-  requireStack: [
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/app/api/ai-conversations/debug/route.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/utils.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-middleware.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-reloader-webpack.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js'
-  ],
-  page: '/api/ai-conversations/debug'
-}
- ✓ Compiled /_error in 338ms (394 modules)
- ⨯ Error: Cannot find module './chunks/vendor-chunks/next.js'
-Require stack:
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/pages/_document.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/utils.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-middleware.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-reloader-webpack.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js
-    at Function.<anonymous> (node:internal/modules/cjs/loader:1405:15)
-    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require-hook.js:55:36
-    at defaultResolveImpl (node:internal/modules/cjs/loader:1061:19)
-    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1066:22)
-    at Function._load (node:internal/modules/cjs/loader:1215:37)
-    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
-    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
-    at Module.<anonymous> (node:internal/modules/cjs/loader:1491:12)
-    at mod.require (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require-hook.js:65:28)
-    at require (node:internal/modules/helpers:135:16)
-    at t.f.require (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:1:1420)
-    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:1:879
-    at Array.reduce (<anonymous>)
-    at t.e (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:1:858)
-    at Array.map (<anonymous>)
-    at t.X (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:1:1179)
-    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/pages/_document.js:63:47
-    at Object.<anonymous> (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/pages/_document.js:66:3)
-    at Module._compile (node:internal/modules/cjs/loader:1734:14)
-    at Object..js (node:internal/modules/cjs/loader:1899:10)
-    at Module.load (node:internal/modules/cjs/loader:1469:32)
-    at Function._load (node:internal/modules/cjs/loader:1286:12)
-    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
-    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
-    at Module.<anonymous> (node:internal/modules/cjs/loader:1491:12)
-    at mod.require (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require-hook.js:65:28)
-    at require (node:internal/modules/helpers:135:16)
-    at requirePage (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js:109:84)
-    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js:70:65
-    at async Promise.all (index 0)
-    at async loadComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js:69:33)
-    at async DevServer.findPageComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:675:36) {
-  code: 'MODULE_NOT_FOUND',
-  requireStack: [
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/pages/_document.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/utils.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-middleware.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-reloader-webpack.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js'
-  ]
-}
-[Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'] {
-  errno: -2,
-  code: 'ENOENT',
-  syscall: 'stat',
-  path: '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'
-}
-[Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'] {
-  errno: -2,
-  code: 'ENOENT',
-  syscall: 'stat',
-  path: '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'
-}
- ⨯ unhandledRejection: [Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'] {
-  errno: -2,
-  code: 'ENOENT',
-  syscall: 'stat',
-  path: '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'
-}
- ⨯ unhandledRejection: [Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'] {
-  errno: -2,
-  code: 'ENOENT',
-  syscall: 'stat',
-  path: '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'
-}
-<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'
- ⨯ Error: Cannot find module './chunks/vendor-chunks/next.js'
-Require stack:
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/pages/_document.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/utils.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-middleware.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-reloader-webpack.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js
-    at Function.<anonymous> (node:internal/modules/cjs/loader:1405:15)
-    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require-hook.js:55:36
-    at defaultResolveImpl (node:internal/modules/cjs/loader:1061:19)
-    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1066:22)
-    at Function._load (node:internal/modules/cjs/loader:1215:37)
-    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
-    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
-    at Module.<anonymous> (node:internal/modules/cjs/loader:1491:12)
-    at mod.require (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require-hook.js:65:28)
-    at require (node:internal/modules/helpers:135:16)
-    at t.f.require (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:1:1420)
-    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:1:879
-    at Array.reduce (<anonymous>)
-    at t.e (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:1:858)
-    at Array.map (<anonymous>)
-    at t.X (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:1:1179)
-    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/app/api/ai-conversations/debug/route.js:73:47
-    at Object.<anonymous> (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/app/api/ai-conversations/debug/route.js:76:3)
-    at Module._compile (node:internal/modules/cjs/loader:1734:14)
-    at Object..js (node:internal/modules/cjs/loader:1899:10)
-    at Module.load (node:internal/modules/cjs/loader:1469:32)
-    at Function._load (node:internal/modules/cjs/loader:1286:12)
-    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
-    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
-    at Module.<anonymous> (node:internal/modules/cjs/loader:1491:12)
-    at mod.require (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require-hook.js:65:28)
-    at require (node:internal/modules/helpers:135:16)
-    at requirePage (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js:109:84)
-    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js:74:84
-    at async loadComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js:74:26)
-    at async DevServer.findPageComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:675:36) {
-  code: 'MODULE_NOT_FOUND',
-  requireStack: [
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/pages/_document.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/utils.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-middleware.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-reloader-webpack.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js'
-  ],
-  page: '/api/ai-conversations/debug'
-}
- ⨯ Error: Cannot find module './chunks/vendor-chunks/next.js'
-Require stack:
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/pages/_document.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/utils.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-middleware.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-reloader-webpack.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js
-    at Function.<anonymous> (node:internal/modules/cjs/loader:1405:15)
-    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require-hook.js:55:36
-    at defaultResolveImpl (node:internal/modules/cjs/loader:1061:19)
-    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1066:22)
-    at Function._load (node:internal/modules/cjs/loader:1215:37)
-    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
-    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
-    at Module.<anonymous> (node:internal/modules/cjs/loader:1491:12)
-    at mod.require (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require-hook.js:65:28)
-    at require (node:internal/modules/helpers:135:16)
-    at t.f.require (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:1:1420)
-    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:1:879
-    at Array.reduce (<anonymous>)
-    at t.e (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:1:858)
-    at Array.map (<anonymous>)
-    at t.X (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:1:1179)
-    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/pages/_document.js:63:47
-    at Object.<anonymous> (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/pages/_document.js:66:3)
-    at Module._compile (node:internal/modules/cjs/loader:1734:14)
-    at Object..js (node:internal/modules/cjs/loader:1899:10)
-    at Module.load (node:internal/modules/cjs/loader:1469:32)
-    at Function._load (node:internal/modules/cjs/loader:1286:12)
-    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
-    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
-    at Module.<anonymous> (node:internal/modules/cjs/loader:1491:12)
-    at mod.require (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require-hook.js:65:28)
-    at require (node:internal/modules/helpers:135:16)
-    at requirePage (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js:109:84)
-    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js:70:65
-    at async Promise.all (index 0)
-    at async loadComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js:69:33)
-    at async DevServer.findPageComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:675:36) {
-  code: 'MODULE_NOT_FOUND',
-  requireStack: [
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/pages/_document.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/utils.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-middleware.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-reloader-webpack.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js'
-  ]
-}
- ✓ Compiled /api/ai-conversations in 28ms (79 modules)
-[AI Conversations API - GET] Search params: {
-  conversationId: '1752374194038',
-  invoiceId: '68731bbcca778cb6bad92270'
-}
-Reusing cached MongoDB connection
-Reusing cached MongoDB connection
-Reusing cached MongoDB connection
-[AI Conversations API - GET] Trying query: { conversationId: '1752374194038' }
-[AI Conversations API - GET] Found with query: { conversationId: '1752374194038' }
- ○ Compiling /invoices/[id]/edit ...
+ ✓ Ready in 1430ms
+ ✓ Compiled /middleware in 149ms (64 modules)
+ ○ Compiling /documents ...
 
 warn - Your `content` configuration includes a pattern which looks like it's accidentally matching all of `node_modules` and can cause serious performance issues.
 warn - Pattern: `./src/**/*.ts`
 warn - See our documentation for recommendations:
 warn - https://tailwindcss.com/docs/content-configuration#pattern-recommendations
- ✓ Compiled /invoices/[id]/edit in 4.8s (2457 modules)
-<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/app/api/accounts'
-<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/app/api/accounts/route' in /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/app/api/accounts/route.js', but to 'Error: Can't resolve '../../../../.next/server/app/api/accounts/route' in '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
-<w>  at resolve commonjs file ../../../../.next/server/app/api/accounts/route (expected /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/app/api/accounts/route.js)
-<w>  at file dependencies /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js
-<w>  at file /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js
-<w>  at file dependencies /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js
-<w>  at file /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js
-<w>  at file dependencies /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/utils.js
-<w>  at file /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/utils.js
-<w>  at file dependencies /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/webpack/loaders/next-app-loader.js
-<w>  at file /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/webpack/loaders/next-app-loader.js
-<w>  at file dependencies /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
-<w>  at file /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
-<w>  at file dependencies /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/webpack/bundle5.js
-<w>  at file /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/webpack/bundle5.js
-<w>  at file dependencies /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/webpack/webpack.js
-<w>  at file /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/webpack/webpack.js
-<w>  at file dependencies /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
-<w>  at file /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
-<w>  at file dependencies /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/swc/index.js
-<w>  at file /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/swc/index.js
-<w>  at file dependencies /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
-<w>  at file /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
-<w>  at resolve commonjs /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
-<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/app/api/accounts'
-<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/app/api/accounts/route' in /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/app/api/accounts/route.js', but to 'Error: Can't resolve '../../../../.next/server/app/api/accounts/route' in '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
-<w>  at resolve commonjs file ../../../../.next/server/app/api/accounts/route (expected /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/app/api/accounts/route.js)
-<w>  at file dependencies /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js
-<w>  at file /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js
-<w>  at file dependencies /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js
-<w>  at file /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js
-<w>  at file dependencies /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/utils.js
-<w>  at file /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/utils.js
-<w>  at file dependencies /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/worker.js
-<w>  at file /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/worker.js
-<w>  at file dependencies /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
-<w>  at file /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
-<w>  at file dependencies /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
-<w>  at file /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
-<w>  at file dependencies /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/webpack/bundle5.js
-<w>  at file /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/webpack/bundle5.js
-<w>  at file dependencies /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/webpack/webpack.js
-<w>  at file /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/webpack/webpack.js
-<w>  at file dependencies /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
-<w>  at file /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
-<w>  at file dependencies /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/swc/index.js
-<w>  at file /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/swc/index.js
-<w>  at file dependencies /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
-<w>  at file /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
-<w>  at resolve commonjs /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
- ✓ Compiled in 226ms (1308 modules)
- ✓ Compiled in 139ms (1261 modules)
-<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/app/api/accounts'
-<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/app/api/accounts/route' in /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/app/api/accounts/route.js', but to 'Error: Can't resolve '../../../../.next/server/app/api/accounts/route' in '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
-<w>  at resolve commonjs file ../../../../.next/server/app/api/accounts/route (expected /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/app/api/accounts/route.js)
-<w>  at file dependencies /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js
-<w>  at file /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js
-<w>  at file dependencies /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js
-<w>  at file /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js
-<w>  at file dependencies /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/utils.js
-<w>  at file /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/utils.js
-<w>  at file dependencies /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/worker.js
-<w>  at file /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/worker.js
-<w>  at file dependencies /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
-<w>  at file /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
-<w>  at resolve commonjs /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
-<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/app/api/accounts'
-<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/app/api/accounts/route' in /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/app/api/accounts/route.js', but to 'Error: Can't resolve '../../../../.next/server/app/api/accounts/route' in '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
-<w>  at resolve commonjs file ../../../../.next/server/app/api/accounts/route (expected /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/app/api/accounts/route.js)
-<w>  at file dependencies /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js
-<w>  at file /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js
-<w>  at file dependencies /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/export/worker.js
-<w>  at file /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/export/worker.js
-<w>  at file dependencies /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/worker.js
-<w>  at file /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/worker.js
-<w>  at file dependencies /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
-<w>  at file /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
-<w>  at file dependencies /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
-<w>  at file /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/loader-runner/LoaderRunner.js
-<w>  at file dependencies /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/webpack/bundle5.js
-<w>  at file /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/webpack/bundle5.js
-<w>  at file dependencies /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/webpack/webpack.js
-<w>  at file /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/webpack/webpack.js
-<w>  at file dependencies /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
-<w>  at file /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/webpack/plugins/define-env-plugin.js
-<w>  at file dependencies /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/swc/index.js
-<w>  at file /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/swc/index.js
-<w>  at file dependencies /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
-<w>  at file /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
-<w>  at resolve commonjs /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/webpack/loaders/next-barrel-loader.js
- ✓ Compiled in 202ms (1262 modules)
- ✓ Compiled in 163ms (1264 modules)
- ✓ Compiled in 142ms (1264 modules)
- ✓ Compiled in 39ms (1250 modules)
- ✓ Compiled in 41ms (1250 modules)
- ✓ Compiled in 40ms (1250 modules)
- ✓ Compiled in 37ms (1250 modules)
- ✓ Compiled /api/accounts in 27ms (79 modules)
- ⨯ Error: Cannot find module './chunks/vendor-chunks/next.js'
-Require stack:
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/app/api/accounts/route.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/utils.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-middleware.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-reloader-webpack.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js
-    at Function.<anonymous> (node:internal/modules/cjs/loader:1405:15)
-    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require-hook.js:55:36
-    at defaultResolveImpl (node:internal/modules/cjs/loader:1061:19)
-    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1066:22)
-    at Function._load (node:internal/modules/cjs/loader:1215:37)
-    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
-    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
-    at Module.<anonymous> (node:internal/modules/cjs/loader:1491:12)
-    at mod.require (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require-hook.js:65:28)
-    at require (node:internal/modules/helpers:135:16)
-    at t.f.require (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:1:1420)
-    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:1:879
-    at Array.reduce (<anonymous>)
-    at t.e (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:1:858)
-    at Array.map (<anonymous>)
-    at t.X (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:1:1179)
-    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/app/api/accounts/route.js:73:47
-    at Object.<anonymous> (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/app/api/accounts/route.js:76:3)
-    at Module._compile (node:internal/modules/cjs/loader:1734:14)
-    at Object..js (node:internal/modules/cjs/loader:1899:10)
-    at Module.load (node:internal/modules/cjs/loader:1469:32)
-    at Function._load (node:internal/modules/cjs/loader:1286:12)
-    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
-    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
-    at Module.<anonymous> (node:internal/modules/cjs/loader:1491:12)
-    at mod.require (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require-hook.js:65:28)
-    at require (node:internal/modules/helpers:135:16)
-    at requirePage (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js:109:84)
-    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js:74:84
-    at async loadComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js:74:26)
-    at async DevServer.findPageComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:675:36) {
-  code: 'MODULE_NOT_FOUND',
-  requireStack: [
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/app/api/accounts/route.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/utils.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-middleware.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-reloader-webpack.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js'
+ ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@prisma/instrumentation/dist/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+
+./node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/require-in-the-middle/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+🔵🔵🔵 DocumentsPage がレンダリングされました！
+🟡🟡🟡 useAzureMongoDBServer: true
+🟡🟡🟡 useAzureMongoDBClient: true
+🟡🟡🟡 useAzureMongoDB (final): true
+🟢🟢🟢 使用するコンポーネント: DocumentsContent (強制)
+🔴🔴🔴 DocumentsContent コンポーネントがマウントされました！
+ ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@prisma/instrumentation/dist/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+
+./node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/require-in-the-middle/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+ ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@prisma/instrumentation/dist/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+
+./node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/require-in-the-middle/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+[2025-07-21T15:39:23.458Z] [DEBUG] Creating new MongoDB connection... 
+[2025-07-21T15:39:23.458Z] [DEBUG] MongoDB URI configured: mongodb://localhost:27017/mastra-accounting
+🔍 [OCR-Results API] リクエスト受信
+📊 [OCR-Results API] フィルター: {
+  "companyId": "11111111-1111-1111-1111-111111111111",
+  "ocrStatus": {
+    "$exists": true
+  },
+  "$or": [
+    {
+      "linked_document_id": {
+        "$exists": false
+      }
+    },
+    {
+      "linked_document_id": null
+    }
   ],
-  page: '/api/accounts'
+  "status": {
+    "$ne": "archived"
+  },
+  "hiddenFromList": {
+    "$ne": true
+  }
 }
- ✓ Compiled /_error in 169ms (1345 modules)
-Reusing cached MongoDB connection
-Reusing cached MongoDB connection
-Reusing cached MongoDB connection
- ✓ Compiled in 326ms (1264 modules)
- ✓ Compiled in 151ms (1264 modules)
- ✓ Compiled in 142ms (1264 modules)
-Reusing cached MongoDB connection
-[?25h
+📄 [OCR-Results API] ページ設定: { page: 1, limit: 20, skip: 0 }
+🔄 [OCR-Results API] ソート設定: { sortBy: 'date', sortOrder: 'desc' }
+🔄 [OCR-Results API] ソートオプション: { receipt_date: -1, createdAt: -1 }
+[2025-07-21T15:39:23.470Z] [DEBUG] Documents list API - MongoDB URI exists: true
+🔵🔵🔵 DocumentsPage がレンダリングされました！
+🟡🟡🟡 useAzureMongoDBServer: true
+🟡🟡🟡 useAzureMongoDBClient: true
+🟡🟡🟡 useAzureMongoDB (final): true
+🟢🟢🟢 使用するコンポーネント: DocumentsContent (強制)
+[2025-07-21T15:39:28.465Z] [ERROR] MongoDB connection error: {
+  errorLabelSet: {},
+  reason: {
+    type: 'Unknown',
+    servers: {},
+    stale: false,
+    compatible: true,
+    heartbeatFrequencyMS: 10000,
+    localThresholdMS: 15,
+    setName: null,
+    maxElectionId: null,
+    maxSetVersion: null,
+    commonWireVersion: 0,
+    logicalSessionTimeoutMinutes: '[REDACTED]'
+  },
+  code: undefined
+}
+[2025-07-21T15:39:28.466Z] [ERROR] Connection error details: {
+  name: 'MongoServerSelectionError',
+  message: 'connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017',
+  stack: 'MongoServerSelectionError: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017\n' +
+    '    at Topology.selectServer (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/sdam/topology.js:326:38)\n' +
+    '    at async Topology._connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/sdam/topology.js:200:28)\n' +
+    '    at async Topology.connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/sdam/topology.js:152:13)\n' +
+    '    at async topologyConnect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/mongo_client.js:246:17)\n' +
+    '    at async MongoClient._connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/mongo_client.js:259:13)\n' +
+    '    at async MongoClient.connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/mongo_client.js:184:13)'
+}
+[2025-07-21T15:39:28.466Z] [DEBUG] Cached connection is stale, creating new connection... 
+[2025-07-21T15:39:28.466Z] [DEBUG] Creating new MongoDB connection... 
+[2025-07-21T15:39:28.466Z] [DEBUG] MongoDB URI configured: mongodb://localhost:27017/mastra-accounting
+[2025-07-21T15:39:28.468Z] [DEBUG] Cached connection is stale, creating new connection... 
+[2025-07-21T15:39:28.469Z] [DEBUG] Creating new MongoDB connection... 
+[2025-07-21T15:39:28.469Z] [DEBUG] MongoDB URI configured: mongodb://localhost:27017/mastra-accounting
+[2025-07-21T15:39:28.470Z] [DEBUG] Cached connection is stale, creating new connection... 
+[2025-07-21T15:39:28.470Z] [DEBUG] Creating new MongoDB connection... 
+[2025-07-21T15:39:28.470Z] [DEBUG] MongoDB URI configured: mongodb://localhost:27017/mastra-accounting
+DatabaseError: MongoDB connection failed: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017
+    at connectToDatabase (webpack-internal:///(rsc)/./lib/mongodb-client.ts:118:15)
+    at async getClientPromise (webpack-internal:///(rsc)/./lib/mongodb-client.ts:156:24) {
+  code: 'CONNECTION_ERROR'
+}
+DatabaseError: MongoDB connection failed: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017
+    at connectToDatabase (webpack-internal:///(rsc)/./lib/mongodb-client.ts:118:15)
+    at async getClientPromise (webpack-internal:///(rsc)/./lib/mongodb-client.ts:156:24) {
+  code: 'CONNECTION_ERROR'
+}
+ ⨯ unhandledRejection: DatabaseError: MongoDB connection failed: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017
+    at connectToDatabase (webpack-internal:///(rsc)/./lib/mongodb-client.ts:118:15)
+    at async getClientPromise (webpack-internal:///(rsc)/./lib/mongodb-client.ts:156:24) {
+  code: 'CONNECTION_ERROR'
+}
+ ⨯ unhandledRejection: DatabaseError: MongoDB connection failed: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017
+    at connectToDatabase (webpack-internal:///(rsc)/./lib/mongodb-client.ts:118:15)
+    at async getClientPromise (webpack-internal:///(rsc)/./lib/mongodb-client.ts:156:24) {
+  code: 'CONNECTION_ERROR'
+}
+[2025-07-21T15:39:33.470Z] [ERROR] MongoDB connection error: {
+  errorLabelSet: {},
+  reason: {
+    type: 'Unknown',
+    servers: {},
+    stale: false,
+    compatible: true,
+    heartbeatFrequencyMS: 10000,
+    localThresholdMS: 15,
+    setName: null,
+    maxElectionId: null,
+    maxSetVersion: null,
+    commonWireVersion: 0,
+    logicalSessionTimeoutMinutes: '[REDACTED]'
+  },
+  code: undefined
+}
+[2025-07-21T15:39:33.471Z] [ERROR] Connection error details: {
+  name: 'MongoServerSelectionError',
+  message: 'connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017',
+  stack: 'MongoServerSelectionError: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017\n' +
+    '    at Topology.selectServer (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/sdam/topology.js:326:38)\n' +
+    '    at async Topology._connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/sdam/topology.js:200:28)\n' +
+    '    at async Topology.connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/sdam/topology.js:152:13)\n' +
+    '    at async topologyConnect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/mongo_client.js:246:17)\n' +
+    '    at async MongoClient._connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/mongo_client.js:259:13)\n' +
+    '    at async MongoClient.connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/mongo_client.js:184:13)\n' +
+    '    at async connectToDatabase (webpack-internal:///(rsc)/./lib/mongodb-client.ts:99:33)\n' +
+    '    at async getDatabase (webpack-internal:///(rsc)/./lib/mongodb-client.ts:124:24)\n' +
+    '    at async eval (webpack-internal:///(rsc)/./lib/mongodb-client.ts:517:22)'
+}
+[2025-07-21T15:39:33.471Z] [ERROR] getDatabase error: { code: 'CONNECTION_ERROR', name: 'DatabaseError' }
+DatabaseError: Failed to get database instance: MongoDB connection failed: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017
+    at getDatabase (webpack-internal:///(rsc)/./lib/mongodb-client.ts:128:15)
+    at async eval (webpack-internal:///(rsc)/./lib/mongodb-client.ts:517:22) {
+  code: 'DATABASE_ACCESS_ERROR'
+}
+DatabaseError: Failed to get database instance: MongoDB connection failed: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017
+    at getDatabase (webpack-internal:///(rsc)/./lib/mongodb-client.ts:128:15)
+    at async eval (webpack-internal:///(rsc)/./lib/mongodb-client.ts:517:22) {
+  code: 'DATABASE_ACCESS_ERROR'
+}
+ ⨯ unhandledRejection: DatabaseError: Failed to get database instance: MongoDB connection failed: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017
+    at getDatabase (webpack-internal:///(rsc)/./lib/mongodb-client.ts:128:15)
+    at async eval (webpack-internal:///(rsc)/./lib/mongodb-client.ts:517:22) {
+  code: 'DATABASE_ACCESS_ERROR'
+}
+ ⨯ unhandledRejection: DatabaseError: Failed to get database instance: MongoDB connection failed: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017
+    at getDatabase (webpack-internal:///(rsc)/./lib/mongodb-client.ts:128:15)
+    at async eval (webpack-internal:///(rsc)/./lib/mongodb-client.ts:517:22) {
+  code: 'DATABASE_ACCESS_ERROR'
+}
+[2025-07-21T15:39:33.474Z] [ERROR] MongoDB connection error: {
+  errorLabelSet: {},
+  reason: {
+    type: 'Unknown',
+    servers: {},
+    stale: false,
+    compatible: true,
+    heartbeatFrequencyMS: 10000,
+    localThresholdMS: 15,
+    setName: null,
+    maxElectionId: null,
+    maxSetVersion: null,
+    commonWireVersion: 0,
+    logicalSessionTimeoutMinutes: '[REDACTED]'
+  },
+  code: undefined
+}
+[2025-07-21T15:39:33.474Z] [ERROR] Connection error details: {
+  name: 'MongoServerSelectionError',
+  message: 'connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017',
+  stack: 'MongoServerSelectionError: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017\n' +
+    '    at Topology.selectServer (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/sdam/topology.js:326:38)\n' +
+    '    at runNextTicks (node:internal/process/task_queues:65:5)\n' +
+    '    at listOnTimeout (node:internal/timers:569:9)\n' +
+    '    at process.processTimers (node:internal/timers:543:7)\n' +
+    '    at async Topology._connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/sdam/topology.js:200:28)\n' +
+    '    at async Topology.connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/sdam/topology.js:152:13)\n' +
+    '    at async topologyConnect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/mongo_client.js:246:17)\n' +
+    '    at async MongoClient._connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/mongo_client.js:259:13)\n' +
+    '    at async MongoClient.connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/mongo_client.js:184:13)\n' +
+    '    at async connectToDatabase (webpack-internal:///(rsc)/./lib/mongodb-client.ts:99:33)\n' +
+    '    at async getDatabase (webpack-internal:///(rsc)/./lib/mongodb-client.ts:124:24)\n' +
+    '    at async getCollection (webpack-internal:///(rsc)/./lib/mongodb-client.ts:134:20)\n' +
+    '    at async DatabaseService.find (webpack-internal:///(rsc)/./lib/mongodb-client.ts:258:28)\n' +
+    '    at async GET (webpack-internal:///(rsc)/./app/api/ocr-results/route.ts:187:28)\n' +
+    '    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:63809\n' +
+    '    at async eU.execute (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:53964)\n' +
+    '    at async eU.handle (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:65062)\n' +
+    '    at async doRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1333:42)\n' +
+    '    at async cacheEntry.responseCache.get.routeKind (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1555:28)\n' +
+    '    at async DevServer.renderToResponseWithComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1463:28)\n' +
+    '    at async DevServer.renderPageComponent (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1856:24)\n' +
+    '    at async DevServer.renderToResponseImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1894:32)\n' +
+    '    at async DevServer.pipeImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:911:25)\n' +
+    '    at async NextNodeServer.handleCatchallRenderRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:271:17)\n' +
+    '    at async DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:807:17)\n' +
+    '    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:331:20\n' +
+    '    at async Span.traceAsyncFn (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/trace/trace.js:151:20)\n' +
+    '    at async DevServer.handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:328:24)\n' +
+    '    at async invokeRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:163:21)\n' +
+    '    at async handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:342:24)\n' +
+    '    at async requestHandlerImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:366:13)\n' +
+    '    at async Server.requestListener (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js:140:13)'
+}
+[2025-07-21T15:39:33.475Z] [ERROR] getDatabase error: { code: 'CONNECTION_ERROR', name: 'DatabaseError' }
+[2025-07-21T15:39:33.475Z] [ERROR] getCollection error for documents: { code: 'DATABASE_ACCESS_ERROR', name: 'DatabaseError' }
+OCR results API error: DatabaseError: Failed to get collection documents: Failed to get database instance: MongoDB connection failed: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017
+    at getCollection (webpack-internal:///(rsc)/./lib/mongodb-client.ts:151:15)
+    at runNextTicks (node:internal/process/task_queues:65:5)
+    at listOnTimeout (node:internal/timers:569:9)
+    at process.processTimers (node:internal/timers:543:7)
+    at async DatabaseService.find (webpack-internal:///(rsc)/./lib/mongodb-client.ts:258:28)
+    at async GET (webpack-internal:///(rsc)/./app/api/ocr-results/route.ts:187:28)
+    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:63809
+    at async eU.execute (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:53964)
+    at async eU.handle (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:65062)
+    at async doRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1333:42)
+    at async cacheEntry.responseCache.get.routeKind (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1555:28)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1463:28)
+    at async DevServer.renderPageComponent (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1856:24)
+    at async DevServer.renderToResponseImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1894:32)
+    at async DevServer.pipeImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:911:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:271:17)
+    at async DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:807:17)
+    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:331:20
+    at async Span.traceAsyncFn (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/trace/trace.js:151:20)
+    at async DevServer.handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:328:24)
+    at async invokeRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:163:21)
+    at async handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:342:24)
+    at async requestHandlerImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:366:13)
+    at async Server.requestListener (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js:140:13) {
+  code: 'COLLECTION_ACCESS_ERROR'
+}
+Error stack: DatabaseError: Failed to get collection documents: Failed to get database instance: MongoDB connection failed: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017
+    at getCollection (webpack-internal:///(rsc)/./lib/mongodb-client.ts:151:15)
+    at runNextTicks (node:internal/process/task_queues:65:5)
+    at listOnTimeout (node:internal/timers:569:9)
+    at process.processTimers (node:internal/timers:543:7)
+    at async DatabaseService.find (webpack-internal:///(rsc)/./lib/mongodb-client.ts:258:28)
+    at async GET (webpack-internal:///(rsc)/./app/api/ocr-results/route.ts:187:28)
+    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:63809
+    at async eU.execute (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:53964)
+    at async eU.handle (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:65062)
+    at async doRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1333:42)
+    at async cacheEntry.responseCache.get.routeKind (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1555:28)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1463:28)
+    at async DevServer.renderPageComponent (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1856:24)
+    at async DevServer.renderToResponseImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1894:32)
+    at async DevServer.pipeImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:911:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:271:17)
+    at async DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:807:17)
+    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:331:20
+    at async Span.traceAsyncFn (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/trace/trace.js:151:20)
+    at async DevServer.handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:328:24)
+    at async invokeRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:163:21)
+    at async handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:342:24)
+    at async requestHandlerImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:366:13)
+    at async Server.requestListener (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js:140:13)
+[2025-07-21T15:39:33.485Z] [ERROR] MongoDB connection error: {
+  errorLabelSet: {},
+  reason: {
+    type: 'Unknown',
+    servers: {},
+    stale: false,
+    compatible: true,
+    heartbeatFrequencyMS: 10000,
+    localThresholdMS: 15,
+    setName: null,
+    maxElectionId: null,
+    maxSetVersion: null,
+    commonWireVersion: 0,
+    logicalSessionTimeoutMinutes: '[REDACTED]'
+  },
+  code: undefined
+}
+[2025-07-21T15:39:33.485Z] [ERROR] Connection error details: {
+  name: 'MongoServerSelectionError',
+  message: 'connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017',
+  stack: 'MongoServerSelectionError: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017\n' +
+    '    at Topology.selectServer (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/sdam/topology.js:326:38)\n' +
+    '    at async Topology._connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/sdam/topology.js:200:28)\n' +
+    '    at async Topology.connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/sdam/topology.js:152:13)\n' +
+    '    at async topologyConnect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/mongo_client.js:246:17)\n' +
+    '    at async MongoClient._connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/mongo_client.js:259:13)\n' +
+    '    at async MongoClient.connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/mongo_client.js:184:13)\n' +
+    '    at async connectToDatabase (webpack-internal:///(rsc)/./lib/mongodb-client.ts:99:33)\n' +
+    '    at async getDatabase (webpack-internal:///(rsc)/./lib/mongodb-client.ts:124:24)\n' +
+    '    at async getCollection (webpack-internal:///(rsc)/./lib/mongodb-client.ts:134:20)\n' +
+    '    at async DatabaseService.find (webpack-internal:///(rsc)/./lib/mongodb-client.ts:258:28)\n' +
+    '    at async GET (webpack-internal:///(rsc)/./app/api/documents/list/route.ts:76:27)\n' +
+    '    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:63809\n' +
+    '    at async eU.execute (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:53964)\n' +
+    '    at async eU.handle (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:65062)\n' +
+    '    at async doRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1333:42)\n' +
+    '    at async cacheEntry.responseCache.get.routeKind (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1555:28)\n' +
+    '    at async DevServer.renderToResponseWithComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1463:28)\n' +
+    '    at async DevServer.renderPageComponent (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1856:24)\n' +
+    '    at async DevServer.renderToResponseImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1894:32)\n' +
+    '    at async DevServer.pipeImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:911:25)\n' +
+    '    at async NextNodeServer.handleCatchallRenderRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:271:17)\n' +
+    '    at async DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:807:17)\n' +
+    '    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:331:20\n' +
+    '    at async Span.traceAsyncFn (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/trace/trace.js:151:20)\n' +
+    '    at async DevServer.handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:328:24)\n' +
+    '    at async invokeRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:163:21)\n' +
+    '    at async handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:342:24)\n' +
+    '    at async requestHandlerImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:366:13)\n' +
+    '    at async Server.requestListener (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js:140:13)'
+}
+[2025-07-21T15:39:33.486Z] [ERROR] getDatabase error: { code: 'CONNECTION_ERROR', name: 'DatabaseError' }
+[2025-07-21T15:39:33.486Z] [ERROR] getCollection error for documents: { code: 'DATABASE_ACCESS_ERROR', name: 'DatabaseError' }
+[2025-07-21T15:39:33.486Z] [ERROR] Document list error: { code: 'COLLECTION_ACCESS_ERROR', name: 'DatabaseError' }
+[2025-07-21T15:39:33.486Z] [ERROR] Error details: {
+  name: 'DatabaseError',
+  message: 'Failed to get collection documents: Failed to get database instance: MongoDB connection failed: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017',
+  stack: 'DatabaseError: Failed to get collection documents: Failed to get database instance: MongoDB connection failed: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017\n' +
+    '    at getCollection (webpack-internal:///(rsc)/./lib/mongodb-client.ts:151:15)\n' +
+    '    at async DatabaseService.find (webpack-internal:///(rsc)/./lib/mongodb-client.ts:258:28)\n' +
+    '    at async GET (webpack-internal:///(rsc)/./app/api/documents/list/route.ts:76:27)\n' +
+    '    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:63809\n' +
+    '    at async eU.execute (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:53964)\n' +
+    '    at async eU.handle (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:65062)\n' +
+    '    at async doRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1333:42)\n' +
+    '    at async cacheEntry.responseCache.get.routeKind (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1555:28)\n' +
+    '    at async DevServer.renderToResponseWithComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1463:28)\n' +
+    '    at async DevServer.renderPageComponent (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1856:24)\n' +
+    '    at async DevServer.renderToResponseImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1894:32)\n' +
+    '    at async DevServer.pipeImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:911:25)\n' +
+    '    at async NextNodeServer.handleCatchallRenderRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:271:17)\n' +
+    '    at async DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:807:17)\n' +
+    '    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:331:20\n' +
+    '    at async Span.traceAsyncFn (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/trace/trace.js:151:20)\n' +
+    '    at async DevServer.handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:328:24)\n' +
+    '    at async invokeRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:163:21)\n' +
+    '    at async handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:342:24)\n' +
+    '    at async requestHandlerImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:366:13)\n' +
+    '    at async Server.requestListener (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js:140:13)'
+}
+[2025-07-21T15:39:33.514Z] [DEBUG] Documents list API - MongoDB URI exists: true
+[2025-07-21T15:39:33.514Z] [DEBUG] Creating new MongoDB connection... 
+[2025-07-21T15:39:33.514Z] [DEBUG] MongoDB URI configured: mongodb://localhost:27017/mastra-accounting
+🔍 [OCR-Results API] リクエスト受信
+📊 [OCR-Results API] フィルター: {
+  "companyId": "11111111-1111-1111-1111-111111111111",
+  "ocrStatus": {
+    "$exists": true
+  },
+  "$or": [
+    {
+      "linked_document_id": {
+        "$exists": false
+      }
+    },
+    {
+      "linked_document_id": null
+    }
+  ],
+  "status": {
+    "$ne": "archived"
+  },
+  "hiddenFromList": {
+    "$ne": true
+  }
+}
+📄 [OCR-Results API] ページ設定: { page: 1, limit: 20, skip: 0 }
+🔄 [OCR-Results API] ソート設定: { sortBy: 'date', sortOrder: 'desc' }
+🔄 [OCR-Results API] ソートオプション: { receipt_date: -1, createdAt: -1 }
+[2025-07-21T15:39:38.517Z] [ERROR] MongoDB connection error: {
+  errorLabelSet: {},
+  reason: {
+    type: 'Unknown',
+    servers: {},
+    stale: false,
+    compatible: true,
+    heartbeatFrequencyMS: 10000,
+    localThresholdMS: 15,
+    setName: null,
+    maxElectionId: null,
+    maxSetVersion: null,
+    commonWireVersion: 0,
+    logicalSessionTimeoutMinutes: '[REDACTED]'
+  },
+  code: undefined
+}
+[2025-07-21T15:39:38.517Z] [ERROR] Connection error details: {
+  name: 'MongoServerSelectionError',
+  message: 'connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017',
+  stack: 'MongoServerSelectionError: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017\n' +
+    '    at Topology.selectServer (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/sdam/topology.js:326:38)\n' +
+    '    at async Topology._connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/sdam/topology.js:200:28)\n' +
+    '    at async Topology.connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/sdam/topology.js:152:13)\n' +
+    '    at async topologyConnect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/mongo_client.js:246:17)\n' +
+    '    at async MongoClient._connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/mongo_client.js:259:13)\n' +
+    '    at async MongoClient.connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/mongo_client.js:184:13)'
+}
+[2025-07-21T15:39:38.517Z] [DEBUG] Cached connection is stale, creating new connection... 
+[2025-07-21T15:39:38.518Z] [DEBUG] Creating new MongoDB connection... 
+[2025-07-21T15:39:38.518Z] [DEBUG] MongoDB URI configured: mongodb://localhost:27017/mastra-accounting
+[2025-07-21T15:39:38.520Z] [ERROR] getDatabase error: { code: 'CONNECTION_ERROR', name: 'DatabaseError' }
+[2025-07-21T15:39:38.520Z] [ERROR] getCollection error for documents: { code: 'DATABASE_ACCESS_ERROR', name: 'DatabaseError' }
+[2025-07-21T15:39:38.521Z] [ERROR] Document list error: { code: 'COLLECTION_ACCESS_ERROR', name: 'DatabaseError' }
+[2025-07-21T15:39:38.521Z] [ERROR] Error details: {
+  name: 'DatabaseError',
+  message: 'Failed to get collection documents: Failed to get database instance: MongoDB connection failed: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017',
+  stack: 'DatabaseError: Failed to get collection documents: Failed to get database instance: MongoDB connection failed: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017\n' +
+    '    at getCollection (webpack-internal:///(rsc)/./lib/mongodb-client.ts:151:15)\n' +
+    '    at async DatabaseService.find (webpack-internal:///(rsc)/./lib/mongodb-client.ts:258:28)\n' +
+    '    at async GET (webpack-internal:///(rsc)/./app/api/documents/list/route.ts:76:27)\n' +
+    '    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:63809\n' +
+    '    at async eU.execute (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:53964)\n' +
+    '    at async eU.handle (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:65062)\n' +
+    '    at async doRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1333:42)\n' +
+    '    at async cacheEntry.responseCache.get.routeKind (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1555:28)\n' +
+    '    at async DevServer.renderToResponseWithComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1463:28)\n' +
+    '    at async DevServer.renderPageComponent (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1856:24)\n' +
+    '    at async DevServer.renderToResponseImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1894:32)\n' +
+    '    at async DevServer.pipeImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:911:25)\n' +
+    '    at async NextNodeServer.handleCatchallRenderRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:271:17)\n' +
+    '    at async DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:807:17)\n' +
+    '    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:331:20\n' +
+    '    at async Span.traceAsyncFn (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/trace/trace.js:151:20)\n' +
+    '    at async DevServer.handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:328:24)\n' +
+    '    at async invokeRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:163:21)\n' +
+    '    at async handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:342:24)\n' +
+    '    at async requestHandlerImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:366:13)\n' +
+    '    at async Server.requestListener (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js:140:13)'
+}
+🔍 [OCR-Results API] リクエスト受信
+📊 [OCR-Results API] フィルター: {
+  "companyId": "11111111-1111-1111-1111-111111111111",
+  "ocrStatus": {
+    "$exists": true
+  },
+  "$or": [
+    {
+      "linked_document_id": {
+        "$exists": false
+      }
+    },
+    {
+      "linked_document_id": null
+    }
+  ],
+  "status": {
+    "$ne": "archived"
+  },
+  "hiddenFromList": {
+    "$ne": true
+  }
+}
+📄 [OCR-Results API] ページ設定: { page: 1, limit: 20, skip: 0 }
+🔄 [OCR-Results API] ソート設定: { sortBy: 'date', sortOrder: 'desc' }
+🔄 [OCR-Results API] ソートオプション: { receipt_date: -1, createdAt: -1 }
+🔍 [OCR-Results API] リクエスト受信
+📊 [OCR-Results API] フィルター: {
+  "companyId": "11111111-1111-1111-1111-111111111111",
+  "ocrStatus": {
+    "$exists": true
+  },
+  "$or": [
+    {
+      "linked_document_id": {
+        "$exists": false
+      }
+    },
+    {
+      "linked_document_id": null
+    }
+  ],
+  "status": {
+    "$ne": "archived"
+  },
+  "hiddenFromList": {
+    "$ne": true
+  }
+}
+📄 [OCR-Results API] ページ設定: { page: 1, limit: 20, skip: 0 }
+🔄 [OCR-Results API] ソート設定: { sortBy: 'date', sortOrder: 'desc' }
+🔄 [OCR-Results API] ソートオプション: { receipt_date: -1, createdAt: -1 }
+[2025-07-21T15:39:43.521Z] [ERROR] MongoDB connection error: {
+  errorLabelSet: {},
+  reason: {
+    type: 'Unknown',
+    servers: {},
+    stale: false,
+    compatible: true,
+    heartbeatFrequencyMS: 10000,
+    localThresholdMS: 15,
+    setName: null,
+    maxElectionId: null,
+    maxSetVersion: null,
+    commonWireVersion: 0,
+    logicalSessionTimeoutMinutes: '[REDACTED]'
+  },
+  code: undefined
+}
+[2025-07-21T15:39:43.521Z] [ERROR] Connection error details: {
+  name: 'MongoServerSelectionError',
+  message: 'connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017',
+  stack: 'MongoServerSelectionError: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017\n' +
+    '    at Topology.selectServer (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/sdam/topology.js:326:38)\n' +
+    '    at async Topology._connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/sdam/topology.js:200:28)\n' +
+    '    at async Topology.connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/sdam/topology.js:152:13)\n' +
+    '    at async topologyConnect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/mongo_client.js:246:17)\n' +
+    '    at async MongoClient._connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/mongo_client.js:259:13)\n' +
+    '    at async MongoClient.connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/mongo_client.js:184:13)'
+}
+[2025-07-21T15:39:43.521Z] [DEBUG] Cached connection is stale, creating new connection... 
+[2025-07-21T15:39:43.521Z] [DEBUG] Creating new MongoDB connection... 
+[2025-07-21T15:39:43.521Z] [DEBUG] MongoDB URI configured: mongodb://localhost:27017/mastra-accounting
+[2025-07-21T15:39:43.523Z] [DEBUG] Cached connection is stale, creating new connection... 
+[2025-07-21T15:39:43.523Z] [DEBUG] Creating new MongoDB connection... 
+[2025-07-21T15:39:43.523Z] [DEBUG] MongoDB URI configured: mongodb://localhost:27017/mastra-accounting
+[2025-07-21T15:39:43.524Z] [ERROR] getDatabase error: { code: 'CONNECTION_ERROR', name: 'DatabaseError' }
+[2025-07-21T15:39:43.525Z] [ERROR] getCollection error for documents: { code: 'DATABASE_ACCESS_ERROR', name: 'DatabaseError' }
+OCR results API error: DatabaseError: Failed to get collection documents: Failed to get database instance: MongoDB connection failed: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017
+    at getCollection (webpack-internal:///(rsc)/./lib/mongodb-client.ts:151:15)
+    at async DatabaseService.find (webpack-internal:///(rsc)/./lib/mongodb-client.ts:258:28)
+    at async GET (webpack-internal:///(rsc)/./app/api/ocr-results/route.ts:187:28)
+    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:63809
+    at async eU.execute (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:53964)
+    at async eU.handle (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:65062)
+    at async doRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1333:42)
+    at async cacheEntry.responseCache.get.routeKind (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1555:28)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1463:28)
+    at async DevServer.renderPageComponent (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1856:24)
+    at async DevServer.renderToResponseImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1894:32)
+    at async DevServer.pipeImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:911:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:271:17)
+    at async DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:807:17)
+    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:331:20
+    at async Span.traceAsyncFn (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/trace/trace.js:151:20)
+    at async DevServer.handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:328:24)
+    at async invokeRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:163:21)
+    at async handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:342:24)
+    at async requestHandlerImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:366:13)
+    at async Server.requestListener (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js:140:13) {
+  code: 'COLLECTION_ACCESS_ERROR'
+}
+Error stack: DatabaseError: Failed to get collection documents: Failed to get database instance: MongoDB connection failed: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017
+    at getCollection (webpack-internal:///(rsc)/./lib/mongodb-client.ts:151:15)
+    at async DatabaseService.find (webpack-internal:///(rsc)/./lib/mongodb-client.ts:258:28)
+    at async GET (webpack-internal:///(rsc)/./app/api/ocr-results/route.ts:187:28)
+    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:63809
+    at async eU.execute (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:53964)
+    at async eU.handle (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:65062)
+    at async doRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1333:42)
+    at async cacheEntry.responseCache.get.routeKind (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1555:28)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1463:28)
+    at async DevServer.renderPageComponent (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1856:24)
+    at async DevServer.renderToResponseImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1894:32)
+    at async DevServer.pipeImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:911:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:271:17)
+    at async DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:807:17)
+    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:331:20
+    at async Span.traceAsyncFn (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/trace/trace.js:151:20)
+    at async DevServer.handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:328:24)
+    at async invokeRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:163:21)
+    at async handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:342:24)
+    at async requestHandlerImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:366:13)
+    at async Server.requestListener (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js:140:13)
+ ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@prisma/instrumentation/dist/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+
+./node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/require-in-the-middle/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+ ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@prisma/instrumentation/dist/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+
+./node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/require-in-the-middle/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+[2025-07-21T15:39:48.524Z] [ERROR] MongoDB connection error: {
+  errorLabelSet: {},
+  reason: {
+    type: 'Unknown',
+    servers: {},
+    stale: false,
+    compatible: true,
+    heartbeatFrequencyMS: 10000,
+    localThresholdMS: 15,
+    setName: null,
+    maxElectionId: null,
+    maxSetVersion: null,
+    commonWireVersion: 0,
+    logicalSessionTimeoutMinutes: '[REDACTED]'
+  },
+  code: undefined
+}
+[2025-07-21T15:39:48.525Z] [ERROR] Connection error details: {
+  name: 'MongoServerSelectionError',
+  message: 'connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017',
+  stack: 'MongoServerSelectionError: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017\n' +
+    '    at Topology.selectServer (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/sdam/topology.js:326:38)\n' +
+    '    at async Topology._connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/sdam/topology.js:200:28)\n' +
+    '    at async Topology.connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/sdam/topology.js:152:13)\n' +
+    '    at async topologyConnect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/mongo_client.js:246:17)\n' +
+    '    at async MongoClient._connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/mongo_client.js:259:13)\n' +
+    '    at async MongoClient.connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/mongo_client.js:184:13)\n' +
+    '    at async connectToDatabase (webpack-internal:///(rsc)/./lib/mongodb-client.ts:99:33)\n' +
+    '    at async getDatabase (webpack-internal:///(rsc)/./lib/mongodb-client.ts:124:24)\n' +
+    '    at async getCollection (webpack-internal:///(rsc)/./lib/mongodb-client.ts:134:20)\n' +
+    '    at async DatabaseService.find (webpack-internal:///(rsc)/./lib/mongodb-client.ts:258:28)\n' +
+    '    at async GET (webpack-internal:///(rsc)/./app/api/ocr-results/route.ts:187:28)\n' +
+    '    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:63809\n' +
+    '    at async eU.execute (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:53964)\n' +
+    '    at async eU.handle (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:65062)\n' +
+    '    at async doRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1333:42)\n' +
+    '    at async cacheEntry.responseCache.get.routeKind (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1555:28)\n' +
+    '    at async DevServer.renderToResponseWithComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1463:28)\n' +
+    '    at async DevServer.renderPageComponent (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1856:24)\n' +
+    '    at async DevServer.renderToResponseImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1894:32)\n' +
+    '    at async DevServer.pipeImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:911:25)\n' +
+    '    at async NextNodeServer.handleCatchallRenderRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:271:17)\n' +
+    '    at async DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:807:17)\n' +
+    '    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:331:20\n' +
+    '    at async Span.traceAsyncFn (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/trace/trace.js:151:20)\n' +
+    '    at async DevServer.handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:328:24)\n' +
+    '    at async invokeRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:163:21)\n' +
+    '    at async handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:342:24)\n' +
+    '    at async requestHandlerImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:366:13)\n' +
+    '    at async Server.requestListener (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js:140:13)'
+}
+[2025-07-21T15:39:48.525Z] [ERROR] getDatabase error: { code: 'CONNECTION_ERROR', name: 'DatabaseError' }
+[2025-07-21T15:39:48.525Z] [ERROR] getCollection error for documents: { code: 'DATABASE_ACCESS_ERROR', name: 'DatabaseError' }
+OCR results API error: DatabaseError: Failed to get collection documents: Failed to get database instance: MongoDB connection failed: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017
+    at getCollection (webpack-internal:///(rsc)/./lib/mongodb-client.ts:151:15)
+    at async DatabaseService.find (webpack-internal:///(rsc)/./lib/mongodb-client.ts:258:28)
+    at async GET (webpack-internal:///(rsc)/./app/api/ocr-results/route.ts:187:28)
+    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:63809
+    at async eU.execute (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:53964)
+    at async eU.handle (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:65062)
+    at async doRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1333:42)
+    at async cacheEntry.responseCache.get.routeKind (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1555:28)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1463:28)
+    at async DevServer.renderPageComponent (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1856:24)
+    at async DevServer.renderToResponseImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1894:32)
+    at async DevServer.pipeImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:911:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:271:17)
+    at async DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:807:17)
+    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:331:20
+    at async Span.traceAsyncFn (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/trace/trace.js:151:20)
+    at async DevServer.handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:328:24)
+    at async invokeRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:163:21)
+    at async handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:342:24)
+    at async requestHandlerImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:366:13)
+    at async Server.requestListener (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js:140:13) {
+  code: 'COLLECTION_ACCESS_ERROR'
+}
+Error stack: DatabaseError: Failed to get collection documents: Failed to get database instance: MongoDB connection failed: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017
+    at getCollection (webpack-internal:///(rsc)/./lib/mongodb-client.ts:151:15)
+    at async DatabaseService.find (webpack-internal:///(rsc)/./lib/mongodb-client.ts:258:28)
+    at async GET (webpack-internal:///(rsc)/./app/api/ocr-results/route.ts:187:28)
+    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:63809
+    at async eU.execute (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:53964)
+    at async eU.handle (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:65062)
+    at async doRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1333:42)
+    at async cacheEntry.responseCache.get.routeKind (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1555:28)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1463:28)
+    at async DevServer.renderPageComponent (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1856:24)
+    at async DevServer.renderToResponseImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1894:32)
+    at async DevServer.pipeImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:911:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:271:17)
+    at async DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:807:17)
+    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:331:20
+    at async Span.traceAsyncFn (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/trace/trace.js:151:20)
+    at async DevServer.handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:328:24)
+    at async invokeRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:163:21)
+    at async handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:342:24)
+    at async requestHandlerImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:366:13)
+    at async Server.requestListener (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js:140:13)
+[2025-07-21T15:39:48.531Z] [ERROR] MongoDB connection error: {
+  errorLabelSet: {},
+  reason: {
+    type: 'Unknown',
+    servers: {},
+    stale: false,
+    compatible: true,
+    heartbeatFrequencyMS: 10000,
+    localThresholdMS: 15,
+    setName: null,
+    maxElectionId: null,
+    maxSetVersion: null,
+    commonWireVersion: 0,
+    logicalSessionTimeoutMinutes: '[REDACTED]'
+  },
+  code: undefined
+}
+[2025-07-21T15:39:48.532Z] [ERROR] Connection error details: {
+  name: 'MongoServerSelectionError',
+  message: 'connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017',
+  stack: 'MongoServerSelectionError: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017\n' +
+    '    at Topology.selectServer (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/sdam/topology.js:326:38)\n' +
+    '    at async Topology._connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/sdam/topology.js:200:28)\n' +
+    '    at async Topology.connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/sdam/topology.js:152:13)\n' +
+    '    at async topologyConnect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/mongo_client.js:246:17)\n' +
+    '    at async MongoClient._connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/mongo_client.js:259:13)\n' +
+    '    at async MongoClient.connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/mongo_client.js:184:13)\n' +
+    '    at async connectToDatabase (webpack-internal:///(rsc)/./lib/mongodb-client.ts:99:33)\n' +
+    '    at async getDatabase (webpack-internal:///(rsc)/./lib/mongodb-client.ts:124:24)\n' +
+    '    at async getCollection (webpack-internal:///(rsc)/./lib/mongodb-client.ts:134:20)\n' +
+    '    at async DatabaseService.find (webpack-internal:///(rsc)/./lib/mongodb-client.ts:258:28)\n' +
+    '    at async GET (webpack-internal:///(rsc)/./app/api/ocr-results/route.ts:187:28)\n' +
+    '    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:63809\n' +
+    '    at async eU.execute (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:53964)\n' +
+    '    at async eU.handle (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:65062)\n' +
+    '    at async doRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1333:42)\n' +
+    '    at async cacheEntry.responseCache.get.routeKind (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1555:28)\n' +
+    '    at async DevServer.renderToResponseWithComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1463:28)\n' +
+    '    at async DevServer.renderPageComponent (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1856:24)\n' +
+    '    at async DevServer.renderToResponseImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1894:32)\n' +
+    '    at async DevServer.pipeImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:911:25)\n' +
+    '    at async NextNodeServer.handleCatchallRenderRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:271:17)\n' +
+    '    at async DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:807:17)\n' +
+    '    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:331:20\n' +
+    '    at async Span.traceAsyncFn (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/trace/trace.js:151:20)\n' +
+    '    at async DevServer.handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:328:24)\n' +
+    '    at async invokeRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:163:21)\n' +
+    '    at async handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:342:24)\n' +
+    '    at async requestHandlerImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:366:13)\n' +
+    '    at async Server.requestListener (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js:140:13)'
+}
+[2025-07-21T15:39:48.532Z] [ERROR] getDatabase error: { code: 'CONNECTION_ERROR', name: 'DatabaseError' }
+[2025-07-21T15:39:48.532Z] [ERROR] getCollection error for documents: { code: 'DATABASE_ACCESS_ERROR', name: 'DatabaseError' }
+OCR results API error: DatabaseError: Failed to get collection documents: Failed to get database instance: MongoDB connection failed: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017
+    at getCollection (webpack-internal:///(rsc)/./lib/mongodb-client.ts:151:15)
+    at async DatabaseService.find (webpack-internal:///(rsc)/./lib/mongodb-client.ts:258:28)
+    at async GET (webpack-internal:///(rsc)/./app/api/ocr-results/route.ts:187:28)
+    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:63809
+    at async eU.execute (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:53964)
+    at async eU.handle (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:65062)
+    at async doRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1333:42)
+    at async cacheEntry.responseCache.get.routeKind (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1555:28)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1463:28)
+    at async DevServer.renderPageComponent (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1856:24)
+    at async DevServer.renderToResponseImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1894:32)
+    at async DevServer.pipeImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:911:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:271:17)
+    at async DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:807:17)
+    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:331:20
+    at async Span.traceAsyncFn (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/trace/trace.js:151:20)
+    at async DevServer.handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:328:24)
+    at async invokeRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:163:21)
+    at async handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:342:24)
+    at async requestHandlerImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:366:13)
+    at async Server.requestListener (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js:140:13) {
+  code: 'COLLECTION_ACCESS_ERROR'
+}
+Error stack: DatabaseError: Failed to get collection documents: Failed to get database instance: MongoDB connection failed: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017
+    at getCollection (webpack-internal:///(rsc)/./lib/mongodb-client.ts:151:15)
+    at async DatabaseService.find (webpack-internal:///(rsc)/./lib/mongodb-client.ts:258:28)
+    at async GET (webpack-internal:///(rsc)/./app/api/ocr-results/route.ts:187:28)
+    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:63809
+    at async eU.execute (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:53964)
+    at async eU.handle (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:65062)
+    at async doRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1333:42)
+    at async cacheEntry.responseCache.get.routeKind (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1555:28)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1463:28)
+    at async DevServer.renderPageComponent (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1856:24)
+    at async DevServer.renderToResponseImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1894:32)
+    at async DevServer.pipeImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:911:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:271:17)
+    at async DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:807:17)
+    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:331:20
+    at async Span.traceAsyncFn (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/trace/trace.js:151:20)
+    at async DevServer.handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:328:24)
+    at async invokeRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:163:21)
+    at async handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:342:24)
+    at async requestHandlerImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:366:13)
+    at async Server.requestListener (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js:140:13)
