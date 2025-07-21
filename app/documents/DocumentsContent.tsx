@@ -75,6 +75,7 @@ export default function DocumentsContent() {
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalOcrPages, setTotalOcrPages] = useState(1);
   const [viewMode, setViewMode] = useState<'card' | 'table'>('card');
   const [ocrSortBy, setOcrSortBy] = useState<'date' | 'vendor' | 'amount'>('date');
   const [ocrSortOrder, setOcrSortOrder] = useState<'asc' | 'desc'>('desc');
@@ -165,7 +166,7 @@ export default function DocumentsContent() {
           console.warn('⚠️ OCR結果は0件です。MongoDBにデータが存在するか確認してください。');
         }
         setOcrResults(data.data || []);
-        setTotalPages(Math.ceil((data.total || 0) / documentsPerPage));
+        setTotalOcrPages(Math.ceil((data.total || 0) / documentsPerPage));
         console.log('📈 総ページ数設定:', Math.ceil((data.total || 0) / documentsPerPage));
       } else {
         console.error('❌ OCR結果取得失敗:', data.error);
@@ -1395,7 +1396,7 @@ export default function DocumentsContent() {
             </div>
 
             {/* ページネーション */}
-            {totalPages > 1 && (
+            {(activeTab === 'ocr' ? totalOcrPages : totalPages) > 1 && (
               <div className="mt-6 flex justify-center">
                 <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
                   <button
@@ -1406,7 +1407,7 @@ export default function DocumentsContent() {
                     前へ
                   </button>
                   
-                  {[...Array(totalPages)].map((_, i) => (
+                  {[...Array(activeTab === 'ocr' ? totalOcrPages : totalPages)].map((_, i) => (
                     <button
                       key={i + 1}
                       onClick={() => setCurrentPage(i + 1)}
@@ -1421,8 +1422,8 @@ export default function DocumentsContent() {
                   ))}
                   
                   <button
-                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                    disabled={currentPage === totalPages}
+                    onClick={() => setCurrentPage(Math.min(activeTab === 'ocr' ? totalOcrPages : totalPages, currentPage + 1))}
+                    disabled={currentPage === (activeTab === 'ocr' ? totalOcrPages : totalPages)}
                     className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
                   >
                     次へ
