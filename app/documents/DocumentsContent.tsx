@@ -649,13 +649,6 @@ export default function DocumentsContent() {
 
             {/* コンテンツ */}
             <div className="bg-white rounded-lg shadow overflow-hidden">
-              {/* OCRカード表示エリア確認用 */}
-            <div className="mb-4 p-4 bg-blue-100 border border-blue-400 rounded">
-              <p className="font-bold">OCRカード表示エリアの確認</p>
-              <p>このエリアの下にOCRカードが表示されるはずです。</p>
-              <p>赤い境界線のグリッドが見えていれば、カード表示エリアは存在しています。</p>
-            </div>
-            
             {loading ? (
                 <div className="p-8 text-center">
                   <div className="inline-flex items-center">
@@ -691,18 +684,19 @@ export default function DocumentsContent() {
                       </p>
                     </div>
                   ) : viewMode === 'card' ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-4 md:p-6 border-4 border-red-500">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-4 md:p-6">
                       {displayResults.map((result, index) => (
                       <div key={result.id} className="bg-white border border-gray-200 rounded-lg hover:shadow-lg transition-all duration-200 min-h-[200px]">
                         <div className="p-4">
-                          <p className="text-red-500 font-bold">OCRカード #{index + 1}</p>
-                          <p className="text-gray-900">ID: {result.id}</p>
-                          <p className="text-gray-900">店舗: {result.vendor_name || result.store_name || '不明'}</p>
-                          <p className="text-gray-900">金額: ¥{(result.total_amount || 0).toLocaleString()}</p>
-                          <p className="text-gray-600 text-sm">
-                            日付: {result.receipt_date ? new Date(result.receipt_date).toLocaleDateString('ja-JP') : 'なし'}
-                          </p>
-                          {/* 以下は一時的にコメントアウト
+                          {/* デバッグ情報 */}
+                          <details className="mb-3 text-xs text-gray-500">
+                            <summary className="cursor-pointer">デバッグ: 生データを表示</summary>
+                            <pre className="mt-1 p-2 bg-gray-100 rounded overflow-auto max-h-40">
+                              {JSON.stringify(result, null, 2)}
+                            </pre>
+                          </details>
+                          
+                          {/* ヘッダー */}
                           <div className="mb-3">
                             <div className="flex-1">
                               <h3 className="text-sm font-semibold text-gray-900 truncate">
@@ -872,7 +866,6 @@ export default function DocumentsContent() {
                               </div>
                             )}
                           </div>
-                          コメントアウト終了 */}
                         </div>
                       </div>
                       ))}
