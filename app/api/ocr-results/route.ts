@@ -109,29 +109,78 @@ export async function GET(request: NextRequest) {
     console.log('📄 [OCR-Results API] ページ設定:', { page, limit, skip });
     console.log('🔄 [OCR-Results API] ソート設定:', { sortBy, sortOrder });
     
-    // ソート設定を決定
-    let sortField = 'createdAt';
-    switch (sortBy) {
-      case 'date':
-        sortField = 'receipt_date';
-        break;
-      case 'vendor':
-        sortField = 'vendor_name';
-        break;
-      case 'amount':
-        sortField = 'total_amount';
-        break;
-      default:
-        sortField = 'createdAt';
-    }
-    
+    // ソート設定を決定（セカンダリソートを含む）
+    let sortOptions: any = {};
     const sortDirection = sortOrder === 'asc' ? 1 : -1;
     
+    switch (sortBy) {
+      case 'date':
+        // 日付でソートし、同じ日付の場合は作成日時でソート
+        sortOptions = {
+          receipt_date: sortDirection,
+          createdAt: sortDirection
+        };
+        break;
+      case 'vendor':
+        // ベンダー名でソートし、同じ名前の場合は作成日時でソート
+        sortOptions = {
+          vendor_name: sortDirection,
+          createdAt: sortDirection
+        };
+        break;
+      case 'amount':
+        // 金額でソートし、同じ金額の場合は作成日時でソート
+        sortOptions = {
+          total_amount: sortDirection,
+          createdAt: sortDirection
+        };
+        break;
+      default:
+        sortOptions = {
+          createdAt: sortDirection
+        };
+    }
+    
+    console.log('🔄 [OCR-Results API] ソートオプション:', sortOptions);
+    
+    // OCR結果を取得（ソートを適用）
     const ocrResults = await db.find('documents', filter, {
       limit,
       skip,
-      sort: { [sortField]: sortDirection }
+      sort: sortOptions
     });
+    
+    console.log('✅ [OCR-Results API] 取得結果数:', ocrResults.length);
+    
+    // デバッグ: ソート結果を確認
+    if (ocrResults.length > 0) {
+      console.log(`🔄 [OCR-Results API] ページ${page}のソート結果サンプル (最初の3件):`);
+      ocrResults.slice(0, 3).forEach((doc, index) => {
+        const dateValue = doc.receipt_date || doc.documentDate || doc.issueDate || doc.createdAt;
+        const vendorValue = doc.vendor_name || doc.vendorName || doc.store_name || doc.partnerName || 'N/A';
+        const amountValue = doc.total_amount || doc.totalAmount || 0;
+        const globalIndex = skip + index + 1;
+        console.log(`  #${globalIndex} (Page ${page}, Item ${index + 1}). Date: ${dateValue}, Vendor: ${vendorValue}, Amount: ${amountValue}`);
+      });
+      
+      // ページ2の場合、前ページの最後のデータを確認
+      if (page === 2) {
+        console.log('🔍 [OCR-Results API] ページ1の最後のデータを確認:');
+        const previousPageLast = await db.find('documents', filter, {
+          limit: 3,
+          skip: limit - 3,
+          sort: sortOptions
+        });
+        
+        previousPageLast.forEach((doc, index) => {
+          const dateValue = doc.receipt_date || doc.documentDate || doc.issueDate || doc.createdAt;
+          const vendorValue = doc.vendor_name || doc.vendorName || doc.store_name || doc.partnerName || 'N/A';
+          const amountValue = doc.total_amount || doc.totalAmount || 0;
+          const globalIndex = limit - 2 + index;
+          console.log(`  #${globalIndex} (Page 1, Item ${18 + index}). Date: ${dateValue}, Vendor: ${vendorValue}, Amount: ${amountValue}`);
+        });
+      }
+    }
     
     console.log('✅ [OCR-Results API] 取得結果数:', ocrResults.length);
     
@@ -211,8 +260,53 @@ export async function GET(request: NextRequest) {
       linked_document_id: doc.linked_document_id || null
     }));
 
-    // 総数を取得
+    // 総数を取得（フィルター適用後の総数）
     const total = await db.count('documents', filter);
+    
+    // デバッグ: ページング情報を出力
+    console.log('📄 [OCR-Results API] ページング情報:', {
+      currentPage: page,
+      itemsPerPage: limit,
+      totalItems: total,
+      totalPages: Math.ceil(total / limit),
+      showingFrom: skip + 1,
+      showingTo: Math.min(skip + limit, total)
+    });
+    
+    // デバッグ: 全ページのデータを確認（最初の5件と最後の5件）
+    if (page === 1 && totalBeforeSort > limit) {
+      console.log('🔍 [OCR-Results API] 全データのソート状態を確認:');
+      
+      // 最初の5件
+      const firstFive = await db.find('documents', filter, {
+        limit: 5,
+        skip: 0,
+        sort: Object.keys(fallbackSortFields).length > 1 ? fallbackSortFields : { [sortField]: sortDirection }
+      });
+      
+      console.log('🔼 最初の5件:');
+      firstFive.forEach((doc, index) => {
+        const dateValue = doc.receipt_date || doc.documentDate || doc.issueDate || doc.createdAt;
+        const vendorValue = doc.vendor_name || doc.vendorName || doc.store_name || doc.partnerName || 'N/A';
+        const amountValue = doc.total_amount || doc.totalAmount || 0;
+        console.log(`  ${index + 1}. Date: ${dateValue}, Vendor: ${vendorValue}, Amount: ${amountValue}`);
+      });
+      
+      // 最後の5件
+      const lastFive = await db.find('documents', filter, {
+        limit: 5,
+        skip: Math.max(0, totalBeforeSort - 5),
+        sort: Object.keys(fallbackSortFields).length > 1 ? fallbackSortFields : { [sortField]: sortDirection }
+      });
+      
+      console.log('🔽 最後の5件:');
+      lastFive.forEach((doc, index) => {
+        const dateValue = doc.receipt_date || doc.documentDate || doc.issueDate || doc.createdAt;
+        const vendorValue = doc.vendor_name || doc.vendorName || doc.store_name || doc.partnerName || 'N/A';
+        const amountValue = doc.total_amount || doc.totalAmount || 0;
+        console.log(`  ${totalBeforeSort - 4 + index}. Date: ${dateValue}, Vendor: ${vendorValue}, Amount: ${amountValue}`);
+      });
+    }
 
     console.log('📋 [OCR-Results API] フォーマット済み結果数:', formattedResults.length, '総数:', total);
     
