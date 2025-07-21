@@ -264,7 +264,10 @@ export async function GET(request: NextRequest) {
       extracted_text: doc.extractedText || doc.extracted_text || '',
       created_at: doc.createdAt,
       status: doc.ocrStatus || 'completed',
-      linked_document_id: doc.linked_document_id || null
+      linked_document_id: doc.linked_document_id || null,
+      category: doc.category || null,
+      subcategory: doc.subcategory || null,
+      aiPrediction: doc.aiPrediction || null
     }));
 
     // 総数を取得（フィルター適用後の総数）
