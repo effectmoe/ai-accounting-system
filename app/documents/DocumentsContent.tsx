@@ -702,7 +702,7 @@ export default function DocumentsContent() {
                           <p className="text-gray-600 text-sm">
                             日付: {result.receipt_date ? new Date(result.receipt_date).toLocaleDateString('ja-JP') : 'なし'}
                           </p>
-                          {false && (
+                          {/* 以下は一時的にコメントアウト
                           <div className="mb-3">
                             <div className="flex-1">
                               <h3 className="text-sm font-semibold text-gray-900 truncate">
@@ -872,7 +872,7 @@ export default function DocumentsContent() {
                               </div>
                             )}
                           </div>
-                          )}
+                          コメントアウト終了 */}
                         </div>
                       </div>
                       ))}
