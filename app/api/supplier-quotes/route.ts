@@ -12,6 +12,13 @@ export const dynamic = 'force-dynamic';
 // GET: 仕入先見積書一覧取得
 export async function GET(request: NextRequest) {
   try {
+    // デバッグ: 環境変数を確認
+    logger.debug('[Supplier Quotes API] Environment check:', {
+      USE_AZURE_MONGODB: process.env.USE_AZURE_MONGODB,
+      MONGODB_URI_EXISTS: !!process.env.MONGODB_URI,
+      MONGODB_DB_NAME: process.env.MONGODB_DB_NAME
+    });
+    
     const searchParams = request.nextUrl.searchParams;
     const supplierId = searchParams.get('supplierId');
     const status = searchParams.get('status');
