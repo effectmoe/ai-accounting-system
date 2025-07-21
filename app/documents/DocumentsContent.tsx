@@ -1187,7 +1187,7 @@ export default function DocumentsContent() {
                     </div>
                   );
                 })()
-              ) : (
+              ) : activeTab === 'documents' ? (
                 // 作成済み文書
                 documents.length === 0 ? (
                   <div className="p-8 text-center">
@@ -1391,7 +1391,7 @@ export default function DocumentsContent() {
                     </table>
                   </div>
                 )
-              )}
+              ) : null}
             </div>
 
             {/* ページネーション */}
