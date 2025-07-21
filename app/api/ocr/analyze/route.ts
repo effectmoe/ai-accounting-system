@@ -148,6 +148,8 @@ TEL: 03-xxxx-xxxx FAX: 03-xxxx-xxxx
     logger.debug('[OCR API] AI orchestration completed successfully in', totalElapsed, 'ms total');
     
     // MongoDBに結果を保存
+    let mongoDbSaved = false;
+    let mongoDbId = null;
     try {
       const { MongoClient } = await import('mongodb');
       const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017';
@@ -186,6 +188,8 @@ TEL: 03-xxxx-xxxx FAX: 03-xxxx-xxxx
       };
       
       const insertResult = await collection.insertOne(ocrDocument);
+      mongoDbSaved = true;
+      mongoDbId = insertResult.insertedId;
       logger.debug('[OCR API] Document saved to MongoDB:', insertResult.insertedId);
       console.log('✅ [OCR API] MongoDB保存成功! ID:', insertResult.insertedId);
       console.log('📄 [OCR API] 保存したドキュメント:', JSON.stringify({
@@ -200,6 +204,11 @@ TEL: 03-xxxx-xxxx FAX: 03-xxxx-xxxx
       await client.close();
     } catch (dbError) {
       logger.error('[OCR API] MongoDB save error:', dbError);
+      console.error('❌ [OCR API] MongoDB保存エラー詳細:', {
+        error: dbError instanceof Error ? dbError.message : dbError,
+        stack: dbError instanceof Error ? dbError.stack : undefined,
+        mongoUri: process.env.MONGODB_URI ? 'Set' : 'Not set'
+      });
       // DBエラーがあっても処理は続行
     }
     
@@ -244,6 +253,8 @@ TEL: 03-xxxx-xxxx FAX: 03-xxxx-xxxx
       success: true,
       data: structuredData,
       fileId: gridfsFileId, // GridFSのファイルIDを返す
+      mongoDbId: mongoDbId?.toString(), // MongoDBのドキュメントID
+      mongoDbSaved: mongoDbSaved, // MongoDB保存の成否
       message: 'DeepSeek AI駆動のOCR解析が完了しました',
       processingMethod: 'DeepSeek-AI-driven',
       model: 'deepseek-chat',

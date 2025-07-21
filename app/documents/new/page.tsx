@@ -653,6 +653,10 @@ function NewDocumentContent() {
 
       const result = await response.json();
       console.log('📊 [Documents New] OCR結果:', result);
+      console.log('🗄️ [Documents New] MongoDB保存状態:', {
+        mongoDbSaved: result.mongoDbSaved,
+        mongoDbId: result.mongoDbId
+      });
       
       logger.debug('[Documents New] OCR Response:', result);
       
