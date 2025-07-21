@@ -649,7 +649,14 @@ export default function DocumentsContent() {
 
             {/* コンテンツ */}
             <div className="bg-white rounded-lg shadow overflow-hidden">
-              {loading ? (
+              {/* OCRカード表示エリア確認用 */}
+            <div className="mb-4 p-4 bg-blue-100 border border-blue-400 rounded">
+              <p className="font-bold">OCRカード表示エリアの確認</p>
+              <p>このエリアの下にOCRカードが表示されるはずです。</p>
+              <p>赤い境界線のグリッドが見えていれば、カード表示エリアは存在しています。</p>
+            </div>
+            
+            {loading ? (
                 <div className="p-8 text-center">
                   <div className="inline-flex items-center">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -684,10 +691,11 @@ export default function DocumentsContent() {
                       </p>
                     </div>
                   ) : viewMode === 'card' ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-4 md:p-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-4 md:p-6 border-4 border-red-500">
                       {displayResults.map((result) => (
                       <div key={result.id} className="bg-white border border-gray-200 rounded-lg hover:shadow-lg transition-all duration-200">
                         <div className="p-4">
+                          <p className="text-red-500 font-bold">OCRカード表示中！</p>
                           {/* ヘッダー */}
                           <div className="mb-3">
                             <div className="flex-1">
