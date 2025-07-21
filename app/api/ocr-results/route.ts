@@ -130,17 +130,17 @@ export async function GET(request: NextRequest) {
     
     console.log('🔄 [OCR-Results API] ソートオプション:', sortOptions);
     
-    // OCR結果を両方のコレクションから取得（ソートを適用）
+    // OCR結果を両方のコレクションから取得（リアルタイム、キャッシュなし）
     const ocrResultsFromOcrResults = await db.find('ocr_results', filter, {
-      limit: Math.ceil(limit * 1.5),
+      limit: Math.ceil(limit * 2),
       skip: 0,
-      sort: sortOptions
+      sort: { createdAt: -1, _id: -1 }
     });
     
     const ocrResultsFromDocuments = await db.find('documents', filter, {
-      limit: Math.ceil(limit * 1.5),
+      limit: Math.ceil(limit * 2),
       skip: 0,
-      sort: sortOptions
+      sort: { createdAt: -1, _id: -1 }
     });
     
     // 両方のコレクションの結果を統合
@@ -344,7 +344,7 @@ export async function GET(request: NextRequest) {
       console.log('🔎 [OCR-Results API] 最初の結果サンプル:', JSON.stringify(formattedResults[0], null, 2));
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       data: formattedResults,
       total,
@@ -352,6 +352,13 @@ export async function GET(request: NextRequest) {
       limit,
       debugInfo: debugInfo
     });
+
+    // キャッシュを無効化してリアルタイム表示を強制
+    response.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+    response.headers.set('Pragma', 'no-cache');
+    response.headers.set('Expires', '0');
+
+    return response;
   } catch (error) {
     console.error('OCR results API error:', error);
     console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
