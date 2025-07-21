@@ -141,12 +141,31 @@ export async function GET(request: NextRequest) {
     
     console.log('🔄 [OCR-Results API] ソートオプション:', sortOptions);
     
-    // OCR結果を取得（ソートを適用）
-    const ocrResults = await db.find('ocr_results', filter, {
-      limit,
-      skip,
+    // OCR結果を両方のコレクションから取得（ソートを適用）
+    const ocrResultsFromOcrResults = await db.find('ocr_results', filter, {
+      limit: Math.ceil(limit * 1.5),
+      skip: 0,
       sort: sortOptions
     });
+    
+    const ocrResultsFromDocuments = await db.find('documents', filter, {
+      limit: Math.ceil(limit * 1.5),
+      skip: 0,
+      sort: sortOptions
+    });
+    
+    // 両方のコレクションの結果を統合
+    const combinedResults = [...ocrResultsFromOcrResults, ...ocrResultsFromDocuments];
+    
+    // 日付でソート
+    combinedResults.sort((a, b) => {
+      const dateA = new Date(a.createdAt || a.created_at || 0).getTime();
+      const dateB = new Date(b.createdAt || b.created_at || 0).getTime();
+      return sortOptions.createdAt === -1 ? dateB - dateA : dateA - dateB;
+    });
+    
+    // ページング適用
+    const ocrResults = combinedResults.slice(skip, skip + limit);
     
     console.log('✅ [OCR-Results API] 取得結果数:', ocrResults.length);
     
@@ -262,8 +281,10 @@ export async function GET(request: NextRequest) {
       aiPrediction: doc.aiPrediction || null
     }));
 
-    // 総数を取得（フィルター適用後の総数）
-    const total = await db.count('ocr_results', filter);
+    // 総数を取得（両方のコレクションから）
+    const totalOcrResults = await db.count('ocr_results', filter);
+    const totalDocuments = await db.count('documents', filter);
+    const total = totalOcrResults + totalDocuments;
     
     // デバッグ: ページング情報を出力
     console.log('📄 [OCR-Results API] ページング情報:', {
