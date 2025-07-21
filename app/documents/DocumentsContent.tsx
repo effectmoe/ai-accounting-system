@@ -58,7 +58,8 @@ export default function DocumentsContent() {
   
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'ocr');
+  const tabFromUrl = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState(tabFromUrl || 'ocr');
   const [debugInfo, setDebugInfo] = useState<string[]>(['DocumentsContent mounted at ' + new Date().toISOString()]);
   const [documents, setDocuments] = useState<SavedDocument[]>([]);
   const [ocrResults, setOcrResults] = useState<OcrResult[]>([]);
@@ -280,6 +281,14 @@ export default function DocumentsContent() {
     }
   };
 
+  // URLパラメータの変更を監視
+  useEffect(() => {
+    if (tabFromUrl && tabFromUrl !== activeTab) {
+      console.log('📌 URLパラメータからタブを変更:', tabFromUrl);
+      setActiveTab(tabFromUrl);
+    }
+  }, [tabFromUrl]);
+
   // 初回ロードのみ
   useEffect(() => {
     console.log('🚀 [DocumentsContent] 初回ロード開始');
@@ -414,7 +423,18 @@ export default function DocumentsContent() {
           <div className="px-4 sm:px-6 lg:px-8 py-8">
             {/* デバッグ情報 */}
             <div className="mb-4 p-4 bg-yellow-100 border border-yellow-400 rounded">
-              <p className="font-bold">デバッグ情報:</p>
+              <div className="flex justify-between items-center mb-2">
+                <p className="font-bold">デバッグ情報:</p>
+                <button
+                  onClick={() => {
+                    console.log('🔄 手動リフレッシュ実行');
+                    fetchOcrResults();
+                  }}
+                  className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
+                >
+                  リフレッシュ
+                </button>
+              </div>
               <p>OCR結果数: {ocrResults.length}件</p>
               <p>フィルター後の結果数: {filteredAndSortedOcrResults().length}件</p>
               <p>ローディング: {loading ? 'はい' : 'いいえ'}</p>
