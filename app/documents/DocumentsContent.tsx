@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { DocumentService, SavedDocument } from '@/services/document-service';
-import { FileText, Download, Send, CheckCircle, Filter, Plus, Paperclip, Bell, Edit, FileCheck, Archive, Grid3X3, List, Trash2, Image } from 'lucide-react';
+import { FileText, Download, Send, CheckCircle, Filter, Plus, Paperclip, Bell, Edit, FileCheck, Archive, Grid3X3, List, Trash2, Image, CheckSquare, Square, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 const documentTypeLabels = {
@@ -86,6 +86,8 @@ export default function DocumentsContent() {
     maxAmount: '',
     documentType: ''
   });
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
   const documentsPerPage = 20;
 
   // タブ変更時にURLパラメータを更新
@@ -315,6 +317,59 @@ export default function DocumentsContent() {
     } catch (error) {
       console.error('Delete error:', error);
       toast.error(error instanceof Error ? error.message : '削除に失敗しました');
+    }
+  };
+
+  // 選択モードの切り替え
+  const toggleSelectionMode = () => {
+    setIsSelectionMode(!isSelectionMode);
+    setSelectedItems(new Set());
+  };
+
+  // アイテムの選択・解除
+  const toggleItemSelection = (id: string) => {
+    const newSelected = new Set(selectedItems);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedItems(newSelected);
+  };
+
+  // 全選択・全解除
+  const toggleSelectAll = () => {
+    if (selectedItems.size === ocrResults.length) {
+      setSelectedItems(new Set());
+    } else {
+      setSelectedItems(new Set(ocrResults.map(doc => doc.id)));
+    }
+  };
+
+  // 選択したアイテムの削除
+  const handleDeleteSelected = async () => {
+    if (selectedItems.size === 0) return;
+
+    if (!confirm(`選択した${selectedItems.size}件のデータを削除しますか？`)) {
+      return;
+    }
+
+    try {
+      const deletePromises = Array.from(selectedItems).map(id => 
+        fetch(`/api/ocr-results/${id}`, { method: 'DELETE' })
+      );
+
+      await Promise.all(deletePromises);
+      
+      toast.success(`${selectedItems.size}件のデータを削除しました`);
+      setSelectedItems(new Set());
+      setIsSelectionMode(false);
+      
+      // リストを更新
+      fetchOcrResults();
+    } catch (error) {
+      console.error('Delete error:', error);
+      toast.error('削除中にエラーが発生しました');
     }
   };
 
@@ -614,6 +669,45 @@ export default function DocumentsContent() {
             {/* フィルター（OCRタブ） */}
             {activeTab === 'ocr' && (
               <div className="bg-white rounded-lg shadow mb-6 p-4">
+                {/* 選択モードボタン */}
+                <div className="flex justify-between items-center mb-4">
+                  <div className="flex gap-2">
+                    {!isSelectionMode ? (
+                      <button
+                        onClick={toggleSelectionMode}
+                        className="px-3 py-1 border border-gray-300 rounded-md text-sm hover:bg-gray-50">
+                        <CheckSquare className="h-4 w-4 inline mr-1" />
+                        選択モード
+                      </button>
+                    ) : (
+                      <>
+                        <button
+                          onClick={toggleSelectAll}
+                          className="px-3 py-1 border border-gray-300 rounded-md text-sm hover:bg-gray-50">
+                          {selectedItems.size === ocrResults.length ? '全解除' : '全選択'}
+                        </button>
+                        <button
+                          onClick={handleDeleteSelected}
+                          disabled={selectedItems.size === 0}
+                          className="px-3 py-1 bg-red-500 text-white rounded-md text-sm hover:bg-red-600 disabled:bg-gray-300 disabled:cursor-not-allowed">
+                          <Trash2 className="h-4 w-4 inline mr-1" />
+                          選択した{selectedItems.size}件を削除
+                        </button>
+                        <button
+                          onClick={toggleSelectionMode}
+                          className="px-3 py-1 border border-gray-300 rounded-md text-sm hover:bg-gray-50">
+                          <X className="h-4 w-4 inline mr-1" />
+                          キャンセル
+                        </button>
+                      </>
+                    )}
+                  </div>
+                  {totalOcrPages > 1 && (
+                    <span className="text-sm text-gray-500">
+                      ページ {currentPage} / {totalOcrPages}
+                    </span>
+                  )}
+                </div>
                 <div className="flex items-center justify-between flex-wrap gap-4">
                   <div className="flex items-center gap-4 flex-wrap">
                     <div className="flex items-center gap-2">
@@ -774,7 +868,24 @@ export default function DocumentsContent() {
                   ) : viewMode === 'card' ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-4 md:p-6">
                       {displayResults.map((result, index) => (
-                      <div key={result.id} className="bg-white border border-gray-200 rounded-lg hover:shadow-lg transition-all duration-200 min-h-[200px]">
+                      <div key={result.id} className="bg-white border border-gray-200 rounded-lg hover:shadow-lg transition-all duration-200 min-h-[200px] relative">
+                        {/* 選択チェックボックス */}
+                        {isSelectionMode && (
+                          <div className="absolute top-2 left-2 z-10">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleItemSelection(result.id);
+                              }}
+                              className="p-1 hover:bg-gray-100 rounded">
+                              {selectedItems.has(result.id) ? (
+                                <CheckSquare className="h-5 w-5 text-blue-600" />
+                              ) : (
+                                <Square className="h-5 w-5 text-gray-400" />
+                              )}
+                            </button>
+                          </div>
+                        )}
                         <div className="p-4">
                           {/* デバッグ情報 */}
                           <details className="mb-3 text-xs text-gray-500">
@@ -969,6 +1080,19 @@ export default function DocumentsContent() {
                       <table className="min-w-full divide-y divide-gray-200">
                         <thead className="bg-gray-50">
                           <tr>
+                            {isSelectionMode && (
+                              <th className="px-6 py-3 text-center">
+                                <button
+                                  onClick={toggleSelectAll}
+                                  className="p-1 hover:bg-gray-200 rounded">
+                                  {selectedItems.size === displayResults.length ? (
+                                    <CheckSquare className="h-4 w-4 text-blue-600" />
+                                  ) : (
+                                    <Square className="h-4 w-4 text-gray-400" />
+                                  )}
+                                </button>
+                              </th>
+                            )}
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                               ファイル名
                             </th>
@@ -992,6 +1116,19 @@ export default function DocumentsContent() {
                         <tbody className="bg-white divide-y divide-gray-200">
                           {displayResults.map((result) => (
                             <tr key={result.id} className="hover:bg-gray-50">
+                              {isSelectionMode && (
+                                <td className="px-6 py-4 text-center">
+                                  <button
+                                    onClick={() => toggleItemSelection(result.id)}
+                                    className="p-1 hover:bg-gray-100 rounded">
+                                    {selectedItems.has(result.id) ? (
+                                      <CheckSquare className="h-4 w-4 text-blue-600" />
+                                    ) : (
+                                      <Square className="h-4 w-4 text-gray-400" />
+                                    )}
+                                  </button>
+                                </td>
+                              )}
                               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                 {result.receipt_number || result.file_name?.split('.')[0] || '領収書'}
                               </td>
@@ -1029,8 +1166,17 @@ export default function DocumentsContent() {
                                       handleCreateDocument(result, 'receipt');
                                     }}
                                     className="text-blue-600 hover:text-blue-900"
+                                    disabled={isSelectionMode}
                                   >
                                     文書化
+                                  </button>
+                                )}
+                                {!isSelectionMode && (
+                                  <button
+                                    onClick={() => handleDeleteOcrResult(result)}
+                                    className="text-red-600 hover:text-red-900 ml-3"
+                                  >
+                                    削除
                                   </button>
                                 )}
                               </td>
