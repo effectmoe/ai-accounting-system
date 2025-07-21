@@ -156,7 +156,8 @@ TEL: 03-xxxx-xxxx FAX: 03-xxxx-xxxx
       const client = new MongoClient(uri);
       
       await client.connect();
-      const db = client.db('accounting_system');
+      const dbName = process.env.MONGODB_DB_NAME || 'accounting';
+      const db = client.db(dbName.trim());
       const collection = db.collection('documents');
       
       // OCR結果をドキュメントとして保存
