@@ -24,6 +24,8 @@ interface Document {
   notes: string;
   created_at: string;
   updated_at: string;
+  ocr_result_id?: string;
+  gridfs_file_id?: string;
 }
 
 interface DocumentItem {
@@ -377,6 +379,50 @@ export default function DocumentDetailPage() {
                 <div className="mt-6 pt-6 border-t border-gray-200">
                   <h3 className="text-sm font-medium text-gray-900 mb-2">備考</h3>
                   <p className="text-sm text-gray-700 whitespace-pre-wrap">{document.notes}</p>
+                </div>
+              )}
+
+              {/* OCR元ファイル */}
+              {(document.ocr_result_id || document.gridfs_file_id) && (
+                <div className="mt-6 pt-6 border-t border-gray-200">
+                  <h3 className="text-sm font-medium text-gray-900 mb-4">OCR元ファイル</h3>
+                  <p className="text-xs text-gray-600 mb-3">
+                    この書類はOCRによって自動生成されました。
+                  </p>
+                  <div className="space-y-2">
+                    {document.gridfs_file_id && (
+                      <>
+                        <a
+                          href={`/api/documents/${document.gridfs_file_id}/download`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100 transition-colors text-sm"
+                        >
+                          <Eye className="w-4 h-4" />
+                          元ファイルを表示
+                        </a>
+                        <a
+                          href={`/api/documents/${document.gridfs_file_id}/download`}
+                          download
+                          className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 bg-gray-50 text-gray-700 rounded-md hover:bg-gray-100 transition-colors text-sm"
+                        >
+                          <Download className="w-4 h-4" />
+                          ダウンロード
+                        </a>
+                      </>
+                    )}
+                    {document.ocr_result_id && (
+                      <a
+                        href={`/api/ocr-results/${document.ocr_result_id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 bg-gray-50 text-gray-700 rounded-md hover:bg-gray-100 transition-colors text-sm"
+                      >
+                        <FileText className="w-4 h-4" />
+                        OCR結果を表示
+                      </a>
+                    )}
+                  </div>
                 </div>
               )}
 
