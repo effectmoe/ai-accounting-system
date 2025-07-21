@@ -981,6 +981,23 @@ export default function DocumentsContent() {
                             </div>
                           </div>
 
+                          {/* 勘定科目情報 */}
+                          {result.category && (
+                            <div className="mb-3">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-medium text-gray-700">勘定科目:</span>
+                                <span className="inline-block px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded">
+                                  {result.category}
+                                </span>
+                                {result.aiPrediction?.confidence && (
+                                  <span className="text-xs text-gray-500">
+                                    (AI推測: {Math.round(result.aiPrediction.confidence * 100)}%)
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
                           {/* 備考 */}
                           {result.notes && (
                             <div className="mb-3">
