@@ -700,7 +700,8 @@ function NewDocumentContent() {
             router.push(redirectPath);
           }
         } else {
-          router.push(redirectPath);
+          // 一般的なOCR処理の場合、OCRタブを選択してドキュメントページに遷移
+          router.push('/documents?tab=ocr');
         }
       } else {
         throw new Error(result.error || 'OCR処理に失敗しました');
