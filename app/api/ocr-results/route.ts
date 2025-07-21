@@ -28,10 +28,8 @@ export async function GET(request: NextRequest) {
 
     // MongoDBからOCR結果を取得
     // ocr_resultsコレクションから取得（83件のデータが存在する）
-    const filter: any = {
-      // companyIdフィルターは一旦削除（データの存在を確認）
-      // 基本的なフィルター条件のみ
-    };
+    // フィルターを最小限にしてデータを表示
+    const filter: any = {};
     
     // ベンダー名フィルター
     if (vendorFilter) {
