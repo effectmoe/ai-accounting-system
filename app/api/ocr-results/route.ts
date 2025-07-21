@@ -27,16 +27,10 @@ export async function GET(request: NextRequest) {
     const documentType = searchParams.get('documentType') || '';
 
     // MongoDBからOCR結果を取得
-    // documentsコレクションからOCR結果として扱えるものを取得
+    // ocr_resultsコレクションから取得（83件のデータが存在する）
     const filter: any = {
-      companyId: companyId,
-      ocrStatus: { $exists: true },
-      $or: [
-        { linked_document_id: { $exists: false } },
-        { linked_document_id: null }
-      ],
-      status: { $ne: 'archived' },
-      hiddenFromList: { $ne: true }  // hiddenFromListがtrueのものを除外
+      // companyIdフィルターは一旦削除（データの存在を確認）
+      // 基本的なフィルター条件のみ
     };
     
     // ベンダー名フィルター
@@ -150,7 +144,7 @@ export async function GET(request: NextRequest) {
     console.log('🔄 [OCR-Results API] ソートオプション:', sortOptions);
     
     // OCR結果を取得（ソートを適用）
-    const ocrResults = await db.find('documents', filter, {
+    const ocrResults = await db.find('ocr_results', filter, {
       limit,
       skip,
       sort: sortOptions
@@ -172,7 +166,7 @@ export async function GET(request: NextRequest) {
       // ページ2の場合、前ページの最後のデータを確認
       if (page === 2) {
         console.log('🔍 [OCR-Results API] ページ1の最後のデータを確認:');
-        const previousPageLast = await db.find('documents', filter, {
+        const previousPageLast = await db.find('ocr_results', filter, {
           limit: 3,
           skip: limit - 3,
           sort: sortOptions
@@ -208,7 +202,7 @@ export async function GET(request: NextRequest) {
     
     for (const targetId of targetIds) {
       try {
-        const targetDoc = await db.findOne('documents', { _id: new ObjectId(targetId) });
+        const targetDoc = await db.findOne('ocr_results', { _id: new ObjectId(targetId) });
         if (targetDoc) {
           const checks = {
             hasOcrStatus: !!targetDoc.ocrStatus,
@@ -271,7 +265,7 @@ export async function GET(request: NextRequest) {
     }));
 
     // 総数を取得（フィルター適用後の総数）
-    const total = await db.count('documents', filter);
+    const total = await db.count('ocr_results', filter);
     
     // デバッグ: ページング情報を出力
     console.log('📄 [OCR-Results API] ページング情報:', {
@@ -288,7 +282,7 @@ export async function GET(request: NextRequest) {
       console.log('🔍 [OCR-Results API] 全データのソート状態を確認:');
       
       // 最初の5件
-      const firstFive = await db.find('documents', filter, {
+      const firstFive = await db.find('ocr_results', filter, {
         limit: 5,
         skip: 0,
         sort: sortOptions
@@ -303,7 +297,7 @@ export async function GET(request: NextRequest) {
       });
       
       // 最後の5件
-      const lastFive = await db.find('documents', filter, {
+      const lastFive = await db.find('ocr_results', filter, {
         limit: 5,
         skip: Math.max(0, total - 5),
         sort: sortOptions
@@ -323,7 +317,7 @@ export async function GET(request: NextRequest) {
     // 全ページ分のデータを取得して最新データを確認
     if (page === 1 && total > limit) {
       console.log('🔍 [OCR-Results API] 全データから最新5件を確認:');
-      const allRecent = await db.find('documents', filter, {
+      const allRecent = await db.find('ocr_results', filter, {
         limit: 5,
         skip: 0,
         sort: { createdAt: -1 }
