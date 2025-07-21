@@ -13,10 +13,21 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '20');
     const skip = (page - 1) * limit;
+    
+    // ソートパラメータ
+    const sortBy = searchParams.get('sortBy') || 'date';
+    const sortOrder = searchParams.get('sortOrder') || 'desc';
+    
+    // フィルターパラメータ
+    const vendorFilter = searchParams.get('vendor') || '';
+    const minAmount = searchParams.get('minAmount') ? parseFloat(searchParams.get('minAmount')!) : null;
+    const maxAmount = searchParams.get('maxAmount') ? parseFloat(searchParams.get('maxAmount')!) : null;
+    const startDate = searchParams.get('startDate') || '';
+    const endDate = searchParams.get('endDate') || '';
 
     // MongoDBからOCR結果を取得
     // documentsコレクションからOCR結果として扱えるものを取得
-    const filter = {
+    const filter: any = {
       companyId: companyId,
       ocrStatus: { $exists: true },
       $or: [
@@ -26,14 +37,100 @@ export async function GET(request: NextRequest) {
       status: { $ne: 'archived' },
       hiddenFromList: { $ne: true }  // hiddenFromListがtrueのものを除外
     };
+    
+    // ベンダー名フィルター
+    if (vendorFilter) {
+      filter.$and = filter.$and || [];
+      filter.$and.push({
+        $or: [
+          { vendor_name: { $regex: vendorFilter, $options: 'i' } },
+          { vendorName: { $regex: vendorFilter, $options: 'i' } },
+          { store_name: { $regex: vendorFilter, $options: 'i' } }
+        ]
+      });
+    }
+    
+    // 金額フィルター
+    if (minAmount !== null || maxAmount !== null) {
+      filter.$and = filter.$and || [];
+      const amountFilter: any = {
+        $or: [
+          { total_amount: {} },
+          { totalAmount: {} }
+        ]
+      };
+      
+      if (minAmount !== null) {
+        amountFilter.$or[0].total_amount.$gte = minAmount;
+        amountFilter.$or[1].totalAmount.$gte = minAmount;
+      }
+      if (maxAmount !== null) {
+        amountFilter.$or[0].total_amount.$lte = maxAmount;
+        amountFilter.$or[1].totalAmount.$lte = maxAmount;
+      }
+      
+      filter.$and.push(amountFilter);
+    }
+    
+    // 日付フィルター
+    if (startDate || endDate) {
+      filter.$and = filter.$and || [];
+      const dateFilter: any = {
+        $or: [
+          { receipt_date: {} },
+          { documentDate: {} },
+          { issueDate: {} }
+        ]
+      };
+      
+      if (startDate) {
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+        dateFilter.$or.forEach((f: any) => {
+          Object.keys(f).forEach(key => {
+            f[key].$gte = start;
+          });
+        });
+      }
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        dateFilter.$or.forEach((f: any) => {
+          Object.keys(f).forEach(key => {
+            f[key].$lte = end;
+          });
+        });
+      }
+      
+      filter.$and.push(dateFilter);
+    }
 
     console.log('📊 [OCR-Results API] フィルター:', JSON.stringify(filter, null, 2));
     console.log('📄 [OCR-Results API] ページ設定:', { page, limit, skip });
+    console.log('🔄 [OCR-Results API] ソート設定:', { sortBy, sortOrder });
+    
+    // ソート設定を決定
+    let sortField = 'createdAt';
+    switch (sortBy) {
+      case 'date':
+        sortField = 'receipt_date';
+        break;
+      case 'vendor':
+        sortField = 'vendor_name';
+        break;
+      case 'amount':
+        sortField = 'total_amount';
+        break;
+      default:
+        sortField = 'createdAt';
+    }
+    
+    const sortDirection = sortOrder === 'asc' ? 1 : -1;
     
     const ocrResults = await db.find('documents', filter, {
       limit,
       skip,
-      sort: { createdAt: -1 }
+      sort: { [sortField]: sortDirection }
     });
     
     console.log('✅ [OCR-Results API] 取得結果数:', ocrResults.length);
