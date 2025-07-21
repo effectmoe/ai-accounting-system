@@ -157,11 +157,11 @@ export async function GET(request: NextRequest) {
     // 両方のコレクションの結果を統合
     const combinedResults = [...ocrResultsFromOcrResults, ...ocrResultsFromDocuments];
     
-    // 日付でソート
+    // 日付でソート（最新順 = 降順）
     combinedResults.sort((a, b) => {
       const dateA = new Date(a.createdAt || a.created_at || 0).getTime();
       const dateB = new Date(b.createdAt || b.created_at || 0).getTime();
-      return sortOptions.createdAt === -1 ? dateB - dateA : dateA - dateB;
+      return dateB - dateA; // 常に最新順
     });
     
     // ページング適用
