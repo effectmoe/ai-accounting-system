@@ -684,16 +684,6 @@ export default function DocumentsContent() {
                       </p>
                     </div>
                   ) : viewMode === 'card' ? (
-                    <div className="p-4">
-                      <h3 className="text-lg font-bold mb-4">OCR結果一覧（デバッグ表示）</h3>
-                      {displayResults.map((result, index) => (
-                        <div key={result.id} className="mb-2 p-2 bg-gray-100 rounded">
-                          <p>{index + 1}. {result.vendor_name || result.store_name || 'ベンダー名なし'} - ¥{result.total_amount || 0}</p>
-                          <p className="text-sm text-gray-600">{result.file_name} - {new Date(result.created_at).toLocaleDateString('ja-JP')}</p>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-4 md:p-6">
                       {displayResults.map((result) => (
                       <div key={result.id} className="bg-white border border-gray-200 rounded-lg hover:shadow-lg transition-all duration-200">
@@ -949,7 +939,6 @@ export default function DocumentsContent() {
                       </table>
                     </div>
                   );
-                })
                 })()
               ) : (
                 // 作成済み文書
