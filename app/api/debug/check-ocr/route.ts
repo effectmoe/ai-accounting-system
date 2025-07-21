@@ -22,12 +22,47 @@ export async function GET(request: NextRequest) {
         _id: new ObjectId(documentId) 
       });
       
+      if (document) {
+        // フィルター条件をチェック
+        const filterChecks = {
+          hasOcrStatus: !!document.ocrStatus,
+          ocrStatusValue: document.ocrStatus,
+          hasLinkedDocumentId: 'linked_document_id' in document,
+          linkedDocumentIdValue: document.linked_document_id,
+          statusValue: document.status,
+          isNotArchived: document.status !== 'archived',
+          hiddenFromListValue: document.hiddenFromList,
+          isNotHidden: document.hiddenFromList !== true,
+          companyIdValue: document.companyId,
+          isCorrectCompany: document.companyId === '11111111-1111-1111-1111-111111111111'
+        };
+        
+        const passesAllFilters = 
+          filterChecks.hasOcrStatus && 
+          (!filterChecks.hasLinkedDocumentId || filterChecks.linkedDocumentIdValue === null) &&
+          filterChecks.isNotArchived &&
+          filterChecks.isNotHidden &&
+          filterChecks.isCorrectCompany;
+        
+        await client.close();
+        
+        return NextResponse.json({
+          found: true,
+          document: document,
+          filterChecks: filterChecks,
+          passesAllFilters: passesAllFilters,
+          message: passesAllFilters 
+            ? 'ドキュメントが見つかり、全てのフィルター条件を満たしています' 
+            : 'ドキュメントは見つかりましたが、フィルター条件を満たしていません'
+        });
+      }
+      
       await client.close();
       
       return NextResponse.json({
-        found: !!document,
-        document: document || null,
-        message: document ? 'ドキュメントが見つかりました' : 'ドキュメントが見つかりません'
+        found: false,
+        document: null,
+        message: 'ドキュメントが見つかりません'
       });
     }
     
