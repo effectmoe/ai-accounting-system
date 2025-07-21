@@ -46,33 +46,49 @@ export async function GET(request: NextRequest) {
       });
     }
     
-    // 特定のIDを検索
-    const targetId = '687e370963c1a5fa866d74d5';
-    const targetDoc = await db.findOne('documents', { _id: new ObjectId(targetId) });
-    if (targetDoc) {
-      console.log('🎯 [OCR-Results API] ターゲットドキュメント発見:', {
-        _id: targetDoc._id,
-        ocrStatus: targetDoc.ocrStatus,
-        linked_document_id: targetDoc.linked_document_id,
-        status: targetDoc.status,
-        hiddenFromList: targetDoc.hiddenFromList,
-        companyId: targetDoc.companyId
-      });
-      
-      // フィルター条件をチェック
-      const checks = {
-        hasOcrStatus: !!targetDoc.ocrStatus,
-        linkedDocIdOk: !targetDoc.linked_document_id,
-        statusOk: targetDoc.status !== 'archived',
-        notHidden: targetDoc.hiddenFromList !== true,
-        companyIdOk: targetDoc.companyId === companyId
-      };
-      
-      console.log('✅❌ [OCR-Results API] フィルターチェック結果:', checks);
-      const passesAll = Object.values(checks).every(v => v);
-      console.log(passesAll ? '✅ 全条件クリア！' : '❌ いずれかの条件で除外');
-    } else {
-      console.log('❌ [OCR-Results API] ターゲットドキュメントが見つかりません:', targetId);
+    // 特定のIDを検索（複数のIDを順番に確認）
+    const targetIds = [
+      '687e38a478e107710fecb492',  // 最新
+      '687e370963c1a5fa866d74d5',  // 2番目
+      '687e3501d18421a3ce4e7f53'   // 3番目
+    ];
+    let debugInfo = null;
+    
+    for (const targetId of targetIds) {
+      try {
+        const targetDoc = await db.findOne('documents', { _id: new ObjectId(targetId) });
+        if (targetDoc) {
+          const checks = {
+            hasOcrStatus: !!targetDoc.ocrStatus,
+            linkedDocIdOk: !targetDoc.linked_document_id,
+            statusOk: targetDoc.status !== 'archived',
+            notHidden: targetDoc.hiddenFromList !== true,
+            companyIdOk: targetDoc.companyId === companyId
+          };
+          
+          const passesAll = Object.values(checks).every(v => v);
+          
+          debugInfo = {
+            targetId,
+            found: true,
+            doc: {
+              _id: targetDoc._id.toString(),
+              ocrStatus: targetDoc.ocrStatus,
+              linked_document_id: targetDoc.linked_document_id,
+              status: targetDoc.status,
+              hiddenFromList: targetDoc.hiddenFromList,
+              companyId: targetDoc.companyId
+            },
+            filterChecks: checks,
+            passesAll
+          };
+          
+          console.log('🎯 [OCR-Results API] デバッグ情報:', JSON.stringify(debugInfo, null, 2));
+          break;
+        }
+      } catch (e) {
+        console.log('❌ [OCR-Results API] ID検索エラー:', targetId, e);
+      }
     }
 
     // OCR結果の形式に変換
@@ -125,7 +141,8 @@ export async function GET(request: NextRequest) {
       data: formattedResults,
       total,
       page,
-      limit
+      limit,
+      debugInfo: debugInfo
     });
   } catch (error) {
     console.error('OCR results API error:', error);

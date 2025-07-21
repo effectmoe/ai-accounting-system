@@ -115,8 +115,13 @@ export default function DocumentsContent() {
         total: data.total,
         page: data.page,
         limit: data.limit,
-        error: data.error
+        error: data.error,
+        debugInfo: data.debugInfo
       });
+      
+      if (data.debugInfo) {
+        console.log('🔍 [OCR-Results] デバッグ情報:', data.debugInfo);
+      }
       
       if (data.success) {
         console.log('✅ OCR結果取得成功:', data.data?.length, '件');
