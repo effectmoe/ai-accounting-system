@@ -5236,3 +5236,2071 @@ Error stack: DatabaseError: Failed to get collection documents: Failed to get da
 📄 [OCR-Results API] ページ設定: { page: 1, limit: 20, skip: 0 }
 🔄 [OCR-Results API] ソート設定: { sortBy: 'date', sortOrder: 'desc' }
 🔄 [OCR-Results API] ソートオプション: { receipt_date: -1, createdAt: -1 }
+[2025-07-21T15:46:40.423Z] [ERROR] MongoDB connection error: {
+  errorLabelSet: {},
+  reason: {
+    type: 'Unknown',
+    servers: {},
+    stale: false,
+    compatible: true,
+    heartbeatFrequencyMS: 10000,
+    localThresholdMS: 15,
+    setName: null,
+    maxElectionId: null,
+    maxSetVersion: null,
+    commonWireVersion: 0,
+    logicalSessionTimeoutMinutes: '[REDACTED]'
+  },
+  code: undefined
+}
+[2025-07-21T15:46:40.424Z] [ERROR] Connection error details: {
+  name: 'MongoServerSelectionError',
+  message: 'connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017',
+  stack: 'MongoServerSelectionError: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017\n' +
+    '    at Topology.selectServer (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/sdam/topology.js:326:38)\n' +
+    '    at async Topology._connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/sdam/topology.js:200:28)\n' +
+    '    at async Topology.connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/sdam/topology.js:152:13)\n' +
+    '    at async topologyConnect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/mongo_client.js:246:17)\n' +
+    '    at async MongoClient._connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/mongo_client.js:259:13)\n' +
+    '    at async MongoClient.connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/mongo_client.js:184:13)'
+}
+[2025-07-21T15:46:40.424Z] [DEBUG] Cached connection is stale, creating new connection... 
+[2025-07-21T15:46:40.424Z] [DEBUG] Creating new MongoDB connection... 
+[2025-07-21T15:46:40.424Z] [DEBUG] MongoDB URI configured: mongodb://localhost:27017/mastra-accounting
+[2025-07-21T15:46:40.424Z] [ERROR] getDatabase error: { code: 'CONNECTION_ERROR', name: 'DatabaseError' }
+[2025-07-21T15:46:40.424Z] [ERROR] getCollection error for documents: { code: 'DATABASE_ACCESS_ERROR', name: 'DatabaseError' }
+[2025-07-21T15:46:40.424Z] [ERROR] Document list error: { code: 'COLLECTION_ACCESS_ERROR', name: 'DatabaseError' }
+[2025-07-21T15:46:40.424Z] [ERROR] Error details: {
+  name: 'DatabaseError',
+  message: 'Failed to get collection documents: Failed to get database instance: MongoDB connection failed: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017',
+  stack: 'DatabaseError: Failed to get collection documents: Failed to get database instance: MongoDB connection failed: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017\n' +
+    '    at getCollection (webpack-internal:///(rsc)/./lib/mongodb-client.ts:151:15)\n' +
+    '    at async DatabaseService.find (webpack-internal:///(rsc)/./lib/mongodb-client.ts:258:28)\n' +
+    '    at async GET (webpack-internal:///(rsc)/./app/api/documents/list/route.ts:76:27)\n' +
+    '    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:63809\n' +
+    '    at async eU.execute (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:53964)\n' +
+    '    at async eU.handle (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:65062)\n' +
+    '    at async doRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1333:42)\n' +
+    '    at async cacheEntry.responseCache.get.routeKind (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1555:28)\n' +
+    '    at async DevServer.renderToResponseWithComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1463:28)\n' +
+    '    at async DevServer.renderPageComponent (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1856:24)\n' +
+    '    at async DevServer.renderToResponseImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1894:32)\n' +
+    '    at async DevServer.pipeImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:911:25)\n' +
+    '    at async NextNodeServer.handleCatchallRenderRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:271:17)\n' +
+    '    at async DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:807:17)\n' +
+    '    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:331:20\n' +
+    '    at async Span.traceAsyncFn (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/trace/trace.js:151:20)\n' +
+    '    at async DevServer.handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:328:24)\n' +
+    '    at async invokeRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:163:21)\n' +
+    '    at async handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:342:24)\n' +
+    '    at async requestHandlerImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:366:13)\n' +
+    '    at async Server.requestListener (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js:140:13)'
+}
+[2025-07-21T15:46:40.433Z] [DEBUG] Documents list API - MongoDB URI exists: true
+[2025-07-21T15:46:45.425Z] [ERROR] MongoDB connection error: {
+  errorLabelSet: {},
+  reason: {
+    type: 'Unknown',
+    servers: {},
+    stale: false,
+    compatible: true,
+    heartbeatFrequencyMS: 10000,
+    localThresholdMS: 15,
+    setName: null,
+    maxElectionId: null,
+    maxSetVersion: null,
+    commonWireVersion: 0,
+    logicalSessionTimeoutMinutes: '[REDACTED]'
+  },
+  code: undefined
+}
+[2025-07-21T15:46:45.426Z] [ERROR] Connection error details: {
+  name: 'MongoServerSelectionError',
+  message: 'connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017',
+  stack: 'MongoServerSelectionError: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017\n' +
+    '    at Topology.selectServer (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/sdam/topology.js:326:38)\n' +
+    '    at async Topology._connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/sdam/topology.js:200:28)\n' +
+    '    at async Topology.connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/sdam/topology.js:152:13)\n' +
+    '    at async topologyConnect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/mongo_client.js:246:17)\n' +
+    '    at async MongoClient._connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/mongo_client.js:259:13)\n' +
+    '    at async MongoClient.connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/mongo_client.js:184:13)'
+}
+[2025-07-21T15:46:45.426Z] [DEBUG] Cached connection is stale, creating new connection... 
+[2025-07-21T15:46:45.426Z] [DEBUG] Creating new MongoDB connection... 
+[2025-07-21T15:46:45.426Z] [DEBUG] MongoDB URI configured: mongodb://localhost:27017/mastra-accounting
+[2025-07-21T15:46:45.427Z] [ERROR] getDatabase error: { code: 'CONNECTION_ERROR', name: 'DatabaseError' }
+[2025-07-21T15:46:45.427Z] [ERROR] getCollection error for documents: { code: 'DATABASE_ACCESS_ERROR', name: 'DatabaseError' }
+OCR results API error: DatabaseError: Failed to get collection documents: Failed to get database instance: MongoDB connection failed: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017
+    at getCollection (webpack-internal:///(rsc)/./lib/mongodb-client.ts:151:15)
+    at async DatabaseService.find (webpack-internal:///(rsc)/./lib/mongodb-client.ts:258:28)
+    at async GET (webpack-internal:///(rsc)/./app/api/ocr-results/route.ts:187:28)
+    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:63809
+    at async eU.execute (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:53964)
+    at async eU.handle (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:65062)
+    at async doRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1333:42)
+    at async cacheEntry.responseCache.get.routeKind (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1555:28)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1463:28)
+    at async DevServer.renderPageComponent (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1856:24)
+    at async DevServer.renderToResponseImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1894:32)
+    at async DevServer.pipeImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:911:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:271:17)
+    at async DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:807:17)
+    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:331:20
+    at async Span.traceAsyncFn (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/trace/trace.js:151:20)
+    at async DevServer.handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:328:24)
+    at async invokeRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:163:21)
+    at async handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:342:24)
+    at async requestHandlerImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:366:13)
+    at async Server.requestListener (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js:140:13) {
+  code: 'COLLECTION_ACCESS_ERROR'
+}
+Error stack: DatabaseError: Failed to get collection documents: Failed to get database instance: MongoDB connection failed: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017
+    at getCollection (webpack-internal:///(rsc)/./lib/mongodb-client.ts:151:15)
+    at async DatabaseService.find (webpack-internal:///(rsc)/./lib/mongodb-client.ts:258:28)
+    at async GET (webpack-internal:///(rsc)/./app/api/ocr-results/route.ts:187:28)
+    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:63809
+    at async eU.execute (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:53964)
+    at async eU.handle (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:65062)
+    at async doRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1333:42)
+    at async cacheEntry.responseCache.get.routeKind (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1555:28)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1463:28)
+    at async DevServer.renderPageComponent (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1856:24)
+    at async DevServer.renderToResponseImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1894:32)
+    at async DevServer.pipeImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:911:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:271:17)
+    at async DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:807:17)
+    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:331:20
+    at async Span.traceAsyncFn (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/trace/trace.js:151:20)
+    at async DevServer.handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:328:24)
+    at async invokeRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:163:21)
+    at async handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:342:24)
+    at async requestHandlerImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:366:13)
+    at async Server.requestListener (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js:140:13)
+🔍 [OCR-Results API] リクエスト受信
+📊 [OCR-Results API] フィルター: {
+  "companyId": "11111111-1111-1111-1111-111111111111",
+  "ocrStatus": {
+    "$exists": true
+  },
+  "$or": [
+    {
+      "linked_document_id": {
+        "$exists": false
+      }
+    },
+    {
+      "linked_document_id": null
+    }
+  ],
+  "status": {
+    "$ne": "archived"
+  },
+  "hiddenFromList": {
+    "$ne": true
+  }
+}
+📄 [OCR-Results API] ページ設定: { page: 1, limit: 20, skip: 0 }
+🔄 [OCR-Results API] ソート設定: { sortBy: 'date', sortOrder: 'desc' }
+🔄 [OCR-Results API] ソートオプション: { receipt_date: -1, createdAt: -1 }
+🔍 [OCR-Results API] リクエスト受信
+📊 [OCR-Results API] フィルター: {
+  "companyId": "11111111-1111-1111-1111-111111111111",
+  "ocrStatus": {
+    "$exists": true
+  },
+  "$or": [
+    {
+      "linked_document_id": {
+        "$exists": false
+      }
+    },
+    {
+      "linked_document_id": null
+    }
+  ],
+  "status": {
+    "$ne": "archived"
+  },
+  "hiddenFromList": {
+    "$ne": true
+  }
+}
+📄 [OCR-Results API] ページ設定: { page: 1, limit: 20, skip: 0 }
+🔄 [OCR-Results API] ソート設定: { sortBy: 'date', sortOrder: 'desc' }
+🔄 [OCR-Results API] ソートオプション: { receipt_date: -1, createdAt: -1 }
+🔍 [OCR-Results API] リクエスト受信
+📊 [OCR-Results API] フィルター: {
+  "companyId": "11111111-1111-1111-1111-111111111111",
+  "ocrStatus": {
+    "$exists": true
+  },
+  "$or": [
+    {
+      "linked_document_id": {
+        "$exists": false
+      }
+    },
+    {
+      "linked_document_id": null
+    }
+  ],
+  "status": {
+    "$ne": "archived"
+  },
+  "hiddenFromList": {
+    "$ne": true
+  }
+}
+📄 [OCR-Results API] ページ設定: { page: 1, limit: 20, skip: 0 }
+🔄 [OCR-Results API] ソート設定: { sortBy: 'date', sortOrder: 'desc' }
+🔄 [OCR-Results API] ソートオプション: { receipt_date: -1, createdAt: -1 }
+🔍 [OCR-Results API] リクエスト受信
+📊 [OCR-Results API] フィルター: {
+  "companyId": "11111111-1111-1111-1111-111111111111",
+  "ocrStatus": {
+    "$exists": true
+  },
+  "$or": [
+    {
+      "linked_document_id": {
+        "$exists": false
+      }
+    },
+    {
+      "linked_document_id": null
+    }
+  ],
+  "status": {
+    "$ne": "archived"
+  },
+  "hiddenFromList": {
+    "$ne": true
+  }
+}
+📄 [OCR-Results API] ページ設定: { page: 1, limit: 20, skip: 0 }
+🔄 [OCR-Results API] ソート設定: { sortBy: 'date', sortOrder: 'desc' }
+🔄 [OCR-Results API] ソートオプション: { receipt_date: -1, createdAt: -1 }
+[2025-07-21T15:46:45.475Z] [DEBUG] Documents list API - MongoDB URI exists: true
+[2025-07-21T15:46:50.428Z] [ERROR] MongoDB connection error: {
+  errorLabelSet: {},
+  reason: {
+    type: 'Unknown',
+    servers: {},
+    stale: false,
+    compatible: true,
+    heartbeatFrequencyMS: 10000,
+    localThresholdMS: 15,
+    setName: null,
+    maxElectionId: null,
+    maxSetVersion: null,
+    commonWireVersion: 0,
+    logicalSessionTimeoutMinutes: '[REDACTED]'
+  },
+  code: undefined
+}
+[2025-07-21T15:46:50.428Z] [ERROR] Connection error details: {
+  name: 'MongoServerSelectionError',
+  message: 'connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017',
+  stack: 'MongoServerSelectionError: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017\n' +
+    '    at Topology.selectServer (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/sdam/topology.js:326:38)\n' +
+    '    at async Topology._connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/sdam/topology.js:200:28)\n' +
+    '    at async Topology.connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/sdam/topology.js:152:13)\n' +
+    '    at async topologyConnect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/mongo_client.js:246:17)\n' +
+    '    at async MongoClient._connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/mongo_client.js:259:13)\n' +
+    '    at async MongoClient.connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/mongo_client.js:184:13)'
+}
+[2025-07-21T15:46:50.428Z] [DEBUG] Cached connection is stale, creating new connection... 
+[2025-07-21T15:46:50.428Z] [DEBUG] Creating new MongoDB connection... 
+[2025-07-21T15:46:50.428Z] [DEBUG] MongoDB URI configured: mongodb://localhost:27017/mastra-accounting
+[2025-07-21T15:46:50.428Z] [DEBUG] Cached connection is stale, creating new connection... 
+[2025-07-21T15:46:50.428Z] [DEBUG] Creating new MongoDB connection... 
+[2025-07-21T15:46:50.429Z] [DEBUG] MongoDB URI configured: mongodb://localhost:27017/mastra-accounting
+[2025-07-21T15:46:50.429Z] [DEBUG] Cached connection is stale, creating new connection... 
+[2025-07-21T15:46:50.429Z] [DEBUG] Creating new MongoDB connection... 
+[2025-07-21T15:46:50.429Z] [DEBUG] MongoDB URI configured: mongodb://localhost:27017/mastra-accounting
+[2025-07-21T15:46:50.429Z] [DEBUG] Cached connection is stale, creating new connection... 
+[2025-07-21T15:46:50.429Z] [DEBUG] Creating new MongoDB connection... 
+[2025-07-21T15:46:50.429Z] [DEBUG] MongoDB URI configured: mongodb://localhost:27017/mastra-accounting
+[2025-07-21T15:46:50.430Z] [DEBUG] Cached connection is stale, creating new connection... 
+[2025-07-21T15:46:50.430Z] [DEBUG] Creating new MongoDB connection... 
+[2025-07-21T15:46:50.430Z] [DEBUG] MongoDB URI configured: mongodb://localhost:27017/mastra-accounting
+[2025-07-21T15:46:50.430Z] [ERROR] getDatabase error: { code: 'CONNECTION_ERROR', name: 'DatabaseError' }
+[2025-07-21T15:46:50.430Z] [ERROR] getCollection error for documents: { code: 'DATABASE_ACCESS_ERROR', name: 'DatabaseError' }
+[2025-07-21T15:46:50.430Z] [ERROR] Document list error: { code: 'COLLECTION_ACCESS_ERROR', name: 'DatabaseError' }
+[2025-07-21T15:46:50.431Z] [ERROR] Error details: {
+  name: 'DatabaseError',
+  message: 'Failed to get collection documents: Failed to get database instance: MongoDB connection failed: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017',
+  stack: 'DatabaseError: Failed to get collection documents: Failed to get database instance: MongoDB connection failed: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017\n' +
+    '    at getCollection (webpack-internal:///(rsc)/./lib/mongodb-client.ts:151:15)\n' +
+    '    at async DatabaseService.find (webpack-internal:///(rsc)/./lib/mongodb-client.ts:258:28)\n' +
+    '    at async GET (webpack-internal:///(rsc)/./app/api/documents/list/route.ts:76:27)\n' +
+    '    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:63809\n' +
+    '    at async eU.execute (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:53964)\n' +
+    '    at async eU.handle (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:65062)\n' +
+    '    at async doRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1333:42)\n' +
+    '    at async cacheEntry.responseCache.get.routeKind (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1555:28)\n' +
+    '    at async DevServer.renderToResponseWithComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1463:28)\n' +
+    '    at async DevServer.renderPageComponent (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1856:24)\n' +
+    '    at async DevServer.renderToResponseImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1894:32)\n' +
+    '    at async DevServer.pipeImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:911:25)\n' +
+    '    at async NextNodeServer.handleCatchallRenderRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:271:17)\n' +
+    '    at async DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:807:17)\n' +
+    '    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:331:20\n' +
+    '    at async Span.traceAsyncFn (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/trace/trace.js:151:20)\n' +
+    '    at async DevServer.handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:328:24)\n' +
+    '    at async invokeRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:163:21)\n' +
+    '    at async handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:342:24)\n' +
+    '    at async requestHandlerImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:366:13)\n' +
+    '    at async Server.requestListener (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js:140:13)'
+}
+[2025-07-21T15:46:55.429Z] [ERROR] MongoDB connection error: {
+  errorLabelSet: {},
+  reason: {
+    type: 'Unknown',
+    servers: {},
+    stale: false,
+    compatible: true,
+    heartbeatFrequencyMS: 10000,
+    localThresholdMS: 15,
+    setName: null,
+    maxElectionId: null,
+    maxSetVersion: null,
+    commonWireVersion: 0,
+    logicalSessionTimeoutMinutes: '[REDACTED]'
+  },
+  code: undefined
+}
+[2025-07-21T15:46:55.429Z] [ERROR] Connection error details: {
+  name: 'MongoServerSelectionError',
+  message: 'connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017',
+  stack: 'MongoServerSelectionError: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017\n' +
+    '    at Topology.selectServer (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/sdam/topology.js:326:38)\n' +
+    '    at async Topology._connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/sdam/topology.js:200:28)\n' +
+    '    at async Topology.connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/sdam/topology.js:152:13)\n' +
+    '    at async topologyConnect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/mongo_client.js:246:17)\n' +
+    '    at async MongoClient._connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/mongo_client.js:259:13)\n' +
+    '    at async MongoClient.connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/mongo_client.js:184:13)\n' +
+    '    at async connectToDatabase (webpack-internal:///(rsc)/./lib/mongodb-client.ts:99:33)\n' +
+    '    at async getDatabase (webpack-internal:///(rsc)/./lib/mongodb-client.ts:124:24)\n' +
+    '    at async getCollection (webpack-internal:///(rsc)/./lib/mongodb-client.ts:134:20)\n' +
+    '    at async DatabaseService.find (webpack-internal:///(rsc)/./lib/mongodb-client.ts:258:28)\n' +
+    '    at async GET (webpack-internal:///(rsc)/./app/api/ocr-results/route.ts:187:28)\n' +
+    '    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:63809\n' +
+    '    at async eU.execute (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:53964)\n' +
+    '    at async eU.handle (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:65062)\n' +
+    '    at async doRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1333:42)\n' +
+    '    at async cacheEntry.responseCache.get.routeKind (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1555:28)\n' +
+    '    at async DevServer.renderToResponseWithComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1463:28)\n' +
+    '    at async DevServer.renderPageComponent (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1856:24)\n' +
+    '    at async DevServer.renderToResponseImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1894:32)\n' +
+    '    at async DevServer.pipeImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:911:25)\n' +
+    '    at async NextNodeServer.handleCatchallRenderRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:271:17)\n' +
+    '    at async DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:807:17)\n' +
+    '    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:331:20\n' +
+    '    at async Span.traceAsyncFn (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/trace/trace.js:151:20)\n' +
+    '    at async DevServer.handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:328:24)\n' +
+    '    at async invokeRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:163:21)\n' +
+    '    at async handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:342:24)\n' +
+    '    at async requestHandlerImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:366:13)\n' +
+    '    at async Server.requestListener (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js:140:13)'
+}
+[2025-07-21T15:46:55.429Z] [ERROR] getDatabase error: { code: 'CONNECTION_ERROR', name: 'DatabaseError' }
+[2025-07-21T15:46:55.429Z] [ERROR] getCollection error for documents: { code: 'DATABASE_ACCESS_ERROR', name: 'DatabaseError' }
+OCR results API error: DatabaseError: Failed to get collection documents: Failed to get database instance: MongoDB connection failed: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017
+    at getCollection (webpack-internal:///(rsc)/./lib/mongodb-client.ts:151:15)
+    at async DatabaseService.find (webpack-internal:///(rsc)/./lib/mongodb-client.ts:258:28)
+    at async GET (webpack-internal:///(rsc)/./app/api/ocr-results/route.ts:187:28)
+    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:63809
+    at async eU.execute (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:53964)
+    at async eU.handle (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:65062)
+    at async doRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1333:42)
+    at async cacheEntry.responseCache.get.routeKind (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1555:28)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1463:28)
+    at async DevServer.renderPageComponent (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1856:24)
+    at async DevServer.renderToResponseImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1894:32)
+    at async DevServer.pipeImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:911:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:271:17)
+    at async DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:807:17)
+    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:331:20
+    at async Span.traceAsyncFn (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/trace/trace.js:151:20)
+    at async DevServer.handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:328:24)
+    at async invokeRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:163:21)
+    at async handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:342:24)
+    at async requestHandlerImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:366:13)
+    at async Server.requestListener (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js:140:13) {
+  code: 'COLLECTION_ACCESS_ERROR'
+}
+Error stack: DatabaseError: Failed to get collection documents: Failed to get database instance: MongoDB connection failed: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017
+    at getCollection (webpack-internal:///(rsc)/./lib/mongodb-client.ts:151:15)
+    at async DatabaseService.find (webpack-internal:///(rsc)/./lib/mongodb-client.ts:258:28)
+    at async GET (webpack-internal:///(rsc)/./app/api/ocr-results/route.ts:187:28)
+    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:63809
+    at async eU.execute (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:53964)
+    at async eU.handle (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:65062)
+    at async doRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1333:42)
+    at async cacheEntry.responseCache.get.routeKind (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1555:28)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1463:28)
+    at async DevServer.renderPageComponent (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1856:24)
+    at async DevServer.renderToResponseImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1894:32)
+    at async DevServer.pipeImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:911:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:271:17)
+    at async DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:807:17)
+    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:331:20
+    at async Span.traceAsyncFn (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/trace/trace.js:151:20)
+    at async DevServer.handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:328:24)
+    at async invokeRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:163:21)
+    at async handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:342:24)
+    at async requestHandlerImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:366:13)
+    at async Server.requestListener (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js:140:13)
+[2025-07-21T15:46:55.430Z] [ERROR] MongoDB connection error: {
+  errorLabelSet: {},
+  reason: {
+    type: 'Unknown',
+    servers: {},
+    stale: false,
+    compatible: true,
+    heartbeatFrequencyMS: 10000,
+    localThresholdMS: 15,
+    setName: null,
+    maxElectionId: null,
+    maxSetVersion: null,
+    commonWireVersion: 0,
+    logicalSessionTimeoutMinutes: '[REDACTED]'
+  },
+  code: undefined
+}
+[2025-07-21T15:46:55.430Z] [ERROR] Connection error details: {
+  name: 'MongoServerSelectionError',
+  message: 'connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017',
+  stack: 'MongoServerSelectionError: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017\n' +
+    '    at Topology.selectServer (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/sdam/topology.js:326:38)\n' +
+    '    at runNextTicks (node:internal/process/task_queues:65:5)\n' +
+    '    at listOnTimeout (node:internal/timers:569:9)\n' +
+    '    at process.processTimers (node:internal/timers:543:7)\n' +
+    '    at async Topology._connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/sdam/topology.js:200:28)\n' +
+    '    at async Topology.connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/sdam/topology.js:152:13)\n' +
+    '    at async topologyConnect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/mongo_client.js:246:17)\n' +
+    '    at async MongoClient._connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/mongo_client.js:259:13)\n' +
+    '    at async MongoClient.connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/mongo_client.js:184:13)\n' +
+    '    at async connectToDatabase (webpack-internal:///(rsc)/./lib/mongodb-client.ts:99:33)\n' +
+    '    at async getDatabase (webpack-internal:///(rsc)/./lib/mongodb-client.ts:124:24)\n' +
+    '    at async getCollection (webpack-internal:///(rsc)/./lib/mongodb-client.ts:134:20)\n' +
+    '    at async DatabaseService.find (webpack-internal:///(rsc)/./lib/mongodb-client.ts:258:28)\n' +
+    '    at async GET (webpack-internal:///(rsc)/./app/api/ocr-results/route.ts:187:28)\n' +
+    '    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:63809\n' +
+    '    at async eU.execute (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:53964)\n' +
+    '    at async eU.handle (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:65062)\n' +
+    '    at async doRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1333:42)\n' +
+    '    at async cacheEntry.responseCache.get.routeKind (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1555:28)\n' +
+    '    at async DevServer.renderToResponseWithComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1463:28)\n' +
+    '    at async DevServer.renderPageComponent (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1856:24)\n' +
+    '    at async DevServer.renderToResponseImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1894:32)\n' +
+    '    at async DevServer.pipeImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:911:25)\n' +
+    '    at async NextNodeServer.handleCatchallRenderRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:271:17)\n' +
+    '    at async DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:807:17)\n' +
+    '    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:331:20\n' +
+    '    at async Span.traceAsyncFn (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/trace/trace.js:151:20)\n' +
+    '    at async DevServer.handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:328:24)\n' +
+    '    at async invokeRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:163:21)\n' +
+    '    at async handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:342:24)\n' +
+    '    at async requestHandlerImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:366:13)\n' +
+    '    at async Server.requestListener (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js:140:13)'
+}
+[2025-07-21T15:46:55.430Z] [ERROR] getDatabase error: { code: 'CONNECTION_ERROR', name: 'DatabaseError' }
+[2025-07-21T15:46:55.430Z] [ERROR] getCollection error for documents: { code: 'DATABASE_ACCESS_ERROR', name: 'DatabaseError' }
+OCR results API error: DatabaseError: Failed to get collection documents: Failed to get database instance: MongoDB connection failed: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017
+    at getCollection (webpack-internal:///(rsc)/./lib/mongodb-client.ts:151:15)
+    at runNextTicks (node:internal/process/task_queues:65:5)
+    at listOnTimeout (node:internal/timers:569:9)
+    at process.processTimers (node:internal/timers:543:7)
+    at async DatabaseService.find (webpack-internal:///(rsc)/./lib/mongodb-client.ts:258:28)
+    at async GET (webpack-internal:///(rsc)/./app/api/ocr-results/route.ts:187:28)
+    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:63809
+    at async eU.execute (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:53964)
+    at async eU.handle (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:65062)
+    at async doRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1333:42)
+    at async cacheEntry.responseCache.get.routeKind (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1555:28)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1463:28)
+    at async DevServer.renderPageComponent (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1856:24)
+    at async DevServer.renderToResponseImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1894:32)
+    at async DevServer.pipeImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:911:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:271:17)
+    at async DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:807:17)
+    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:331:20
+    at async Span.traceAsyncFn (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/trace/trace.js:151:20)
+    at async DevServer.handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:328:24)
+    at async invokeRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:163:21)
+    at async handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:342:24)
+    at async requestHandlerImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:366:13)
+    at async Server.requestListener (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js:140:13) {
+  code: 'COLLECTION_ACCESS_ERROR'
+}
+Error stack: DatabaseError: Failed to get collection documents: Failed to get database instance: MongoDB connection failed: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017
+    at getCollection (webpack-internal:///(rsc)/./lib/mongodb-client.ts:151:15)
+    at runNextTicks (node:internal/process/task_queues:65:5)
+    at listOnTimeout (node:internal/timers:569:9)
+    at process.processTimers (node:internal/timers:543:7)
+    at async DatabaseService.find (webpack-internal:///(rsc)/./lib/mongodb-client.ts:258:28)
+    at async GET (webpack-internal:///(rsc)/./app/api/ocr-results/route.ts:187:28)
+    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:63809
+    at async eU.execute (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:53964)
+    at async eU.handle (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:65062)
+    at async doRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1333:42)
+    at async cacheEntry.responseCache.get.routeKind (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1555:28)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1463:28)
+    at async DevServer.renderPageComponent (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1856:24)
+    at async DevServer.renderToResponseImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1894:32)
+    at async DevServer.pipeImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:911:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:271:17)
+    at async DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:807:17)
+    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:331:20
+    at async Span.traceAsyncFn (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/trace/trace.js:151:20)
+    at async DevServer.handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:328:24)
+    at async invokeRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:163:21)
+    at async handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:342:24)
+    at async requestHandlerImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:366:13)
+    at async Server.requestListener (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js:140:13)
+[2025-07-21T15:46:55.431Z] [ERROR] MongoDB connection error: {
+  errorLabelSet: {},
+  reason: {
+    type: 'Unknown',
+    servers: {},
+    stale: false,
+    compatible: true,
+    heartbeatFrequencyMS: 10000,
+    localThresholdMS: 15,
+    setName: null,
+    maxElectionId: null,
+    maxSetVersion: null,
+    commonWireVersion: 0,
+    logicalSessionTimeoutMinutes: '[REDACTED]'
+  },
+  code: undefined
+}
+[2025-07-21T15:46:55.431Z] [ERROR] Connection error details: {
+  name: 'MongoServerSelectionError',
+  message: 'connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017',
+  stack: 'MongoServerSelectionError: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017\n' +
+    '    at Topology.selectServer (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/sdam/topology.js:326:38)\n' +
+    '    at runNextTicks (node:internal/process/task_queues:65:5)\n' +
+    '    at listOnTimeout (node:internal/timers:569:9)\n' +
+    '    at process.processTimers (node:internal/timers:543:7)\n' +
+    '    at async Topology._connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/sdam/topology.js:200:28)\n' +
+    '    at async Topology.connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/sdam/topology.js:152:13)\n' +
+    '    at async topologyConnect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/mongo_client.js:246:17)\n' +
+    '    at async MongoClient._connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/mongo_client.js:259:13)\n' +
+    '    at async MongoClient.connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/mongo_client.js:184:13)\n' +
+    '    at async connectToDatabase (webpack-internal:///(rsc)/./lib/mongodb-client.ts:99:33)\n' +
+    '    at async getDatabase (webpack-internal:///(rsc)/./lib/mongodb-client.ts:124:24)\n' +
+    '    at async getCollection (webpack-internal:///(rsc)/./lib/mongodb-client.ts:134:20)\n' +
+    '    at async DatabaseService.find (webpack-internal:///(rsc)/./lib/mongodb-client.ts:258:28)\n' +
+    '    at async GET (webpack-internal:///(rsc)/./app/api/ocr-results/route.ts:187:28)\n' +
+    '    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:63809\n' +
+    '    at async eU.execute (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:53964)\n' +
+    '    at async eU.handle (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:65062)\n' +
+    '    at async doRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1333:42)\n' +
+    '    at async cacheEntry.responseCache.get.routeKind (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1555:28)\n' +
+    '    at async DevServer.renderToResponseWithComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1463:28)\n' +
+    '    at async DevServer.renderPageComponent (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1856:24)\n' +
+    '    at async DevServer.renderToResponseImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1894:32)\n' +
+    '    at async DevServer.pipeImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:911:25)\n' +
+    '    at async NextNodeServer.handleCatchallRenderRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:271:17)\n' +
+    '    at async DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:807:17)\n' +
+    '    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:331:20\n' +
+    '    at async Span.traceAsyncFn (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/trace/trace.js:151:20)\n' +
+    '    at async DevServer.handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:328:24)\n' +
+    '    at async invokeRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:163:21)\n' +
+    '    at async handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:342:24)\n' +
+    '    at async requestHandlerImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:366:13)\n' +
+    '    at async Server.requestListener (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js:140:13)'
+}
+[2025-07-21T15:46:55.431Z] [ERROR] getDatabase error: { code: 'CONNECTION_ERROR', name: 'DatabaseError' }
+[2025-07-21T15:46:55.431Z] [ERROR] getCollection error for documents: { code: 'DATABASE_ACCESS_ERROR', name: 'DatabaseError' }
+OCR results API error: DatabaseError: Failed to get collection documents: Failed to get database instance: MongoDB connection failed: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017
+    at getCollection (webpack-internal:///(rsc)/./lib/mongodb-client.ts:151:15)
+    at runNextTicks (node:internal/process/task_queues:65:5)
+    at listOnTimeout (node:internal/timers:569:9)
+    at process.processTimers (node:internal/timers:543:7)
+    at async DatabaseService.find (webpack-internal:///(rsc)/./lib/mongodb-client.ts:258:28)
+    at async GET (webpack-internal:///(rsc)/./app/api/ocr-results/route.ts:187:28)
+    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:63809
+    at async eU.execute (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:53964)
+    at async eU.handle (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:65062)
+    at async doRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1333:42)
+    at async cacheEntry.responseCache.get.routeKind (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1555:28)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1463:28)
+    at async DevServer.renderPageComponent (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1856:24)
+    at async DevServer.renderToResponseImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1894:32)
+    at async DevServer.pipeImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:911:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:271:17)
+    at async DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:807:17)
+    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:331:20
+    at async Span.traceAsyncFn (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/trace/trace.js:151:20)
+    at async DevServer.handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:328:24)
+    at async invokeRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:163:21)
+    at async handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:342:24)
+    at async requestHandlerImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:366:13)
+    at async Server.requestListener (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js:140:13) {
+  code: 'COLLECTION_ACCESS_ERROR'
+}
+Error stack: DatabaseError: Failed to get collection documents: Failed to get database instance: MongoDB connection failed: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017
+    at getCollection (webpack-internal:///(rsc)/./lib/mongodb-client.ts:151:15)
+    at runNextTicks (node:internal/process/task_queues:65:5)
+    at listOnTimeout (node:internal/timers:569:9)
+    at process.processTimers (node:internal/timers:543:7)
+    at async DatabaseService.find (webpack-internal:///(rsc)/./lib/mongodb-client.ts:258:28)
+    at async GET (webpack-internal:///(rsc)/./app/api/ocr-results/route.ts:187:28)
+    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:63809
+    at async eU.execute (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:53964)
+    at async eU.handle (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:65062)
+    at async doRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1333:42)
+    at async cacheEntry.responseCache.get.routeKind (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1555:28)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1463:28)
+    at async DevServer.renderPageComponent (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1856:24)
+    at async DevServer.renderToResponseImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1894:32)
+    at async DevServer.pipeImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:911:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:271:17)
+    at async DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:807:17)
+    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:331:20
+    at async Span.traceAsyncFn (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/trace/trace.js:151:20)
+    at async DevServer.handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:328:24)
+    at async invokeRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:163:21)
+    at async handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:342:24)
+    at async requestHandlerImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:366:13)
+    at async Server.requestListener (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js:140:13)
+[2025-07-21T15:46:55.431Z] [ERROR] MongoDB connection error: {
+  errorLabelSet: {},
+  reason: {
+    type: 'Unknown',
+    servers: {},
+    stale: false,
+    compatible: true,
+    heartbeatFrequencyMS: 10000,
+    localThresholdMS: 15,
+    setName: null,
+    maxElectionId: null,
+    maxSetVersion: null,
+    commonWireVersion: 0,
+    logicalSessionTimeoutMinutes: '[REDACTED]'
+  },
+  code: undefined
+}
+[2025-07-21T15:46:55.431Z] [ERROR] Connection error details: {
+  name: 'MongoServerSelectionError',
+  message: 'connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017',
+  stack: 'MongoServerSelectionError: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017\n' +
+    '    at Topology.selectServer (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/sdam/topology.js:326:38)\n' +
+    '    at runNextTicks (node:internal/process/task_queues:65:5)\n' +
+    '    at listOnTimeout (node:internal/timers:569:9)\n' +
+    '    at process.processTimers (node:internal/timers:543:7)\n' +
+    '    at async Topology._connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/sdam/topology.js:200:28)\n' +
+    '    at async Topology.connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/sdam/topology.js:152:13)\n' +
+    '    at async topologyConnect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/mongo_client.js:246:17)\n' +
+    '    at async MongoClient._connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/mongo_client.js:259:13)\n' +
+    '    at async MongoClient.connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/mongo_client.js:184:13)\n' +
+    '    at async connectToDatabase (webpack-internal:///(rsc)/./lib/mongodb-client.ts:99:33)\n' +
+    '    at async getDatabase (webpack-internal:///(rsc)/./lib/mongodb-client.ts:124:24)\n' +
+    '    at async getCollection (webpack-internal:///(rsc)/./lib/mongodb-client.ts:134:20)\n' +
+    '    at async DatabaseService.find (webpack-internal:///(rsc)/./lib/mongodb-client.ts:258:28)\n' +
+    '    at async GET (webpack-internal:///(rsc)/./app/api/ocr-results/route.ts:187:28)\n' +
+    '    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:63809\n' +
+    '    at async eU.execute (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:53964)\n' +
+    '    at async eU.handle (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:65062)\n' +
+    '    at async doRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1333:42)\n' +
+    '    at async cacheEntry.responseCache.get.routeKind (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1555:28)\n' +
+    '    at async DevServer.renderToResponseWithComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1463:28)\n' +
+    '    at async DevServer.renderPageComponent (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1856:24)\n' +
+    '    at async DevServer.renderToResponseImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1894:32)\n' +
+    '    at async DevServer.pipeImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:911:25)\n' +
+    '    at async NextNodeServer.handleCatchallRenderRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:271:17)\n' +
+    '    at async DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:807:17)\n' +
+    '    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:331:20\n' +
+    '    at async Span.traceAsyncFn (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/trace/trace.js:151:20)\n' +
+    '    at async DevServer.handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:328:24)\n' +
+    '    at async invokeRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:163:21)\n' +
+    '    at async handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:342:24)\n' +
+    '    at async requestHandlerImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:366:13)\n' +
+    '    at async Server.requestListener (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js:140:13)'
+}
+[2025-07-21T15:46:55.431Z] [ERROR] getDatabase error: { code: 'CONNECTION_ERROR', name: 'DatabaseError' }
+[2025-07-21T15:46:55.431Z] [ERROR] getCollection error for documents: { code: 'DATABASE_ACCESS_ERROR', name: 'DatabaseError' }
+OCR results API error: DatabaseError: Failed to get collection documents: Failed to get database instance: MongoDB connection failed: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017
+    at getCollection (webpack-internal:///(rsc)/./lib/mongodb-client.ts:151:15)
+    at runNextTicks (node:internal/process/task_queues:65:5)
+    at listOnTimeout (node:internal/timers:569:9)
+    at process.processTimers (node:internal/timers:543:7)
+    at async DatabaseService.find (webpack-internal:///(rsc)/./lib/mongodb-client.ts:258:28)
+    at async GET (webpack-internal:///(rsc)/./app/api/ocr-results/route.ts:187:28)
+    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:63809
+    at async eU.execute (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:53964)
+    at async eU.handle (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:65062)
+    at async doRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1333:42)
+    at async cacheEntry.responseCache.get.routeKind (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1555:28)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1463:28)
+    at async DevServer.renderPageComponent (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1856:24)
+    at async DevServer.renderToResponseImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1894:32)
+    at async DevServer.pipeImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:911:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:271:17)
+    at async DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:807:17)
+    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:331:20
+    at async Span.traceAsyncFn (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/trace/trace.js:151:20)
+    at async DevServer.handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:328:24)
+    at async invokeRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:163:21)
+    at async handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:342:24)
+    at async requestHandlerImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:366:13)
+    at async Server.requestListener (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js:140:13) {
+  code: 'COLLECTION_ACCESS_ERROR'
+}
+Error stack: DatabaseError: Failed to get collection documents: Failed to get database instance: MongoDB connection failed: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017
+    at getCollection (webpack-internal:///(rsc)/./lib/mongodb-client.ts:151:15)
+    at runNextTicks (node:internal/process/task_queues:65:5)
+    at listOnTimeout (node:internal/timers:569:9)
+    at process.processTimers (node:internal/timers:543:7)
+    at async DatabaseService.find (webpack-internal:///(rsc)/./lib/mongodb-client.ts:258:28)
+    at async GET (webpack-internal:///(rsc)/./app/api/ocr-results/route.ts:187:28)
+    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:63809
+    at async eU.execute (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:53964)
+    at async eU.handle (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:65062)
+    at async doRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1333:42)
+    at async cacheEntry.responseCache.get.routeKind (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1555:28)
+    at async DevServer.renderToResponseWithComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1463:28)
+    at async DevServer.renderPageComponent (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1856:24)
+    at async DevServer.renderToResponseImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1894:32)
+    at async DevServer.pipeImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:911:25)
+    at async NextNodeServer.handleCatchallRenderRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:271:17)
+    at async DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:807:17)
+    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:331:20
+    at async Span.traceAsyncFn (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/trace/trace.js:151:20)
+    at async DevServer.handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:328:24)
+    at async invokeRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:163:21)
+    at async handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:342:24)
+    at async requestHandlerImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:366:13)
+    at async Server.requestListener (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js:140:13)
+[2025-07-21T15:46:55.432Z] [ERROR] MongoDB connection error: {
+  errorLabelSet: {},
+  reason: {
+    type: 'Unknown',
+    servers: {},
+    stale: false,
+    compatible: true,
+    heartbeatFrequencyMS: 10000,
+    localThresholdMS: 15,
+    setName: null,
+    maxElectionId: null,
+    maxSetVersion: null,
+    commonWireVersion: 0,
+    logicalSessionTimeoutMinutes: '[REDACTED]'
+  },
+  code: undefined
+}
+[2025-07-21T15:46:55.432Z] [ERROR] Connection error details: {
+  name: 'MongoServerSelectionError',
+  message: 'connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017',
+  stack: 'MongoServerSelectionError: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017\n' +
+    '    at Topology.selectServer (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/sdam/topology.js:326:38)\n' +
+    '    at async Topology._connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/sdam/topology.js:200:28)\n' +
+    '    at async Topology.connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/sdam/topology.js:152:13)\n' +
+    '    at async topologyConnect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/mongo_client.js:246:17)\n' +
+    '    at async MongoClient._connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/mongo_client.js:259:13)\n' +
+    '    at async MongoClient.connect (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/mongo_client.js:184:13)\n' +
+    '    at async connectToDatabase (webpack-internal:///(rsc)/./lib/mongodb-client.ts:99:33)\n' +
+    '    at async getDatabase (webpack-internal:///(rsc)/./lib/mongodb-client.ts:124:24)\n' +
+    '    at async getCollection (webpack-internal:///(rsc)/./lib/mongodb-client.ts:134:20)\n' +
+    '    at async DatabaseService.find (webpack-internal:///(rsc)/./lib/mongodb-client.ts:258:28)\n' +
+    '    at async GET (webpack-internal:///(rsc)/./app/api/documents/list/route.ts:76:27)\n' +
+    '    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:63809\n' +
+    '    at async eU.execute (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:53964)\n' +
+    '    at async eU.handle (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:65062)\n' +
+    '    at async doRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1333:42)\n' +
+    '    at async cacheEntry.responseCache.get.routeKind (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1555:28)\n' +
+    '    at async DevServer.renderToResponseWithComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1463:28)\n' +
+    '    at async DevServer.renderPageComponent (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1856:24)\n' +
+    '    at async DevServer.renderToResponseImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1894:32)\n' +
+    '    at async DevServer.pipeImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:911:25)\n' +
+    '    at async NextNodeServer.handleCatchallRenderRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:271:17)\n' +
+    '    at async DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:807:17)\n' +
+    '    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:331:20\n' +
+    '    at async Span.traceAsyncFn (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/trace/trace.js:151:20)\n' +
+    '    at async DevServer.handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:328:24)\n' +
+    '    at async invokeRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:163:21)\n' +
+    '    at async handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:342:24)\n' +
+    '    at async requestHandlerImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:366:13)\n' +
+    '    at async Server.requestListener (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js:140:13)'
+}
+[2025-07-21T15:46:55.432Z] [ERROR] getDatabase error: { code: 'CONNECTION_ERROR', name: 'DatabaseError' }
+[2025-07-21T15:46:55.432Z] [ERROR] getCollection error for documents: { code: 'DATABASE_ACCESS_ERROR', name: 'DatabaseError' }
+[2025-07-21T15:46:55.432Z] [ERROR] Document list error: { code: 'COLLECTION_ACCESS_ERROR', name: 'DatabaseError' }
+[2025-07-21T15:46:55.432Z] [ERROR] Error details: {
+  name: 'DatabaseError',
+  message: 'Failed to get collection documents: Failed to get database instance: MongoDB connection failed: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017',
+  stack: 'DatabaseError: Failed to get collection documents: Failed to get database instance: MongoDB connection failed: connect ECONNREFUSED ::1:27017, connect ECONNREFUSED 127.0.0.1:27017\n' +
+    '    at getCollection (webpack-internal:///(rsc)/./lib/mongodb-client.ts:151:15)\n' +
+    '    at async DatabaseService.find (webpack-internal:///(rsc)/./lib/mongodb-client.ts:258:28)\n' +
+    '    at async GET (webpack-internal:///(rsc)/./app/api/documents/list/route.ts:76:27)\n' +
+    '    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:63809\n' +
+    '    at async eU.execute (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:53964)\n' +
+    '    at async eU.handle (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:65062)\n' +
+    '    at async doRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1333:42)\n' +
+    '    at async cacheEntry.responseCache.get.routeKind (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1555:28)\n' +
+    '    at async DevServer.renderToResponseWithComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1463:28)\n' +
+    '    at async DevServer.renderPageComponent (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1856:24)\n' +
+    '    at async DevServer.renderToResponseImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1894:32)\n' +
+    '    at async DevServer.pipeImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:911:25)\n' +
+    '    at async NextNodeServer.handleCatchallRenderRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:271:17)\n' +
+    '    at async DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:807:17)\n' +
+    '    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:331:20\n' +
+    '    at async Span.traceAsyncFn (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/trace/trace.js:151:20)\n' +
+    '    at async DevServer.handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:328:24)\n' +
+    '    at async invokeRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:163:21)\n' +
+    '    at async handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:342:24)\n' +
+    '    at async requestHandlerImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:366:13)\n' +
+    '    at async Server.requestListener (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js:140:13)'
+}
+ ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@prisma/instrumentation/dist/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+
+./node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/require-in-the-middle/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+ ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@prisma/instrumentation/dist/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+
+./node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/require-in-the-middle/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+🔵🔵🔵 DocumentsPage がレンダリングされました！
+🟡🟡🟡 useAzureMongoDBServer: true
+🟡🟡🟡 useAzureMongoDBClient: true
+🟡🟡🟡 useAzureMongoDB (final): true
+🟢🟢🟢 使用するコンポーネント: DocumentsContent (強制)
+ ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@prisma/instrumentation/dist/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+
+./node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/require-in-the-middle/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+ ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@prisma/instrumentation/dist/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+
+./node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/require-in-the-middle/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+ ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@prisma/instrumentation/dist/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+
+./node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/require-in-the-middle/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+ ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@prisma/instrumentation/dist/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+
+./node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/require-in-the-middle/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+ ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@prisma/instrumentation/dist/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+
+./node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/require-in-the-middle/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+🔵🔵🔵 DocumentsPage がレンダリングされました！
+🟡🟡🟡 useAzureMongoDBServer: true
+🟡🟡🟡 useAzureMongoDBClient: true
+🟡🟡🟡 useAzureMongoDB (final): true
+🟢🟢🟢 使用するコンポーネント: DocumentsContent (強制)
+ ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@prisma/instrumentation/dist/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+
+./node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/require-in-the-middle/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+🔵🔵🔵 DocumentsPage がレンダリングされました！
+🟡🟡🟡 useAzureMongoDBServer: true
+🟡🟡🟡 useAzureMongoDBClient: true
+🟡🟡🟡 useAzureMongoDB (final): true
+🟢🟢🟢 使用するコンポーネント: DocumentsContent (強制)
+🔵🔵🔵 DocumentsPage がレンダリングされました！
+🟡🟡🟡 useAzureMongoDBServer: true
+🟡🟡🟡 useAzureMongoDBClient: true
+🟡🟡🟡 useAzureMongoDB (final): true
+🟢🟢🟢 使用するコンポーネント: DocumentsContent (強制)
+ ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@prisma/instrumentation/dist/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+
+./node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/require-in-the-middle/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+ ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@prisma/instrumentation/dist/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+
+./node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/require-in-the-middle/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+   Reload env: .env
+ ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@prisma/instrumentation/dist/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+
+./node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/require-in-the-middle/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+🔵🔵🔵 DocumentsPage がレンダリングされました！
+🟡🟡🟡 useAzureMongoDBServer: false
+🟡🟡🟡 useAzureMongoDBClient: false
+🟡🟡🟡 useAzureMongoDB (final): false
+🟢🟢🟢 使用するコンポーネント: DocumentsContent (強制)
+ ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@prisma/instrumentation/dist/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+
+./node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/require-in-the-middle/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+ ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@prisma/instrumentation/dist/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+
+./node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/require-in-the-middle/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+ ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@prisma/instrumentation/dist/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+
+./node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/require-in-the-middle/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+🔵🔵🔵 DocumentsPage がレンダリングされました！
+🟡🟡🟡 useAzureMongoDBServer: false
+🟡🟡🟡 useAzureMongoDBClient: false
+🟡🟡🟡 useAzureMongoDB (final): false
+🟢🟢🟢 使用するコンポーネント: DocumentsContent (強制)
+ ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@prisma/instrumentation/dist/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+
+./node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/require-in-the-middle/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+🔵🔵🔵 DocumentsPage がレンダリングされました！
+🟡🟡🟡 useAzureMongoDBServer: false
+🟡🟡🟡 useAzureMongoDBClient: false
+🟡🟡🟡 useAzureMongoDB (final): false
+🟢🟢🟢 使用するコンポーネント: DocumentsContent (強制)
+ ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@prisma/instrumentation/dist/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+
+./node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/require-in-the-middle/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+🔵🔵🔵 DocumentsPage がレンダリングされました！
+🟡🟡🟡 useAzureMongoDBServer: false
+🟡🟡🟡 useAzureMongoDBClient: false
+🟡🟡🟡 useAzureMongoDB (final): false
+🟢🟢🟢 使用するコンポーネント: DocumentsContent (強制)
+ ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@prisma/instrumentation/dist/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+
+./node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/require-in-the-middle/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+ ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@prisma/instrumentation/dist/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+
+./node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/require-in-the-middle/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+🔵🔵🔵 DocumentsPage がレンダリングされました！
+🟡🟡🟡 useAzureMongoDBServer: false
+🟡🟡🟡 useAzureMongoDBClient: false
+🟡🟡🟡 useAzureMongoDB (final): false
+🟢🟢🟢 使用するコンポーネント: DocumentsContent (強制)
+ ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@prisma/instrumentation/dist/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+
+./node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/require-in-the-middle/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+🔵🔵🔵 DocumentsPage がレンダリングされました！
+🟡🟡🟡 useAzureMongoDBServer: false
+🟡🟡🟡 useAzureMongoDBClient: false
+🟡🟡🟡 useAzureMongoDB (final): false
+🟢🟢🟢 使用するコンポーネント: DocumentsContent (強制)
+ ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@prisma/instrumentation/dist/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+
+./node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/require-in-the-middle/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+ ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@prisma/instrumentation/dist/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+
+./node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/require-in-the-middle/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+ ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@prisma/instrumentation/dist/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+
+./node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/require-in-the-middle/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+🔵🔵🔵 DocumentsPage がレンダリングされました！
+🟡🟡🟡 useAzureMongoDBServer: false
+🟡🟡🟡 useAzureMongoDBClient: false
+🟡🟡🟡 useAzureMongoDB (final): false
+🟢🟢🟢 使用するコンポーネント: DocumentsContent (強制)
+🔵🔵🔵 DocumentsPage がレンダリングされました！
+🟡🟡🟡 useAzureMongoDBServer: false
+🟡🟡🟡 useAzureMongoDBClient: false
+🟡🟡🟡 useAzureMongoDB (final): false
+🟢🟢🟢 使用するコンポーネント: DocumentsContent (強制)
+ ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@prisma/instrumentation/dist/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+
+./node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/require-in-the-middle/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+ ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@prisma/instrumentation/dist/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+
+./node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/require-in-the-middle/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+ ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@prisma/instrumentation/dist/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+
+./node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/require-in-the-middle/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+🔵🔵🔵 DocumentsPage がレンダリングされました！
+🟡🟡🟡 useAzureMongoDBServer: false
+🟡🟡🟡 useAzureMongoDBClient: false
+🟡🟡🟡 useAzureMongoDB (final): false
+🟢🟢🟢 使用するコンポーネント: DocumentsContent (強制)
+ ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@prisma/instrumentation/dist/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+
+./node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/require-in-the-middle/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+🔵🔵🔵 DocumentsPage がレンダリングされました！
+🟡🟡🟡 useAzureMongoDBServer: false
+🟡🟡🟡 useAzureMongoDBClient: false
+🟡🟡🟡 useAzureMongoDB (final): false
+🟢🟢🟢 使用するコンポーネント: DocumentsContent (強制)
+ ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@prisma/instrumentation/dist/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+
+./node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/require-in-the-middle/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+🔵🔵🔵 DocumentsPage がレンダリングされました！
+🟡🟡🟡 useAzureMongoDBServer: false
+🟡🟡🟡 useAzureMongoDBClient: false
+🟡🟡🟡 useAzureMongoDB (final): false
+🟢🟢🟢 使用するコンポーネント: DocumentsContent (強制)
+ ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@prisma/instrumentation/dist/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+
+./node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/require-in-the-middle/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+🔵🔵🔵 DocumentsPage がレンダリングされました！
+🟡🟡🟡 useAzureMongoDBServer: false
+🟡🟡🟡 useAzureMongoDBClient: false
+🟡🟡🟡 useAzureMongoDB (final): false
+🟢🟢🟢 使用するコンポーネント: DocumentsContent (強制)
+ ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@prisma/instrumentation/dist/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+
+./node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/require-in-the-middle/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+🔵🔵🔵 DocumentsPage がレンダリングされました！
+🟡🟡🟡 useAzureMongoDBServer: false
+🟡🟡🟡 useAzureMongoDBClient: false
+🟡🟡🟡 useAzureMongoDB (final): false
+🟢🟢🟢 使用するコンポーネント: DocumentsContent (強制)
+ ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@prisma/instrumentation/dist/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+
+./node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/require-in-the-middle/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+🔵🔵🔵 DocumentsPage がレンダリングされました！
+🟡🟡🟡 useAzureMongoDBServer: false
+🟡🟡🟡 useAzureMongoDBClient: false
+🟡🟡🟡 useAzureMongoDB (final): false
+🟢🟢🟢 使用するコンポーネント: DocumentsContent (強制)
+ ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@prisma/instrumentation/dist/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+
+./node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/require-in-the-middle/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+🔵🔵🔵 DocumentsPage がレンダリングされました！
+🟡🟡🟡 useAzureMongoDBServer: false
+🟡🟡🟡 useAzureMongoDBClient: false
+🟡🟡🟡 useAzureMongoDB (final): false
+🟢🟢🟢 使用するコンポーネント: DocumentsContent (強制)
+ ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@prisma/instrumentation/dist/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+
+./node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/require-in-the-middle/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+🔵🔵🔵 DocumentsPage がレンダリングされました！
+🟡🟡🟡 useAzureMongoDBServer: false
+🟡🟡🟡 useAzureMongoDBClient: false
+🟡🟡🟡 useAzureMongoDB (final): false
+🟢🟢🟢 使用するコンポーネント: DocumentsContent (強制)
+ ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@prisma/instrumentation/dist/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+
+./node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/require-in-the-middle/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+ ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@prisma/instrumentation/dist/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+
+./node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/require-in-the-middle/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+ ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@prisma/instrumentation/dist/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+
+./node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/require-in-the-middle/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+🔵🔵🔵 DocumentsPage がレンダリングされました！
+🟡🟡🟡 useAzureMongoDBServer: false
+🟡🟡🟡 useAzureMongoDBClient: false
+🟡🟡🟡 useAzureMongoDB (final): false
+🟢🟢🟢 使用するコンポーネント: DocumentsContent (強制)
+ ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@prisma/instrumentation/dist/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+
+./node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/require-in-the-middle/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+ ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@prisma/instrumentation/dist/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+
+./node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/require-in-the-middle/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+ ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@prisma/instrumentation/dist/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+
+./node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/require-in-the-middle/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+🔵🔵🔵 DocumentsPage がレンダリングされました！
+🟡🟡🟡 useAzureMongoDBServer: false
+🟡🟡🟡 useAzureMongoDBClient: false
+🟡🟡🟡 useAzureMongoDB (final): false
+🟢🟢🟢 使用するコンポーネント: DocumentsContent (強制)
+🔵🔵🔵 DocumentsPage がレンダリングされました！
+🟡🟡🟡 useAzureMongoDBServer: false
+🟡🟡🟡 useAzureMongoDBClient: false
+🟡🟡🟡 useAzureMongoDB (final): false
+🟢🟢🟢 使用するコンポーネント: DocumentsContent (強制)
+ ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@prisma/instrumentation/dist/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+
+./node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/require-in-the-middle/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+ ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@prisma/instrumentation/dist/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+
+./node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/require-in-the-middle/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+ ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@prisma/instrumentation/dist/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+
+./node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/require-in-the-middle/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+🔵🔵🔵 DocumentsPage がレンダリングされました！
+🟡🟡🟡 useAzureMongoDBServer: false
+🟡🟡🟡 useAzureMongoDBClient: false
+🟡🟡🟡 useAzureMongoDB (final): false
+🟢🟢🟢 使用するコンポーネント: DocumentsContent (強制)
+🔵🔵🔵 DocumentsPage がレンダリングされました！
+🟡🟡🟡 useAzureMongoDBServer: false
+🟡🟡🟡 useAzureMongoDBClient: false
+🟡🟡🟡 useAzureMongoDB (final): false
+🟢🟢🟢 使用するコンポーネント: DocumentsContent (強制)
+🔵🔵🔵 DocumentsPage がレンダリングされました！
+🟡🟡🟡 useAzureMongoDBServer: false
+🟡🟡🟡 useAzureMongoDBClient: false
+🟡🟡🟡 useAzureMongoDB (final): false
+🟢🟢🟢 使用するコンポーネント: DocumentsContent (強制)
+🔵🔵🔵 DocumentsPage がレンダリングされました！
+🟡🟡🟡 useAzureMongoDBServer: false
+🟡🟡🟡 useAzureMongoDBClient: false
+🟡🟡🟡 useAzureMongoDB (final): false
+🟢🟢🟢 使用するコンポーネント: DocumentsContent (強制)
+🔵🔵🔵 DocumentsPage がレンダリングされました！
+🟡🟡🟡 useAzureMongoDBServer: false
+🟡🟡🟡 useAzureMongoDBClient: false
+🟡🟡🟡 useAzureMongoDB (final): false
+🟢🟢🟢 使用するコンポーネント: DocumentsContent (強制)
