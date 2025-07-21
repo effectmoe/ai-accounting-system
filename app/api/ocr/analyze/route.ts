@@ -167,12 +167,24 @@ TEL: 03-xxxx-xxxx FAX: 03-xxxx-xxxx
         ocrProcessedAt: new Date(),
         ocrResult: structuredData,
         
-        // 主要フィールドを展開
-        documentNumber: structuredData.documentNumber,
-        issueDate: structuredData.issueDate,
-        vendor_name: structuredData.vendor?.name,
-        customer_name: structuredData.customer?.name,
-        amount: structuredData.totalAmount,
+        // 主要フィールドを展開（読み取りAPIが期待するフィールド名に合わせる）
+        documentNumber: structuredData.documentNumber || structuredData.receiptNumber,
+        issueDate: structuredData.issueDate || structuredData.invoiceDate,
+        vendor_name: structuredData.vendor?.name || structuredData.vendorName,
+        vendorName: structuredData.vendor?.name || structuredData.vendorName,
+        customer_name: structuredData.customer?.name || structuredData.customerName,
+        amount: structuredData.totalAmount?.amount || structuredData.totalAmount,
+        
+        // OCR結果API用のフィールド
+        total_amount: structuredData.totalAmount?.amount || structuredData.totalAmount || 0,
+        totalAmount: structuredData.totalAmount?.amount || structuredData.totalAmount || 0,
+        tax_amount: structuredData.taxAmount || 0,
+        taxAmount: structuredData.taxAmount || 0,
+        subtotal_amount: structuredData.subtotalAmount || ((structuredData.totalAmount?.amount || structuredData.totalAmount || 0) - (structuredData.taxAmount || 0)),
+        receipt_date: structuredData.invoiceDate || structuredData.issueDate || new Date(),
+        receipt_number: structuredData.receiptNumber || structuredData.documentNumber || '',
+        store_name: structuredData.vendor?.name || structuredData.vendorName || '',
+        extracted_text: JSON.stringify(structuredData),
         
         // その他のメタデータ
         fileName: file.name,
