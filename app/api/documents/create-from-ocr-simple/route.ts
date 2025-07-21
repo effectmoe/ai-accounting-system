@@ -107,36 +107,49 @@ export async function POST(request: NextRequest) {
     }
 
     // 勘定科目を推論（非同期で実行）
-    // TODO: Mastraのビルド問題を解決後に有効化
-    /*
     try {
-      const { AccountInferenceAgent } = await import('@/agents/account-inference-agent');
-      const agent = new AccountInferenceAgent();
+      const { AccountCategoryAI } = await import('@/lib/account-category-ai');
+      const categoryAI = new AccountCategoryAI();
       
       // 非同期で推論実行（レスポンスを待たない）
-      agent.analyzeDocument({
-        documentType: 'receipt',
-        vendorName: partnerName,
+      const ocrResult = {
+        text: body.extracted_text || '',
+        vendor: partnerName,
+        amount: total_amount,
+        date: receipt_date,
         items: [{
           name: file_name || '商品・サービス',
-          amount: calculatedSubtotal
-        }],
-        totalAmount: total_amount,
-        notes: enhancedNotes,
-        extractedText: body.extracted_text
-      }).then(async (inference) => {
-        if (inference) {
-          await agent.saveInference(savedDoc.id, inference);
-          logger.debug('勘定科目推論完了:', inference);
+          price: calculatedSubtotal,
+          quantity: 1
+        }]
+      };
+      
+      categoryAI.predictAccountCategory(ocrResult, companyId).then(async (prediction) => {
+        if (prediction && prediction.confidence >= 0.6) {
+          // 文書にカテゴリーと推論結果を保存
+          await db.updateById(Collections.DOCUMENTS, savedDoc._id, {
+            category: prediction.category,
+            subcategory: prediction.alternativeCategories?.[0]?.category || '',
+            aiPrediction: {
+              category: prediction.category,
+              confidence: prediction.confidence,
+              reasoning: prediction.reasoning,
+              alternativeCategories: prediction.alternativeCategories,
+              taxNotes: prediction.taxNotes,
+              sources: prediction.sources,
+              predictedAt: new Date()
+            },
+            updatedAt: new Date()
+          });
+          logger.debug('勘定科目推論完了:', prediction);
         }
       }).catch((error) => {
         logger.error('勘定科目推論エラー:', error);
       });
     } catch (error) {
-      logger.error('Agent initialization error:', error);
+      logger.error('AccountCategoryAI initialization error:', error);
       // エラーが発生しても文書作成は成功とする
     }
-    */
 
     const documentTypeLabels = {
       receipt: '領収書',

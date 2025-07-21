@@ -1122,6 +1122,23 @@ export default function DocumentsContent() {
                             </div>
                           </div>
 
+                          {/* 勘定科目情報 */}
+                          {doc.category && (
+                            <div className="mb-3">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-medium text-gray-700">勘定科目:</span>
+                                <span className="inline-block px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded">
+                                  {doc.category}
+                                </span>
+                                {doc.aiPrediction?.confidence && (
+                                  <span className="text-xs text-gray-500">
+                                    (AI推測: {Math.round(doc.aiPrediction.confidence * 100)}%)
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
                           {/* 日付情報 */}
                           <div className="mb-3">
                             <div className="text-xs text-gray-600">
@@ -1165,6 +1182,9 @@ export default function DocumentsContent() {
                             取引先
                           </th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            勘定科目
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             発行日
                           </th>
                           <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -1189,6 +1209,15 @@ export default function DocumentsContent() {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                               {doc.partnerName || doc.partner_name || doc.vendor_name || doc.store_name || '-'}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm">
+                              {doc.category ? (
+                                <span className="inline-block px-2 py-0.5 bg-green-100 text-green-800 text-xs rounded">
+                                  {doc.category}
+                                </span>
+                              ) : (
+                                <span className="text-gray-400">未設定</span>
+                              )}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                               {(doc.issueDate || doc.issue_date || doc.receipt_date) ? 
