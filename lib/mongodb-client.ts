@@ -11,7 +11,11 @@ export class DatabaseError extends Error {
 
 // MongoDB接続設定 - 環境変数から取得するように変更
 function getDBName(): string {
-  return process.env.MONGODB_DB_NAME || 'accounting';
+  const dbName = process.env.MONGODB_DB_NAME || 'accounting';
+  // 改行文字やスペースを除去
+  const cleanDbName = dbName.trim();
+  logger.debug(`[MongoDB] Database name: "${cleanDbName}" (original: "${dbName}")`);
+  return cleanDbName;
 }
 
 // グローバル変数の宣言（Vercel推奨パターン）
