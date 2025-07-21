@@ -441,10 +441,28 @@ export default function DocumentsContent() {
               <p>アクティブタブ: {activeTab}</p>
               <p>表示モード: {viewMode}</p>
               <p>総ページ数: {totalPages}</p>
+              <p>ソート: {ocrSortBy} ({ocrSortOrder})</p>
               {ocrResults.length > 0 && (
                 <>
                   <p>最初のOCR結果: {ocrResults[0].vendor_name} - ¥{ocrResults[0].total_amount}</p>
                   <p>displayResults件数: {filteredAndSortedOcrResults().length}件</p>
+                  <p className="mt-2 font-semibold">現在のページ: {currentPage} / {totalPages}</p>
+                  <div className="flex gap-2 mt-2">
+                    {Array.from({length: Math.min(3, totalPages)}, (_, i) => i + 1).map(page => (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`px-3 py-1 text-sm rounded ${
+                          currentPage === page 
+                            ? 'bg-blue-500 text-white' 
+                            : 'bg-gray-200 hover:bg-gray-300'
+                        }`}
+                        disabled={loading}
+                      >
+                        ページ{page}
+                      </button>
+                    ))}
+                  </div>
                   <details className="mt-2">
                     <summary className="cursor-pointer text-sm">OCRデータ詳細（クリックで展開）</summary>
                     <div className="mt-2 text-xs max-h-40 overflow-auto">
@@ -454,6 +472,7 @@ export default function DocumentsContent() {
                           <p>金額: ¥{result.total_amount || 0}</p>
                           <p>日付: {result.receipt_date || 'なし'}</p>
                           <p>ID: {result.id}</p>
+                          <p>作成日時: {result.created_at ? new Date(result.created_at).toLocaleString('ja-JP') : 'なし'}</p>
                         </div>
                       ))}
                     </div>

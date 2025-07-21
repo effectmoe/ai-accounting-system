@@ -36,6 +36,14 @@ export async function GET(request: NextRequest) {
     });
     
     console.log('✅ [OCR-Results API] 取得結果数:', ocrResults.length);
+    
+    // 最新の3件のデータをデバッグ出力
+    if (ocrResults.length > 0) {
+      console.log('📅 [OCR-Results API] 最新3件のデータ:');
+      ocrResults.slice(0, 3).forEach((doc, index) => {
+        console.log(`  ${index + 1}. createdAt: ${doc.createdAt}, receipt_date: ${doc.receipt_date}, vendor: ${doc.vendor_name || doc.vendorName}, amount: ${doc.total_amount || doc.totalAmount}`);
+      });
+    }
 
     // OCR結果の形式に変換
     const formattedResults = ocrResults.map(doc => ({
@@ -64,6 +72,19 @@ export async function GET(request: NextRequest) {
     const total = await db.count('documents', filter);
 
     console.log('📋 [OCR-Results API] フォーマット済み結果数:', formattedResults.length, '総数:', total);
+    
+    // 全ページ分のデータを取得して最新データを確認
+    if (page === 1 && total > limit) {
+      console.log('🔍 [OCR-Results API] 全データから最新5件を確認:');
+      const allRecent = await db.find('documents', filter, {
+        limit: 5,
+        skip: 0,
+        sort: { createdAt: -1 }
+      });
+      allRecent.forEach((doc, index) => {
+        console.log(`  ${index + 1}. _id: ${doc._id}, createdAt: ${doc.createdAt}, vendor: ${doc.vendor_name || doc.vendorName}, amount: ${doc.total_amount || doc.totalAmount}`);
+      });
+    }
     
     if (formattedResults.length > 0) {
       console.log('🔎 [OCR-Results API] 最初の結果サンプル:', JSON.stringify(formattedResults[0], null, 2));
