@@ -160,11 +160,19 @@ TEL: 03-xxxx-xxxx FAX: 03-xxxx-xxxx
       const collection = db.collection('documents');
       
       // OCR結果をドキュメントとして保存
+      const currentDate = new Date();
+      console.log('📅 [OCR API] 現在の日時:', currentDate.toISOString());
+      console.log('📅 [OCR API] 抽出された日付:', {
+        invoiceDate: structuredData.invoiceDate,
+        issueDate: structuredData.issueDate,
+        receiptDate: structuredData.receiptDate
+      });
+      
       const ocrDocument = {
         companyId: companyId,
         type: documentType,
         ocrStatus: 'completed',
-        ocrProcessedAt: new Date(),
+        ocrProcessedAt: currentDate,
         ocrResult: structuredData,
         
         // 主要フィールドを展開（読み取りAPIが期待するフィールド名に合わせる）
@@ -190,8 +198,8 @@ TEL: 03-xxxx-xxxx FAX: 03-xxxx-xxxx
         fileName: file.name,
         fileType: file.type,
         fileSize: file.size,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: currentDate,
+        updatedAt: currentDate,
         
         // フラグ
         linked_document_id: null,
@@ -210,7 +218,10 @@ TEL: 03-xxxx-xxxx FAX: 03-xxxx-xxxx
         documentNumber: ocrDocument.documentNumber,
         vendor_name: ocrDocument.vendor_name,
         amount: ocrDocument.amount,
-        ocrStatus: ocrDocument.ocrStatus
+        ocrStatus: ocrDocument.ocrStatus,
+        createdAt: ocrDocument.createdAt,
+        receipt_date: ocrDocument.receipt_date,
+        issueDate: ocrDocument.issueDate
       }, null, 2));
       
       await client.close();
