@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>OCRテスト</title>
+</head>
+<body>
+    <h1>OCRアップロードテスト</h1>
+    <input type="file" id="fileInput" accept=".jpg,.jpeg,.png,.pdf">
+    <button onclick="testOCR()">OCRテスト実行</button>
+    <div id="status"></div>
+    <pre id="result"></pre>
+
+    <script>
+        async function testOCR() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            const status = document.getElementById('status');
+            const result = document.getElementById('result');
+            
+            if (!file) {
+                alert('ファイルを選択してください');
+                return;
+            }
+            
+            status.textContent = '処理中...';
+            result.textContent = '';
+            
+            try {
+                // 1. Google Driveアップロード
+                status.textContent = 'Google Driveにアップロード中...';
+                const formData1 = new FormData();
+                formData1.append('file', file);
+                
+                const uploadResponse = await fetch('http://localhost:3000/api/upload/gdrive', {
+                    method: 'POST',
+                    body: formData1
+                });
+                
+                const uploadResult = await uploadResponse.json();
+                console.log('Upload result:', uploadResult);
+                
+                if (!uploadResponse.ok) {
+                    throw new Error('アップロード失敗: ' + JSON.stringify(uploadResult));
+                }
+                
+                // 2. OCR処理
+                status.textContent = 'OCR処理中...';
+                const formData2 = new FormData();
+                formData2.append('file', file);
+                formData2.append('documentType', 'invoice');
+                formData2.append('companyId', '11111111-1111-1111-1111-111111111111');
+                
+                const ocrResponse = await fetch('http://localhost:3000/api/ocr/analyze', {
+                    method: 'POST',
+                    body: formData2
+                });
+                
+                const ocrResult = await ocrResponse.json();
+                console.log('OCR result:', ocrResult);
+                
+                if (!ocrResponse.ok) {
+                    throw new Error('OCR失敗: ' + JSON.stringify(ocrResult));
+                }
+                
+                // 3. OCR結果一覧を確認
+                status.textContent = 'OCR結果を確認中...';
+                const listResponse = await fetch('http://localhost:3000/api/ocr-results?page=1&limit=10');
+                const listResult = await listResponse.json();
+                
+                status.textContent = '✅ 完了！';
+                result.textContent = JSON.stringify({
+                    upload: uploadResult,
+                    ocr: ocrResult,
+                    list: listResult
+                }, null, 2);
+                
+            } catch (error) {
+                status.textContent = '❌ エラー: ' + error.message;
+                result.textContent = error.stack;
+            }
+        }
+    </script>
+</body>
+</html>

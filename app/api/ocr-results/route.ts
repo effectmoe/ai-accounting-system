@@ -4,6 +4,8 @@ import { db } from '@/lib/mongodb-client';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
+  console.log('🔍 [OCR-Results API] リクエスト受信');
+  
   try {
     const { searchParams } = new URL(request.url);
     const companyId = searchParams.get('companyId') || '11111111-1111-1111-1111-111111111111';
@@ -24,11 +26,16 @@ export async function GET(request: NextRequest) {
       hiddenFromList: { $ne: true }  // hiddenFromListがtrueのものを除外
     };
 
+    console.log('📊 [OCR-Results API] フィルター:', JSON.stringify(filter, null, 2));
+    console.log('📄 [OCR-Results API] ページ設定:', { page, limit, skip });
+    
     const ocrResults = await db.find('documents', filter, {
       limit,
       skip,
       sort: { createdAt: -1 }
     });
+    
+    console.log('✅ [OCR-Results API] 取得結果数:', ocrResults.length);
 
     // OCR結果の形式に変換
     const formattedResults = ocrResults.map(doc => ({
@@ -56,7 +63,11 @@ export async function GET(request: NextRequest) {
     // 総数を取得
     const total = await db.count('documents', filter);
 
-    console.log('Fetched OCR results:', formattedResults.length, 'total:', total);
+    console.log('📋 [OCR-Results API] フォーマット済み結果数:', formattedResults.length, '総数:', total);
+    
+    if (formattedResults.length > 0) {
+      console.log('🔎 [OCR-Results API] 最初の結果サンプル:', JSON.stringify(formattedResults[0], null, 2));
+    }
 
     return NextResponse.json({
       success: true,

@@ -91,7 +91,7 @@ const nextConfig = {
     ],
   },
   // 出力の最適化
-  output: 'standalone',
+  // output: 'standalone', // Vercelと互換性がないためコメントアウト
   // ソースマップの生成を本番環境で無効化
   productionBrowserSourceMaps: false,
   // 圧縮の改善
@@ -163,16 +163,19 @@ const sentryWebpackPluginOptions = {
 
 // Make sure adding Sentry options is the last code to run before exporting, to
 // ensure that your source maps include changes from all other Webpack plugins
-module.exports = withSentryConfig(nextConfig, sentryWebpackPluginOptions, {
-  // For all available options, see:
-  // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
+// module.exports = withSentryConfig(nextConfig, sentryWebpackPluginOptions, {
+//   // For all available options, see:
+//   // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
 
-  // Automatically tree-shake Sentry logger statements to reduce bundle size
-  disableLogger: true,
+//   // Automatically tree-shake Sentry logger statements to reduce bundle size
+//   disableLogger: false, // デバッグのため一時的に無効化
 
-  // Hides source maps from generated client bundles
-  hideSourceMaps: true,
+//   // Hides source maps from generated client bundles
+//   hideSourceMaps: true,
 
-  // Transpiles SDK to be compatible with IE11 (increases bundle size)
-  transpileClientSDK: false,
-});
+//   // Transpiles SDK to be compatible with IE11 (increases bundle size)
+//   transpileClientSDK: false,
+// });
+
+// Sentryを一時的に無効化
+module.exports = nextConfig;
