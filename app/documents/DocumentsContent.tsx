@@ -692,11 +692,17 @@ export default function DocumentsContent() {
                     </div>
                   ) : viewMode === 'card' ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 p-4 md:p-6 border-4 border-red-500">
-                      {displayResults.map((result) => (
-                      <div key={result.id} className="bg-white border border-gray-200 rounded-lg hover:shadow-lg transition-all duration-200">
+                      {displayResults.map((result, index) => (
+                      <div key={result.id} className="bg-white border border-gray-200 rounded-lg hover:shadow-lg transition-all duration-200 min-h-[200px]">
                         <div className="p-4">
-                          <p className="text-red-500 font-bold">OCRカード表示中！</p>
-                          {/* ヘッダー */}
+                          <p className="text-red-500 font-bold">OCRカード #{index + 1}</p>
+                          <p className="text-gray-900">ID: {result.id}</p>
+                          <p className="text-gray-900">店舗: {result.vendor_name || result.store_name || '不明'}</p>
+                          <p className="text-gray-900">金額: ¥{(result.total_amount || 0).toLocaleString()}</p>
+                          <p className="text-gray-600 text-sm">
+                            日付: {result.receipt_date ? new Date(result.receipt_date).toLocaleDateString('ja-JP') : 'なし'}
+                          </p>
+                          {false && (
                           <div className="mb-3">
                             <div className="flex-1">
                               <h3 className="text-sm font-semibold text-gray-900 truncate">
@@ -866,6 +872,7 @@ export default function DocumentsContent() {
                               </div>
                             )}
                           </div>
+                          )}
                         </div>
                       </div>
                       ))}
