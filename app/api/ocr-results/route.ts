@@ -274,14 +274,14 @@ export async function GET(request: NextRequest) {
     });
     
     // デバッグ: 全ページのデータを確認（最初の5件と最後の5件）
-    if (page === 1 && totalBeforeSort > limit) {
+    if (page === 1 && total > limit) {
       console.log('🔍 [OCR-Results API] 全データのソート状態を確認:');
       
       // 最初の5件
       const firstFive = await db.find('documents', filter, {
         limit: 5,
         skip: 0,
-        sort: Object.keys(fallbackSortFields).length > 1 ? fallbackSortFields : { [sortField]: sortDirection }
+        sort: sortOptions
       });
       
       console.log('🔼 最初の5件:');
@@ -295,8 +295,8 @@ export async function GET(request: NextRequest) {
       // 最後の5件
       const lastFive = await db.find('documents', filter, {
         limit: 5,
-        skip: Math.max(0, totalBeforeSort - 5),
-        sort: Object.keys(fallbackSortFields).length > 1 ? fallbackSortFields : { [sortField]: sortDirection }
+        skip: Math.max(0, total - 5),
+        sort: sortOptions
       });
       
       console.log('🔽 最後の5件:');
@@ -304,7 +304,7 @@ export async function GET(request: NextRequest) {
         const dateValue = doc.receipt_date || doc.documentDate || doc.issueDate || doc.createdAt;
         const vendorValue = doc.vendor_name || doc.vendorName || doc.store_name || doc.partnerName || 'N/A';
         const amountValue = doc.total_amount || doc.totalAmount || 0;
-        console.log(`  ${totalBeforeSort - 4 + index}. Date: ${dateValue}, Vendor: ${vendorValue}, Amount: ${amountValue}`);
+        console.log(`  ${total - 4 + index}. Date: ${dateValue}, Vendor: ${vendorValue}, Amount: ${amountValue}`);
       });
     }
 
@@ -337,10 +337,24 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('OCR results API error:', error);
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    
+    // より詳細なエラー情報を返す
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorDetails = {
+      message: errorMessage,
+      type: error?.constructor?.name || 'Unknown',
+      // 開発環境のみスタックトレースを含める
+      ...(process.env.NODE_ENV === 'development' && {
+        stack: error instanceof Error ? error.stack : undefined
+      })
+    };
+    
     return NextResponse.json(
       { 
         error: 'Internal server error',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: errorMessage,
+        debug: errorDetails
       },
       { status: 500 }
     );
