@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/mongodb-client';
+import { ObjectId } from 'mongodb';
 
 export const dynamic = 'force-dynamic';
 
@@ -41,8 +42,37 @@ export async function GET(request: NextRequest) {
     if (ocrResults.length > 0) {
       console.log('📅 [OCR-Results API] 最新3件のデータ:');
       ocrResults.slice(0, 3).forEach((doc, index) => {
-        console.log(`  ${index + 1}. createdAt: ${doc.createdAt}, receipt_date: ${doc.receipt_date}, vendor: ${doc.vendor_name || doc.vendorName}, amount: ${doc.total_amount || doc.totalAmount}`);
+        console.log(`  ${index + 1}. _id: ${doc._id}, createdAt: ${doc.createdAt}, receipt_date: ${doc.receipt_date}, vendor: ${doc.vendor_name || doc.vendorName}, amount: ${doc.total_amount || doc.totalAmount}`);
       });
+    }
+    
+    // 特定のIDを検索
+    const targetId = '687e370963c1a5fa866d74d5';
+    const targetDoc = await db.findOne('documents', { _id: new ObjectId(targetId) });
+    if (targetDoc) {
+      console.log('🎯 [OCR-Results API] ターゲットドキュメント発見:', {
+        _id: targetDoc._id,
+        ocrStatus: targetDoc.ocrStatus,
+        linked_document_id: targetDoc.linked_document_id,
+        status: targetDoc.status,
+        hiddenFromList: targetDoc.hiddenFromList,
+        companyId: targetDoc.companyId
+      });
+      
+      // フィルター条件をチェック
+      const checks = {
+        hasOcrStatus: !!targetDoc.ocrStatus,
+        linkedDocIdOk: !targetDoc.linked_document_id,
+        statusOk: targetDoc.status !== 'archived',
+        notHidden: targetDoc.hiddenFromList !== true,
+        companyIdOk: targetDoc.companyId === companyId
+      };
+      
+      console.log('✅❌ [OCR-Results API] フィルターチェック結果:', checks);
+      const passesAll = Object.values(checks).every(v => v);
+      console.log(passesAll ? '✅ 全条件クリア！' : '❌ いずれかの条件で除外');
+    } else {
+      console.log('❌ [OCR-Results API] ターゲットドキュメントが見つかりません:', targetId);
     }
 
     // OCR結果の形式に変換
