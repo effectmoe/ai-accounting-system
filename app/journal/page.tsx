@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ViewToggle } from '@/components/journals/ViewToggle';
-import { ViewMode } from '@/types/journal';
 import { JournalTimeline } from '@/components/journals/JournalTimeline';
 import { JournalTable } from '@/components/journals/JournalTable';
 import { LoadingState } from '@/components/common/LoadingState';
@@ -20,7 +19,7 @@ import { JOURNAL_ERROR_MESSAGES } from '@/lib/journal-utils';
  */
 export default function JournalPage() {
   const router = useRouter();
-  const [viewMode, setViewMode] = useState<ViewMode>('timeline');
+  const [viewMode, setViewMode] = useState<'timeline' | 'table'>('timeline');
   const [journals, setJournals] = useState<JournalEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -32,7 +31,7 @@ export default function JournalPage() {
   /**
    * 表示モードを変更する
    */
-  const handleViewChange = useCallback((mode: ViewMode) => {
+  const handleViewChange = useCallback((mode: 'timeline' | 'table') => {
     setViewMode(mode);
   }, []);
 
@@ -253,9 +252,9 @@ export default function JournalPage() {
               journals={journals}
               loading={loading}
               error={error}
-              onEdit={handleEdit}
-              onView={handleView}
-              onDelete={handleDelete}
+              onEdit={(journal) => handleEdit(journal._id?.toString() || '')}
+              onView={(journal) => handleView(journal._id?.toString() || '')}
+              onDelete={(journal) => handleDelete(journal._id?.toString() || '')}
             />
           )}
 

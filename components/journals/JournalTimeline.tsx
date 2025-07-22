@@ -3,7 +3,6 @@
 import React, { useMemo, useCallback } from 'react';
 import { CalendarIcon, FileTextIcon } from 'lucide-react';
 import { BalanceCheck } from './BalanceCheck';
-import { cn } from '@/lib/utils';
 import { JournalEntry } from '@/types/collections';
 import { GroupedJournals } from '@/types/journal';
 import { format } from 'date-fns';
@@ -50,7 +49,7 @@ export function JournalTimeline({ journals, className }: JournalTimelineProps) {
   }, []);
 
   return (
-    <div className={cn('space-y-8', className)}>
+    <div className={`space-y-8 ${className || ''}`}>
       {groupedJournals.map(([date, dayJournals]) => {
         const formattedDate = formatDateWithDay(date);
         
@@ -80,12 +79,11 @@ export function JournalTimeline({ journals, className }: JournalTimelineProps) {
                   <div key={journal._id?.toString() || index} className="relative">
                     {/* Timeline dot */}
                     <div
-                      className={cn(
-                        'absolute -left-6 top-0 w-4 h-4 rounded-full border-2 bg-white',
+                      className={`absolute -left-6 top-0 w-4 h-4 rounded-full border-2 bg-white ${
                         isBalanced
                           ? 'border-green-500'
                           : 'border-red-500'
-                      )}
+                      }`}
                     />
 
                     {/* Journal card */}
@@ -98,10 +96,9 @@ export function JournalTimeline({ journals, className }: JournalTimelineProps) {
                             <span className="text-sm font-medium text-gray-900">
                               {journal.journalNumber}
                             </span>
-                            <span className={cn(
-                              'text-xs px-2 py-0.5 rounded-full',
+                            <span className={`text-xs px-2 py-0.5 rounded-full ${
                               getStatusClassName(journal.status)
-                            )}>
+                            }`}>
                               {getStatusLabel(journal.status)}
                             </span>
                           </div>
@@ -136,10 +133,9 @@ export function JournalTimeline({ journals, className }: JournalTimelineProps) {
                               {/* Debit */}
                               <div className="text-right">
                                 <div className="text-xs text-gray-500 mb-0.5">借方</div>
-                                <div className={cn(
-                                  'font-medium',
+                                <div className={`font-medium ${
                                   line.debitAmount > 0 ? 'text-blue-600' : 'text-gray-400'
-                                )}>
+                                }`}>
                                   {line.debitAmount > 0 
                                     ? formatCurrency(line.debitAmount)
                                     : '-'
@@ -150,10 +146,9 @@ export function JournalTimeline({ journals, className }: JournalTimelineProps) {
                               {/* Credit */}
                               <div className="text-right">
                                 <div className="text-xs text-gray-500 mb-0.5">貸方</div>
-                                <div className={cn(
-                                  'font-medium',
+                                <div className={`font-medium ${
                                   line.creditAmount > 0 ? 'text-red-600' : 'text-gray-400'
-                                )}>
+                                }`}>
                                   {line.creditAmount > 0 
                                     ? formatCurrency(line.creditAmount)
                                     : '-'
