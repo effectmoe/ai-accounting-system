@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { logger } from '@/lib/logger';
+import { TenantProvider } from '@/contexts/TenantContext';
 
 export function AppInitializer({ children }: { children: React.ReactNode }) {
   useEffect(() => {
@@ -12,5 +13,9 @@ export function AppInitializer({ children }: { children: React.ReactNode }) {
     // }
   }, []);
 
-  return <>{children}</>;
+  return (
+    <TenantProvider>
+      {children}
+    </TenantProvider>
+  );
 }
