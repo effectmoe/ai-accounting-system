@@ -344,6 +344,35 @@ TEL: 03-xxxx-xxxx FAX: 03-xxxx-xxxx
       });
       
       logger.debug('[OCR API] File saved to GridFS successfully');
+      
+      // MongoDBドキュメントにGridFS File IDを更新
+      if (mongoDbId && gridfsFileId) {
+        try {
+          const { MongoClient } = await import('mongodb');
+          const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017';
+          const updateClient = new MongoClient(uri);
+          
+          await updateClient.connect();
+          const dbName = process.env.MONGODB_DB_NAME || 'accounting';
+          const updateDb = updateClient.db(dbName.trim());
+          const updateCollection = updateDb.collection('documents');
+          
+          await updateCollection.updateOne(
+            { _id: mongoDbId },
+            {
+              $set: {
+                gridfsFileId: new ObjectId(gridfsFileId),
+                sourceFileId: new ObjectId(gridfsFileId)
+              }
+            }
+          );
+          
+          await updateClient.close();
+          logger.debug('[OCR API] Updated document with GridFS file ID');
+        } catch (updateError) {
+          logger.error('[OCR API] Error updating document with file ID:', updateError);
+        }
+      }
     } catch (gridfsError) {
       logger.error('[OCR API] Error saving to GridFS:', gridfsError);
       // GridFS保存に失敗しても処理は続行（fileIdはnullのまま）
