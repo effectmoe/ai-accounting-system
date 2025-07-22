@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Timeline, Calendar, Kanban, BarChart3 } from 'lucide-react';
+import { Clock as Timeline, Calendar, Layout as Kanban, BarChart3 } from 'lucide-react';
 import { Project, TransactionWithProject, MonthlyStats } from '@/types/tenant-collections';
 import TimelineView from './TimelineView';
 import ProjectKanbanView from './ProjectKanbanView';
