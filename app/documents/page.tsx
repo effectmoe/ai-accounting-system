@@ -15,9 +15,9 @@ export default function DocumentsPage() {
   console.log('🟡🟡🟡 useAzureMongoDBClient:', useAzureMongoDBClient);
   console.log('🟡🟡🟡 useAzureMongoDB (final):', useAzureMongoDB);
   
-  // 常にDocumentsContentを使用するように強制
-  const Component = DocumentsContent; // useAzureMongoDB ? DocumentsContentMongoDB : DocumentsContent;
-  console.log('🟢🟢🟢 使用するコンポーネント: DocumentsContent (強制)');
+  // MongoDBコンポーネントを使用
+  const Component = DocumentsContentMongoDB;
+  console.log('🟢🟢🟢 使用するコンポーネント: DocumentsContentMongoDB');
   
   return (
     <Suspense fallback={
