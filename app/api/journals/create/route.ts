@@ -14,12 +14,22 @@ export async function POST(request: NextRequest) {
       MONGODB_URI_EXISTS: !!process.env.MONGODB_URI
     });
     
-    if (!useAzureMongoDB) {
-      logger.warn('MongoDB is not enabled. Returning error.');
+    // MongoDB URIが存在する場合は、USE_AZURE_MONGODBの値に関わらず処理を続行
+    if (!useAzureMongoDB && !process.env.MONGODB_URI) {
+      logger.warn('MongoDB is not enabled and no URI found. Returning error.');
       return NextResponse.json({
         success: false,
-        error: 'MongoDB is not enabled. Use legacy system.'
+        error: 'MongoDB is not enabled. Use legacy system.',
+        debug: {
+          USE_AZURE_MONGODB: process.env.USE_AZURE_MONGODB,
+          MONGODB_URI_EXISTS: !!process.env.MONGODB_URI,
+          VERCEL_ENV: process.env.VERCEL_ENV
+        }
       }, { status: 400 });
+    }
+    
+    if (process.env.MONGODB_URI && !useAzureMongoDB) {
+      logger.info('MongoDB URI exists but USE_AZURE_MONGODB is not true. Proceeding anyway.');
     }
 
     logger.info('Creating journal entry with request body');
