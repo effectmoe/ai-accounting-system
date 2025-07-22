@@ -96,6 +96,11 @@ const nextConfig = {
   productionBrowserSourceMaps: false,
   // 圧縮の改善
   compress: true,
+  // ビルドIDを生成（キャッシュバスティング）
+  generateBuildId: async () => {
+    // タイムスタンプベースのビルドIDを生成
+    return `build-${Date.now()}`;
+  },
   // 静的ファイルのキャッシュ設定
   async headers() {
     return [
