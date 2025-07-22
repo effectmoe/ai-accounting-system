@@ -71,6 +71,37 @@ interface Document {
 export default function DocumentsContentMongoDB() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  
+  // 診断用: routerが正しく機能しているか確認
+  useEffect(() => {
+    console.log('=== DocumentsContentMongoDB Diagnostic Info ===');
+    console.log('Router available:', !!router);
+    console.log('Router.push available:', !!router?.push);
+    console.log('Current pathname:', typeof window !== 'undefined' ? window.location.pathname : 'SSR');
+    console.log('===========================================');
+  }, [router]);
+  
+  // 代替ナビゲーション関数
+  const navigateToDocument = (docId: string) => {
+    const targetUrl = `/documents/${docId}`;
+    console.log('NavigateToDocument called with:', targetUrl);
+    
+    // 方法1: Next.js router
+    try {
+      console.log('Method 1: Using Next.js router.push');
+      router.push(targetUrl);
+    } catch (error) {
+      console.error('Router.push failed:', error);
+      
+      // 方法2: window.location
+      try {
+        console.log('Method 2: Using window.location.href');
+        window.location.href = targetUrl;
+      } catch (error2) {
+        console.error('window.location failed:', error2);
+      }
+    }
+  };
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'all' | 'ocr' | 'created'>('ocr');
@@ -104,11 +135,18 @@ export default function DocumentsContentMongoDB() {
       if (data.success) {
         // デバッグ用：取得したデータを確認
         logger.debug('Fetched documents:', data.documents);
+        console.log('=== DOCUMENTS DATA CHECK ===');
+        console.log('Total documents:', data.documents.length);
         if (data.documents.length > 0) {
-          logger.debug('First document sample:', data.documents[0]);
-          logger.debug('vendor_name value:', data.documents[0].vendor_name);
-          logger.debug('gridfs_file_id value:', data.documents[0].gridfs_file_id);
+          console.log('First document sample:', data.documents[0]);
+          console.log('First document ID:', data.documents[0].id);
+          console.log('First document _id:', data.documents[0]._id);
+          console.log('ID type:', typeof data.documents[0].id);
+          console.log('_id type:', typeof data.documents[0]._id);
+          console.log('vendor_name value:', data.documents[0].vendor_name);
+          console.log('gridfs_file_id value:', data.documents[0].gridfs_file_id);
         }
+        console.log('========================');
         setDocuments(data.documents);
       } else {
         throw new Error(data.error || 'Failed to load documents');
@@ -581,14 +619,23 @@ export default function DocumentsContentMongoDB() {
                   if (target.closest('input') || target.closest('button') || target.closest('a') || target.closest('.account-category-editor')) {
                     return;
                   }
+                  // 診断: イベントが正しく発火しているか
+                  console.log('=== CARD CLICK EVENT FIRED ===');
+                  console.log('Event type:', e.type);
+                  console.log('Event target:', e.target);
+                  console.log('Current target:', e.currentTarget);
+                  
                   const docId = doc.id || doc._id;
                   console.log('Card clicked, doc data:', doc);
                   console.log('Card clicked, doc.id:', doc.id);
                   console.log('Card clicked, doc._id:', doc._id);
                   console.log('Card clicked, docId:', docId);
                   console.log('Card clicked, navigating to:', `/documents/${docId}`);
-                  logger.debug('Card clicked - Document ID:', docId);
-                  router.push(`/documents/${docId}`);
+                  console.log('Router object:', router);
+                  console.log('Router.push function:', router.push);
+                  
+                  // 診断: 実際にナビゲーションを実行
+                  navigateToDocument(docId);
                 }}
               >
                 <input
@@ -817,13 +864,22 @@ export default function DocumentsContentMongoDB() {
                         if (target.closest('input') || target.closest('button') || target.closest('a')) {
                           return;
                         }
+                        // 診断: イベントが正しく発火しているか
+                        console.log('=== ROW CLICK EVENT FIRED ===');
+                        console.log('Event type:', e.type);
+                        console.log('Event target:', e.target);
+                        console.log('Current target:', e.currentTarget);
+                        
                         console.log('Row clicked, doc data:', doc);
                         console.log('Row clicked, doc.id:', doc.id);
                         console.log('Row clicked, doc._id:', doc._id);
                         console.log('Row clicked, docId:', docId);
                         console.log('Row clicked, navigating to:', `/documents/${docId}`);
-                        logger.debug('Row clicked - Document ID:', docId);
-                        router.push(`/documents/${docId}`);
+                        console.log('Router object:', router);
+                        console.log('Router.push function:', router.push);
+                        
+                        // 診断: 実際にナビゲーションを実行
+                        navigateToDocument(docId);
                       }}
                     >
                     <td className="p-2">
