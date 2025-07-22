@@ -8343,3 +8343,150 @@ Import trace for requested module:
 ./node_modules/@sentry/node/build/cjs/index.js
 ./node_modules/@sentry/nextjs/build/cjs/index.server.js
 ./app/global-error.tsx
+ ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@prisma/instrumentation/dist/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+
+./node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/require-in-the-middle/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+ ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@prisma/instrumentation/dist/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+
+./node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/require-in-the-middle/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+ ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@prisma/instrumentation/dist/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+
+./node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/require-in-the-middle/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+ ⚠ You have added a custom /_error page without a custom /404 page. This prevents the 404 page from being auto statically optimized.
+See here for info: https://nextjs.org/docs/messages/custom-error-no-custom-404
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/pages'
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/pages/_error' in /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/pages/_error.js', but to 'Error: Can't resolve '../../../../.next/server/pages/_error' in '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/pages/_error (expected /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/pages/_error.js)
+<w>  at file dependencies /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js
+<w>  at file /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/export/worker.js
+<w>  at file /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/export/worker.js
+<w>  at file dependencies /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/worker.js
+<w>  at file /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/worker.js
+<w>  at file dependencies /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at resolve commonjs /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/pages/_app' in /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/pages/_app.js', but to 'Error: Can't resolve '../../../../.next/server/pages/_app' in '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/pages/_app (expected /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/pages/_app.js)
+<w>  at file dependencies /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js
+<w>  at file /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/export/worker.js
+<w>  at file /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/export/worker.js
+<w>  at file dependencies /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/worker.js
+<w>  at file /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/worker.js
+<w>  at file dependencies /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at resolve commonjs /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/pages/_document' in /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/pages/_document.js', but to 'Error: Can't resolve '../../../../.next/server/pages/_document' in '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/pages/_document (expected /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/pages/_document.js)
+<w>  at file dependencies /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js
+<w>  at file /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/export/worker.js
+<w>  at file /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/export/worker.js
+<w>  at file dependencies /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/worker.js
+<w>  at file /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/worker.js
+<w>  at file dependencies /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at file /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+<w>  at resolve commonjs /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/webpack/loaders/next-route-loader/index.js
+   Reload env: .env.local
+<w> [webpack.cache.PackFileCacheStrategy] Restoring pack from /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development.pack.gz failed: TypeError: Cannot read properties of undefined (reading 'hasStartTime')
+ ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@prisma/instrumentation/dist/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+
+./node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/require-in-the-middle/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./app/global-error.tsx
+[?25h
