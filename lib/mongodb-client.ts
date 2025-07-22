@@ -107,8 +107,11 @@ async function connectToDatabase(): Promise<{ client: MongoClient; db: Db }> {
     // Vercel推奨の接続オプション
     const options = {
       maxPoolSize: 10,
-      serverSelectionTimeoutMS: 5000,
+      serverSelectionTimeoutMS: 10000, // 10秒に増やす
       socketTimeoutMS: 45000,
+      connectTimeoutMS: 10000, // 接続タイムアウトを追加
+      retryWrites: true,
+      w: 'majority'
     };
     
     const client = new MongoClient(uri, options);
