@@ -956,7 +956,8 @@ export default function DocumentsContentMongoDB() {
                       </div>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}}
               </tbody>
             </table>
           </div>
