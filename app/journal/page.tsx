@@ -13,10 +13,15 @@ export default function JournalPage() {
   const [journals, setJournals] = useState<JournalEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    fetchJournals();
-  }, []);
+    if (!isInitialized) {
+      console.log('Journal page mounted, fetching journals...');
+      setIsInitialized(true);
+      fetchJournals();
+    }
+  }, [isInitialized]);
 
   const fetchJournals = async () => {
     try {
@@ -75,7 +80,7 @@ export default function JournalPage() {
   };
 
   // Loading state
-  if (loading) {
+  if (loading && journals.length === 0) {
     return (
       <div className="container mx-auto p-8">
         <Card>
