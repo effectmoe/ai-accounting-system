@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { TableIcon, ActivityIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ViewMode } from '@/types/journal';
@@ -11,33 +11,34 @@ interface ViewToggleProps {
   className?: string;
 }
 
+/**
+ * 表示モードの切り替えコンポーネント
+ * タイムラインとテーブル表示を切り替える
+ */
 export function ViewToggle({ 
   defaultView = 'timeline', 
   onViewChange,
   className 
 }: ViewToggleProps) {
-  // Initialize with saved preference or default
-  const [activeView, setActiveView] = useState<ViewMode>(() => {
-    if (typeof window !== 'undefined') {
-      const savedView = localStorage.getItem('journal-view-mode') as ViewMode;
-      if (savedView && (savedView === 'timeline' || savedView === 'table')) {
-        return savedView;
-      }
+  // Get initial view from localStorage or use default
+  const getInitialView = (): ViewMode => {
+    if (typeof window === 'undefined') return defaultView;
+    
+    const savedView = localStorage.getItem('journal-view-mode') as ViewMode;
+    if (savedView === 'timeline' || savedView === 'table') {
+      return savedView;
     }
     return defaultView;
-  });
+  };
 
-  // Only notify parent on mount if saved view differs from default
-  useEffect(() => {
-    if (activeView !== defaultView) {
-      onViewChange(activeView);
-    }
-  }, []);
+  const [activeView, setActiveView] = React.useState<ViewMode>(getInitialView);
 
   const handleViewChange = (view: ViewMode) => {
     setActiveView(view);
     localStorage.setItem('journal-view-mode', view);
-    onViewChange(view);
+    if (typeof onViewChange === 'function') {
+      onViewChange(view);
+    }
   };
 
   return (
