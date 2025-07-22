@@ -29,6 +29,10 @@ export async function POST(request: NextRequest) {
       );
     }
     
+    // ファイルバッファを一度だけ取得（後でGridFSでも使用）
+    const fileBuffer = await file.arrayBuffer();
+    const uint8Array = new Uint8Array(fileBuffer);
+    
     // Azure Form Recognizerで基本的なOCR処理
     let azureOcrResult;
     
@@ -51,8 +55,7 @@ export async function POST(request: NextRequest) {
         new AzureKeyCredential(azureKey)
       );
       
-      const fileBuffer = await file.arrayBuffer();
-      const uint8Array = new Uint8Array(fileBuffer);
+      // fileBufferとuint8Arrayは既に上で取得済み
       
       // documentTypeに応じてモデルを選択
       const modelId = documentType === 'supplier-quote' ? 'prebuilt-invoice' : 'prebuilt-invoice';
@@ -316,7 +319,8 @@ TEL: 03-xxxx-xxxx FAX: 03-xxxx-xxxx
     let gridfsFileId: string | null = null;
     try {
       logger.debug('[OCR API] Saving file to GridFS...');
-      const fileBuffer = await file.arrayBuffer();
+      // fileBufferは既に上で取得済みなので、fileを再度読み込まない
+      // const fileBuffer = await file.arrayBuffer(); // この行を削除
       const bucket = await getGridFSBucket();
       
       // GridFSにファイルをアップロード
