@@ -202,6 +202,10 @@ TEL: 03-xxxx-xxxx FAX: 03-xxxx-xxxx
         createdAt: currentDate,
         updatedAt: currentDate,
         
+        // GridFSファイルID
+        gridfsFileId: gridfsFileId ? new ObjectId(gridfsFileId) : null,
+        sourceFileId: gridfsFileId ? new ObjectId(gridfsFileId) : null,
+        
         // フラグ
         linked_document_id: null,
         hiddenFromList: false,
