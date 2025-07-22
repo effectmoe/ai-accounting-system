@@ -113,7 +113,7 @@ export async function GET(request: NextRequest) {
       confidence: doc.confidence,
       ocr_status: doc.ocrStatus || 'completed',
       ocr_result_id: doc.ocrResultId?.toString(),
-      gridfs_file_id: doc.gridfsFileId?.toString() || doc.gridfs_file_id?.toString(),
+      gridfs_file_id: doc.gridfsFileId?.toString() || doc.gridfs_file_id?.toString() || doc.sourceFileId?.toString(),
       
       // 仕訳関連フィールド
       journalId: doc.journalId?.toString(),
