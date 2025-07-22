@@ -205,7 +205,11 @@ TEL: 03-xxxx-xxxx FAX: 03-xxxx-xxxx
         // フラグ
         linked_document_id: null,
         hiddenFromList: false,
-        status: 'active'
+        status: 'active',
+        
+        // 勘定科目は後で非同期で追加
+        category: '未分類',
+        subcategory: null
       };
       
       const insertResult = await collection.insertOne(ocrDocument);
@@ -234,6 +238,66 @@ TEL: 03-xxxx-xxxx FAX: 03-xxxx-xxxx
       }, null, 2));
       
       await client.close();
+      
+      // 勘定科目AI推論を非同期で実行（領収書の場合のみ）
+      if (mongoDbSaved && documentType === 'receipt') {
+        try {
+          const { AccountCategoryAI } = await import('@/lib/account-category-ai');
+          const categoryAI = new AccountCategoryAI();
+          
+          const ocrResultForAI = {
+            text: JSON.stringify(structuredData),
+            vendor_name: structuredData.vendor?.name || structuredData.vendorName || '',
+            total_amount: structuredData.totalAmount?.amount || structuredData.totalAmount || 0,
+            items: structuredData.items || []
+          };
+          
+          logger.debug('[OCR API] Starting category AI prediction for receipt...');
+          
+          // 非同期で実行（レスポンスを待たない）
+          categoryAI.predictAccountCategory(ocrResultForAI, companyId).then(async (prediction) => {
+            if (prediction && prediction.confidence >= 0.6) {
+              const { MongoClient } = await import('mongodb');
+              const updateClient = new MongoClient(uri);
+              
+              try {
+                await updateClient.connect();
+                const updateDb = updateClient.db(dbName.trim());
+                const updateCollection = updateDb.collection('documents');
+                
+                await updateCollection.updateOne(
+                  { _id: mongoDbId },
+                  {
+                    $set: {
+                      category: prediction.category,
+                      subcategory: prediction.subcategory,
+                      aiPrediction: {
+                        category: prediction.category,
+                        subcategory: prediction.subcategory,
+                        confidence: prediction.confidence,
+                        reasoning: prediction.reasoning,
+                        alternativeCategories: prediction.alternativeCategories,
+                        notes: prediction.notes,
+                        predictionDate: new Date()
+                      }
+                    }
+                  }
+                );
+                
+                logger.debug('[OCR API] Category updated successfully:', prediction.category);
+              } catch (updateError) {
+                logger.error('[OCR API] Category update error:', updateError);
+              } finally {
+                await updateClient.close();
+              }
+            }
+          }).catch(error => {
+            logger.error('[OCR API] Category prediction error:', error);
+          });
+        } catch (error) {
+          logger.error('[OCR API] AccountCategoryAI initialization error:', error);
+        }
+      }
     } catch (dbError) {
       logger.error('[OCR API] MongoDB save error:', dbError);
       console.error('❌ [OCR API] MongoDB保存エラー詳細:', {

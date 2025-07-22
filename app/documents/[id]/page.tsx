@@ -393,7 +393,7 @@ export default function DocumentDetailPage() {
                     {document.gridfs_file_id && (
                       <>
                         <a
-                          href={`/api/documents/${document.gridfs_file_id}/download`}
+                          href={`/api/files/${document.gridfs_file_id}`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100 transition-colors text-sm"
@@ -402,7 +402,7 @@ export default function DocumentDetailPage() {
                           元ファイルを表示
                         </a>
                         <a
-                          href={`/api/documents/${document.gridfs_file_id}/download`}
+                          href={`/api/files/${document.gridfs_file_id}?download=true`}
                           download
                           className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 bg-gray-50 text-gray-700 rounded-md hover:bg-gray-100 transition-colors text-sm"
                         >
