@@ -150,6 +150,42 @@ TEL: 03-xxxx-xxxx FAX: 03-xxxx-xxxx
     const totalElapsed = Date.now() - startTime;
     logger.debug('[OCR API] AI orchestration completed successfully in', totalElapsed, 'ms total');
     
+    // 先にファイルをGridFSに保存
+    let gridfsFileId: string | null = null;
+    try {
+      logger.debug('[OCR API] Saving file to GridFS...');
+      const bucket = await getGridFSBucket();
+      
+      // GridFSにファイルをアップロード
+      const uploadStream = bucket.openUploadStream(file.name, {
+        metadata: {
+          uploadedAt: new Date(),
+          contentType: file.type,
+          documentType: documentType,
+          companyId: companyId,
+          ocrProcessed: true
+        }
+      });
+      
+      // ファイルIDを取得
+      gridfsFileId = uploadStream.id.toString();
+      logger.debug('[OCR API] GridFS file ID:', gridfsFileId);
+      
+      // BufferをStreamに変換してアップロード
+      const readableStream = Readable.from(Buffer.from(fileBuffer));
+      
+      await new Promise((resolve, reject) => {
+        readableStream.pipe(uploadStream)
+          .on('error', reject)
+          .on('finish', resolve);
+      });
+      
+      logger.debug('[OCR API] File saved to GridFS successfully');
+    } catch (gridfsError) {
+      logger.error('[OCR API] Error saving to GridFS:', gridfsError);
+      // GridFS保存に失敗しても処理は続行（fileIdはnullのまま）
+    }
+    
     // MongoDBに結果を保存
     let mongoDbSaved = false;
     let mongoDbId = null;
@@ -205,7 +241,7 @@ TEL: 03-xxxx-xxxx FAX: 03-xxxx-xxxx
         createdAt: currentDate,
         updatedAt: currentDate,
         
-        // GridFSファイルID
+        // GridFSファイルIDを設定
         gridfsFileId: gridfsFileId ? new ObjectId(gridfsFileId) : null,
         sourceFileId: gridfsFileId ? new ObjectId(gridfsFileId) : null,
         
@@ -315,72 +351,6 @@ TEL: 03-xxxx-xxxx FAX: 03-xxxx-xxxx
       // DBエラーがあっても処理は続行
     }
     
-    // ファイルをGridFSに保存
-    let gridfsFileId: string | null = null;
-    try {
-      logger.debug('[OCR API] Saving file to GridFS...');
-      // fileBufferは既に上で取得済みなので、fileを再度読み込まない
-      // const fileBuffer = await file.arrayBuffer(); // この行を削除
-      const bucket = await getGridFSBucket();
-      
-      // GridFSにファイルをアップロード
-      const uploadStream = bucket.openUploadStream(file.name, {
-        metadata: {
-          uploadedAt: new Date(),
-          contentType: file.type,
-          documentType: documentType,
-          companyId: companyId,
-          ocrProcessed: true
-        }
-      });
-      
-      // ファイルIDを取得
-      gridfsFileId = uploadStream.id.toString();
-      logger.debug('[OCR API] GridFS file ID:', gridfsFileId);
-      
-      // BufferをStreamに変換してアップロード
-      const readableStream = Readable.from(Buffer.from(fileBuffer));
-      
-      await new Promise((resolve, reject) => {
-        readableStream.pipe(uploadStream)
-          .on('error', reject)
-          .on('finish', resolve);
-      });
-      
-      logger.debug('[OCR API] File saved to GridFS successfully');
-      
-      // MongoDBドキュメントにGridFS File IDを更新
-      if (mongoDbId && gridfsFileId) {
-        try {
-          const { MongoClient } = await import('mongodb');
-          const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017';
-          const updateClient = new MongoClient(uri);
-          
-          await updateClient.connect();
-          const dbName = process.env.MONGODB_DB_NAME || 'accounting';
-          const updateDb = updateClient.db(dbName.trim());
-          const updateCollection = updateDb.collection('documents');
-          
-          await updateCollection.updateOne(
-            { _id: mongoDbId },
-            {
-              $set: {
-                gridfsFileId: new ObjectId(gridfsFileId),
-                sourceFileId: new ObjectId(gridfsFileId)
-              }
-            }
-          );
-          
-          await updateClient.close();
-          logger.debug('[OCR API] Updated document with GridFS file ID');
-        } catch (updateError) {
-          logger.error('[OCR API] Error updating document with file ID:', updateError);
-        }
-      }
-    } catch (gridfsError) {
-      logger.error('[OCR API] Error saving to GridFS:', gridfsError);
-      // GridFS保存に失敗しても処理は続行（fileIdはnullのまま）
-    }
     
     const response = {
       success: true,
