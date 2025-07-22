@@ -8,13 +8,21 @@ export async function POST(request: NextRequest) {
     // 環境変数チェック
     const useAzureMongoDB = process.env.USE_AZURE_MONGODB === 'true';
     
+    logger.info('MongoDB configuration check:', {
+      USE_AZURE_MONGODB: process.env.USE_AZURE_MONGODB,
+      useAzureMongoDB,
+      MONGODB_URI_EXISTS: !!process.env.MONGODB_URI
+    });
+    
     if (!useAzureMongoDB) {
+      logger.warn('MongoDB is not enabled. Returning error.');
       return NextResponse.json({
         success: false,
         error: 'MongoDB is not enabled. Use legacy system.'
       }, { status: 400 });
     }
 
+    logger.info('Creating journal entry with request body');
     const body = await request.json();
     const {
       companyId,
@@ -117,7 +125,9 @@ export async function POST(request: NextRequest) {
     };
 
     // MongoDBに保存
+    logger.info('Saving journal entry to MongoDB:', { journalNumber });
     const savedJournal = await db.create('journals', journalEntry);
+    logger.info('Journal entry saved successfully:', { journalId: savedJournal._id });
 
     // 関連ドキュメントを更新（存在する場合）
     // 重複表示を防ぐため、元のドキュメントを非表示にする
