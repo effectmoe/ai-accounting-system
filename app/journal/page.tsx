@@ -2,15 +2,15 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { PageLayout, PageSection } from '@/components/common/PageLayout';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { ViewToggle } from '@/components/journals/ViewToggle';
 import { ViewMode } from '@/types/journal';
 import { JournalTimeline } from '@/components/journals/JournalTimeline';
 import { JournalTable } from '@/components/journals/JournalTable';
 import { LoadingState } from '@/components/common/LoadingState';
 import { EmptyState } from '@/components/common/EmptyState';
-import { Button } from '@/components/ui/button';
-import { PlusIcon, RefreshCwIcon } from 'lucide-react';
+import { PlusIcon, RefreshCwIcon, BookOpenCheck, Home } from 'lucide-react';
 import { JournalEntry } from '@/types/collections';
 import { JOURNAL_ERROR_MESSAGES } from '@/lib/journal-utils';
 
@@ -55,61 +55,63 @@ export default function JournalPage() {
       
       if (data.success) {
         setJournals(data.journals || []);
-        setTotalPages(data.totalPages || 1);
         setTotalCount(data.totalCount || 0);
+        setTotalPages(data.totalPages || 1);
       } else {
-        throw new Error(data.error || '予期しないエラーが発生しました');
+        throw new Error(data.error || JOURNAL_ERROR_MESSAGES.LOAD_FAILED);
       }
     } catch (err) {
-      setError(err instanceof Error ? err : new Error('Unknown error'));
-      setJournals([]);
+      const error = err as Error;
+      setError(error);
+      console.error('Error fetching journals:', error);
     } finally {
       setLoading(false);
     }
   }, [page, pageSize]);
 
+  // 初回マウント時とページ変更時にデータを取得
   useEffect(() => {
     fetchJournals();
   }, [fetchJournals]);
 
   /**
-   * データを再読み込み
-   */
-  const handleRefresh = useCallback(() => {
-    fetchJournals();
-  }, [fetchJournals]);
-
-  /**
-   * 新規仕訳作成画面へ遷移
+   * 仕訳を作成する
    */
   const handleCreate = useCallback(() => {
     router.push('/journal/new');
   }, [router]);
 
   /**
-   * 仕訳編集画面へ遷移
+   * データを更新する
    */
-  const handleEdit = useCallback((journal: JournalEntry) => {
-    router.push(`/journal/${journal._id}/edit`);
+  const handleRefresh = useCallback(() => {
+    fetchJournals();
+  }, [fetchJournals]);
+
+  /**
+   * 仕訳を編集する
+   */
+  const handleEdit = useCallback((id: string) => {
+    router.push(`/journal/${id}/edit`);
   }, [router]);
 
   /**
-   * 仕訳詳細画面へ遷移
+   * 仕訳を表示する
    */
-  const handleView = useCallback((journal: JournalEntry) => {
-    router.push(`/journal/${journal._id}`);
+  const handleView = useCallback((id: string) => {
+    router.push(`/journal/${id}`);
   }, [router]);
 
   /**
-   * 仕訳を削除
+   * 仕訳を削除する
    */
-  const handleDelete = useCallback(async (journal: JournalEntry) => {
+  const handleDelete = useCallback(async (id: string) => {
     if (!confirm('この仕訳を削除してもよろしいですか？')) {
       return;
     }
 
     try {
-      const response = await fetch(`/api/journals/${journal._id}`, {
+      const response = await fetch(`/api/journals/${id}`, {
         method: 'DELETE',
       });
 
@@ -117,8 +119,10 @@ export default function JournalPage() {
         throw new Error(JOURNAL_ERROR_MESSAGES.DELETE_FAILED);
       }
 
+      // 削除成功後、データを再取得
       await fetchJournals();
-    } catch (err) {
+    } catch (error) {
+      console.error('Error deleting journal:', error);
       alert(JOURNAL_ERROR_MESSAGES.DELETE_FAILED);
     }
   }, [fetchJournals]);
@@ -126,150 +130,159 @@ export default function JournalPage() {
   // Loading state
   if (loading && journals.length === 0) {
     return (
-      <PageLayout
-        title="仕訳帳"
-        description="会計仕訳の記録と管理"
-        breadcrumbs={[
-          { label: 'ホーム', href: '/' },
-          { label: '仕訳帳' },
-        ]}
-      >
-        <PageSection>
-          <LoadingState message="仕訳データを読み込んでいます..." />
-        </PageSection>
-      </PageLayout>
+      <div className="container mx-auto p-8">
+        <Card>
+          <CardContent className="py-8">
+            <LoadingState message="仕訳データを読み込んでいます..." />
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   // Error state
-  if (error && journals.length === 0) {
+  if (error) {
     return (
-      <PageLayout
-        title="仕訳帳"
-        description="会計仕訳の記録と管理"
-        breadcrumbs={[
-          { label: 'ホーム', href: '/' },
-          { label: '仕訳帳' },
-        ]}
-      >
-        <PageSection>
-          <EmptyState
-            variant="error"
-            title="エラーが発生しました"
-            message={error.message}
-            action={{
-              label: '再読み込み',
-              onClick: handleRefresh,
-            }}
-          />
-        </PageSection>
-      </PageLayout>
+      <div className="container mx-auto p-8">
+        <Card>
+          <CardContent className="py-8">
+            <EmptyState
+              variant="error"
+              title="エラーが発生しました"
+              message={error.message}
+              action={{
+                label: '再試行',
+                onClick: handleRefresh,
+              }}
+            />
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   // Empty state
   if (!loading && journals.length === 0) {
     return (
-      <PageLayout
-        title="仕訳帳"
-        description="会計仕訳の記録と管理"
-        breadcrumbs={[
-          { label: 'ホーム', href: '/' },
-          { label: '仕訳帳' },
-        ]}
-        actions={
-          <Button onClick={handleCreate}>
-            <PlusIcon className="mr-2 h-4 w-4" />
-            仕訳を作成
-          </Button>
-        }
-      >
-        <PageSection>
-          <EmptyState
-            variant="no-data"
-            title="仕訳がありません"
-            message="最初の仕訳を作成してください"
-            action={{
-              label: '仕訳を作成',
-              onClick: handleCreate,
-            }}
-          />
-        </PageSection>
-      </PageLayout>
+      <div className="container mx-auto p-8">
+        <div className="mb-8">
+          <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
+            <Home className="w-4 h-4" />
+            <span>/</span>
+            <span>仕訳帳</span>
+          </div>
+          <h1 className="text-3xl font-bold flex items-center gap-3">
+            <BookOpenCheck className="w-8 h-8 text-violet-600" />
+            仕訳帳
+          </h1>
+          <p className="text-gray-600 mt-2">会計仕訳の記録と管理</p>
+        </div>
+
+        <Card>
+          <CardContent className="py-8">
+            <EmptyState
+              variant="no-data"
+              title="仕訳がありません"
+              message="最初の仕訳を作成してください"
+              action={{
+                label: '仕訳を作成',
+                onClick: handleCreate,
+              }}
+            />
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   return (
-    <PageLayout
-      title="仕訳帳"
-      description="会計仕訳の記録と管理"
-      breadcrumbs={[
-        { label: 'ホーム', href: '/' },
-        { label: '仕訳帳' },
-      ]}
-      actions={
-        <div className="flex items-center gap-3">
-          <ViewToggle
-            defaultView={viewMode}
-            onViewChange={handleViewChange}
-          />
-          <Button variant="outline" onClick={handleRefresh}>
-            <RefreshCwIcon className="mr-2 h-4 w-4" />
-            更新
-          </Button>
-          <Button onClick={handleCreate}>
-            <PlusIcon className="mr-2 h-4 w-4" />
-            仕訳を作成
-          </Button>
+    <div className="container mx-auto p-8">
+      {/* Header */}
+      <div className="mb-8">
+        <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
+          <Home className="w-4 h-4" />
+          <span>/</span>
+          <span>仕訳帳</span>
         </div>
-      }
-    >
-      <PageSection>
-        {/* Summary info */}
-        <div className="mb-6 flex items-center justify-between text-sm text-gray-600">
-          <span>合計 {totalCount} 件の仕訳</span>
-          {totalPages > 1 && (
-            <span>ページ {page} / {totalPages}</span>
-          )}
-        </div>
-
-        {/* Content based on view mode */}
-        {viewMode === 'timeline' ? (
-          <JournalTimeline journals={journals} />
-        ) : (
-          <JournalTable
-            journals={journals}
-            loading={loading}
-            error={error}
-            onEdit={handleEdit}
-            onView={handleView}
-            onDelete={handleDelete}
-          />
-        )}
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="mt-6 flex justify-center gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setPage(Math.max(1, page - 1))}
-              disabled={page === 1}
-            >
-              前へ
+        
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold flex items-center gap-3">
+              <BookOpenCheck className="w-8 h-8 text-violet-600" />
+              仕訳帳
+            </h1>
+            <p className="text-gray-600 mt-2">会計仕訳の記録と管理</p>
+          </div>
+          
+          <div className="flex items-center gap-3">
+            <ViewToggle
+              defaultView={viewMode}
+              onViewChange={handleViewChange}
+            />
+            <Button variant="outline" onClick={handleRefresh}>
+              <RefreshCwIcon className="mr-2 h-4 w-4" />
+              更新
             </Button>
-            <span className="flex items-center px-4 text-sm text-gray-600">
-              {page} / {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              onClick={() => setPage(Math.min(totalPages, page + 1))}
-              disabled={page === totalPages}
-            >
-              次へ
+            <Button onClick={handleCreate}>
+              <PlusIcon className="mr-2 h-4 w-4" />
+              仕訳を作成
             </Button>
           </div>
-        )}
-      </PageSection>
-    </PageLayout>
+        </div>
+      </div>
+
+      {/* Content */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle>仕訳一覧</CardTitle>
+            <div className="text-sm text-gray-600">
+              合計 {totalCount} 件
+              {totalPages > 1 && (
+                <span className="ml-2">（ページ {page} / {totalPages}）</span>
+              )}
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {/* Content based on view mode */}
+          {viewMode === 'timeline' ? (
+            <JournalTimeline journals={journals} />
+          ) : (
+            <JournalTable
+              journals={journals}
+              loading={loading}
+              error={error}
+              onEdit={handleEdit}
+              onView={handleView}
+              onDelete={handleDelete}
+            />
+          )}
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="mt-6 flex justify-center gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setPage(Math.max(1, page - 1))}
+                disabled={page === 1}
+              >
+                前へ
+              </Button>
+              <span className="flex items-center px-4 text-sm text-gray-600">
+                {page} / {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                onClick={() => setPage(Math.min(totalPages, page + 1))}
+                disabled={page === totalPages}
+              >
+                次へ
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }
