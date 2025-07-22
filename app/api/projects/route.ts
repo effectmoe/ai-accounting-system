@@ -1,22 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/mongodb-client';
-import { Project } from '@/types/tenant-collections';
 import { logger } from '@/lib/logger';
+import type { Project, CreateProjectInput } from '@/types/project';
 
 export async function GET(request: NextRequest) {
   try {
-    // TODO: 認証処理を実装
-    // const { user } = await auth(request);
-    // if (!user) {
-    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    // }
-
     const searchParams = request.nextUrl.searchParams;
     const status = searchParams.get('status');
     const limit = parseInt(searchParams.get('limit') || '50');
-    const tenantId = searchParams.get('tenantId') || 'default';
 
-    const filter: any = { tenantId };
+    const filter: any = {};
     if (status) filter.status = status;
 
     const projects = await db.findMany('projects', filter, {
@@ -33,22 +26,14 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    // TODO: 認証処理を実装
-    // const { user } = await auth(request);
-    // if (!user) {
-    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    // }
-
-    const body = await request.json();
-    const { name, clientName, contractAmount, startDate, endDate, tenantId = 'default' } = body;
+    const body = await request.json() as CreateProjectInput;
+    const { name, clientName, contractAmount, startDate, endDate } = body;
 
     // プロジェクトコード自動生成
-    const projectCount = await db.count('projects', { tenantId });
+    const projectCount = await db.count('projects', {});
     const projectCode = `P${String(projectCount + 1).padStart(4, '0')}`;
 
     const project: Partial<Project> = {
-      tenantId,
-      tenantType: 'individual_contractor',
       projectCode,
       name,
       client: {
