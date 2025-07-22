@@ -126,3 +126,4 @@ export async function GET(request: NextRequest) {
 }
 
 export const runtime = 'nodejs';
+export const maxDuration = 30; // Vercel function timeout in seconds
