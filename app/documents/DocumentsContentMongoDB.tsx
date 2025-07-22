@@ -572,7 +572,25 @@ export default function DocumentsContentMongoDB() {
         {viewMode === 'grid' ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {paginatedDocuments.map((doc) => (
-              <div key={doc.id} className="bg-white border rounded-lg p-4 hover:shadow-lg transition-shadow relative">
+              <div 
+                key={doc.id} 
+                className="bg-white border rounded-lg p-4 hover:shadow-lg transition-shadow relative cursor-pointer"
+                onClick={(e) => {
+                  // チェックボックスやボタンのクリックは除外
+                  const target = e.target as HTMLElement;
+                  if (target.closest('input') || target.closest('button') || target.closest('a') || target.closest('.account-category-editor')) {
+                    return;
+                  }
+                  const docId = doc.id || doc._id;
+                  console.log('Card clicked, doc data:', doc);
+                  console.log('Card clicked, doc.id:', doc.id);
+                  console.log('Card clicked, doc._id:', doc._id);
+                  console.log('Card clicked, docId:', docId);
+                  console.log('Card clicked, navigating to:', `/documents/${docId}`);
+                  logger.debug('Card clicked - Document ID:', docId);
+                  router.push(`/documents/${docId}`);
+                }}
+              >
                 <input
                   type="checkbox"
                   checked={selectedDocuments.has(doc.id)}
@@ -605,19 +623,21 @@ export default function DocumentsContentMongoDB() {
                       {documentTypeLabels[doc.document_type] || doc.document_type}
                     </span>
                     {doc.ocr_status === 'completed' && (
-                      <AccountCategoryEditor
-                        documentId={doc.id}
-                        vendorName={doc.vendor_name || doc.partner_name || ''}
-                        currentCategory={doc.category || '未分類'}
-                        amount={doc.total_amount}
-                        fileName={doc.file_name}
-                        extractedText={doc.extracted_text}
-                        documentType={doc.document_type}
-                        onCategoryUpdate={(newCategory) => {
-                          // カテゴリー更新後の処理
-                          fetchDocuments();
-                        }}
-                      />
+                      <div className="account-category-editor" onClick={(e) => e.stopPropagation()}>
+                        <AccountCategoryEditor
+                          documentId={doc.id}
+                          vendorName={doc.vendor_name || doc.partner_name || ''}
+                          currentCategory={doc.category || '未分類'}
+                          amount={doc.total_amount}
+                          fileName={doc.file_name}
+                          extractedText={doc.extracted_text}
+                          documentType={doc.document_type}
+                          onCategoryUpdate={(newCategory) => {
+                            // カテゴリー更新後の処理
+                            fetchDocuments();
+                          }}
+                        />
+                      </div>
                     )}
                   </div>
                   
@@ -709,7 +729,7 @@ export default function DocumentsContentMongoDB() {
                     )}
                   </div>
                   
-                  <div className="mt-3 flex gap-2">
+                  <div className="mt-3 flex gap-2" onClick={(e) => e.stopPropagation()}>
                     {doc.document_type !== 'journal_entry' && (
                       <button
                         onClick={() => {
@@ -785,8 +805,27 @@ export default function DocumentsContentMongoDB() {
                 </tr>
               </thead>
               <tbody>
-                {paginatedDocuments.map((doc) => (
-                  <tr key={doc.id} className="border-b hover:bg-gray-50">
+                {paginatedDocuments.map((doc) => {
+                  const docId = doc.id || doc._id;
+                  return (
+                    <tr 
+                      key={docId} 
+                      className="border-b hover:bg-gray-50 cursor-pointer"
+                      onClick={(e) => {
+                        // チェックボックスやボタンのクリックは除外
+                        const target = e.target as HTMLElement;
+                        if (target.closest('input') || target.closest('button') || target.closest('a')) {
+                          return;
+                        }
+                        console.log('Row clicked, doc data:', doc);
+                        console.log('Row clicked, doc.id:', doc.id);
+                        console.log('Row clicked, doc._id:', doc._id);
+                        console.log('Row clicked, docId:', docId);
+                        console.log('Row clicked, navigating to:', `/documents/${docId}`);
+                        logger.debug('Row clicked - Document ID:', docId);
+                        router.push(`/documents/${docId}`);
+                      }}
+                    >
                     <td className="p-2">
                       <input
                         type="checkbox"
@@ -806,10 +845,10 @@ export default function DocumentsContentMongoDB() {
                       </span>
                     </td>
                     <td className="p-2">
-                      <div className="flex gap-1">
+                      <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
                         <button 
                           onClick={() => handleEditDocument(doc)}
-                          className="text-blue-600 hover:text-blue-800 p-1"
+                          className="text-green-600 hover:text-green-800 p-1"
                           title="編集"
                         >
                           <Edit className="w-4 h-4" />
