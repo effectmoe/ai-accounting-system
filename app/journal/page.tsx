@@ -23,18 +23,39 @@ export default function JournalPage() {
       setLoading(true);
       setError(null);
 
-      const response = await fetch('/api/journals?limit=50&skip=0');
+      console.log('Fetching journals...');
+      
+      // タイムアウトを設定
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30秒のタイムアウト
+      
+      try {
+        const response = await fetch('/api/journals?limit=50&skip=0', {
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        console.log('Response status:', response.status);
       
       if (!response.ok) {
-        throw new Error('仕訳データの読み込みに失敗しました');
+        const errorText = await response.text();
+        console.error('Response error:', errorText);
+        throw new Error(`API Error: ${response.status} - ${errorText}`);
       }
 
       const data = await response.json();
+      console.log('Response data:', data);
       
       if (data.success) {
         setJournals(data.journals || []);
+        console.log('Journals loaded:', data.journals?.length || 0);
       } else {
         throw new Error(data.error || '仕訳データの読み込みに失敗しました');
+      }
+      } catch (timeoutError) {
+        if (timeoutError instanceof Error && timeoutError.name === 'AbortError') {
+          throw new Error('接続タイムアウト: サーバーからの応答がありません');
+        }
+        throw timeoutError;
       }
     } catch (err) {
       const error = err as Error;
