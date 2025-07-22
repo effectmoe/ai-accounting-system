@@ -7,7 +7,6 @@ import { JournalEntry } from '@/types/collections';
 import { JournalTableItem } from '@/types/journal';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
-import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { EditIcon, TrashIcon, FileTextIcon } from 'lucide-react';
 import {
@@ -122,10 +121,9 @@ export function JournalTable({
 
         return (
           <div className="text-sm text-right">
-            <span className={cn(
-              'font-medium',
+            <span className={`font-medium ${
               isBalanced ? 'text-green-600' : 'text-red-600'
-            )}>
+            }`}>
               {isBalanced ? '一致' : formatCurrency(Math.abs(difference))}
             </span>
           </div>
@@ -137,10 +135,9 @@ export function JournalTable({
       id: 'status',
       header: 'ステータス',
       cell: (item) => (
-        <span className={cn(
-          'inline-flex text-xs px-2 py-1 rounded-full font-medium',
+        <span className={`inline-flex text-xs px-2 py-1 rounded-full font-medium ${
           getStatusClassName(item.status)
-        )}>
+        }`}>
           {getStatusLabel(item.status)}
         </span>
       ),
