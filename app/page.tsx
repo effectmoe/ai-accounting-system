@@ -10,7 +10,6 @@ import {
   Plus, 
   FileText, 
   Users, 
-  Package, 
   Upload,
   BarChart3,
   TrendingUp,
@@ -25,10 +24,8 @@ import {
   MessageSquare,
   Bot,
   BookOpen,
-  Lightbulb,
   HelpCircle,
-  Database,
-  Hammer
+  Database
 } from 'lucide-react';
 
 const quickActions = [
@@ -163,16 +160,6 @@ export default function Home() {
               請求書作成、OCR読み取り、顧客管理まで。
               AIがあなたの会計業務を効率化します。
             </p>
-            
-            {/* テナント切り替えボタン */}
-            <div className="mt-6">
-              <Link href="/tenant-switch">
-                <Button variant="outline" className="gap-2">
-                  <Hammer className="w-4 h-4" />
-                  1人親方モードに切り替え
-                </Button>
-              </Link>
-            </div>
           </div>
 
           {/* クイックアクション */}

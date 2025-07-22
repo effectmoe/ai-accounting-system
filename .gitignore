@@ -93,3 +93,6 @@ mcp-chrome-server/
 
 # scripts with secrets
 add-env-vars.sh
+
+# backup files
+*.tar.gz
