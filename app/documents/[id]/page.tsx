@@ -91,6 +91,15 @@ export default function DocumentDetailPage() {
       }
 
       setDocument(data.document);
+      
+      // デバッグ: OCR関連フィールドの確認
+      console.log('Document OCR fields:', {
+        id: data.document.id,
+        ocr_result_id: data.document.ocr_result_id,
+        gridfs_file_id: data.document.gridfs_file_id,
+        has_ocr_result_id: !!data.document.ocr_result_id,
+        has_gridfs_file_id: !!data.document.gridfs_file_id
+      });
 
       // MongoDBでは明細は別テーブルではなく、ドキュメント内に含まれるか、
       // または別途APIで取得する必要がある
@@ -397,6 +406,22 @@ export default function DocumentDetailPage() {
                           target="_blank"
                           rel="noopener noreferrer"
                           className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100 transition-colors text-sm"
+                          onClick={async (e) => {
+                            console.log('Clicking file view with ID:', document.gridfs_file_id);
+                            // ファイルが存在するかチェック
+                            try {
+                              const response = await fetch(`/api/files/${document.gridfs_file_id}`, { method: 'HEAD' });
+                              if (!response.ok) {
+                                e.preventDefault();
+                                toast.error('元ファイルが見つかりません');
+                                console.error('File not found:', response.status);
+                              }
+                            } catch (error) {
+                              e.preventDefault();
+                              toast.error('ファイルアクセスエラー');
+                              console.error('File check error:', error);
+                            }
+                          }}
                         >
                           <Eye className="w-4 h-4" />
                           元ファイルを表示
@@ -405,6 +430,22 @@ export default function DocumentDetailPage() {
                           href={`/api/files/${document.gridfs_file_id}?download=true`}
                           download
                           className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 bg-gray-50 text-gray-700 rounded-md hover:bg-gray-100 transition-colors text-sm"
+                          onClick={async (e) => {
+                            console.log('Clicking file download with ID:', document.gridfs_file_id);
+                            // ファイルが存在するかチェック
+                            try {
+                              const response = await fetch(`/api/files/${document.gridfs_file_id}`, { method: 'HEAD' });
+                              if (!response.ok) {
+                                e.preventDefault();
+                                toast.error('ダウンロードファイルが見つかりません');
+                                console.error('Download file not found:', response.status);
+                              }
+                            } catch (error) {
+                              e.preventDefault();
+                              toast.error('ダウンロードエラー');
+                              console.error('Download check error:', error);
+                            }
+                          }}
                         >
                           <Download className="w-4 h-4" />
                           ダウンロード
