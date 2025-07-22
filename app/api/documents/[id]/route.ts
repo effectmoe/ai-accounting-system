@@ -27,6 +27,19 @@ export async function GET(
         error: 'Document not found'
       }, { status: 404 });
     }
+    
+    // デバッグ: 生のMongoDBドキュメントをログ出力
+    logger.debug('Raw MongoDB document:', {
+      _id: document._id,
+      gridfsFileId: document.gridfsFileId,
+      gridfs_file_id: document.gridfs_file_id,
+      fileId: document.fileId,
+      file_id: document.file_id,
+      ocrResultId: document.ocrResultId,
+      ocr_result_id: document.ocr_result_id,
+      // すべてのキーを表示
+      allKeys: Object.keys(document)
+    });
 
     // Supabase形式に変換（既存のUIとの互換性のため）
     const formattedDocument = {
@@ -56,8 +69,8 @@ export async function GET(
       extracted_text: document.extractedText,
       confidence: document.confidence,
       ocr_status: document.ocrStatus || 'completed',
-      ocr_result_id: document.ocrResultId?.toString(),
-      gridfs_file_id: document.gridfsFileId?.toString() || document.gridfs_file_id?.toString(),
+      ocr_result_id: document.ocrResultId?.toString() || document.ocr_result_id?.toString(),
+      gridfs_file_id: document.gridfsFileId?.toString() || document.gridfs_file_id?.toString() || document.fileId?.toString() || document.file_id?.toString(),
       
       // 仕訳関連フィールド
       journalId: document.journalId?.toString()

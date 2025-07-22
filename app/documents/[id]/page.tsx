@@ -93,6 +93,8 @@ export default function DocumentDetailPage() {
       setDocument(data.document);
       
       // デバッグ: OCR関連フィールドの確認
+      console.log('=== Document Detail Debug ===');
+      console.log('Full document data:', data.document);
       console.log('Document OCR fields:', {
         id: data.document.id,
         ocr_result_id: data.document.ocr_result_id,
@@ -100,6 +102,8 @@ export default function DocumentDetailPage() {
         has_ocr_result_id: !!data.document.ocr_result_id,
         has_gridfs_file_id: !!data.document.gridfs_file_id
       });
+      console.log('All document keys:', Object.keys(data.document));
+      console.log('===========================');
 
       // MongoDBでは明細は別テーブルではなく、ドキュメント内に含まれるか、
       // または別途APIで取得する必要がある
