@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { PageLayout, PageSection } from '@/components/common/PageLayout/PageLayout';
+import { PageLayout, PageSection } from '@/components/common/PageLayout';
 import { ViewToggle } from '@/components/journals/ViewToggle';
 import { ViewMode } from '@/types/journal';
 import { JournalTimeline } from '@/components/journals/JournalTimeline';
@@ -20,16 +20,7 @@ import { JOURNAL_ERROR_MESSAGES } from '@/lib/journal-utils';
  */
 export default function JournalPage() {
   const router = useRouter();
-  // Initialize viewMode from localStorage if available
-  const [viewMode, setViewMode] = useState<ViewMode>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('journal-view-mode') as ViewMode;
-      if (saved === 'timeline' || saved === 'table') {
-        return saved;
-      }
-    }
-    return 'timeline';
-  });
+  const [viewMode, setViewMode] = useState<ViewMode>('timeline');
   const [journals, setJournals] = useState<JournalEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);

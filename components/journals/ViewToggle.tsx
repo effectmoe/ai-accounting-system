@@ -20,18 +20,15 @@ export function ViewToggle({
   onViewChange,
   className 
 }: ViewToggleProps) {
-  // Get initial view from localStorage or use default
-  const getInitialView = (): ViewMode => {
-    if (typeof window === 'undefined') return defaultView;
-    
+  const [activeView, setActiveView] = React.useState<ViewMode>(defaultView);
+
+  // Sync with localStorage after mount
+  React.useEffect(() => {
     const savedView = localStorage.getItem('journal-view-mode') as ViewMode;
     if (savedView === 'timeline' || savedView === 'table') {
-      return savedView;
+      setActiveView(savedView);
     }
-    return defaultView;
-  };
-
-  const [activeView, setActiveView] = React.useState<ViewMode>(getInitialView);
+  }, []);
 
   const handleViewChange = (view: ViewMode) => {
     setActiveView(view);
