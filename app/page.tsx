@@ -25,10 +25,19 @@ import {
   Bot,
   BookOpen,
   HelpCircle,
-  Database
+  Database,
+  BookOpenCheck
 } from 'lucide-react';
 
 const quickActions = [
+  {
+    title: '仕訳管理',
+    description: 'タイムライン表示で仕訳を視覚的に管理',
+    href: '/journal',
+    icon: BookOpenCheck,
+    color: 'from-violet-500 to-violet-600',
+    badge: '新機能'
+  },
   {
     title: '見積書作成',
     description: 'AIアシスタントと会話しながら見積書を作成',

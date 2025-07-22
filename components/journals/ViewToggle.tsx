@@ -16,16 +16,23 @@ export function ViewToggle({
   onViewChange,
   className 
 }: ViewToggleProps) {
-  const [activeView, setActiveView] = useState<ViewMode>(defaultView);
-
-  // Load saved preference from localStorage
-  useEffect(() => {
-    const savedView = localStorage.getItem('journal-view-mode') as ViewMode;
-    if (savedView && (savedView === 'timeline' || savedView === 'table')) {
-      setActiveView(savedView);
-      onViewChange(savedView);
+  // Initialize with saved preference or default
+  const [activeView, setActiveView] = useState<ViewMode>(() => {
+    if (typeof window !== 'undefined') {
+      const savedView = localStorage.getItem('journal-view-mode') as ViewMode;
+      if (savedView && (savedView === 'timeline' || savedView === 'table')) {
+        return savedView;
+      }
     }
-  }, [onViewChange]);
+    return defaultView;
+  });
+
+  // Only notify parent on mount if saved view differs from default
+  useEffect(() => {
+    if (activeView !== defaultView) {
+      onViewChange(activeView);
+    }
+  }, []);
 
   const handleViewChange = (view: ViewMode) => {
     setActiveView(view);
