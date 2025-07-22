@@ -33,19 +33,28 @@ export default function JournalPage() {
   const [error, setError] = useState<string | null>(null);
 
   const fetchJournals = async () => {
+    console.log('[Journal Page] Starting to fetch journals...');
     setLoading(true);
     setError(null);
     
     try {
+      console.log('[Journal Page] Calling /api/journals...');
       const response = await fetch('/api/journals?limit=50&skip=0');
+      console.log('[Journal Page] Response status:', response.status);
+      console.log('[Journal Page] Response headers:', Object.fromEntries(response.headers.entries()));
+      
       const data = await response.json();
+      console.log('[Journal Page] Response data:', data);
       
       if (data.success && data.journals) {
+        console.log('[Journal Page] Journals loaded successfully:', data.journals.length);
         setJournals(data.journals);
       } else {
+        console.error('[Journal Page] API returned error:', data.error);
         setError(data.error || '仕訳データの読み込みに失敗しました');
       }
     } catch (err) {
+      console.error('[Journal Page] Network error:', err);
       setError('ネットワークエラーが発生しました');
     } finally {
       setLoading(false);

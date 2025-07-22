@@ -161,25 +161,43 @@ export async function getDatabase(): Promise<Db> {
 // コレクションの取得（シンプル化）
 export async function getCollection<T = any>(collectionName: string): Promise<Collection<T>> {
   try {
+    logger.debug(`[getCollection] Attempting to get collection: ${collectionName}`);
+    
     const db = await getDatabase();
+    logger.debug(`[getCollection] Database obtained successfully`);
+    
     const collection = db.collection<T>(collectionName);
+    logger.debug(`[getCollection] Collection reference created for: ${collectionName}`);
     
     // コレクションが実際に使用可能か確認
     try {
-      await collection.estimatedDocumentCount();
+      const count = await collection.estimatedDocumentCount();
+      logger.debug(`[getCollection] Collection ${collectionName} is accessible. Estimated count: ${count}`);
       return collection;
     } catch (error) {
-      logger.error(`Collection ${collectionName} test failed:`, error);
+      logger.error(`[getCollection] Collection ${collectionName} test failed:`, error);
+      logger.error(`[getCollection] Error type: ${error?.constructor?.name}`);
+      
       // 接続をリセット
       cached = undefined;
       global._mongoClientPromise = undefined;
+      logger.debug(`[getCollection] Connection cache cleared, attempting retry...`);
       
       // 再試行
       const retryDb = await getDatabase();
-      return retryDb.collection<T>(collectionName);
+      const retryCollection = retryDb.collection<T>(collectionName);
+      logger.debug(`[getCollection] Retry successful for collection: ${collectionName}`);
+      return retryCollection;
     }
   } catch (error) {
-    logger.error(`getCollection error for ${collectionName}:`, error);
+    logger.error(`[getCollection] Fatal error for ${collectionName}:`, error);
+    logger.error(`[getCollection] Error details:`, {
+      name: error instanceof Error ? error.name : 'Unknown',
+      message: error instanceof Error ? error.message : 'Unknown error',
+      type: typeof error,
+      constructor: error?.constructor?.name
+    });
+    
     throw new DatabaseError(
       `Failed to get collection ${collectionName}: ${error instanceof Error ? error.message : 'Unknown error'}`,
       'COLLECTION_ACCESS_ERROR'
@@ -322,15 +340,47 @@ export class DatabaseService {
       projection?: any;
     }
   ): Promise<T[]> {
-    const collection = await getCollection<T>(collectionName);
-    let query = collection.find(filter);
+    try {
+      logger.debug(`[DatabaseService.find] Starting find operation for collection: ${collectionName}`);
+      logger.debug(`[DatabaseService.find] Filter:`, JSON.stringify(filter));
+      logger.debug(`[DatabaseService.find] Options:`, JSON.stringify(options));
+      
+      const collection = await getCollection<T>(collectionName);
+      logger.debug(`[DatabaseService.find] Collection obtained successfully`);
+      
+      let query = collection.find(filter);
 
-    if (options?.sort) query = query.sort(options.sort);
-    if (options?.skip) query = query.skip(options.skip);
-    if (options?.limit) query = query.limit(options.limit);
-    if (options?.projection) query = query.project(options.projection);
+      if (options?.sort) {
+        query = query.sort(options.sort);
+        logger.debug(`[DatabaseService.find] Sort applied:`, options.sort);
+      }
+      if (options?.skip) {
+        query = query.skip(options.skip);
+        logger.debug(`[DatabaseService.find] Skip applied:`, options.skip);
+      }
+      if (options?.limit) {
+        query = query.limit(options.limit);
+        logger.debug(`[DatabaseService.find] Limit applied:`, options.limit);
+      }
+      if (options?.projection) {
+        query = query.project(options.projection);
+        logger.debug(`[DatabaseService.find] Projection applied:`, options.projection);
+      }
 
-    return await query.toArray();
+      logger.debug(`[DatabaseService.find] Executing query...`);
+      const results = await query.toArray();
+      logger.debug(`[DatabaseService.find] Query executed successfully. Results count: ${results.length}`);
+      
+      return results;
+    } catch (error) {
+      logger.error(`[DatabaseService.find] Error in find operation for ${collectionName}:`, error);
+      logger.error(`[DatabaseService.find] Error details:`, {
+        name: error instanceof Error ? error.name : 'Unknown',
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      });
+      throw error;
+    }
   }
 
   /**
@@ -416,8 +466,21 @@ export class DatabaseService {
    * カウント
    */
   async count(collectionName: string, filter: any = {}): Promise<number> {
-    const collection = await getCollection(collectionName);
-    return await collection.countDocuments(filter);
+    try {
+      logger.debug(`[DatabaseService.count] Starting count operation for collection: ${collectionName}`);
+      logger.debug(`[DatabaseService.count] Filter:`, JSON.stringify(filter));
+      
+      const collection = await getCollection(collectionName);
+      logger.debug(`[DatabaseService.count] Collection obtained successfully`);
+      
+      const count = await collection.countDocuments(filter);
+      logger.debug(`[DatabaseService.count] Count result: ${count}`);
+      
+      return count;
+    } catch (error) {
+      logger.error(`[DatabaseService.count] Error in count operation for ${collectionName}:`, error);
+      throw error;
+    }
   }
 
   /**
