@@ -20,7 +20,16 @@ import { JOURNAL_ERROR_MESSAGES } from '@/lib/journal-utils';
  */
 export default function JournalPage() {
   const router = useRouter();
-  const [viewMode, setViewMode] = useState<ViewMode>('timeline');
+  // Initialize viewMode from localStorage if available
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('journal-view-mode') as ViewMode;
+      if (saved === 'timeline' || saved === 'table') {
+        return saved;
+      }
+    }
+    return 'timeline';
+  });
   const [journals, setJournals] = useState<JournalEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -28,6 +37,13 @@ export default function JournalPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const pageSize = 50;
+
+  /**
+   * 表示モードを変更する
+   */
+  const handleViewChange = useCallback((mode: ViewMode) => {
+    setViewMode(mode);
+  }, []);
 
   /**
    * 仕訳データを取得する
@@ -204,7 +220,7 @@ export default function JournalPage() {
         <div className="flex items-center gap-3">
           <ViewToggle
             defaultView={viewMode}
-            onViewChange={setViewMode}
+            onViewChange={handleViewChange}
           />
           <Button variant="outline" onClick={handleRefresh}>
             <RefreshCwIcon className="mr-2 h-4 w-4" />
