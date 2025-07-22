@@ -384,7 +384,18 @@ export default function SupplierQuotesPage() {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {filteredQuotes.map((quote) => (
-                  <tr key={quote._id?.toString()} className="hover:bg-gray-50">
+                  <tr 
+                    key={quote._id?.toString()} 
+                    className="hover:bg-gray-50 cursor-pointer"
+                    onClick={(e) => {
+                      // 操作ボタンのクリックは除外
+                      const target = e.target as HTMLElement;
+                      if (target.closest('a') || target.closest('button')) {
+                        return;
+                      }
+                      router.push(`/supplier-quotes/${quote._id?.toString()}`);
+                    }}
+                  >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <FileText className="h-5 w-5 text-gray-400 mr-2" />
@@ -428,7 +439,7 @@ export default function SupplierQuotesPage() {
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex items-center justify-end gap-2">
+                      <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
                         <Link
                           href={`/supplier-quotes/${quote._id?.toString()}/edit`}
                           className="text-blue-600 hover:text-blue-800"
