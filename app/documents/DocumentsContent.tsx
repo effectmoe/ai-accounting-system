@@ -6,33 +6,8 @@ import Link from 'next/link';
 import { DocumentService, SavedDocument } from '@/services/document-service';
 import { FileText, Download, Send, CheckCircle, Filter, Plus, Paperclip, Bell, Edit, FileCheck, Archive, Grid3X3, List, Trash2, Image, CheckSquare, Square, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
-
-const documentTypeLabels = {
-  estimate: '見積書',
-  quotation: '見積書',
-  invoice: '請求書',
-  delivery_note: '納品書',
-  receipt: '領収書',
-  purchase_order: '発注書'
-};
-
-const statusLabels = {
-  draft: '下書き',
-  confirmed: '確定済み',
-  viewed: '閲覧済み',
-  accepted: '承認済み',
-  paid: '支払済み',
-  cancelled: 'キャンセル'
-};
-
-const statusColors = {
-  draft: 'bg-gray-100 text-gray-800',
-  confirmed: 'bg-blue-100 text-blue-800',
-  viewed: 'bg-yellow-100 text-yellow-800',
-  accepted: 'bg-green-100 text-green-800',
-  paid: 'bg-purple-100 text-purple-800',
-  cancelled: 'bg-red-100 text-red-800'
-};
+import { documentTypeLabels, statusLabels, statusColors, getDocumentTypeLabel, getStatusLabel, getStatusColor } from '@/components/common/constants';
+import StatusBadge from '@/components/common/StatusBadge';
 
 interface OcrResult {
   id: string;
