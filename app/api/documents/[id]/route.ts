@@ -35,6 +35,7 @@ export async function GET(
       gridfs_file_id: document.gridfs_file_id,
       fileId: document.fileId,
       file_id: document.file_id,
+      sourceFileId: document.sourceFileId,
       ocrResultId: document.ocrResultId,
       ocr_result_id: document.ocr_result_id,
       // すべてのキーを表示
@@ -70,7 +71,7 @@ export async function GET(
       confidence: document.confidence,
       ocr_status: document.ocrStatus || 'completed',
       ocr_result_id: document.ocrResultId?.toString() || document.ocr_result_id?.toString(),
-      gridfs_file_id: document.gridfsFileId?.toString() || document.gridfs_file_id?.toString() || document.fileId?.toString() || document.file_id?.toString(),
+      gridfs_file_id: document.gridfsFileId?.toString() || document.gridfs_file_id?.toString() || document.fileId?.toString() || document.file_id?.toString() || document.sourceFileId?.toString(),
       
       // 仕訳関連フィールド
       journalId: document.journalId?.toString()
