@@ -35,6 +35,7 @@ interface JournalEntry {
   description: string;
   status: string;
   lines: JournalLine[];
+  sourceDocumentId?: string;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -156,6 +157,17 @@ export default function JournalDetailPage() {
         </div>
         
         <div className="flex items-center gap-2">
+          {journal.sourceDocumentId && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => router.push(`/documents/${journal.sourceDocumentId}`)}
+              className="bg-purple-50 hover:bg-purple-100 text-purple-700 border-purple-300"
+            >
+              <FileText className="mr-2 h-4 w-4" />
+              元の領収書を表示
+            </Button>
+          )}
           <Button variant="outline" size="sm" onClick={handleEdit}>
             <EditIcon className="mr-2 h-4 w-4" />
             編集
