@@ -325,3 +325,5 @@ Import trace for requested module:
 }
  POST /api/journals/686d273afda1a0da7a319cd0/chat 200 in 17136ms
  ✓ Compiled /api/journals/[id]/chat in 10ms
+ ✓ Compiled in 912ms (319 modules)
+ ✓ Compiled in 56ms (319 modules)

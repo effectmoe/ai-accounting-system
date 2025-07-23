@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import AIChatDialog from '@/components/ai-chat-dialog';
@@ -140,16 +140,85 @@ const features = [
   }
 ];
 
-const recentActivities = [
-  { icon: CheckCircle, text: '請求書 #2024-001 が送信されました', time: '5分前', color: 'text-green-600' },
-  { icon: Upload, text: '領収書3件がアップロードされました', time: '1時間前', color: 'text-blue-600' },
-  { icon: Users, text: '新規顧客「株式会社サンプル」が追加されました', time: '3時間前', color: 'text-purple-600' }
-];
+// アクティビティのアイコンマッピング
+const getActivityIcon = (type: string) => {
+  switch (type) {
+    case 'invoice_created':
+    case 'invoice_sent':
+      return CheckCircle;
+    case 'document_created':
+    case 'ocr_completed':
+      return Upload;
+    case 'customer_created':
+      return Users;
+    default:
+      return CheckCircle;
+  }
+};
+
+// アクティビティの色マッピング
+const getActivityColor = (type: string) => {
+  switch (type) {
+    case 'invoice_created':
+    case 'invoice_sent':
+      return 'text-green-600';
+    case 'document_created':
+    case 'ocr_completed':
+      return 'text-blue-600';
+    case 'customer_created':
+      return 'text-purple-600';
+    default:
+      return 'text-gray-600';
+  }
+};
+
+interface DashboardMetrics {
+  totalRevenue: number;
+  processedDocuments: number;
+  pendingDocuments: number;
+  activeCustomers: number;
+  recentActivities: Array<{
+    type: string;
+    description: string;
+    timestamp: string;
+    metadata?: Record<string, any>;
+  }>;
+}
 
 export default function Home() {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isKnowledgeChatOpen, setIsKnowledgeChatOpen] = useState(false);
   const [documentType, setDocumentType] = useState<'invoice' | 'quote'>('invoice');
+  const [metrics, setMetrics] = useState<DashboardMetrics | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // ダッシュボードメトリクスを取得
+  useEffect(() => {
+    const fetchMetrics = async () => {
+      try {
+        console.log('Fetching dashboard metrics...');
+        setLoading(true);
+        const response = await fetch('/api/dashboard/metrics');
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch metrics: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('Dashboard metrics loaded:', data);
+        setMetrics(data);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching dashboard metrics:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load dashboard data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMetrics();
+  }, []);
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
@@ -210,11 +279,19 @@ export default function Home() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600 mb-1">今月の請求額</p>
-                    <p className="text-2xl font-bold text-gray-900">¥1,234,567</p>
+                    <p className="text-sm text-gray-600 mb-1">総請求額</p>
+                    {loading ? (
+                      <div className="h-8 bg-gray-200 rounded animate-pulse"></div>
+                    ) : error ? (
+                      <p className="text-xl font-bold text-red-500">エラー</p>
+                    ) : (
+                      <p className="text-2xl font-bold text-gray-900">
+                        ¥{metrics?.totalRevenue.toLocaleString() || '0'}
+                      </p>
+                    )}
                     <div className="flex items-center gap-1 mt-2 text-sm text-green-600">
                       <TrendingUp className="w-4 h-4" />
-                      <span>+12.5%</span>
+                      <span>累計</span>
                     </div>
                   </div>
                   <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
@@ -229,10 +306,18 @@ export default function Home() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-600 mb-1">処理済み書類</p>
-                    <p className="text-2xl font-bold text-gray-900">156件</p>
+                    {loading ? (
+                      <div className="h-8 bg-gray-200 rounded animate-pulse"></div>
+                    ) : error ? (
+                      <p className="text-xl font-bold text-red-500">エラー</p>
+                    ) : (
+                      <p className="text-2xl font-bold text-gray-900">
+                        {metrics?.processedDocuments || 0}件
+                      </p>
+                    )}
                     <div className="flex items-center gap-1 mt-2 text-sm text-blue-600">
                       <Clock className="w-4 h-4" />
-                      <span>今月</span>
+                      <span>保留中: {metrics?.pendingDocuments || 0}件</span>
                     </div>
                   </div>
                   <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
@@ -247,10 +332,18 @@ export default function Home() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-gray-600 mb-1">アクティブ顧客</p>
-                    <p className="text-2xl font-bold text-gray-900">48社</p>
+                    {loading ? (
+                      <div className="h-8 bg-gray-200 rounded animate-pulse"></div>
+                    ) : error ? (
+                      <p className="text-xl font-bold text-red-500">エラー</p>
+                    ) : (
+                      <p className="text-2xl font-bold text-gray-900">
+                        {metrics?.activeCustomers || 0}社
+                      </p>
+                    )}
                     <div className="flex items-center gap-1 mt-2 text-sm text-purple-600">
                       <Users className="w-4 h-4" />
-                      <span>+3 新規</span>
+                      <span>過去90日</span>
                     </div>
                   </div>
                   <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
@@ -364,15 +457,57 @@ export default function Home() {
               <CardTitle className="text-lg">最近のアクティビティ</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {recentActivities.map((activity, index) => (
-                <div key={index} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
-                  <activity.icon className={`w-5 h-5 ${activity.color}`} />
+              {loading ? (
+                // ローディング状態
+                Array.from({ length: 3 }).map((_, index) => (
+                  <div key={index} className="flex items-center gap-3 p-3 rounded-lg">
+                    <div className="w-5 h-5 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="flex-1">
+                      <div className="h-4 bg-gray-200 rounded animate-pulse mb-2"></div>
+                      <div className="h-3 bg-gray-200 rounded animate-pulse w-20"></div>
+                    </div>
+                  </div>
+                ))
+              ) : error ? (
+                <div className="flex items-center gap-3 p-3 rounded-lg">
+                  <div className="w-5 h-5 text-red-500">⚠</div>
                   <div className="flex-1">
-                    <p className="text-sm text-gray-900">{activity.text}</p>
-                    <p className="text-xs text-gray-500">{activity.time}</p>
+                    <p className="text-sm text-red-600">アクティビティの読み込みに失敗しました</p>
+                    <p className="text-xs text-gray-500">{error}</p>
                   </div>
                 </div>
-              ))}
+              ) : (
+                metrics?.recentActivities && metrics.recentActivities.length > 0 ? (
+                  metrics.recentActivities.map((activity, index) => {
+                    const ActivityIcon = getActivityIcon(activity.type);
+                    const activityColor = getActivityColor(activity.type);
+                    const timeAgo = new Date(activity.timestamp).toLocaleString('ja-JP', {
+                      month: 'short',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    });
+                    
+                    return (
+                      <div key={index} className="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                        <ActivityIcon className={`w-5 h-5 ${activityColor}`} />
+                        <div className="flex-1">
+                          <p className="text-sm text-gray-900">{activity.description}</p>
+                          <p className="text-xs text-gray-500">{timeAgo}</p>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="flex items-center gap-3 p-3 rounded-lg">
+                    <div className="w-5 h-5 text-gray-400">ℹ</div>
+                    <div className="flex-1">
+                      <p className="text-sm text-gray-600">最近のアクティビティはありません</p>
+                      <p className="text-xs text-gray-500">システムを使用するとここに表示されます</p>
+                    </div>
+                  </div>
+                )
+              )}
             </CardContent>
           </Card>
 
