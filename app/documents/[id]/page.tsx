@@ -26,6 +26,16 @@ interface Document {
   updated_at: string;
   ocr_result_id?: string;
   gridfs_file_id?: string;
+  // OCR関連フィールド
+  vendor_name?: string;
+  receipt_date?: string;
+  category?: string;
+  extracted_text?: string;
+  ocr_status?: string;
+  confidence?: number;
+  file_name?: string;
+  file_type?: string;
+  file_size?: number;
 }
 
 interface DocumentItem {
@@ -100,7 +110,16 @@ export default function DocumentDetailPage() {
         ocr_result_id: data.document.ocr_result_id,
         gridfs_file_id: data.document.gridfs_file_id,
         has_ocr_result_id: !!data.document.ocr_result_id,
-        has_gridfs_file_id: !!data.document.gridfs_file_id
+        has_gridfs_file_id: !!data.document.gridfs_file_id,
+        // OCR詳細情報
+        vendor_name: data.document.vendor_name,
+        receipt_date: data.document.receipt_date,
+        category: data.document.category,
+        ocr_status: data.document.ocr_status,
+        confidence: data.document.confidence,
+        file_name: data.document.file_name,
+        file_type: data.document.file_type,
+        file_size: data.document.file_size
       });
       console.log('All document keys:', Object.keys(data.document));
       console.log('===========================');
@@ -395,13 +414,59 @@ export default function DocumentDetailPage() {
                 </div>
               )}
 
-              {/* OCR元ファイル */}
-              {(document.ocr_result_id || document.gridfs_file_id) && (
+              {/* OCR情報 */}
+              {(document.ocr_result_id || document.gridfs_file_id || document.ocr_status === 'completed') && (
                 <div className="mt-6 pt-6 border-t border-gray-200">
-                  <h3 className="text-sm font-medium text-gray-900 mb-4">OCR元ファイル</h3>
+                  <h3 className="text-sm font-medium text-gray-900 mb-4">OCR情報</h3>
                   <p className="text-xs text-gray-600 mb-3">
                     この書類はOCRによって自動生成されました。
                   </p>
+                  
+                  {/* OCR詳細情報 */}
+                  <dl className="space-y-2 mb-4">
+                    {document.vendor_name && (
+                      <div className="flex justify-between text-sm">
+                        <dt className="text-gray-500">ベンダー名</dt>
+                        <dd className="text-gray-900">{document.vendor_name}</dd>
+                      </div>
+                    )}
+                    {document.receipt_date && (
+                      <div className="flex justify-between text-sm">
+                        <dt className="text-gray-500">領収日</dt>
+                        <dd className="text-gray-900">
+                          {new Date(document.receipt_date).toLocaleDateString('ja-JP')}
+                        </dd>
+                      </div>
+                    )}
+                    {document.category && (
+                      <div className="flex justify-between text-sm">
+                        <dt className="text-gray-500">カテゴリ</dt>
+                        <dd className="text-gray-900">{document.category}</dd>
+                      </div>
+                    )}
+                    {document.confidence && (
+                      <div className="flex justify-between text-sm">
+                        <dt className="text-gray-500">信頼度</dt>
+                        <dd className="text-gray-900">{Math.round(document.confidence * 100)}%</dd>
+                      </div>
+                    )}
+                    {document.file_name && (
+                      <div className="flex justify-between text-sm">
+                        <dt className="text-gray-500">ファイル名</dt>
+                        <dd className="text-gray-900 truncate max-w-[150px]" title={document.file_name}>
+                          {document.file_name}
+                        </dd>
+                      </div>
+                    )}
+                    {document.file_size && (
+                      <div className="flex justify-between text-sm">
+                        <dt className="text-gray-500">ファイルサイズ</dt>
+                        <dd className="text-gray-900">
+                          {(document.file_size / 1024).toFixed(1)} KB
+                        </dd>
+                      </div>
+                    )}
+                  </dl>
                   <div className="space-y-2">
                     {document.gridfs_file_id && (
                       <>
