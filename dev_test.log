@@ -2,15 +2,14 @@
 > mastra-accounting-automation@1.0.1 dev
 > next dev
 
- ⚠ Port 3000 is in use, trying 3001 instead.
   ▲ Next.js 14.2.21
-  - Local:        http://localhost:3001
+  - Local:        http://localhost:3000
   - Environments: .env.local, .env
 
  ✓ Starting...
- ✓ Ready in 2s
- ✓ Compiled /middleware in 163ms (117 modules)
- ○ Compiling /api/journals/[id] ...
+ ✓ Ready in 1870ms
+ ✓ Compiled /middleware in 161ms (117 modules)
+ ○ Compiling /api/dashboard/metrics ...
  ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
 Critical dependency: the request of a dependency is an expression
 
@@ -24,7 +23,7 @@ Import trace for requested module:
 ./node_modules/@sentry/node/build/cjs/index.js
 ./node_modules/@sentry/nextjs/build/cjs/index.server.js
 ./lib/logger.ts
-./app/api/journals/[id]/route.ts
+./app/api/dashboard/metrics/route.ts
 
 ./node_modules/require-in-the-middle/index.js
 Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
@@ -40,25 +39,54 @@ Import trace for requested module:
 ./node_modules/@sentry/node/build/cjs/index.js
 ./node_modules/@sentry/nextjs/build/cjs/index.server.js
 ./lib/logger.ts
-./app/api/journals/[id]/route.ts
-[2025-07-23T02:18:19.639Z] [DEBUG] Creating new MongoDB connection... 
-[2025-07-23T02:18:19.640Z] [DEBUG] MongoDB URI configured: mongodb+srv://***:***@accounting-cluster.nld0j20.mongodb.net/accounting?retryWrites=true&w=majority&appName=accounting-cluster
-[2025-07-23T02:18:19.951Z] [DEBUG] Creating new MongoDB connection... 
-[2025-07-23T02:18:19.952Z] [DEBUG] MongoDB URI configured: mongodb+srv://***:***@accounting-cluster.nld0j20.mongodb.net/accounting?retryWrites=true&w=majority&appName=accounting-cluster
-[2025-07-23T02:18:19.963Z] [DEBUG] ===== Journal Detail API GET Request Start ===== 
-[2025-07-23T02:18:19.963Z] [DEBUG] Journal ID: test-id
-[2025-07-23T02:18:19.963Z] [DEBUG] Environment check: {
-  NODE_ENV: 'development',
-  MONGODB_URI_exists: '[REDACTED]',
-  USE_AZURE_MONGODB: 'true',
-  timestamp: '2025-07-23T02:18:19.963Z'
+./app/api/dashboard/metrics/route.ts
+[2025-07-23T15:30:15.642Z] [DEBUG] Creating new MongoDB connection... 
+[2025-07-23T15:30:15.643Z] [DEBUG] MongoDB URI configured: mongodb+srv://***:***@accounting-cluster.nld0j20.mongodb.net/accounting?retryWrites=true&w=majority&appName=accounting-cluster
+🎯 Dashboard metrics API called
+[2025-07-23T15:30:15.652Z] [INFO] Dashboard metrics API called 
+[2025-07-23T15:30:16.080Z] [DEBUG] [MongoDB] Database name extracted from URI: "accounting" 
+[2025-07-23T15:30:16.080Z] [DEBUG] [MongoDB] Database name extracted from URI: "accounting" 
+[2025-07-23T15:30:16.081Z] [DEBUG] [MongoDB] Database name extracted from URI: "accounting" 
+[2025-07-23T15:30:16.106Z] [DEBUG] MongoDB connection verified with ping 
+[2025-07-23T15:30:16.308Z] [DEBUG] Reusing cached MongoDB connection 
+[2025-07-23T15:30:16.352Z] [DEBUG] Reusing cached MongoDB connection 
+✅ Connected to MongoDB for dashboard metrics
+[2025-07-23T15:30:16.352Z] [INFO] Connected to MongoDB for dashboard metrics 
+📋 Available collections: [ 'ocrResults', 'suppliers', 'supplierQuotes' ]
+[2025-07-23T15:30:16.378Z] [INFO] Available collections: [ 'ocrResults', 'suppliers', 'supplierQuotes' ]
+💰 Calculating total revenue...
+Revenue from supplier quotes: ¥52,800
+[2025-07-23T15:30:16.410Z] [INFO] Total revenue calculated: ¥52,800 
+📄 Calculating processed documents...
+OCR processed documents: 3
+Total processed documents: 3
+[2025-07-23T15:30:16.434Z] [INFO] Processed documents count: 3 
+⏳ Calculating pending documents...
+Pending supplier quotes: 0
+Total pending documents: 0
+[2025-07-23T15:30:16.462Z] [INFO] Pending documents count: 0 
+👥 Calculating active customers/suppliers...
+Active suppliers: 1
+Total active customers/suppliers: 1
+[2025-07-23T15:30:16.487Z] [INFO] Active customers count: 1 
+📊 Fetching recent activities...
+Recent activities generated: 7
+[2025-07-23T15:30:16.564Z] [INFO] Recent activities count: 7 
+✅ Dashboard metrics successfully compiled: {
+  totalRevenue: 52800,
+  processedDocuments: 3,
+  pendingDocuments: 0,
+  activeCustomers: 1,
+  activitiesCount: 7
 }
-[2025-07-23T02:18:19.964Z] [ERROR] Invalid ObjectId format: test-id
- GET /api/journals/test-id 400 in 1601ms
-[2025-07-23T02:18:20.534Z] [DEBUG] [MongoDB] Database name extracted from URI: "accounting" 
-[2025-07-23T02:18:20.535Z] [DEBUG] [MongoDB] Database name extracted from URI: "accounting" 
-[2025-07-23T02:18:20.560Z] [DEBUG] MongoDB connection verified with ping 
-[2025-07-23T02:18:20.751Z] [DEBUG] Reusing cached MongoDB connection 
+[2025-07-23T15:30:16.565Z] [INFO] Dashboard metrics successfully compiled {
+  totalRevenue: 52800,
+  processedDocuments: 3,
+  pendingDocuments: 0,
+  activeCustomers: 1,
+  activitiesCount: 7
+}
+ GET /api/dashboard/metrics 200 in 2175ms
  ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
 Critical dependency: the request of a dependency is an expression
 
@@ -72,7 +100,7 @@ Import trace for requested module:
 ./node_modules/@sentry/node/build/cjs/index.js
 ./node_modules/@sentry/nextjs/build/cjs/index.server.js
 ./lib/logger.ts
-./app/api/journals/[id]/route.ts
+./app/api/dashboard/metrics/route.ts
 
 ./node_modules/require-in-the-middle/index.js
 Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
@@ -88,7 +116,12 @@ Import trace for requested module:
 ./node_modules/@sentry/node/build/cjs/index.js
 ./node_modules/@sentry/nextjs/build/cjs/index.server.js
 ./lib/logger.ts
-./app/api/journals/[id]/route.ts
+./app/api/dashboard/metrics/route.ts
+
+warn - Your `content` configuration includes a pattern which looks like it's accidentally matching all of `node_modules` and can cause serious performance issues.
+warn - Pattern: `./src/**/*.ts`
+warn - See our documentation for recommendations:
+warn - https://tailwindcss.com/docs/content-configuration#pattern-recommendations
  ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
 Critical dependency: the request of a dependency is an expression
 
@@ -102,7 +135,8 @@ Import trace for requested module:
 ./node_modules/@sentry/node/build/cjs/index.js
 ./node_modules/@sentry/nextjs/build/cjs/index.server.js
 ./lib/logger.ts
-./app/api/journals/[id]/route.ts
+./components/ai-chat-dialog.tsx
+./app/page.tsx
 
 ./node_modules/require-in-the-middle/index.js
 Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
@@ -117,155 +151,37 @@ Import trace for requested module:
 ./node_modules/@sentry/node/build/cjs/index.js
 ./node_modules/@sentry/nextjs/build/cjs/index.server.js
 ./lib/logger.ts
-./app/api/journals/[id]/route.ts
-[2025-07-23T02:18:29.708Z] [DEBUG] [MongoDB] Database name extracted from URI: "accounting" 
-[2025-07-23T02:18:29.708Z] [DEBUG] [MongoDB] Database name extracted from URI: "accounting" 
-[2025-07-23T02:18:29.709Z] [DEBUG] ===== Journals API GET Request Start ===== 
-[2025-07-23T02:18:29.709Z] [DEBUG] Environment check: {
-  NODE_ENV: 'development',
-  MONGODB_URI_exists: '[REDACTED]',
-  USE_AZURE_MONGODB: 'true',
-  VERCEL: false,
-  timestamp: '2025-07-23T02:18:29.709Z'
-}
-[2025-07-23T02:18:29.709Z] [DEBUG] Query parameters: { companyId: null, dateFrom: null, dateTo: null, limit: 1, skip: 0 }
-[2025-07-23T02:18:29.710Z] [DEBUG] Filter object: {}
-[2025-07-23T02:18:29.710Z] [DEBUG] Attempting to fetch journals from database... 
-[2025-07-23T02:18:29.710Z] [DEBUG] [DatabaseService.find] Starting find operation for collection: journals 
-[2025-07-23T02:18:29.710Z] [DEBUG] [DatabaseService.find] Filter: {}
-[2025-07-23T02:18:29.710Z] [DEBUG] [DatabaseService.find] Options: {"limit":1,"skip":0,"sort":{"entryDate":-1,"createdAt":-1}}
-[2025-07-23T02:18:29.710Z] [DEBUG] [getCollection] Attempting to get collection: journals 
-[2025-07-23T02:18:29.710Z] [DEBUG] [MongoDB] Database name extracted from URI: "accounting" 
-[2025-07-23T02:18:29.735Z] [DEBUG] Reusing cached MongoDB connection 
-[2025-07-23T02:18:29.736Z] [DEBUG] Reusing cached MongoDB connection 
-[2025-07-23T02:18:29.918Z] [DEBUG] Reusing cached MongoDB connection 
-[2025-07-23T02:18:29.918Z] [DEBUG] [getCollection] Database obtained successfully 
-[2025-07-23T02:18:29.918Z] [DEBUG] [getCollection] Collection reference created for: journals 
-[2025-07-23T02:18:29.944Z] [DEBUG] [getCollection] Collection journals is accessible. Estimated count: 4 
-[2025-07-23T02:18:29.944Z] [DEBUG] [DatabaseService.find] Collection obtained successfully 
-[2025-07-23T02:18:29.946Z] [DEBUG] [DatabaseService.find] Sort applied: { entryDate: -1, createdAt: -1 }
-[2025-07-23T02:18:29.947Z] [DEBUG] [DatabaseService.find] Limit applied: 1
-[2025-07-23T02:18:29.947Z] [DEBUG] [DatabaseService.find] Executing query... 
-[2025-07-23T02:18:29.976Z] [DEBUG] [DatabaseService.find] Query executed successfully. Results count: 1 
-[2025-07-23T02:18:29.977Z] [DEBUG] Journals fetched successfully: {
-  count: 1,
-  hasData: true,
-  firstJournal: {
-    _id: { buffer: [Object] },
-    companyId: '11111111-1111-1111-1111-111111111111',
-    journalNumber: 'J202500003',
-    entryDate: {},
-    description: '福岡城三の丸:株式会社 ( - ',
-    status: 'confirmed',
-    sourceType: 'ocr',
-    sourceDocumentId: { buffer: [Object] },
-    lines: [ [Object], [Object] ],
-    totalDebit: 800,
-    totalCredit: 800,
-    createdAt: {},
-    updatedAt: {}
-  }
-}
-[2025-07-23T02:18:29.978Z] [DEBUG] Fetching total count... 
-[2025-07-23T02:18:29.979Z] [DEBUG] [DatabaseService.count] Starting count operation for collection: journals 
-[2025-07-23T02:18:29.979Z] [DEBUG] [DatabaseService.count] Filter: {}
-[2025-07-23T02:18:29.979Z] [DEBUG] [getCollection] Attempting to get collection: journals 
-[2025-07-23T02:18:29.979Z] [DEBUG] [MongoDB] Database name extracted from URI: "accounting" 
-[2025-07-23T02:18:30.005Z] [DEBUG] Reusing cached MongoDB connection 
-[2025-07-23T02:18:30.005Z] [DEBUG] [getCollection] Database obtained successfully 
-[2025-07-23T02:18:30.005Z] [DEBUG] [getCollection] Collection reference created for: journals 
-[2025-07-23T02:18:30.031Z] [DEBUG] [getCollection] Collection journals is accessible. Estimated count: 4 
-[2025-07-23T02:18:30.031Z] [DEBUG] [DatabaseService.count] Collection obtained successfully 
-[2025-07-23T02:18:30.058Z] [DEBUG] [DatabaseService.count] Count result: 4 
-[2025-07-23T02:18:30.058Z] [DEBUG] Total count: 4
-[2025-07-23T02:18:30.058Z] [DEBUG] API Response: {
-  success: true,
-  journalsCount: 1,
-  totalCount: 4,
-  currentPage: 1,
-  totalPages: 4
-}
-[2025-07-23T02:18:30.058Z] [DEBUG] ===== Journals API GET Request End ===== 
- GET /api/journals?limit=1 200 in 536ms
-[2025-07-23T02:26:05.957Z] [DEBUG] ===== Journals API GET Request Start ===== 
-[2025-07-23T02:26:05.957Z] [DEBUG] Environment check: {
-  NODE_ENV: 'development',
-  MONGODB_URI_exists: '[REDACTED]',
-  USE_AZURE_MONGODB: 'true',
-  VERCEL: false,
-  timestamp: '2025-07-23T02:26:05.957Z'
-}
-[2025-07-23T02:26:05.957Z] [DEBUG] Query parameters: { companyId: null, dateFrom: null, dateTo: null, limit: 1, skip: 0 }
-[2025-07-23T02:26:05.957Z] [DEBUG] Filter object: {}
-[2025-07-23T02:26:05.957Z] [DEBUG] Attempting to fetch journals from database... 
-[2025-07-23T02:26:05.957Z] [DEBUG] [DatabaseService.find] Starting find operation for collection: journals 
-[2025-07-23T02:26:05.957Z] [DEBUG] [DatabaseService.find] Filter: {}
-[2025-07-23T02:26:05.957Z] [DEBUG] [DatabaseService.find] Options: {"limit":1,"skip":0,"sort":{"entryDate":-1,"createdAt":-1}}
-[2025-07-23T02:26:05.957Z] [DEBUG] [getCollection] Attempting to get collection: journals 
-[2025-07-23T02:26:05.957Z] [DEBUG] [MongoDB] Database name extracted from URI: "accounting" 
-[2025-07-23T02:26:06.034Z] [DEBUG] Reusing cached MongoDB connection 
-[2025-07-23T02:26:06.034Z] [DEBUG] [getCollection] Database obtained successfully 
-[2025-07-23T02:26:06.034Z] [DEBUG] [getCollection] Collection reference created for: journals 
-[2025-07-23T02:26:06.115Z] [DEBUG] [getCollection] Collection journals is accessible. Estimated count: 4 
-[2025-07-23T02:26:06.115Z] [DEBUG] [DatabaseService.find] Collection obtained successfully 
-[2025-07-23T02:26:06.115Z] [DEBUG] [DatabaseService.find] Sort applied: { entryDate: -1, createdAt: -1 }
-[2025-07-23T02:26:06.115Z] [DEBUG] [DatabaseService.find] Limit applied: 1
-[2025-07-23T02:26:06.115Z] [DEBUG] [DatabaseService.find] Executing query... 
-[2025-07-23T02:26:06.140Z] [DEBUG] [DatabaseService.find] Query executed successfully. Results count: 1 
-[2025-07-23T02:26:06.140Z] [DEBUG] Journals fetched successfully: {
-  count: 1,
-  hasData: true,
-  firstJournal: {
-    _id: { buffer: [Object] },
-    companyId: '11111111-1111-1111-1111-111111111111',
-    journalNumber: 'J202500003',
-    entryDate: {},
-    description: '福岡城三の丸:株式会社 ( - ',
-    status: 'confirmed',
-    sourceType: 'ocr',
-    sourceDocumentId: { buffer: [Object] },
-    lines: [ [Object], [Object] ],
-    totalDebit: 800,
-    totalCredit: 800,
-    createdAt: {},
-    updatedAt: {}
-  }
-}
-[2025-07-23T02:26:06.140Z] [DEBUG] Fetching total count... 
-[2025-07-23T02:26:06.140Z] [DEBUG] [DatabaseService.count] Starting count operation for collection: journals 
-[2025-07-23T02:26:06.140Z] [DEBUG] [DatabaseService.count] Filter: {}
-[2025-07-23T02:26:06.140Z] [DEBUG] [getCollection] Attempting to get collection: journals 
-[2025-07-23T02:26:06.140Z] [DEBUG] [MongoDB] Database name extracted from URI: "accounting" 
-[2025-07-23T02:26:06.165Z] [DEBUG] Reusing cached MongoDB connection 
-[2025-07-23T02:26:06.165Z] [DEBUG] [getCollection] Database obtained successfully 
-[2025-07-23T02:26:06.165Z] [DEBUG] [getCollection] Collection reference created for: journals 
-[2025-07-23T02:26:06.189Z] [DEBUG] [getCollection] Collection journals is accessible. Estimated count: 4 
-[2025-07-23T02:26:06.189Z] [DEBUG] [DatabaseService.count] Collection obtained successfully 
-[2025-07-23T02:26:06.215Z] [DEBUG] [DatabaseService.count] Count result: 4 
-[2025-07-23T02:26:06.215Z] [DEBUG] Total count: 4
-[2025-07-23T02:26:06.215Z] [DEBUG] API Response: {
-  success: true,
-  journalsCount: 1,
-  totalCount: 4,
-  currentPage: 1,
-  totalPages: 4
-}
-[2025-07-23T02:26:06.216Z] [DEBUG] ===== Journals API GET Request End ===== 
- GET /api/journals?limit=1 200 in 278ms
- ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./components/ai-chat-dialog.tsx
+./app/page.tsx
+
+./node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
 Critical dependency: the request of a dependency is an expression
 
 Import trace for requested module:
-./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
-./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
-./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
-./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
-./node_modules/@prisma/instrumentation/dist/index.js
-./node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+./node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node-core/build/cjs/integrations/http/SentryHttpInstrumentation.js
+./node_modules/@sentry/node-core/build/cjs/index.js
 ./node_modules/@sentry/node/build/cjs/index.js
 ./node_modules/@sentry/nextjs/build/cjs/index.server.js
 ./lib/logger.ts
-./app/api/journals/[id]/route.ts
+./app/api/dashboard/metrics/route.ts
+
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./lib/logger.ts
+./app/api/dashboard/metrics/route.ts
 
 ./node_modules/require-in-the-middle/index.js
 Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
@@ -280,50 +196,51 @@ Import trace for requested module:
 ./node_modules/@sentry/node/build/cjs/index.js
 ./node_modules/@sentry/nextjs/build/cjs/index.server.js
 ./lib/logger.ts
-./app/api/journals/[id]/route.ts
- ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
-Critical dependency: the request of a dependency is an expression
-
-Import trace for requested module:
-./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
-./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
-./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
-./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
-./node_modules/@prisma/instrumentation/dist/index.js
-./node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
-./node_modules/@sentry/node/build/cjs/index.js
-./node_modules/@sentry/nextjs/build/cjs/index.server.js
-./lib/logger.ts
-./app/api/journals/route.ts
-
-./node_modules/require-in-the-middle/index.js
-Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
-
-Import trace for requested module:
-./node_modules/require-in-the-middle/index.js
-./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
-./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
-./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
-./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/index.js
-./node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js
-./node_modules/@sentry/node/build/cjs/index.js
-./node_modules/@sentry/nextjs/build/cjs/index.server.js
-./lib/logger.ts
-./app/api/journals/route.ts
-[2025-07-23T02:26:26.845Z] [DEBUG] [Journal Chat API] Request received for journal: 686d273afda1a0da7a319cd0
-[2025-07-23T02:26:26.855Z] [DEBUG] [Journal Chat API] Calling DeepSeek API with messages: { messageCount: 2, journalNumber: 'J202500003' }
-[2025-07-23T02:26:43.398Z] [DEBUG] [Journal Chat API] DeepSeek response received: {
-  responseLength: 416,
-  usage: {
-    prompt_tokens: '[REDACTED]',
-    completion_tokens: '[REDACTED]',
-    total_tokens: '[REDACTED]',
-    prompt_tokens_details: '[REDACTED]',
-    prompt_cache_hit_tokens: '[REDACTED]',
-    prompt_cache_miss_tokens: '[REDACTED]'
-  }
+./app/api/dashboard/metrics/route.ts
+ GET / 200 in 7556ms
+[2025-07-23T15:31:04.506Z] [DEBUG] [MongoDB] Database name extracted from URI: "accounting" 
+[2025-07-23T15:31:04.506Z] [DEBUG] [MongoDB] Database name extracted from URI: "accounting" 
+🎯 Dashboard metrics API called
+[2025-07-23T15:31:04.508Z] [INFO] Dashboard metrics API called 
+[2025-07-23T15:31:04.508Z] [DEBUG] [MongoDB] Database name extracted from URI: "accounting" 
+[2025-07-23T15:31:04.531Z] [DEBUG] Reusing cached MongoDB connection 
+[2025-07-23T15:31:04.532Z] [DEBUG] Reusing cached MongoDB connection 
+[2025-07-23T15:31:04.533Z] [DEBUG] Reusing cached MongoDB connection 
+✅ Connected to MongoDB for dashboard metrics
+[2025-07-23T15:31:04.533Z] [INFO] Connected to MongoDB for dashboard metrics 
+📋 Available collections: [ 'ocrResults', 'suppliers', 'supplierQuotes' ]
+[2025-07-23T15:31:04.569Z] [INFO] Available collections: [ 'ocrResults', 'suppliers', 'supplierQuotes' ]
+💰 Calculating total revenue...
+Revenue from supplier quotes: ¥52,800
+[2025-07-23T15:31:04.595Z] [INFO] Total revenue calculated: ¥52,800 
+📄 Calculating processed documents...
+OCR processed documents: 3
+Total processed documents: 3
+[2025-07-23T15:31:04.621Z] [INFO] Processed documents count: 3 
+⏳ Calculating pending documents...
+Pending supplier quotes: 0
+Total pending documents: 0
+[2025-07-23T15:31:04.661Z] [INFO] Pending documents count: 0 
+👥 Calculating active customers/suppliers...
+Active suppliers: 1
+Total active customers/suppliers: 1
+[2025-07-23T15:31:04.724Z] [INFO] Active customers count: 1 
+📊 Fetching recent activities...
+Recent activities generated: 7
+[2025-07-23T15:31:05.074Z] [INFO] Recent activities count: 7 
+✅ Dashboard metrics successfully compiled: {
+  totalRevenue: 52800,
+  processedDocuments: 3,
+  pendingDocuments: 0,
+  activeCustomers: 1,
+  activitiesCount: 7
 }
- POST /api/journals/686d273afda1a0da7a319cd0/chat 200 in 17136ms
- ✓ Compiled /api/journals/[id]/chat in 10ms
- ✓ Compiled in 912ms (319 modules)
- ✓ Compiled in 56ms (319 modules)
+[2025-07-23T15:31:05.074Z] [INFO] Dashboard metrics successfully compiled {
+  totalRevenue: 52800,
+  processedDocuments: 3,
+  pendingDocuments: 0,
+  activeCustomers: 1,
+  activitiesCount: 7
+}
+ GET /api/dashboard/metrics 200 in 678ms
+[?25h
