@@ -108,10 +108,23 @@ export default function DocumentDetailPage() {
       setLoading(true);
       
       // 文書の詳細を取得
+      console.log('=== Document Loading Debug ===');
+      console.log('Loading document with ID:', documentId);
+      console.log('Is Journal Number?:', documentId.startsWith('J'));
+      
       const response = await fetch(`/api/documents/${documentId}`);
       const data = await response.json();
 
+      console.log('API Response:', {
+        ok: response.ok,
+        status: response.status,
+        success: data.success,
+        error: data.error,
+        hasDocument: !!data.document
+      });
+
       if (!response.ok || !data.success) {
+        console.error('Failed to load document:', data.error);
         throw new Error(data.error || '文書の取得に失敗しました');
       }
 
@@ -135,6 +148,15 @@ export default function DocumentDetailPage() {
         file_name: data.document.file_name,
         file_type: data.document.file_type,
         file_size: data.document.file_size
+      });
+      console.log('Parking fields:', {
+        receipt_type: data.document.receipt_type,
+        facility_name: data.document.facility_name,
+        entry_time: data.document.entry_time,
+        exit_time: data.document.exit_time,
+        parking_duration: data.document.parking_duration,
+        base_fee: data.document.base_fee,
+        additional_fee: data.document.additional_fee
       });
       console.log('All document keys:', Object.keys(data.document));
       console.log('===========================');

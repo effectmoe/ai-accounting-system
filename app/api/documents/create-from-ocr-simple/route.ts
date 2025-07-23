@@ -65,6 +65,7 @@ export async function POST(request: NextRequest) {
         documentType: document_type,
         type: document_type,
         documentNumber: receipt_number || `${prefix}-${new Date().getTime()}`,
+        displayNumber: '', // 仕訳作成時に設定される番号（例：J202500005）
         issueDate: receipt_date,
         partnerName: partnerName,
         partnerAddress: '',
