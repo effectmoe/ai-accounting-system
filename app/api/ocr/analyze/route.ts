@@ -209,6 +209,18 @@ TEL: 03-xxxx-xxxx FAX: 03-xxxx-xxxx
         receiptDate: structuredData.receiptDate
       });
       
+      // 駐車場関連フィールドのログ
+      console.log('🚗 [OCR API] 駐車場関連フィールド:', {
+        receiptType: structuredData.receiptType,
+        facilityName: structuredData.facilityName,
+        entryTime: structuredData.entryTime,
+        exitTime: structuredData.exitTime,
+        parkingDuration: structuredData.parkingDuration,
+        baseFee: structuredData.baseFee,
+        additionalFee: structuredData.additionalFee,
+        companyName: structuredData.companyName
+      });
+
       const ocrDocument = {
         companyId: companyId,
         type: documentType,
@@ -234,6 +246,16 @@ TEL: 03-xxxx-xxxx FAX: 03-xxxx-xxxx
         receipt_number: structuredData.receiptNumber || structuredData.documentNumber || '',
         store_name: structuredData.vendor?.name || structuredData.vendorName || '',
         extracted_text: JSON.stringify(structuredData),
+        
+        // 駐車場領収書専用フィールド
+        receiptType: structuredData.receiptType,
+        facilityName: structuredData.facilityName,
+        entryTime: structuredData.entryTime,
+        exitTime: structuredData.exitTime,
+        parkingDuration: structuredData.parkingDuration,
+        baseFee: structuredData.baseFee,
+        additionalFee: structuredData.additionalFee,
+        companyName: structuredData.companyName,
         
         // その他のメタデータ
         fileName: file.name,
@@ -273,7 +295,15 @@ TEL: 03-xxxx-xxxx FAX: 03-xxxx-xxxx
           category: savedDoc.category,
           total_amount: savedDoc.total_amount,
           file_name: savedDoc.fileName,
-          gridfsFileId: savedDoc.gridfsFileId?.toString()
+          gridfsFileId: savedDoc.gridfsFileId?.toString(),
+          // 駐車場関連フィールド
+          receiptType: savedDoc.receiptType,
+          facilityName: savedDoc.facilityName,
+          entryTime: savedDoc.entryTime,
+          exitTime: savedDoc.exitTime,
+          parkingDuration: savedDoc.parkingDuration,
+          baseFee: savedDoc.baseFee,
+          additionalFee: savedDoc.additionalFee
         });
       } else {
         mongoDbSaved = false;

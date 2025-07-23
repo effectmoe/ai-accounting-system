@@ -36,36 +36,62 @@ export async function POST(request: NextRequest) {
       }, { status: 404 });
     }
 
+    // OCR結果の構造をログに出力
+    logger.debug('OCR Result structure:', JSON.stringify({
+      id: ocrResult._id,
+      hasExtractedData: !!ocrResult.extractedData,
+      extractedDataKeys: ocrResult.extractedData ? Object.keys(ocrResult.extractedData) : [],
+      hasOcrResult: !!ocrResult.ocrResult,
+      ocrResultKeys: ocrResult.ocrResult ? Object.keys(ocrResult.ocrResult) : [],
+      topLevelKeys: Object.keys(ocrResult)
+    }, null, 2));
+
+    // OCR結果からデータを取得（ocrResultフィールドとextractedDataフィールドの両方をチェック）
+    const ocrData = ocrResult.ocrResult || ocrResult.extractedData || {};
+    
+    // 駐車場関連フィールドのログ
+    logger.debug('Parking fields from OCR:', {
+      receiptType: ocrData.receiptType,
+      facilityName: ocrData.facilityName,
+      entryTime: ocrData.entryTime,
+      exitTime: ocrData.exitTime,
+      parkingDuration: ocrData.parkingDuration,
+      baseFee: ocrData.baseFee,
+      additionalFee: ocrData.additionalFee,
+      companyName: ocrData.companyName
+    });
+
     // ドキュメントを作成
     const document = await db.create('documents', {
       companyId: ocrResult.companyId,
-      documentType: documentType || ocrResult.documentType || 'receipt',
+      documentType: documentType || ocrResult.documentType || ocrResult.type || 'receipt',
       fileName: ocrResult.fileName,
-      vendorName: ocrResult.extractedData?.vendorName || 'Unknown',
-      totalAmount: ocrResult.extractedData?.totalAmount || 0,
-      taxAmount: ocrResult.extractedData?.taxAmount || 0,
-      documentDate: ocrResult.extractedData?.invoiceDate || new Date(),
-      dueDate: ocrResult.extractedData?.dueDate,
-      items: ocrResult.extractedData?.items || [],
-      category: ocrResult.extractedData?.category || '未分類',
-      subcategory: ocrResult.extractedData?.subcategory,
+      vendorName: ocrData.vendorName || ocrData.vendor?.name || ocrResult.vendor_name || 'Unknown',
+      totalAmount: ocrData.totalAmount?.amount || ocrData.totalAmount || ocrResult.total_amount || 0,
+      taxAmount: ocrData.taxAmount || ocrResult.tax_amount || 0,
+      documentDate: ocrData.invoiceDate || ocrData.issueDate || ocrResult.receipt_date || new Date(),
+      dueDate: ocrData.dueDate,
+      items: ocrData.items || [],
+      category: ocrData.category || ocrResult.category || '未分類',
+      subcategory: ocrData.subcategory || ocrResult.subcategory,
       tags: [],
       status: 'pending',
       approvedBy: approvedBy,
       approvedAt: approvedBy ? new Date() : null,
       notes: `OCR処理済み (${ocrResult.confidence ? `信頼度: ${(ocrResult.confidence * 100).toFixed(1)}%` : ''})`,
-      sourceFileId: ocrResult.sourceFileId,
+      sourceFileId: ocrResult.sourceFileId || ocrResult.gridfsFileId,
       ocrResultId: new ObjectId(ocrResultId),
       // 駐車場領収書専用フィールド
-      receiptType: ocrResult.extractedData?.receiptType,
-      facilityName: ocrResult.extractedData?.facilityName,
-      entryTime: ocrResult.extractedData?.entryTime,
-      exitTime: ocrResult.extractedData?.exitTime,
-      parkingDuration: ocrResult.extractedData?.parkingDuration,
-      baseFee: ocrResult.extractedData?.baseFee,
-      additionalFee: ocrResult.extractedData?.additionalFee,
+      receiptType: ocrData.receiptType,
+      facilityName: ocrData.facilityName,
+      entryTime: ocrData.entryTime,
+      exitTime: ocrData.exitTime,
+      parkingDuration: ocrData.parkingDuration,
+      baseFee: ocrData.baseFee,
+      additionalFee: ocrData.additionalFee,
+      companyName: ocrData.companyName,
       metadata: {
-        ocrProcessedAt: ocrResult.processedAt,
+        ocrProcessedAt: ocrResult.processedAt || ocrResult.ocrProcessedAt || new Date(),
         ocrConfidence: ocrResult.confidence,
         ...ocrResult.metadata
       },
