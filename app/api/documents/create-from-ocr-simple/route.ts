@@ -42,6 +42,29 @@ export async function POST(request: NextRequest) {
     // パートナー名を決定（vendor_name, store_name, company_nameの優先順）
     const partnerName = vendor_name || store_name || company_name || '不明';
     
+    // 駐車場領収書の判定と情報抽出
+    let extractedParkingInfo: any = {};
+    const isTimesReceipt = partnerName.includes('タイムズ') || vendor_name?.includes('タイムズ');
+    
+    if (isTimesReceipt && (!receiptType || !facilityName)) {
+      // notesフィールドから駐車場情報を抽出
+      if (notes) {
+        const parkingTimeMatch = notes.match(/駐車時間[:：]\s*([^,、]+)/);
+        if (parkingTimeMatch) {
+          extractedParkingInfo.parkingDuration = parkingTimeMatch[1].trim();
+        }
+        
+        // 施設名をベンダー名から推測（例：タイムズ福岡城三の丸）
+        if (vendor_name && vendor_name.includes('タイムズ')) {
+          extractedParkingInfo.facilityName = vendor_name;
+        }
+      }
+      
+      // デフォルト値を設定
+      extractedParkingInfo.receiptType = 'parking';
+      extractedParkingInfo.companyName = 'タイムズ24株式会社';
+    }
+    
     // 備考欄に支払い情報を含める
     const enhancedNotes = [
       notes || 'OCRデータより作成',
@@ -78,13 +101,13 @@ export async function POST(request: NextRequest) {
         status: 'draft',
         notes: enhancedNotes,
         // 駐車場関連フィールド（スネークケースに変換）
-        receipt_type: receiptType,
-        facility_name: facilityName,
-        entry_time: entryTime,
-        exit_time: exitTime,
-        parking_duration: parkingDuration,
-        base_fee: baseFee,
-        additional_fee: additionalFee,
+        receipt_type: receiptType || extractedParkingInfo.receiptType,
+        facility_name: facilityName || extractedParkingInfo.facilityName,
+        entry_time: entryTime || extractedParkingInfo.entryTime,
+        exit_time: exitTime || extractedParkingInfo.exitTime,
+        parking_duration: parkingDuration || extractedParkingInfo.parkingDuration,
+        base_fee: baseFee || extractedParkingInfo.baseFee,
+        additional_fee: additionalFee || extractedParkingInfo.additionalFee,
         createdAt: new Date(),
         updatedAt: new Date()
     };
