@@ -56,7 +56,13 @@ export async function POST(request: NextRequest) {
         logger.debug('Source document:', {
           id: sourceDocument?._id,
           category: sourceDocument?.category,
-          gridfsFileId: sourceDocument?.gridfsFileId
+          gridfsFileId: sourceDocument?.gridfsFileId,
+          // 駐車場フィールドの確認
+          receipt_type: sourceDocument?.receipt_type,
+          facility_name: sourceDocument?.facility_name,
+          entry_time: sourceDocument?.entry_time,
+          exit_time: sourceDocument?.exit_time,
+          parking_duration: sourceDocument?.parking_duration
         });
       } catch (e) {
         logger.error('Failed to fetch source document:', e);
@@ -174,6 +180,14 @@ export async function POST(request: NextRequest) {
       journalId: savedJournal._id,
       sourceDocumentId: documentId ? new ObjectId(documentId) : null,
       gridfsFileId: sourceDocument?.gridfsFileId || null, // 元画像のIDを引き継ぐ
+      // 元のドキュメントから駐車場情報を引き継ぐ
+      receipt_type: sourceDocument?.receipt_type || sourceDocument?.receiptType,
+      facility_name: sourceDocument?.facility_name || sourceDocument?.facilityName,
+      entry_time: sourceDocument?.entry_time || sourceDocument?.entryTime,
+      exit_time: sourceDocument?.exit_time || sourceDocument?.exitTime,
+      parking_duration: sourceDocument?.parking_duration || sourceDocument?.parkingDuration,
+      base_fee: sourceDocument?.base_fee || sourceDocument?.baseFee,
+      additional_fee: sourceDocument?.additional_fee || sourceDocument?.additionalFee,
       createdAt: new Date(),
       updatedAt: new Date()
     };
