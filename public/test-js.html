@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JavaScript Test</title>
+</head>
+<body>
+    <h1>JavaScript Test Page</h1>
+    <button id="testBtn" style="padding: 10px 20px; font-size: 16px;">Click Me</button>
+    <p id="result"></p>
+    
+    <script>
+        console.log('Script loaded');
+        
+        const btn = document.getElementById('testBtn');
+        const result = document.getElementById('result');
+        let count = 0;
+        
+        if (btn) {
+            btn.addEventListener('click', function() {
+                count++;
+                console.log('Button clicked:', count);
+                result.textContent = `Button clicked ${count} times`;
+            });
+            console.log('Event listener added');
+        } else {
+            console.error('Button not found');
+        }
+    </script>
+</body>
+</html>

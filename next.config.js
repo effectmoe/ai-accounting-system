@@ -35,10 +35,10 @@ const nextConfig = {
     );
     
     // aiモジュールのtestディレクトリを完全に除外
-    config.module.rules.push({
-      test: /node_modules\/(ai|@ai-sdk).*\/test\/.*/,
-      use: 'null-loader',
-    });
+    // config.module.rules.push({
+    //   test: /node_modules\/(ai|@ai-sdk).*\/test\/.*/,
+    //   use: 'null-loader',
+    // });
 
     // バンドル分析（環境変数で有効化）
     if (process.env.ANALYZE === 'true') {
@@ -55,7 +55,7 @@ const nextConfig = {
     return config;
   },
   reactStrictMode: true,
-  swcMinify: true,
+  // swcMinify: true,
   typescript: {
     // !! WARN !!
     // Dangerously allow production builds to successfully complete even if
