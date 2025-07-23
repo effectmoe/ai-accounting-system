@@ -148,9 +148,13 @@ const getActivityIcon = (type: string) => {
       return CheckCircle;
     case 'document_created':
     case 'ocr_completed':
-      return Upload;
+      return ScanLine;
     case 'customer_created':
       return Users;
+    case 'supplier_created':
+      return Building2;
+    case 'supplier_quote_created':
+      return FileText;
     default:
       return CheckCircle;
   }
@@ -167,6 +171,10 @@ const getActivityColor = (type: string) => {
       return 'text-blue-600';
     case 'customer_created':
       return 'text-purple-600';
+    case 'supplier_created':
+      return 'text-orange-600';
+    case 'supplier_quote_created':
+      return 'text-teal-600';
     default:
       return 'text-gray-600';
   }
