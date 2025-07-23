@@ -145,8 +145,14 @@ export async function POST(request: NextRequest) {
       await db.update('documents', documentId, {
         status: 'journalized',
         journalId: savedJournal._id,
+        displayNumber: journalNumber, // 仕訳番号を設定（例：J202500005）
         hiddenFromList: true, // 書類管理画面から非表示にする
         updatedAt: new Date()
+      });
+      logger.debug('Updated source document with journal number:', {
+        documentId,
+        journalNumber,
+        displayNumber: journalNumber
       });
     }
 

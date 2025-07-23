@@ -11,15 +11,30 @@ export async function GET(
     const { id } = params;
     logger.debug('Getting document with ID:', id);
 
-    if (!id || !ObjectId.isValid(id)) {
-      return NextResponse.json({
-        success: false,
-        error: 'Invalid document ID'
-      }, { status: 400 });
-    }
+    let document = null;
 
-    // ドキュメントを取得
-    const document = await db.findById('documents', id);
+    // 仕訳番号（Jで始まる）の場合はdisplayNumberで検索
+    if (id && id.startsWith('J')) {
+      logger.debug('Searching by displayNumber:', id);
+      document = await db.findOne('documents', { displayNumber: id });
+      
+      if (!document) {
+        logger.debug('Document not found by displayNumber, trying as regular ID');
+      }
+    }
+    
+    // displayNumberで見つからない場合、またはJで始まらない場合は通常のID検索
+    if (!document) {
+      if (!id || !ObjectId.isValid(id)) {
+        return NextResponse.json({
+          success: false,
+          error: 'Invalid document ID'
+        }, { status: 400 });
+      }
+
+      // ドキュメントを取得
+      document = await db.findById('documents', id);
+    }
     
     if (!document) {
       return NextResponse.json({
@@ -31,6 +46,7 @@ export async function GET(
     // デバッグ: 生のMongoDBドキュメントをログ出力
     logger.debug('Raw MongoDB document:', {
       _id: document._id,
+      displayNumber: document.displayNumber,
       gridfsFileId: document.gridfsFileId,
       gridfs_file_id: document.gridfs_file_id,
       fileId: document.fileId,
@@ -49,6 +65,7 @@ export async function GET(
       company_id: document.companyId?.toString() || '11111111-1111-1111-1111-111111111111',
       document_type: document.documentType || 'receipt',
       document_number: document.documentNumber || `DOC-${document._id.toString().slice(-8)}`,
+      displayNumber: document.displayNumber || '', // 仕訳番号（例：J202500005）
       status: document.status || 'draft',
       issue_date: document.issueDate || document.documentDate || document.createdAt,
       partner_name: document.partnerName || document.vendorName || '不明',
