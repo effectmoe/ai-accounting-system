@@ -9,6 +9,7 @@ import { logger } from '@/lib/logger';
 export async function POST(request: NextRequest) {
   const startTime = Date.now();
   console.log('🎯 [OCR API] OCR処理開始');
+  console.log('📅 [OCR API] 処理開始時刻:', new Date().toISOString());
   
   try {
     logger.debug('[OCR API] Starting OCR analysis...');
@@ -264,6 +265,16 @@ TEL: 03-xxxx-xxxx FAX: 03-xxxx-xxxx
         mongoDbId = insertResult.insertedId;
         logger.debug('[OCR API] Document saved and verified:', insertResult.insertedId);
         console.log('✅ [OCR API] MongoDB保存・確認成功! ID:', insertResult.insertedId);
+        
+        // 保存されたドキュメントのOCR関連フィールドを確認
+        console.log('🔍 [OCR API] 保存されたOCRフィールド:', {
+          vendor_name: savedDoc.vendor_name,
+          receipt_date: savedDoc.receipt_date,
+          category: savedDoc.category,
+          total_amount: savedDoc.total_amount,
+          file_name: savedDoc.fileName,
+          gridfsFileId: savedDoc.gridfsFileId?.toString()
+        });
       } else {
         mongoDbSaved = false;
         console.log('❌ [OCR API] MongoDB保存後の確認に失敗!');
@@ -277,7 +288,15 @@ TEL: 03-xxxx-xxxx FAX: 03-xxxx-xxxx
         ocrStatus: ocrDocument.ocrStatus,
         createdAt: ocrDocument.createdAt,
         receipt_date: ocrDocument.receipt_date,
-        issueDate: ocrDocument.issueDate
+        issueDate: ocrDocument.issueDate,
+        gridfsFileId: ocrDocument.gridfsFileId,
+        category: ocrDocument.category,
+        file_name: ocrDocument.fileName,
+        ocrResultDetails: {
+          vendor: structuredData.vendor,
+          items: structuredData.items,
+          notes: structuredData.notes
+        }
       }, null, 2));
       
       await client.close();
