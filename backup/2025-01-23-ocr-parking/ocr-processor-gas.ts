@@ -73,14 +73,6 @@ export class GASWebAppOCRProcessor {
       items: []
     };
 
-    // 駐車場領収書かどうかを判定
-    const isParkingReceipt = this.isParkingReceipt(text);
-    
-    if (isParkingReceipt) {
-      // 駐車場領収書専用の解析
-      return this.parseParkingReceipt(text);
-    }
-
     // テキストを行ごとに分割
     const lines = text.split('\n').map(line => line.trim()).filter(line => line);
 
@@ -219,92 +211,5 @@ export class GASWebAppOCRProcessor {
 
   async close(): Promise<void> {
     // GAS Web Appは接続を保持しないため、何もしない
-  }
-
-  // 駐車場領収書かどうかを判定
-  private isParkingReceipt(text: string): boolean {
-    const parkingKeywords = [
-      'タイムズ',
-      'times',
-      'TIMES',
-      'パーキング',
-      'parking',
-      'PARKING',
-      '駐車場',
-      '入庫',
-      '出庫',
-      '駐車時間',
-      '駐車料金',
-      'パーク24',
-      'タイムズ24株式会社'
-    ];
-    
-    const lowerText = text.toLowerCase();
-    return parkingKeywords.some(keyword => lowerText.includes(keyword.toLowerCase()));
-  }
-
-  // 駐車場領収書専用の解析
-  private parseParkingReceipt(text: string): Partial<OCRResult> {
-    const result: Partial<OCRResult> = {
-      receiptType: 'parking',
-      items: []
-    };
-    const lines = text.split('\n').filter(line => line.trim());
-    
-    // 運営会社名と施設名の分離
-    // タイムズ24株式会社が運営会社、駐車場名が施設名
-    const timesPattern = /タイムズ24株式会社|times\s*24|パーク24/i;
-    const timesMatch = text.match(timesPattern);
-    if (timesMatch) {
-      result.companyName = 'タイムズ24株式会社';
-    }
-    
-    // 施設名（駐車場名）の抽出
-    for (const line of lines) {
-      if (line.includes('タイムズ') && !line.includes('タイムズ24株式会社')) {
-        result.facilityName = line.trim();
-        result.vendor = line.trim(); // 互換性のため
-        break;
-      }
-    }
-    
-    // 日付の抽出
-    result.date = this.extractDate(text);
-    
-    // 入庫・出庫時刻の抽出
-    const entryPattern = /入庫[:：]?\s*(\d{1,2}[:：]\d{2})/;
-    const exitPattern = /出庫[:：]?\s*(\d{1,2}[:：]\d{2})/;
-    
-    const entryMatch = text.match(entryPattern);
-    if (entryMatch) {
-      result.entryTime = entryMatch[1];
-    }
-    
-    const exitMatch = text.match(exitPattern);
-    if (exitMatch) {
-      result.exitTime = exitMatch[1];
-    }
-    
-    // 駐車時間の抽出
-    const durationPattern = /駐車時間[:：]?\s*(\d+時間\d+分|\d+分)/;
-    const durationMatch = text.match(durationPattern);
-    if (durationMatch) {
-      result.parkingDuration = durationMatch[1];
-    }
-    
-    // 料金の抽出
-    const amounts = this.extractAmounts(text);
-    result.amount = amounts.total || 0;
-    result.taxAmount = 0; // 駐車場は通常内税
-    
-    // アイテムとして駐車料金を追加
-    if (result.amount) {
-      result.items = [{
-        name: `駐車料金（${result.facilityName || '駐車場'}）`,
-        amount: result.amount
-      }];
-    }
-    
-    return result;
   }
 }

@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { logger } from '@/lib/logger';
@@ -13,7 +13,6 @@ import {
   User, 
   Loader2, 
   MessageSquare,
-  X,
   Minimize2,
   Maximize2,
   AlertCircle
@@ -55,8 +54,7 @@ interface JournalAIChatProps {
 }
 
 export default function JournalAIChat({ journal, journalId }: JournalAIChatProps) {
-  const [isOpen, setIsOpen] = useState(true);
-  const [isMinimized, setIsMinimized] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -155,43 +153,40 @@ export default function JournalAIChat({ journal, journalId }: JournalAIChatProps
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed bottom-4 right-4 z-40" style={{ maxWidth: '400px', width: '90vw' }}>
-      <Card className={`bg-white shadow-lg border ${isMinimized ? 'h-14' : 'h-[500px]'} flex flex-col transition-all duration-300`}>
-        {/* ヘッダー */}
-        <div className="flex items-center justify-between p-3 border-b bg-violet-50">
+    <Card className="mt-6">
+      <CardHeader className="bg-violet-50 cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}>
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <MessageSquare className="h-5 w-5 text-violet-600" />
-            <h3 className="text-sm font-semibold">この仕訳について質問する</h3>
+            <CardTitle className="text-lg">この仕訳について質問する</CardTitle>
           </div>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsMinimized(!isMinimized)}
-              className="h-8 w-8"
-            >
-              {isMinimized ? (
-                <Maximize2 className="h-4 w-4" />
-              ) : (
-                <Minimize2 className="h-4 w-4" />
-              )}
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setIsOpen(false)}
-              className="h-8 w-8"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsExpanded(!isExpanded);
+            }}
+            className="h-8 w-8"
+          >
+            {isExpanded ? (
+              <Minimize2 className="h-4 w-4" />
+            ) : (
+              <Maximize2 className="h-4 w-4" />
+            )}
+          </Button>
         </div>
+        {!isExpanded && (
+          <p className="text-sm text-gray-600 mt-2">
+            クリックして展開し、仕訳について質問する
+          </p>
+        )}
+      </CardHeader>
 
-        {!isMinimized && (
-          <>
+      {isExpanded && (
+        <CardContent className="p-0">
+          <div className="flex flex-col" style={{ height: '500px' }}>
             {/* エラー表示 */}
             {error && (
               <Alert variant="destructive" className="m-3 mb-0">
@@ -201,7 +196,7 @@ export default function JournalAIChat({ journal, journalId }: JournalAIChatProps
             )}
 
             {/* チャットメッセージエリア */}
-            <ScrollArea className="flex-1 p-3" ref={scrollAreaRef}>
+            <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
               <div className="space-y-3">
                 {messages.map(message => (
                   <div
@@ -216,7 +211,7 @@ export default function JournalAIChat({ journal, journalId }: JournalAIChatProps
                       </div>
                     )}
                     <div
-                      className={`max-w-[80%] rounded-lg p-2 ${
+                      className={`max-w-[80%] rounded-lg p-3 ${
                         message.role === 'user'
                           ? 'bg-gray-900 text-white'
                           : 'bg-gray-100 text-gray-900'
@@ -239,7 +234,7 @@ export default function JournalAIChat({ journal, journalId }: JournalAIChatProps
                     <div className="w-7 h-7 rounded-full bg-violet-100 flex items-center justify-center">
                       <Bot className="h-4 w-4 text-violet-600" />
                     </div>
-                    <div className="bg-gray-100 rounded-lg p-2">
+                    <div className="bg-gray-100 rounded-lg p-3">
                       <Loader2 className="h-4 w-4 animate-spin" />
                     </div>
                   </div>
@@ -248,7 +243,7 @@ export default function JournalAIChat({ journal, journalId }: JournalAIChatProps
             </ScrollArea>
 
             {/* 入力エリア */}
-            <div className="p-3 border-t">
+            <div className="p-4 border-t bg-gray-50">
               <div className="flex gap-2">
                 <Input
                   ref={inputRef}
@@ -257,7 +252,7 @@ export default function JournalAIChat({ journal, journalId }: JournalAIChatProps
                   onKeyDown={handleKeyDown}
                   placeholder="質問を入力してください..."
                   disabled={isLoading}
-                  className="flex-1 text-sm"
+                  className="flex-1 text-sm bg-white"
                 />
                 <Button
                   onClick={sendMessage}
@@ -269,9 +264,9 @@ export default function JournalAIChat({ journal, journalId }: JournalAIChatProps
                 </Button>
               </div>
             </div>
-          </>
-        )}
-      </Card>
-    </div>
+          </div>
+        </CardContent>
+      )}
+    </Card>
   );
 }

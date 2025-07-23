@@ -358,9 +358,16 @@ export class AccountCategoryAI {
    * 駐車場レシートかどうかを判定
    */
   private isParkingReceipt(ocrResult: OCRResult, extractedInfo: any): boolean {
+    // 新しいOCRフィールドで既に駐車場として判定されている場合
+    if (ocrResult.receiptType === 'parking') {
+      return true;
+    }
+    
     const safeText = ocrResult.text && typeof ocrResult.text === 'string' ? ocrResult.text : '';
     const text = safeText.toLowerCase();
     const vendor = (ocrResult.vendor && typeof ocrResult.vendor === 'string' ? ocrResult.vendor : '').toLowerCase();
+    const facilityName = (ocrResult.facilityName && typeof ocrResult.facilityName === 'string' ? ocrResult.facilityName : '').toLowerCase();
+    const companyName = (ocrResult.companyName && typeof ocrResult.companyName === 'string' ? ocrResult.companyName : '').toLowerCase();
     
     // 複数の指標でスコアリング
     let score = 0;
@@ -368,6 +375,23 @@ export class AccountCategoryAI {
     // ベンダー名による判定（最重要）
     if (vendor.includes('times') || vendor.includes('タイムズ') || 
         vendor.includes('パーキング') || vendor.includes('駐車場')) {
+      score += 0.4;
+    }
+    
+    // 施設名による判定
+    if (facilityName.includes('times') || facilityName.includes('タイムズ') || 
+        facilityName.includes('パーキング') || facilityName.includes('駐車場')) {
+      score += 0.3;
+    }
+    
+    // 運営会社名による判定
+    if (companyName.includes('タイムズ24') || companyName.includes('times 24') || 
+        companyName.includes('パーク24')) {
+      score += 0.3;
+    }
+    
+    // 駐車場専用フィールドの存在による判定
+    if (ocrResult.entryTime || ocrResult.exitTime || ocrResult.parkingDuration) {
       score += 0.4;
     }
     
@@ -400,12 +424,28 @@ export class AccountCategoryAI {
     // Perplexityで駐車場利用の会計処理を詳細に調査
     const parkingQuery = `
       駐車場利用料の勘定科目 旅費交通費 
-      ${ocrResult.vendor} 
-      ${extractedInfo.times.duration || ''} 
+      ${ocrResult.facilityName || ocrResult.vendor || ''} 
+      ${ocrResult.parkingDuration || extractedInfo.times.duration || ''} 
       最新の税務処理
     `;
     
     const specificInfo = await this.mcpClient.searchAccountingInfo(parkingQuery);
+    
+    // 詳細な判定根拠を構築
+    const reasoningDetails = [];
+    
+    if (ocrResult.companyName) {
+      reasoningDetails.push(`運営会社: ${ocrResult.companyName}`);
+    }
+    if (ocrResult.facilityName) {
+      reasoningDetails.push(`施設名: ${ocrResult.facilityName}`);
+    }
+    if (ocrResult.entryTime && ocrResult.exitTime) {
+      reasoningDetails.push(`利用時間: ${ocrResult.entryTime} - ${ocrResult.exitTime}`);
+    }
+    if (ocrResult.parkingDuration) {
+      reasoningDetails.push(`駐車時間: ${ocrResult.parkingDuration}`);
+    }
     
     return {
       category: '旅費交通費',
@@ -413,6 +453,7 @@ export class AccountCategoryAI {
       reasoning: `
         駐車場利用と判定しました。
         【判定根拠】
+        ${reasoningDetails.join('\n        ')}
         1. ベンダー名: ${ocrResult.vendor}
         2. 入出庫時刻の記載: ${extractedInfo.times.parkingTime || 'なし'} - ${extractedInfo.times.exitTime || 'なし'}
         3. 駐車時間: ${extractedInfo.times.duration || '不明'}
