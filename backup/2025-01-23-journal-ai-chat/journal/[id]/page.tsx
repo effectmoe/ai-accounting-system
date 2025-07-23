@@ -7,16 +7,6 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeftIcon, EditIcon, TrashIcon, PrinterIcon, Home, BookOpenCheck, Calendar, Hash, FileText } from 'lucide-react';
 import { BalanceCheck } from '@/components/journals/BalanceCheck';
 import { formatCurrency } from '@/lib/journal-utils';
-import dynamic from 'next/dynamic';
-
-// 動的インポートでJournalAIChatをクライアントサイドでのみ読み込む
-const JournalAIChat = dynamic(
-  () => import('@/components/journals/JournalAIChat'),
-  { 
-    ssr: false,
-    loading: () => null
-  }
-);
 
 interface JournalLine {
   accountCode: string;
@@ -347,14 +337,6 @@ export default function JournalDetailPage() {
             <p>更新日時: {new Date(journal.updatedAt).toLocaleString('ja-JP')}</p>
           )}
         </div>
-      )}
-      
-      {/* AI チャットコンポーネント */}
-      {journal && (
-        <JournalAIChat 
-          journal={journal} 
-          journalId={id}
-        />
       )}
     </div>
   );
