@@ -27,6 +27,7 @@ interface Document {
   updated_at: string;
   ocr_result_id?: string;
   gridfs_file_id?: string;
+  sourceDocumentId?: string;
   // OCR関連フィールド
   vendor_name?: string;
   receipt_date?: string;
@@ -308,6 +309,17 @@ export default function DocumentDetailPage() {
                       <Edit className="mr-2 h-4 w-4" />
                       下書きに戻す
                     </button>
+                    
+                    {/* 仕訳伝票の場合、元の領収書へのリンクを表示 */}
+                    {document.document_type === 'journal_entry' && document.sourceDocumentId && (
+                      <button
+                        onClick={() => router.push(`/documents/${document.sourceDocumentId}`)}
+                        className="inline-flex items-center px-3 py-2 border border-purple-300 text-sm font-medium rounded-md text-purple-700 bg-white hover:bg-purple-50"
+                      >
+                        <Receipt className="mr-2 h-4 w-4" />
+                        元の領収書を表示
+                      </button>
+                    )}
                     
                     {document.document_type === 'receipt' && (
                       <button
