@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { OCRDocumentService } from '@/services/ocr-document.service';
 import { CreateDocumentFromOCRRequest } from '@/types/ocr.types';
+import { ActivityLogService } from '@/services/activity-log.service';
 import { logger } from '@/lib/logger';
 
 /**
@@ -40,6 +41,18 @@ export async function POST(request: NextRequest) {
       documentId: result.id,
       processingMethod: result.processingMethod
     });
+    
+    // アクティビティログを記録
+    try {
+      const documentType = body.document_type || body.aiStructuredData?.documentType || 'unknown';
+      await ActivityLogService.logDocumentCreated(
+        result.id,
+        documentType
+      );
+      logger.info('Activity log recorded for document creation');
+    } catch (logError) {
+      logger.error('Failed to log activity for document creation:', logError);
+    }
     
     return NextResponse.json(result);
     

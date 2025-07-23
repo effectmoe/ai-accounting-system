@@ -3,6 +3,7 @@ import { getDatabase } from '@/lib/mongodb-client';
 import { Customer, SortableField, SortOrder, FilterState } from '@/types/collections';
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '@/lib/logger';
+import { ActivityLogService } from '@/services/activity-log.service';
 import { 
   withErrorHandler, 
   validateRequired, 
@@ -341,6 +342,17 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
 
     // データベースに保存
     const result = await collection.insertOne(newCustomer);
+
+    // アクティビティログを記録
+    try {
+      await ActivityLogService.logCustomerCreated(
+        result.insertedId.toString(),
+        newCustomer.companyName
+      );
+      logger.info('Activity log recorded for customer creation');
+    } catch (logError) {
+      logger.error('Failed to log activity for customer creation:', logError);
+    }
 
     return NextResponse.json({
       success: true,

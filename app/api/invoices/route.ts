@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { InvoiceService } from '@/services/invoice.service';
 import { InvoiceStatus } from '@/types/collections';
-
+import { ActivityLogService } from '@/services/activity-log.service';
 import { logger } from '@/lib/logger';
 export async function GET(request: NextRequest) {
   try {
@@ -95,6 +95,20 @@ export async function POST(request: NextRequest) {
     // 請求書を作成
     const invoice = await invoiceService.createInvoice(invoiceData);
     logger.debug('Invoice created:', invoice);
+    
+    // アクティビティログを記録
+    try {
+      const customerName = invoice.customer?.companyName || '不明な顧客';
+      await ActivityLogService.logInvoiceCreated(
+        invoice._id.toString(),
+        customerName,
+        invoice.totalAmount
+      );
+      logger.info('Activity log recorded for invoice creation');
+    } catch (logError) {
+      logger.error('Failed to log activity for invoice creation:', logError);
+    }
+    
     return NextResponse.json(invoice);
   } catch (error) {
     logger.error('Error creating invoice:', error);

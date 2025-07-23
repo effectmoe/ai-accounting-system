@@ -1439,3 +1439,37 @@ export interface DashboardProfitData {
     averageDealSize: number;
   };
 }
+
+// アクティビティログタイプ
+export type ActivityLogType = 
+  | 'document_created' 
+  | 'document_updated' 
+  | 'invoice_created' 
+  | 'invoice_sent'
+  | 'invoice_paid'
+  | 'quote_created' 
+  | 'quote_sent'
+  | 'quote_accepted'
+  | 'customer_created' 
+  | 'customer_updated'
+  | 'supplier_created'
+  | 'supplier_updated'
+  | 'ocr_completed'
+  | 'ocr_failed'
+  | 'journal_created'
+  | 'journal_updated'
+  | 'system_error'
+  | 'user_action';
+
+// アクティビティログインターフェース
+export interface ActivityLog extends TimestampedDocument {
+  type: ActivityLogType;
+  entityType?: 'document' | 'invoice' | 'quote' | 'customer' | 'supplier' | 'journal' | 'system';
+  entityId?: ObjectId | string;
+  userId?: string;
+  description: string;
+  metadata?: Record<string, any>;
+  ipAddress?: string;
+  userAgent?: string;
+  severity?: 'low' | 'medium' | 'high';
+}
