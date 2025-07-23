@@ -1,14 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Car, Clock, Building, CreditCard } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface JournalLine {
   accountCode: string;
@@ -18,9 +19,37 @@ interface JournalLine {
   description: string;
 }
 
+interface ParkingDetails {
+  receiptType: string;
+  facilityName?: string;
+  entryTime?: string;
+  exitTime?: string;
+  parkingDuration?: string;
+  baseFee?: number;
+  additionalFee?: number;
+}
+
+interface DocumentData {
+  documentId: string;
+  date: string;
+  description: string;
+  amount: number;
+  taxAmount: number;
+  vendorName: string;
+  parkingDetails?: ParkingDetails | null;
+  category?: string;
+  items?: Array<{
+    item_name: string;
+    quantity?: number;
+    unit_price?: number;
+    amount: number;
+  }>;
+}
+
 export default function NewJournalPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [documentData, setDocumentData] = useState<DocumentData | null>(null);
   const [entryDate, setEntryDate] = useState(new Date().toISOString().split('T')[0]);
   const [description, setDescription] = useState('');
   const [notes, setNotes] = useState('');
@@ -28,6 +57,39 @@ export default function NewJournalPage() {
     { accountCode: '', accountName: '', debitAmount: 0, creditAmount: 0, description: '' },
     { accountCode: '', accountName: '', debitAmount: 0, creditAmount: 0, description: '' }
   ]);
+
+  // セッションストレージからデータを読み込む
+  useEffect(() => {
+    const savedData = sessionStorage.getItem('journalFromDocument');
+    console.log('Loading journal data from sessionStorage:', savedData);
+    if (savedData) {
+      try {
+        const data: DocumentData = JSON.parse(savedData);
+        console.log('Parsed document data:', data);
+        setDocumentData(data);
+        setEntryDate(data.date);
+        setDescription(data.description);
+        
+        // 初期仕訳行を設定
+        if (data.category === '駐車場代' || data.parkingDetails) {
+          setLines([
+            { accountCode: '751', accountName: '車両費（駐車場代）', debitAmount: data.amount, creditAmount: 0, description: data.description },
+            { accountCode: '101', accountName: '現金', debitAmount: 0, creditAmount: data.amount, description: '' }
+          ]);
+        } else {
+          setLines([
+            { accountCode: '', accountName: '経費', debitAmount: data.amount, creditAmount: 0, description: data.description },
+            { accountCode: '101', accountName: '現金', debitAmount: 0, creditAmount: data.amount, description: '' }
+          ]);
+        }
+        
+        // データを使用後にクリア
+        sessionStorage.removeItem('journalFromDocument');
+      } catch (error) {
+        console.error('Failed to parse document data:', error);
+      }
+    }
+  }, []);
 
   const addLine = () => {
     setLines([...lines, { accountCode: '', accountName: '', debitAmount: 0, creditAmount: 0, description: '' }]);
@@ -87,11 +149,11 @@ export default function NewJournalPage() {
           debitAccount: firstLine.accountName,
           creditAccount: validLines[1]?.accountName || '現金',
           amount: firstLine.debitAmount || firstLine.creditAmount,
-          taxAmount: 0,
+          taxAmount: documentData?.taxAmount || 0,
           taxRate: 0,
           isTaxIncluded: true,
-          documentId: null,
-          vendorName: description
+          documentId: documentData?.documentId || null,
+          vendorName: documentData?.vendorName || description
         })
       });
 
@@ -136,6 +198,54 @@ export default function NewJournalPage() {
           <CardTitle>仕訳情報</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* 領収書からの情報表示 */}
+          {documentData && documentData.parkingDetails && (
+            <Alert className="bg-blue-50 border-blue-200">
+              <Car className="h-4 w-4" />
+              <AlertDescription>
+                <div className="font-medium mb-2">駐車場領収書情報</div>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  {documentData.parkingDetails.facilityName && (
+                    <div className="flex items-center gap-1">
+                      <Building className="h-3 w-3" />
+                      <span>施設: {documentData.parkingDetails.facilityName}</span>
+                    </div>
+                  )}
+                  {documentData.parkingDetails.entryTime && (
+                    <div className="flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      <span>入庫: {documentData.parkingDetails.entryTime}</span>
+                    </div>
+                  )}
+                  {documentData.parkingDetails.exitTime && (
+                    <div className="flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      <span>出庫: {documentData.parkingDetails.exitTime}</span>
+                    </div>
+                  )}
+                  {documentData.parkingDetails.parkingDuration && (
+                    <div className="flex items-center gap-1">
+                      <Car className="h-3 w-3" />
+                      <span>駐車時間: {documentData.parkingDetails.parkingDuration}</span>
+                    </div>
+                  )}
+                  {documentData.parkingDetails.baseFee !== undefined && (
+                    <div className="flex items-center gap-1">
+                      <CreditCard className="h-3 w-3" />
+                      <span>基本料金: ¥{documentData.parkingDetails.baseFee.toLocaleString()}</span>
+                    </div>
+                  )}
+                  {documentData.parkingDetails.additionalFee !== undefined && (
+                    <div className="flex items-center gap-1">
+                      <CreditCard className="h-3 w-3" />
+                      <span>追加料金: ¥{documentData.parkingDetails.additionalFee.toLocaleString()}</span>
+                    </div>
+                  )}
+                </div>
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* 基本情報 */}
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -147,6 +257,14 @@ export default function NewJournalPage() {
                 onChange={(e) => setEntryDate(e.target.value)}
               />
             </div>
+            {documentData && (
+              <div>
+                <Label>元文書</Label>
+                <div className="mt-1 p-2 bg-gray-50 rounded text-sm">
+                  {documentData.vendorName} - 領収書
+                </div>
+              </div>
+            )}
           </div>
 
           <div>
