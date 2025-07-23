@@ -101,7 +101,8 @@ export async function GET(
       items: document.items || [],
       
       // 仕訳関連フィールド
-      journalId: document.journalId?.toString()
+      journalId: document.journalId?.toString(),
+      sourceDocumentId: document.sourceDocumentId?.toString()
     };
 
     logger.debug('Formatted document:', formattedDocument);
