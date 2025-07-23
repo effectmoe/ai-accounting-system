@@ -188,7 +188,10 @@ export default function JournalPage() {
                           isBalanced ? 'bg-green-500 border-green-500' : 'bg-red-500 border-red-500'
                         }`}></div>
                         
-                        <div className="ml-16 flex-1 bg-white border rounded-lg p-4 shadow-sm">
+                        <div 
+                          className="ml-16 flex-1 bg-white border rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                          onClick={() => router.push(`/journal/${journal._id}`)}
+                        >
                           <div className="flex justify-between items-start mb-2">
                             <div>
                               <span className="font-medium text-lg">{journal.journalNumber}</span>
@@ -253,7 +256,11 @@ export default function JournalPage() {
                       const creditTotal = journal.lines.reduce((sum, line) => sum + line.creditAmount, 0);
                       
                       return (
-                        <tr key={journal._id || index} className="hover:bg-gray-50">
+                        <tr 
+                          key={journal._id || index} 
+                          className="hover:bg-gray-50 cursor-pointer"
+                          onClick={() => router.push(`/journal/${journal._id}`)}
+                        >
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                             {journal.journalNumber}
                           </td>
