@@ -29,6 +29,14 @@ interface OcrResult {
   status: string;
   linked_document_id?: string;
   document_type?: string;
+  // 駐車場関連フィールド
+  receiptType?: string;
+  facilityName?: string;
+  entryTime?: string;
+  exitTime?: string;
+  parkingDuration?: string;
+  baseFee?: number;
+  additionalFee?: number;
 }
 
 export default function DocumentsContent() {
@@ -222,7 +230,15 @@ export default function DocumentsContent() {
           company_name: ocrResult.company_name || '',
           notes: ocrResult.notes || '',
           file_name: ocrResult.file_name,
-          extracted_text: ocrResult.extracted_text
+          extracted_text: ocrResult.extracted_text,
+          // 駐車場関連フィールド
+          receiptType: ocrResult.receiptType,
+          facilityName: ocrResult.facilityName,
+          entryTime: ocrResult.entryTime,
+          exitTime: ocrResult.exitTime,
+          parkingDuration: ocrResult.parkingDuration,
+          baseFee: ocrResult.baseFee,
+          additionalFee: ocrResult.additionalFee
         })
       });
 
@@ -988,6 +1004,39 @@ export default function DocumentsContent() {
                               </div>
                             </div>
                           </div>
+
+                          {/* 駐車場情報 */}
+                          {result.receiptType === 'parking' && (
+                            <div className="bg-purple-50 rounded-md p-3 mb-3">
+                              <div className="text-xs font-medium text-purple-700 mb-2">駐車場情報</div>
+                              <div className="space-y-1 text-xs">
+                                {result.facilityName && (
+                                  <div className="flex justify-between">
+                                    <span className="text-gray-600">施設名</span>
+                                    <span className="text-gray-900">{result.facilityName}</span>
+                                  </div>
+                                )}
+                                {result.entryTime && (
+                                  <div className="flex justify-between">
+                                    <span className="text-gray-600">入庫時刻</span>
+                                    <span className="text-gray-900">{result.entryTime}</span>
+                                  </div>
+                                )}
+                                {result.exitTime && (
+                                  <div className="flex justify-between">
+                                    <span className="text-gray-600">出庫時刻</span>
+                                    <span className="text-gray-900">{result.exitTime}</span>
+                                  </div>
+                                )}
+                                {result.parkingDuration && (
+                                  <div className="flex justify-between">
+                                    <span className="text-gray-600">駐車時間</span>
+                                    <span className="text-gray-900">{result.parkingDuration}</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
 
                           {/* その他情報 */}
                           <div className="flex justify-between items-center mb-3">
