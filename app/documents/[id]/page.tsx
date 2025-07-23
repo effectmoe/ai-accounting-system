@@ -3,10 +3,11 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Download, Edit, Send, Trash2, Eye, FileText, Car, Clock, Receipt, Building, CreditCard } from 'lucide-react';
+import { ArrowLeft, Download, Edit, Send, Trash2, Eye, FileText, Car, Clock, Receipt, Building, CreditCard, FileInput } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 import { logger } from '@/lib/logger';
+import DocumentAIChat from '@/components/documents/DocumentAIChat';
 interface Document {
   id: string;
   company_id: string;
@@ -277,13 +278,52 @@ export default function DocumentDetailPage() {
                 )}
                 
                 {document.status === 'confirmed' && (
-                  <button
-                    onClick={() => handleStatusUpdate('draft')}
-                    className="inline-flex items-center px-3 py-2 border border-orange-300 text-sm font-medium rounded-md text-orange-700 bg-white hover:bg-orange-50"
-                  >
-                    <Edit className="mr-2 h-4 w-4" />
-                    下書きに戻す
-                  </button>
+                  <>
+                    <button
+                      onClick={() => handleStatusUpdate('draft')}
+                      className="inline-flex items-center px-3 py-2 border border-orange-300 text-sm font-medium rounded-md text-orange-700 bg-white hover:bg-orange-50"
+                    >
+                      <Edit className="mr-2 h-4 w-4" />
+                      下書きに戻す
+                    </button>
+                    
+                    {document.document_type === 'receipt' && (
+                      <button
+                        onClick={() => {
+                          console.log('Creating journal from document:', document);
+                          // 領収書データをセッションストレージに保存
+                          const journalData = {
+                            documentId: document.id,
+                            date: document.issue_date,
+                            description: document.notes || `${document.partner_name} - ${document.document_number}`,
+                            amount: document.total_amount,
+                            taxAmount: document.tax_amount,
+                            vendorName: document.partner_name,
+                            // 駐車場情報を追加
+                            parkingDetails: document.receipt_type === 'parking' ? {
+                              receiptType: document.receipt_type,
+                              facilityName: document.facility_name,
+                              entryTime: document.entry_time,
+                              exitTime: document.exit_time,
+                              parkingDuration: document.parking_duration,
+                              baseFee: document.base_fee,
+                              additionalFee: document.additional_fee
+                            } : null,
+                            // OCR情報
+                            category: document.category,
+                            items: document.items
+                          };
+                          console.log('Journal data to be saved:', journalData);
+                          sessionStorage.setItem('journalFromDocument', JSON.stringify(journalData));
+                          router.push('/journal/new');
+                        }}
+                        className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700"
+                      >
+                        <FileInput className="mr-2 h-4 w-4" />
+                        仕訳作成
+                      </button>
+                    )}
+                  </>
                 )}
                 
                 <button
@@ -646,6 +686,11 @@ export default function DocumentDetailPage() {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* AIチャットコンポーネントを追加 */}
+        <div className="mt-6">
+          <DocumentAIChat document={document} documentId={document.id} />
         </div>
       </div>
     </div>
