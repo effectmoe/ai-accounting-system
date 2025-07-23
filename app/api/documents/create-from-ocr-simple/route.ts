@@ -21,7 +21,15 @@ export async function POST(request: NextRequest) {
       store_phone = '',
       company_name = '',
       notes = '',
-      file_name = '文書'
+      file_name = '文書',
+      // 駐車場関連フィールド
+      receiptType,
+      facilityName,
+      entryTime,
+      exitTime,
+      parkingDuration,
+      baseFee,
+      additionalFee
     } = body;
 
     // MongoDB データベース接続
@@ -69,6 +77,14 @@ export async function POST(request: NextRequest) {
         totalAmount: total_amount,
         status: 'draft',
         notes: enhancedNotes,
+        // 駐車場関連フィールド（スネークケースに変換）
+        receipt_type: receiptType,
+        facility_name: facilityName,
+        entry_time: entryTime,
+        exit_time: exitTime,
+        parking_duration: parkingDuration,
+        base_fee: baseFee,
+        additional_fee: additionalFee,
         createdAt: new Date(),
         updatedAt: new Date()
     };
