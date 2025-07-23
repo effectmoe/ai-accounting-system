@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
@@ -8,6 +8,35 @@ export default function DebugPage() {
   const [apiResponse, setApiResponse] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  // Add immediate script execution test
+  if (typeof window !== 'undefined') {
+    console.log('=== DebugPage: Client-side code is running ===');
+    (window as any).debugPageLoaded = true;
+  }
+
+  // Check if component is mounted
+  useEffect(() => {
+    setMounted(true);
+    console.log('DebugPage component mounted');
+    
+    // Add global error handler
+    window.addEventListener('error', (e) => {
+      console.error('Global error:', e.error);
+      addLog(`Global error: ${e.error?.message || 'Unknown error'}`);
+    });
+    
+    window.addEventListener('unhandledrejection', (e) => {
+      console.error('Unhandled rejection:', e.reason);
+      addLog(`Unhandled rejection: ${e.reason}`);
+    });
+  }, []);
+
+  const addLog = (message: string) => {
+    const timestamp = new Date().toLocaleTimeString();
+    console.log(`[${timestamp}] ${message}`);
+  };
 
   const testJournalsAPI = async () => {
     setLoading(true);
@@ -118,7 +147,10 @@ export default function DebugPage() {
       <h1 className="text-2xl font-bold mb-6">Journal API Debug Page</h1>
       
       <div className="space-y-4 mb-6">
-        <Button onClick={testJournalsAPI} disabled={loading}>
+        <Button onClick={() => {
+          console.log('Button clicked!');
+          testJournalsAPI();
+        }} disabled={loading}>
           Test /api/journals Endpoint
         </Button>
         
@@ -133,6 +165,20 @@ export default function DebugPage() {
         <Button onClick={checkEnvironment} disabled={loading} variant="outline">
           Check Environment Variables
         </Button>
+        
+        {/* Native HTML button for testing */}
+        <div className="mt-4 p-4 border rounded bg-yellow-50">
+          <p className="text-sm mb-2">Native HTML Button Test:</p>
+          <button 
+            onClick={() => {
+              alert('Native button clicked!');
+              console.log('Native button clicked!');
+            }}
+            className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+          >
+            Test Native Button
+          </button>
+        </div>
       </div>
 
       {loading && (
@@ -175,8 +221,27 @@ export default function DebugPage() {
           <p><strong>Current Time:</strong> {new Date().toISOString()}</p>
           <p><strong>Browser:</strong> {typeof window !== 'undefined' ? navigator.userAgent : 'Server-side'}</p>
           <p><strong>Page URL:</strong> {typeof window !== 'undefined' ? window.location.href : 'Server-side'}</p>
+          <p><strong>Component Mounted:</strong> {mounted ? '✓ Yes' : '✗ No'}</p>
+          <p><strong>JavaScript Enabled:</strong> {typeof window !== 'undefined' ? '✓ Yes' : '✗ No'}</p>
+          <p><strong>React Version:</strong> {useState ? '✓ React is loaded' : '✗ React not loaded'}</p>
         </CardContent>
       </Card>
+      
+      {/* Inline script test */}
+      <script dangerouslySetInnerHTML={{
+        __html: `
+          console.log('=== Inline script executed ===');
+          document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded');
+            const testBtn = document.querySelector('button');
+            if (testBtn) {
+              console.log('Found button:', testBtn.textContent);
+            } else {
+              console.log('No button found');
+            }
+          });
+        `
+      }} />
     </div>
   );
 }

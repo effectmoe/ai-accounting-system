@@ -3,7 +3,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import Navigation from '@/components/navigation'
 import { Toaster } from 'react-hot-toast'
-import { AppInitializer } from './app'
+// import { AppInitializer } from './app'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -28,13 +28,11 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <body className={inter.className}>
-        <AppInitializer>
-          <Navigation />
-          <main className="min-h-screen bg-gray-50 pt-24 lg:pt-16">
-            {children}
-          </main>
-          <Toaster position="top-right" />
-        </AppInitializer>
+        <Navigation />
+        <main className="min-h-screen bg-gray-50 pt-24 lg:pt-16">
+          {children}
+        </main>
+        <Toaster position="top-right" />
       </body>
     </html>
   )
