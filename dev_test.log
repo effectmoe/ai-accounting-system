@@ -1,1193 +1,326 @@
 
-> mastra-accounting-automation@1.0.0 dev
+> mastra-accounting-automation@1.0.1 dev
 > next dev
 
  ⚠ Port 3000 is in use, trying 3001 instead.
-   ▲ Next.js 14.1.0
-   - Local:        http://localhost:3001
-   - Environments: .env.local, .env
+  ▲ Next.js 14.2.21
+  - Local:        http://localhost:3001
+  - Environments: .env.local, .env
 
- ✓ Ready in 1053ms
- ✓ Compiled /middleware in 127ms (64 modules)
- ✓ Compiled /api/quotes in 115ms (43 modules)
-Creating new MongoDB connection...
-MongoDB URI configured: mongodb+srv://***:***@accounting-cluster.nld0j20.mongodb.net/accounting?retryWrites=true&w=majority&appName=accounting-cluster
-MongoDB connection verified with ping
-Reusing cached MongoDB connection
-Reusing cached MongoDB connection
-Reusing cached MongoDB connection
- ✓ Compiled /api/health in 34ms (45 modules)
-MongoDB connection check...
-Reusing cached MongoDB connection
-Reusing cached MongoDB connection
-Reusing cached MongoDB connection
-MongoDB connection successful
-Quote creation request: {
-  "customerId": "65a1b2c3d4e5f6789abcdef0",
-  "title": "Test Quote",
-  "items": [
-    {
-      "description": "Test Item",
-      "quantity": 1,
-      "unitPrice": 1000,
-      "amount": 1000
-    }
-  ],
-  "subtotal": 1000,
-  "taxAmount": 100,
-  "totalAmount": 1100
+ ✓ Starting...
+ ✓ Ready in 2s
+ ✓ Compiled /middleware in 163ms (117 modules)
+ ○ Compiling /api/journals/[id] ...
+ ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@prisma/instrumentation/dist/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./lib/logger.ts
+./app/api/journals/[id]/route.ts
+
+./node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/require-in-the-middle/index.js
+./node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node-core/build/cjs/integrations/http/SentryHttpInstrumentation.js
+./node_modules/@sentry/node-core/build/cjs/index.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./lib/logger.ts
+./app/api/journals/[id]/route.ts
+[2025-07-23T02:18:19.639Z] [DEBUG] Creating new MongoDB connection... 
+[2025-07-23T02:18:19.640Z] [DEBUG] MongoDB URI configured: mongodb+srv://***:***@accounting-cluster.nld0j20.mongodb.net/accounting?retryWrites=true&w=majority&appName=accounting-cluster
+[2025-07-23T02:18:19.951Z] [DEBUG] Creating new MongoDB connection... 
+[2025-07-23T02:18:19.952Z] [DEBUG] MongoDB URI configured: mongodb+srv://***:***@accounting-cluster.nld0j20.mongodb.net/accounting?retryWrites=true&w=majority&appName=accounting-cluster
+[2025-07-23T02:18:19.963Z] [DEBUG] ===== Journal Detail API GET Request Start ===== 
+[2025-07-23T02:18:19.963Z] [DEBUG] Journal ID: test-id
+[2025-07-23T02:18:19.963Z] [DEBUG] Environment check: {
+  NODE_ENV: 'development',
+  MONGODB_URI_exists: '[REDACTED]',
+  USE_AZURE_MONGODB: 'true',
+  timestamp: '2025-07-23T02:18:19.963Z'
 }
-Reusing cached MongoDB connection
-Reusing cached MongoDB connection
-Processed quote data: {
-  "customerId": "65a1b2c3d4e5f6789abcdef0",
-  "title": "Test Quote",
-  "items": [
-    {
-      "description": "Test Item",
-      "quantity": 1,
-      "unitPrice": 1000,
-      "amount": 1000,
-      "itemName": "Test Item",
-      "totalAmount": null,
-      "sortOrder": 0
-    }
-  ],
-  "subtotal": 1000,
-  "taxAmount": 0,
-  "totalAmount": 1000,
-  "quoteNumber": "QUO-20250714-001",
-  "issueDate": null,
-  "validityDate": null,
-  "status": "draft"
+[2025-07-23T02:18:19.964Z] [ERROR] Invalid ObjectId format: test-id
+ GET /api/journals/test-id 400 in 1601ms
+[2025-07-23T02:18:20.534Z] [DEBUG] [MongoDB] Database name extracted from URI: "accounting" 
+[2025-07-23T02:18:20.535Z] [DEBUG] [MongoDB] Database name extracted from URI: "accounting" 
+[2025-07-23T02:18:20.560Z] [DEBUG] MongoDB connection verified with ping 
+[2025-07-23T02:18:20.751Z] [DEBUG] Reusing cached MongoDB connection 
+ ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@prisma/instrumentation/dist/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./lib/logger.ts
+./app/api/journals/[id]/route.ts
+
+./node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/require-in-the-middle/index.js
+./node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node-core/build/cjs/integrations/http/SentryHttpInstrumentation.js
+./node_modules/@sentry/node-core/build/cjs/index.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./lib/logger.ts
+./app/api/journals/[id]/route.ts
+ ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@prisma/instrumentation/dist/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./lib/logger.ts
+./app/api/journals/[id]/route.ts
+
+./node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/require-in-the-middle/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./lib/logger.ts
+./app/api/journals/[id]/route.ts
+[2025-07-23T02:18:29.708Z] [DEBUG] [MongoDB] Database name extracted from URI: "accounting" 
+[2025-07-23T02:18:29.708Z] [DEBUG] [MongoDB] Database name extracted from URI: "accounting" 
+[2025-07-23T02:18:29.709Z] [DEBUG] ===== Journals API GET Request Start ===== 
+[2025-07-23T02:18:29.709Z] [DEBUG] Environment check: {
+  NODE_ENV: 'development',
+  MONGODB_URI_exists: '[REDACTED]',
+  USE_AZURE_MONGODB: 'true',
+  VERCEL: false,
+  timestamp: '2025-07-23T02:18:29.709Z'
 }
-Reusing cached MongoDB connection
-[MongoDB] findById called for collection: customers, id: 65a1b2c3d4e5f6789abcdef0
-[MongoDB] ID type: string, length: 24
-Reusing cached MongoDB connection
-[MongoDB] Converted ObjectId: 65a1b2c3d4e5f6789abcdef0
-[MongoDB] findById result: not found
-Error in createQuote: Error: 指定された顧客が見つかりません
-    at QuoteService.createQuote (webpack-internal:///(rsc)/./services/quote.service.ts:121:27)
-    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-    at async POST (webpack-internal:///(rsc)/./app/api/quotes/route.ts:86:23)
-    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:63809
-    at async eU.execute (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:53964)
-    at async eU.handle (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:65062)
-    at async doRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1333:42)
-    at async cacheEntry.responseCache.get.routeKind (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1555:28)
-    at async DevServer.renderToResponseWithComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1463:28)
-    at async DevServer.renderPageComponent (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1856:24)
-    at async DevServer.renderToResponseImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1894:32)
-    at async DevServer.pipeImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:911:25)
-    at async NextNodeServer.handleCatchallRenderRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:271:17)
-    at async DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:807:17)
-    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:331:20
-    at async Span.traceAsyncFn (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/trace/trace.js:151:20)
-    at async DevServer.handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:328:24)
-    at async invokeRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:163:21)
-    at async handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:342:24)
-    at async requestHandlerImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:366:13)
-    at async Server.requestListener (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js:140:13)
-Error creating quote: Error: 指定された顧客が見つかりません
-    at QuoteService.createQuote (webpack-internal:///(rsc)/./services/quote.service.ts:121:27)
-    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-    at async POST (webpack-internal:///(rsc)/./app/api/quotes/route.ts:86:23)
-    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:63809
-    at async eU.execute (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:53964)
-    at async eU.handle (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:65062)
-    at async doRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1333:42)
-    at async cacheEntry.responseCache.get.routeKind (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1555:28)
-    at async DevServer.renderToResponseWithComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1463:28)
-    at async DevServer.renderPageComponent (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1856:24)
-    at async DevServer.renderToResponseImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1894:32)
-    at async DevServer.pipeImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:911:25)
-    at async NextNodeServer.handleCatchallRenderRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:271:17)
-    at async DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:807:17)
-    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:331:20
-    at async Span.traceAsyncFn (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/trace/trace.js:151:20)
-    at async DevServer.handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:328:24)
-    at async invokeRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:163:21)
-    at async handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:342:24)
-    at async requestHandlerImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:366:13)
-    at async Server.requestListener (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js:140:13)
-Error details: {
-  message: '指定された顧客が見つかりません',
-  stack: 'Error: 指定された顧客が見つかりません\n' +
-    '    at QuoteService.createQuote (webpack-internal:///(rsc)/./services/quote.service.ts:121:27)\n' +
-    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
-    '    at async POST (webpack-internal:///(rsc)/./app/api/quotes/route.ts:86:23)\n' +
-    '    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:63809\n' +
-    '    at async eU.execute (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:53964)\n' +
-    '    at async eU.handle (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:65062)\n' +
-    '    at async doRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1333:42)\n' +
-    '    at async cacheEntry.responseCache.get.routeKind (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1555:28)\n' +
-    '    at async DevServer.renderToResponseWithComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1463:28)\n' +
-    '    at async DevServer.renderPageComponent (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1856:24)\n' +
-    '    at async DevServer.renderToResponseImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1894:32)\n' +
-    '    at async DevServer.pipeImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:911:25)\n' +
-    '    at async NextNodeServer.handleCatchallRenderRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:271:17)\n' +
-    '    at async DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:807:17)\n' +
-    '    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:331:20\n' +
-    '    at async Span.traceAsyncFn (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/trace/trace.js:151:20)\n' +
-    '    at async DevServer.handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:328:24)\n' +
-    '    at async invokeRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:163:21)\n' +
-    '    at async handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:342:24)\n' +
-    '    at async requestHandlerImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:366:13)\n' +
-    '    at async Server.requestListener (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js:140:13)'
+[2025-07-23T02:18:29.709Z] [DEBUG] Query parameters: { companyId: null, dateFrom: null, dateTo: null, limit: 1, skip: 0 }
+[2025-07-23T02:18:29.710Z] [DEBUG] Filter object: {}
+[2025-07-23T02:18:29.710Z] [DEBUG] Attempting to fetch journals from database... 
+[2025-07-23T02:18:29.710Z] [DEBUG] [DatabaseService.find] Starting find operation for collection: journals 
+[2025-07-23T02:18:29.710Z] [DEBUG] [DatabaseService.find] Filter: {}
+[2025-07-23T02:18:29.710Z] [DEBUG] [DatabaseService.find] Options: {"limit":1,"skip":0,"sort":{"entryDate":-1,"createdAt":-1}}
+[2025-07-23T02:18:29.710Z] [DEBUG] [getCollection] Attempting to get collection: journals 
+[2025-07-23T02:18:29.710Z] [DEBUG] [MongoDB] Database name extracted from URI: "accounting" 
+[2025-07-23T02:18:29.735Z] [DEBUG] Reusing cached MongoDB connection 
+[2025-07-23T02:18:29.736Z] [DEBUG] Reusing cached MongoDB connection 
+[2025-07-23T02:18:29.918Z] [DEBUG] Reusing cached MongoDB connection 
+[2025-07-23T02:18:29.918Z] [DEBUG] [getCollection] Database obtained successfully 
+[2025-07-23T02:18:29.918Z] [DEBUG] [getCollection] Collection reference created for: journals 
+[2025-07-23T02:18:29.944Z] [DEBUG] [getCollection] Collection journals is accessible. Estimated count: 4 
+[2025-07-23T02:18:29.944Z] [DEBUG] [DatabaseService.find] Collection obtained successfully 
+[2025-07-23T02:18:29.946Z] [DEBUG] [DatabaseService.find] Sort applied: { entryDate: -1, createdAt: -1 }
+[2025-07-23T02:18:29.947Z] [DEBUG] [DatabaseService.find] Limit applied: 1
+[2025-07-23T02:18:29.947Z] [DEBUG] [DatabaseService.find] Executing query... 
+[2025-07-23T02:18:29.976Z] [DEBUG] [DatabaseService.find] Query executed successfully. Results count: 1 
+[2025-07-23T02:18:29.977Z] [DEBUG] Journals fetched successfully: {
+  count: 1,
+  hasData: true,
+  firstJournal: {
+    _id: { buffer: [Object] },
+    companyId: '11111111-1111-1111-1111-111111111111',
+    journalNumber: 'J202500003',
+    entryDate: {},
+    description: '福岡城三の丸:株式会社 ( - ',
+    status: 'confirmed',
+    sourceType: 'ocr',
+    sourceDocumentId: { buffer: [Object] },
+    lines: [ [Object], [Object] ],
+    totalDebit: 800,
+    totalCredit: 800,
+    createdAt: {},
+    updatedAt: {}
+  }
 }
- ✓ Compiled /api/customers in 46ms (45 modules)
-Reusing cached MongoDB connection
-Reusing cached MongoDB connection
-Reusing cached MongoDB connection
-Quote creation request: {
-  "customerId": "686e8633893d2d4875abd83c",
-  "title": "Test Quote for ピアソラ",
-  "items": [
-    {
-      "description": "WebサイトリニューアルサービS",
-      "quantity": 1,
-      "unitPrice": 500000,
-      "amount": 500000
-    }
-  ],
-  "subtotal": 500000,
-  "taxAmount": 50000,
-  "totalAmount": 550000
+[2025-07-23T02:18:29.978Z] [DEBUG] Fetching total count... 
+[2025-07-23T02:18:29.979Z] [DEBUG] [DatabaseService.count] Starting count operation for collection: journals 
+[2025-07-23T02:18:29.979Z] [DEBUG] [DatabaseService.count] Filter: {}
+[2025-07-23T02:18:29.979Z] [DEBUG] [getCollection] Attempting to get collection: journals 
+[2025-07-23T02:18:29.979Z] [DEBUG] [MongoDB] Database name extracted from URI: "accounting" 
+[2025-07-23T02:18:30.005Z] [DEBUG] Reusing cached MongoDB connection 
+[2025-07-23T02:18:30.005Z] [DEBUG] [getCollection] Database obtained successfully 
+[2025-07-23T02:18:30.005Z] [DEBUG] [getCollection] Collection reference created for: journals 
+[2025-07-23T02:18:30.031Z] [DEBUG] [getCollection] Collection journals is accessible. Estimated count: 4 
+[2025-07-23T02:18:30.031Z] [DEBUG] [DatabaseService.count] Collection obtained successfully 
+[2025-07-23T02:18:30.058Z] [DEBUG] [DatabaseService.count] Count result: 4 
+[2025-07-23T02:18:30.058Z] [DEBUG] Total count: 4
+[2025-07-23T02:18:30.058Z] [DEBUG] API Response: {
+  success: true,
+  journalsCount: 1,
+  totalCount: 4,
+  currentPage: 1,
+  totalPages: 4
 }
-Reusing cached MongoDB connection
-Reusing cached MongoDB connection
-Processed quote data: {
-  "customerId": "686e8633893d2d4875abd83c",
-  "title": "Test Quote for ピアソラ",
-  "items": [
-    {
-      "description": "WebサイトリニューアルサービS",
-      "quantity": 1,
-      "unitPrice": 500000,
-      "amount": 500000,
-      "itemName": "WebサイトリニューアルサービS",
-      "totalAmount": null,
-      "sortOrder": 0
-    }
-  ],
-  "subtotal": 500000,
-  "taxAmount": 0,
-  "totalAmount": 500000,
-  "quoteNumber": "QUO-20250714-001",
-  "issueDate": null,
-  "validityDate": null,
-  "status": "draft"
+[2025-07-23T02:18:30.058Z] [DEBUG] ===== Journals API GET Request End ===== 
+ GET /api/journals?limit=1 200 in 536ms
+[2025-07-23T02:26:05.957Z] [DEBUG] ===== Journals API GET Request Start ===== 
+[2025-07-23T02:26:05.957Z] [DEBUG] Environment check: {
+  NODE_ENV: 'development',
+  MONGODB_URI_exists: '[REDACTED]',
+  USE_AZURE_MONGODB: 'true',
+  VERCEL: false,
+  timestamp: '2025-07-23T02:26:05.957Z'
 }
-Reusing cached MongoDB connection
-[MongoDB] findById called for collection: customers, id: 686e8633893d2d4875abd83c
-[MongoDB] ID type: string, length: 24
-Reusing cached MongoDB connection
-[MongoDB] Converted ObjectId: 686e8633893d2d4875abd83c
-[MongoDB] findById result: found
-[MongoDB] Found document with _id: 686e8633893d2d4875abd83c
-Reusing cached MongoDB connection
-Quote created: {
-  customerId: '686e8633893d2d4875abd83c',
-  title: 'Test Quote for ピアソラ',
-  items: [
-    {
-      description: 'WebサイトリニューアルサービS',
-      quantity: 1,
-      unitPrice: 500000,
-      amount: 500000,
-      itemName: 'WebサイトリニューアルサービS',
-      totalAmount: NaN,
-      sortOrder: 0
-    }
-  ],
-  subtotal: 500000,
-  taxAmount: 0,
-  totalAmount: 500000,
-  quoteNumber: 'QUO-20250714-001',
-  issueDate: Invalid Date,
-  validityDate: Invalid Date,
-  status: 'draft',
-  acceptedDate: undefined,
-  rejectedDate: undefined,
-  expiredDate: undefined,
-  convertedToInvoiceDate: undefined,
-  createdAt: 2025-07-14T02:34:12.643Z,
-  updatedAt: 2025-07-14T02:34:12.643Z,
-  _id: new ObjectId('68746ca46426b1173b5cf864')
+[2025-07-23T02:26:05.957Z] [DEBUG] Query parameters: { companyId: null, dateFrom: null, dateTo: null, limit: 1, skip: 0 }
+[2025-07-23T02:26:05.957Z] [DEBUG] Filter object: {}
+[2025-07-23T02:26:05.957Z] [DEBUG] Attempting to fetch journals from database... 
+[2025-07-23T02:26:05.957Z] [DEBUG] [DatabaseService.find] Starting find operation for collection: journals 
+[2025-07-23T02:26:05.957Z] [DEBUG] [DatabaseService.find] Filter: {}
+[2025-07-23T02:26:05.957Z] [DEBUG] [DatabaseService.find] Options: {"limit":1,"skip":0,"sort":{"entryDate":-1,"createdAt":-1}}
+[2025-07-23T02:26:05.957Z] [DEBUG] [getCollection] Attempting to get collection: journals 
+[2025-07-23T02:26:05.957Z] [DEBUG] [MongoDB] Database name extracted from URI: "accounting" 
+[2025-07-23T02:26:06.034Z] [DEBUG] Reusing cached MongoDB connection 
+[2025-07-23T02:26:06.034Z] [DEBUG] [getCollection] Database obtained successfully 
+[2025-07-23T02:26:06.034Z] [DEBUG] [getCollection] Collection reference created for: journals 
+[2025-07-23T02:26:06.115Z] [DEBUG] [getCollection] Collection journals is accessible. Estimated count: 4 
+[2025-07-23T02:26:06.115Z] [DEBUG] [DatabaseService.find] Collection obtained successfully 
+[2025-07-23T02:26:06.115Z] [DEBUG] [DatabaseService.find] Sort applied: { entryDate: -1, createdAt: -1 }
+[2025-07-23T02:26:06.115Z] [DEBUG] [DatabaseService.find] Limit applied: 1
+[2025-07-23T02:26:06.115Z] [DEBUG] [DatabaseService.find] Executing query... 
+[2025-07-23T02:26:06.140Z] [DEBUG] [DatabaseService.find] Query executed successfully. Results count: 1 
+[2025-07-23T02:26:06.140Z] [DEBUG] Journals fetched successfully: {
+  count: 1,
+  hasData: true,
+  firstJournal: {
+    _id: { buffer: [Object] },
+    companyId: '11111111-1111-1111-1111-111111111111',
+    journalNumber: 'J202500003',
+    entryDate: {},
+    description: '福岡城三の丸:株式会社 ( - ',
+    status: 'confirmed',
+    sourceType: 'ocr',
+    sourceDocumentId: { buffer: [Object] },
+    lines: [ [Object], [Object] ],
+    totalDebit: 800,
+    totalCredit: 800,
+    createdAt: {},
+    updatedAt: {}
+  }
 }
- ✓ Compiled /api/quotes/[id]/convert-to-invoice in 19ms (47 modules)
-Reusing cached MongoDB connection
-Reusing cached MongoDB connection
-Creating new MongoDB connection...
-MongoDB URI configured: mongodb+srv://***:***@accounting-cluster.nld0j20.mongodb.net/accounting?retryWrites=true&w=majority&appName=accounting-cluster
-Error converting quote to invoice: SyntaxError: Unexpected end of JSON input
-    at JSON.parse (<anonymous>)
-    at parseJSONFromBytes (node:internal/deps/undici/undici:5738:19)
-    at successSteps (node:internal/deps/undici/undici:5719:27)
-    at fullyReadBody (node:internal/deps/undici/undici:4609:9)
-    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-    at async consumeBody (node:internal/deps/undici/undici:5728:7)
-    at async POST (webpack-internal:///(rsc)/./app/api/quotes/[id]/convert-to-invoice/route.ts:12:22)
-    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:63809
-    at async eU.execute (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:53964)
-    at async eU.handle (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:65062)
-    at async doRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1333:42)
-    at async cacheEntry.responseCache.get.routeKind (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1543:40)
-    at async DevServer.renderToResponseWithComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1463:28)
-    at async DevServer.renderPageComponent (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1856:24)
-    at async DevServer.renderToResponseImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1894:32)
-    at async DevServer.pipeImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:911:25)
-    at async NextNodeServer.handleCatchallRenderRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:271:17)
-    at async DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:807:17)
-    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:331:20
-    at async Span.traceAsyncFn (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/trace/trace.js:151:20)
-    at async DevServer.handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:328:24)
-    at async invokeRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:163:21)
-    at async handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:342:24)
-    at async requestHandlerImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:366:13)
-    at async Server.requestListener (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js:140:13)
-[POST /api/quotes/[id]/convert-to-invoice] Quote ID: 68746ca46426b1173b5cf864
-[POST /api/quotes/[id]/convert-to-invoice] Invoice data: {
-  "issueDate": "2025-07-14",
-  "dueDate": "2025-08-14"
+[2025-07-23T02:26:06.140Z] [DEBUG] Fetching total count... 
+[2025-07-23T02:26:06.140Z] [DEBUG] [DatabaseService.count] Starting count operation for collection: journals 
+[2025-07-23T02:26:06.140Z] [DEBUG] [DatabaseService.count] Filter: {}
+[2025-07-23T02:26:06.140Z] [DEBUG] [getCollection] Attempting to get collection: journals 
+[2025-07-23T02:26:06.140Z] [DEBUG] [MongoDB] Database name extracted from URI: "accounting" 
+[2025-07-23T02:26:06.165Z] [DEBUG] Reusing cached MongoDB connection 
+[2025-07-23T02:26:06.165Z] [DEBUG] [getCollection] Database obtained successfully 
+[2025-07-23T02:26:06.165Z] [DEBUG] [getCollection] Collection reference created for: journals 
+[2025-07-23T02:26:06.189Z] [DEBUG] [getCollection] Collection journals is accessible. Estimated count: 4 
+[2025-07-23T02:26:06.189Z] [DEBUG] [DatabaseService.count] Collection obtained successfully 
+[2025-07-23T02:26:06.215Z] [DEBUG] [DatabaseService.count] Count result: 4 
+[2025-07-23T02:26:06.215Z] [DEBUG] Total count: 4
+[2025-07-23T02:26:06.215Z] [DEBUG] API Response: {
+  success: true,
+  journalsCount: 1,
+  totalCount: 4,
+  currentPage: 1,
+  totalPages: 4
 }
-[QuoteService] getQuote called with ID: 68746ca46426b1173b5cf864
-[MongoDB] findById called for collection: quotes, id: 68746ca46426b1173b5cf864
-[MongoDB] ID type: string, length: 24
-Reusing cached MongoDB connection
-[MongoDB] Converted ObjectId: 68746ca46426b1173b5cf864
-[MongoDB] findById result: found
-[MongoDB] Found document with _id: 68746ca46426b1173b5cf864
-[QuoteService] Quote found: {
-  _id: new ObjectId('68746ca46426b1173b5cf864'),
-  quoteNumber: 'QUO-20250714-001'
+[2025-07-23T02:26:06.216Z] [DEBUG] ===== Journals API GET Request End ===== 
+ GET /api/journals?limit=1 200 in 278ms
+ ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@prisma/instrumentation/dist/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./lib/logger.ts
+./app/api/journals/[id]/route.ts
+
+./node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/require-in-the-middle/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./lib/logger.ts
+./app/api/journals/[id]/route.ts
+ ⚠ ./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+Critical dependency: the request of a dependency is an expression
+
+Import trace for requested module:
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@prisma/instrumentation/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@prisma/instrumentation/dist/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/prisma.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./lib/logger.ts
+./app/api/journals/route.ts
+
+./node_modules/require-in-the-middle/index.js
+Critical dependency: require function is used in a way in which dependencies cannot be statically extracted
+
+Import trace for requested module:
+./node_modules/require-in-the-middle/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/instrumentation.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/node/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/platform/index.js
+./node_modules/@sentry/node/node_modules/@opentelemetry/instrumentation/build/esm/index.js
+./node_modules/@sentry/node/build/cjs/integrations/tracing/postgresjs.js
+./node_modules/@sentry/node/build/cjs/index.js
+./node_modules/@sentry/nextjs/build/cjs/index.server.js
+./lib/logger.ts
+./app/api/journals/route.ts
+[2025-07-23T02:26:26.845Z] [DEBUG] [Journal Chat API] Request received for journal: 686d273afda1a0da7a319cd0
+[2025-07-23T02:26:26.855Z] [DEBUG] [Journal Chat API] Calling DeepSeek API with messages: { messageCount: 2, journalNumber: 'J202500003' }
+[2025-07-23T02:26:43.398Z] [DEBUG] [Journal Chat API] DeepSeek response received: {
+  responseLength: 416,
+  usage: {
+    prompt_tokens: '[REDACTED]',
+    completion_tokens: '[REDACTED]',
+    total_tokens: '[REDACTED]',
+    prompt_tokens_details: '[REDACTED]',
+    prompt_cache_hit_tokens: '[REDACTED]',
+    prompt_cache_miss_tokens: '[REDACTED]'
+  }
 }
-[MongoDB] findById called for collection: customers, id: 686e8633893d2d4875abd83c
-[MongoDB] ID type: string, length: 24
-Reusing cached MongoDB connection
-Creating new MongoDB connection...
-MongoDB URI configured: mongodb+srv://***:***@accounting-cluster.nld0j20.mongodb.net/accounting?retryWrites=true&w=majority&appName=accounting-cluster
-[MongoDB] Converted ObjectId: 686e8633893d2d4875abd83c
-[MongoDB] findById result: found
-[MongoDB] Found document with _id: 686e8633893d2d4875abd83c
-Error in convertToInvoice: Error: 承認された見積書のみ請求書に変換できます
-    at QuoteService.convertToInvoice (webpack-internal:///(rsc)/./services/quote.service.ts:314:23)
-    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-    at async POST (webpack-internal:///(rsc)/./app/api/quotes/[id]/convert-to-invoice/route.ts:17:25)
-    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:63809
-    at async eU.execute (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:53964)
-    at async eU.handle (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:65062)
-    at async doRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1333:42)
-    at async cacheEntry.responseCache.get.routeKind (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1543:40)
-    at async DevServer.renderToResponseWithComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1463:28)
-    at async DevServer.renderPageComponent (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1856:24)
-    at async DevServer.renderToResponseImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1894:32)
-    at async DevServer.pipeImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:911:25)
-    at async NextNodeServer.handleCatchallRenderRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:271:17)
-    at async DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:807:17)
-    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:331:20
-    at async Span.traceAsyncFn (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/trace/trace.js:151:20)
-    at async DevServer.handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:328:24)
-    at async invokeRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:163:21)
-    at async handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:342:24)
-    at async requestHandlerImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:366:13)
-    at async Server.requestListener (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js:140:13)
-Error converting quote to invoice: Error: 承認された見積書のみ請求書に変換できます
-    at QuoteService.convertToInvoice (webpack-internal:///(rsc)/./services/quote.service.ts:314:23)
-    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-    at async POST (webpack-internal:///(rsc)/./app/api/quotes/[id]/convert-to-invoice/route.ts:17:25)
-    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:63809
-    at async eU.execute (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:53964)
-    at async eU.handle (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:65062)
-    at async doRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1333:42)
-    at async cacheEntry.responseCache.get.routeKind (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1543:40)
-    at async DevServer.renderToResponseWithComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1463:28)
-    at async DevServer.renderPageComponent (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1856:24)
-    at async DevServer.renderToResponseImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1894:32)
-    at async DevServer.pipeImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:911:25)
-    at async NextNodeServer.handleCatchallRenderRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:271:17)
-    at async DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:807:17)
-    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:331:20
-    at async Span.traceAsyncFn (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/trace/trace.js:151:20)
-    at async DevServer.handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:328:24)
-    at async invokeRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:163:21)
-    at async handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:342:24)
-    at async requestHandlerImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:366:13)
-    at async Server.requestListener (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js:140:13)
- ✓ Compiled /api/quotes/[id] in 28ms (45 modules)
-Reusing cached MongoDB connection
-Reusing cached MongoDB connection
-Creating new MongoDB connection...
-MongoDB URI configured: mongodb+srv://***:***@accounting-cluster.nld0j20.mongodb.net/accounting?retryWrites=true&w=majority&appName=accounting-cluster
-[PUT /api/quotes/[id]] Quote ID: 68746ca46426b1173b5cf864
-[PUT /api/quotes/[id]] Update data: {
-  "status": "accepted"
-}
-[QuoteService] updateQuote called with: {
-  id: '68746ca46426b1173b5cf864',
-  updateData: '{\n  "status": "accepted"\n}'
-}
-Reusing cached MongoDB connection
-Updating document in quotes with ID: 68746ca46426b1173b5cf864
-Update data keys: [ 'status' ]
-[MongoDB] findOneAndUpdate raw result: {
-  _id: new ObjectId('68746ca46426b1173b5cf864'),
-  customerId: '686e8633893d2d4875abd83c',
-  title: 'Test Quote for ピアソラ',
-  items: [
-    {
-      description: 'WebサイトリニューアルサービS',
-      quantity: 1,
-      unitPrice: 500000,
-      amount: 500000,
-      itemName: 'WebサイトリニューアルサービS',
-      totalAmount: NaN,
-      sortOrder: 0
-    }
-  ],
-  subtotal: 500000,
-  taxAmount: 0,
-  totalAmount: 500000,
-  quoteNumber: 'QUO-20250714-001',
-  issueDate: 1970-01-01T00:00:00.000Z,
-  validityDate: 1970-01-01T00:00:00.000Z,
-  status: 'accepted',
-  acceptedDate: null,
-  rejectedDate: null,
-  expiredDate: null,
-  convertedToInvoiceDate: null,
-  createdAt: 2025-07-14T02:34:12.643Z,
-  updatedAt: 2025-07-14T02:35:45.755Z
-}
-[MongoDB] findOneAndUpdate result type: object
-[MongoDB] findOneAndUpdate result keys: [
-  '_id',
-  'customerId',
-  'title',
-  'items',
-  'subtotal',
-  'taxAmount',
-  'totalAmount',
-  'quoteNumber',
-  'issueDate',
-  'validityDate',
-  'status',
-  'acceptedDate',
-  'rejectedDate',
-  'expiredDate',
-  'convertedToInvoiceDate',
-  'createdAt',
-  'updatedAt'
-]
-Document updated successfully in quotes
-Updated document ID: 68746ca46426b1173b5cf864
-[MongoDB] findById called for collection: customers, id: 686e8633893d2d4875abd83c
-[MongoDB] ID type: string, length: 24
-Reusing cached MongoDB connection
-[MongoDB] Converted ObjectId: 686e8633893d2d4875abd83c
-[MongoDB] findById result: found
-[MongoDB] Found document with _id: 686e8633893d2d4875abd83c
-[POST /api/quotes/[id]/convert-to-invoice] Quote ID: 68746ca46426b1173b5cf864
-[POST /api/quotes/[id]/convert-to-invoice] Invoice data: {
-  "issueDate": "2025-07-14",
-  "dueDate": "2025-08-14"
-}
-[QuoteService] getQuote called with ID: 68746ca46426b1173b5cf864
-[MongoDB] findById called for collection: quotes, id: 68746ca46426b1173b5cf864
-[MongoDB] ID type: string, length: 24
-Reusing cached MongoDB connection
-[MongoDB] Converted ObjectId: 68746ca46426b1173b5cf864
-[MongoDB] findById result: found
-[MongoDB] Found document with _id: 68746ca46426b1173b5cf864
-[QuoteService] Quote found: {
-  _id: new ObjectId('68746ca46426b1173b5cf864'),
-  quoteNumber: 'QUO-20250714-001'
-}
-[MongoDB] findById called for collection: customers, id: 686e8633893d2d4875abd83c
-[MongoDB] ID type: string, length: 24
-Reusing cached MongoDB connection
-Creating new MongoDB connection...
-MongoDB URI configured: mongodb+srv://***:***@accounting-cluster.nld0j20.mongodb.net/accounting?retryWrites=true&w=majority&appName=accounting-cluster
-[MongoDB] Converted ObjectId: 686e8633893d2d4875abd83c
-[MongoDB] findById result: found
-[MongoDB] Found document with _id: 686e8633893d2d4875abd83c
-Reusing cached MongoDB connection
-Reusing cached MongoDB connection
-Reusing cached MongoDB connection
-[MongoDB] findById called for collection: customers, id: 686e8633893d2d4875abd83c
-[MongoDB] ID type: string, length: 24
-Reusing cached MongoDB connection
-[MongoDB] Converted ObjectId: 686e8633893d2d4875abd83c
-[MongoDB] findById result: found
-[MongoDB] Found document with _id: 686e8633893d2d4875abd83c
-Reusing cached MongoDB connection
-[QuoteService] updateQuote called with: {
-  id: '68746ca46426b1173b5cf864',
-  updateData: '{\n' +
-    '  "status": "converted",\n' +
-    '  "convertedToInvoiceId": "68746d0d6426b1173b5cf865",\n' +
-    '  "convertedToInvoiceDate": "2025-07-14T02:35:57.393Z"\n' +
-    '}'
-}
-Reusing cached MongoDB connection
-Updating document in quotes with ID: 68746ca46426b1173b5cf864
-Update data keys: [ 'status', 'convertedToInvoiceId', 'convertedToInvoiceDate' ]
-[MongoDB] findOneAndUpdate raw result: {
-  _id: new ObjectId('68746ca46426b1173b5cf864'),
-  customerId: '686e8633893d2d4875abd83c',
-  title: 'Test Quote for ピアソラ',
-  items: [
-    {
-      description: 'WebサイトリニューアルサービS',
-      quantity: 1,
-      unitPrice: 500000,
-      amount: 500000,
-      itemName: 'WebサイトリニューアルサービS',
-      totalAmount: NaN,
-      sortOrder: 0
-    }
-  ],
-  subtotal: 500000,
-  taxAmount: 0,
-  totalAmount: 500000,
-  quoteNumber: 'QUO-20250714-001',
-  issueDate: 1970-01-01T00:00:00.000Z,
-  validityDate: 1970-01-01T00:00:00.000Z,
-  status: 'converted',
-  acceptedDate: null,
-  rejectedDate: null,
-  expiredDate: null,
-  convertedToInvoiceDate: 2025-07-14T02:35:57.393Z,
-  createdAt: 2025-07-14T02:34:12.643Z,
-  updatedAt: 2025-07-14T02:35:57.442Z,
-  convertedToInvoiceId: new ObjectId('68746d0d6426b1173b5cf865')
-}
-[MongoDB] findOneAndUpdate result type: object
-[MongoDB] findOneAndUpdate result keys: [
-  '_id',                    'customerId',
-  'title',                  'items',
-  'subtotal',               'taxAmount',
-  'totalAmount',            'quoteNumber',
-  'issueDate',              'validityDate',
-  'status',                 'acceptedDate',
-  'rejectedDate',           'expiredDate',
-  'convertedToInvoiceDate', 'createdAt',
-  'updatedAt',              'convertedToInvoiceId'
-]
-Document updated successfully in quotes
-Updated document ID: 68746ca46426b1173b5cf864
-[MongoDB] findById called for collection: customers, id: 686e8633893d2d4875abd83c
-[MongoDB] ID type: string, length: 24
-Reusing cached MongoDB connection
-[MongoDB] Converted ObjectId: 686e8633893d2d4875abd83c
-[MongoDB] findById result: found
-[MongoDB] Found document with _id: 686e8633893d2d4875abd83c
-[POST /api/quotes/[id]/convert-to-invoice] Invoice created: new ObjectId('68746d0d6426b1173b5cf865')
- ✓ Compiled /api/quotes/analyze-chat in 300ms (234 modules)
-[API] POST /api/quotes/analyze-chat - Start
-[API] Request body: {
-  "message": "新しい見積書を作成したい。株式会社ピアソラ向けのWebサイトリニューアル見積り、50万円で"
-}
-Reusing cached MongoDB connection
-Reusing cached MongoDB connection
-[API] POST /api/quotes/analyze-chat - Start
-[API] Request body: {
-  "message": "新しい見積書を作成したい。株式会社ピアソラ向けのWebサイトリニューアル見積り、50万円で",
-  "conversation": []
-}
-[API] Error in analyze-chat: TypeError: customerService.getCustomers is not a function
-    at POST (webpack-internal:///(rsc)/./app/api/quotes/analyze-chat/route.ts:122:49)
-    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:63809
-    at async eU.execute (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:53964)
-    at async eU.handle (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:65062)
-    at async doRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1333:42)
-    at async cacheEntry.responseCache.get.routeKind (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1555:28)
-    at async DevServer.renderToResponseWithComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1463:28)
-    at async DevServer.renderPageComponent (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1856:24)
-    at async DevServer.renderToResponseImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1894:32)
-    at async DevServer.pipeImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:911:25)
-    at async NextNodeServer.handleCatchallRenderRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:271:17)
-    at async DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:807:17)
-    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:331:20
-    at async Span.traceAsyncFn (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/trace/trace.js:151:20)
-    at async DevServer.handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:328:24)
-    at async invokeRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:163:21)
-    at async handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:342:24)
-    at async requestHandlerImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:366:13)
-    at async Server.requestListener (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js:140:13)
- ○ Compiling /api/quotes/[id]/pdf ...
- ✓ Compiled /api/quotes/[id]/pdf in 528ms (223 modules)
-Reusing cached MongoDB connection
-Reusing cached MongoDB connection
-Creating new MongoDB connection...
-MongoDB URI configured: mongodb+srv://***:***@accounting-cluster.nld0j20.mongodb.net/accounting?retryWrites=true&w=majority&appName=accounting-cluster
-[GET /api/quotes/[id]/pdf] Quote ID: 68746ca46426b1173b5cf864
-[QuoteService] getQuote called with ID: 68746ca46426b1173b5cf864
-[MongoDB] findById called for collection: quotes, id: 68746ca46426b1173b5cf864
-[MongoDB] ID type: string, length: 24
-Reusing cached MongoDB connection
-[MongoDB] Converted ObjectId: 68746ca46426b1173b5cf864
-[MongoDB] findById result: found
-[MongoDB] Found document with _id: 68746ca46426b1173b5cf864
-[QuoteService] Quote found: {
-  _id: new ObjectId('68746ca46426b1173b5cf864'),
-  quoteNumber: 'QUO-20250714-001'
-}
-[MongoDB] findById called for collection: customers, id: 686e8633893d2d4875abd83c
-[MongoDB] ID type: string, length: 24
-Reusing cached MongoDB connection
-[MongoDB] Converted ObjectId: 686e8633893d2d4875abd83c
-[MongoDB] findById result: found
-[MongoDB] Found document with _id: 686e8633893d2d4875abd83c
-Reusing cached MongoDB connection
-PDF generation error: TypeError: Cannot read properties of undefined (reading 'trim')
-    at eval (webpack-internal:///(rsc)/./lib/pdf-quote-generator.ts:110:39)
-    at Array.filter (<anonymous>)
-    at eval (webpack-internal:///(rsc)/./lib/pdf-quote-generator.ts:110:19)
-    at new Promise (<anonymous>)
-    at generateQuotePDF (webpack-internal:///(rsc)/./lib/pdf-quote-generator.ts:50:12)
-    at GET (webpack-internal:///(rsc)/./app/api/quotes/[id]/pdf/route.ts:38:107)
-    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:63809
-    at async eU.execute (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:53964)
-    at async eU.handle (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:65062)
-    at async doRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1333:42)
-    at async cacheEntry.responseCache.get.routeKind (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1543:40)
-    at async DevServer.renderToResponseWithComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1463:28)
-    at async DevServer.renderPageComponent (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1856:24)
-    at async DevServer.renderToResponseImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1894:32)
-    at async DevServer.pipeImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:911:25)
-    at async NextNodeServer.handleCatchallRenderRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:271:17)
-    at async DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:807:17)
-    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:331:20
-    at async Span.traceAsyncFn (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/trace/trace.js:151:20)
-    at async DevServer.handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:328:24)
-    at async invokeRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:163:21)
-    at async handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:342:24)
-    at async requestHandlerImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:366:13)
-    at async Server.requestListener (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js:140:13)
-Error generating quote PDF: TypeError: Cannot read properties of undefined (reading 'trim')
-    at eval (webpack-internal:///(rsc)/./lib/pdf-quote-generator.ts:110:39)
-    at Array.filter (<anonymous>)
-    at eval (webpack-internal:///(rsc)/./lib/pdf-quote-generator.ts:110:19)
-    at new Promise (<anonymous>)
-    at generateQuotePDF (webpack-internal:///(rsc)/./lib/pdf-quote-generator.ts:50:12)
-    at GET (webpack-internal:///(rsc)/./app/api/quotes/[id]/pdf/route.ts:38:107)
-    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:63809
-    at async eU.execute (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:53964)
-    at async eU.handle (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:65062)
-    at async doRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1333:42)
-    at async cacheEntry.responseCache.get.routeKind (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1543:40)
-    at async DevServer.renderToResponseWithComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1463:28)
-    at async DevServer.renderPageComponent (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1856:24)
-    at async DevServer.renderToResponseImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1894:32)
-    at async DevServer.pipeImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:911:25)
-    at async NextNodeServer.handleCatchallRenderRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:271:17)
-    at async DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:807:17)
-    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:331:20
-    at async Span.traceAsyncFn (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/trace/trace.js:151:20)
-    at async DevServer.handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:328:24)
-    at async invokeRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:163:21)
-    at async handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:342:24)
-    at async requestHandlerImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:366:13)
-    at async Server.requestListener (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js:140:13)
- ✓ Compiled in 35ms (223 modules)
- ✓ Compiled in 26ms (223 modules)
- ✓ Compiled in 25ms (223 modules)
- ✓ Compiled in 23ms (223 modules)
- ✓ Compiled in 31ms (223 modules)
-[GET /api/quotes/[id]/pdf] Quote ID: 68746ca46426b1173b5cf864
-[QuoteService] getQuote called with ID: 68746ca46426b1173b5cf864
-[MongoDB] findById called for collection: quotes, id: 68746ca46426b1173b5cf864
-[MongoDB] ID type: string, length: 24
-Reusing cached MongoDB connection
-Reusing cached MongoDB connection
-Reusing cached MongoDB connection
-[MongoDB] Converted ObjectId: 68746ca46426b1173b5cf864
-[MongoDB] findById result: found
-[MongoDB] Found document with _id: 68746ca46426b1173b5cf864
-[QuoteService] Quote found: {
-  _id: new ObjectId('68746ca46426b1173b5cf864'),
-  quoteNumber: 'QUO-20250714-001'
-}
-[MongoDB] findById called for collection: customers, id: 686e8633893d2d4875abd83c
-[MongoDB] ID type: string, length: 24
-Reusing cached MongoDB connection
-[MongoDB] Converted ObjectId: 686e8633893d2d4875abd83c
-[MongoDB] findById result: found
-[MongoDB] Found document with _id: 686e8633893d2d4875abd83c
-Reusing cached MongoDB connection
-Creating new MongoDB connection...
-MongoDB URI configured: mongodb+srv://***:***@accounting-cluster.nld0j20.mongodb.net/accounting?retryWrites=true&w=majority&appName=accounting-cluster
- ✓ Compiled in 12ms
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:331:20
-    at async Span.traceAsyncFn (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/trace/trace.js:151:20)
-    at async DevServer.handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:328:24)
-    at async handleRoute (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-utils/resolve-routes.js:319:33)
-    at async resolveRoutes (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-utils/resolve-routes.js:539:28)
-    at async upgradeHandler (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:415:50)
-    at async Server.<anonymous> (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js:169:13)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:331:20
-    at async Span.traceAsyncFn (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/trace/trace.js:151:20)
-    at async DevServer.handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:328:24)
-    at async handleRoute (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-utils/resolve-routes.js:319:33)
-    at async resolveRoutes (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-utils/resolve-routes.js:539:28)
-    at async upgradeHandler (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:415:50)
-    at async Server.<anonymous> (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js:169:13)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:331:20
-    at async Span.traceAsyncFn (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/trace/trace.js:151:20)
-    at async DevServer.handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:328:24)
-    at async handleRoute (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-utils/resolve-routes.js:319:33)
-    at async resolveRoutes (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-utils/resolve-routes.js:539:28)
-    at async upgradeHandler (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:415:50)
-    at async Server.<anonymous> (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js:169:13)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-Error handling upgrade request TypeError: Cannot read properties of undefined (reading 'bind')
-    at DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:460:50)
-[?25h
+ POST /api/journals/686d273afda1a0da7a319cd0/chat 200 in 17136ms
