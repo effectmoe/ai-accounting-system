@@ -145,6 +145,16 @@ export class OCRAIOrchestrator {
       // プロンプトの構築
       const prompt = this.buildDeepSeekPrompt(request.documentType, ocrDataStr);
       
+      // 駐車場領収書の判定結果をログ出力
+      if (request.documentType === 'receipt') {
+        const isParkingReceipt = this.isParkingReceiptFromOCR(ocrDataStr);
+        logger.debug('[OCRAIOrchestrator] Receipt type detection:', {
+          documentType: request.documentType,
+          isParkingReceipt: isParkingReceipt,
+          ocrDataPreview: ocrDataStr.substring(0, 200)
+        });
+      }
+      
       // DeepSeek APIを使用して解析（リトライ付き）
       logger.debug('[OCRAIOrchestrator] Sending request to DeepSeek API...');
       logger.debug('[OCRAIOrchestrator] Prompt length:', prompt.length, 'characters');
@@ -747,8 +757,12 @@ export class OCRAIOrchestrator {
       'parking-receipt': '駐車場領収書'
     }[documentType] || '書類';
     
+    // 領収書の場合、OCRデータから駐車場領収書かどうかを判定
+    const isParkingReceipt = documentType === 'parking-receipt' || 
+      (documentType === 'receipt' && this.isParkingReceiptFromOCR(ocrData));
+    
     // 駐車場領収書の場合は特別なプロンプトを使用
-    if (documentType === 'parking-receipt') {
+    if (isParkingReceipt) {
       return `Extract structured data from Japanese 駐車場領収書 (parking receipt) OCR.
 
 CRITICAL RULES FOR PARKING RECEIPTS:
@@ -808,7 +822,11 @@ CRITICAL RULES:
 4. IMPORTANT: Rows in product table with text in name column but EMPTY quantity, unit price, AND amount are NOT products - these are remarks/notes
 5. Only treat rows as products if they have at least ONE of: quantity, unit price, or amount
 6. Extract content from 備考 columns as notes
-7. For invoices (請求書), extract balance/carryover information:
+7. For receipts (領収書), check if it's a parking receipt:
+   - If contains タイムズ, パーキング, 駐車場, 入庫/出庫 = parking receipt
+   - Set receiptType = "parking" and extract parking-specific fields
+   - Otherwise set receiptType = "general"
+8. For invoices (請求書), extract balance/carryover information:
    - 前回請求額 = previousBalance
    - 今回入金額 = currentPayment  
    - 繰越金額 = carryoverAmount
@@ -881,7 +899,15 @@ Return ONLY JSON:
     "accountNumber": "1234567",
     "accountName": "口座名義",
     "additionalInfo": "振込手数料はお客様負担"
-  }
+  },
+  "receiptType": "general or parking",
+  "companyName": "for parking receipts only",
+  "facilityName": "for parking receipts only",
+  "entryTime": "for parking receipts only",
+  "exitTime": "for parking receipts only",
+  "parkingDuration": "for parking receipts only",
+  "baseFee": 0,
+  "additionalFee": 0
 }
 \`\`\``;
   }
@@ -947,5 +973,29 @@ ${ocrData}
 \`\`\`
 
 正確な日本語の商習慣を理解して解析してください。`;
+  }
+  
+  /**
+   * OCRデータから駐車場領収書かどうかを判定
+   */
+  private isParkingReceiptFromOCR(ocrData: string): boolean {
+    const parkingKeywords = [
+      'タイムズ',
+      'times',
+      'TIMES',
+      'パーキング',
+      'parking',
+      'PARKING',
+      '駐車場',
+      '入庫',
+      '出庫',
+      '駐車時間',
+      '駐車料金',
+      'パーク24',
+      'タイムズ24株式会社'
+    ];
+    
+    const lowerData = ocrData.toLowerCase();
+    return parkingKeywords.some(keyword => lowerData.includes(keyword.toLowerCase()));
   }
 }
