@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Download, Edit, Send, Trash2, Eye, FileText } from 'lucide-react';
+import { ArrowLeft, Download, Edit, Send, Trash2, Eye, FileText, Car, Clock, Receipt, Building, CreditCard } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 import { logger } from '@/lib/logger';
@@ -36,6 +36,20 @@ interface Document {
   file_name?: string;
   file_type?: string;
   file_size?: number;
+  // 駐車場領収書専用フィールド
+  receipt_type?: 'parking' | 'general';
+  facility_name?: string;
+  entry_time?: string;
+  exit_time?: string;
+  parking_duration?: string;
+  base_fee?: number;
+  additional_fee?: number;
+  items?: Array<{
+    item_name: string;
+    quantity?: number;
+    unit_price?: number;
+    amount: number;
+  }>;
 }
 
 interface DocumentItem {
@@ -424,6 +438,17 @@ export default function DocumentDetailPage() {
                   
                   {/* OCR詳細情報 */}
                   <dl className="space-y-2 mb-4">
+                    {document.receipt_type && (
+                      <div className="flex justify-between text-sm">
+                        <dt className="text-gray-500 flex items-center gap-1">
+                          <Receipt className="w-3 h-3" />
+                          領収書タイプ
+                        </dt>
+                        <dd className="text-gray-900">
+                          {document.receipt_type === 'parking' ? '駐車場領収書' : '一般領収書'}
+                        </dd>
+                      </div>
+                    )}
                     {document.vendor_name && (
                       <div className="flex justify-between text-sm">
                         <dt className="text-gray-500">ベンダー名</dt>
@@ -444,8 +469,84 @@ export default function DocumentDetailPage() {
                         <dd className="text-gray-900">{document.category}</dd>
                       </div>
                     )}
+                    
+                    {/* 駐車場固有情報 */}
+                    {document.receipt_type === 'parking' && (
+                      <>
+                        {document.facility_name && (
+                          <div className="flex justify-between text-sm pt-2 border-t">
+                            <dt className="text-gray-500 flex items-center gap-1">
+                              <Building className="w-3 h-3" />
+                              施設名
+                            </dt>
+                            <dd className="text-gray-900">{document.facility_name}</dd>
+                          </div>
+                        )}
+                        {document.entry_time && (
+                          <div className="flex justify-between text-sm">
+                            <dt className="text-gray-500 flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              入庫時刻
+                            </dt>
+                            <dd className="text-gray-900">{document.entry_time}</dd>
+                          </div>
+                        )}
+                        {document.exit_time && (
+                          <div className="flex justify-between text-sm">
+                            <dt className="text-gray-500 flex items-center gap-1">
+                              <Clock className="w-3 h-3" />
+                              出庫時刻
+                            </dt>
+                            <dd className="text-gray-900">{document.exit_time}</dd>
+                          </div>
+                        )}
+                        {document.parking_duration && (
+                          <div className="flex justify-between text-sm">
+                            <dt className="text-gray-500 flex items-center gap-1">
+                              <Car className="w-3 h-3" />
+                              駐車時間
+                            </dt>
+                            <dd className="text-gray-900">{document.parking_duration}</dd>
+                          </div>
+                        )}
+                        {document.base_fee !== undefined && (
+                          <div className="flex justify-between text-sm">
+                            <dt className="text-gray-500 flex items-center gap-1">
+                              <CreditCard className="w-3 h-3" />
+                              基本料金
+                            </dt>
+                            <dd className="text-gray-900">¥{document.base_fee.toLocaleString()}</dd>
+                          </div>
+                        )}
+                        {document.additional_fee !== undefined && (
+                          <div className="flex justify-between text-sm">
+                            <dt className="text-gray-500 flex items-center gap-1">
+                              <CreditCard className="w-3 h-3" />
+                              追加料金
+                            </dt>
+                            <dd className="text-gray-900">¥{document.additional_fee.toLocaleString()}</dd>
+                          </div>
+                        )}
+                      </>
+                    )}
+                    
+                    {/* 明細情報 */}
+                    {document.items && document.items.length > 0 && (
+                      <div className="pt-2 border-t">
+                        <dt className="text-gray-500 text-sm mb-2">明細</dt>
+                        <dd className="text-sm">
+                          {document.items.map((item, index) => (
+                            <div key={index} className="flex justify-between py-1">
+                              <span className="text-gray-700">{item.item_name}</span>
+                              <span className="text-gray-900">¥{item.amount.toLocaleString()}</span>
+                            </div>
+                          ))}
+                        </dd>
+                      </div>
+                    )}
+                    
                     {document.confidence && (
-                      <div className="flex justify-between text-sm">
+                      <div className="flex justify-between text-sm pt-2 border-t">
                         <dt className="text-gray-500">信頼度</dt>
                         <dd className="text-gray-900">{Math.round(document.confidence * 100)}%</dd>
                       </div>
