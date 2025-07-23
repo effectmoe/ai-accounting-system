@@ -163,6 +163,14 @@ export default function DocumentAIChat({ document, documentId }: DocumentAIChatP
 
   // 初期化時にLocalStorageから履歴を読み込む
   useEffect(() => {
+    // デバッグログを追加
+    console.log('=== DocumentAIChat Debug ===');
+    console.log('Document:', document);
+    console.log('Document ID:', documentId);
+    console.log('Document Type:', document?.document_type);
+    console.log('Document Number:', document?.document_number);
+    console.log('===========================');
+
     // 古い履歴のクリーンアップ（初回のみ）
     cleanOldHistory();
     
@@ -171,11 +179,13 @@ export default function DocumentAIChat({ document, documentId }: DocumentAIChatP
       setMessages(savedMessages);
     } else {
       // 新規の場合は初期メッセージを設定
-      const docType = documentTypeLabels[document.document_type as keyof typeof documentTypeLabels];
+      const docType = documentTypeLabels[document.document_type as keyof typeof documentTypeLabels] || '文書';
+      const docNumber = document.document_number || '不明';
+      
       const initialMessage: Message = {
         id: Date.now().toString(),
         role: 'assistant',
-        content: `こんにちは！${docType}「${document.document_number}」について質問をお受けします。
+        content: `こんにちは！${docType}「${docNumber}」について質問をお受けします。
 
 この文書に関して、以下のような質問にお答えできます：
 • この${document.document_type === 'receipt' ? '領収書' : '文書'}の内容について詳しく教えてください
@@ -280,11 +290,13 @@ ${document.receipt_type === 'parking' ? '• 駐車場代の経費計上につ�
       try {
         localStorage.removeItem(STORAGE_KEY);
         // 初期メッセージを再設定
-        const docType = documentTypeLabels[document.document_type as keyof typeof documentTypeLabels];
+        const docType = documentTypeLabels[document.document_type as keyof typeof documentTypeLabels] || '文書';
+        const docNumber = document.document_number || '不明';
+        
         const initialMessage: Message = {
           id: Date.now().toString(),
           role: 'assistant',
-          content: `こんにちは！${docType}「${document.document_number}」について質問をお受けします。
+          content: `こんにちは！${docType}「${docNumber}」について質問をお受けします。
 
 この文書に関して、以下のような質問にお答えできます：
 • この${document.document_type === 'receipt' ? '領収書' : '文書'}の内容について詳しく教えてください
