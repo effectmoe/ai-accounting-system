@@ -73,6 +73,16 @@ export async function GET(
       ocr_result_id: document.ocrResultId?.toString() || document.ocr_result_id?.toString(),
       gridfs_file_id: document.gridfsFileId?.toString() || document.gridfs_file_id?.toString() || document.fileId?.toString() || document.file_id?.toString() || document.sourceFileId?.toString(),
       
+      // 駐車場領収書専用フィールド
+      receipt_type: document.receiptType || document.receipt_type,
+      facility_name: document.facilityName || document.facility_name,
+      entry_time: document.entryTime || document.entry_time,
+      exit_time: document.exitTime || document.exit_time,
+      parking_duration: document.parkingDuration || document.parking_duration,
+      base_fee: document.baseFee || document.base_fee,
+      additional_fee: document.additionalFee || document.additional_fee,
+      items: document.items || [],
+      
       // 仕訳関連フィールド
       journalId: document.journalId?.toString()
     };

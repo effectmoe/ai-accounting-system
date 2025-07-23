@@ -56,6 +56,14 @@ export async function POST(request: NextRequest) {
       notes: `OCR処理済み (${ocrResult.confidence ? `信頼度: ${(ocrResult.confidence * 100).toFixed(1)}%` : ''})`,
       sourceFileId: ocrResult.sourceFileId,
       ocrResultId: new ObjectId(ocrResultId),
+      // 駐車場領収書専用フィールド
+      receiptType: ocrResult.extractedData?.receiptType,
+      facilityName: ocrResult.extractedData?.facilityName,
+      entryTime: ocrResult.extractedData?.entryTime,
+      exitTime: ocrResult.extractedData?.exitTime,
+      parkingDuration: ocrResult.extractedData?.parkingDuration,
+      baseFee: ocrResult.extractedData?.baseFee,
+      additionalFee: ocrResult.extractedData?.additionalFee,
       metadata: {
         ocrProcessedAt: ocrResult.processedAt,
         ocrConfidence: ocrResult.confidence,
