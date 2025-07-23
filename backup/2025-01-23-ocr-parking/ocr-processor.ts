@@ -14,15 +14,6 @@ export interface OCRResult {
     amount: number;
   }>;
   message?: string; // OCR処理ステータスメッセージ
-  // 駐車場領収書専用フィールド
-  receiptType?: 'parking' | 'general'; // 領収書タイプ
-  companyName?: string; // 運営会社名（タイムズ24株式会社など）
-  facilityName?: string; // 施設名（駐車場名）
-  entryTime?: string; // 入庫時刻
-  exitTime?: string; // 出庫時刻
-  parkingDuration?: string; // 駐車時間
-  baseFee?: number; // 基本料金
-  additionalFee?: number; // 追加料金
 }
 
 export class OCRProcessor {
@@ -294,103 +285,6 @@ export class OCRProcessor {
       items: []
     };
     
-    // まず駐車場領収書かどうかを判定
-    const isParkingReceipt = this.isParkingReceipt(text);
-    
-    if (isParkingReceipt) {
-      result.receiptType = 'parking';
-      
-      // 駐車場領収書専用の解析
-      const parkingData = this.parseParkingReceipt(text);
-      Object.assign(result, parkingData);
-    } else {
-      result.receiptType = 'general';
-      
-      // 日付の抽出
-      const datePatterns = [
-        /(\d{4})[年\/\-](\d{1,2})[月\/\-](\d{1,2})日?/,
-        /(\d{2})[年\/\-](\d{1,2})[月\/\-](\d{1,2})日?/
-      ];
-      
-      for (const pattern of datePatterns) {
-        const match = text.match(pattern);
-        if (match) {
-          const year = match[1].length === 2 ? `20${match[1]}` : match[1];
-          result.date = `${year}-${match[2].padStart(2, '0')}-${match[3].padStart(2, '0')}`;
-          break;
-        }
-      }
-      
-      // 金額の抽出
-      const amountPattern = /[合計|計|total]\s*[:：]?\s*[¥￥]?\s*(\d{1,3}(?:,\d{3})*)/gi;
-      const amountMatches = text.match(amountPattern);
-      if (amountMatches && amountMatches.length > 0) {
-        const amountStr = amountMatches[amountMatches.length - 1]; // 最後の合計を使用
-        result.amount = parseInt(amountStr.replace(/[^\d]/g, ''));
-      }
-      
-      // 税額の抽出
-      const taxPattern = /(?:消費税|税)\s*(?:\(?\d+%\)?)?\s*[:：]?\s*[¥￥]?\s*(\d{1,3}(?:,\d{3})*)/gi;
-      const taxMatches = text.match(taxPattern);
-      if (taxMatches && taxMatches.length > 0) {
-        const taxStr = taxMatches[0];
-        result.taxAmount = parseInt(taxStr.replace(/[^\d]/g, ''));
-      }
-      
-      // 店舗名の抽出（最初の行を店舗名と仮定）
-      const lines = text.split('\n').filter(line => line.trim());
-      if (lines.length > 0) {
-        result.vendor = lines[0].trim();
-      }
-    }
-    
-    return result;
-  }
-  
-  // 駐車場領収書かどうかを判定
-  private isParkingReceipt(text: string): boolean {
-    const parkingKeywords = [
-      'タイムズ',
-      'times',
-      'TIMES',
-      'パーキング',
-      'parking',
-      'PARKING',
-      '駐車場',
-      '入庫',
-      '出庫',
-      '駐車時間',
-      '駐車料金',
-      'パーク24',
-      'タイムズ24株式会社'
-    ];
-    
-    const lowerText = text.toLowerCase();
-    return parkingKeywords.some(keyword => lowerText.includes(keyword.toLowerCase()));
-  }
-  
-  // 駐車場領収書専用の解析
-  private parseParkingReceipt(text: string): Partial<OCRResult> {
-    const result: Partial<OCRResult> = {};
-    const lines = text.split('\n').filter(line => line.trim());
-    
-    // 運営会社名と施設名の分離
-    // タイムズ24株式会社が運営会社、駐車場名が施設名
-    const timesPattern = /タイムズ24株式会社|times\s*24|パーク24/i;
-    const timesMatch = text.match(timesPattern);
-    if (timesMatch) {
-      result.companyName = 'タイムズ24株式会社';
-    }
-    
-    // 施設名（駐車場名）の抽出
-    for (const line of lines) {
-      if (line.includes('タイムズ') && !line.includes('タイムズ24株式会社')) {
-        result.facilityName = line.trim();
-        result.vendor = line.trim(); // 互換性のため
-        break;
-      }
-    }
-    
     // 日付の抽出
     const datePatterns = [
       /(\d{4})[年\/\-](\d{1,2})[月\/\-](\d{1,2})日?/,
@@ -406,56 +300,26 @@ export class OCRProcessor {
       }
     }
     
-    // 入庫・出庫時刻の抽出
-    const entryPattern = /入庫[:：]?\s*(\d{1,2}[:：]\d{2})/;
-    const exitPattern = /出庫[:：]?\s*(\d{1,2}[:：]\d{2})/;
-    
-    const entryMatch = text.match(entryPattern);
-    if (entryMatch) {
-      result.entryTime = entryMatch[1];
+    // 金額の抽出
+    const amountPattern = /[合計|計|total]\s*[:：]?\s*[¥￥]?\s*(\d{1,3}(?:,\d{3})*)/gi;
+    const amountMatches = text.match(amountPattern);
+    if (amountMatches && amountMatches.length > 0) {
+      const amountStr = amountMatches[amountMatches.length - 1]; // 最後の合計を使用
+      result.amount = parseInt(amountStr.replace(/[^\d]/g, ''));
     }
     
-    const exitMatch = text.match(exitPattern);
-    if (exitMatch) {
-      result.exitTime = exitMatch[1];
+    // 税額の抽出
+    const taxPattern = /(?:消費税|税)\s*(?:\(?\d+%\)?)?\s*[:：]?\s*[¥￥]?\s*(\d{1,3}(?:,\d{3})*)/gi;
+    const taxMatches = text.match(taxPattern);
+    if (taxMatches && taxMatches.length > 0) {
+      const taxStr = taxMatches[0];
+      result.taxAmount = parseInt(taxStr.replace(/[^\d]/g, ''));
     }
     
-    // 駐車時間の抽出
-    const durationPattern = /駐車時間[:：]?\s*(\d+時間\d+分|\d+分)/;
-    const durationMatch = text.match(durationPattern);
-    if (durationMatch) {
-      result.parkingDuration = durationMatch[1];
-    }
-    
-    // 料金の抽出
-    const baseFeePattern = /基本料金[:：]?\s*[¥￥]?\s*(\d{1,3}(?:,\d{3})*)/;
-    const additionalFeePattern = /追加料金[:：]?\s*[¥￥]?\s*(\d{1,3}(?:,\d{3})*)/;
-    const totalPattern = /(?:合計|駐車料金|お支払い金額)[:：]?\s*[¥￥]?\s*(\d{1,3}(?:,\d{3})*)/;
-    
-    const baseFeeMatch = text.match(baseFeePattern);
-    if (baseFeeMatch) {
-      result.baseFee = parseInt(baseFeeMatch[1].replace(/,/g, ''));
-    }
-    
-    const additionalFeeMatch = text.match(additionalFeePattern);
-    if (additionalFeeMatch) {
-      result.additionalFee = parseInt(additionalFeeMatch[1].replace(/,/g, ''));
-    }
-    
-    const totalMatch = text.match(totalPattern);
-    if (totalMatch) {
-      result.amount = parseInt(totalMatch[1].replace(/,/g, ''));
-    }
-    
-    // 税額（駐車場は通常内税なので0）
-    result.taxAmount = 0;
-    
-    // アイテムとして駐車料金を追加
-    if (result.amount) {
-      result.items = [{
-        name: `駐車料金（${result.facilityName || '駐車場'}）`,
-        amount: result.amount
-      }];
+    // 店舗名の抽出（最初の行を店舗名と仮定）
+    const lines = text.split('\n').filter(line => line.trim());
+    if (lines.length > 0) {
+      result.vendor = lines[0].trim();
     }
     
     return result;
@@ -506,38 +370,32 @@ export class OCRProcessor {
     let taxRate = 0.10; // デフォルト10%
     let aiReasoning = '';
     
-    // 駐車場領収書の場合は特別処理
-    if (ocrResult.receiptType === 'parking') {
-      debitAccount = '旅費交通費';
-      aiReasoning = '駐車場領収書として自動判定';
-      logger.debug('Parking receipt detected - using 旅費交通費');
-    } else {
-      // AIベースの勘定科目分類システムを使用
-      try {
-        const { AccountCategoryAI } = await import('./account-category-ai');
-        const categoryAI = new AccountCategoryAI();
+    // AIベースの勘定科目分類システムを使用
+    try {
+      const { AccountCategoryAI } = await import('./account-category-ai');
+      const categoryAI = new AccountCategoryAI();
+      
+      // AIによる高度な分析を実行
+      const prediction = await categoryAI.predictAccountCategory(ocrResult, accountId);
+      
+      if (prediction && prediction.confidence >= 0.6) {
+        debitAccount = prediction.category;
+        aiReasoning = prediction.reasoning;
         
-        // AIによる高度な分析を実行
-        const prediction = await categoryAI.predictAccountCategory(ocrResult, accountId);
-        
-        if (prediction && prediction.confidence >= 0.6) {
-          debitAccount = prediction.category;
-          aiReasoning = prediction.reasoning;
-          
-          // 税務関連のメモがあれば保存
-          if (prediction.taxNotes) {
-            logger.debug('Tax notes:', prediction.taxNotes);
-          }
-          
-          // 使用したソースを記録
-          if (prediction.sources && prediction.sources.length > 0) {
-            logger.debug('Sources used:', prediction.sources.join(', '));
-          }
+        // 税務関連のメモがあれば保存
+        if (prediction.taxNotes) {
+          logger.debug('Tax notes:', prediction.taxNotes);
         }
-      } catch (error) {
-        logger.error('AI category prediction failed:', error);
         
-        // フォールバック: 従来のキーワードベースの判定
+        // 使用したソースを記録
+        if (prediction.sources && prediction.sources.length > 0) {
+          logger.debug('Sources used:', prediction.sources.join(', '));
+        }
+      }
+    } catch (error) {
+      logger.error('AI category prediction failed:', error);
+      
+      // フォールバック: 従来のキーワードベースの判定
       if (ocrResult.vendor && typeof ocrResult.vendor === 'string') {
         const vendor = ocrResult.vendor.toLowerCase();
         
@@ -582,7 +440,6 @@ export class OCRProcessor {
                  vendor.includes('コクヨ') || vendor.includes('アスクル')) {
           debitAccount = '事務用品費';
         }
-      }
       }
     }
     

@@ -24,7 +24,7 @@ interface DeepSeekResponse {
 
 export interface OCROrchestrationRequest {
   ocrResult: any; // Azure Form Recognizerの結果
-  documentType: 'invoice' | 'supplier-quote' | 'receipt' | 'purchase-invoice' | 'parking-receipt';
+  documentType: 'invoice' | 'supplier-quote' | 'receipt' | 'purchase-invoice';
   companyId: string;
 }
 
@@ -85,16 +85,6 @@ export interface StructuredInvoiceData {
     swiftCode?: string;
     additionalInfo?: string;
   };
-  
-  // 駐車場領収書専用フィールド
-  receiptType?: 'parking' | 'general';
-  companyName?: string; // 運営会社名（タイムズ24株式会社など）
-  facilityName?: string; // 施設名（駐車場名）
-  entryTime?: string; // 入庫時刻
-  exitTime?: string; // 出庫時刻
-  parkingDuration?: string; // 駐車時間
-  baseFee?: number; // 基本料金
-  additionalFee?: number; // 追加料金
 }
 
 export class OCRAIOrchestrator {
@@ -743,61 +733,8 @@ export class OCRAIOrchestrator {
       'invoice': '請求書',
       'supplier-quote': '見積書',
       'receipt': '領収書',
-      'purchase-invoice': '仕入請求書',
-      'parking-receipt': '駐車場領収書'
+      'purchase-invoice': '仕入請求書'
     }[documentType] || '書類';
-    
-    // 駐車場領収書の場合は特別なプロンプトを使用
-    if (documentType === 'parking-receipt') {
-      return `Extract structured data from Japanese 駐車場領収書 (parking receipt) OCR.
-
-CRITICAL RULES FOR PARKING RECEIPTS:
-1. タイムズ24株式会社 = companyName (the operating company)
-2. タイムズ[場所名] = facilityName (parking facility name) 
-3. Extract parking-specific information:
-   - 入庫/入庫時刻 = entryTime
-   - 出庫/出庫時刻 = exitTime
-   - 駐車時間 = parkingDuration
-   - 基本料金 = baseFee
-   - 追加料金 = additionalFee
-   - 合計/駐車料金 = totalAmount
-4. receiptType = "parking" (always for parking receipts)
-5. vendor should be set to facilityName for compatibility
-6. Tax is usually included (内税) so taxAmount = 0
-
-OCR data:
-${ocrData}
-
-Return ONLY JSON:
-\`\`\`json
-{
-  "documentNumber": "string",
-  "issueDate": "YYYY-MM-DD",
-  "receiptType": "parking",
-  "companyName": "タイムズ24株式会社",
-  "facilityName": "タイムズ[場所名]",
-  "vendor": {
-    "name": "same as facilityName"
-  },
-  "customer": {
-    "name": "顧客名（あれば）"
-  },
-  "entryTime": "HH:MM",
-  "exitTime": "HH:MM", 
-  "parkingDuration": "X時間Y分",
-  "baseFee": 0,
-  "additionalFee": 0,
-  "items": [{
-    "itemName": "駐車料金",
-    "amount": 0
-  }],
-  "subtotal": 0,
-  "taxAmount": 0,
-  "totalAmount": 0,
-  "notes": "any additional notes"
-}
-\`\`\``;
-    }
     
     return `Extract structured data from Japanese ${docTypeJa} OCR.
 

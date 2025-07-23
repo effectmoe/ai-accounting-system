@@ -336,6 +336,14 @@ export default function JournalDetailPage() {
           </div>
         </CardContent>
       </Card>
+      
+      {/* AI チャットコンポーネント */}
+      {journal && (
+        <JournalAIChat 
+          journal={journal} 
+          journalId={id}
+        />
+      )}
 
       {/* タイムスタンプ */}
       {(journal.createdAt || journal.updatedAt) && (
@@ -347,14 +355,6 @@ export default function JournalDetailPage() {
             <p>更新日時: {new Date(journal.updatedAt).toLocaleString('ja-JP')}</p>
           )}
         </div>
-      )}
-      
-      {/* AI チャットコンポーネント */}
-      {journal && (
-        <JournalAIChat 
-          journal={journal} 
-          journalId={id}
-        />
       )}
     </div>
   );
