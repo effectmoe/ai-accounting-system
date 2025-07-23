@@ -499,6 +499,54 @@ export class OCRAIOrchestrator {
       hasNotes: !!data.notes
     });
     
+    // 駐車場領収書の場合、駐車場フィールドを強制的に追加
+    if (this.isParkingReceiptFromOCR(JSON.stringify(ocrResult))) {
+      logger.debug('[OCRAIOrchestrator] Detected parking receipt, enhancing parking fields...');
+      
+      // receiptTypeを設定
+      data.receiptType = 'parking';
+      
+      // facilityNameが空の場合、vendorNameから抽出
+      if (!data.facilityName && data.vendor?.name) {
+        data.facilityName = data.vendor.name;
+      }
+      
+      // companyNameを設定
+      if (!data.companyName) {
+        data.companyName = 'タイムズ24株式会社';
+      }
+      
+      // notesから駐車場情報を抽出
+      if (data.notes) {
+        // 駐車時間
+        const parkingTimeMatch = data.notes.match(/駐車時間[:：]?\s*([^,、\n]+)/);
+        if (parkingTimeMatch && !data.parkingDuration) {
+          data.parkingDuration = parkingTimeMatch[1].trim();
+        }
+        
+        // 入庫時刻
+        const entryTimeMatch = data.notes.match(/入庫[:：]?\s*(\d+[:：]\d+)/);
+        if (entryTimeMatch && !data.entryTime) {
+          data.entryTime = entryTimeMatch[1].replace('：', ':');
+        }
+        
+        // 出庫時刻
+        const exitTimeMatch = data.notes.match(/出庫[:：]?\s*(\d+[:：]\d+)/);
+        if (exitTimeMatch && !data.exitTime) {
+          data.exitTime = exitTimeMatch[1].replace('：', ':');
+        }
+      }
+      
+      logger.debug('[OCRAIOrchestrator] Enhanced parking fields:', {
+        receiptType: data.receiptType,
+        facilityName: data.facilityName,
+        companyName: data.companyName,
+        entryTime: data.entryTime,
+        exitTime: data.exitTime,
+        parkingDuration: data.parkingDuration
+      });
+    }
+    
     return data;
   }
   
