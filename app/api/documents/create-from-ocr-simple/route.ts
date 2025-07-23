@@ -1,200 +1,149 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { DatabaseService, Collections } from '@/lib/mongodb-client';
+/**
+ * Create Document from OCR Simple API Route
+ * 
+ * Simplified endpoint for creating documents from basic OCR data.
+ * This route is optimized for quick document creation with minimal processing.
+ */
 
+import { NextRequest, NextResponse } from 'next/server';
+import { OCRDocumentService } from '@/services/ocr-document.service';
+import { CreateDocumentFromOCRRequest } from '@/types/ocr.types';
 import { logger } from '@/lib/logger';
+
+/**
+ * POST /api/documents/create-from-ocr-simple
+ * 
+ * Creates a document using simplified OCR data processing.
+ * Best suited for simple receipts and documents with basic information.
+ * 
+ * @param request - The incoming request with OCR data
+ * @returns Document creation response
+ */
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    logger.debug('Received request body:', JSON.stringify(body, null, 2));
-    const {
-      ocrResultId,
-      document_type = 'receipt',
-      vendor_name = '',
-      receipt_date = new Date().toISOString().split('T')[0],
-      subtotal_amount = 0,
-      tax_amount = 0,
-      total_amount = 0,
-      payment_amount = 0,
-      change_amount = 0,
-      receipt_number = '',
-      store_name = '',
-      store_phone = '',
-      company_name = '',
-      notes = '',
-      file_name = '文書',
-      // 駐車場関連フィールド
-      receiptType,
-      facilityName,
-      entryTime,
-      exitTime,
-      parkingDuration,
-      baseFee,
-      additionalFee
-    } = body;
-
-    // MongoDB データベース接続
-    const db = DatabaseService.getInstance();
-    const companyId = '11111111-1111-1111-1111-111111111111';
-    
-    // 小計を計算（subtotal_amountが提供されていない場合は、total_amountから税額を引く）
-    const calculatedSubtotal = subtotal_amount > 0 ? subtotal_amount : Math.max(0, total_amount - tax_amount);
-    
-    // パートナー名を決定（vendor_name, store_name, company_nameの優先順）
-    const partnerName = vendor_name || store_name || company_name || '不明';
-    
-    // 備考欄に支払い情報を含める
-    const enhancedNotes = [
-      notes || 'OCRデータより作成',
-      payment_amount > 0 ? `お預かり: ¥${payment_amount.toLocaleString()}` : '',
-      change_amount > 0 ? `お釣り: ¥${change_amount.toLocaleString()}` : '',
-      receipt_number ? `領収書番号: ${receipt_number}` : ''
-    ].filter(n => n).join('\n');
-
-    // 文書番号のプレフィックスを文書種別に応じて変更
-    const prefixMap = {
-      receipt: 'REC',
-      invoice: 'INV',
-      estimate: 'EST',
-      delivery_note: 'DLV'
-    };
-    const prefix = prefixMap[document_type as keyof typeof prefixMap] || 'DOC';
-
-    // 保存するデータを準備
-    const documentData = {
-        companyId: companyId,
-        documentType: document_type,
-        type: document_type,
-        documentNumber: receipt_number || `${prefix}-${new Date().getTime()}`,
-        displayNumber: '', // 仕訳作成時に設定される番号（例：J202500005）
-        issueDate: receipt_date,
-        partnerName: partnerName,
-        partnerAddress: '',
-        partnerPhone: store_phone || '',
-        partnerEmail: '',
-        partnerPostalCode: '',
-        projectName: file_name,
-        subtotal: calculatedSubtotal,
-        taxAmount: tax_amount,
-        totalAmount: total_amount,
-        status: 'draft',
-        notes: enhancedNotes,
-        // 駐車場関連フィールド（スネークケースに変換）
-        receipt_type: receiptType,
-        facility_name: facilityName,
-        entry_time: entryTime,
-        exit_time: exitTime,
-        parking_duration: parkingDuration,
-        base_fee: baseFee,
-        additional_fee: additionalFee,
-        createdAt: new Date(),
-        updatedAt: new Date()
-    };
-    
-    logger.debug('Document data to save:', JSON.stringify(documentData, null, 2));
-    
-    // MongoDBに保存
-    const savedDoc = await db.create(Collections.DOCUMENTS, documentData);
-
-    // 明細を保存
-    await db.create(Collections.ITEMS, {
-        documentId: savedDoc._id,
-        itemOrder: 1,
-        itemName: file_name || '商品・サービス',
-        quantity: 1,
-        unitPrice: calculatedSubtotal,
-        taxRate: tax_amount > 0 ? 0.10 : 0,
-        amount: calculatedSubtotal,
-        createdAt: new Date(),
-        updatedAt: new Date()
+    const body: CreateDocumentFromOCRRequest = await request.json();
+    logger.debug('[Create Simple] Received request', {
+      documentType: body.document_type,
+      hasOCRResultId: !!body.ocrResultId,
+      vendorName: body.vendor_name || body.store_name
     });
-
-    // OCR結果を更新
-    if (ocrResultId) {
-      try {
-        await db.updateById(Collections.OCR_RESULTS, ocrResultId, { 
-          linkedDocumentId: savedDoc._id,
-          status: 'processed',
-          updatedAt: new Date()
-        });
-        logger.debug('OCR result updated successfully:', ocrResultId);
-      } catch (updateError) {
-        logger.error('OCR result update error:', updateError);
-        // エラーがあってもレスポンスは成功として返す（文書は作成済みのため）
-      }
-    }
-
-    // 勘定科目を推論（非同期で実行）
-    try {
-      const { AccountCategoryAI } = await import('@/lib/account-category-ai');
-      const categoryAI = new AccountCategoryAI();
-      
-      // 非同期で推論実行（レスポンスを待たない）
-      const ocrResult = {
-        text: body.extracted_text || '',
-        vendor: partnerName,
-        amount: total_amount,
-        date: receipt_date,
-        items: [{
-          name: file_name || '商品・サービス',
-          price: calculatedSubtotal,
-          quantity: 1
-        }]
-      };
-      
-      categoryAI.predictAccountCategory(ocrResult, companyId).then(async (prediction) => {
-        if (prediction && prediction.confidence >= 0.6) {
-          // 文書にカテゴリーと推論結果を保存
-          await db.updateById(Collections.DOCUMENTS, savedDoc._id, {
-            category: prediction.category,
-            subcategory: prediction.alternativeCategories?.[0]?.category || '',
-            aiPrediction: {
-              category: prediction.category,
-              confidence: prediction.confidence,
-              reasoning: prediction.reasoning,
-              alternativeCategories: prediction.alternativeCategories,
-              taxNotes: prediction.taxNotes,
-              sources: prediction.sources,
-              predictedAt: new Date()
-            },
-            updatedAt: new Date()
-          });
-          logger.debug('勘定科目推論完了:', prediction);
-        }
-      }).catch((error) => {
-        logger.error('勘定科目推論エラー:', error);
-      });
-    } catch (error) {
-      logger.error('AccountCategoryAI initialization error:', error);
-      // エラーが発生しても文書作成は成功とする
-    }
-
-    const documentTypeLabels = {
-      receipt: '領収書',
-      invoice: '請求書',
-      estimate: '見積書',
-      delivery_note: '納品書'
-    };
-    const label = documentTypeLabels[document_type as keyof typeof documentTypeLabels] || '文書';
-
-    return NextResponse.json({
-      id: savedDoc._id,
-      message: `${label}を作成しました（勘定科目を推論中...）`
+    
+    // Initialize service with simple processing configuration
+    const ocrService = new OCRDocumentService({
+      useAIOrchestrator: false,
+      enableAccountPrediction: true,
+      defaultCompanyId: body.companyId || process.env.DEFAULT_COMPANY_ID
     });
-
+    
+    // Process the document
+    const result = await ocrService.createDocument(body);
+    
+    logger.info('[Create Simple] Document created successfully', {
+      documentId: result.id,
+      processingMethod: result.processingMethod
+    });
+    
+    return NextResponse.json(result);
+    
   } catch (error) {
-    logger.error('Create document error:', error);
-    logger.error('Error details:', {
-      message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-      error: error
-    });
+    logger.error('[Create Simple] Error:', error);
+    
+    const errorMessage = error instanceof Error ? error.message : '文書の作成に失敗しました';
+    const errorDetails = error instanceof Error ? {
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
+      type: error.constructor.name
+    } : undefined;
+    
     return NextResponse.json(
       { 
-        error: error instanceof Error ? error.message : '文書の作成に失敗しました',
-        details: error instanceof Error ? error.stack : undefined,
-        errorObject: JSON.stringify(error, null, 2)
+        error: errorMessage,
+        details: errorDetails
       },
       { status: 500 }
     );
   }
+}
+
+/**
+ * GET /api/documents/create-from-ocr-simple
+ * 
+ * Returns API documentation for the simplified endpoint
+ */
+export async function GET() {
+  return NextResponse.json({
+    endpoint: '/api/documents/create-from-ocr-simple',
+    method: 'POST',
+    description: 'Simplified document creation from OCR data',
+    accepts: 'application/json',
+    features: [
+      'Quick document creation with minimal validation',
+      'Automatic subtotal calculation',
+      'Support for parking receipts',
+      'Background account category prediction',
+      'OCR result linking'
+    ],
+    requestBody: {
+      required: {
+        // At least one of these is required
+        vendor_name: 'string - Vendor name',
+        store_name: 'string - Store name', 
+        company_name: 'string - Company name'
+      },
+      optional: {
+        ocrResultId: 'string - OCR result ID to link',
+        document_type: 'string - Document type (default: receipt)',
+        receipt_date: 'string - Date in YYYY-MM-DD format',
+        receipt_number: 'string - Receipt number',
+        subtotal_amount: 'number - Subtotal amount',
+        tax_amount: 'number - Tax amount',
+        total_amount: 'number - Total amount',
+        payment_amount: 'number - Payment received',
+        change_amount: 'number - Change given',
+        store_phone: 'string - Store phone number',
+        notes: 'string - Additional notes',
+        file_name: 'string - File or item name',
+        extracted_text: 'string - Full OCR text for AI prediction',
+        // Parking-specific fields
+        receiptType: 'string - Receipt type (parking, general)',
+        facilityName: 'string - Parking facility name',
+        entryTime: 'string - Entry time',
+        exitTime: 'string - Exit time',
+        parkingDuration: 'string - Parking duration',
+        baseFee: 'number - Base parking fee',
+        additionalFee: 'number - Additional parking fee',
+        companyId: 'string - Company ID for multi-tenant'
+      }
+    },
+    response: {
+      success: {
+        id: 'string - Created document ID',
+        message: 'string - Success message with document type'
+      },
+      error: {
+        error: 'string - Error message',
+        details: 'object - Error details (development only)'
+      }
+    },
+    examples: {
+      simpleReceipt: {
+        vendor_name: 'コンビニストア',
+        total_amount: 1080,
+        tax_amount: 80,
+        receipt_date: '2024-01-20',
+        notes: 'お弁当購入'
+      },
+      parkingReceipt: {
+        vendor_name: 'タイムズ駐車場',
+        receiptType: 'parking',
+        facilityName: '渋谷駅前第1',
+        entryTime: '14:30',
+        exitTime: '16:45',
+        parkingDuration: '2時間15分',
+        baseFee: 400,
+        additionalFee: 600,
+        total_amount: 1000
+      }
+    }
+  });
 }

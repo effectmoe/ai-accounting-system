@@ -1,23 +1,38 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/mongodb-client';
-import { ObjectId } from 'mongodb';
+/**
+ * Create Document from OCR MongoDB API Route
+ * 
+ * Legacy endpoint for Azure MongoDB integration.
+ * This route fetches OCR results from MongoDB and creates documents.
+ */
 
+import { NextRequest, NextResponse } from 'next/server';
+import { OCRDocumentService } from '@/services/ocr-document.service';
+import { CreateDocumentFromOCRRequest } from '@/types/ocr.types';
 import { logger } from '@/lib/logger';
+
+/**
+ * POST /api/documents/create-from-ocr-mongodb
+ * 
+ * Creates a document by fetching OCR result from MongoDB.
+ * This endpoint is maintained for backward compatibility with Azure MongoDB integration.
+ * 
+ * @param request - Request containing ocrResultId
+ * @returns Document creation response
+ */
 export async function POST(request: NextRequest) {
   try {
-    // 環境変数チェック
+    // Check if Azure MongoDB is enabled
     const useAzureMongoDB = process.env.USE_AZURE_MONGODB === 'true';
     
     if (!useAzureMongoDB) {
-      // 旧システムの場合は既存のエンドポイントを使用
       return NextResponse.json({
         success: false,
-        error: 'Please use /api/documents/create-from-ocr for the legacy system'
+        error: 'Please use /api/documents/create-from-ocr for the standard system'
       }, { status: 400 });
     }
 
-    const data = await request.json();
-    const { ocrResultId, documentType, approvedBy } = data;
+    const data: CreateDocumentFromOCRRequest = await request.json();
+    const { ocrResultId, document_type, approvedBy } = data;
 
     if (!ocrResultId) {
       return NextResponse.json({
@@ -26,110 +41,106 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // OCR結果を取得
-    const ocrResult = await db.findById('ocrResults', ocrResultId);
+    logger.debug('[Create MongoDB] Processing OCR result', {
+      ocrResultId,
+      documentType: document_type,
+      hasApprover: !!approvedBy
+    });
+
+    // Use OCR document service to process
+    const ocrService = new OCRDocumentService({
+      useAIOrchestrator: false,
+      enableAccountPrediction: false, // Disabled for legacy compatibility
+      defaultCompanyId: process.env.DEFAULT_COMPANY_ID
+    });
+
+    // Process with OCR result ID
+    const result = await ocrService.createDocument({
+      ocrResultId,
+      document_type,
+      approvedBy
+    });
+
+    logger.info('[Create MongoDB] Document created successfully', {
+      documentId: result.id,
+      ocrResultId
+    });
+
+    // Format response for backward compatibility
+    return NextResponse.json({
+      success: true,
+      documentId: result.id,
+      message: result.message
+    });
+
+  } catch (error) {
+    logger.error('[Create MongoDB] Error:', error);
     
-    if (!ocrResult) {
+    const errorMessage = error instanceof Error ? error.message : '予期しないエラーが発生しました';
+    
+    // Handle specific error cases
+    if (error instanceof Error && error.message === 'OCR result not found') {
       return NextResponse.json({
         success: false,
         error: 'OCR result not found'
       }, { status: 404 });
     }
-
-    // OCR結果の構造をログに出力
-    logger.debug('OCR Result structure:', JSON.stringify({
-      id: ocrResult._id,
-      hasExtractedData: !!ocrResult.extractedData,
-      extractedDataKeys: ocrResult.extractedData ? Object.keys(ocrResult.extractedData) : [],
-      hasOcrResult: !!ocrResult.ocrResult,
-      ocrResultKeys: ocrResult.ocrResult ? Object.keys(ocrResult.ocrResult) : [],
-      topLevelKeys: Object.keys(ocrResult)
-    }, null, 2));
-
-    // OCR結果からデータを取得（ocrResultフィールドとextractedDataフィールドの両方をチェック）
-    const ocrData = ocrResult.ocrResult || ocrResult.extractedData || {};
     
-    // 駐車場関連フィールドのログ
-    logger.debug('Parking fields from OCR:', {
-      receiptType: ocrData.receiptType,
-      facilityName: ocrData.facilityName,
-      entryTime: ocrData.entryTime,
-      exitTime: ocrData.exitTime,
-      parkingDuration: ocrData.parkingDuration,
-      baseFee: ocrData.baseFee,
-      additionalFee: ocrData.additionalFee,
-      companyName: ocrData.companyName
-    });
-
-    // ドキュメントを作成
-    const document = await db.create('documents', {
-      companyId: ocrResult.companyId,
-      documentType: documentType || ocrResult.documentType || ocrResult.type || 'receipt',
-      fileName: ocrResult.fileName,
-      vendorName: ocrData.vendorName || ocrData.vendor?.name || ocrResult.vendor_name || 'Unknown',
-      totalAmount: ocrData.totalAmount?.amount || ocrData.totalAmount || ocrResult.total_amount || 0,
-      taxAmount: ocrData.taxAmount || ocrResult.tax_amount || 0,
-      documentDate: ocrData.invoiceDate || ocrData.issueDate || ocrResult.receipt_date || new Date(),
-      dueDate: ocrData.dueDate,
-      items: ocrData.items || [],
-      category: ocrData.category || ocrResult.category || '未分類',
-      subcategory: ocrData.subcategory || ocrResult.subcategory,
-      tags: [],
-      status: 'pending',
-      approvedBy: approvedBy,
-      approvedAt: approvedBy ? new Date() : null,
-      notes: `OCR処理済み (${ocrResult.confidence ? `信頼度: ${(ocrResult.confidence * 100).toFixed(1)}%` : ''})`,
-      sourceFileId: ocrResult.sourceFileId || ocrResult.gridfsFileId,
-      ocrResultId: new ObjectId(ocrResultId),
-      // 駐車場領収書専用フィールド
-      receiptType: ocrData.receiptType,
-      facilityName: ocrData.facilityName,
-      entryTime: ocrData.entryTime,
-      exitTime: ocrData.exitTime,
-      parkingDuration: ocrData.parkingDuration,
-      baseFee: ocrData.baseFee,
-      additionalFee: ocrData.additionalFee,
-      companyName: ocrData.companyName,
-      metadata: {
-        ocrProcessedAt: ocrResult.processedAt || ocrResult.ocrProcessedAt || new Date(),
-        ocrConfidence: ocrResult.confidence,
-        ...ocrResult.metadata
-      },
-      createdAt: new Date(),
-      updatedAt: new Date()
-    });
-
-    // OCR結果のステータスを更新
-    await db.update('ocrResults', ocrResultId, {
-      status: 'processed',
-      documentId: document._id,
-      updatedAt: new Date()
-    });
-
-    return NextResponse.json({
-      success: true,
-      documentId: document._id.toString(),
-      message: 'ドキュメントが作成されました'
-    });
-
-  } catch (error) {
-    logger.error('Document creation error:', error);
     return NextResponse.json({
       success: false,
-      error: error instanceof Error ? error.message : '予期しないエラーが発生しました'
+      error: errorMessage
     }, { status: 500 });
   }
 }
 
+/**
+ * GET /api/documents/create-from-ocr-mongodb
+ * 
+ * Returns API documentation
+ */
 export async function GET() {
   return NextResponse.json({
-    message: 'Create Document from OCR API (MongoDB)',
+    endpoint: '/api/documents/create-from-ocr-mongodb',
     method: 'POST',
+    description: 'Create Document from OCR API (MongoDB) - Legacy Azure MongoDB integration',
     accepts: 'application/json',
-    fields: {
-      ocrResultId: 'required, OCR result ID',
-      documentType: 'optional, document type (invoice, receipt, etc.)',
-      approvedBy: 'optional, approver user ID'
-    }
+    requirements: {
+      environment: 'USE_AZURE_MONGODB must be set to "true"',
+      database: 'Requires active MongoDB connection'
+    },
+    requestBody: {
+      required: {
+        ocrResultId: 'string - OCR result ID from MongoDB'
+      },
+      optional: {
+        documentType: 'string - Document type override (invoice, receipt, etc.)',
+        document_type: 'string - Alternative field name for documentType',
+        approvedBy: 'string - User ID of approver'
+      }
+    },
+    response: {
+      success: {
+        success: 'boolean - Always true on success',
+        documentId: 'string - Created document ID',
+        message: 'string - Success message'
+      },
+      error: {
+        success: 'boolean - Always false on error',
+        error: 'string - Error message'
+      }
+    },
+    workflow: [
+      '1. Validate Azure MongoDB is enabled',
+      '2. Fetch OCR result from MongoDB using provided ID',
+      '3. Extract and validate OCR data',
+      '4. Create document with extracted information',
+      '5. Link document to OCR result',
+      '6. Return created document ID'
+    ],
+    notes: [
+      'This endpoint is maintained for backward compatibility',
+      'New integrations should use /api/documents/create-from-ocr',
+      'Account category prediction is disabled for performance'
+    ]
   });
 }
