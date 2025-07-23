@@ -57,12 +57,20 @@ ${documentData.items && documentData.items.length > 0 ? `
 ${documentData.items.map(item => `- ${item.item_name}: ¥${item.amount.toLocaleString()}`).join('\n')}` : ''}
 `;
 
+    // デバッグログを追加
+    logger.info('Document chat request:', {
+      documentId: params.id,
+      documentType: documentData.document_type,
+      documentNumber: documentData.document_number,
+      receiptType: documentData.receipt_type
+    });
+
     // システムプロンプト
-    const systemPrompt = `あなたは会計文書（領収書・請求書・見積書）の分析と説明を行う専門的なアシスタントです。
-現在表示されている文書について、ユーザーの質問に的確に答えてください。
+    const systemPrompt = `あなたは会計文書（領収書・請求書・見積書・納品書）の分析と説明を行う専門的なアシスタントです。
+現在表示されている${documentTypeDescriptions[documentData.document_type] || '文書'}について、ユーザーの質問に的確に答えてください。
 
 以下の点に注意してください：
-1. 現在表示中の文書に関する質問のみに回答し、他の文書や一般的な会計の話題に逸れないこと
+1. 現在表示中の${documentTypeDescriptions[documentData.document_type] || '文書'}に関する質問のみに回答し、他の文書や一般的な会計の話題に逸れないこと
 2. 税務や会計処理に関する質問には、一般的な知識に基づいて回答しつつ、最終的には税理士や会計士に相談することを推奨すること
 3. 仕訳作成に関する質問には、適切な勘定科目や処理方法を提案すること
 4. 駐車場領収書の場合は、車両費（駐車場代）として経費計上できることを説明すること
