@@ -4,11 +4,11 @@ description: AI-driven accounting automation system for Japanese tax compliance
 
 # Build configuration
 build:
-  command: npx @mastra/cli build
+  command: node build.js
 
 # Start configuration  
 start:
-  command: node .mastra/output/index.mjs
+  command: node start.js
 
 # Agents
 agents:
