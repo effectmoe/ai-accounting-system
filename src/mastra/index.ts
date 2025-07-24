@@ -1,47 +1,20 @@
-
 import { Mastra } from '@mastra/core';
 
-// 全エージェントのインポート（正しいパス）
+// まずは確実に動く accounting-agent だけでテスト
 import { accountingAgent } from '../agents/accounting-agent';
-import { constructionAgent } from '../agents/construction-agent';
-import { customerAgent } from '../agents/customer-agent';
-import { databaseAgent } from '../agents/database-agent';
-import { deploymentAgent } from '../agents/deployment-agent';
-import { japanTaxAgent } from '../agents/japan-tax-agent';
-import { ocrAgent } from '../agents/ocr-agent';
-import { problemSolvingAgent } from '../agents/problem-solving-agent';
-import { productAgent } from '../agents/product-agent';
-import { refactorAgent } from '../agents/refactor-agent';
-import { uiAgent } from '../agents/ui-agent';
 
-// 完全な会計システム設定
+// 会計システム設定（段階的に追加）
 const mastra = new Mastra({
   agents: {
-    // 会計関連エージェント
+    // 会計エージェントのみ（確実に動作）
     accountingAgent,
-    japanTaxAgent,
-    
-    // データ管理エージェント
-    databaseAgent,
-    customerAgent,
-    productAgent,
-    
-    // OCR・処理エージェント
-    ocrAgent,
-    problemSolvingAgent,
-    
-    // UI・デプロイエージェント
-    uiAgent,
-    deploymentAgent,
-    refactorAgent,
-    
-    // 特殊エージェント
-    constructionAgent,
   },
-  workflows: {
-    // ワークフローは後で追加
-  },
+  workflows: {},
 });
+
+// 両方の形式でエクスポート
+export { mastra };
+export default mastra;
 
 // 両方の形式でエクスポート
 export { mastra };
