@@ -31,14 +31,14 @@
     "test:coverage": "jest --coverage"
   },
   "dependencies": {
-    "@ai-sdk/anthropic": "^0.0.72",
+    "@ai-sdk/anthropic": "^1.0.0",
     "@anthropic-ai/sdk": "^0.27.3",
     "@azure/ai-form-recognizer": "^5.1.0",
     "@azure/cosmos": "^4.4.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@google/generative-ai": "^0.21.0",
-    "@googleapis/drive": "^8.21.0",
+    "@googleapis/drive": "^8.0.0",
     "@mastra/core": "^0.10.10",
     "@mastra/mcp": "latest",
     "@modelcontextprotocol/sdk": "^1.15.0",
