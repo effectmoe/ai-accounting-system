@@ -26,6 +26,16 @@ export const mastra = new Mastra({
     mastraRefactorAgent,
   },
   workflows: {},
+  // サーバー設定
+  server: {
+    port: Number(process.env.PORT) || 3000,
+    cors: {
+      origin: '*',
+      allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      allowHeaders: ['Content-Type', 'Authorization'],
+      credentials: false,
+    },
+  },
 });
 
 export default mastra;
