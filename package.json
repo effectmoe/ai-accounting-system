@@ -9,8 +9,8 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "npx @mastra/cli build",
-    "start": "node .mastra/output/index.mjs",
+    "build": "node build.js",
+    "start": "node start.js",
     "lint": "next lint",
     "db:migrate": "tsx scripts/setup-database.ts",
     "db:seed": "tsx scripts/seed-data.ts",
@@ -125,6 +125,7 @@
     "zustand": "^5.0.2"
   },
   "devDependencies": {
+    "@mastra/cli": "latest",
     "@tailwindcss/forms": "^0.5.9",
     "@types/express": "^5.0.0",
     "@types/formidable": "^3.4.5",
