@@ -1,17 +1,18 @@
+
 import { Mastra } from '@mastra/core';
 
-// 全エージェントのインポート
-import { accountingAgent } from './agents/accounting-agent';
-import { constructionAgent } from './agents/construction-agent';
-import { customerAgent } from './agents/customer-agent';
-import { databaseAgent } from './agents/database-agent';
-import { deploymentAgent } from './agents/deployment-agent';
-import { japanTaxAgent } from './agents/japan-tax-agent';
-import { ocrAgent } from './agents/ocr-agent';
-import { problemSolvingAgent } from './agents/problem-solving-agent';
-import { productAgent } from './agents/product-agent';
-import { refactorAgent } from './agents/refactor-agent';
-import { uiAgent } from './agents/ui-agent';
+// 全エージェントのインポート（正しいパス）
+import { accountingAgent } from '../agents/accounting-agent';
+import { constructionAgent } from '../agents/construction-agent';
+import { customerAgent } from '../agents/customer-agent';
+import { databaseAgent } from '../agents/database-agent';
+import { deploymentAgent } from '../agents/deployment-agent';
+import { japanTaxAgent } from '../agents/japan-tax-agent';
+import { ocrAgent } from '../agents/ocr-agent';
+import { problemSolvingAgent } from '../agents/problem-solving-agent';
+import { productAgent } from '../agents/product-agent';
+import { refactorAgent } from '../agents/refactor-agent';
+import { uiAgent } from '../agents/ui-agent';
 
 // 完全な会計システム設定
 const mastra = new Mastra({
