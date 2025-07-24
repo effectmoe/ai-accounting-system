@@ -5,12 +5,12 @@
   "main": "index.js",
   "private": true,
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=20.0.0"
   },
   "scripts": {
     "dev": "next dev",
-    "build": "echo 'Build complete'",
-    "start": "node server.js",
+    "build": "npx @mastra/cli build",
+    "start": "node .mastra/output/index.mjs",
     "lint": "next lint",
     "db:migrate": "tsx scripts/setup-database.ts",
     "db:seed": "tsx scripts/seed-data.ts",

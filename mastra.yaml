@@ -2,9 +2,13 @@ project: accounting-automation
 version: 1.0.0
 description: AI-driven accounting automation system for Japanese tax compliance
 
-# Start configuration
+# Build configuration
+build:
+  command: npx @mastra/cli build
+
+# Start configuration  
 start:
-  command: node server.js
+  command: node .mastra/output/index.mjs
 
 # Agents
 agents:
