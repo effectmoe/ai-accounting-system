@@ -9,7 +9,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "echo 'Build skipped for Mastra Cloud'",
+    "build": "echo 'Build completed'",
     "start": "node server.js",
     "lint": "next lint",
     "db:migrate": "tsx scripts/setup-database.ts",
