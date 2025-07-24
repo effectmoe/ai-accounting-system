@@ -9,8 +9,8 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "npx mastra build",
-    "start": "node .mastra/output/index.mjs",
+    "build": "tsc",
+    "start": "tsx src/mastra/index.ts",
     "lint": "next lint",
     "db:migrate": "tsx scripts/setup-database.ts",
     "db:seed": "tsx scripts/seed-data.ts",
