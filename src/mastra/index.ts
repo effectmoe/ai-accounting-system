@@ -1,9 +1,11 @@
 import { Mastra } from '@mastra/core';
+import { accountingAgent } from './agents/accounting-agent';
 
-// 簡単な基本設定でまず動かす
+// 会計システム設定
 const mastra = new Mastra({
-  // とりあえず空の設定で開始
-  agents: {},
+  agents: {
+    accountingAgent,
+  },
   workflows: {},
 });
 
