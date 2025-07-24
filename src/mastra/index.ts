@@ -1,8 +1,13 @@
 import { Mastra } from '@mastra/core';
 
-// 超シンプル構成で動作確認
+// シンプル版の会計エージェント
+import { accountingAgent } from '../agents/simple-accounting-agent';
+
+// 会計システム設定
 export const mastra = new Mastra({
-  agents: {},
+  agents: {
+    accountingAgent,
+  },
   workflows: {},
 });
 
