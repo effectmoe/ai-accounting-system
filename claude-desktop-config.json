@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "mastra-accounting": {
+      "command": "tsx",
+      "args": ["/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/mastra-mcp-server-simple.ts"],
+      "env": {
+        "MONGODB_URI": "your-mongodb-uri",
+        "MONGODB_DB_NAME": "accounting",
+        "OPENAI_API_KEY": "your-openai-key",
+        "ANTHROPIC_API_KEY": "your-anthropic-key",
+        "AZURE_FORM_RECOGNIZER_ENDPOINT": "your-azure-endpoint",
+        "AZURE_FORM_RECOGNIZER_KEY": "your-azure-key",
+        "MASTRA_API_SECRET": "your-secret"
+      }
+    }
+  }
+}
