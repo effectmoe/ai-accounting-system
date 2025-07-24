@@ -9,8 +9,8 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "node build.js",
-    "start": "node start.js",
+    "build": "echo 'Build skipped for Mastra Cloud'",
+    "start": "node server.js",
     "lint": "next lint",
     "db:migrate": "tsx scripts/setup-database.ts",
     "db:seed": "tsx scripts/seed-data.ts",
@@ -44,7 +44,6 @@
     "@google/generative-ai": "^0.21.0",
     "@googleapis/drive": "^8.0.0",
     "@mastra/core": "^0.10.10",
-    "@mastra/mcp": "latest",
     "@modelcontextprotocol/sdk": "^1.15.0",
     "@mui/material": "^6.3.1",
     "@next/bundle-analyzer": "^15.1.5",
@@ -125,7 +124,7 @@
     "zustand": "^5.0.2"
   },
   "devDependencies": {
-    "@mastra/cli": "latest",
+    "mastra": "^0.10.13",
     "@tailwindcss/forms": "^0.5.9",
     "@types/express": "^5.0.0",
     "@types/formidable": "^3.4.5",
@@ -133,8 +132,8 @@
     "@types/multer": "^1.4.13",
     "@types/node": "^22.10.5",
     "@types/pdfkit": "^0.13.6",
-    "@types/react": "^18",
-    "@types/react-dom": "^18",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
     "@types/ws": "^8.5.13",
     "autoprefixer": "^10.4.20",
     "eslint": "^8",
