@@ -2,139 +2,90 @@ project: accounting-automation
 version: 1.0.0
 description: AI-driven accounting automation system for Japanese tax compliance
 
-agents:
-  - name: accounting-agent
-    description: 会計処理・仕訳作成エージェント
-    file: ./src/agents/accounting-agent.ts
-    tools:
-      - create_journal
-      - process_transaction
-      - create_invoice
-      - generate_report
-    
-  - name: customer-agent
-    description: 顧客管理エージェント
-    file: ./src/agents/customer-agent.ts
-    tools:
-      - create
-      - update
-      - delete
-      - search
-      - analyze
-    
-  - name: database-agent
-    description: データベース操作エージェント
-    file: ./src/agents/database-agent.ts
-    tools:
-      - query
-      - create
-      - update
-      - delete
-      - backup
-    
-  - name: japan-tax-agent
-    description: 日本税制対応エージェント
-    file: ./src/agents/japan-tax-agent.ts
-    tools:
-      - calculate_tax
-      - validate_invoice
-      - check_compliance
-      - generate_tax_report
-    
-  - name: ocr-agent
-    description: OCR処理エージェント
-    file: ./src/agents/ocr-agent.ts
-    tools:
-      - process_image
-      - extract_invoice
-      - extract_receipt
-      - analyze_document
-    
-  - name: product-agent
-    description: 商品管理エージェント
-    file: ./src/agents/product-agent.ts
-    tools:
-      - create
-      - update
-      - delete
-      - search
-      - analyze_inventory
-    
-  - name: ui-agent
-    description: UI操作エージェント
-    file: ./src/agents/ui-agent.ts
-    tools:
-      - generate_form
-      - create_dashboard
-      - export_pdf
-      - create_chart
+# Build configuration
+build:
+  command: echo "Build complete"
+  
+# Start configuration
+start:
+  command: node server.js
+  port: 3000
 
+# Health check
+health_check:
+  path: /health
+  interval: 30
+  timeout: 5
+  retries: 5
+
+# Agents
+agents:
+  - name: mastra-accounting-agent
+    description: 会計処理・仕訳作成エージェント
+    file: ./src/agents/mastra-accounting-agent.ts
+    
+  - name: mastra-customer-agent
+    description: 顧客管理エージェント
+    file: ./src/agents/mastra-customer-agent.ts
+    
+  - name: mastra-database-agent
+    description: データベース操作エージェント
+    file: ./src/agents/mastra-database-agent.ts
+    
+  - name: mastra-japan-tax-agent
+    description: 日本税制対応エージェント
+    file: ./src/agents/mastra-japan-tax-agent.ts
+    
+  - name: mastra-ocr-agent
+    description: OCR処理エージェント
+    file: ./src/agents/mastra-ocr-agent.ts
+    
+  - name: mastra-product-agent
+    description: 商品管理エージェント
+    file: ./src/agents/mastra-product-agent.ts
+    
+  - name: mastra-ui-agent
+    description: UI操作エージェント
+    file: ./src/agents/mastra-ui-agent.ts
+
+  - name: mastra-construction-agent
+    description: 構築支援エージェント
+    file: ./src/agents/mastra-construction-agent.ts
+
+  - name: mastra-deployment-agent
+    description: デプロイメント管理エージェント
+    file: ./src/agents/mastra-deployment-agent.ts
+
+  - name: mastra-problem-solving-agent
+    description: 問題解決専門エージェント
+    file: ./src/agents/mastra-problem-solving-agent.ts
+
+  - name: mastra-refactor-agent
+    description: リファクタリング専門エージェント
+    file: ./src/agents/mastra-refactor-agent.ts
+
+# Workflows
 workflows:
   - name: accounting-workflow
     description: 会計処理ワークフロー
     file: ./src/workflows/accounting-workflow.ts
-    agents:
-      - accounting-agent
-      - database-agent
-      - japan-tax-agent
     
   - name: compliance-workflow
     description: コンプライアンスチェック
     file: ./src/workflows/compliance-workflow.ts
-    agents:
-      - japan-tax-agent
-      - database-agent
     
   - name: invoice-processing-workflow
     description: 請求書処理
     file: ./src/workflows/invoice-processing-workflow.ts
-    agents:
-      - ocr-agent
-      - accounting-agent
-      - database-agent
 
-integrations:
-  - mongodb:
-      enabled: true
-      connection_string: ${MONGODB_URI}
-      database: accounting
-      
-  - openai:
-      enabled: true
-      api_key: ${OPENAI_API_KEY}
-      model: gpt-4-turbo-preview
-      
-  - anthropic:
-      enabled: true
-      api_key: ${ANTHROPIC_API_KEY}
-      model: claude-3-opus-20240229
-      
-  - azure:
-      enabled: true
-      form_recognizer:
-        endpoint: ${AZURE_FORM_RECOGNIZER_ENDPOINT}
-        key: ${AZURE_FORM_RECOGNIZER_KEY}
-
+# Environment variables
 environment:
-  NODE_ENV: production
-  MASTRA_API_PORT: 3001
+  MONGODB_URI: ${MONGODB_URI}
+  OPENAI_API_KEY: ${OPENAI_API_KEY}
+  ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+  AZURE_FORM_RECOGNIZER_ENDPOINT: ${AZURE_FORM_RECOGNIZER_ENDPOINT}
+  AZURE_FORM_RECOGNIZER_KEY: ${AZURE_FORM_RECOGNIZER_KEY}
+  HANDWRITING_OCR_API_TOKEN: ${HANDWRITING_OCR_API_TOKEN}
+  NLWEB_API_ENDPOINT: ${NLWEB_API_ENDPOINT}
   MASTRA_API_SECRET: ${MASTRA_API_SECRET}
-  LOG_LEVEL: info
-
-deployment:
-  runtime: nodejs20
-  memory: 512MB
-  timeout: 300s
-  regions:
-    - asia-northeast1  # Tokyo
-  
-monitoring:
-  enabled: true
-  metrics:
-    - execution_time
-    - error_rate
-    - agent_usage
-  alerts:
-    - type: error_rate
-      threshold: 0.05
-      channel: email
+  NODE_ENV: production
