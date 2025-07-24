@@ -2,17 +2,17 @@ import { Mastra } from "@mastra/core";
 import { registerApiRoute } from "@mastra/core/server";
 
 // Import all agents
-import { mastraAccountingAgent } from './agents/mastra-accounting-agent';
-import { mastraCustomerAgent } from './agents/mastra-customer-agent';
-import { mastraDatabaseAgent } from './agents/mastra-database-agent';
-import { mastraJapanTaxAgent } from './agents/mastra-japan-tax-agent';
-import { mastraOcrAgent } from './agents/mastra-ocr-agent';
-import { mastraProductAgent } from './agents/mastra-product-agent';
-import { mastraUiAgent } from './agents/mastra-ui-agent';
-import { mastraConstructionAgent } from './agents/mastra-construction-agent';
-import { mastraDeploymentAgent } from './agents/mastra-deployment-agent';
-import { mastraProblemSolvingAgent } from './agents/mastra-problem-solving-agent';
-import { mastraRefactorAgent } from './agents/mastra-refactor-agent';
+import { mastraAccountingAgent } from '../agents/mastra-accounting-agent';
+import { mastraCustomerAgent } from '../agents/mastra-customer-agent';
+import { mastraDatabaseAgent } from '../agents/mastra-database-agent';
+import { mastraJapanTaxAgent } from '../agents/mastra-japan-tax-agent';
+import { mastraOcrAgent } from '../agents/mastra-ocr-agent';
+import { mastraProductAgent } from '../agents/mastra-product-agent';
+import { mastraUiAgent } from '../agents/mastra-ui-agent';
+import { mastraConstructionAgent } from '../agents/mastra-construction-agent';
+import { mastraDeploymentAgent } from '../agents/mastra-deployment-agent';
+import { mastraProblemSolvingAgent } from '../agents/mastra-problem-solving-agent';
+import { mastraRefactorAgent } from '../agents/mastra-refactor-agent';
 
 export const mastra = new Mastra({
   agents: {
