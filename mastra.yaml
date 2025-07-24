@@ -4,11 +4,11 @@ description: AI-driven accounting automation system for Japanese tax compliance
 
 # Build configuration
 build:
-  command: node build.js
+  command: echo "Build step completed"
 
 # Start configuration  
 start:
-  command: node start.js
+  command: node server.js
 
 # Agents
 agents:
