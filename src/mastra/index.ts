@@ -4,7 +4,7 @@ import { Mastra } from '@mastra/core';
 import { accountingAgent } from '../agents/accounting-agent';
 
 // 会計システム設定（段階的に追加）
-const mastra = new Mastra({
+export const mastra = new Mastra({
   agents: {
     // 会計エージェントのみ（確実に動作）
     accountingAgent,
@@ -12,10 +12,5 @@ const mastra = new Mastra({
   workflows: {},
 });
 
-// 両方の形式でエクスポート
-export { mastra };
-export default mastra;
-
-// 両方の形式でエクスポート
-export { mastra };
+// デフォルトエクスポートのみ
 export default mastra;
