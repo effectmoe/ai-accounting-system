@@ -80,7 +80,7 @@
     "@tanstack/react-query": "^5.64.0",
     "@tanstack/react-table": "^8.20.6",
     "@types/uuid": "^10.0.0",
-    "@upstash/redis": "^1.37.0",
+    "@upstash/redis": "^1.35.1",
     "@vercel/analytics": "^1.4.1",
     "@vercel/speed-insights": "^1.1.0",
     "ai": "^4.0.18",
