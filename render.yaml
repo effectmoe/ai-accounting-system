@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: mastra-accounting-automation
+    env: node
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_ENV
+        value: production
