@@ -2,21 +2,9 @@ project: accounting-automation
 version: 1.0.0
 description: AI-driven accounting automation system for Japanese tax compliance
 
-# Build configuration
-build:
-  command: echo "Build complete"
-  
 # Start configuration
 start:
   command: node server.js
-  port: 3000
-
-# Health check
-health_check:
-  path: /health
-  interval: 30
-  timeout: 5
-  retries: 5
 
 # Agents
 agents:
