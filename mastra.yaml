@@ -9,7 +9,7 @@ build:
 # Start configuration
 start:
   command: node server.js
-  port: 8080
+  port: 3000
 
 # Health check
 health_check:
