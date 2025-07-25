@@ -1,5 +1,5 @@
 import { Workflow } from '@mastra/core';
-import deploymentAgent from '../agents/deployment-agent';
+import { mastraDeploymentAgent } from '../agents/mastra-deployment-agent';
 
 import { logger } from '@/lib/logger';
 const deploymentWorkflow = new Workflow({
