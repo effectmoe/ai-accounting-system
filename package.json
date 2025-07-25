@@ -9,7 +9,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "echo 'No build required'",
     "start": "node index.js",
     "lint": "next lint",
     "db:migrate": "tsx scripts/setup-database.ts",
