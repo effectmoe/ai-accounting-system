@@ -66,4 +66,29 @@ export {
   deploymentWorkflow
 };
 
+// Start HTTP server if running directly
+if (require.main === module) {
+  import('express').then(({ default: express }) => {
+    const app = express();
+    const port = process.env.PORT || 4111;
+    
+    app.get('/', (req: any, res: any) => {
+      res.json({ 
+        status: 'ok', 
+        message: 'Mastra Cloud - AI Accounting System',
+        agents: Object.keys(mastra.agents || {}),
+        workflows: Object.keys(mastra.workflows || {})
+      });
+    });
+    
+    app.get('/health', (req: any, res: any) => {
+      res.json({ status: 'healthy' });
+    });
+    
+    app.listen(port, '0.0.0.0', () => {
+      console.log(`✅ Mastra server running on port ${port}`);
+    });
+  });
+}
+
 export default mastra;
