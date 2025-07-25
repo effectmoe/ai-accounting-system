@@ -14,14 +14,19 @@ const accountingAgent = new Agent({
   model: openai("gpt-4o-mini"),
 });
 
-// Mastra configuration
+// Mastra configuration with server settings
 const mastra = new Mastra({
   agents: { accountingAgent },
+  server: {
+    port: parseInt(process.env.PORT || "4111"), // Mastra Cloudが期待するデフォルトポート
+    host: "0.0.0.0",
+    timeout: 30000,
+  },
 });
 
-// Create Express app
+// Create Express app for HTTP server
 const app = express();
-const port = parseInt(process.env.PORT || "3000");
+const port = parseInt(process.env.PORT || "4111");
 
 // Middleware
 app.use(express.json());
@@ -66,7 +71,7 @@ app.get('/health', async (req, res) => {
   }
 });
 
-// Start the server
+// Start the server for Mastra Cloud
 if (process.env.NODE_ENV === "production" || require.main === module) {
   app.listen(port, '0.0.0.0', () => {
     console.log(`🚀 Starting Mastra server on port ${port}...`);
