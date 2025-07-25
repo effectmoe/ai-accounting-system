@@ -1,3 +1,7 @@
 name: accounting-automation
 description: AI-driven accounting automation system for Japanese tax compliance
-port: 4111
+build:
+  skip: true
+start:
+  command: node index.js
+  port: 4111
