@@ -386,5 +386,4 @@ export const invoiceProcessingWorkflow = createWorkflow({
   },
 });
 
-export { invoiceProcessingWorkflow };
 export default invoiceProcessingWorkflow;

@@ -352,5 +352,4 @@ function generateComplianceSummary(results: any): any {
   return summary;
 }
 
-export { complianceWorkflow };
 export default complianceWorkflow;

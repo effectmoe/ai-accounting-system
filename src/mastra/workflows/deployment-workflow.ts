@@ -2,7 +2,7 @@ import { Workflow } from '@mastra/core';
 import { mastraDeploymentAgent } from '../agents/mastra-deployment-agent';
 
 import { logger } from '@/lib/logger';
-const deploymentWorkflow = new Workflow({
+export const deploymentWorkflow = new Workflow({
   name: 'deployment-workflow',
   description: 'Complete deployment workflow for the accounting automation system',
   version: '1.0.0',
@@ -65,5 +65,4 @@ const deploymentWorkflow = new Workflow({
   }
 });
 
-export { deploymentWorkflow };
 export default deploymentWorkflow;
