@@ -930,7 +930,7 @@ export default function DocumentsContentMongoDB() {
                     </td>
                   </tr>
                   );
-                })}}
+                })}
               </tbody>
             </table>
           </div>
