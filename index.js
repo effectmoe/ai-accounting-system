@@ -1,46 +1,33 @@
-console.log('Starting Mastra Cloud server...');
-console.log('Environment:', {
-  NODE_ENV: process.env.NODE_ENV,
-  PORT: process.env.PORT,
-  PWD: process.cwd()
-});
+// Mastra Cloud Server
+console.log('[Mastra] Starting server...');
+console.log('[Mastra] Node version:', process.version);
+console.log('[Mastra] Environment:', process.env.NODE_ENV || 'development');
+console.log('[Mastra] Port:', process.env.PORT || '4111');
 
 const http = require('http');
-const port = parseInt(process.env.PORT || '4111', 10);
+const PORT = process.env.PORT || 4111;
 
-console.log(`Creating HTTP server on port ${port}...`);
+console.log(`[Mastra] Creating server on port ${PORT}...`);
 
 const server = http.createServer((req, res) => {
-  const timestamp = new Date().toISOString();
-  console.log(`[${timestamp}] ${req.method} ${req.url} from ${req.headers.host}`);
+  console.log(`[Mastra] ${req.method} ${req.url}`);
   
-  // Handle all requests with 200 OK
-  res.writeHead(200, { 
-    'Content-Type': 'application/json',
-    'X-Powered-By': 'Mastra'
-  });
-  
-  const response = JSON.stringify({ 
+  res.writeHead(200, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify({ 
     status: 'ok',
-    service: 'mastra-accounting',
-    timestamp: timestamp,
-    port: port,
-    path: req.url,
-    method: req.method
-  });
-  
-  res.end(response);
-  console.log(`[${timestamp}] Response sent: ${response}`);
+    port: PORT,
+    path: req.url
+  }));
 });
 
 server.on('error', (err) => {
-  console.error('Server error:', err);
+  console.error('[Mastra] Server error:', err);
   process.exit(1);
 });
 
-server.listen(port, '0.0.0.0', () => {
-  console.log(`✅ Server is listening on http://0.0.0.0:${port}`);
-  console.log('✅ Ready for readiness probe');
+server.listen(PORT, () => {
+  console.log(`[Mastra] Server running on port ${PORT}`);
+  console.log('[Mastra] Ready');
 });
 
 // Handle termination
