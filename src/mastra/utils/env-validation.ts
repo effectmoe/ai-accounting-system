@@ -78,3 +78,36 @@ export async function testApiConnections() {
 
   return results;
 }
+
+// Add a diagnostics endpoint for development environments
+export const diagnosticsRoute = (registerApiRoute: any) => registerApiRoute("/diagnostics/env", {
+  method: "GET",
+  handler: async (c: any) => {
+    // Only allow in non-production environments
+    if (process.env.NODE_ENV === "production") {
+      return c.json({ error: "Diagnostics endpoint is disabled in production" }, 403);
+    }
+
+    try {
+      const env = validateEnvironment();
+      const apiTests = await testApiConnections();
+      
+      return c.json({
+        status: "success",
+        environment: {
+          NODE_ENV: env.NODE_ENV,
+          hasOpenAIKey: !!env.OPENAI_API_KEY,
+          hasAnthropicKey: !!env.ANTHROPIC_API_KEY,
+        },
+        apiConnections: apiTests,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error: any) {
+      return c.json({
+        status: "error",
+        error: error.message,
+        timestamp: new Date().toISOString(),
+      }, 500);
+    }
+  },
+});

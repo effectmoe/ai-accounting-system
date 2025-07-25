@@ -9,8 +9,8 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "tsc src/mastra/index.ts --outDir dist --skipLibCheck --module esnext --target es2022 --moduleResolution node --allowSyntheticDefaultImports",
-    "start": "node index.js",
+    "build": "tsc",
+    "start": "node dist/src/mastra/index.js",
     "lint": "next lint",
     "db:migrate": "tsx scripts/setup-database.ts",
     "db:seed": "tsx scripts/seed-data.ts",
