@@ -1,5 +1,5 @@
 import { Agent } from '@mastra/core';
-import { accountingTools } from './tools/accounting-tools';
+import { accountingTools } from '../tools/accounting-tools';
 
 export const mastraAccountingAgent = new Agent({
   name: 'mastra-accounting-agent',

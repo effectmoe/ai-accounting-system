@@ -1,86 +1,69 @@
 import { Mastra } from "@mastra/core";
-import { Agent } from "@mastra/core/agent";
-import { openai } from "@ai-sdk/openai";
-import { validateEnvironment } from "./utils/env-validation";
-import express from 'express';
 
-// Validate environment variables on startup
-validateEnvironment();
+// Import all agents
+import { mastraAccountingAgent } from './agents/mastra-accounting-agent';
+import { mastraCustomerAgent } from './agents/mastra-customer-agent';
+import { mastraDatabaseAgent } from './agents/mastra-database-agent';
+import { mastraDeploymentAgent } from './agents/mastra-deployment-agent';
+import { mastraJapanTaxAgent } from './agents/mastra-japan-tax-agent';
+import { mastraOcrAgent } from './agents/mastra-ocr-agent';
+import { mastraProblemSolvingAgent } from './agents/mastra-problem-solving-agent';
+import { mastraProductAgent } from './agents/mastra-product-agent';
+import { mastraRefactorAgent } from './agents/mastra-refactor-agent';
+import { mastraUiAgent } from './agents/mastra-ui-agent';
+import { mastraConstructionAgent } from './agents/mastra-construction-agent';
 
-// Simple agent definition for Mastra Cloud
-const accountingAgent = new Agent({
-  name: "Accounting Assistant",
-  instructions: "You are a helpful accounting assistant. Answer concisely.",
-  model: openai("gpt-4o-mini"),
-});
+// Import workflows
+import { accountingWorkflow } from './workflows/accounting-workflow';
+import { complianceWorkflow } from './workflows/compliance-workflow';
+import { invoiceProcessingWorkflow } from './workflows/invoice-processing-workflow';
+import { deploymentWorkflow } from './workflows/deployment-workflow';
 
-// Mastra configuration with server settings
-const mastra = new Mastra({
-  agents: { accountingAgent },
-  server: {
-    port: parseInt(process.env.PORT || "4111"), // Mastra Cloudが期待するデフォルトポート
-    host: "0.0.0.0",
-    timeout: 30000,
+// Create Mastra instance with all agents and workflows
+export const mastra = new Mastra({
+  name: "AI Accounting Automation System",
+  agents: {
+    accountingAgent: mastraAccountingAgent,
+    customerAgent: mastraCustomerAgent,
+    databaseAgent: mastraDatabaseAgent,
+    deploymentAgent: mastraDeploymentAgent,
+    japanTaxAgent: mastraJapanTaxAgent,
+    ocrAgent: mastraOcrAgent,
+    problemSolvingAgent: mastraProblemSolvingAgent,
+    productAgent: mastraProductAgent,
+    refactorAgent: mastraRefactorAgent,
+    uiAgent: mastraUiAgent,
+    constructionAgent: mastraConstructionAgent
   },
-});
-
-// Create Express app for HTTP server
-const app = express();
-const port = parseInt(process.env.PORT || "4111");
-
-// Middleware
-app.use(express.json());
-
-// Health check endpoint
-app.get('/', (req, res) => {
-  res.json({ 
-    status: "ok", 
-    service: "mastra-accounting-automation",
-    timestamp: new Date().toISOString()
-  });
-});
-
-// Detailed health check endpoint
-app.get('/health', async (req, res) => {
-  try {
-    // Get agents to verify they're loaded
-    const agents = await mastra.getAgents();
-    const agentCount = Object.keys(agents).length;
-    
-    res.json({
-      status: "healthy",
-      timestamp: new Date().toISOString(),
-      components: {
-        agents: {
-          status: agentCount > 0 ? "healthy" : "degraded",
-          count: agentCount
-        },
-        memory: {
-          used: process.memoryUsage().heapUsed,
-          total: process.memoryUsage().heapTotal
-        },
-        uptime: process.uptime()
-      }
-    });
-  } catch (error) {
-    res.status(503).json({
-      status: "unhealthy",
-      error: error.message,
-      timestamp: new Date().toISOString()
-    });
+  workflows: {
+    accountingWorkflow,
+    complianceWorkflow,
+    invoiceProcessingWorkflow,
+    deploymentWorkflow
   }
 });
 
-// Start the server for Mastra Cloud
-if (process.env.NODE_ENV === "production" || require.main === module) {
-  app.listen(port, '0.0.0.0', () => {
-    console.log(`🚀 Starting Mastra server on port ${port}...`);
-    console.log(`✅ Mastra server running on http://0.0.0.0:${port}`);
-    console.log(`✅ Health check endpoint: http://0.0.0.0:${port}/`);
-    console.log(`✅ Detailed health check endpoint: http://0.0.0.0:${port}/health`);
-  });
-}
+// Export individual agents for direct access
+export {
+  mastraAccountingAgent,
+  mastraCustomerAgent,
+  mastraDatabaseAgent,
+  mastraDeploymentAgent,
+  mastraJapanTaxAgent,
+  mastraOcrAgent,
+  mastraProblemSolvingAgent,
+  mastraProductAgent,
+  mastraRefactorAgent,
+  mastraUiAgent,
+  mastraConstructionAgent
+};
 
-// Export for Mastra Cloud
-export { mastra };
+// Export workflows
+export {
+  accountingWorkflow,
+  complianceWorkflow,
+  invoiceProcessingWorkflow,
+  deploymentWorkflow
+};
+
 export default mastra;

@@ -8,7 +8,7 @@
   "build": {
     "env": {
       "NODE_ENV": "production",
-      "FORCE_REBUILD": "2025-07-23-cache-clear"
+      "FORCE_REBUILD": "2025-07-25-force-rebuild-v3"
     }
   },
   "functions": {

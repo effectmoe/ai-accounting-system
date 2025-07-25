@@ -3,6 +3,7 @@ import { InvoiceService } from '@/services/invoice.service';
 import { InvoiceStatus } from '@/types/collections';
 import { ActivityLogService } from '@/services/activity-log.service';
 import { logger } from '@/lib/logger';
+import { MastraAccountingAgent } from '@/src/lib/mastra-integration';
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
@@ -92,9 +93,28 @@ export async function POST(request: NextRequest) {
       invoiceData.aiConversationId = body.aiConversationId;
     }
     
-    // 請求書を作成
-    const invoice = await invoiceService.createInvoice(invoiceData);
-    logger.debug('Invoice created:', invoice);
+    // Mastraエージェント経由で請求書を作成（既存機能へのフォールバック付き）
+    const invoice = await MastraAccountingAgent.createInvoice(
+      {
+        customer_name: invoiceData.customer?.companyName || invoiceData.customerName || '',
+        items: invoiceData.items.map((item: any) => ({
+          description: item.itemName || item.description,
+          quantity: item.quantity,
+          unit_price: item.unitPrice
+        })),
+        tax_rate: invoiceData.taxRate || 0.1,
+        due_date: invoiceData.dueDate?.toISOString(),
+        company_id: invoiceData.companyId || 'default'
+      },
+      // フォールバック：既存のサービスを使用
+      async () => {
+        const createdInvoice = await invoiceService.createInvoice(invoiceData);
+        logger.debug('Invoice created via fallback:', createdInvoice);
+        return createdInvoice;
+      }
+    );
+    
+    logger.debug('Invoice created via Mastra agent:', invoice);
     
     // アクティビティログを記録
     try {

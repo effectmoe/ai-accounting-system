@@ -5,14 +5,19 @@ const envSchema = z.object({
   ANTHROPIC_API_KEY: z.string().min(1).optional(),
   NODE_ENV: z.enum(["development", "staging", "production"]).optional(),
   PORT: z.string().optional(),
-}).refine(data => data.OPENAI_API_KEY || data.ANTHROPIC_API_KEY, {
-  message: "At least one LLM API key (OPENAI_API_KEY or ANTHROPIC_API_KEY) is required"
 });
 
 export function validateEnvironment() {
   try {
     const env = envSchema.parse(process.env);
-    console.log("✅ Environment variables validated successfully");
+    
+    // LLM APIキーのチェック（警告のみ）
+    if (!env.OPENAI_API_KEY && !env.ANTHROPIC_API_KEY) {
+      console.warn("⚠️ Warning: No LLM API keys found. Some features may not work.");
+    } else {
+      console.log("✅ Environment variables validated successfully");
+    }
+    
     return env;
   } catch (error) {
     console.error("❌ Environment validation failed:", error.errors || error.message);
