@@ -4,6 +4,7 @@ import { OCRAIOrchestrator } from '@/lib/ocr-ai-orchestrator';
 import { getGridFSBucket } from '@/lib/mongodb-client';
 import { ObjectId } from 'mongodb';
 import { Readable } from 'stream';
+import { MastraOcrAgent } from '@/src/lib/mastra-integration';
 
 import { logger } from '@/lib/logger';
 export async function POST(request: NextRequest) {
@@ -140,13 +141,24 @@ TEL: 03-xxxx-xxxx FAX: 03-xxxx-xxxx
     // AI駆動のOCRオーケストレーター を使用
     logger.debug('[OCR API] Starting AI-driven orchestration...');
     
-    const orchestrator = new OCRAIOrchestrator();
-    
-    const structuredData = await orchestrator.orchestrateOCRResult({
-      ocrResult: azureOcrResult,
-      documentType: documentType as 'invoice' | 'supplier-quote' | 'receipt',
-      companyId: companyId
-    });
+    // Mastraエージェント経由でOCR処理（フォールバック付き）
+    const structuredData = await MastraOcrAgent.processDocumentImage(
+      {
+        image_base64: Buffer.from(uint8Array).toString('base64'),
+        document_type: documentType === 'supplier-quote' ? 'quotation' : documentType,
+        language: 'ja',
+        enhance_quality: true
+      },
+      // フォールバック：既存のオーケストレーターを使用
+      async () => {
+        const orchestrator = new OCRAIOrchestrator();
+        return await orchestrator.orchestrateOCRResult({
+          ocrResult: azureOcrResult,
+          documentType: documentType as 'invoice' | 'supplier-quote' | 'receipt',
+          companyId: companyId
+        });
+      }
+    );
     
     const totalElapsed = Date.now() - startTime;
     logger.debug('[OCR API] AI orchestration completed successfully in', totalElapsed, 'ms total');

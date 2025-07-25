@@ -4,6 +4,7 @@ import { Customer, SortableField, SortOrder, FilterState } from '@/types/collect
 import { v4 as uuidv4 } from 'uuid';
 import { logger } from '@/lib/logger';
 import { ActivityLogService } from '@/services/activity-log.service';
+import { MastraCustomerAgent } from '@/src/lib/mastra-integration';
 import { 
   withErrorHandler, 
   validateRequired, 
@@ -340,19 +341,40 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
       updatedAt: now,
     };
 
-    // データベースに保存
-    const result = await collection.insertOne(newCustomer);
-
-    // アクティビティログを記録
-    try {
-      await ActivityLogService.logCustomerCreated(
-        result.insertedId.toString(),
-        newCustomer.companyName
-      );
-      logger.info('Activity log recorded for customer creation');
-    } catch (logError) {
-      logger.error('Failed to log activity for customer creation:', logError);
-    }
+    // Mastraエージェント経由で顧客を作成（フォールバック付き）
+    const result = await MastraCustomerAgent.createCustomer(
+      {
+        name: newCustomer.companyName,
+        name_kana: newCustomer.companyNameKana || '',
+        email: newCustomer.email || '',
+        phone: newCustomer.phone || '',
+        address: `${newCustomer.prefecture || ''}${newCustomer.city || ''}${newCustomer.address1 || ''}${newCustomer.address2 || ''}`,
+        tax_id: body.taxId || '',
+        payment_terms: newCustomer.paymentTerms || 30,
+        credit_limit: body.creditLimit || 0,
+        notes: newCustomer.notes || ''
+      },
+      // フォールバック：既存のデータベース操作を使用
+      async () => {
+        const insertResult = await collection.insertOne(newCustomer);
+        
+        // アクティビティログを記録
+        try {
+          await ActivityLogService.logCustomerCreated(
+            insertResult.insertedId.toString(),
+            newCustomer.companyName
+          );
+          logger.info('Activity log recorded for customer creation');
+        } catch (logError) {
+          logger.error('Failed to log activity for customer creation:', logError);
+        }
+        
+        return {
+          insertedId: insertResult.insertedId,
+          ...newCustomer
+        };
+      }
+    );
 
     return NextResponse.json({
       success: true,

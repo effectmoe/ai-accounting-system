@@ -1,5 +1,5 @@
 import { Agent } from '@mastra/core';
-import { customerTools } from './tools/customer-tools';
+import { customerTools } from '../tools/customer-tools';
 
 export const mastraCustomerAgent = new Agent({
   name: 'mastra-customer-agent',
