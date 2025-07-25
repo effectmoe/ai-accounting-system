@@ -1,26 +1,72 @@
-const http = require('http');
+console.log('Starting Mastra Cloud server...');
+console.log('Environment:', {
+  NODE_ENV: process.env.NODE_ENV,
+  PORT: process.env.PORT,
+  PWD: process.cwd()
+});
 
-const port = process.env.PORT || 4111;
+const http = require('http');
+const port = parseInt(process.env.PORT || '4111', 10);
+
+console.log(`Creating HTTP server on port ${port}...`);
 
 const server = http.createServer((req, res) => {
-  res.writeHead(200, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify({ 
+  const timestamp = new Date().toISOString();
+  console.log(`[${timestamp}] ${req.method} ${req.url} from ${req.headers.host}`);
+  
+  // Handle all requests with 200 OK
+  res.writeHead(200, { 
+    'Content-Type': 'application/json',
+    'X-Powered-By': 'Mastra'
+  });
+  
+  const response = JSON.stringify({ 
     status: 'ok',
     service: 'mastra-accounting',
-    message: 'Mastra Cloud deployment'
-  }));
+    timestamp: timestamp,
+    port: port,
+    path: req.url,
+    method: req.method
+  });
+  
+  res.end(response);
+  console.log(`[${timestamp}] Response sent: ${response}`);
+});
+
+server.on('error', (err) => {
+  console.error('Server error:', err);
+  process.exit(1);
 });
 
 server.listen(port, '0.0.0.0', () => {
-  console.log(`Server running on port ${port}`);
+  console.log(`✅ Server is listening on http://0.0.0.0:${port}`);
+  console.log('✅ Ready for readiness probe');
 });
 
-// Import and initialize Mastra in the background
-setTimeout(() => {
-  try {
-    require('./src/mastra');
-    console.log('Mastra framework loaded');
-  } catch (error) {
-    console.error('Failed to load Mastra:', error);
-  }
-}, 1000);
+// Handle termination
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, shutting down...');
+  server.close(() => {
+    console.log('Server closed');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  console.log('SIGINT received, shutting down...');
+  server.close(() => {
+    console.log('Server closed');
+    process.exit(0);
+  });
+});
+
+// Keep process alive
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught exception:', err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled rejection at:', promise, 'reason:', reason);
+});
+
+console.log('Server initialization complete');
