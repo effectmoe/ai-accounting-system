@@ -9,7 +9,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "echo 'Build completed'",
+    "build": "tsc src/mastra/index.ts --outDir dist --skipLibCheck --module esnext --target es2022 --moduleResolution node --allowSyntheticDefaultImports",
     "start": "node index.js",
     "lint": "next lint",
     "db:migrate": "tsx scripts/setup-database.ts",
@@ -36,6 +36,7 @@
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^1.0.0",
+    "@ai-sdk/openai": "^1.0.14",
     "@anthropic-ai/sdk": "^0.27.3",
     "@azure/ai-form-recognizer": "^5.1.0",
     "@azure/cosmos": "^4.4.0",
@@ -43,7 +44,7 @@
     "@emotion/styled": "^11.14.0",
     "@google/generative-ai": "^0.21.0",
     "@googleapis/drive": "^8.0.0",
-    "@mastra/core": "^0.10.10",
+    "@mastra/core": "^0.10.15",
     "@modelcontextprotocol/sdk": "^1.15.0",
     "@mui/material": "^6.3.1",
     "@next/bundle-analyzer": "^15.1.5",
@@ -121,10 +122,10 @@
     "winston": "^3.17.0",
     "ws": "^8.18.0",
     "zod": "^3.24.1",
-    "zustand": "^5.0.2"
+    "zustand": "^5.0.2",
+    "mastra": "^0.10.13"
   },
   "devDependencies": {
-    "mastra": "^0.10.13",
     "@tailwindcss/forms": "^0.5.9",
     "@types/express": "^5.0.0",
     "@types/formidable": "^3.4.5",
