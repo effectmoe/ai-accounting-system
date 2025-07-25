@@ -9,7 +9,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "echo 'No build required'",
+    "build": "node build.js",
     "start": "node index.js",
     "start:next": "next start",
     "mastra:server": "tsx server.ts",
