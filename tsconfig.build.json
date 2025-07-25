@@ -1,0 +1,27 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./",
+    "noEmit": false,
+    "declaration": true,
+    "declarationMap": false,
+    "sourceMap": true,
+    "removeComments": true
+  },
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    ".next",
+    "app",
+    "pages",
+    "components",
+    "hooks",
+    "tests",
+    "scripts",
+    "**/*.test.ts",
+    "**/*.spec.ts"
+  ]
+}

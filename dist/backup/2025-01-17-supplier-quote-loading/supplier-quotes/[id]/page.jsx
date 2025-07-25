@@ -1,0 +1,429 @@
+"use strict";
+'use client';
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = SupplierQuoteDetailPage;
+const react_1 = require("react");
+const navigation_1 = require("next/navigation");
+const link_1 = __importDefault(require("next/link"));
+const lucide_react_1 = require("lucide-react");
+const react_hot_toast_1 = require("react-hot-toast");
+// ステータス表示用のスタイル
+const statusStyles = {
+    pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+    received: 'bg-blue-100 text-blue-800 border-blue-200',
+    accepted: 'bg-green-100 text-green-800 border-green-200',
+    rejected: 'bg-red-100 text-red-800 border-red-200',
+    expired: 'bg-gray-100 text-gray-800 border-gray-200',
+    cancelled: 'bg-gray-100 text-gray-800 border-gray-200',
+    converted: 'bg-purple-100 text-purple-800 border-purple-200',
+};
+const statusLabels = {
+    pending: '保留',
+    received: '受信',
+    accepted: '承認',
+    rejected: '拒否',
+    expired: '期限切れ',
+    cancelled: 'キャンセル',
+    converted: '発注書に変換',
+};
+const statusIcons = {
+    pending: lucide_react_1.AlertCircle,
+    received: lucide_react_1.FileText,
+    accepted: lucide_react_1.CheckCircle,
+    rejected: lucide_react_1.XCircle,
+    expired: lucide_react_1.Clock,
+    cancelled: lucide_react_1.XCircle,
+    converted: lucide_react_1.Send,
+};
+function SupplierQuoteDetailPage() {
+    const params = (0, navigation_1.useParams)();
+    const router = (0, navigation_1.useRouter)();
+    const [quote, setQuote] = (0, react_1.useState)(null);
+    const [loading, setLoading] = (0, react_1.useState)(true);
+    const [updating, setUpdating] = (0, react_1.useState)(false);
+    const quoteId = params.id;
+    // 見積書データの取得
+    (0, react_1.useEffect)(() => {
+        const fetchQuote = async () => {
+            try {
+                const response = await fetch(`/api/supplier-quotes/${quoteId}`);
+                if (!response.ok) {
+                    if (response.status === 404) {
+                        react_hot_toast_1.toast.error('見積書が見つかりません');
+                        router.push('/supplier-quotes');
+                        return;
+                    }
+                    throw new Error('Failed to fetch quote');
+                }
+                const data = await response.json();
+                setQuote(data);
+            }
+            catch (error) {
+                console.error('Error fetching quote:', error);
+                react_hot_toast_1.toast.error('見積書の取得に失敗しました');
+            }
+            finally {
+                setLoading(false);
+            }
+        };
+        if (quoteId) {
+            fetchQuote();
+        }
+    }, [quoteId, router]);
+    // ステータス更新
+    const handleStatusUpdate = async (newStatus) => {
+        if (!quote)
+            return;
+        const confirmMessages = {
+            pending: '保留',
+            received: '受信',
+            accepted: '承認',
+            rejected: '拒否',
+            expired: '期限切れ',
+            cancelled: 'キャンセル',
+            converted: '発注書に変換',
+        };
+        if (!confirm(`この見積書を「${confirmMessages[newStatus]}」に変更しますか？`))
+            return;
+        setUpdating(true);
+        try {
+            const response = await fetch(`/api/supplier-quotes/${quoteId}/status`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    status: newStatus,
+                    statusDate: new Date().toISOString(),
+                }),
+            });
+            if (!response.ok)
+                throw new Error('Failed to update status');
+            const updatedQuote = await response.json();
+            setQuote(updatedQuote);
+            react_hot_toast_1.toast.success('ステータスを更新しました');
+        }
+        catch (error) {
+            console.error('Error updating status:', error);
+            react_hot_toast_1.toast.error('ステータスの更新に失敗しました');
+        }
+        finally {
+            setUpdating(false);
+        }
+    };
+    // 見積書の削除
+    const handleDelete = async () => {
+        if (!quote)
+            return;
+        if (!confirm('この見積書を削除してもよろしいですか？この操作は取り消せません。'))
+            return;
+        try {
+            const response = await fetch(`/api/supplier-quotes/${quoteId}`, {
+                method: 'DELETE',
+            });
+            if (!response.ok)
+                throw new Error('Failed to delete quote');
+            react_hot_toast_1.toast.success('見積書を削除しました');
+            router.push('/supplier-quotes');
+        }
+        catch (error) {
+            console.error('Error deleting quote:', error);
+            react_hot_toast_1.toast.error('見積書の削除に失敗しました');
+        }
+    };
+    if (loading) {
+        return (<div className="container mx-auto p-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-gray-500">読み込み中...</div>
+        </div>
+      </div>);
+    }
+    if (!quote) {
+        return (<div className="container mx-auto p-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-gray-500">見積書が見つかりません</div>
+        </div>
+      </div>);
+    }
+    const StatusIcon = statusIcons[quote.status];
+    return (<div className="container mx-auto p-6">
+      {/* ヘッダー */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-4">
+          <link_1.default href="/supplier-quotes" className="flex items-center gap-2 text-gray-600 hover:text-gray-800">
+            <lucide_react_1.ArrowLeft size={20}/>
+            戻る
+          </link_1.default>
+          <h1 className="text-2xl font-bold text-gray-900">見積書詳細</h1>
+        </div>
+        <div className="flex items-center gap-2">
+          <link_1.default href={`/supplier-quotes/${quoteId}/edit`} className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center gap-2">
+            <lucide_react_1.Edit size={16}/>
+            編集
+          </link_1.default>
+          <button onClick={handleDelete} className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md flex items-center gap-2">
+            <lucide_react_1.Trash2 size={16}/>
+            削除
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* メイン情報 */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* 基本情報 */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">基本情報</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  見積書番号
+                </label>
+                <div className="flex items-center gap-2">
+                  <lucide_react_1.FileText className="h-5 w-5 text-gray-400"/>
+                  <span className="text-gray-900 font-medium">{quote.quoteNumber}</span>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  仕入先
+                </label>
+                <div className="flex items-center gap-2">
+                  <lucide_react_1.Building className="h-5 w-5 text-gray-400"/>
+                  <span className="text-gray-900">{quote.supplier?.companyName || '未設定'}</span>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  発行日
+                </label>
+                <div className="flex items-center gap-2">
+                  <lucide_react_1.Calendar className="h-5 w-5 text-gray-400"/>
+                  <span className="text-gray-900">
+                    {new Date(quote.issueDate).toLocaleDateString('ja-JP')}
+                  </span>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  有効期限
+                </label>
+                <div className="flex items-center gap-2">
+                  <lucide_react_1.Clock className="h-5 w-5 text-gray-400"/>
+                  <span className="text-gray-900">
+                    {new Date(quote.validityDate).toLocaleDateString('ja-JP')}
+                  </span>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  総額
+                </label>
+                <div className="flex items-center gap-2">
+                  <lucide_react_1.DollarSign className="h-5 w-5 text-gray-400"/>
+                  <span className="text-gray-900 font-medium">
+                    ¥{(quote.totalAmount || 0).toLocaleString()}
+                  </span>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  ステータス
+                </label>
+                <div className="flex items-center gap-2">
+                  <StatusIcon className="h-5 w-5 text-gray-400"/>
+                  <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full border ${statusStyles[quote.status]}`}>
+                    {statusLabels[quote.status]}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 見積項目 */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">見積項目</h2>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      項目名
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      数量
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      単価
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      金額
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      税率
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      税額
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {quote.items.map((item, index) => (<tr key={index}>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900">{item.itemName}</div>
+                        {item.description && (<div className="text-sm text-gray-500">{item.description}</div>)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {item.quantity}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        ¥{(item.unitPrice || 0).toLocaleString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        ¥{(item.amount || 0).toLocaleString()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {item.taxRate}%
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        ¥{(item.taxAmount || 0).toLocaleString()}
+                      </td>
+                    </tr>))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* 合計 */}
+            <div className="mt-6 pt-6 border-t border-gray-200">
+              <div className="flex justify-end">
+                <div className="w-64 space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">小計:</span>
+                    <span className="text-sm text-gray-900">¥{(quote.subtotal || 0).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-600">税額:</span>
+                    <span className="text-sm text-gray-900">¥{(quote.taxAmount || 0).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between font-medium border-t pt-2">
+                    <span className="text-sm text-gray-900">合計:</span>
+                    <span className="text-sm text-gray-900">¥{(quote.totalAmount || 0).toLocaleString()}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 備考 */}
+          {quote.notes && (<div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">備考</h2>
+              <div className="text-gray-700 whitespace-pre-wrap">{quote.notes}</div>
+            </div>)}
+        </div>
+
+        {/* サイドバー */}
+        <div className="space-y-6">
+          {/* ステータス管理 */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">ステータス管理</h2>
+            <div className="space-y-2">
+              {['pending', 'received', 'accepted', 'rejected', 'expired', 'cancelled', 'converted'].map((status) => (<button key={status} onClick={() => handleStatusUpdate(status)} disabled={updating || quote.status === status} className={`w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors ${quote.status === status
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : 'hover:bg-gray-50 text-gray-700'}`}>
+                  {statusLabels[status]}
+                </button>))}
+            </div>
+          </div>
+
+          {/* 仕入先情報 */}
+          {quote.supplier && (<div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">仕入先情報</h2>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    会社名
+                  </label>
+                  <div className="text-sm text-gray-900">{quote.supplier.companyName}</div>
+                </div>
+                {quote.supplier.contactPerson && (<div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      担当者
+                    </label>
+                    <div className="text-sm text-gray-900">{quote.supplier.contactPerson}</div>
+                  </div>)}
+                {quote.supplier.email && (<div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      メールアドレス
+                    </label>
+                    <div className="text-sm text-gray-900">{quote.supplier.email}</div>
+                  </div>)}
+                {quote.supplier.phone && (<div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      電話番号
+                    </label>
+                    <div className="text-sm text-gray-900">{quote.supplier.phone}</div>
+                  </div>)}
+                <div className="mt-4">
+                  <link_1.default href={`/suppliers/${quote.supplier._id}`} className="text-blue-600 hover:text-blue-800 text-sm">
+                    仕入先詳細を見る →
+                  </link_1.default>
+                </div>
+              </div>
+            </div>)}
+
+          {/* AI生成情報 */}
+          {quote.isGeneratedByAI && quote.aiGenerationMetadata && (<div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">AI生成情報</h2>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    生成元
+                  </label>
+                  <div className="text-sm text-gray-900">{quote.aiGenerationMetadata.source}</div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    信頼度
+                  </label>
+                  <div className="text-sm text-gray-900">{Math.round(quote.aiGenerationMetadata.confidence * 100)}%</div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    生成日時
+                  </label>
+                  <div className="text-sm text-gray-900">
+                    {new Date(quote.aiGenerationMetadata.timestamp).toLocaleString('ja-JP')}
+                  </div>
+                </div>
+              </div>
+            </div>)}
+
+          {/* 作成・更新日時 */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">作成・更新情報</h2>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  作成日時
+                </label>
+                <div className="text-sm text-gray-900">
+                  {new Date(quote.createdAt).toLocaleString('ja-JP')}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  更新日時
+                </label>
+                <div className="text-sm text-gray-900">
+                  {new Date(quote.updatedAt).toLocaleString('ja-JP')}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>);
+}

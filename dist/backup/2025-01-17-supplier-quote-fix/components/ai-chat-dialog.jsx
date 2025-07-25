@@ -1,0 +1,818 @@
+"use strict";
+'use client';
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.default = AIChatDialog;
+const react_1 = require("react");
+const button_1 = require("@/components/ui/button");
+const input_1 = require("@/components/ui/input");
+const label_1 = require("@/components/ui/label");
+const card_1 = require("@/components/ui/card");
+const scroll_area_1 = require("@/components/ui/scroll-area");
+const alert_1 = require("@/components/ui/alert");
+const lucide_react_1 = require("lucide-react");
+const date_fns_1 = require("date-fns");
+const locale_1 = require("date-fns/locale");
+const use_speech_recognition_1 = require("@/hooks/use-speech-recognition");
+const ai_conversation_helper_1 = require("@/lib/ai-conversation-helper");
+function AIChatDialog({ isOpen, onClose, onComplete, onDataApply, initialInvoiceData, mode = 'create', companyId, existingConversationId, invoiceId, documentType = 'invoice', title, placeholder }) {
+    const [messages, setMessages] = (0, react_1.useState)([]);
+    const [input, setInput] = (0, react_1.useState)('');
+    const [isLoading, setIsLoading] = (0, react_1.useState)(false);
+    const [error, setError] = (0, react_1.useState)(null);
+    const [sessionId, setSessionId] = (0, react_1.useState)(null);
+    const [currentInvoiceData, setCurrentInvoiceData] = (0, react_1.useState)(mode === 'create'
+        ? { items: [], subtotal: 0, taxAmount: 0, totalAmount: 0 }
+        : (initialInvoiceData || { items: [], subtotal: 0, taxAmount: 0, totalAmount: 0 }));
+    const [conversationId, setConversationId] = (0, react_1.useState)((0, ai_conversation_helper_1.normalizeConversationId)(existingConversationId));
+    const scrollAreaRef = (0, react_1.useRef)(null);
+    const inputRef = (0, react_1.useRef)(null);
+    const [cursorPosition, setCursorPosition] = (0, react_1.useState)(0);
+    // 音声認識フック
+    const { isListening, transcript, interimTranscript, error: speechError, isSupported: isSpeechSupported, startListening, stopListening, resetTranscript } = (0, use_speech_recognition_1.useSpeechRecognition)({
+        continuous: true, // trueに変更：音声認識を継続的に行う
+        interimResults: true,
+        language: 'ja-JP',
+        speechTimeout: 12000 // デフォルト10秒 + 2秒延長
+    });
+    // デバッグ用：音声認識の状態をコンソールに出力
+    (0, react_1.useEffect)(() => {
+        if (process.env.NODE_ENV === 'development') {
+            console.log('[AIChatDialog] 音声認識デバッグ情報:', {
+                isSupported: isSpeechSupported,
+                isListening,
+                hasTranscript: !!transcript,
+                transcriptLength: transcript.length,
+                hasInterimTranscript: !!interimTranscript,
+                speechError,
+                browserInfo: {
+                    userAgent: navigator.userAgent,
+                    platform: navigator.platform,
+                    language: navigator.language,
+                    protocol: window.location.protocol,
+                    hostname: window.location.hostname
+                }
+            });
+        }
+    }, [isSpeechSupported, isListening, transcript, interimTranscript, speechError]);
+    // 初期メッセージの設定
+    (0, react_1.useEffect)(() => {
+        if (isOpen) {
+            // ダイアログが開かれた時は常にメッセージをリセット
+            if (messages.length === 0) {
+                // セッション開始時のデータ設定（リセットしない）
+                if (mode === 'edit' && initialInvoiceData) {
+                    // 編集モードの場合、初期データを完全にセット
+                    const completeInitialData = {
+                        ...initialInvoiceData,
+                        items: initialInvoiceData.items || [],
+                        subtotal: initialInvoiceData.subtotal || 0,
+                        taxAmount: initialInvoiceData.taxAmount || 0,
+                        totalAmount: initialInvoiceData.totalAmount || 0,
+                        invoiceDate: initialInvoiceData.invoiceDate || initialInvoiceData.issueDate,
+                        dueDate: initialInvoiceData.dueDate,
+                        customerName: initialInvoiceData.customerName || initialInvoiceData.customer?.companyName || initialInvoiceData.customer?.name || '',
+                        notes: initialInvoiceData.notes || '',
+                        paymentMethod: initialInvoiceData.paymentMethod || 'bank_transfer'
+                    };
+                    console.log('[AIChatDialog] Setting initial data for edit mode:', completeInitialData);
+                    setCurrentInvoiceData(completeInitialData);
+                }
+                // 編集モードの場合、現在の請求書データを含めた初期メッセージを作成
+                let content = '';
+                if (mode === 'create') {
+                    content = 'こんにちは！請求書作成をお手伝いします。\n\n例えば以下のような内容を教えてください：\n- 顧客名（〇〇会社様）\n- 請求内容（ウェブサイト制作費など）\n- 金額（50万円など）\n- 納期や支払期限\n\nどのような請求書を作成しますか？';
+                }
+                else if (mode === 'edit' && initialInvoiceData) {
+                    // 現在の請求書データを整形して表示
+                    const items = initialInvoiceData.items || [];
+                    const customerName = initialInvoiceData.customerName || '未設定';
+                    const totalAmount = items.reduce((sum, item) => sum + (item.amount || 0) + (item.taxAmount || 0), 0);
+                    content = `現在の請求書データ：\n`;
+                    content += `顧客名: ${customerName}\n`;
+                    content += `項目数: ${items.length}\n`;
+                    if (items.length > 0) {
+                        content += '\n現在の明細：\n';
+                        items.forEach((item, index) => {
+                            content += `${index + 1}. ${item.description || item.itemName}: ¥${((item.amount || 0) + (item.taxAmount || 0)).toLocaleString()}\n`;
+                        });
+                        content += '\n合計金額: ¥' + totalAmount.toLocaleString() + '（税込）\n';
+                        content += '\nどの部分を変更しますか？（明細の追加、金額の変更、項目の削除など）';
+                    }
+                    else {
+                        content += '\n現在明細がありません。どのような項目を追加しますか？';
+                    }
+                }
+                else {
+                    content = 'こんにちは！請求書の編集をお手伝いします。\n\nどの部分を変更したいですか？';
+                }
+                const initialMessage = {
+                    id: Date.now().toString(),
+                    role: 'assistant',
+                    content,
+                    timestamp: new Date(),
+                    quickReplies: mode === 'create'
+                        ? [
+                            { text: '例を見る', value: '請求書の作成例を見せてください' }
+                        ]
+                        : [
+                            { text: '金額を変更', value: '金額を変更したいです' },
+                            { text: '明細を追加', value: '明細を追加したいです' },
+                            { text: '支払期限を変更', value: '支払期限を変更したいです' }
+                        ]
+                };
+                setMessages([initialMessage]);
+                const newSessionId = Date.now().toString();
+                setSessionId(newSessionId);
+                // 会話IDの生成: ダイアログが開かれるたびに1つの会話IDを使用
+                // 同じダイアログ内での複数の会話は同じIDで保存される
+                if (!conversationId) {
+                    const newConversationId = (0, ai_conversation_helper_1.generateConversationId)();
+                    setConversationId(newConversationId);
+                    console.log('[AIChatDialog] New conversation started with ID:', newConversationId);
+                    console.log('[AIChatDialog] existingConversationId:', existingConversationId);
+                }
+                else {
+                    console.log('[AIChatDialog] Using existing conversation ID:', conversationId);
+                    console.log('[AIChatDialog] Normalized from:', existingConversationId, 'to:', conversationId);
+                }
+            }
+        }
+    }, [isOpen, mode, initialInvoiceData]);
+    // メッセージが追加されたらスクロール
+    (0, react_1.useEffect)(() => {
+        if (scrollAreaRef.current) {
+            scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
+        }
+    }, [messages]);
+    // currentInvoiceDataの変更を監視
+    (0, react_1.useEffect)(() => {
+        console.log('[Frontend] currentInvoiceData changed:', currentInvoiceData);
+    }, [currentInvoiceData]);
+    // カーソル位置を保存・取得する関数
+    const saveCursorPosition = () => {
+        if (inputRef.current) {
+            const position = inputRef.current.selectionStart || 0;
+            setCursorPosition(position);
+            return position;
+        }
+        return 0;
+    };
+    // カーソル位置にテキストを挿入する関数
+    const insertTextAtCursor = (textToInsert) => {
+        if (inputRef.current) {
+            const currentValue = input;
+            const beforeCursor = currentValue.slice(0, cursorPosition);
+            const afterCursor = currentValue.slice(cursorPosition);
+            // 適切なスペース処理
+            let finalText = beforeCursor;
+            if (beforeCursor && !beforeCursor.endsWith(' ') && !beforeCursor.endsWith('　')) {
+                finalText += ' ';
+            }
+            finalText += textToInsert;
+            if (afterCursor && !afterCursor.startsWith(' ') && !afterCursor.startsWith('　')) {
+                finalText += ' ';
+            }
+            finalText += afterCursor;
+            setInput(finalText);
+            // カーソル位置を挿入後の位置に更新
+            const newCursorPosition = beforeCursor.length + (beforeCursor && !beforeCursor.endsWith(' ') && !beforeCursor.endsWith('　') ? 1 : 0) + textToInsert.length + (afterCursor && !afterCursor.startsWith(' ') && !afterCursor.startsWith('　') ? 1 : 0);
+            // 次のフレームでカーソル位置を設定
+            setTimeout(() => {
+                if (inputRef.current) {
+                    inputRef.current.setSelectionRange(newCursorPosition, newCursorPosition);
+                    inputRef.current.focus();
+                    setCursorPosition(newCursorPosition);
+                }
+            }, 0);
+        }
+    };
+    // 音声認識結果をカーソル位置に挿入
+    (0, react_1.useEffect)(() => {
+        if (transcript) {
+            insertTextAtCursor(transcript);
+            console.log('[SpeechRecognition] Transcript inserted at cursor position:', cursorPosition);
+            // 挿入後にトランスクリプトをリセットして重複を防ぐ
+            resetTranscript();
+        }
+    }, [transcript, resetTranscript]);
+    // 音声認識エラーをerrorステートに統合
+    (0, react_1.useEffect)(() => {
+        if (speechError) {
+            setError(speechError);
+        }
+    }, [speechError]);
+    // メッセージ送信処理
+    const sendMessage = async (customInput) => {
+        const messageText = customInput || input.trim();
+        if (!messageText || isLoading)
+            return;
+        const userMessage = {
+            id: Date.now().toString(),
+            role: 'user',
+            content: messageText,
+            timestamp: new Date()
+        };
+        setMessages(prev => [...prev, userMessage]);
+        setInput('');
+        setIsLoading(true);
+        setError(null);
+        try {
+            // 会話履歴を含めてAPIに送信
+            const conversationHistory = messages.map(m => ({
+                role: m.role,
+                content: m.content
+            }));
+            conversationHistory.push({ role: 'user', content: userMessage.content });
+            console.log('[Frontend] Sending data to API:', {
+                conversation: userMessage.content,
+                currentInvoiceData,
+                sessionId,
+                mode
+            });
+            // タイムアウトを設定（30秒）
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 30000);
+            // ドキュメントタイプに応じてAPIエンドポイントを決定
+            const apiEndpoint = documentType === 'quote'
+                ? '/api/quotes/analyze-chat'
+                : '/api/invoices/analyze-chat';
+            const response = await fetch(apiEndpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    conversation: userMessage.content,
+                    conversationHistory,
+                    sessionId,
+                    currentInvoiceData,
+                    mode,
+                    initialInvoiceData: mode === 'edit' ? initialInvoiceData : null
+                }),
+                signal: controller.signal
+            });
+            clearTimeout(timeoutId);
+            if (!response.ok) {
+                let errorMessage = '会話の処理に失敗しました';
+                try {
+                    const errorData = await response.json();
+                    console.error('[Frontend] Error response:', errorData);
+                    if (errorData.details) {
+                        errorMessage = errorData.details;
+                        // ユーザーフレンドリーなメッセージに変換
+                        if (errorData.details.includes('API key')) {
+                            errorMessage = 'AI サービスの設定に問題があります。管理者にお問い合わせください。';
+                        }
+                        else if (errorData.details.includes('timeout')) {
+                            errorMessage = 'リクエストがタイムアウトしました。もう一度お試しください。';
+                        }
+                        else if (errorData.details.includes('rate limit')) {
+                            errorMessage = 'API の利用制限に達しました。しばらく待ってから再度お試しください。';
+                        }
+                        else if (errorData.details.includes('service is temporarily unavailable')) {
+                            errorMessage = 'AI サービスが一時的に利用できません。後ほど再度お試しください。';
+                        }
+                    }
+                }
+                catch (parseError) {
+                    console.error('[Frontend] Failed to parse error response');
+                    if (response.status === 504) {
+                        errorMessage = 'リクエストがタイムアウトしました。もう一度お試しください。';
+                    }
+                    else if (response.status === 500) {
+                        errorMessage = 'サーバーエラーが発生しました。管理者にお問い合わせください。';
+                    }
+                }
+                throw new Error(errorMessage);
+            }
+            const result = await response.json();
+            console.log('[Frontend] Received response from API:', {
+                message: result.message,
+                data: result.data
+            });
+            // AIの応答メッセージ
+            const assistantMessage = {
+                id: (Date.now() + 1).toString(),
+                role: 'assistant',
+                content: result.message || '請求書データを更新しました。',
+                timestamp: new Date(),
+                invoiceData: result.data,
+                quickReplies: result.quickReplies
+            };
+            setMessages(prev => [...prev, assistantMessage]);
+            // 請求書データを更新
+            if (result.data) {
+                console.log('[Frontend] Updating invoice data:', result.data);
+                console.log('[Frontend] Data details:', {
+                    items: result.data.items,
+                    subtotal: result.data.subtotal,
+                    taxAmount: result.data.taxAmount,
+                    totalAmount: result.data.totalAmount,
+                    customerName: result.data.customerName
+                });
+                // 各項目の詳細をログ出力
+                if (result.data.items && result.data.items.length > 0) {
+                    console.log('[Frontend] Items detail:');
+                    result.data.items.forEach((item, index) => {
+                        console.log(`[Frontend] Item ${index}:`, {
+                            description: item.description,
+                            quantity: item.quantity,
+                            unitPrice: item.unitPrice,
+                            amount: item.amount,
+                            taxAmount: item.taxAmount,
+                            total: item.amount + item.taxAmount
+                        });
+                    });
+                }
+                // データが正しく設定されているか確認
+                if (result.data.items && result.data.items.length > 0) {
+                    console.log('[Frontend] Items detected, updating currentInvoiceData');
+                }
+                if (result.data.customerName) {
+                    console.log('[Frontend] Customer name detected:', result.data.customerName);
+                }
+                // 完全なデータ構造で更新（既存データとマージ）
+                setCurrentInvoiceData(prev => {
+                    console.log('[Frontend] Previous state:', prev);
+                    console.log('[Frontend] Result data from backend:', result.data);
+                    console.log('[Frontend] Customer name in result:', result.data.customerName);
+                    // itemsの更新は、バックエンドが明示的に送信した場合のみ行う
+                    // バックエンドは常に完全な更新後のitemsを送信するので、そのまま使用する
+                    const newData = {
+                        ...prev,
+                        ...result.data,
+                        // itemsは常にバックエンドから送られたものを使用
+                        items: result.data.items !== undefined ? result.data.items : prev.items || [],
+                        subtotal: result.data.subtotal !== undefined ? result.data.subtotal : prev.subtotal || 0,
+                        taxAmount: result.data.taxAmount !== undefined ? result.data.taxAmount : (result.data.totalTaxAmount !== undefined ? result.data.totalTaxAmount : prev.taxAmount || 0),
+                        totalAmount: result.data.totalAmount !== undefined ? result.data.totalAmount : prev.totalAmount || 0,
+                        // 日付フィールドも含める
+                        invoiceDate: result.data.invoiceDate !== undefined ? result.data.invoiceDate : prev.invoiceDate,
+                        dueDate: result.data.dueDate !== undefined ? result.data.dueDate : prev.dueDate,
+                        // その他のフィールドも確実に含める
+                        customerName: result.data.customerName !== undefined ? result.data.customerName : prev.customerName,
+                        notes: result.data.notes !== undefined ? result.data.notes : prev.notes,
+                        paymentMethod: result.data.paymentMethod !== undefined ? result.data.paymentMethod : prev.paymentMethod
+                    };
+                    console.log('[Frontend] New state will be:', newData);
+                    console.log('[Frontend] Customer name updated to:', newData.customerName);
+                    console.log('[Frontend] Date fields updated:', {
+                        invoiceDate: newData.invoiceDate,
+                        dueDate: newData.dueDate
+                    });
+                    console.log('[Frontend] Items update:', {
+                        prevItemsCount: prev.items?.length || 0,
+                        newItemsCount: newData.items?.length || 0,
+                        items: JSON.parse(JSON.stringify(newData.items))
+                    });
+                    // 各アイテムの詳細を個別にログ出力
+                    if (newData.items && newData.items.length > 0) {
+                        newData.items.forEach((item, index) => {
+                            console.log(`[Frontend] Item ${index} details:`, {
+                                description: item.description,
+                                quantity: item.quantity,
+                                unitPrice: item.unitPrice,
+                                amount: item.amount,
+                                taxAmount: item.taxAmount,
+                                total: item.amount + item.taxAmount
+                            });
+                        });
+                    }
+                    return newData;
+                });
+            }
+            else {
+                console.log('[Frontend] No data in result, not updating currentInvoiceData');
+            }
+        }
+        catch (error) {
+            console.error('Error sending message:', error);
+            let errorContent = '申し訳ございません。処理中にエラーが発生しました。もう一度お試しください。';
+            if (error instanceof Error) {
+                if (error.name === 'AbortError' || error.message.includes('タイムアウト')) {
+                    errorContent = 'リクエストがタイムアウトしました。ネットワーク接続を確認して、もう一度お試しください。';
+                }
+                else if (error.message) {
+                    errorContent = error.message;
+                }
+            }
+            setError(errorContent);
+            // エラーメッセージを追加
+            const errorMessage = {
+                id: (Date.now() + 1).toString(),
+                role: 'assistant',
+                content: errorContent,
+                timestamp: new Date()
+            };
+            setMessages(prev => [...prev, errorMessage]);
+        }
+        finally {
+            setIsLoading(false);
+        }
+    };
+    // 会話を完了して請求書データを確定
+    const completeConversation = () => {
+        if (currentInvoiceData && (currentInvoiceData.customerName || (currentInvoiceData.items && currentInvoiceData.items.length > 0))) {
+            console.log('[Frontend] Completing conversation with data:', JSON.parse(JSON.stringify(currentInvoiceData)));
+            console.log('[Frontend] Final data details:', {
+                items: JSON.parse(JSON.stringify(currentInvoiceData.items)),
+                subtotal: currentInvoiceData.subtotal,
+                taxAmount: currentInvoiceData.taxAmount,
+                totalAmount: currentInvoiceData.totalAmount,
+                invoiceDate: currentInvoiceData.invoiceDate,
+                dueDate: currentInvoiceData.dueDate,
+                customerName: currentInvoiceData.customerName,
+                notes: currentInvoiceData.notes,
+                paymentMethod: currentInvoiceData.paymentMethod
+            });
+            // 各アイテムの詳細も個別にログ
+            if (currentInvoiceData.items && currentInvoiceData.items.length > 0) {
+                console.log('[Frontend] Final items breakdown:');
+                currentInvoiceData.items.forEach((item, index) => {
+                    console.log(`[Frontend] Final Item ${index}:`, {
+                        description: item.description,
+                        quantity: item.quantity,
+                        unitPrice: item.unitPrice,
+                        amount: item.amount,
+                        taxAmount: item.taxAmount,
+                        total: item.amount + item.taxAmount
+                    });
+                });
+            }
+            // 全てのデータが含まれることを確認
+            const completeData = {
+                ...currentInvoiceData,
+                aiConversationId: conversationId
+            };
+            console.log('[Frontend] Complete data to be passed:', completeData);
+            // 新しいコールバックがある場合はそれを優先使用
+            if (onDataApply) {
+                onDataApply(completeData);
+            }
+            else if (onComplete) {
+                onComplete(completeData);
+            }
+        }
+        else {
+            setError(`${documentType === 'quote' ? '見積書' : '請求書'}データがまだ作成されていません。`);
+        }
+    };
+    // 会話ログをダウンロード
+    const downloadConversationLog = () => {
+        // 会話ログを整形
+        let logContent = `AI${documentType === 'quote' ? '見積書' : '請求書'}${mode === 'create' ? '作成' : '編集'}アシスタント 会話ログ\n`;
+        logContent += `=============================================\n`;
+        logContent += `ダウンロード日時: ${(0, date_fns_1.format)(new Date(), 'yyyy年MM月dd日 HH:mm:ss', { locale: locale_1.ja })}\n`;
+        logContent += `=============================================\n\n`;
+        messages.forEach((message) => {
+            const timestamp = (0, date_fns_1.format)(message.timestamp, 'yyyy/MM/dd HH:mm:ss', { locale: locale_1.ja });
+            const speaker = message.role === 'user' ? 'ユーザー' : 'AIアシスタント';
+            logContent += `[${timestamp}] ${speaker}\n`;
+            logContent += `${message.content}\n`;
+            logContent += `---------------------------------------------\n\n`;
+        });
+        // 現在の請求書データも追記
+        if (currentInvoiceData && (currentInvoiceData.customerName || (currentInvoiceData.items && currentInvoiceData.items.length > 0))) {
+            logContent += `\n=============================================\n`;
+            logContent += `作成された請求書データ\n`;
+            logContent += `=============================================\n\n`;
+            if (currentInvoiceData.customerName) {
+                logContent += `顧客名: ${currentInvoiceData.customerName}\n`;
+            }
+            if (currentInvoiceData.items && currentInvoiceData.items.length > 0) {
+                logContent += `\n明細:\n`;
+                currentInvoiceData.items.forEach((item, index) => {
+                    logContent += `${index + 1}. ${item.description}\n`;
+                    logContent += `   数量: ${item.quantity} ${item.unit || ''}\n`;
+                    logContent += `   単価: ¥${item.unitPrice.toLocaleString()}\n`;
+                    logContent += `   小計: ¥${item.amount.toLocaleString()}\n`;
+                    logContent += `   税額: ¥${item.taxAmount.toLocaleString()}\n`;
+                    logContent += `   合計: ¥${(item.amount + item.taxAmount).toLocaleString()}\n\n`;
+                });
+            }
+            if (currentInvoiceData.subtotal !== undefined) {
+                logContent += `\n小計: ¥${currentInvoiceData.subtotal.toLocaleString()}\n`;
+                logContent += `税額: ¥${currentInvoiceData.taxAmount.toLocaleString()}\n`;
+                logContent += `合計: ¥${currentInvoiceData.totalAmount.toLocaleString()}\n`;
+            }
+        }
+        // ダウンロード処理
+        const blob = new Blob([logContent], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const filename = `請求書${mode === 'create' ? '作成' : '編集'}_会話ログ_${(0, date_fns_1.format)(new Date(), 'yyyyMMdd_HHmmss')}.txt`;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
+    // エンターキーで送信
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter' && !e.shiftKey && !isLoading && input.trim()) {
+            e.preventDefault();
+            sendMessage();
+        }
+    };
+    if (!isOpen)
+        return null;
+    return (<div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+      <card_1.Card className="w-full max-w-2xl h-[80vh] flex flex-col bg-white">
+        {/* ヘッダー */}
+        <div className="flex items-center justify-between p-4 border-b">
+          <div className="flex items-center gap-2">
+            <lucide_react_1.MessageSquare className="h-5 w-5"/>
+            <h2 className="text-lg font-semibold">
+              {title || `AI${documentType === 'quote' ? '見積書' : '請求書'}${mode === 'create' ? '作成' : '編集'}アシスタント`}
+            </h2>
+          </div>
+          <button_1.Button variant="ghost" size="icon" onClick={(e) => {
+            e.preventDefault();
+            // ダイアログを閉じる際にデータをリセット
+            setMessages([]);
+            setCurrentInvoiceData({ items: [], subtotal: 0, taxAmount: 0, totalAmount: 0 });
+            setSessionId(null);
+            setConversationId(null); // 次回開く時は新しい会話IDを生成
+            setError(null);
+            onClose();
+        }}>
+            <lucide_react_1.X className="h-4 w-4"/>
+          </button_1.Button>
+        </div>
+
+        {/* エラー表示 */}
+        {error && (<alert_1.Alert variant="destructive" className="m-4 mb-0">
+            <lucide_react_1.AlertCircle className="h-4 w-4"/>
+            <alert_1.AlertDescription className="whitespace-pre-wrap">{error}</alert_1.AlertDescription>
+          </alert_1.Alert>)}
+
+        {/* 音声認識サポート状況表示（開発環境のみ） */}
+        {process.env.NODE_ENV === 'development' && !isSpeechSupported && (<alert_1.Alert className="m-4 mb-0 border-yellow-200 bg-yellow-50">
+            <lucide_react_1.AlertCircle className="h-4 w-4 text-yellow-600"/>
+            <alert_1.AlertDescription className="text-yellow-800">
+              <p className="font-medium mb-2">音声認識がサポートされていません</p>
+              <div className="text-sm space-y-1">
+                <p>ブラウザ: {navigator.userAgent.split(' ').slice(-2).join(' ')}</p>
+                <p>プロトコル: {window.location.protocol}</p>
+                <p>ホスト: {window.location.hostname}</p>
+                <p className="mt-2">対応ブラウザ: Chrome、Edge、Safari（最新版）</p>
+              </div>
+            </alert_1.AlertDescription>
+          </alert_1.Alert>)}
+
+        {/* 現在の請求書データプレビュー */}
+        {currentInvoiceData && (currentInvoiceData.customerName ||
+            (currentInvoiceData.items && currentInvoiceData.items.length > 0) ||
+            (currentInvoiceData.subtotal && currentInvoiceData.subtotal > 0) ||
+            (currentInvoiceData.totalAmount && currentInvoiceData.totalAmount > 0)) && (<div className="mx-4 mt-4 p-3 bg-blue-50 rounded-lg">
+            <div className="flex items-center gap-2 mb-2">
+              <lucide_react_1.CheckCircle className="h-4 w-4 text-blue-600"/>
+              <span className="text-sm font-medium text-blue-900">現在の{documentType === 'quote' ? '見積書' : '請求書'}データ</span>
+            </div>
+            <div className="text-sm text-blue-800 space-y-1">
+              {currentInvoiceData.customerName && (<p>顧客: {currentInvoiceData.customerName}</p>)}
+              {currentInvoiceData.items && currentInvoiceData.items.length > 0 && (<p>明細: {currentInvoiceData.items.map((item) => item.description).join(', ')}</p>)}
+              {(() => {
+                // 合計金額を正しく計算
+                const subtotal = currentInvoiceData.subtotal || 0;
+                const taxAmount = currentInvoiceData.taxAmount || 0;
+                const totalAmount = currentInvoiceData.totalAmount || 0;
+                console.log('[Frontend] Display calculation:', { subtotal, taxAmount, totalAmount });
+                return totalAmount > 0 ? (<p>合計: ¥{totalAmount.toLocaleString()}（税込）</p>) : null;
+            })()}
+            </div>
+          </div>)}
+
+        {/* チャットメッセージエリア */}
+        <scroll_area_1.ScrollArea className="flex-1 p-4 bg-gray-50" ref={scrollAreaRef}>
+          <div className="space-y-4">
+            {messages.map(message => (<div key={message.id} className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                {message.role === 'assistant' && (<div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
+                    <lucide_react_1.Bot className="h-5 w-5 text-blue-600"/>
+                  </div>)}
+                <div className={`max-w-[80%] ${message.role === 'user'
+                ? 'bg-gray-900 text-white rounded-lg p-3'
+                : ''}`}>
+                  {message.role === 'assistant' ? (<div className="space-y-2">
+                      <div className="bg-gray-100 text-gray-900 rounded-lg p-3">
+                        <p className="whitespace-pre-wrap">{message.content}</p>
+                        <p className="text-xs mt-1 text-gray-500">
+                          {(0, date_fns_1.format)(message.timestamp, 'HH:mm', { locale: locale_1.ja })}
+                        </p>
+                      </div>
+                      {message.quickReplies && message.quickReplies.length > 0 && (<div className="flex flex-wrap gap-2">
+                          {message.quickReplies.map((reply, index) => (<button_1.Button key={index} variant="outline" size="sm" onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            sendMessage(reply.value);
+                        }} disabled={isLoading} className="text-sm">
+                              {reply.text}
+                            </button_1.Button>))}
+                        </div>)}
+                    </div>) : (<>
+                      <p className="whitespace-pre-wrap">{message.content}</p>
+                      <p className="text-xs mt-1 text-gray-400">
+                        {(0, date_fns_1.format)(message.timestamp, 'HH:mm', { locale: locale_1.ja })}
+                      </p>
+                    </>)}
+                </div>
+                {message.role === 'user' && (<div className="w-8 h-8 rounded-full bg-gray-900 flex items-center justify-center flex-shrink-0">
+                    <lucide_react_1.User className="h-5 w-5 text-white"/>
+                  </div>)}
+              </div>))}
+            {isLoading && (<div className="flex gap-3 justify-start">
+                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                  <lucide_react_1.Bot className="h-5 w-5 text-blue-600"/>
+                </div>
+                <div className="bg-gray-100 rounded-lg p-3">
+                  <lucide_react_1.Loader2 className="h-4 w-4 animate-spin"/>
+                </div>
+              </div>)}
+          </div>
+        </scroll_area_1.ScrollArea>
+
+        {/* 入力エリア */}
+        <div className="p-4 border-t space-y-3 bg-white">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label_1.Label htmlFor="chat-input" className="text-sm text-gray-600 flex items-center gap-2">
+                <lucide_react_1.MessageSquare className="h-4 w-4"/>
+    {placeholder || `AI${documentType === 'quote' ? '見積書' : '請求書'}アシスタントに質問や指示を入力してください`}
+              </label_1.Label>
+              <span className="text-xs text-gray-500">Enterで送信</span>
+            </div>
+            <div className="flex gap-2">
+              <input_1.Input id="chat-input" ref={inputRef} value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={handleKeyDown} onSelect={() => {
+            // カーソル位置が変更された時に保存
+            if (inputRef.current && !isListening) {
+                setCursorPosition(inputRef.current.selectionStart || 0);
+            }
+        }} onClick={() => {
+            // クリック時にもカーソル位置を保存
+            if (inputRef.current && !isListening) {
+                setTimeout(() => {
+                    setCursorPosition(inputRef.current?.selectionStart || 0);
+                }, 0);
+            }
+        }} placeholder={isListening ? '音声を認識中...' : '例: 山田商事さんに、ウェブサイト制作費として50万円の請求書を作成してください'} disabled={isLoading || isListening} className={`flex-1 placeholder:text-gray-400 ${isListening ? 'bg-red-50 border-red-300' : ''}`}/>
+              {/* 音声入力ボタン */}
+              {isSpeechSupported && (<button_1.Button onClick={(e) => {
+                e.preventDefault();
+                if (isListening) {
+                    stopListening();
+                }
+                else {
+                    // 音声認識開始時にカーソル位置を保存
+                    saveCursorPosition();
+                    setError(null);
+                    // 音声認識開始前に明示的にリセット
+                    resetTranscript();
+                    startListening();
+                }
+            }} disabled={isLoading} size="icon" variant={isListening ? "destructive" : "outline"} title={isListening ? '音声認識を停止' : '音声入力を開始'} className={isListening ? 'animate-pulse' : ''}>
+                  {isListening ? <lucide_react_1.MicOff className="h-4 w-4"/> : <lucide_react_1.Mic className="h-4 w-4"/>}
+                </button_1.Button>)}
+              <button_1.Button onClick={(e) => {
+            e.preventDefault();
+            sendMessage();
+        }} disabled={!input.trim() || isLoading || isListening} size="icon" title="送信 (Enter)">
+                <lucide_react_1.Send className="h-4 w-4"/>
+              </button_1.Button>
+            </div>
+            {(isLoading || isListening || interimTranscript) && (<div className="space-y-1">
+                {isLoading && (<p className="text-xs text-gray-500 flex items-center gap-1">
+                    <lucide_react_1.Loader2 className="h-3 w-3 animate-spin"/>
+                    AIが応答を生成中...
+                  </p>)}
+                {isListening && (<p className="text-xs text-red-500 flex items-center gap-1">
+                    <lucide_react_1.Mic className="h-3 w-3 animate-pulse text-red-500"/>
+                    音声を認識中... （話し終わったらマイクボタンをクリックしてください）
+                  </p>)}
+                {interimTranscript && (<p className="text-xs text-blue-600">
+                    認識中: {interimTranscript}
+                  </p>)}
+              </div>)}
+          </div>
+          
+          {/* アクションボタン */}
+          <div className="flex justify-between">
+            <div className="flex gap-2">
+              <button_1.Button variant="outline" onClick={(e) => {
+            e.preventDefault();
+            // ダイアログを閉じる際にデータをリセット
+            setMessages([]);
+            setCurrentInvoiceData({ items: [], subtotal: 0, taxAmount: 0, totalAmount: 0 });
+            setSessionId(null);
+            setConversationId(null); // 次回開く時は新しい会話IDを生成
+            setError(null);
+            onClose();
+        }}>
+                キャンセル
+              </button_1.Button>
+              <button_1.Button variant="outline" onClick={(e) => {
+            e.preventDefault();
+            downloadConversationLog();
+        }} disabled={messages.length <= 1} // 初期メッセージのみの場合は無効
+     title="会話ログをダウンロード">
+                <lucide_react_1.Download className="mr-2 h-4 w-4"/>
+                ログ
+              </button_1.Button>
+            </div>
+            <button_1.Button onClick={async (e) => {
+            e.preventDefault();
+            // 保存ボタンのクリック状態を確認
+            console.log('[AIChatDialog] Save button clicked');
+            console.log('[AIChatDialog] Document type:', documentType);
+            console.log('[AIChatDialog] Current data:', currentInvoiceData);
+            console.log('[AIChatDialog] Data validation:', {
+                hasCustomerName: !!currentInvoiceData?.customerName,
+                hasItems: !!(currentInvoiceData?.items && currentInvoiceData.items.length > 0),
+                itemsCount: currentInvoiceData?.items?.length || 0,
+                customerName: currentInvoiceData?.customerName,
+                subtotal: currentInvoiceData?.subtotal,
+                taxAmount: currentInvoiceData?.taxAmount,
+                totalAmount: currentInvoiceData?.totalAmount
+            });
+            // 各アイテムの詳細もログ出力
+            if (currentInvoiceData?.items && currentInvoiceData.items.length > 0) {
+                console.log('[AIChatDialog] Items details:');
+                currentInvoiceData.items.forEach((item, index) => {
+                    console.log(`[AIChatDialog] Item ${index}:`, {
+                        description: item.description,
+                        quantity: item.quantity,
+                        unitPrice: item.unitPrice,
+                        amount: item.amount,
+                        taxAmount: item.taxAmount,
+                        total: item.amount + item.taxAmount
+                    });
+                });
+            }
+            // 会話履歴を保存
+            if (companyId && conversationId && messages.length > 1) {
+                // conversationIdの最終チェックと正規化
+                let finalConversationId = conversationId;
+                if (!conversationId.startsWith('conv_')) {
+                    console.warn('[AIChatDialog] Invalid conversationId format:', conversationId);
+                    finalConversationId = `conv_${conversationId}`;
+                    setConversationId(finalConversationId);
+                    console.log('[AIChatDialog] Corrected conversationId to:', finalConversationId);
+                }
+                try {
+                    console.log('[AIChatDialog] Saving conversation with ID:', finalConversationId);
+                    console.log('[AIChatDialog] Message count:', messages.length);
+                    console.log('[AIChatDialog] Current sessionId:', sessionId);
+                    console.log('[AIChatDialog] existingConversationId prop:', existingConversationId);
+                    // 全てのメッセージを含めて保存
+                    const conversationData = {
+                        conversationId: String(finalConversationId), // 文字列として保存
+                        invoiceId: invoiceId || currentInvoiceData._id,
+                        companyId,
+                        messages: messages.map(msg => ({
+                            role: msg.role,
+                            content: msg.content,
+                            timestamp: msg.timestamp
+                        })),
+                        metadata: {
+                            model: 'deepseek',
+                            invoiceData: currentInvoiceData,
+                            messagesCount: messages.length,
+                            sessionId: sessionId
+                        }
+                    };
+                    console.log('[AIChatDialog] Saving conversation with data:', {
+                        conversationId: conversationData.conversationId,
+                        invoiceId: conversationData.invoiceId,
+                        messagesCount: conversationData.messages.length,
+                        sessionId: sessionId
+                    });
+                    const response = await fetch('/api/ai-conversations', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(conversationData)
+                    });
+                    if (!response.ok) {
+                        console.error('会話履歴の保存に失敗しました');
+                    }
+                    else {
+                        const result = await response.json();
+                        console.log('[AIChatDialog] Conversation saved successfully:', result);
+                        console.log('[AIChatDialog] Saved conversation ID:', finalConversationId);
+                        console.log('[AIChatDialog] Total messages saved:', result.messagesCount || messages.length);
+                        // 保存が成功した場合、データに会話IDを追加
+                        currentInvoiceData.aiConversationId = finalConversationId;
+                    }
+                }
+                catch (error) {
+                    console.error('会話履歴保存エラー:', error);
+                }
+            }
+            console.log('[AIChatDialog] Calling completeConversation');
+            completeConversation();
+        }} disabled={!currentInvoiceData || (!currentInvoiceData.customerName && (!currentInvoiceData.items || currentInvoiceData.items.length === 0))}>
+              <lucide_react_1.CheckCircle className="mr-2 h-4 w-4"/>
+              会話を終了して確定
+            </button_1.Button>
+          </div>
+        </div>
+      </card_1.Card>
+    </div>);
+}

@@ -10,7 +10,7 @@ build:
   output: .
 
 start:
-  command: node index.js
+  command: node .mastra/output/index.mjs
   port: 4111
 
 agents:
