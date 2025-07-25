@@ -65,4 +65,5 @@ const deploymentWorkflow = new Workflow({
   }
 });
 
+export { deploymentWorkflow };
 export default deploymentWorkflow;

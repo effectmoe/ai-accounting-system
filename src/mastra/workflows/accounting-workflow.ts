@@ -269,4 +269,5 @@ export const accountingWorkflow = createWorkflow({
   },
 });
 
+export { accountingWorkflow };
 export default accountingWorkflow;
