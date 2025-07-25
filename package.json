@@ -2,7 +2,7 @@
   "name": "mastra-accounting-automation",
   "version": "1.0.1",
   "description": "AI-driven accounting automation system for Japanese tax compliance using Mastra framework",
-  "main": "server.js",
+  "main": "index.js",
   "private": true,
   "engines": {
     "node": ">=20.0.0"
@@ -10,7 +10,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "node server.js",
+    "start": "node index.js",
     "lint": "next lint",
     "db:migrate": "tsx scripts/setup-database.ts",
     "db:seed": "tsx scripts/seed-data.ts",
