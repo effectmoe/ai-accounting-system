@@ -1,0 +1,80 @@
+import { z } from "zod";
+
+const envSchema = z.object({
+  OPENAI_API_KEY: z.string().min(1).optional(),
+  ANTHROPIC_API_KEY: z.string().min(1).optional(),
+  NODE_ENV: z.enum(["development", "staging", "production"]).optional(),
+  PORT: z.string().optional(),
+}).refine(data => data.OPENAI_API_KEY || data.ANTHROPIC_API_KEY, {
+  message: "At least one LLM API key (OPENAI_API_KEY or ANTHROPIC_API_KEY) is required"
+});
+
+export function validateEnvironment() {
+  try {
+    const env = envSchema.parse(process.env);
+    console.log("✅ Environment variables validated successfully");
+    return env;
+  } catch (error) {
+    console.error("❌ Environment validation failed:", error.errors || error.message);
+    throw new Error("Required environment variables are not set");
+  }
+}
+
+export async function testApiConnections() {
+  const results = {
+    openai: false,
+    anthropic: false,
+    errors: [] as string[]
+  };
+
+  // Test OpenAI connection if key exists
+  if (process.env.OPENAI_API_KEY) {
+    try {
+      const response = await fetch("https://api.openai.com/v1/models", {
+        headers: {
+          "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+      });
+      
+      if (response.ok) {
+        results.openai = true;
+        console.log("✅ OpenAI API connection successful");
+      } else {
+        results.errors.push(`OpenAI API: ${response.status} ${response.statusText}`);
+      }
+    } catch (error: any) {
+      results.errors.push(`OpenAI API connection error: ${error.message}`);
+    }
+  }
+
+  // Test Anthropic connection if key exists
+  if (process.env.ANTHROPIC_API_KEY) {
+    try {
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "x-api-key": process.env.ANTHROPIC_API_KEY!,
+          "content-type": "application/json",
+          "anthropic-version": "2023-06-01",
+        },
+        body: JSON.stringify({
+          model: "claude-3-haiku-20240307",
+          max_tokens: 10,
+          messages: [{ role: "user", content: "test" }],
+        }),
+      });
+
+      if (response.ok || response.status === 400) {
+        results.anthropic = true;
+        console.log("✅ Anthropic API connection successful");
+      } else {
+        results.errors.push(`Anthropic API: ${response.status} ${response.statusText}`);
+      }
+    } catch (error: any) {
+      results.errors.push(`Anthropic API connection error: ${error.message}`);
+    }
+  }
+
+  return results;
+}

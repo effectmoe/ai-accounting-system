@@ -1,4 +1,8 @@
 import { Mastra } from '@mastra/core';
+import { validateEnvironment } from './utils/env-validation';
+
+// Validate environment on startup
+validateEnvironment();
 
 // Import all agents
 import { mastraAccountingAgent } from '../agents/mastra-accounting-agent';
@@ -43,13 +47,30 @@ export const mastra = new Mastra({
 
 // Start the server when this file is run directly
 if (require.main === module) {
+  const port = process.env.PORT || 3000;
+  console.log(`🚀 Starting Mastra server...`);
+  console.log(`📍 Port: ${port}`);
+  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  
   mastra.start().then(() => {
-    console.log(`✅ Mastra server running on port ${process.env.PORT || 3000}`);
-    console.log(`✅ Health check available at http://0.0.0.0:${process.env.PORT || 3000}/`);
+    console.log(`✅ Mastra server running on http://0.0.0.0:${port}`);
+    console.log(`✅ Health check: http://0.0.0.0:${port}/`);
+    console.log(`✅ API routes available at http://0.0.0.0:${port}/api`);
   }).catch((error) => {
     console.error('❌ Failed to start Mastra server:', error);
     process.exit(1);
   });
 }
+
+// Handle graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM signal received: closing Mastra server');
+  process.exit(0);
+});
+
+process.on('SIGINT', () => {
+  console.log('SIGINT signal received: closing Mastra server');
+  process.exit(0);
+});
 
 export default mastra;
