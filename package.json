@@ -10,7 +10,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "echo 'Build completed'",
-    "start": "node server.js",
+    "start": "node index.js",
     "lint": "next lint",
     "db:migrate": "tsx scripts/setup-database.ts",
     "db:seed": "tsx scripts/seed-data.ts",
