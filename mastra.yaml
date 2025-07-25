@@ -10,7 +10,7 @@ build:
   output: .
 
 start:
-  command: node server.js
+  command: node index.js
   port: 4111
 
 agents:
