@@ -1,0 +1,17 @@
+name: accounting-automation
+version: 1.0.1
+description: AI-driven accounting automation system
+
+# Mastra Cloud configuration
+build:
+  entry: src/index.ts
+  output: .mastra/output
+
+server:
+  port: 4111
+
+# Environment variables will be set in Mastra Cloud dashboard
+env:
+  - MONGODB_URI
+  - OPENAI_API_KEY
+  - ANTHROPIC_API_KEY
