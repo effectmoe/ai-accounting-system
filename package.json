@@ -10,7 +10,9 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
+    "start": "node index.js",
+    "start:next": "next start",
+    "mastra:server": "tsx server.ts",
     "lint": "next lint",
     "db:migrate": "tsx scripts/setup-database.ts",
     "db:seed": "tsx scripts/seed-data.ts",
