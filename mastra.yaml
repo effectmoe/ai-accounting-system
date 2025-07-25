@@ -10,7 +10,7 @@ build:
   output: .
 
 start:
-  command: node server.mjs
+  command: node mastra-cloud-server.js
   port: 4111
 
 agents:
