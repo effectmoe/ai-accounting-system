@@ -1,14 +1,17 @@
 {
-  "buildCommand": "npm run build",
+  "buildCommand": "npm install @opentelemetry/instrumentation-http @opentelemetry/api @opentelemetry/instrumentation --legacy-peer-deps && npm run build",
   "outputDirectory": ".next",
   "devCommand": "npm run dev",
-  "installCommand": "npm install",
+  "installCommand": "npm install --legacy-peer-deps",
   "framework": "nextjs",
   "regions": ["hnd1"],
   "build": {
     "env": {
       "NODE_ENV": "production",
-      "FORCE_REBUILD": "2025-07-25-force-rebuild-v3"
+      "NODE_OPTIONS": "--max-old-space-size=4096",
+      "FORCE_REBUILD": "2025-07-26-stable-build-v1",
+      "DO_NOT_TRACK": "1",
+      "NEXT_TELEMETRY_DISABLED": "1"
     }
   },
   "functions": {
@@ -76,6 +79,31 @@
         { "key": "Access-Control-Allow-Methods", "value": "GET,OPTIONS,PATCH,DELETE,POST,PUT" },
         { "key": "Access-Control-Allow-Headers", "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version" }
       ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Frame-Options",
+          "value": "SAMEORIGIN"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        }
+      ]
     }
-  ]
+  ],
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "/api/:path*"
+    }
+  ],
+  "cleanUrls": true,
+  "trailingSlash": false
 }
