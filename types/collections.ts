@@ -47,7 +47,7 @@ export interface SpeechDictionaryEntry {
 export type AccountType = 'checking' | 'savings';
 
 // 請求書ステータス
-export type InvoiceStatus = 'draft' | 'sent' | 'viewed' | 'paid' | 'partially_paid' | 'overdue' | 'cancelled';
+export type InvoiceStatus = 'draft' | 'sent' | 'viewed' | 'unpaid' | 'paid' | 'partially_paid' | 'overdue' | 'cancelled';
 
 // 見積書ステータス
 export type QuoteStatus = 'draft' | 'sent' | 'saved' | 'accepted' | 'rejected' | 'expired' | 'converted';
