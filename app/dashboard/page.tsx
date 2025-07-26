@@ -8,6 +8,7 @@ interface DashboardData {
   revenue: number;
   expenses: number;
   profit: number;
+  profitMargin: number;
   recentEntries: number;
   error?: string;
 }
@@ -17,6 +18,7 @@ export default function DashboardPage() {
     revenue: 0,
     expenses: 0,
     profit: 0,
+    profitMargin: 0,
     recentEntries: 0
   });
   const [loading, setLoading] = useState(true);
@@ -36,11 +38,12 @@ export default function DashboardPage() {
       
       const result = await response.json();
       
-      // APIからのデータを使用
+      // APIからの実際のデータを使用
       setData({
         revenue: result.totalRevenue || 0,
-        expenses: Math.floor((result.totalRevenue || 0) * 0.7), // 仮の経費計算
-        profit: Math.floor((result.totalRevenue || 0) * 0.3), // 仮の利益計算
+        expenses: result.totalExpenses || 0,
+        profit: result.profit || 0,
+        profitMargin: result.profitMargin || 0,
         recentEntries: result.recentActivities?.length || 0
       });
     } catch (error) {
@@ -49,6 +52,7 @@ export default function DashboardPage() {
         revenue: 0,
         expenses: 0,
         profit: 0,
+        profitMargin: 0,
         recentEntries: 0,
         error: 'データの読み込みに失敗しました'
       });
@@ -98,6 +102,9 @@ export default function DashboardPage() {
           <CardContent>
             <p className="text-2xl font-bold text-green-600">
               ¥{loading ? '...' : data.profit.toLocaleString()}
+            </p>
+            <p className="text-sm text-gray-500 mt-1">
+              利益率: {loading ? '...' : `${data.profitMargin.toFixed(1)}%`}
             </p>
           </CardContent>
         </Card>
