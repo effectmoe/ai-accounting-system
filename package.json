@@ -9,8 +9,8 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "node build.js",
-    "start": "node index.js",
+    "build": "echo 'Build handled by Mastra Cloud'",
+    "start": "tsx src/index.ts",
     "start:next": "next start",
     "mastra:server": "tsx server.ts",
     "lint": "next lint",
