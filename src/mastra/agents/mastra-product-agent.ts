@@ -4,8 +4,8 @@ export const mastraProductAgent = new Agent({
   name: 'mastra-product-agent',
   description: '商品・サービス管理と在庫管理を行うエージェント',
   model: {
-    provider: 'openai',
-    name: 'gpt-4',
+    provider: 'deepseek',
+    name: 'deepseek-chat',
   },
   instructions: `
 あなたは商品・サービス管理専門のAIエージェントです。

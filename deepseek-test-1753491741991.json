@@ -1,0 +1,47 @@
+{
+  "apiTest": {
+    "status": "SUCCESS",
+    "response": "日本の消費税（付加価値税）は、商品やサービスの消費に対して課される間接税で、現在の標準税率は**10%**です（2023年時点）。ただし、飲食料品（酒類・外食を除く）や新聞などは軽減税率**8%**が適用されます。\n\n### 主なポイント\n1. **税率**  \n   - 標準税率：10%（一般商品・サービス）  \n   - 軽減税率：8%（飲食料品※酒類・外食除く、定期購読の新聞）  \n\n2. "
+  },
+  "toolTests": [
+    {
+      "test": "消費税計算",
+      "status": "SUCCESS",
+      "result": {
+        "success": true,
+        "calculation": {},
+        "summary": {
+          "tax_amount": 0,
+          "effective_rate": "0.00%",
+          "calculated_at": "2025-07-26T01:02:21.930Z"
+        }
+      }
+    },
+    {
+      "test": "仕訳作成",
+      "status": "SUCCESS",
+      "result": {
+        "success": true,
+        "id": "6884291d5db904d585227b44",
+        "entry_number": "JE-1753491741956",
+        "description": "DeepSeek統合テスト取引",
+        "date": "2025-07-26T00:00:00.000Z",
+        "created_at": "2025-07-26T01:02:21.956Z",
+        "updated_at": "2025-07-26T01:02:21.956Z",
+        "status": "posted",
+        "_id": "6884291d5db904d585227b44"
+      }
+    }
+  ],
+  "agentTests": [
+    {
+      "test": "エージェント設定",
+      "status": "SUCCESS",
+      "config": {
+        "name": "mastra-accounting-agent",
+        "provider": "deepseek",
+        "model": "deepseek-chat"
+      }
+    }
+  ]
+}

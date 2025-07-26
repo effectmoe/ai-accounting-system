@@ -4,8 +4,8 @@ export const mastraUiAgent = new Agent({
   name: 'mastra-ui-agent',
   description: 'UIコンポーネント生成とユーザーインターフェース管理エージェント',
   model: {
-    provider: 'openai',
-    name: 'gpt-4',
+    provider: 'deepseek',
+    name: 'deepseek-chat',
   },
   instructions: `
 あなたはUIコンポーネント生成専門のAIエージェントです。

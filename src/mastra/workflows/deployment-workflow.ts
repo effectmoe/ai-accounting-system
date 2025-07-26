@@ -11,7 +11,7 @@ export const deploymentWorkflow = new Workflow({
     {
       id: 'validate-config',
       name: 'Validate Configuration',
-      agent: deploymentAgent,
+      agent: mastraDeploymentAgent,
       action: 'validateConfig',
       input: {
         platform: 'vercel',
@@ -22,7 +22,7 @@ export const deploymentWorkflow = new Workflow({
     {
       id: 'build-and-deploy',
       name: 'Build and Deploy',
-      agent: deploymentAgent,
+      agent: mastraDeploymentAgent,
       action: 'deployToVercel',
       input: {
         platform: 'vercel',
@@ -34,7 +34,7 @@ export const deploymentWorkflow = new Workflow({
     {
       id: 'check-status',
       name: 'Check Deployment Status',
-      agent: deploymentAgent,
+      agent: mastraDeploymentAgent,
       action: 'checkDeploymentStatus',
       input: {
         deploymentId: '{{ steps.build-and-deploy.output.deploymentId }}'

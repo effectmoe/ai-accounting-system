@@ -4,8 +4,8 @@ export const mastraOcrAgent = new Agent({
   name: 'mastra-ocr-agent',
   description: 'OCR処理と文書解析を行う画像認識エージェント',
   model: {
-    provider: 'openai',
-    name: 'gpt-4-vision-preview',
+    provider: 'deepseek',
+    name: 'deepseek-chat',
   },
   instructions: `
 あなたは日本語OCR処理と文書解析の専門AIエージェントです。

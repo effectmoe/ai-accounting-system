@@ -4,8 +4,8 @@ export const mastraDeploymentAgent = new Agent({
   name: 'mastra-deployment-agent',
   description: 'デプロイメントとCI/CD管理を行うエージェント',
   model: {
-    provider: 'openai',
-    name: 'gpt-4',
+    provider: 'deepseek',
+    name: 'deepseek-chat',
   },
   instructions: `
 あなたはデプロイメント専門のAIエージェントです。

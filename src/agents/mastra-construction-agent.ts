@@ -4,8 +4,8 @@ export const mastraConstructionAgent = new Agent({
   name: 'mastra-construction-agent',
   description: 'システム構築とアーキテクチャ設計を行うエージェント',
   model: {
-    provider: 'openai',
-    name: 'gpt-4',
+    provider: 'deepseek',
+    name: 'deepseek-chat',
   },
   instructions: `
 あなたはシステム構築専門のAIエージェントです。
