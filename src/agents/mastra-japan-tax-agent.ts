@@ -4,8 +4,8 @@ export const mastraJapanTaxAgent = new Agent({
   name: 'mastra-japan-tax-agent',
   description: '日本の税制に完全対応した税務計算・申告支援エージェント',
   model: {
-    provider: 'openai',
-    name: 'gpt-4',
+    provider: 'deepseek',
+    name: 'deepseek-chat',
   },
   instructions: `
 あなたは日本の税制に精通した税務専門AIエージェントです。

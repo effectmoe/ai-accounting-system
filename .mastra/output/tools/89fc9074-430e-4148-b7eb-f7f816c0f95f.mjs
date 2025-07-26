@@ -949,4 +949,4 @@ const accountingTools = [
 ];
 
 export { accountingTools, analyzeExpensesTool, calculateTaxTool, categorizeTransactionTool, createInvoiceTool, createJournalEntryTool, generateFinancialReportTool };
-//# sourceMappingURL=eecf28a3-a59e-4209-9984-caca4c988c80.mjs.map
+//# sourceMappingURL=89fc9074-430e-4148-b7eb-f7f816c0f95f.mjs.map

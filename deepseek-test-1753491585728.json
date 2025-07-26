@@ -1,0 +1,47 @@
+{
+  "apiTest": {
+    "status": "SUCCESS",
+    "response": "日本の消費税（付加価値税）は、商品やサービスの消費に対して課される税金で、現在の標準税率は**10%**です（軽減税率対象品目は**8%**）。以下に簡単に要点をまとめます：\n\n1. **税率**  \n   - **標準税率10%**：ほとんどの商品・サービスに適用。  \n   - **軽減税率8%**：飲食料品（酒類・外食除く）や新聞（定期購読）に適用。\n\n2. **導入の経緯**  \n   -"
+  },
+  "toolTests": [
+    {
+      "test": "消費税計算",
+      "status": "SUCCESS",
+      "result": {
+        "success": true,
+        "calculation": {},
+        "summary": {
+          "tax_amount": 0,
+          "effective_rate": "0.00%",
+          "calculated_at": "2025-07-26T00:59:45.665Z"
+        }
+      }
+    },
+    {
+      "test": "仕訳作成",
+      "status": "SUCCESS",
+      "result": {
+        "success": true,
+        "id": "68842881027830f89addf11c",
+        "entry_number": "JE-1753491585693",
+        "description": "DeepSeek統合テスト取引",
+        "date": "2025-07-26T00:00:00.000Z",
+        "created_at": "2025-07-26T00:59:45.693Z",
+        "updated_at": "2025-07-26T00:59:45.693Z",
+        "status": "posted",
+        "_id": "68842881027830f89addf11c"
+      }
+    }
+  ],
+  "agentTests": [
+    {
+      "test": "エージェント設定",
+      "status": "FAILED",
+      "config": {
+        "name": "mastra-accounting-agent",
+        "provider": "openai",
+        "model": "gpt-4"
+      }
+    }
+  ]
+}

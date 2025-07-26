@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getMongoClient } from '@/lib/mongodb-client';
 import { logger } from '@/lib/logger';
 
-const DB_NAME = process.env.MONGODB_DB_NAME || 'accounting-app';
+const DB_NAME = 'accounting'; // MongoDBの実際のデータベース名
 
 // Force dynamic rendering for this route
 export const dynamic = 'force-dynamic';

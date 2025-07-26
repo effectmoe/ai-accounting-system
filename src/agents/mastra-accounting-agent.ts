@@ -5,8 +5,8 @@ export const mastraAccountingAgent = new Agent({
   name: 'mastra-accounting-agent',
   description: '会計処理・仕訳作成・請求書処理・財務レポート生成を行う日本税制対応エージェント',
   model: {
-    provider: 'openai',
-    name: 'gpt-4',
+    provider: 'deepseek',
+    name: 'deepseek-chat',
   },
   instructions: `
 あなたは日本の会計処理専門AIエージェントです。

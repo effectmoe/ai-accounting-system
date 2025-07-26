@@ -1,0 +1,82 @@
+{
+  "toolTests": [
+    {
+      "test": "消費税計算",
+      "status": "SUCCESS",
+      "result": {
+        "success": true,
+        "calculation": {},
+        "summary": {
+          "tax_amount": 0,
+          "effective_rate": "0.00%",
+          "calculated_at": "2025-07-26T00:36:54.555Z"
+        }
+      }
+    },
+    {
+      "test": "所得税計算",
+      "status": "SUCCESS",
+      "result": {
+        "success": true,
+        "calculation": {},
+        "summary": {
+          "tax_amount": 0,
+          "effective_rate": "0.00%",
+          "calculated_at": "2025-07-26T00:36:54.555Z"
+        }
+      }
+    },
+    {
+      "test": "仕訳作成",
+      "status": "SUCCESS",
+      "result": {
+        "success": true,
+        "id": "688423270fcfb95eaae3e2d5",
+        "entry_number": "JE-1753490215368",
+        "description": "商品販売取引",
+        "date": "2025-07-26T00:00:00.000Z",
+        "created_at": "2025-07-26T00:36:55.368Z",
+        "updated_at": "2025-07-26T00:36:55.368Z",
+        "status": "posted",
+        "_id": "688423270fcfb95eaae3e2d5"
+      }
+    }
+  ],
+  "agentTests": [
+    {
+      "test": "会計エージェント",
+      "status": "SKIPPED",
+      "note": "API形式の違い"
+    },
+    {
+      "test": "税務エージェント設定",
+      "status": "SUCCESS",
+      "config": {
+        "name": "mastra-japan-tax-agent",
+        "model": {
+          "provider": "openai",
+          "name": "gpt-4"
+        }
+      }
+    }
+  ],
+  "integrationTests": [
+    {
+      "test": "財務レポート生成",
+      "status": "SUCCESS",
+      "result": {
+        "success": true,
+        "report_id": "688423270fcfb95eaae3e2d6",
+        "report": {
+          "period": {},
+          "generated_at": "2025-07-26T00:36:55.432Z",
+          "data": {
+            "message": "undefinedレポートを生成しました",
+            "records_processed": 104
+          },
+          "_id": "688423270fcfb95eaae3e2d6"
+        }
+      }
+    }
+  ]
+}
