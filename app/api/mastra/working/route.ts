@@ -1,6 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { registerAgentTools } from '@/src/mastra/agent-registry';
 
 export const dynamic = 'force-dynamic';
+
+// エージェントツールの登録（初回のみ）
+let toolsRegistered = false;
+async function ensureToolsRegistered() {
+  if (!toolsRegistered) {
+    await registerAgentTools();
+    toolsRegistered = true;
+  }
+}
 
 // 税金計算関数
 async function calculateTax(amount: number, taxRate: number = 0.1) {
@@ -17,9 +27,31 @@ async function calculateTax(amount: number, taxRate: number = 0.1) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { message } = await request.json();
+    // ツールを登録
+    await ensureToolsRegistered();
+    
+    const { message, context } = await request.json();
     
     console.log('🎯 税計算API実行:', message);
+    console.log('📍 コンテキスト:', context);
+    
+    // コンテキストに応じたシステムプロンプトを構築
+    let systemPrompt = 'あなたは日本の会計専門AIです。ユーザーが金額を言及したら、calculate_taxツールを使用してください。';
+    
+    if (context) {
+      if (context.page) {
+        systemPrompt += `\n\n現在のページ: ${context.page}`;
+      }
+      if (context.description) {
+        systemPrompt += `\n現在のコンテキスト: ${context.description}`;
+      }
+      if (context.entityId) {
+        systemPrompt += `\n対象ID: ${context.entityId}`;
+      }
+      if (context.entityType) {
+        systemPrompt += `\nエンティティタイプ: ${context.entityType}`;
+      }
+    }
     
     // DeepSeek APIを直接呼び出す
     const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
@@ -33,7 +65,7 @@ export async function POST(request: NextRequest) {
         messages: [
           {
             role: 'system',
-            content: 'あなたは日本の会計専門AIです。ユーザーが金額を言及したら、calculate_taxツールを使用してください。'
+            content: systemPrompt
           },
           {
             role: 'user',

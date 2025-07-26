@@ -288,16 +288,43 @@ export class InvoiceService {
    */
   async updateInvoiceStatus(id: string, status: InvoiceStatus, paidDate?: Date, paidAmount?: number): Promise<Invoice | null> {
     try {
+      // 現在の請求書を取得して以前のステータスを確認
+      const currentInvoice = await this.getInvoice(id);
+      if (!currentInvoice) {
+        return null;
+      }
+
       const updateData: Partial<Invoice> = { status };
 
-      if (status === 'paid') {
+      // 支払済みにする場合の処理
+      if (status === 'paid' && currentInvoice.status !== 'paid') {
         updateData.paidDate = paidDate || new Date();
         if (paidAmount !== undefined) {
           updateData.paidAmount = paidAmount;
+        } else {
+          // paidAmountが指定されていない場合は、総額を設定
+          updateData.paidAmount = currentInvoice.totalAmount;
         }
       }
 
-      return await this.updateInvoice(id, updateData);
+      // 部分支払済みの場合の処理
+      if (status === 'partially_paid' && paidAmount !== undefined) {
+        updateData.paidAmount = paidAmount;
+      }
+
+      // キャンセルする場合の処理
+      if (status === 'cancelled') {
+        updateData.cancelledAt = new Date();
+      }
+
+      const updatedInvoice = await this.updateInvoice(id, updateData);
+      
+      // 更新前のステータスを含めて返す（アクティビティログ用）
+      if (updatedInvoice) {
+        (updatedInvoice as any).previousStatus = currentInvoice.status;
+      }
+      
+      return updatedInvoice;
     } catch (error) {
       logger.error('Error in updateInvoiceStatus:', error);
       throw new Error('請求書ステータスの更新に失敗しました');

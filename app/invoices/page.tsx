@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Search, FileText, Loader2, Sparkles, FileDown } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Plus, Search, FileText, Loader2, Sparkles, FileDown, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { safeFormatDate } from '@/lib/date-utils';
@@ -63,6 +64,9 @@ export default function InvoicesPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [aiOnlyFilter, setAiOnlyFilter] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedInvoices, setSelectedInvoices] = useState<Set<string>>(new Set());
+  const [bulkStatus, setBulkStatus] = useState<string>('');
+  const [isUpdating, setIsUpdating] = useState(false);
   const itemsPerPage = 20;
 
   useEffect(() => {
@@ -101,6 +105,84 @@ export default function InvoicesPage() {
   const handleSearch = () => {
     // TODO: 検索機能の実装
     logger.debug('Search:', searchQuery);
+  };
+
+  const handleStatusChange = async (invoiceId: string, newStatus: string) => {
+    setIsUpdating(true);
+    try {
+      const response = await fetch(`/api/invoices/${invoiceId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      
+      if (response.ok) {
+        // 更新された請求書で一覧を更新
+        const updatedInvoice = await response.json();
+        setInvoices(prev => 
+          prev.map(inv => inv._id === invoiceId ? { ...inv, status: newStatus } : inv)
+        );
+        
+        // 「送信済み」に変更した場合は総収益に計上するための追加処理
+        if (newStatus === 'sent' && updatedInvoice.totalAmount) {
+          // アクティビティログに記録（APIサーバー側で処理されるが、UIにも反映）
+          logger.info(`Invoice ${invoiceId} status changed to sent`);
+        }
+      } else {
+        logger.error('Failed to update invoice status');
+      }
+    } catch (error) {
+      logger.error('Error updating invoice status:', error);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      const allIds = new Set(invoices.map(inv => inv._id));
+      setSelectedInvoices(allIds);
+    } else {
+      setSelectedInvoices(new Set());
+    }
+  };
+
+  const handleSelectInvoice = (invoiceId: string, checked: boolean) => {
+    const newSelection = new Set(selectedInvoices);
+    if (checked) {
+      newSelection.add(invoiceId);
+    } else {
+      newSelection.delete(invoiceId);
+    }
+    setSelectedInvoices(newSelection);
+  };
+
+  const handleBulkStatusChange = async () => {
+    if (!bulkStatus || selectedInvoices.size === 0) return;
+    
+    setIsUpdating(true);
+    try {
+      const promises = Array.from(selectedInvoices).map(invoiceId =>
+        fetch(`/api/invoices/${invoiceId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: bulkStatus }),
+        })
+      );
+      
+      await Promise.all(promises);
+      
+      // 一覧を再取得
+      await fetchInvoices();
+      
+      // 選択をクリア
+      setSelectedInvoices(new Set());
+      setBulkStatus('');
+    } catch (error) {
+      logger.error('Error in bulk status update:', error);
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -161,6 +243,54 @@ export default function InvoicesPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* 一括操作バー */}
+      {selectedInvoices.size > 0 && (
+        <Card className="mb-4 bg-blue-50 border-blue-200">
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-5 w-5 text-blue-600" />
+                <span className="text-sm font-medium">
+                  {selectedInvoices.size}件の請求書を選択中
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Select value={bulkStatus} onValueChange={setBulkStatus}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="ステータスを選択" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="draft">下書き</SelectItem>
+                    <SelectItem value="sent">送信済み</SelectItem>
+                    <SelectItem value="paid">支払済み</SelectItem>
+                    <SelectItem value="overdue">期限超過</SelectItem>
+                    <SelectItem value="cancelled">キャンセル</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button
+                  onClick={handleBulkStatusChange}
+                  disabled={!bulkStatus || isUpdating}
+                  size="sm"
+                >
+                  {isUpdating ? (
+                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> 更新中...</>
+                  ) : (
+                    '一括変更'
+                  )}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedInvoices(new Set())}
+                >
+                  選択解除
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* フィルター */}
       <Card className="mb-6">
@@ -227,6 +357,13 @@ export default function InvoicesPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-[50px]">
+                      <Checkbox
+                        checked={selectedInvoices.size === invoices.length && invoices.length > 0}
+                        onCheckedChange={handleSelectAll}
+                        aria-label="すべて選択"
+                      />
+                    </TableHead>
                     <TableHead>請求書番号</TableHead>
                     <TableHead>顧客名</TableHead>
                     <TableHead>発行日</TableHead>
@@ -243,30 +380,104 @@ export default function InvoicesPage() {
                     .map((invoice) => (
                     <TableRow
                       key={invoice._id}
-                      className="cursor-pointer hover:bg-gray-50"
-                      onClick={() => router.push(`/invoices/${invoice._id}`)}
+                      className="hover:bg-gray-50"
                     >
-                      <TableCell className="font-medium">
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <Checkbox
+                          checked={selectedInvoices.has(invoice._id)}
+                          onCheckedChange={(checked) => 
+                            handleSelectInvoice(invoice._id, checked as boolean)
+                          }
+                          aria-label={`${invoice.invoiceNumber}を選択`}
+                        />
+                      </TableCell>
+                      <TableCell 
+                        className="font-medium cursor-pointer"
+                        onClick={() => router.push(`/invoices/${invoice._id}`)}
+                      >
                         {invoice.invoiceNumber}
                       </TableCell>
-                      <TableCell>
+                      <TableCell
+                        className="cursor-pointer"
+                        onClick={() => router.push(`/invoices/${invoice._id}`)}
+                      >
                         {invoice.customer?.companyName || 
                          invoice.customer?.name || 
                          invoice.customer?.company || 
                          invoice.customerSnapshot?.companyName || 
                          '顧客名未設定'}
                       </TableCell>
-                      <TableCell>
+                      <TableCell
+                        className="cursor-pointer"
+                        onClick={() => router.push(`/invoices/${invoice._id}`)}
+                      >
                         {safeFormatDate(invoice.issueDate || invoice.invoiceDate)}
                       </TableCell>
-                      <TableCell>
+                      <TableCell
+                        className="cursor-pointer"
+                        onClick={() => router.push(`/invoices/${invoice._id}`)}
+                      >
                         {safeFormatDate(invoice.dueDate)}
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell 
+                        className="text-right cursor-pointer"
+                        onClick={() => router.push(`/invoices/${invoice._id}`)}
+                      >
                         ¥{(invoice.totalAmount || 0).toLocaleString()}
                       </TableCell>
-                      <TableCell>{getStatusBadge(invoice.status)}</TableCell>
-                      <TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <Select
+                          value={invoice.status}
+                          onValueChange={(value) => handleStatusChange(invoice._id, value)}
+                          disabled={isUpdating}
+                        >
+                          <SelectTrigger className="w-[140px] h-8">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="draft">
+                              <div className="flex items-center">
+                                <div className="w-2 h-2 rounded-full bg-gray-400 mr-2" />
+                                下書き
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="sent">
+                              <div className="flex items-center">
+                                <div className="w-2 h-2 rounded-full bg-blue-400 mr-2" />
+                                送信済み
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="paid">
+                              <div className="flex items-center">
+                                <div className="w-2 h-2 rounded-full bg-green-400 mr-2" />
+                                支払済み
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="partially_paid">
+                              <div className="flex items-center">
+                                <div className="w-2 h-2 rounded-full bg-yellow-400 mr-2" />
+                                一部支払済み
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="overdue">
+                              <div className="flex items-center">
+                                <div className="w-2 h-2 rounded-full bg-red-400 mr-2" />
+                                期限超過
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="cancelled">
+                              <div className="flex items-center">
+                                <div className="w-2 h-2 rounded-full bg-gray-400 mr-2" />
+                                キャンセル
+                              </div>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell
+                        className="cursor-pointer"
+                        onClick={() => router.push(`/invoices/${invoice._id}`)}
+                      >
                         {invoice.isGeneratedByAI ? (
                           <Badge variant="secondary" className="bg-purple-100 text-purple-800 border-0">
                             <Sparkles className="mr-1 h-3 w-3" />
@@ -278,7 +489,7 @@ export default function InvoicesPage() {
                           </Badge>
                         )}
                       </TableCell>
-                      <TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
                         <div className="flex gap-1">
                           <Button
                             variant="ghost"
