@@ -1,6 +1,13 @@
 /** @type {import('next').NextConfig} */
 
 const nextConfig = {
+  
+  // Enable SWC minification for better performance
+  swcMinify: true,
+  
+  // Optimize output for production
+  output: 'standalone',
+  
   webpack: (config, { isServer, webpack }) => {
     // Configure fallbacks for Node.js modules
     if (!isServer) {
@@ -28,14 +35,24 @@ const nextConfig = {
         http: false,
         https: false,
         zlib: false,
+        // Additional fallbacks for problematic modules
+        'require-in-the-middle': false,
       };
     }
 
-    // Ignore test directories
+    // Ignore test directories and problematic modules
     config.plugins.push(
       new webpack.IgnorePlugin({
         resourceRegExp: /^.*\/test\/.*$/,
         contextRegExp: /@ai-sdk|ai/,
+      }),
+      // Ignore OpenTelemetry modules that cause issues
+      new webpack.IgnorePlugin({
+        resourceRegExp: /@opentelemetry\/instrumentation/,
+        contextRegExp: /@sentry/,
+      }),
+      new webpack.IgnorePlugin({
+        resourceRegExp: /require-in-the-middle/,
       })
     );
 
@@ -77,6 +94,51 @@ const nextConfig = {
       );
     }
 
+    // Optimize chunk splitting
+    if (!isServer) {
+      config.optimization = {
+        ...config.optimization,
+        splitChunks: {
+          chunks: 'all',
+          cacheGroups: {
+            default: false,
+            vendors: false,
+            framework: {
+              name: 'framework',
+              chunks: 'all',
+              test: /(?<!node_modules.*)[\\/]node_modules[\\/](react|react-dom|scheduler|prop-types|use-subscription)[\\/]/,
+              priority: 40,
+              enforce: true,
+            },
+            lib: {
+              test(module) {
+                return module.size() > 160000 &&
+                  /node_modules[/\\]/.test(module.identifier());
+              },
+              name: 'lib',
+              priority: 30,
+              minChunks: 1,
+              reuseExistingChunk: true,
+            },
+            commons: {
+              name: 'commons',
+              chunks: 'all',
+              minChunks: 2,
+              priority: 20,
+            },
+            shared: {
+              name: 'shared',
+              priority: 10,
+              minChunks: 2,
+              reuseExistingChunk: true,
+            },
+          },
+          maxAsyncRequests: 30,
+          maxInitialRequests: 30,
+        },
+      };
+    }
+
     return config;
   },
   
@@ -95,6 +157,9 @@ const nextConfig = {
   images: {
     domains: ['localhost', 'supabase.co'],
     formats: ['image/avif', 'image/webp'],
+    // Optimize image loading
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
   },
   
   experimental: {
@@ -108,6 +173,10 @@ const nextConfig = {
       '@babel/preset-typescript',
       'rollup',
       '@mastra/deployer',
+      'mongodb',
+      '@azure/cosmos',
+      '@azure/openai',
+      '@azure/ai-form-recognizer',
     ],
     
     // Optimize package imports
@@ -125,6 +194,7 @@ const nextConfig = {
       '@radix-ui/react-switch',
       '@radix-ui/react-tabs',
     ],
+    
   },
   
   // Disable source maps in production
@@ -189,6 +259,20 @@ const nextConfig = {
     'date-fns': {
       transform: 'date-fns/{{member}}',
     },
+  },
+  
+  // Disable powered by header
+  poweredByHeader: false,
+  
+  // Optimize CSS
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production',
+  },
+  
+  // Build cache configuration
+  onDemandEntries: {
+    maxInactiveAge: 25 * 1000,
+    pagesBufferLength: 2,
   },
 };
 
