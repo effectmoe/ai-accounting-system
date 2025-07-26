@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { registerAgentTools } from '@/src/mastra/agent-registry';
+import { registerAgentTools } from '@/src/mastra/server-only';
 
 export const dynamic = 'force-dynamic';
 

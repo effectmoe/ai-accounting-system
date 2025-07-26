@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { connectDB } from '@/lib/mongodb';
+import { getDatabase } from '@/lib/mongodb';
 
 export const dynamic = 'force-dynamic';
 
@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
 
 // 顧客追加
 async function addCustomer(data: any) {
-  const db = await connectDB();
+  const db = await getDatabase();
   const customers = db.collection('customers');
   
   const newCustomer = {
@@ -156,7 +156,7 @@ async function addCustomer(data: any) {
 
 // 顧客検索
 async function searchCustomer(data: any) {
-  const db = await connectDB();
+  const db = await getDatabase();
   const customers = db.collection('customers');
   
   const results = await customers.find({
@@ -174,7 +174,7 @@ async function searchCustomer(data: any) {
 
 // 顧客更新
 async function updateCustomer(data: any) {
-  const db = await connectDB();
+  const db = await getDatabase();
   const customers = db.collection('customers');
   
   const { id, ...updateData } = data;
@@ -195,7 +195,7 @@ async function updateCustomer(data: any) {
 
 // 顧客削除
 async function deleteCustomer(data: any) {
-  const db = await connectDB();
+  const db = await getDatabase();
   const customers = db.collection('customers');
   
   const result = await customers.updateOne(

@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { mastra } from '@/src/mastra';
-import { mastraAccountingAgent, mastraCustomerAgent, mastraJapanTaxAgent } from '@/src/mastra';
-import { registerAgentTools } from '@/src/mastra/agent-registry';
+import { getMastra, getMastraAgent, registerAgentTools } from '@/src/mastra/server-only';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,9 +25,10 @@ export async function POST(request: NextRequest) {
     console.log('- コンテキスト:', context);
     
     // Mastraエージェントを取得
-    const selectedAgent = mastra.agents[agent];
+    const selectedAgent = await getMastraAgent(agent);
     
     if (!selectedAgent) {
+      const { mastra } = await getMastra();
       return NextResponse.json({
         success: false,
         error: `エージェント '${agent}' が見つかりません`,
@@ -83,6 +82,7 @@ export async function POST(request: NextRequest) {
 
 // GET: 利用可能なエージェント一覧
 export async function GET() {
+  const { mastra } = await getMastra();
   const agents = Object.keys(mastra.agents).map(key => ({
     id: key,
     name: mastra.agents[key].name,

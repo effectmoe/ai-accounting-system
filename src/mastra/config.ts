@@ -1,5 +1,4 @@
-import { Mastra } from "mastra";
-import { Agent } from "mastra";
+import { Mastra, Agent } from "@mastra/core";
 
 // DeepSeek provider configuration for stable version
 const deepseekProvider = {

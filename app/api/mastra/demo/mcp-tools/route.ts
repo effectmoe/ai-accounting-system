@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { registerAgentTools } from '@/src/mastra/agent-registry';
-import { mastra } from '@/src/mastra';
+import { getMastra, registerAgentTools } from '@/src/mastra/server-only';
 import { logger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
@@ -27,6 +26,7 @@ export async function POST(request: NextRequest) {
     switch (demo_type) {
       case 'organize_receipts':
         // 会計エージェントで領収書整理
+        const { mastra } = await getMastra();
         const accountingAgent = mastra.agents.accountingAgent;
         result = await accountingAgent.execute({
           prompt: `organize_receipts ツールを使用して、領収書ファイルを整理してください。
@@ -36,7 +36,8 @@ export async function POST(request: NextRequest) {
         
       case 'search_tax_info':
         // 会計エージェントで税制情報検索
-        const accountingAgent2 = mastra.agents.accountingAgent;
+        const { mastra: mastra2 } = await getMastra();
+        const accountingAgent2 = mastra2.agents.accountingAgent;
         result = await accountingAgent2.execute({
           prompt: `search_and_save_tax_info ツールを使用して、税制情報を検索してください。
           パラメータ: ${JSON.stringify(params)}`,
@@ -45,7 +46,8 @@ export async function POST(request: NextRequest) {
         
       case 'research_tax_law':
         // 税務エージェントで税法調査
-        const taxAgent = mastra.agents.japanTaxAgent;
+        const { mastra: mastra3 } = await getMastra();
+        const taxAgent = mastra3.agents.japanTaxAgent;
         result = await taxAgent.execute({
           prompt: `research_tax_law ツールを使用して、税法について調査してください。
           パラメータ: ${JSON.stringify(params)}`,
@@ -54,7 +56,8 @@ export async function POST(request: NextRequest) {
         
       case 'scrape_tax_info':
         // 税務エージェントでe-Tax情報取得
-        const taxAgent2 = mastra.agents.japanTaxAgent;
+        const { mastra: mastra4 } = await getMastra();
+        const taxAgent2 = mastra4.agents.japanTaxAgent;
         result = await taxAgent2.execute({
           prompt: `scrape_etax_info ツールを使用して、e-Taxから情報を取得してください。
           パラメータ: ${JSON.stringify(params)}`,
@@ -63,11 +66,12 @@ export async function POST(request: NextRequest) {
         
       case 'list_mcp_tools':
         // 利用可能なMCPツールをリスト
+        const { mastra: mastra5 } = await getMastra();
         const agents = ['accountingAgent', 'japanTaxAgent', 'customerAgent'];
         const toolsList: Record<string, any[]> = {};
         
         for (const agentName of agents) {
-          const agent = mastra.agents[agentName];
+          const agent = mastra5.agents[agentName];
           if (agent && agent.tools) {
             toolsList[agentName] = agent.tools.map((tool: any) => ({
               name: tool.name,
