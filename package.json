@@ -9,7 +9,9 @@
   },
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "prebuild": "node scripts/disable-telemetry.js",
+    "build": "DO_NOT_TRACK=1 next build",
+    "postbuild": "node scripts/disable-telemetry.js",
     "start": "node server.js",
     "start:next": "next start",
     "mastra:server": "tsx server.ts",
