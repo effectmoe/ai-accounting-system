@@ -1,2 +1,8 @@
 name: accounting-automation
 description: AI-driven accounting automation system for Japanese tax compliance
+runtime: node
+start:
+  command: node server.js
+  port: 4111
+build:
+  command: echo "Using custom server"
