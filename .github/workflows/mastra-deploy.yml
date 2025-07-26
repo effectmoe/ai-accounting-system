@@ -1,0 +1,37 @@
+name: Deploy to Mastra Cloud
+
+on:
+  push:
+    branches: [main]
+
+env:
+  DO_NOT_TRACK: 1
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Build application
+        run: npm run build
+        
+      - name: Install Mastra CLI
+        run: npm install -g @mastra/cli
+        
+      - name: Deploy to Mastra Cloud
+        env:
+          MASTRA_CLOUD_TOKEN: ${{ secrets.MASTRA_CLOUD_TOKEN }}
+          DO_NOT_TRACK: 1
+        run: |
+          echo "Deploying to Mastra Cloud..."
+          mastra cloud deploy --token $MASTRA_CLOUD_TOKEN
