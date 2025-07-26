@@ -1,15 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { mastra } from '@/src/mastra';
+import { mastraAccountingAgent, mastraCustomerAgent, mastraJapanTaxAgent } from '@/src/mastra';
+import { registerAgentTools } from '@/src/mastra/agent-registry';
 
 export const dynamic = 'force-dynamic';
 
+// エージェントツールの登録（初回のみ）
+let toolsRegistered = false;
+async function ensureToolsRegistered() {
+  if (!toolsRegistered) {
+    await registerAgentTools();
+    toolsRegistered = true;
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const { message, agent = 'accountingAgent' } = await request.json();
+    // ツールを登録
+    await ensureToolsRegistered();
+    
+    const { message, agent = 'accountingAgent', context } = await request.json();
     
     console.log('🤖 Mastraエージェントチャット:');
     console.log('- エージェント:', agent);
     console.log('- メッセージ:', message);
+    console.log('- コンテキスト:', context);
     
     // Mastraエージェントを取得
     const selectedAgent = mastra.agents[agent];
@@ -22,9 +37,23 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
     
+    // コンテキスト付きのプロンプトを構築
+    let enhancedPrompt = message;
+    if (context) {
+      const contextInfo = [];
+      if (context.page) contextInfo.push(`現在のページ: ${context.page}`);
+      if (context.description) contextInfo.push(`コンテキスト: ${context.description}`);
+      if (context.entityId) contextInfo.push(`対象ID: ${context.entityId}`);
+      if (context.entityType) contextInfo.push(`エンティティタイプ: ${context.entityType}`);
+      
+      if (contextInfo.length > 0) {
+        enhancedPrompt = `[コンテキスト情報]\n${contextInfo.join('\n')}\n\n[ユーザーの質問]\n${message}`;
+      }
+    }
+    
     // エージェントに自然言語でタスクを実行させる
     const result = await selectedAgent.execute({
-      prompt: message,
+      prompt: enhancedPrompt,
       // DeepSeekの設定を含める
       model: {
         provider: 'deepseek',

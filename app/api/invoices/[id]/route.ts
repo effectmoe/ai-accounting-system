@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { InvoiceService } from '@/services/invoice.service';
 import { CompanyInfoService } from '@/services/company-info.service';
+import { ActivityLogService } from '@/services/activity-log.service';
 import { InvoiceStatus } from '@/types/collections';
 
 import { logger } from '@/lib/logger';
@@ -113,6 +114,72 @@ export async function PUT(
           { status: 404 }
         );
       }
+      
+      // ステータス変更時のアクティビティログを記録
+      try {
+        const customerName = invoice.customer?.companyName || invoice.customer?.name || '不明な顧客';
+        const previousStatus = (invoice as any).previousStatus || invoice.status;
+        const statusLabels: Record<string, string> = {
+          draft: '下書き',
+          sent: '送信済み',
+          paid: '支払済み',
+          partially_paid: '一部支払済み',
+          overdue: '期限超過',
+          cancelled: 'キャンセル',
+        };
+        
+        // ステータスが実際に変更された場合のみログを記録
+        if (previousStatus !== body.status) {
+          await ActivityLogService.log({
+            type: 'invoice_status_updated',
+            targetType: 'invoice',
+            targetId: invoice._id.toString(),
+            description: `請求書 ${invoice.invoiceNumber} のステータスを「${statusLabels[previousStatus] || previousStatus}」から「${statusLabels[body.status] || body.status}」に変更しました`,
+            metadata: {
+              invoiceNumber: invoice.invoiceNumber,
+              customerName,
+              oldStatus: previousStatus,
+              newStatus: body.status,
+              totalAmount: invoice.totalAmount,
+            },
+          });
+          
+          // 「送信済み」に変更した場合は売上として計上
+          if (body.status === 'sent' && previousStatus !== 'sent') {
+            await ActivityLogService.log({
+              type: 'revenue_recorded',
+              targetType: 'invoice',
+              targetId: invoice._id.toString(),
+              description: `請求書 ${invoice.invoiceNumber} を送信し、売上 ¥${invoice.totalAmount.toLocaleString()} を計上しました`,
+              metadata: {
+                invoiceNumber: invoice.invoiceNumber,
+                customerName,
+                amount: invoice.totalAmount,
+              },
+            });
+          }
+          
+          // 「支払済み」に変更した場合は入金として記録
+          if (body.status === 'paid' && previousStatus !== 'paid') {
+            await ActivityLogService.log({
+              type: 'payment_received',
+              targetType: 'invoice',
+              targetId: invoice._id.toString(),
+              description: `請求書 ${invoice.invoiceNumber} の支払い ¥${invoice.totalAmount.toLocaleString()} を受領しました`,
+              metadata: {
+                invoiceNumber: invoice.invoiceNumber,
+                customerName,
+                amount: invoice.totalAmount,
+                paidAmount: invoice.paidAmount || invoice.totalAmount,
+                paymentDate: invoice.paidDate || new Date().toISOString(),
+              },
+            });
+          }
+        }
+      } catch (logError) {
+        logger.error('Failed to log activity for invoice status update:', logError);
+      }
+      
       logger.debug('Invoice status updated successfully');
       return NextResponse.json(invoice);
     }

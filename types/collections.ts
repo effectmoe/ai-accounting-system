@@ -47,7 +47,7 @@ export interface SpeechDictionaryEntry {
 export type AccountType = 'checking' | 'savings';
 
 // 請求書ステータス
-export type InvoiceStatus = 'draft' | 'saved' | 'paid' | 'overdue' | 'cancelled';
+export type InvoiceStatus = 'draft' | 'sent' | 'viewed' | 'paid' | 'partially_paid' | 'overdue' | 'cancelled';
 
 // 見積書ステータス
 export type QuoteStatus = 'draft' | 'sent' | 'saved' | 'accepted' | 'rejected' | 'expired' | 'converted';
@@ -156,6 +156,7 @@ export interface Invoice {
   paidAmount?: number;
   convertedToDeliveryNoteId?: ObjectId; // 納品書に変換された場合のID
   convertedToDeliveryNoteDate?: Date;
+  cancelledAt?: Date; // キャンセル日時
   isGeneratedByAI?: boolean;
   aiGenerationMetadata?: {
     source?: string;
