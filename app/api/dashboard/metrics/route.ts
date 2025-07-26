@@ -9,6 +9,9 @@ export const dynamic = 'force-dynamic';
 
 interface DashboardMetrics {
   totalRevenue: number;
+  totalExpenses: number;
+  profit: number;
+  profitMargin: number;
   processedDocuments: number;
   pendingDocuments: number;
   activeCustomers: number;
@@ -39,15 +42,16 @@ export async function GET(request: NextRequest) {
     logger.info('Available collections:', collectionNames);
 
     let totalRevenue = 0;
+    let totalExpenses = 0;
     let processedDocuments = 0;
     let pendingDocuments = 0;
     let activeCustomers = 0;
     let recentActivities: any[] = [];
 
-    // 1. 総収益の計算 - 複数のソースから集計
+    // 1. 総収益の計算 - 売上のみを集計
     console.log('💰 Calculating total revenue...');
     
-    // invoicesコレクションが存在する場合
+    // invoicesコレクションが存在する場合（売上）
     if (collectionNames.includes('invoices')) {
       const revenueResult = await db.collection('invoices').aggregate([
         {
@@ -66,12 +70,12 @@ export async function GET(request: NextRequest) {
       console.log(`Revenue from invoices: ¥${(revenueResult[0]?.totalRevenue || 0).toLocaleString()}`);
     }
 
-    // supplierQuotesからも売上を計算（承認済みの見積もりなど）
-    if (collectionNames.includes('supplierQuotes')) {
-      const supplierQuoteRevenue = await db.collection('supplierQuotes').aggregate([
+    // quotesコレクションが存在する場合（売上見積）
+    if (collectionNames.includes('quotes')) {
+      const quotesResult = await db.collection('quotes').aggregate([
         {
           $match: {
-            status: { $in: ['approved', 'completed', 'received'] }
+            status: { $in: ['accepted', 'converted'] }
           }
         },
         {
@@ -81,14 +85,64 @@ export async function GET(request: NextRequest) {
           }
         }
       ]).toArray();
-      const supplierRevenue = supplierQuoteRevenue[0]?.totalRevenue || 0;
-      totalRevenue += supplierRevenue;
-      console.log(`Revenue from supplier quotes: ¥${supplierRevenue.toLocaleString()}`);
+      const quotesRevenue = quotesResult[0]?.totalRevenue || 0;
+      totalRevenue += quotesRevenue;
+      console.log(`Revenue from accepted quotes: ¥${quotesRevenue.toLocaleString()}`);
     }
+
+    // supplierQuotesは支出なので除外（仕入先からの見積書は支出）
+    // purchaseInvoicesも支出なので除外（仕入先からの請求書は支出）
 
     logger.info(`Total revenue calculated: ¥${totalRevenue.toLocaleString()}`);
 
-    // 2. 処理済みドキュメント数
+    // 2. 総支出の計算 - 仕入・経費を集計
+    console.log('💸 Calculating total expenses...');
+    
+    // purchaseInvoicesコレクションが存在する場合（仕入請求書）
+    if (collectionNames.includes('purchaseInvoices')) {
+      const expenseResult = await db.collection('purchaseInvoices').aggregate([
+        {
+          $match: {
+            status: { $in: ['paid', 'approved', 'received'] }
+          }
+        },
+        {
+          $group: {
+            _id: null,
+            totalExpenses: { $sum: '$totalAmount' }
+          }
+        }
+      ]).toArray();
+      totalExpenses += expenseResult[0]?.totalExpenses || 0;
+      console.log(`Expenses from purchase invoices: ¥${(expenseResult[0]?.totalExpenses || 0).toLocaleString()}`);
+    }
+
+    // supplierQuotesコレクションが存在する場合（仕入見積書・承認済みのもの）
+    if (collectionNames.includes('supplierQuotes')) {
+      const supplierQuotesResult = await db.collection('supplierQuotes').aggregate([
+        {
+          $match: {
+            status: { $in: ['accepted', 'converted'] }
+          }
+        },
+        {
+          $group: {
+            _id: null,
+            totalExpenses: { $sum: '$totalAmount' }
+          }
+        }
+      ]).toArray();
+      const supplierQuotesExpenses = supplierQuotesResult[0]?.totalExpenses || 0;
+      // 仕入請求書と重複しないように、convertedでない見積書のみカウント
+      if (!collectionNames.includes('purchaseInvoices')) {
+        totalExpenses += supplierQuotesExpenses;
+        console.log(`Expenses from accepted supplier quotes: ¥${supplierQuotesExpenses.toLocaleString()}`);
+      }
+    }
+
+    logger.info(`Total expenses calculated: ¥${totalExpenses.toLocaleString()}`);
+
+    // 3. 処理済みドキュメント数
     console.log('📄 Calculating processed documents...');
     
     if (collectionNames.includes('documents')) {
@@ -128,33 +182,40 @@ export async function GET(request: NextRequest) {
     console.log(`Total pending documents: ${pendingDocuments}`);
     logger.info(`Pending documents count: ${pendingDocuments}`);
 
-    // 4. アクティブな顧客数/仕入先数
-    console.log('👥 Calculating active customers/suppliers...');
+    // 4. アクティブな顧客数（仕入先は除外）
+    console.log('👥 Calculating active customers...');
     
+    // 過去90日間に取引のあった顧客をカウント
+    const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
+    const activeCustomerIds = new Set<string>();
+    
+    // invoicesから顧客IDを取得
     if (collectionNames.includes('invoices')) {
-      const activeCustomerIds = await db.collection('invoices').distinct('customerId', {
-        createdAt: { $gte: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000) }
+      const customerIdsFromInvoices = await db.collection('invoices').distinct('customerId', {
+        createdAt: { $gte: ninetyDaysAgo }
       });
-      activeCustomers += activeCustomerIds.length;
+      customerIdsFromInvoices.forEach(id => activeCustomerIds.add(id));
     }
     
-    if (collectionNames.includes('customers')) {
-      const customerCount = await db.collection('customers').countDocuments({
+    // quotesから顧客IDを取得
+    if (collectionNames.includes('quotes')) {
+      const customerIdsFromQuotes = await db.collection('quotes').distinct('customerId', {
+        createdAt: { $gte: ninetyDaysAgo }
+      });
+      customerIdsFromQuotes.forEach(id => activeCustomerIds.add(id));
+    }
+    
+    // アクティブな顧客IDの数をカウント
+    if (activeCustomerIds.size > 0) {
+      activeCustomers = activeCustomerIds.size;
+    } else if (collectionNames.includes('customers')) {
+      // 取引履歴がない場合は、アクティブな顧客マスタの数をカウント
+      activeCustomers = await db.collection('customers').countDocuments({
         isActive: { $ne: false }
       });
-      activeCustomers += customerCount;
     }
     
-    // アクティブな仕入先もカウント
-    if (collectionNames.includes('suppliers')) {
-      const activeSupplierCount = await db.collection('suppliers').countDocuments({
-        isActive: { $ne: false }
-      });
-      activeCustomers += activeSupplierCount;
-      console.log(`Active suppliers: ${activeSupplierCount}`);
-    }
-    
-    console.log(`Total active customers/suppliers: ${activeCustomers}`);
+    console.log(`Active customers (last 90 days): ${activeCustomers}`);
     logger.info(`Active customers count: ${activeCustomers}`);
 
     // 5. 最近のアクティビティ
@@ -235,8 +296,15 @@ export async function GET(request: NextRequest) {
     console.log(`Recent activities generated: ${recentActivities.length}`);
     logger.info(`Recent activities count: ${recentActivities.length}`);
 
+    // 利益と利益率の計算
+    const profit = totalRevenue - totalExpenses;
+    const profitMargin = totalRevenue > 0 ? (profit / totalRevenue) * 100 : 0;
+
     const metrics: DashboardMetrics = {
       totalRevenue,
+      totalExpenses,
+      profit,
+      profitMargin,
       processedDocuments,
       pendingDocuments,
       activeCustomers,
@@ -250,6 +318,9 @@ export async function GET(request: NextRequest) {
 
     console.log('✅ Dashboard metrics successfully compiled:', {
       totalRevenue: metrics.totalRevenue,
+      totalExpenses: metrics.totalExpenses,
+      profit: metrics.profit,
+      profitMargin: `${metrics.profitMargin.toFixed(1)}%`,
       processedDocuments: metrics.processedDocuments,
       pendingDocuments: metrics.pendingDocuments,
       activeCustomers: metrics.activeCustomers,
@@ -258,6 +329,9 @@ export async function GET(request: NextRequest) {
 
     logger.info('Dashboard metrics successfully compiled', {
       totalRevenue: metrics.totalRevenue,
+      totalExpenses: metrics.totalExpenses,
+      profit: metrics.profit,
+      profitMargin: `${metrics.profitMargin.toFixed(1)}%`,
       processedDocuments: metrics.processedDocuments,
       pendingDocuments: metrics.pendingDocuments,
       activeCustomers: metrics.activeCustomers,
