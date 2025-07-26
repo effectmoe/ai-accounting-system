@@ -287,7 +287,7 @@ export default function Home() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-gray-600 mb-1">総請求額</p>
+                    <p className="text-sm text-gray-600 mb-1">総売上</p>
                     {loading ? (
                       <div className="h-8 bg-gray-200 rounded animate-pulse"></div>
                     ) : error ? (
@@ -299,7 +299,7 @@ export default function Home() {
                     )}
                     <div className="flex items-center gap-1 mt-2 text-sm text-green-600">
                       <TrendingUp className="w-4 h-4" />
-                      <span>累計</span>
+                      <span>売上累計</span>
                     </div>
                   </div>
                   <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
