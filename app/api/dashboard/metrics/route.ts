@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
         {
           $group: {
             _id: null,
-            totalRevenue: { $sum: '$totalAmount' }
+            totalRevenue: { $sum: '$amount' }
           }
         }
       ]).toArray();
@@ -81,7 +81,7 @@ export async function GET(request: NextRequest) {
         {
           $group: {
             _id: null,
-            totalRevenue: { $sum: '$totalAmount' }
+            totalRevenue: { $sum: '$amount' }
           }
         }
       ]).toArray();
@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
         {
           $group: {
             _id: null,
-            totalExpenses: { $sum: '$totalAmount' }
+            totalExpenses: { $sum: '$amount' }
           }
         }
       ]).toArray();
@@ -128,7 +128,7 @@ export async function GET(request: NextRequest) {
         {
           $group: {
             _id: null,
-            totalExpenses: { $sum: '$totalAmount' }
+            totalExpenses: { $sum: '$amount' }
           }
         }
       ]).toArray();
@@ -262,9 +262,9 @@ export async function GET(request: NextRequest) {
         recentQuotes.forEach(quote => {
           mockActivities.push({
             type: 'supplier_quote_created',
-            description: `仕入先見積書作成: ${quote.quoteNumber} (¥${(quote.totalAmount || 0).toLocaleString()})`,
+            description: `仕入先見積書作成: ${quote.quoteNumber} (¥${(quote.amount || 0).toLocaleString()})`,
             timestamp: quote.createdAt,
-            metadata: { quoteNumber: quote.quoteNumber, amount: quote.totalAmount }
+            metadata: { quoteNumber: quote.quoteNumber, amount: quote.amount }
           });
         });
       }
