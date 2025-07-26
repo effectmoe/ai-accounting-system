@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
       const revenueResult = await db.collection('invoices').aggregate([
         {
           $match: {
-            status: { $in: ['paid', 'sent'] }
+            status: { $in: ['paid', 'sent', 'unpaid', 'viewed'] }
           }
         },
         {
