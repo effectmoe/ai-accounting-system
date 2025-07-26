@@ -2,7 +2,7 @@ name: accounting-automation
 description: AI-driven accounting automation system for Japanese tax compliance
 runtime: node
 start:
-  command: node server.js
+  command: node .mastra/output/index.mjs
   port: 4111
 build:
-  command: echo "Using custom server"
+  command: npm run build
