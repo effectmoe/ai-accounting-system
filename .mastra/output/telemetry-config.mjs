@@ -1,7 +1,12 @@
-// Define mastra to fix the error
+// Fix for Mastra Cloud deployment
 const mastra = {};
 var mastra$1 = mastra;
 const telemetry = {};
+
+// Ensure this module can be imported without errors
+if (typeof process !== 'undefined' && process.env.MASTRA_CLOUD) {
+  console.log('[Telemetry] Skipping telemetry in Mastra Cloud');
+}
 
 // Start HTTP server for readiness probe
 import http from 'http';
