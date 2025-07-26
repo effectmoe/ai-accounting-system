@@ -1,10 +1,2 @@
-const { Mastra } = require('@mastra/core');
-
-const mastra = new Mastra({
-  name: 'accounting-automation',
-  telemetry: {
-    enabled: false
-  }
-});
-
-module.exports = mastra;
+// Import the mastra instance from src/mastra/config.ts
+module.exports = require('./src/mastra/config').default;
