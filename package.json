@@ -10,7 +10,7 @@
   "scripts": {
     "dev": "next dev",
     "prebuild": "node scripts/disable-telemetry.js",
-    "build": "DO_NOT_TRACK=1 next build",
+    "build": "DO_NOT_TRACK=1 NEXT_TELEMETRY_DISABLED=1 next build",
     "postbuild": "node scripts/disable-telemetry.js",
     "start": "node server.js",
     "start:next": "next start",
