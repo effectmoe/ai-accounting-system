@@ -3,8 +3,8 @@ import { registerHook, AvailableHooks } from '@mastra/core/hooks';
 import { TABLE_EVALS } from '@mastra/core/storage';
 import { checkEvalStorageFields } from '@mastra/core/utils';
 import { Agent, createWorkflow, Workflow, Mastra, generateEmptyFromSchema, Telemetry } from '@mastra/core';
-import { accountingTools } from './tools/89fc9074-430e-4148-b7eb-f7f816c0f95f.mjs';
-import { customerTools } from './tools/fc4cd139-8d64-42b4-b6eb-eb16404974be.mjs';
+import { accountingTools } from './tools/16e0a8e8-d7c7-43a1-a232-95af8b775996.mjs';
+import { customerTools } from './tools/5fbb7b3c-e510-443e-98c1-5cdddd562c52.mjs';
 import { z, ZodFirstPartyTypeKind } from 'zod';
 import { l as logger$1 } from './mongodb-client.mjs';
 import crypto, { randomUUID } from 'crypto';
@@ -29,8 +29,8 @@ const mastraAccountingAgent = new Agent({
   name: "mastra-accounting-agent",
   description: "\u4F1A\u8A08\u51E6\u7406\u30FB\u4ED5\u8A33\u4F5C\u6210\u30FB\u8ACB\u6C42\u66F8\u51E6\u7406\u30FB\u8CA1\u52D9\u30EC\u30DD\u30FC\u30C8\u751F\u6210\u3092\u884C\u3046\u65E5\u672C\u7A0E\u5236\u5BFE\u5FDC\u30A8\u30FC\u30B8\u30A7\u30F3\u30C8",
   model: {
-    provider: "openai",
-    name: "gpt-4"
+    provider: "deepseek",
+    name: "deepseek-chat"
   },
   instructions: `
 \u3042\u306A\u305F\u306F\u65E5\u672C\u306E\u4F1A\u8A08\u51E6\u7406\u5C02\u9580AI\u30A8\u30FC\u30B8\u30A7\u30F3\u30C8\u3067\u3059\u3002
@@ -59,8 +59,8 @@ const mastraCustomerAgent = new Agent({
   name: "mastra-customer-agent",
   description: "\u9867\u5BA2\u60C5\u5831\u306E\u7BA1\u7406\u30FB\u5206\u6790\u30FB\u30EC\u30DD\u30FC\u30C8\u751F\u6210\u3092\u884C\u3046\u30A8\u30FC\u30B8\u30A7\u30F3\u30C8",
   model: {
-    provider: "openai",
-    name: "gpt-4"
+    provider: "deepseek",
+    name: "deepseek-chat"
   },
   instructions: `
 \u3042\u306A\u305F\u306F\u9867\u5BA2\u7BA1\u7406\u5C02\u9580\u306EAI\u30A8\u30FC\u30B8\u30A7\u30F3\u30C8\u3067\u3059\u3002
@@ -89,8 +89,8 @@ const mastraDatabaseAgent = new Agent({
   name: "mastra-database-agent",
   description: "MongoDB\u30C7\u30FC\u30BF\u30D9\u30FC\u30B9\u64CD\u4F5C\u3068\u30C7\u30FC\u30BF\u7BA1\u7406\u3092\u884C\u3046\u30A8\u30FC\u30B8\u30A7\u30F3\u30C8",
   model: {
-    provider: "openai",
-    name: "gpt-4"
+    provider: "deepseek",
+    name: "deepseek-chat"
   },
   instructions: `
 \u3042\u306A\u305F\u306FMongoDB\u30C7\u30FC\u30BF\u30D9\u30FC\u30B9\u7BA1\u7406\u5C02\u9580\u306EAI\u30A8\u30FC\u30B8\u30A7\u30F3\u30C8\u3067\u3059\u3002
@@ -233,8 +233,8 @@ const mastraDeploymentAgent = new Agent({
   name: "mastra-deployment-agent",
   description: "\u30C7\u30D7\u30ED\u30A4\u30E1\u30F3\u30C8\u3068CI/CD\u7BA1\u7406\u3092\u884C\u3046\u30A8\u30FC\u30B8\u30A7\u30F3\u30C8",
   model: {
-    provider: "openai",
-    name: "gpt-4"
+    provider: "deepseek",
+    name: "deepseek-chat"
   },
   instructions: `
 \u3042\u306A\u305F\u306F\u30C7\u30D7\u30ED\u30A4\u30E1\u30F3\u30C8\u5C02\u9580\u306EAI\u30A8\u30FC\u30B8\u30A7\u30F3\u30C8\u3067\u3059\u3002
@@ -420,8 +420,8 @@ const mastraJapanTaxAgent = new Agent({
   name: "mastra-japan-tax-agent",
   description: "\u65E5\u672C\u306E\u7A0E\u5236\u306B\u5B8C\u5168\u5BFE\u5FDC\u3057\u305F\u7A0E\u52D9\u8A08\u7B97\u30FB\u7533\u544A\u652F\u63F4\u30A8\u30FC\u30B8\u30A7\u30F3\u30C8",
   model: {
-    provider: "openai",
-    name: "gpt-4"
+    provider: "deepseek",
+    name: "deepseek-chat"
   },
   instructions: `
 \u3042\u306A\u305F\u306F\u65E5\u672C\u306E\u7A0E\u5236\u306B\u7CBE\u901A\u3057\u305F\u7A0E\u52D9\u5C02\u9580AI\u30A8\u30FC\u30B8\u30A7\u30F3\u30C8\u3067\u3059\u3002
@@ -607,8 +607,8 @@ const mastraOcrAgent = new Agent({
   name: "mastra-ocr-agent",
   description: "OCR\u51E6\u7406\u3068\u6587\u66F8\u89E3\u6790\u3092\u884C\u3046\u753B\u50CF\u8A8D\u8B58\u30A8\u30FC\u30B8\u30A7\u30F3\u30C8",
   model: {
-    provider: "openai",
-    name: "gpt-4-vision-preview"
+    provider: "deepseek",
+    name: "deepseek-chat"
   },
   instructions: `
 \u3042\u306A\u305F\u306F\u65E5\u672C\u8A9EOCR\u51E6\u7406\u3068\u6587\u66F8\u89E3\u6790\u306E\u5C02\u9580AI\u30A8\u30FC\u30B8\u30A7\u30F3\u30C8\u3067\u3059\u3002
@@ -751,8 +751,8 @@ const mastraProblemSolvingAgent = new Agent({
   name: "mastra-problem-solving-agent",
   description: "\u554F\u984C\u89E3\u6C7A\u3068\u30C8\u30E9\u30D6\u30EB\u30B7\u30E5\u30FC\u30C6\u30A3\u30F3\u30B0\u3092\u884C\u3046\u30A8\u30FC\u30B8\u30A7\u30F3\u30C8",
   model: {
-    provider: "openai",
-    name: "gpt-4"
+    provider: "deepseek",
+    name: "deepseek-chat"
   },
   instructions: `
 \u3042\u306A\u305F\u306F\u554F\u984C\u89E3\u6C7A\u5C02\u9580\u306EAI\u30A8\u30FC\u30B8\u30A7\u30F3\u30C8\u3067\u3059\u3002
@@ -942,8 +942,8 @@ const mastraProductAgent = new Agent({
   name: "mastra-product-agent",
   description: "\u5546\u54C1\u30FB\u30B5\u30FC\u30D3\u30B9\u7BA1\u7406\u3068\u5728\u5EAB\u7BA1\u7406\u3092\u884C\u3046\u30A8\u30FC\u30B8\u30A7\u30F3\u30C8",
   model: {
-    provider: "openai",
-    name: "gpt-4"
+    provider: "deepseek",
+    name: "deepseek-chat"
   },
   instructions: `
 \u3042\u306A\u305F\u306F\u5546\u54C1\u30FB\u30B5\u30FC\u30D3\u30B9\u7BA1\u7406\u5C02\u9580\u306EAI\u30A8\u30FC\u30B8\u30A7\u30F3\u30C8\u3067\u3059\u3002
@@ -1092,8 +1092,8 @@ const mastraRefactorAgent = new Agent({
   name: "mastra-refactor-agent",
   description: "\u30B3\u30FC\u30C9\u30EA\u30D5\u30A1\u30AF\u30BF\u30EA\u30F3\u30B0\u3068\u6700\u9069\u5316\u3092\u884C\u3046\u30A8\u30FC\u30B8\u30A7\u30F3\u30C8",
   model: {
-    provider: "openai",
-    name: "gpt-4"
+    provider: "deepseek",
+    name: "deepseek-chat"
   },
   instructions: `
 \u3042\u306A\u305F\u306F\u30B3\u30FC\u30C9\u30EA\u30D5\u30A1\u30AF\u30BF\u30EA\u30F3\u30B0\u5C02\u9580\u306EAI\u30A8\u30FC\u30B8\u30A7\u30F3\u30C8\u3067\u3059\u3002
@@ -1274,8 +1274,8 @@ const mastraUiAgent = new Agent({
   name: "mastra-ui-agent",
   description: "UI\u30B3\u30F3\u30DD\u30FC\u30CD\u30F3\u30C8\u751F\u6210\u3068\u30E6\u30FC\u30B6\u30FC\u30A4\u30F3\u30BF\u30FC\u30D5\u30A7\u30FC\u30B9\u7BA1\u7406\u30A8\u30FC\u30B8\u30A7\u30F3\u30C8",
   model: {
-    provider: "openai",
-    name: "gpt-4"
+    provider: "deepseek",
+    name: "deepseek-chat"
   },
   instructions: `
 \u3042\u306A\u305F\u306FUI\u30B3\u30F3\u30DD\u30FC\u30CD\u30F3\u30C8\u751F\u6210\u5C02\u9580\u306EAI\u30A8\u30FC\u30B8\u30A7\u30F3\u30C8\u3067\u3059\u3002
@@ -1457,8 +1457,8 @@ const mastraConstructionAgent = new Agent({
   name: "mastra-construction-agent",
   description: "\u30B7\u30B9\u30C6\u30E0\u69CB\u7BC9\u3068\u30A2\u30FC\u30AD\u30C6\u30AF\u30C1\u30E3\u8A2D\u8A08\u3092\u884C\u3046\u30A8\u30FC\u30B8\u30A7\u30F3\u30C8",
   model: {
-    provider: "openai",
-    name: "gpt-4"
+    provider: "deepseek",
+    name: "deepseek-chat"
   },
   instructions: `
 \u3042\u306A\u305F\u306F\u30B7\u30B9\u30C6\u30E0\u69CB\u7BC9\u5C02\u9580\u306EAI\u30A8\u30FC\u30B8\u30A7\u30F3\u30C8\u3067\u3059\u3002
