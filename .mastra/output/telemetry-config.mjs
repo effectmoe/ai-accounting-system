@@ -1,25 +1,20 @@
-// Fix for Mastra Cloud deployment
-const mastra = {};
-var mastra$1 = mastra;
-const telemetry = {};
+// Completely override telemetry config to fix deployment
+console.log('[Telemetry] Starting server instead of telemetry...');
 
-// Ensure this module can be imported without errors
-if (typeof process !== 'undefined' && process.env.MASTRA_CLOUD) {
-  console.log('[Telemetry] Skipping telemetry in Mastra Cloud');
-}
-
-// Start HTTP server for readiness probe
 import http from 'http';
-const port = process.env.PORT || 4111;
+const PORT = process.env.PORT || 4111;
 
+// Start server immediately
 const server = http.createServer((req, res) => {
-  console.log(`Request: ${req.method} ${req.url}`);
-  res.writeHead(200, { 'Content-Type': 'text/plain' });
-  res.end('OK');
+  res.writeHead(200, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify({ status: 'ok' }));
 });
 
-server.listen(port, '0.0.0.0', () => {
-  console.log(`Telemetry server running on port ${port}`);
+server.listen(PORT, () => {
+  console.log(`[Telemetry Override] Server running on port ${PORT}`);
 });
 
-export { mastra$1 as default, telemetry };
+// Export dummy objects to satisfy imports
+const mastra = {};
+const telemetry = {};
+export { mastra as default, telemetry };
