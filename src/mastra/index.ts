@@ -22,6 +22,9 @@ import { deploymentWorkflow } from './workflows/deployment-workflow';
 // Create Mastra instance with all agents and workflows
 export const mastra = new Mastra({
   name: "AI Accounting Automation System",
+  telemetry: {
+    enabled: false  // Disable telemetry to avoid deployment issues
+  },
   server: {
     port: 4111,
     timeout: 30000
