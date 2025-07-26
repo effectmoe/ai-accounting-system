@@ -1,79 +1,76 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { mastra } from '@/src/mastra';
+import { calculateTaxTool, createJournalEntryTool, generateFinancialReportTool } from '@/src/mastra/tools/accounting-tools';
+import { searchCustomersTool } from '@/src/mastra/tools/customer-tools';
 
-// This is a NEW endpoint that won't affect existing functionality
-// 既存の機能には一切影響を与えない新しいエンドポイント
+export const dynamic = 'force-dynamic';
+
+// 利用可能なツールのマッピング
+const AVAILABLE_TOOLS = {
+  // 会計ツール
+  'calculate_tax': calculateTaxTool,
+  'create_journal_entry': createJournalEntryTool,
+  'generate_financial_report': generateFinancialReportTool,
+  
+  // 顧客ツール
+  'search_customers': searchCustomersTool,
+};
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { agentName, operation, data } = body;
-
-    if (!agentName || !operation) {
-      return NextResponse.json(
-        { error: 'agentName and operation are required' },
-        { status: 400 }
-      );
+    const { agent, tool, params } = body;
+    
+    console.log('🤖 Mastraエージェント実行リクエスト:');
+    console.log('- エージェント:', agent);
+    console.log('- ツール:', tool);
+    console.log('- パラメータ:', JSON.stringify(params, null, 2));
+    
+    // ツールの存在確認
+    const selectedTool = AVAILABLE_TOOLS[tool];
+    if (!selectedTool) {
+      return NextResponse.json({
+        success: false,
+        error: `ツール '${tool}' が見つかりません`,
+        availableTools: Object.keys(AVAILABLE_TOOLS)
+      }, { status: 400 });
     }
-
-    // Get the agent
-    const agents = await mastra.getAgents();
-    const agent = agents[agentName];
-
-    if (!agent) {
-      return NextResponse.json(
-        { error: `Agent ${agentName} not found` },
-        { status: 404 }
-      );
-    }
-
-    // Execute the agent
-    const result = await agent.execute({
-      operation,
-      data
-    });
-
+    
+    // ツールを実行
+    const result = await selectedTool.handler(params);
+    
+    console.log('✅ 実行成功');
+    
     return NextResponse.json({
       success: true,
-      result,
-      executedBy: agentName,
-      timestamp: new Date().toISOString()
+      agent,
+      tool,
+      result
     });
-
+    
   } catch (error) {
-    console.error('Error executing Mastra agent:', error);
-    return NextResponse.json(
-      { 
-        error: 'Failed to execute agent',
-        details: error.message 
-      },
-      { status: 500 }
-    );
+    console.error('❌ Mastraエージェント実行エラー:', error);
+    return NextResponse.json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 }
 
-// List available agents
+// GET: 利用可能なツール一覧
 export async function GET() {
-  try {
-    const agents = await mastra.getAgents();
-    const agentList = Object.keys(agents).map(key => ({
-      name: key,
-      description: agents[key].description || 'No description available'
-    }));
-
-    return NextResponse.json({
-      agents: agentList,
-      count: agentList.length,
-      status: 'ready'
-    });
-
-  } catch (error) {
-    console.error('Error listing agents:', error);
-    return NextResponse.json(
-      { 
-        error: 'Failed to list agents',
-        details: error.message 
+  return NextResponse.json({
+    agents: [
+      {
+        name: 'accounting',
+        description: '会計処理エージェント',
+        tools: ['calculate_tax', 'create_journal_entry', 'generate_financial_report']
       },
-      { status: 500 }
-    );
-  }
+      {
+        name: 'customer',
+        description: '顧客管理エージェント',
+        tools: ['search_customers']
+      }
+    ],
+    totalTools: Object.keys(AVAILABLE_TOOLS).length
+  });
 }
