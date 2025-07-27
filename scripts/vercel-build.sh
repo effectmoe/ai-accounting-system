@@ -13,9 +13,21 @@ export NODE_OPTIONS="--max-old-space-size=4096"
 echo "🧹 Cleaning previous builds..."
 rm -rf .next .mastra/output/telemetry-config.mjs
 
-# Install all OpenTelemetry dependencies to avoid runtime errors
-echo "📦 Installing OpenTelemetry dependencies..."
-npm install @opentelemetry/instrumentation-http @opentelemetry/api @opentelemetry/instrumentation --legacy-peer-deps || true
+# Create necessary directories
+echo "📁 Creating necessary directories..."
+mkdir -p .mastra/output
+
+# Create a minimal telemetry config to prevent errors
+echo "🔧 Creating telemetry config..."
+cat > .mastra/output/telemetry-config.mjs << EOF
+export const telemetry = {
+  enabled: false,
+  serviceName: 'accounting-automation',
+  sampling: {
+    type: 'always_off'
+  }
+};
+EOF
 
 # Run prebuild
 echo "🔧 Running prebuild tasks..."
