@@ -279,6 +279,9 @@ const nextConfig = {
     maxInactiveAge: 25 * 1000,
     pagesBufferLength: 2,
   },
+  
+  // Exclude disabled pages from build
+  pageExtensions: ['tsx', 'ts', 'jsx', 'js'].filter(ext => !ext.includes('disabled')),
 };
 
 export default nextConfig;

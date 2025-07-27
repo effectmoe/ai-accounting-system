@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import * as Sentry from '@sentry/nextjs';
+// import * as Sentry from '@sentry/nextjs';
 import { logger } from './logger';
 
 export interface ApiError {
@@ -84,11 +84,11 @@ export function createErrorResponse(error: unknown, defaultMessage = 'エラー�
 
   if (statusCode >= 500) {
     logger.error('API Error', errorContext);
-    if (error instanceof Error) {
-      Sentry.captureException(error, {
-        extra: errorContext,
-      });
-    }
+    // if (error instanceof Error) {
+    //   Sentry.captureException(error, {
+    //     extra: errorContext,
+    //   });
+    // }
   } else {
     logger.warn('API Warning', errorContext);
   }
