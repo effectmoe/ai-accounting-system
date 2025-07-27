@@ -1,6 +1,6 @@
 import { MongoClient, Db, MongoClientOptions } from 'mongodb';
 import { logger } from './logger';
-import * as Sentry from '@sentry/nextjs';
+// import * as Sentry from '@sentry/nextjs';
 
 export interface MongoConnectionConfig {
   uri: string;
@@ -103,12 +103,12 @@ export class MongoConnectionManager {
         this.lastConnectionError = null;
         this.startHealthCheck();
 
-        // Sentryにコンテキスト情報を追加
-        Sentry.setContext('mongodb', {
-          connected: true,
-          dbName: this.config.dbName,
-          poolSize: options.maxPoolSize,
-        });
+        // Sentryにコンテキスト情報を追加（一時的に無効化）
+        // Sentry.setContext('mongodb', {
+        //   connected: true,
+        //   dbName: this.config.dbName,
+        //   poolSize: options.maxPoolSize,
+        // });
 
         return;
       } catch (error) {
@@ -133,13 +133,13 @@ export class MongoConnectionManager {
       lastError: this.lastConnectionError?.message,
     });
 
-    Sentry.captureException(this.lastConnectionError || new Error(errorMessage), {
-      level: 'error',
-      tags: {
-        component: 'mongodb',
-        action: 'connection_failed',
-      },
-    });
+    // Sentry.captureException(this.lastConnectionError || new Error(errorMessage), {
+    //   level: 'error',
+    //   tags: {
+    //     component: 'mongodb',
+    //     action: 'connection_failed',
+    //   },
+    // });
 
     throw new Error(errorMessage);
   }

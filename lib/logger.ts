@@ -1,4 +1,4 @@
-import * as Sentry from "@sentry/nextjs";
+// import * as Sentry from "@sentry/nextjs";
 
 type LogLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'fatal';
 
@@ -57,23 +57,23 @@ class Logger {
     const sanitizedContext = context ? this.sanitizeData(context) : undefined;
     const timestamp = new Date().toISOString();
 
-    // Sentryログ統合
-    if (typeof window !== 'undefined' && (window as any).Sentry) {
-      const sentryLogger = (window as any).Sentry.logger;
-      if (sentryLogger && sentryLogger[level]) {
-        sentryLogger[level](message, sanitizedContext);
-      }
-    } else if (Sentry) {
-      // サーバーサイド
-      const breadcrumb = {
-        message,
-        level: level as Sentry.SeverityLevel,
-        category: 'custom',
-        data: sanitizedContext,
-        timestamp: Date.now() / 1000,
-      };
-      Sentry.addBreadcrumb(breadcrumb);
-    }
+    // Sentryログ統合（一時的に無効化）
+    // if (typeof window !== 'undefined' && (window as any).Sentry) {
+    //   const sentryLogger = (window as any).Sentry.logger;
+    //   if (sentryLogger && sentryLogger[level]) {
+    //     sentryLogger[level](message, sanitizedContext);
+    //   }
+    // } else if (Sentry) {
+    //   // サーバーサイド
+    //   const breadcrumb = {
+    //     message,
+    //     level: level as Sentry.SeverityLevel,
+    //     category: 'custom',
+    //     data: sanitizedContext,
+    //     timestamp: Date.now() / 1000,
+    //   };
+    //   Sentry.addBreadcrumb(breadcrumb);
+    // }
 
     // 開発環境でのコンソール出力
     if (this.isDevelopment) {
@@ -107,19 +107,19 @@ class Logger {
   error(message: string, context?: Record<string, any>) {
     this.log('error', message, context);
     
-    // エラーレベル以上はSentryに送信
-    if (context?.error) {
-      Sentry.captureException(context.error, {
-        extra: this.sanitizeData(context),
-      });
-    }
+    // エラーレベル以上はSentryに送信（一時的に無効化）
+    // if (context?.error) {
+    //   Sentry.captureException(context.error, {
+    //     extra: this.sanitizeData(context),
+    //   });
+    // }
   }
 
   fatal(message: string, context?: Record<string, any>) {
     this.log('fatal', message, context);
     
-    // 致命的エラーは必ずSentryに送信
-    Sentry.captureMessage(message, 'fatal');
+    // 致命的エラーは必ずSentryに送信（一時的に無効化）
+    // Sentry.captureMessage(message, 'fatal');
   }
 
   // 既存のconsole.logをこのロガーに置き換えるためのヘルパー
