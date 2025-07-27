@@ -1,0 +1,17 @@
+# Vercel キャッシュ無効化ファイル
+# TypeScriptをdependenciesに移動した際のキャッシュクリア用
+# 作成日時: 2025-07-27 00:00:00
+
+このファイルは、Vercelのビルドキャッシュを強制的に無効化するために作成されました。
+TypeScriptと型定義ファイルをdevDependenciesからdependenciesに移動した際に、
+古いキャッシュが原因でビルドが失敗することを防ぐためのものです。
+
+## 変更内容
+- typescript: devDependencies → dependencies
+- @types/react: devDependencies → dependencies  
+- @types/react-dom: devDependencies → dependencies
+- @types/node: devDependencies → dependencies
+- vercel.json: installCommandに --production=false を追加
+
+## ビルドが成功したら
+このファイルは削除しても構いません。
