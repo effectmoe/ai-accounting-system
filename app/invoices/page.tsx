@@ -15,6 +15,13 @@ import { ja } from 'date-fns/locale';
 import { safeFormatDate } from '@/lib/date-utils';
 
 import { logger } from '@/lib/logger';
+import { 
+  INVOICE_STATUS_LABELS, 
+  INVOICE_STATUS_COLORS, 
+  mapEnglishToJapaneseStatus, 
+  getStatusColor 
+} from '@/lib/status-mapping';
+
 interface Invoice {
   _id: string;
   invoiceNumber: string;
@@ -34,26 +41,6 @@ interface Invoice {
   paidAmount: number;
   isGeneratedByAI?: boolean;
 }
-
-const statusLabels: Record<string, string> = {
-  draft: '下書き',
-  sent: '送信済み',
-  viewed: '開封済み',
-  paid: '支払済み',
-  partially_paid: '一部支払済み',
-  overdue: '期限超過',
-  cancelled: 'キャンセル',
-};
-
-const statusColors: Record<string, string> = {
-  draft: 'bg-gray-100 text-gray-800',
-  sent: 'bg-blue-100 text-blue-800',
-  viewed: 'bg-purple-100 text-purple-800',
-  paid: 'bg-green-100 text-green-800',
-  partially_paid: 'bg-yellow-100 text-yellow-800',
-  overdue: 'bg-red-100 text-red-800',
-  cancelled: 'bg-gray-100 text-gray-500',
-};
 
 export default function InvoicesPage() {
   const router = useRouter();
@@ -187,8 +174,8 @@ export default function InvoicesPage() {
 
   const getStatusBadge = (status: string) => {
     return (
-      <Badge className={`${statusColors[status] || 'bg-gray-100 text-gray-800'} border-0`}>
-        {statusLabels[status] || status}
+      <Badge className={`${getStatusColor(status)} border-0`}>
+        {mapEnglishToJapaneseStatus(status)}
       </Badge>
     );
   };
@@ -263,6 +250,7 @@ export default function InvoicesPage() {
                   <SelectContent>
                     <SelectItem value="draft">下書き</SelectItem>
                     <SelectItem value="sent">送信済み</SelectItem>
+                    <SelectItem value="unpaid">未払い</SelectItem>
                     <SelectItem value="paid">支払済み</SelectItem>
                     <SelectItem value="overdue">期限超過</SelectItem>
                     <SelectItem value="cancelled">キャンセル</SelectItem>
@@ -313,6 +301,7 @@ export default function InvoicesPage() {
                 <SelectItem value="draft">下書き</SelectItem>
                 <SelectItem value="sent">送信済み</SelectItem>
                 <SelectItem value="viewed">開封済み</SelectItem>
+                <SelectItem value="unpaid">未払い</SelectItem>
                 <SelectItem value="paid">支払済み</SelectItem>
                 <SelectItem value="partially_paid">一部支払済み</SelectItem>
                 <SelectItem value="overdue">期限超過</SelectItem>
@@ -445,6 +434,12 @@ export default function InvoicesPage() {
                               <div className="flex items-center">
                                 <div className="w-2 h-2 rounded-full bg-blue-400 mr-2" />
                                 送信済み
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="unpaid">
+                              <div className="flex items-center">
+                                <div className="w-2 h-2 rounded-full bg-orange-400 mr-2" />
+                                未払い
                               </div>
                             </SelectItem>
                             <SelectItem value="paid">

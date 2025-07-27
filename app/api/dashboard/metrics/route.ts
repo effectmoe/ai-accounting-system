@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getMongoClient } from '@/lib/mongodb-client';
 import { logger } from '@/lib/logger';
+import { isRevenueStatus } from '@/lib/status-mapping';
 
 const DB_NAME = 'accounting'; // MongoDBの実際のデータベース名
 
@@ -53,16 +54,18 @@ export async function GET(request: NextRequest) {
     
     // invoicesコレクションが存在する場合（売上）
     if (collectionNames.includes('invoices')) {
+      // 売上として計上すべきステータスのみ集計
+      const revenueStatuses = ['sent', 'viewed', 'paid', 'partially_paid', 'overdue'];
       const revenueResult = await db.collection('invoices').aggregate([
         {
           $match: {
-            status: { $in: ['paid', 'sent', 'unpaid', 'viewed'] }
+            status: { $in: revenueStatuses }
           }
         },
         {
           $group: {
             _id: null,
-            totalRevenue: { $sum: '$amount' }
+            totalRevenue: { $sum: '$totalAmount' }
           }
         }
       ]).toArray();
@@ -81,7 +84,7 @@ export async function GET(request: NextRequest) {
         {
           $group: {
             _id: null,
-            totalRevenue: { $sum: '$amount' }
+            totalRevenue: { $sum: '$totalAmount' }
           }
         }
       ]).toArray();
@@ -109,7 +112,7 @@ export async function GET(request: NextRequest) {
         {
           $group: {
             _id: null,
-            totalExpenses: { $sum: '$amount' }
+            totalExpenses: { $sum: '$totalAmount' }
           }
         }
       ]).toArray();
@@ -128,7 +131,7 @@ export async function GET(request: NextRequest) {
         {
           $group: {
             _id: null,
-            totalExpenses: { $sum: '$amount' }
+            totalExpenses: { $sum: '$totalAmount' }
           }
         }
       ]).toArray();
