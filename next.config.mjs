@@ -46,15 +46,17 @@ const nextConfig = {
         resourceRegExp: /^.*\/test\/.*$/,
         contextRegExp: /@ai-sdk|ai/,
       }),
-      // Ignore OpenTelemetry modules that cause issues
-      new webpack.IgnorePlugin({
-        resourceRegExp: /@opentelemetry\/instrumentation/,
-        contextRegExp: /@sentry/,
-      }),
-      new webpack.IgnorePlugin({
-        resourceRegExp: /require-in-the-middle/,
-      })
     );
+    
+    // Handle OpenTelemetry modules properly for client-side
+    if (!isServer) {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        '@opentelemetry/api': false,
+        '@opentelemetry/instrumentation': false,
+        '@opentelemetry/instrumentation-http': false,
+      };
+    }
 
     // Client-side specific configurations
     if (!isServer) {
