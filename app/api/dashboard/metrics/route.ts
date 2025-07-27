@@ -225,56 +225,82 @@ export async function GET(request: NextRequest) {
     if (recentActivities.length === 0) {
       const mockActivities = [];
       
-      // OCR結果から最近のアクティビティを生成
-      if (collectionNames.includes('ocrResults')) {
-        const recentOCR = await db.collection('ocrResults')
+      // 請求書から最近のアクティビティを生成（売上系を優先）
+      if (collectionNames.includes('invoices')) {
+        const recentInvoices = await db.collection('invoices')
           .find({})
           .sort({ createdAt: -1 })
-          .limit(3)
+          .limit(4)
           .toArray();
         
-        recentOCR.forEach(ocr => {
+        recentInvoices.forEach(invoice => {
+          const amount = invoice.totalAmount || 0;
+          const statusText = invoice.status === 'sent' ? '送信' : 
+                           invoice.status === 'paid' ? '支払完了' : 
+                           invoice.status === 'draft' ? '作成' : '更新';
           mockActivities.push({
-            type: 'ocr_completed',
-            description: `OCR処理完了: ${ocr.vendor || 'ドキュメント'} (¥${(ocr.amount || 0).toLocaleString()})`,
-            timestamp: ocr.createdAt,
-            metadata: { amount: ocr.amount, vendor: ocr.vendor }
+            type: invoice.status === 'sent' ? 'invoice_sent' : 'invoice_created',
+            description: `請求書${statusText}: ${invoice.invoiceNumber || 'INV-' + invoice._id.toString().slice(-6)} (¥${amount.toLocaleString()})`,
+            timestamp: invoice.updatedAt || invoice.createdAt,
+            metadata: { invoiceNumber: invoice.invoiceNumber, amount: amount }
           });
         });
       }
       
-      // 仕入先見積書から最近のアクティビティを生成
-      if (collectionNames.includes('supplierQuotes')) {
-        const recentQuotes = await db.collection('supplierQuotes')
+      // 見積書から最近のアクティビティを生成
+      if (collectionNames.includes('quotes')) {
+        const recentQuotes = await db.collection('quotes')
           .find({})
           .sort({ createdAt: -1 })
           .limit(3)
           .toArray();
         
         recentQuotes.forEach(quote => {
+          const amount = quote.totalAmount || 0;
+          const statusText = quote.status === 'sent' ? '送信' : 
+                           quote.status === 'accepted' ? '承認' : '作成';
           mockActivities.push({
-            type: 'supplier_quote_created',
-            description: `仕入先見積書作成: ${quote.quoteNumber} (¥${(quote.amount || 0).toLocaleString()})`,
-            timestamp: quote.createdAt,
-            metadata: { quoteNumber: quote.quoteNumber, amount: quote.amount }
+            type: quote.status === 'sent' ? 'quote_sent' : 'quote_created',
+            description: `見積書${statusText}: ${quote.quoteNumber || 'QUO-' + quote._id.toString().slice(-6)} (¥${amount.toLocaleString()})`,
+            timestamp: quote.updatedAt || quote.createdAt,
+            metadata: { quoteNumber: quote.quoteNumber, amount: amount }
           });
         });
       }
       
-      // 仕入先登録アクティビティ
-      if (collectionNames.includes('suppliers')) {
-        const recentSuppliers = await db.collection('suppliers')
+      // 顧客登録アクティビティ
+      if (collectionNames.includes('customers')) {
+        const recentCustomers = await db.collection('customers')
           .find({})
           .sort({ createdAt: -1 })
           .limit(2)
           .toArray();
         
-        recentSuppliers.forEach(supplier => {
+        recentCustomers.forEach(customer => {
           mockActivities.push({
-            type: 'supplier_created',
-            description: `仕入先登録: ${supplier.companyName}`,
-            timestamp: supplier.createdAt,
-            metadata: { companyName: supplier.companyName }
+            type: 'customer_created',
+            description: `顧客登録: ${customer.companyName}`,
+            timestamp: customer.createdAt,
+            metadata: { companyName: customer.companyName }
+          });
+        });
+      }
+      
+      // 仕入先見積書（金額フィールド修正）
+      if (collectionNames.includes('supplierQuotes') && mockActivities.length < 8) {
+        const recentSupplierQuotes = await db.collection('supplierQuotes')
+          .find({})
+          .sort({ createdAt: -1 })
+          .limit(2)
+          .toArray();
+        
+        recentSupplierQuotes.forEach(quote => {
+          const amount = quote.totalAmount || 0;
+          mockActivities.push({
+            type: 'supplier_quote_created',
+            description: `仕入先見積書作成: ${quote.quoteNumber} (¥${amount.toLocaleString()})`,
+            timestamp: quote.createdAt,
+            metadata: { quoteNumber: quote.quoteNumber, amount: amount }
           });
         });
       }
