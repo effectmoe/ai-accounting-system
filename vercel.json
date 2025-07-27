@@ -1,5 +1,5 @@
 {
-  "buildCommand": "npm install @opentelemetry/instrumentation-http @opentelemetry/api @opentelemetry/instrumentation --legacy-peer-deps && npm run build",
+  "buildCommand": "npm install --save-dev typescript @types/react --legacy-peer-deps && npm install @opentelemetry/instrumentation-http @opentelemetry/api @opentelemetry/instrumentation --legacy-peer-deps && npm run build",
   "outputDirectory": ".next",
   "devCommand": "npm run dev",
   "installCommand": "npm install --legacy-peer-deps",
