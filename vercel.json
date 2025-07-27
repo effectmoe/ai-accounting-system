@@ -9,9 +9,10 @@
     "env": {
       "NODE_ENV": "production",
       "NODE_OPTIONS": "--max-old-space-size=4096",
-      "FORCE_REBUILD": "2025-07-26-dashboard-fix-v2",
+      "FORCE_REBUILD": "2025-07-27-mongodb-fix",
       "DO_NOT_TRACK": "1",
-      "NEXT_TELEMETRY_DISABLED": "1"
+      "NEXT_TELEMETRY_DISABLED": "1",
+      "SKIP_DB_DURING_BUILD": "true"
     }
   },
   "functions": {

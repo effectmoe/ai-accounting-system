@@ -45,6 +45,9 @@ declare global {
   var _mongoClientPromise: Promise<MongoClient> | undefined;
 }
 
+// ビルド時のスキップフラグ
+const SKIP_DB_DURING_BUILD = process.env.SKIP_DB_DURING_BUILD === 'true' || process.env.NEXT_PHASE === 'phase-production-build';
+
 // Vercelサーバーレス環境用のキャッシュ変数
 let cached = global._mongoClientPromise;
 
@@ -82,6 +85,10 @@ function sanitizeMongoUri(uri: string): string {
 
 // Vercel推奨のMongoDB接続パターン
 async function connectToDatabase(): Promise<{ client: MongoClient; db: Db }> {
+  // ビルド時はスキップ
+  if (SKIP_DB_DURING_BUILD) {
+    throw new DatabaseError('Database connection skipped during build', 'BUILD_SKIP');
+  }
   if (cached) {
     try {
       const client = await cached;
@@ -104,12 +111,13 @@ async function connectToDatabase(): Promise<{ client: MongoClient; db: Db }> {
     logger.debug('Creating new MongoDB connection...');
     logger.debug('MongoDB URI configured:', sanitizeMongoUri(uri)); // パスワードを隠してログ出力
     
-    // Vercel推奨の接続オプション
+    // Vercel推奨の接続オプション（ビルド時は短いタイムアウト）
+    const isBuilding = process.env.NEXT_PHASE === 'phase-production-build';
     const options = {
-      maxPoolSize: 10,
-      serverSelectionTimeoutMS: 10000, // 10秒に増やす
-      socketTimeoutMS: 45000,
-      connectTimeoutMS: 10000, // 接続タイムアウトを追加
+      maxPoolSize: isBuilding ? 1 : 10,
+      serverSelectionTimeoutMS: isBuilding ? 5000 : 10000, // ビルド時は5秒
+      socketTimeoutMS: isBuilding ? 5000 : 45000,
+      connectTimeoutMS: isBuilding ? 5000 : 10000, // ビルド時は5秒
       retryWrites: true,
       w: 'majority'
     };
@@ -149,6 +157,11 @@ async function connectToDatabase(): Promise<{ client: MongoClient; db: Db }> {
 
 // データベースインスタンスの取得（シンプル化）
 export async function getDatabase(): Promise<Db> {
+  // ビルド時はスキップ
+  if (SKIP_DB_DURING_BUILD) {
+    throw new DatabaseError('Database connection skipped during build', 'BUILD_SKIP');
+  }
+  
   try {
     const { db } = await connectToDatabase();
     return db;
