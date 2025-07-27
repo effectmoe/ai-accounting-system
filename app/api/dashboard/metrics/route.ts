@@ -54,8 +54,8 @@ export async function GET(request: NextRequest) {
     
     // invoicesコレクションが存在する場合（売上）
     if (collectionNames.includes('invoices')) {
-      // 売上として計上すべきステータスのみ集計
-      const revenueStatuses = ['sent', 'viewed', 'paid', 'partially_paid', 'overdue'];
+      // 売上として計上すべきステータスのみ集計（送信済み以降のもの）
+      const revenueStatuses = ['sent', 'unpaid', 'paid', 'partially_paid', 'overdue'];
       const revenueResult = await db.collection('invoices').aggregate([
         {
           $match: {
