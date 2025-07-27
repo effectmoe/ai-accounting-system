@@ -46,6 +46,9 @@ const nextConfig = {
         resourceRegExp: /^.*\/test\/.*$/,
         contextRegExp: /@ai-sdk|ai/,
       }),
+      new webpack.IgnorePlugin({
+        resourceRegExp: /require-in-the-middle/,
+      }),
     );
     
     // Handle OpenTelemetry modules properly for client-side
