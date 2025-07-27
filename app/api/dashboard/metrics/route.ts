@@ -145,20 +145,14 @@ export async function GET(request: NextRequest) {
 
     logger.info(`Total expenses calculated: ¥${totalExpenses.toLocaleString()}`);
 
-    // 3. 処理済みドキュメント数
+    // 3. 処理済みドキュメント数（帳簿記帳済みの仕訳件数）
     console.log('📄 Calculating processed documents...');
     
-    if (collectionNames.includes('documents')) {
-      processedDocuments = await db.collection('documents').countDocuments({
-        status: { $in: ['completed', 'manual_review', 'processed'] }
+    if (collectionNames.includes('journals')) {
+      processedDocuments = await db.collection('journals').countDocuments({
+        status: 'posted'
       });
-    }
-    
-    // OCR結果も処理済みドキュメントとしてカウント
-    if (collectionNames.includes('ocrResults')) {
-      const ocrProcessedCount = await db.collection('ocrResults').countDocuments({});
-      processedDocuments += ocrProcessedCount;
-      console.log(`OCR processed documents: ${ocrProcessedCount}`);
+      console.log(`Posted journal entries: ${processedDocuments}`);
     }
     
     console.log(`Total processed documents: ${processedDocuments}`);
@@ -185,34 +179,29 @@ export async function GET(request: NextRequest) {
     console.log(`Total pending documents: ${pendingDocuments}`);
     logger.info(`Pending documents count: ${pendingDocuments}`);
 
-    // 4. アクティブな顧客数（仕入先は除外）
+    // 4. アクティブな顧客数（売上計上ステータスの請求書を持つ顧客）
     console.log('👥 Calculating active customers...');
     
-    // 過去90日間に取引のあった顧客をカウント
+    // 過去90日間に売上計上ステータスの請求書を持つ顧客をカウント
     const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
     const activeCustomerIds = new Set<string>();
     
-    // invoicesから顧客IDを取得
+    // 売上計上ステータスの請求書から顧客IDを取得
     if (collectionNames.includes('invoices')) {
+      const revenueStatuses = ['sent', 'unpaid', 'paid', 'partially_paid', 'overdue'];
       const customerIdsFromInvoices = await db.collection('invoices').distinct('customerId', {
+        status: { $in: revenueStatuses },
         createdAt: { $gte: ninetyDaysAgo }
       });
       customerIdsFromInvoices.forEach(id => activeCustomerIds.add(id));
-    }
-    
-    // quotesから顧客IDを取得
-    if (collectionNames.includes('quotes')) {
-      const customerIdsFromQuotes = await db.collection('quotes').distinct('customerId', {
-        createdAt: { $gte: ninetyDaysAgo }
-      });
-      customerIdsFromQuotes.forEach(id => activeCustomerIds.add(id));
+      console.log(`Active customers from revenue invoices: ${customerIdsFromInvoices.length}`);
     }
     
     // アクティブな顧客IDの数をカウント
     if (activeCustomerIds.size > 0) {
       activeCustomers = activeCustomerIds.size;
     } else if (collectionNames.includes('customers')) {
-      // 取引履歴がない場合は、アクティブな顧客マスタの数をカウント
+      // 売上実績がない場合は、アクティブな顧客マスタの数をカウント
       activeCustomers = await db.collection('customers').countDocuments({
         isActive: { $ne: false }
       });
