@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
       items: processedItems,
       issueDate: new Date(invoiceDate), // フロントエンドのinvoiceDateをissueDateに変換
       dueDate: new Date(body.dueDate),
-      status: body.status || 'unpaid', // デフォルトステータスを設定
+      status: body.status || 'draft', // デフォルトステータスを設定
       subtotal: 0, // 後で計算
       taxAmount: 0, // 後で計算
       totalAmount: 0, // 後で計算

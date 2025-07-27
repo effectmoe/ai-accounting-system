@@ -3,6 +3,7 @@ import { InvoiceService } from '@/services/invoice.service';
 import { CompanyInfoService } from '@/services/company-info.service';
 import { ActivityLogService } from '@/services/activity-log.service';
 import { InvoiceStatus } from '@/types/collections';
+import { INVOICE_STATUS_LABELS } from '@/lib/status-mapping';
 
 import { logger } from '@/lib/logger';
 export async function GET(
@@ -119,14 +120,7 @@ export async function PUT(
       try {
         const customerName = invoice.customer?.companyName || invoice.customer?.name || '不明な顧客';
         const previousStatus = (invoice as any).previousStatus || invoice.status;
-        const statusLabels: Record<string, string> = {
-          draft: '下書き',
-          sent: '送信済み',
-          paid: '支払済み',
-          partially_paid: '一部支払済み',
-          overdue: '期限超過',
-          cancelled: 'キャンセル',
-        };
+        const statusLabels = INVOICE_STATUS_LABELS;
         
         // ステータスが実際に変更された場合のみログを記録
         if (previousStatus !== body.status) {
