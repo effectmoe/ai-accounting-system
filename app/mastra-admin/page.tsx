@@ -1,10 +1,21 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import GitHubSection from './github-section';
-import ProblemSolvingSection from './problem-solving-section';
-
+import dynamic from 'next/dynamic';
 import { logger } from '@/lib/logger';
+
+// 動的インポートで遅延読み込み
+const GitHubSection = dynamic(() => import('./github-section'), {
+  ssr: false,
+});
+
+const ProblemSolvingSection = dynamic(() => import('./problem-solving-section'), {
+  ssr: false,
+});
+
+// Next.jsに対してこのページは動的であることを明示
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 interface AgentStatus {
   name: string;
   status: 'active' | 'idle' | 'error';
