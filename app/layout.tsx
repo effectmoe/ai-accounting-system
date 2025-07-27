@@ -3,7 +3,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import Navigation from '@/components/navigation'
 import { Toaster } from 'react-hot-toast'
-import MastraChat from '@/components/MastraChat'
+import EnhancedMastraChat from '@/components/EnhancedMastraChat'
 // import { AppInitializer } from './app'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -34,7 +34,7 @@ export default function RootLayout({
           {children}
         </main>
         <Toaster position="top-right" />
-        <MastraChat />
+        <EnhancedMastraChat />
       </body>
     </html>
   )
