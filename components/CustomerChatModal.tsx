@@ -165,7 +165,7 @@ export default function CustomerChatModal({ isOpen, onClose, onDataExtracted }: 
   if (!isOpen) return null;
 
   return (
-    <div className="w-full h-[600px] bg-white rounded-lg shadow border border-gray-200 flex flex-col">
+    <div className="fixed bottom-4 right-4 w-96 h-[600px] bg-white rounded-lg shadow-2xl border border-gray-200 flex flex-col z-50">
       {/* ヘッダー */}
       <div className="flex items-center justify-between p-4 border-b bg-purple-50">
         <div className="flex items-center gap-2">
