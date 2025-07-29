@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Plus, Search, Filter, Edit, Trash2, Calendar, Building, FileText, TrendingUp, ChevronLeft, ChevronRight, Upload, ScanLine } from 'lucide-react';
+import { Plus, Search, Filter, Edit, Trash2, Calendar, Building, FileText, TrendingUp, ChevronLeft, ChevronRight, Upload, ScanLine, CheckCircle2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { SupplierQuote, SupplierQuoteStatus, Supplier } from '@/types/collections';
 
@@ -55,6 +55,7 @@ export default function SupplierQuotesPage() {
   const [loading, setLoading] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedQuotes, setSelectedQuotes] = useState<Set<string>>(new Set());
   const [filters, setFilters] = useState<FilterState>({
     supplierId: '',
     status: '',
@@ -133,6 +134,85 @@ export default function SupplierQuotesPage() {
     setCurrentPage(1);
   };
 
+  // 全選択/解除
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      const allIds = new Set(filteredQuotes.map(quote => quote._id?.toString() || ''));
+      setSelectedQuotes(allIds);
+    } else {
+      setSelectedQuotes(new Set());
+    }
+  };
+
+  // 個別選択
+  const handleSelectQuote = (quoteId: string, checked: boolean) => {
+    const newSelection = new Set(selectedQuotes);
+    if (checked) {
+      newSelection.add(quoteId);
+    } else {
+      newSelection.delete(quoteId);
+    }
+    setSelectedQuotes(newSelection);
+  };
+
+  // 一括削除
+  const handleBulkDelete = async () => {
+    if (selectedQuotes.size === 0) return;
+    
+    if (!confirm(`選択した${selectedQuotes.size}件の仕入先見積書を削除してもよろしいですか？この操作は取り消せません。`)) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      logger.debug('Starting bulk delete for supplier quotes:', Array.from(selectedQuotes));
+      
+      const results = await Promise.allSettled(
+        Array.from(selectedQuotes).map(async (id) => {
+          const response = await fetch(`/api/supplier-quotes/${id}`, { 
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+          
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(`Failed to delete supplier quote ${id}: ${errorData.error || response.statusText}`);
+          }
+          
+          return { id, success: true };
+        })
+      );
+      
+      const failures = results.filter(result => result.status === 'rejected');
+      const successes = results.filter(result => result.status === 'fulfilled');
+      
+      logger.debug('Bulk delete results:', { 
+        total: results.length, 
+        successes: successes.length, 
+        failures: failures.length
+      });
+      
+      if (failures.length > 0) {
+        logger.error('Some supplier quotes failed to delete:', failures);
+        toast.error(`${failures.length}件の削除に失敗しました。${successes.length}件は削除されました。`);
+      } else {
+        logger.info(`Successfully deleted ${successes.length} supplier quotes`);
+        toast.success(`${successes.length}件の仕入先見積書を削除しました`);
+      }
+      
+      // リフレッシュ
+      await fetchSupplierQuotes(currentPage);
+      setSelectedQuotes(new Set());
+    } catch (error) {
+      logger.error('Error bulk deleting supplier quotes:', error);
+      toast.error('一括削除に失敗しました。もう一度お試しください。');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // 見積書の削除
   const handleDeleteQuote = async (id: string) => {
     if (!confirm('この仕入先見積書を削除してもよろしいですか？')) return;
@@ -207,6 +287,36 @@ export default function SupplierQuotesPage() {
           </div>
         </div>
       </div>
+
+      {/* 一括操作バー */}
+      {selectedQuotes.size > 0 && (
+        <div className="bg-blue-50 rounded-lg border border-blue-200 p-4 mb-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="h-5 w-5 text-blue-600" />
+              <span className="text-sm font-medium">
+                {selectedQuotes.size}件の仕入先見積書を選択中
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setSelectedQuotes(new Set())}
+                className="text-sm text-gray-600 hover:text-gray-800"
+              >
+                選択解除
+              </button>
+              <button
+                onClick={handleBulkDelete}
+                disabled={loading}
+                className="bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white px-4 py-2 rounded-md text-sm flex items-center gap-2"
+              >
+                <Trash2 size={16} />
+                一括削除
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 検索とフィルター */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
@@ -356,6 +466,15 @@ export default function SupplierQuotesPage() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
+                  <th className="px-3 py-3 text-left">
+                    <input
+                      type="checkbox"
+                      checked={filteredQuotes.length > 0 && selectedQuotes.size === filteredQuotes.length}
+                      onChange={(e) => handleSelectAll(e.target.checked)}
+                      className="rounded border-gray-300"
+                      aria-label="すべて選択"
+                    />
+                  </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     見積書番号
                   </th>
@@ -390,12 +509,21 @@ export default function SupplierQuotesPage() {
                     onClick={(e) => {
                       // 操作ボタンのクリックは除外
                       const target = e.target as HTMLElement;
-                      if (target.closest('a') || target.closest('button')) {
+                      if (target.closest('a') || target.closest('button') || target.closest('input')) {
                         return;
                       }
                       router.push(`/supplier-quotes/${quote._id?.toString()}`);
                     }}
                   >
+                    <td className="px-3 py-4" onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        checked={selectedQuotes.has(quote._id?.toString() || '')}
+                        onChange={(e) => handleSelectQuote(quote._id?.toString() || '', e.target.checked)}
+                        className="rounded border-gray-300"
+                        aria-label={`${quote.quoteNumber}を選択`}
+                      />
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <FileText className="h-5 w-5 text-gray-400 mr-2" />

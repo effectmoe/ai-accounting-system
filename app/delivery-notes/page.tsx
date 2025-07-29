@@ -64,6 +64,7 @@ export default function DeliveryNotesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
+  const [selectedDeliveryNotes, setSelectedDeliveryNotes] = useState<Set<string>>(new Set());
 
   const itemsPerPage = 10;
 
@@ -95,6 +96,82 @@ export default function DeliveryNotesPage() {
     } catch (error) {
       logger.error('Error fetching delivery notes:', error);
       setError('納品書の取得に失敗しました');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      const allIds = new Set(deliveryNotes.map(note => note._id?.toString() || ''));
+      setSelectedDeliveryNotes(allIds);
+    } else {
+      setSelectedDeliveryNotes(new Set());
+    }
+  };
+
+  const handleSelectDeliveryNote = (noteId: string, checked: boolean) => {
+    const newSelection = new Set(selectedDeliveryNotes);
+    if (checked) {
+      newSelection.add(noteId);
+    } else {
+      newSelection.delete(noteId);
+    }
+    setSelectedDeliveryNotes(newSelection);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedDeliveryNotes.size === 0) return;
+    
+    if (!confirm(`選択した${selectedDeliveryNotes.size}件の納品書を削除してもよろしいですか？この操作は取り消せません。`)) {
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      logger.debug('Starting bulk delete for delivery notes:', Array.from(selectedDeliveryNotes));
+      
+      const results = await Promise.allSettled(
+        Array.from(selectedDeliveryNotes).map(async (id) => {
+          const response = await fetch(`/api/delivery-notes/${id}`, { 
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+          
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(`Failed to delete delivery note ${id}: ${errorData.error || response.statusText}`);
+          }
+          
+          return { id, success: true };
+        })
+      );
+      
+      const failures = results.filter(result => result.status === 'rejected');
+      const successes = results.filter(result => result.status === 'fulfilled');
+      
+      logger.debug('Bulk delete results:', { 
+        total: results.length, 
+        successes: successes.length, 
+        failures: failures.length
+      });
+      
+      if (failures.length > 0) {
+        logger.error('Some delivery notes failed to delete:', failures);
+        const errorMessage = `${failures.length}件の納品書の削除に失敗しました。${successes.length}件は削除されました。`;
+        setError(errorMessage);
+      } else {
+        logger.info(`Successfully deleted ${successes.length} delivery notes`);
+      }
+      
+      // リフレッシュ
+      await fetchDeliveryNotes();
+      setSelectedDeliveryNotes(new Set());
+    } catch (error) {
+      logger.error('Error bulk deleting delivery notes:', error);
+      setError('一括削除に失敗しました。もう一度お試しください。');
     } finally {
       setIsLoading(false);
     }
@@ -200,6 +277,46 @@ export default function DeliveryNotesPage() {
         </Button>
       </div>
 
+      {/* 一括操作バー */}
+      {selectedDeliveryNotes.size > 0 && (
+        <Card className="mb-4 bg-blue-50 border-blue-200">
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-5 w-5 text-blue-600" />
+                <span className="text-sm font-medium">
+                  {selectedDeliveryNotes.size}件の納品書を選択中
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedDeliveryNotes(new Set())}
+                >
+                  選択解除
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleBulkDelete}
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> 削除中...</>
+                  ) : (
+                    <>
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      一括削除
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* フィルター・検索エリア */}
       <Card className="mb-6">
         <CardContent className="pt-6">
@@ -252,7 +369,7 @@ export default function DeliveryNotesPage() {
             <div className="flex justify-center items-center h-32">
               <Loader2 className="h-8 w-8 animate-spin" />
             </div>
-          ) : filteredDeliveryNotes.length === 0 ? (
+          ) : deliveryNotes.length === 0 ? (
             <div className="text-center py-8">
               <FileText className="mx-auto h-12 w-12 text-gray-400 mb-4" />
               <p className="text-gray-500">納品書がありません</p>
@@ -263,6 +380,13 @@ export default function DeliveryNotesPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-[50px]">
+                        <Checkbox
+                          checked={selectedDeliveryNotes.size === deliveryNotes.length && deliveryNotes.length > 0}
+                          onCheckedChange={handleSelectAll}
+                          aria-label="すべて選択"
+                        />
+                      </TableHead>
                       <TableHead>納品書番号</TableHead>
                       <TableHead>顧客名</TableHead>
                       <TableHead>発行日</TableHead>
@@ -273,12 +397,21 @@ export default function DeliveryNotesPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredDeliveryNotes.map((deliveryNote) => (
+                    {deliveryNotes.map((deliveryNote) => (
                       <TableRow 
                         key={deliveryNote._id?.toString()} 
                         className="cursor-pointer hover:bg-gray-50"
                         onClick={() => router.push(`/delivery-notes/${deliveryNote._id}`)}
                       >
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          <Checkbox
+                            checked={selectedDeliveryNotes.has(deliveryNote._id?.toString() || '')}
+                            onCheckedChange={(checked) => 
+                              handleSelectDeliveryNote(deliveryNote._id?.toString() || '', checked as boolean)
+                            }
+                            aria-label={`${deliveryNote.deliveryNoteNumber}を選択`}
+                          />
+                        </TableCell>
                         <TableCell className="font-medium">
                           {deliveryNote.deliveryNoteNumber}
                         </TableCell>

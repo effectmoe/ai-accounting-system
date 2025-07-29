@@ -26,6 +26,26 @@ interface CompanyInfo {
   address?: string;
 }
 
+// プレースホルダーを定数として定義
+const PLACEHOLDERS = {
+  customerName: 'customerName',
+  documentNumber: 'documentNumber',
+  documentTitle: 'documentTitle',
+  totalAmount: 'totalAmount',
+  dueDate: 'dueDate',
+  companyName: 'companyName',
+  companyAddress: 'companyAddress',
+  companyPhone: 'companyPhone',
+  companyEmail: 'companyEmail',
+  validityDate: 'validityDate',
+  deliveryDate: 'deliveryDate'
+};
+
+// プレースホルダーをテンプレートに変換する関数
+const ph = (key: string): string => {
+  return String.fromCharCode(123, 123) + key + String.fromCharCode(125, 125);
+};
+
 export default function EmailTemplatesPage() {
   logger.debug('EmailTemplatesPage component initializing');
   
@@ -34,18 +54,18 @@ export default function EmailTemplatesPage() {
     const initialTemplates = [
       {
         documentType: 'invoice' as const,
-        subject: '請求書送付（{{' + 'documentNumber' + '}}）',
-        body: '{{' + 'customerName' + '}}\n\n\nいつもお世話になっております、{{' + 'companyName' + '}}でございます。\n\nPDFファイルにて以下の内容の請求書をお送りさせていただきました。\n\n\n請求書番号：{{' + 'documentNumber' + '}}\n{{' + 'documentTitle' + '}}請求金額：{{' + 'totalAmount' + '}}\nお支払期限：{{' + 'dueDate' + '}}\n\n\n添付ファイルをご確認の上、何卒期限までにお支払いをお願いいたします。\nご不明な点がございましたら、お気軽にお問い合わせくださいませ。\n\nご査収の程、お願いいたします。\n\n\n──────────────────────────\n{{' + 'companyName' + '}}\n{{' + 'companyAddress' + '}}\nTEL: {{' + 'companyPhone' + '}}\nEmail: {{' + 'companyEmail' + '}}\n──────────────────────────'
+        subject: `請求書送付（${ph(PLACEHOLDERS.documentNumber)}）`,
+        body: `${ph(PLACEHOLDERS.customerName)}\n\n\nいつもお世話になっております、${ph(PLACEHOLDERS.companyName)}でございます。\n\nPDFファイルにて以下の内容の請求書をお送りさせていただきました。\n\n\n請求書番号：${ph(PLACEHOLDERS.documentNumber)}\n${ph(PLACEHOLDERS.documentTitle)}請求金額：${ph(PLACEHOLDERS.totalAmount)}\nお支払期限：${ph(PLACEHOLDERS.dueDate)}\n\n\n添付ファイルをご確認の上、何卒期限までにお支払いをお願いいたします。\nご不明な点がございましたら、お気軽にお問い合わせくださいませ。\n\nご査収の程、お願いいたします。\n\n\n──────────────────────────\n${ph(PLACEHOLDERS.companyName)}\n${ph(PLACEHOLDERS.companyAddress)}\nTEL: ${ph(PLACEHOLDERS.companyPhone)}\nEmail: ${ph(PLACEHOLDERS.companyEmail)}\n──────────────────────────`
       },
       {
         documentType: 'quote' as const,
-        subject: '【見積書】{{' + 'documentNumber' + '}} のご送付',
-        body: '{{' + 'customerName' + '}}\n\nいつもお世話になっております、{{' + 'companyName' + '}}でございます。\n\nご依頼いただきました見積書をお送りいたします。\n\n見積書番号：{{' + 'documentNumber' + '}}\n見積金額：{{' + 'totalAmount' + '}}\n有効期限：{{' + 'validityDate' + '}}\n\n添付ファイルをご確認ください。\n\nご不明な点がございましたら、お気軽にお問い合わせください。\n\nよろしくお願いいたします。\n\n\n──────────────────────────\n{{' + 'companyName' + '}}\n{{' + 'companyAddress' + '}}\nTEL: {{' + 'companyPhone' + '}}\nEmail: {{' + 'companyEmail' + '}}\n──────────────────────────'
+        subject: `【見積書】${ph(PLACEHOLDERS.documentNumber)} のご送付`,
+        body: `${ph(PLACEHOLDERS.customerName)}\n\nいつもお世話になっております、${ph(PLACEHOLDERS.companyName)}でございます。\n\nご依頼いただきました見積書をお送りいたします。\n\n見積書番号：${ph(PLACEHOLDERS.documentNumber)}\n見積金額：${ph(PLACEHOLDERS.totalAmount)}\n有効期限：${ph(PLACEHOLDERS.validityDate)}\n\n添付ファイルをご確認ください。\n\nご不明な点がございましたら、お気軽にお問い合わせください。\n\nよろしくお願いいたします。\n\n\n──────────────────────────\n${ph(PLACEHOLDERS.companyName)}\n${ph(PLACEHOLDERS.companyAddress)}\nTEL: ${ph(PLACEHOLDERS.companyPhone)}\nEmail: ${ph(PLACEHOLDERS.companyEmail)}\n──────────────────────────`
       },
       {
         documentType: 'delivery-note' as const,
-        subject: '【納品書】{{' + 'documentNumber' + '}} のご送付',
-        body: '{{' + 'customerName' + '}}\n\nいつもお世話になっております、{{' + 'companyName' + '}}でございます。\n\n納品書をお送りいたします。\n\n納品書番号：{{' + 'documentNumber' + '}}\n納品日：{{' + 'deliveryDate' + '}}\n合計金額：{{' + 'totalAmount' + '}}\n\n添付ファイルをご確認ください。\n\nご不明な点がございましたら、お気軽にお問い合わせください。\n\nよろしくお願いいたします。\n\n\n──────────────────────────\n{{' + 'companyName' + '}}\n{{' + 'companyAddress' + '}}\nTEL: {{' + 'companyPhone' + '}}\nEmail: {{' + 'companyEmail' + '}}\n──────────────────────────'
+        subject: `【納品書】${ph(PLACEHOLDERS.documentNumber)} のご送付`,
+        body: `${ph(PLACEHOLDERS.customerName)}\n\nいつもお世話になっております、${ph(PLACEHOLDERS.companyName)}でございます。\n\n納品書をお送りいたします。\n\n納品書番号：${ph(PLACEHOLDERS.documentNumber)}\n納品日：${ph(PLACEHOLDERS.deliveryDate)}\n合計金額：${ph(PLACEHOLDERS.totalAmount)}\n\n添付ファイルをご確認ください。\n\nご不明な点がございましたら、お気軽にお問い合わせください。\n\nよろしくお願いいたします。\n\n\n──────────────────────────\n${ph(PLACEHOLDERS.companyName)}\n${ph(PLACEHOLDERS.companyAddress)}\nTEL: ${ph(PLACEHOLDERS.companyPhone)}\nEmail: ${ph(PLACEHOLDERS.companyEmail)}\n──────────────────────────`
       }
     ];
     logger.debug('Initial templates created:', initialTemplates);
