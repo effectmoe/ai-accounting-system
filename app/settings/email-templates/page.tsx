@@ -338,10 +338,10 @@ export default function EmailTemplatesPage() {
         <AlertDescription>
           以下の変数を使用できます：
           <div className="mt-2 text-sm">
-            <div>共通：<code className="bg-gray-100 px-1 py-0.5 rounded">{{customerName}}, {{documentNumber}}, {{documentTitle}}, {{totalAmount}}, {{companyName}}, {{companyPhone}}, {{companyEmail}}, {{companyAddress}}</code></div>
-            <div>請求書：<code className="bg-gray-100 px-1 py-0.5 rounded">{{dueDate}}</code></div>
-            <div>見積書：<code className="bg-gray-100 px-1 py-0.5 rounded">{{validityDate}}</code></div>
-            <div>納品書：<code className="bg-gray-100 px-1 py-0.5 rounded">{{deliveryDate}}</code></div>
+            <div>共通：<code className="bg-gray-100 px-1 py-0.5 rounded">{`{{customerName}}, {{documentNumber}}, {{documentTitle}}, {{totalAmount}}, {{companyName}}, {{companyPhone}}, {{companyEmail}}, {{companyAddress}}`}</code></div>
+            <div>請求書：<code className="bg-gray-100 px-1 py-0.5 rounded">{`{{dueDate}}`}</code></div>
+            <div>見積書：<code className="bg-gray-100 px-1 py-0.5 rounded">{`{{validityDate}}`}</code></div>
+            <div>納品書：<code className="bg-gray-100 px-1 py-0.5 rounded">{`{{deliveryDate}}`}</code></div>
           </div>
         </AlertDescription>
       </Alert>
