@@ -719,6 +719,7 @@ export default function NewCustomerPage() {
             isOpen={true}
             onClose={() => {}}
             onDataExtracted={handleDataExtracted}
+            formData={formData}
           />
         </div>
       </div>
