@@ -64,19 +64,19 @@ export default function EmailSendModal({
       try {
         const dateObj = new Date(dueDate);
         if (!isNaN(dateObj.getTime())) {
-          formattedDueDate = dateObj.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '年').replace(/年(\d{2})/, '年$1月').replace(/月(\d{2})/, '月$1日');
+          formattedDueDate = dateObj.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/(\d{4})\/(\d{2})\/(\d{2})/, '$1年$2月$3日');
         }
       } catch (e) {
         logger.error('Error formatting due date:', e);
       }
     }
-    const formattedDeliveryDate = deliveryDate ? new Date(deliveryDate).toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '年').replace(/年(\d{2})/, '年$1月').replace(/月(\d{2})/, '月$1日') : '';
+    const formattedDeliveryDate = deliveryDate ? new Date(deliveryDate).toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/(\d{4})\/(\d{2})\/(\d{2})/, '$1年$2月$3日') : '';
     const formattedCustomerName = formatCustomerNameForEmail(customer, customerSnapshot);
     
     const variables = {
       customerName: formattedCustomerName,
       documentNumber: documentNumber,
-      documentTitle: documentTitle || '',
+      documentTitle: documentTitle ? `請求件名：${documentTitle}\n` : '',
       totalAmount: `¥${totalAmount.toLocaleString()}`,
       dueDate: formattedDueDate,
       validityDate: dueDate ? formattedDueDate : '',
@@ -135,7 +135,7 @@ export default function EmailSendModal({
         try {
           const dateObj = new Date(dueDate);
           if (!isNaN(dateObj.getTime())) {
-            formattedDueDate = dateObj.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '年').replace(/年(\d{2})/, '年$1月').replace(/月(\d{2})/, '月$1日');
+            formattedDueDate = dateObj.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/(\d{4})\/(\d{2})\/(\d{2})/, '$1年$2月$3日');
           }
         } catch (e) {
           logger.error('Error formatting due date:', e);
