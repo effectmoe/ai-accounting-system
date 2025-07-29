@@ -298,32 +298,55 @@ function SuppliersPageContent() {
             },
           });
           
+          const responseData = await response.json();
+          
           if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
-            throw new Error(`Failed to delete supplier ${id}: ${errorData.error || response.statusText}`);
+            throw new Error(`Failed to delete supplier ${id}: ${responseData.error || response.statusText}`);
           }
           
-          return { id, success: true };
+          // 削除結果の詳細をログに出力
+          logger.debug(`Delete result for supplier ${id}:`, responseData);
+          
+          return { id, success: true, data: responseData };
         })
       );
       
       const failures = results.filter(result => result.status === 'rejected');
       const successes = results.filter(result => result.status === 'fulfilled');
       
+      // 成功した結果の中で、実際に削除されたものと無効化されたものを分ける
+      const actuallyDeleted = successes.filter(result => 
+        result.status === 'fulfilled' && result.value.data?.deleted === true
+      );
+      const deactivated = successes.filter(result => 
+        result.status === 'fulfilled' && result.value.data?.deactivated === true
+      );
+      
       logger.debug('Bulk delete results:', { 
         total: results.length, 
         successes: successes.length, 
-        failures: failures.length 
+        failures: failures.length,
+        actuallyDeleted: actuallyDeleted.length,
+        deactivated: deactivated.length
       });
       
       if (failures.length > 0) {
         logger.error('Some suppliers failed to delete:', failures);
-        const errorMessage = `${failures.length}件の仕入先の削除に失敗しました。${successes.length}件は正常に削除されました。`;
+        const errorMessage = `${failures.length}件の仕入先の削除に失敗しました。${successes.length}件は処理されました。`;
         setError(errorMessage);
         toast.error(errorMessage);
       } else {
-        logger.info(`Successfully deleted ${successes.length} suppliers`);
-        toast.success(`${successes.length}件の仕入先を削除しました`);
+        logger.info(`Successfully processed ${successes.length} suppliers`);
+        
+        // 詳細なメッセージを表示
+        if (deactivated.length > 0) {
+          toast.success(
+            `${actuallyDeleted.length}件を削除、${deactivated.length}件を無効化しました（関連データがあるため）`,
+            { duration: 5000 }
+          );
+        } else {
+          toast.success(`${successes.length}件の仕入先を削除しました`);
+        }
       }
       
       // キャッシュを無効化
