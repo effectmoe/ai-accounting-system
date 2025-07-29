@@ -4,6 +4,7 @@ import './globals.css'
 import Navigation from '@/components/navigation'
 import { Toaster } from 'react-hot-toast'
 import EnhancedMastraChat from '@/components/EnhancedMastraChat'
+import ChatbotEmbed from '@/components/ChatbotEmbed'
 // import { AppInitializer } from './app'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -55,6 +56,7 @@ export default function RootLayout({
         </main>
         <Toaster position="top-right" />
         <EnhancedMastraChat />
+        <ChatbotEmbed />
       </body>
     </html>
   )
