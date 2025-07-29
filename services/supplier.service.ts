@@ -164,11 +164,12 @@ export class SupplierService {
       updatedAt: now
     };
 
-    const result = await db.create(COLLECTION_NAME, supplier);
+    const result = await collection.insertOne(supplier);
     
     return {
-      ...result,
-      id: result._id.toString()
+      ...supplier,
+      _id: result.insertedId,
+      id: result.insertedId.toString()
     };
   }
 
@@ -216,6 +217,8 @@ export class SupplierService {
 
   // 仕入先削除
   static async deleteSupplier(id: string) {
+    logger.debug('[SupplierService.deleteSupplier] Starting deletion for ID:', id);
+    
     const db = await getDatabase();
     const collection = db.collection<Supplier>(COLLECTION_NAME);
 
@@ -224,6 +227,11 @@ export class SupplierService {
       db.collection('purchaseOrders').countDocuments({ supplierId: new ObjectId(id) }),
       db.collection('supplierQuotes').countDocuments({ supplierId: new ObjectId(id) })
     ]);
+    
+    logger.debug('[SupplierService.deleteSupplier] Related documents:', {
+      purchaseOrders,
+      supplierQuotes
+    });
 
     if (purchaseOrders > 0 || supplierQuotes > 0) {
       // 完全削除ではなく、ステータスを非アクティブに変更
@@ -251,9 +259,9 @@ export class SupplierService {
     }
 
     // 関連データがない場合は削除
-    const result = await db.delete(COLLECTION_NAME, id);
+    const result = await collection.deleteOne({ _id: new ObjectId(id) });
     
-    if (!result) {
+    if (result.deletedCount === 0) {
       throw new Error('Supplier not found');
     }
 

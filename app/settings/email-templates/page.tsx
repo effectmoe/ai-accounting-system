@@ -27,93 +27,37 @@ interface CompanyInfo {
 }
 
 export default function EmailTemplatesPage() {
-  const [templates, setTemplates] = useState<EmailTemplate[]>([
-    {
-      documentType: 'invoice',
-      subject: '請求書送付（{{documentNumber}}）',
-      body: `{{customerName}}
+  logger.debug('EmailTemplatesPage component initializing');
+  
+  const [templates, setTemplates] = useState<EmailTemplate[]>(() => {
+    logger.debug('Templates state initializing...');
+    const initialTemplates = [
+      {
+        documentType: 'invoice' as const,
+        subject: '請求書送付（{{' + 'documentNumber' + '}}）',
+        body: '{{' + 'customerName' + '}}\n\n\nいつもお世話になっております、{{' + 'companyName' + '}}でございます。\n\nPDFファイルにて以下の内容の請求書をお送りさせていただきました。\n\n\n請求書番号：{{' + 'documentNumber' + '}}\n{{' + 'documentTitle' + '}}請求金額：{{' + 'totalAmount' + '}}\nお支払期限：{{' + 'dueDate' + '}}\n\n\n添付ファイルをご確認の上、何卒期限までにお支払いをお願いいたします。\nご不明な点がございましたら、お気軽にお問い合わせくださいませ。\n\nご査収の程、お願いいたします。\n\n\n──────────────────────────\n{{' + 'companyName' + '}}\n{{' + 'companyAddress' + '}}\nTEL: {{' + 'companyPhone' + '}}\nEmail: {{' + 'companyEmail' + '}}\n──────────────────────────'
+      },
+      {
+        documentType: 'quote' as const,
+        subject: '【見積書】{{' + 'documentNumber' + '}} のご送付',
+        body: '{{' + 'customerName' + '}}\n\nいつもお世話になっております、{{' + 'companyName' + '}}でございます。\n\nご依頼いただきました見積書をお送りいたします。\n\n見積書番号：{{' + 'documentNumber' + '}}\n見積金額：{{' + 'totalAmount' + '}}\n有効期限：{{' + 'validityDate' + '}}\n\n添付ファイルをご確認ください。\n\nご不明な点がございましたら、お気軽にお問い合わせください。\n\nよろしくお願いいたします。\n\n\n──────────────────────────\n{{' + 'companyName' + '}}\n{{' + 'companyAddress' + '}}\nTEL: {{' + 'companyPhone' + '}}\nEmail: {{' + 'companyEmail' + '}}\n──────────────────────────'
+      },
+      {
+        documentType: 'delivery-note' as const,
+        subject: '【納品書】{{' + 'documentNumber' + '}} のご送付',
+        body: '{{' + 'customerName' + '}}\n\nいつもお世話になっております、{{' + 'companyName' + '}}でございます。\n\n納品書をお送りいたします。\n\n納品書番号：{{' + 'documentNumber' + '}}\n納品日：{{' + 'deliveryDate' + '}}\n合計金額：{{' + 'totalAmount' + '}}\n\n添付ファイルをご確認ください。\n\nご不明な点がございましたら、お気軽にお問い合わせください。\n\nよろしくお願いいたします。\n\n\n──────────────────────────\n{{' + 'companyName' + '}}\n{{' + 'companyAddress' + '}}\nTEL: {{' + 'companyPhone' + '}}\nEmail: {{' + 'companyEmail' + '}}\n──────────────────────────'
+      }
+    ];
+    logger.debug('Initial templates created:', initialTemplates);
+    return initialTemplates;
+  });
 
-
-いつもお世話になっております、{{companyName}}でございます。
-
-PDFファイルにて以下の内容の請求書をお送りさせていただきました。
-
-
-請求書番号：{{documentNumber}}
-{{documentTitle}}請求金額：{{totalAmount}}
-お支払期限：{{dueDate}}
-
-
-添付ファイルをご確認の上、何卒期限までにお支払いをお願いいたします。
-ご不明な点がございましたら、お気軽にお問い合わせくださいませ。
-
-ご査収の程、お願いいたします。
-
-
-──────────────────────────
-{{companyName}}
-{{companyAddress}}
-TEL: {{companyPhone}}
-Email: {{companyEmail}}
-──────────────────────────`
-    },
-    {
-      documentType: 'quote',
-      subject: '【見積書】{{documentNumber}} のご送付',
-      body: `{{customerName}}
-
-いつもお世話になっております、{{companyName}}でございます。
-
-ご依頼いただきました見積書をお送りいたします。
-
-見積書番号：{{documentNumber}}
-見積金額：{{totalAmount}}
-有効期限：{{validityDate}}
-
-添付ファイルをご確認ください。
-
-ご不明な点がございましたら、お気軽にお問い合わせください。
-
-よろしくお願いいたします。
-
-
-──────────────────────────
-{{companyName}}
-{{companyAddress}}
-TEL: {{companyPhone}}
-Email: {{companyEmail}}
-──────────────────────────`
-    },
-    {
-      documentType: 'delivery-note',
-      subject: '【納品書】{{documentNumber}} のご送付',
-      body: `{{customerName}}
-
-いつもお世話になっております、{{companyName}}でございます。
-
-納品書をお送りいたします。
-
-納品書番号：{{documentNumber}}
-納品日：{{deliveryDate}}
-合計金額：{{totalAmount}}
-
-添付ファイルをご確認ください。
-
-ご不明な点がございましたら、お気軽にお問い合わせください。
-
-よろしくお願いいたします。
-
-
-──────────────────────────
-{{companyName}}
-{{companyAddress}}
-TEL: {{companyPhone}}
-Email: {{companyEmail}}
-──────────────────────────`
-    }
-  ]);
-
-  const [companyInfo, setCompanyInfo] = useState<CompanyInfo>({});
+  const [companyInfo, setCompanyInfo] = useState<CompanyInfo>({
+    company_name: '',
+    phone: '',
+    email: '',
+    address: ''
+  });
   const [activeTab, setActiveTab] = useState<string>('invoice');
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -126,23 +70,40 @@ Email: {{companyEmail}}
 
   const fetchCompanyInfo = async () => {
     try {
+      logger.debug('Fetching company info...');
       const response = await fetch('/api/company-info');
       if (response.ok) {
         const data = await response.json();
+        logger.debug('Company info API response:', data);
         if (data.companyInfo) {
+          logger.debug('Setting company info:', data.companyInfo);
           setCompanyInfo(data.companyInfo);
         } else {
-          // 会社情報が存在しない場合はデフォルト値を設定
-          setCompanyInfo({});
+          logger.debug('No company info found, setting default values');
+          setCompanyInfo({
+            company_name: '',
+            phone: '',
+            email: '',
+            address: ''
+          });
         }
       } else {
-        // APIエラーの場合もデフォルト値を設定
-        setCompanyInfo({});
+        logger.error('API error response:', response.status);
+        setCompanyInfo({
+          company_name: '',
+          phone: '',
+          email: '',
+          address: ''
+        });
       }
     } catch (error) {
       logger.error('Error fetching company info:', error);
-      // エラーの場合もデフォルト値を設定
-      setCompanyInfo({});
+      setCompanyInfo({
+        company_name: '',
+        phone: '',
+        email: '',
+        address: ''
+      });
     }
   };
 
@@ -163,13 +124,22 @@ Email: {{companyEmail}}
   };
 
   const handleTemplateChange = (documentType: string, field: 'subject' | 'body', value: string) => {
-    setTemplates(prev => 
-      prev.map(template => 
-        template.documentType === documentType 
-          ? { ...template, [field]: value }
-          : template
-      )
-    );
+    logger.debug('handleTemplateChange called:', { documentType, field, value });
+    
+    try {
+      setTemplates(prev => {
+        logger.debug('Previous templates:', prev);
+        const updated = prev.map(template => 
+          template.documentType === documentType 
+            ? { ...template, [field]: value }
+            : template
+        );
+        logger.debug('Updated templates:', updated);
+        return updated;
+      });
+    } catch (error) {
+      logger.error('Error in handleTemplateChange:', error);
+    }
   };
 
   const handleSave = async () => {
@@ -196,10 +166,25 @@ Email: {{companyEmail}}
     }
   };
 
-  const getPreviewContent = (template: EmailTemplate): { subject: string; body: string } => {
+  const getPreviewContent = (template: EmailTemplate | null): { subject: string; body: string } => {
     try {
+      logger.debug('getPreviewContent called with template:', template);
+      logger.debug('getPreviewContent companyInfo:', companyInfo);
+      
+      // テンプレートが存在しない場合のエラーハンドリング
+      if (!template || !template.subject || !template.body) {
+        logger.warn('Template is null or incomplete:', template);
+        return { subject: 'テンプレートが見つかりません', body: 'テンプレートが見つかりません' };
+      }
+
       // companyInfoが存在しない場合はデフォルト値を使用
-      const safeCompanyInfo = companyInfo || {};
+      const safeCompanyInfo = companyInfo || {
+        company_name: '',
+        phone: '',
+        email: '',
+        address: ''
+      };
+      logger.debug('Safe company info:', safeCompanyInfo);
       
       const sampleData: Record<string, string> = {
         customerName: '社労士法人労務ニュース 御中',
@@ -209,25 +194,38 @@ Email: {{companyEmail}}
         dueDate: '2025年07月31日',
         validityDate: '2025年08月31日',
         deliveryDate: '2025年07月29日',
-        companyName: safeCompanyInfo.name || safeCompanyInfo.company_name || '株式会社EFFECT',
-        companyAddress: safeCompanyInfo.address || '東京都千代田区大手町1-1-1',
-        companyPhone: safeCompanyInfo.phone_number || safeCompanyInfo.phone || '03-1234-5678',
-        companyEmail: safeCompanyInfo.email || 'info@effect.moe',
+        companyName: String(safeCompanyInfo.name || safeCompanyInfo.company_name || '株式会社EFFECT'),
+        companyAddress: String(safeCompanyInfo.address || '東京都千代田区大手町1-1-1'),
+        companyPhone: String(safeCompanyInfo.phone_number || safeCompanyInfo.phone || '03-1234-5678'),
+        companyEmail: String(safeCompanyInfo.email || 'info@effect.moe'),
       };
 
-      let subject = template.subject || '';
-      let body = template.body || '';
+      let subject = String(template.subject || '');
+      let body = String(template.body || '');
 
       Object.entries(sampleData).forEach(([key, value]) => {
-        const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
-        subject = subject.replace(regex, value || '');
-        body = body.replace(regex, value || '');
+        try {
+          if (key && typeof key === 'string' && value !== undefined && value !== null) {
+            const escapedKey = key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const regex = new RegExp(`\\{\\{${escapedKey}\\}\\}`, 'g');
+            const safeValue = String(value);
+            subject = subject.replace(regex, safeValue);
+            body = body.replace(regex, safeValue);
+          }
+        } catch (replaceError) {
+          logger.error(`Error replacing variable ${key}:`, replaceError);
+        }
       });
 
-      return { subject, body };
+      const result = { subject: subject || '', body: body || '' };
+      logger.debug('getPreviewContent result:', result);
+      return result;
     } catch (error) {
       logger.error('Error in getPreviewContent:', error);
-      return { subject: 'プレビューエラー', body: 'プレビューを生成できませんでした。' };
+      return { 
+        subject: 'プレビューエラー', 
+        body: 'プレビューを生成できませんでした。エラー: ' + (error instanceof Error ? error.message : String(error))
+      };
     }
   };
 
@@ -252,7 +250,55 @@ Email: {{companyEmail}}
     );
   }
 
-  const activeTemplate = templates.find(t => t.documentType === activeTab);
+  const activeTemplate = templates.find(t => t.documentType === activeTab) || null;
+  logger.debug('Active template found:', activeTemplate);
+  logger.debug('Current activeTab:', activeTab);
+
+  // プレビューコンテンツを直接計算（useMemoを使わない）
+  const getPreviewContentDirect = () => {
+    try {
+      logger.debug('getPreviewContentDirect called with:', {
+        activeTemplate,
+        showPreview,
+        companyInfo
+      });
+      
+      if (!showPreview) {
+        logger.debug('showPreview is false, returning empty content');
+        return { subject: '', body: '' };
+      }
+      
+      if (!activeTemplate) {
+        logger.debug('activeTemplate is null, returning empty content');
+        return { subject: '', body: '' };
+      }
+      
+      // activeTemplateの存在を確認
+      if (!activeTemplate.subject || !activeTemplate.body) {
+        logger.warn('activeTemplate is incomplete:', activeTemplate);
+        return { subject: 'テンプレートが不完全です', body: 'テンプレートが不完全です' };
+      }
+      
+      logger.debug('Calling getPreviewContent with activeTemplate');
+      const result = getPreviewContent(activeTemplate);
+      logger.debug('getPreviewContentDirect result:', result);
+      return result;
+    } catch (error) {
+      logger.error('Error in getPreviewContentDirect:', error);
+      return { subject: 'プレビューエラー', body: 'プレビューを生成できませんでした' };
+    }
+  };
+
+  const previewContent = getPreviewContentDirect();
+  logger.debug('Final previewContent before render:', previewContent);
+
+  logger.debug('About to render component with:', {
+    templates: templates.length,
+    companyInfo,
+    activeTemplate,
+    showPreview,
+    previewContent
+  });
 
   return (
     <div className="container mx-auto p-6">
@@ -324,17 +370,24 @@ Email: {{companyEmail}}
             <div className="flex justify-between mt-6">
               <Button
                 variant="outline"
-                onClick={() => {
-                  if (!companyInfo) {
-                    // 会社情報が読み込まれていない場合は再取得
-                    fetchCompanyInfo();
+                onClick={async () => {
+                  try {
+                    logger.debug('Preview button clicked, current state:', { showPreview, companyInfo });
+                    if (!companyInfo || Object.keys(companyInfo).length === 0) {
+                      logger.debug('Company info not loaded, fetching...');
+                      await fetchCompanyInfo();
+                    }
+                    logger.debug('Toggling showPreview');
+                    setShowPreview(prev => !prev);
+                  } catch (error) {
+                    logger.error('Error handling preview button click:', error);
+                    setShowPreview(prev => !prev);
                   }
-                  setShowPreview(!showPreview);
                 }}
                 disabled={isLoading}
               >
                 <Eye className="mr-2 h-4 w-4" />
-                プレビュー
+                {showPreview ? 'プレビューを閉じる' : 'プレビュー'}
               </Button>
               <Button onClick={handleSave} disabled={isSaving}>
                 {isSaving ? (
@@ -354,38 +407,24 @@ Email: {{companyEmail}}
         </Card>
 
         {/* プレビューエリア */}
-        {showPreview && activeTemplate && !isLoading && companyInfo && (
+        {showPreview && !isLoading && (
           <Card>
             <CardHeader>
-              <CardTitle>プレビュー</CardTitle>
+              <CardTitle>プレビュー - {getDocumentTypeLabel(activeTab)}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div>
                   <Label className="text-sm text-gray-500">件名</Label>
                   <div className="mt-1 p-3 bg-gray-50 rounded-md">
-                    {(() => {
-                      try {
-                        return getPreviewContent(activeTemplate).subject;
-                      } catch (error) {
-                        logger.error('Preview content error:', error);
-                        return 'プレビューエラー';
-                      }
-                    })()}
+                    {previewContent?.subject || 'テンプレートが選択されていません'}
                   </div>
                 </div>
 
                 <div>
                   <Label className="text-sm text-gray-500">本文</Label>
                   <div className="mt-1 p-4 bg-gray-50 rounded-md whitespace-pre-wrap font-mono text-sm">
-                    {(() => {
-                      try {
-                        return getPreviewContent(activeTemplate).body;
-                      } catch (error) {
-                        logger.error('Preview content error:', error);
-                        return 'プレビューエラー';
-                      }
-                    })()}
+                    {previewContent?.body || 'テンプレートが選択されていません'}
                   </div>
                 </div>
               </div>
