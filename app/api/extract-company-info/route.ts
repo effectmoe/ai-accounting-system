@@ -108,22 +108,25 @@ JSON形式で返してください。ウェブサイトに記載がない情報�
 
       // 住所の抽出
       const addressPatterns = [
+        /<dt>(?:住所|所在地|本社|Address)<\/dt>\s*<dd[^>]*>([^<]+(?:<br[^>]*>[^<]+)*)<\/dd>/i,
         /(?:住所|所在地|本社|Address)[：:]\s*([^<\n]+)/i,
         /〒?\d{3}-?\d{4}[^<\n]+/,
-        /(?:東京都|大阪府|京都府|北海道|[^都道府県]+[県市])[^<\n]{5,50}/,
+        /(?:東京都|大阪府|京都府|北海道|福岡県|[^都道府県]+[県府市])[^<\n]{5,100}/,
       ];
 
       for (const pattern of addressPatterns) {
         const match = html.match(pattern);
         if (match) {
-          const address = match[0] || match[1];
+          const address = match[1] || match[0];
           if (address) {
             info.address = address.trim()
               .replace(/^(?:住所|所在地|本社|Address)[：:]\s*/i, '')
+              .replace(/<br[^>]*>/gi, ' ')  // <br>タグを空白に変換
+              .replace(/\s+/g, ' ')  // 連続する空白を1つに
               .trim();
             
             // 住所から都道府県と市区町村を抽出
-            const prefectureMatch = info.address.match(/(東京都|大阪府|京都府|北海道|[^都道府県]+[県])/);
+            const prefectureMatch = info.address.match(/(東京都|大阪府|京都府|北海道|[^都道府県]+[県府])/);
             if (prefectureMatch) {
               info.prefecture = prefectureMatch[0];
               const remaining = info.address.substring(prefectureMatch.index + prefectureMatch[0].length);
@@ -145,6 +148,7 @@ JSON形式で返してください。ウェブサイトに記載がない情報�
 
       // 電話番号の抽出
       const phonePatterns = [
+        /<dt>(?:電話|TEL|Tel|Phone|TEL\/FAX)<\/dt>\s*<dd[^>]*>([^<\/]+)/i,
         /(?:電話|TEL|Tel|Phone)[：:]\s*([\d\-\(\)\s]+)/i,
         /0\d{1,4}-\d{1,4}-\d{4}/,
         /0\d{9,10}/,
@@ -154,10 +158,22 @@ JSON形式で返してください。ウェブサイトに記載がない情報�
         const match = html.match(pattern);
         if (match) {
           const phone = match[1] || match[0];
-          info.phone = phone.trim()
+          let cleanPhone = phone.trim()
             .replace(/^(?:電話|TEL|Tel|Phone)[：:]\s*/i, '')
-            .replace(/[^\d\-]/g, '')
             .trim();
+          
+          // TEL/FAX形式の場合、最初の電話番号のみを抽出
+          if (cleanPhone.includes('/')) {
+            const parts = cleanPhone.split('/');
+            cleanPhone = parts[0].trim();
+            
+            // FAX番号も抽出
+            if (parts[1]) {
+              info.fax = parts[1].trim().replace(/[^\d\-]/g, '');
+            }
+          }
+          
+          info.phone = cleanPhone.replace(/[^\d\-]/g, '');
           break;
         }
       }
@@ -179,12 +195,7 @@ JSON形式で返してください。ウェブサイトに記載がない情報�
       // ウェブサイトURL
       info.website = url;
 
-      // roumunews.jpの特殊処理
-      if (url.includes('roumunews.jp')) {
-        info.companyName = info.companyName || '労務ニュース株式会社';
-        info.department = '労務管理部';
-        info.notes = '労務管理専門の情報サイト';
-      }
+      // 特殊処理は削除 - 実際の情報のみを抽出する
 
       return info;
     };
