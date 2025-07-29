@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withErrorHandler, ApiErrorResponse } from '@/lib/unified-error-handler';
 import { logger } from '@/lib/logger';
+import { getMastraInstance } from '@/lib/mastra';
 
 export const POST = withErrorHandler(async (request: NextRequest) => {
   const body = await request.json();
@@ -13,7 +14,61 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
   try {
     logger.info('Extracting company info from URL:', url);
 
-    // URLからHTMLを取得
+    // まずMastraエージェントで情報抽出を試みる
+    try {
+      const mastra = getMastraInstance();
+      const agent = mastra.getAgent('webScraper');
+      
+      const result = await agent.generate({
+        messages: [{
+          role: 'user',
+          content: `次のURLから会社情報を抽出してください: ${url}
+
+以下の情報を取得してください：
+- 会社名（companyName）
+- 住所（address）
+- 電話番号（phone）
+- メールアドレス（email）
+- ウェブサイト（website）
+- 部署名（department）※あれば
+- 担当者名（contactPerson）※あれば
+- 郵便番号（postalCode）※あれば
+- 都道府県（prefecture）※あれば
+- 市区町村（city）※あれば
+- FAX番号（fax）※あれば
+
+JSON形式で返してください。見つからない情報はnullにしてください。`
+        }]
+      });
+
+      // レスポンスからJSONを抽出
+      const responseText = result.text || '';
+      logger.debug('Agent response:', responseText);
+      
+      const jsonMatch = responseText.match(/```json\s*([\s\S]*?)\s*```/) || 
+                       responseText.match(/\{[\s\S]*\}/);
+      
+      if (jsonMatch) {
+        const jsonString = jsonMatch[1] || jsonMatch[0];
+        const extractedData = JSON.parse(jsonString);
+        
+        // websiteフィールドがない場合は元のURLを設定
+        if (!extractedData.website) {
+          extractedData.website = url;
+        }
+        
+        logger.info('Extracted company info via Mastra:', extractedData);
+        
+        return NextResponse.json({
+          success: true,
+          ...extractedData
+        });
+      }
+    } catch (mastraError) {
+      logger.warn('Mastra extraction failed, falling back to HTML parsing:', mastraError);
+    }
+
+    // Mastraが失敗した場合は、HTMLを直接取得して解析
     const response = await fetch(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
@@ -133,25 +188,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     };
 
     const companyInfo = extractInfo(html);
-
-    // Mastraエージェントを使用してより詳細な情報を抽出（オプション）
-    try {
-      const mastraResponse = await fetch('/api/mastra/extract-company', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ html: html.substring(0, 10000), url }) // HTMLの一部のみ送信
-      });
-
-      if (mastraResponse.ok) {
-        const mastraData = await mastraResponse.json();
-        // Mastraの結果とマージ
-        Object.assign(companyInfo, mastraData);
-      }
-    } catch (error) {
-      logger.warn('Mastra extraction failed, using basic extraction only:', error);
-    }
-
-    logger.info('Extracted company info:', companyInfo);
+    logger.info('Extracted company info via HTML parsing:', companyInfo);
 
     return NextResponse.json({
       success: true,
