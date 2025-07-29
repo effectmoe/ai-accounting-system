@@ -539,6 +539,7 @@ function QuotesPageContent() {
                       />
                     </TableHead>
                     <TableHead>見積書情報</TableHead>
+                    <TableHead>タイトル</TableHead>
                     <TableHead>発行日</TableHead>
                     <TableHead>有効期限</TableHead>
                     <TableHead className="text-right">金額</TableHead>
@@ -577,11 +578,11 @@ function QuotesPageContent() {
                              quote.customerSnapshot?.companyName || 
                              '顧客名未設定'}
                           </div>
-                          {quote.title && (
-                            <div className="text-xs text-gray-500 truncate max-w-[300px]">
-                              {quote.title}
-                            </div>
-                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm text-gray-700 truncate max-w-[250px]">
+                          {quote.title || '-'}
                         </div>
                       </TableCell>
                       <TableCell>
