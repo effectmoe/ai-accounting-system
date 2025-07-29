@@ -3,9 +3,10 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, MessageCircle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { Customer, Contact } from '@/types/collections';
+import CustomerChatModal from '@/components/CustomerChatModal';
 
 import { logger } from '@/lib/logger';
 interface CustomerForm {
@@ -32,6 +33,7 @@ interface CustomerForm {
 export default function NewCustomerPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const [formData, setFormData] = useState<CustomerForm>({
     customerId: '',
     companyName: '',
@@ -167,6 +169,37 @@ export default function NewCustomerPage() {
         i === index ? { ...contact, [field]: value } : contact
       )
     }));
+  };
+
+  // チャットから抽出されたデータを処理
+  const handleDataExtracted = (data: any) => {
+    setFormData(prev => ({
+      ...prev,
+      companyName: data.companyName || prev.companyName,
+      companyNameKana: data.companyNameKana || prev.companyNameKana,
+      department: data.department || prev.department,
+      postalCode: data.postalCode || prev.postalCode,
+      prefecture: data.prefecture || prev.prefecture,
+      city: data.city || prev.city,
+      address1: data.address1 || data.address || prev.address1,
+      address2: data.address2 || prev.address2,
+      phone: data.phone || prev.phone,
+      fax: data.fax || prev.fax,
+      email: data.email || prev.email,
+      website: data.website || prev.website,
+      notes: data.notes || prev.notes,
+      contacts: data.name ? [{
+        name: data.name,
+        nameKana: data.nameKana || '',
+        title: data.title || '',
+        email: data.email || '',
+        phone: data.phone || '',
+        isPrimary: true
+      }] : prev.contacts
+    }));
+    
+    // エラーをクリア
+    setErrors({});
   };
 
   return (
@@ -648,6 +681,21 @@ export default function NewCustomerPage() {
           </form>
         </div>
       </div>
+      
+      {/* チャットボタン */}
+      <button
+        onClick={() => setIsChatOpen(true)}
+        className="fixed bottom-4 right-4 bg-purple-600 text-white p-4 rounded-full shadow-lg hover:bg-purple-700 transition-colors z-40"
+      >
+        <MessageCircle className="w-6 h-6" />
+      </button>
+      
+      {/* チャットモーダル */}
+      <CustomerChatModal
+        isOpen={isChatOpen}
+        onClose={() => setIsChatOpen(false)}
+        onDataExtracted={handleDataExtracted}
+      />
     </div>
   );
 }
