@@ -125,21 +125,28 @@ JSON形式で返してください。ウェブサイトに記載がない情報�
               .replace(/\s+/g, ' ')  // 連続する空白を1つに
               .trim();
             
-            // 住所から都道府県と市区町村を抽出
-            const prefectureMatch = info.address.match(/(東京都|大阪府|京都府|北海道|[^都道府県]+[県府])/);
-            if (prefectureMatch) {
-              info.prefecture = prefectureMatch[0];
-              const remaining = info.address.substring(prefectureMatch.index + prefectureMatch[0].length);
-              const cityMatch = remaining.match(/^([^市区町村]+[市区町村])/);
-              if (cityMatch) {
-                info.city = cityMatch[0];
-              }
-            }
-
-            // 郵便番号の抽出
+            // 郵便番号の抽出（最初に実行）
             const postalMatch = info.address.match(/〒?(\d{3})-?(\d{4})/);
             if (postalMatch) {
               info.postalCode = `${postalMatch[1]}-${postalMatch[2]}`;
+            }
+
+            // 郵便番号を除去してから都道府県を抽出
+            const addressWithoutPostal = info.address.replace(/〒?\d{3}-?\d{4}\s*/, '');
+            const prefectureMatch = addressWithoutPostal.match(/(東京都|大阪府|京都府|北海道|福岡県|[^都道府県〒\d]+[県府])/);
+            if (prefectureMatch) {
+              info.prefecture = prefectureMatch[0];
+              const remaining = addressWithoutPostal.substring(prefectureMatch.index + prefectureMatch[0].length);
+              const cityMatch = remaining.match(/^([^市区町村]+[市区町村])/);
+              if (cityMatch) {
+                info.city = cityMatch[0];
+                // 住所1: 市区町村以降の部分を抽出
+                const address1Start = remaining.indexOf(cityMatch[0]) + cityMatch[0].length;
+                const address1 = remaining.substring(address1Start).trim();
+                if (address1) {
+                  info.address1 = address1;
+                }
+              }
             }
             break;
           }
