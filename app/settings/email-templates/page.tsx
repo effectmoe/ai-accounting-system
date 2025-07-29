@@ -201,7 +201,7 @@ Email: {{companyEmail}}
       // companyInfoが存在しない場合はデフォルト値を使用
       const safeCompanyInfo = companyInfo || {};
       
-      const sampleData = {
+      const sampleData: Record<string, string> = {
         customerName: '社労士法人労務ニュース 御中',
         documentNumber: 'INV-20250729-001',
         documentTitle: template.documentType === 'invoice' ? '請求件名：ウェブサイト制作費用\n' : template.documentType === 'quote' ? '見積件名：ウェブサイト制作費用\n' : '',
@@ -209,9 +209,9 @@ Email: {{companyEmail}}
         dueDate: '2025年07月31日',
         validityDate: '2025年08月31日',
         deliveryDate: '2025年07月29日',
-        companyName: safeCompanyInfo.company_name || '株式会社EFFECT',
+        companyName: safeCompanyInfo.name || safeCompanyInfo.company_name || '株式会社EFFECT',
         companyAddress: safeCompanyInfo.address || '東京都千代田区大手町1-1-1',
-        companyPhone: safeCompanyInfo.phone || '03-1234-5678',
+        companyPhone: safeCompanyInfo.phone_number || safeCompanyInfo.phone || '03-1234-5678',
         companyEmail: safeCompanyInfo.email || 'info@effect.moe',
       };
 
@@ -219,7 +219,7 @@ Email: {{companyEmail}}
       let body = template.body || '';
 
       Object.entries(sampleData).forEach(([key, value]) => {
-        const regex = new RegExp(`{{${key}}}`, 'g');
+        const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
         subject = subject.replace(regex, value || '');
         body = body.replace(regex, value || '');
       });
