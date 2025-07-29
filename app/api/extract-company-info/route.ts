@@ -60,6 +60,7 @@ JSON形式で返してください。ウェブサイトに記載がない情報�
         }
         
         logger.info('Extracted company info via Mastra:', extractedData);
+        logger.debug('Mastra FAX field:', extractedData.fax);
         
         return NextResponse.json({
           success: true,
@@ -177,7 +178,9 @@ JSON形式で返してください。ウェブサイトに記載がない情報�
             // FAX番号も抽出
             if (parts[1]) {
               info.fax = parts[1].trim().replace(/[^\d\-]/g, '');
+              logger.debug('FAX extracted:', info.fax);
             }
+            logger.debug('Phone/FAX split:', { cleanPhone, parts, fax: info.fax });
           }
           
           info.phone = cleanPhone.replace(/[^\d\-]/g, '');
