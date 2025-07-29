@@ -223,21 +223,14 @@ export default function NewCustomerPage() {
         });
       }
 
-      // 電話番号、FAX、メール
-      if (data.phone) newFormData.phone = data.phone;
-      if (data.fax) newFormData.fax = data.fax;
-      if (data.email) newFormData.email = data.email;
-      if (data.website) newFormData.website = data.website;
-      if (data.notes) newFormData.notes = data.notes;
-
-      // 担当者情報
+      // 担当者情報の処理を先に行う
       if (data.name) {
         newFormData.contacts = [{
           name: data.name,
           nameKana: data.nameKana || '',
           title: data.title || data.department || '', // 役職がない場合は部署を使用
-          email: data.email || '',
-          phone: data.mobile || data.phone || '', // 携帯があれば優先
+          email: data.contactEmail || data.email || '', // 担当者専用メールがあれば優先
+          phone: data.mobile || data.contactPhone || '', // 携帯または担当者専用電話
           isPrimary: true
         }];
         
@@ -247,7 +240,35 @@ export default function NewCustomerPage() {
         }
       }
 
-      console.log('Updated form data:', newFormData);
+      // 会社の連絡先情報（担当者情報の後に処理して会社情報を優先）
+      if (data.phone) {
+        newFormData.phone = data.phone;
+        console.log('Setting phone:', data.phone);
+      }
+      if (data.fax) {
+        newFormData.fax = data.fax;
+        console.log('Setting fax:', data.fax);
+      }
+      if (data.email) {
+        newFormData.email = data.email;
+        console.log('Setting email:', data.email);
+      }
+      if (data.website) {
+        newFormData.website = data.website;
+        console.log('Setting website:', data.website);
+      }
+      if (data.notes) {
+        newFormData.notes = data.notes;
+        console.log('Setting notes:', data.notes);
+      }
+
+      console.log('Final form data:', newFormData);
+      console.log('Company contact info check:', {
+        phone: newFormData.phone,
+        fax: newFormData.fax,
+        email: newFormData.email,
+        website: newFormData.website
+      });
       return newFormData;
     });
     
