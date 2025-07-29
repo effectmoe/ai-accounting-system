@@ -49,6 +49,7 @@ interface Product {
 interface Invoice {
   _id: string;
   invoiceNumber: string;
+  title?: string;
   customerId: string;
   customer?: Customer;
   issueDate: string | Date;
