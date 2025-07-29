@@ -175,30 +175,52 @@ export default function NewCustomerPage() {
     console.log('Extracted data received:', data);
     
     setFormData(prev => {
-      const newFormData = {
-        ...prev,
-        companyName: data.companyName || prev.companyName,
-        companyNameKana: data.companyNameKana || prev.companyNameKana,
-      };
+      const newFormData = { ...prev };
 
-      // 住所情報の処理
+      // 基本情報の処理
+      if (data.companyName) newFormData.companyName = data.companyName;
+      if (data.companyNameKana) newFormData.companyNameKana = data.companyNameKana;
+      if (data.department) newFormData.department = data.department;
+
+      // 住所情報の処理（APIからの分割済みデータを優先）
       if (data.postalCode) newFormData.postalCode = data.postalCode;
-      if (data.prefecture) newFormData.prefecture = data.prefecture;
+      if (data.prefecture) newFormData.prefecture = data.prefecture;  
       if (data.city) newFormData.city = data.city;
       if (data.address1) newFormData.address1 = data.address1;
       if (data.address2) newFormData.address2 = data.address2;
       
-      // addressフィールドがある場合の処理
+      // addressフィールドがある場合の処理（分割済みデータがない場合のみ）
       if (data.address && !data.address1) {
-        // 住所が分割されていない場合
-        const addressMatch = data.address.match(/^(.+?[都道府県])(.+?[市区町村])(.*)/)
-        if (addressMatch) {
-          if (!data.prefecture) newFormData.prefecture = addressMatch[1];
-          if (!data.city) newFormData.city = addressMatch[2];
-          if (!data.address1) newFormData.address1 = addressMatch[3];
-        } else {
-          newFormData.address1 = data.address;
+        // 住所が分割されていない場合のみ処理
+        console.log('Processing unsplit address:', data.address);
+        
+        // 郵便番号を除去
+        let cleanAddress = data.address.replace(/〒?\d{3}-?\d{4}\s*/, '');
+        
+        // 都道府県の抽出
+        const prefectureMatch = cleanAddress.match(/(東京都|大阪府|京都府|北海道|.+?県)/);
+        if (prefectureMatch) {
+          newFormData.prefecture = prefectureMatch[1];
+          cleanAddress = cleanAddress.replace(prefectureMatch[1], '');
         }
+        
+        // 市区町村の抽出
+        const cityMatch = cleanAddress.match(/^(.+?[市区町村])/);
+        if (cityMatch) {
+          newFormData.city = cityMatch[1];
+          cleanAddress = cleanAddress.replace(cityMatch[1], '');
+        }
+        
+        // 残りを住所1に設定
+        if (cleanAddress.trim()) {
+          newFormData.address1 = cleanAddress.trim();
+        }
+        
+        console.log('Address split result:', {
+          prefecture: newFormData.prefecture,
+          city: newFormData.city,
+          address1: newFormData.address1
+        });
       }
 
       // 電話番号、FAX、メール
