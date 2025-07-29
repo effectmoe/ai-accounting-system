@@ -203,22 +203,22 @@ export default function NewCustomerPage() {
   };
 
   return (
-    <>
+    <div>
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-2xl mx-auto">
           <div className="mb-6 flex items-center gap-4">
-          <Link
-            href="/customers"
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-800"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            戻る
-          </Link>
-          <h1 className="text-2xl font-bold">新規顧客登録</h1>
-        </div>
+            <Link
+              href="/customers"
+              className="flex items-center gap-2 text-gray-600 hover:text-gray-800"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              戻る
+            </Link>
+            <h1 className="text-2xl font-bold">新規顧客登録</h1>
+          </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <form onSubmit={handleSubmit} className="space-y-8">
+          <div className="bg-white rounded-lg shadow p-6">
+            <form onSubmit={handleSubmit} className="space-y-8">
             {/* 基本情報 */}
             <div className="space-y-6">
               <h3 className="text-lg font-medium text-gray-900 border-b pb-2">基本情報</h3>
@@ -709,6 +709,6 @@ export default function NewCustomerPage() {
         onClose={() => setIsChatOpen(false)}
         onDataExtracted={handleDataExtracted}
       />
-    </>
+    </div>
   );
 }
