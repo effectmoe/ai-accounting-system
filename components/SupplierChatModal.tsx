@@ -74,36 +74,6 @@ export default function SupplierChatModal({ isOpen, onClose, onDataExtracted, fo
         setMessages(prev => [...prev, assistantMessage]);
         onDataExtracted(data);
         toast.success('仕入先情報を入力しました');
-        
-        // 企業深掘り調査を開始
-        const investigateMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          content: '🔍 この仕入先について詳しく調査します...',
-          role: 'assistant',
-          timestamp: new Date()
-        };
-        setMessages(prev => [...prev, investigateMessage]);
-        
-        // 企業深掘り調査を実行
-        const investigateResponse = await fetch('/api/investigate-company', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            url: urlMatch[0],
-            companyName: data.companyName
-          })
-        });
-        
-        if (investigateResponse.ok) {
-          const investigationData = await investigateResponse.json();
-          const investigationMessage: Message = {
-            id: (Date.now() + 2).toString(),
-            content: investigationData.summary || '調査結果を取得できませんでした。',
-            role: 'assistant',
-            timestamp: new Date()
-          };
-          setMessages(prev => [...prev, investigationMessage]);
-        }
       } else {
         // 通常のチャット応答または企業情報調査
         const currentCompanyName = formData?.companyName || '';

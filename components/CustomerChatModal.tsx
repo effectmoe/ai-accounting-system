@@ -74,49 +74,6 @@ export default function CustomerChatModal({ isOpen, onClose, onDataExtracted, fo
         setMessages(prev => [...prev, assistantMessage]);
         onDataExtracted(data);
         toast.success('会社情報を入力しました');
-        
-        // 企業深掘り調査を開始
-        try {
-          const investigateMessage: Message = {
-            id: (Date.now() + 1).toString(),
-            content: '🔍 この企業についてさらに詳しく調査します...',
-            role: 'assistant',
-            timestamp: new Date()
-          };
-          setMessages(prev => [...prev, investigateMessage]);
-          
-          console.log('Starting company investigation:', { url: urlMatch[0], companyName: data.companyName });
-          
-          // 企業深掘り調査を実行
-          const investigateResponse = await fetch('/api/investigate-company', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-              url: urlMatch[0],
-              companyName: data.companyName || data.company_name || '不明'
-            })
-          });
-          
-          console.log('Investigation response status:', investigateResponse.status);
-          
-          if (investigateResponse.ok) {
-            const investigationData = await investigateResponse.json();
-            console.log('Investigation data:', investigationData);
-            
-            const investigationMessage: Message = {
-              id: (Date.now() + 2).toString(),
-              content: investigationData.summary || '調査結果を取得できませんでした。',
-              role: 'assistant',
-              timestamp: new Date()
-            };
-            setMessages(prev => [...prev, investigationMessage]);
-          } else {
-            const errorData = await investigateResponse.text();
-            console.error('Investigation failed:', errorData);
-          }
-        } catch (investigationError) {
-          console.error('Error during company investigation:', investigationError);
-        }
       } else {
         // 通常のチャット応答または企業情報調査
         const currentCompanyName = formData?.companyName || '';
