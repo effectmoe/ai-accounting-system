@@ -187,6 +187,14 @@ JSON形式で返してください。`
           
           logger.info('Company info extracted via AI:', extractedData);
           
+          // デバッグ: FAXとウェブサイト情報の確認
+          logger.debug('🔍 Contact info check:', {
+            phone: extractedData.phone,
+            fax: extractedData.fax,
+            email: extractedData.email,
+            website: extractedData.website
+          });
+          
           return NextResponse.json({
             success: true,
             ...extractedData
@@ -377,6 +385,14 @@ JSON形式で返してください。`
 
     const companyInfo = extractInfo(html);
     logger.info('Company info extracted via regex fallback:', companyInfo);
+    
+    // デバッグ: FAXとウェブサイト情報の確認（正規表現版）
+    logger.debug('🔍 Contact info check (regex):', {
+      phone: companyInfo.phone,
+      fax: companyInfo.fax,
+      email: companyInfo.email,
+      website: companyInfo.website
+    });
 
     return NextResponse.json({
       success: true,
