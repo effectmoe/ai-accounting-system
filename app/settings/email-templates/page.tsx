@@ -30,86 +30,60 @@ export default function EmailTemplatesPage() {
   const [templates, setTemplates] = useState<EmailTemplate[]>([
     {
       documentType: 'invoice',
-      subject: '請求書送付（{{documentNumber}}）',
-      body: `{{customerName}}
-
-
-いつもお世話になっております、{{companyName}}でございます。
-
-PDFファイルにて以下の内容の請求書をお送りさせていただきました。
-
-
-請求書番号：{{documentNumber}}
-{{documentTitle}}請求金額：{{totalAmount}}
-お支払期限：{{dueDate}}
-
-
-添付ファイルをご確認の上、何卒期限までにお支払いをお願いいたします。
-ご不明な点がございましたら、お気軽にお問い合わせくださいませ。
-
-ご査収の程、お願いいたします。
-
-
-──────────────────────────
-{{companyName}}
-{{companyAddress}}
-TEL: {{companyPhone}}
-Email: {{companyEmail}}
-──────────────────────────`
+      subject: '請求書送付（' + '{{documentNumber}}' + '）',
+      body: '{{customerName}}' + '\n\n\n' + 
+            'いつもお世話になっております、' + '{{companyName}}' + 'でございます。\n\n' + 
+            'PDFファイルにて以下の内容の請求書をお送りさせていただきました。\n\n\n' + 
+            '請求書番号：' + '{{documentNumber}}' + '\n' + 
+            '{{documentTitle}}' + '請求金額：' + '{{totalAmount}}' + '\n' + 
+            'お支払期限：' + '{{dueDate}}' + '\n\n\n' + 
+            '添付ファイルをご確認の上、何卒期限までにお支払いをお願いいたします。\n' + 
+            'ご不明な点がございましたら、お気軽にお問い合わせくださいませ。\n\n' + 
+            'ご査収の程、お願いいたします。\n\n\n' + 
+            '──────────────────────────\n' + 
+            '{{companyName}}' + '\n' + 
+            '{{companyAddress}}' + '\n' + 
+            'TEL: ' + '{{companyPhone}}' + '\n' + 
+            'Email: ' + '{{companyEmail}}' + '\n' + 
+            '──────────────────────────'
     },
     {
       documentType: 'quote',
-      subject: '【見積書】{{documentNumber}} のご送付',
-      body: `{{customerName}}
-
-いつもお世話になっております、{{companyName}}でございます。
-
-ご依頼いただきました見積書をお送りいたします。
-
-見積書番号：{{documentNumber}}
-見積金額：{{totalAmount}}
-有効期限：{{validityDate}}
-
-添付ファイルをご確認ください。
-
-ご不明な点がございましたら、お気軽にお問い合わせください。
-
-よろしくお願いいたします。
-
-
-──────────────────────────
-{{companyName}}
-{{companyAddress}}
-TEL: {{companyPhone}}
-Email: {{companyEmail}}
-──────────────────────────`
+      subject: '【見積書】' + '{{documentNumber}}' + ' のご送付',
+      body: '{{customerName}}' + '\n\n' + 
+            'いつもお世話になっております、' + '{{companyName}}' + 'でございます。\n\n' + 
+            'ご依頼いただきました見積書をお送りいたします。\n\n' + 
+            '見積書番号：' + '{{documentNumber}}' + '\n' + 
+            '見積金額：' + '{{totalAmount}}' + '\n' + 
+            '有効期限：' + '{{validityDate}}' + '\n\n' + 
+            '添付ファイルをご確認ください。\n\n' + 
+            'ご不明な点がございましたら、お気軽にお問い合わせください。\n\n' + 
+            'よろしくお願いいたします。\n\n\n' + 
+            '──────────────────────────\n' + 
+            '{{companyName}}' + '\n' + 
+            '{{companyAddress}}' + '\n' + 
+            'TEL: ' + '{{companyPhone}}' + '\n' + 
+            'Email: ' + '{{companyEmail}}' + '\n' + 
+            '──────────────────────────'
     },
     {
       documentType: 'delivery-note',
-      subject: '【納品書】{{documentNumber}} のご送付',
-      body: `{{customerName}}
-
-いつもお世話になっております、{{companyName}}でございます。
-
-納品書をお送りいたします。
-
-納品書番号：{{documentNumber}}
-納品日：{{deliveryDate}}
-合計金額：{{totalAmount}}
-
-添付ファイルをご確認ください。
-
-ご不明な点がございましたら、お気軽にお問い合わせください。
-
-よろしくお願いいたします。
-
-
-──────────────────────────
-{{companyName}}
-{{companyAddress}}
-TEL: {{companyPhone}}
-Email: {{companyEmail}}
-──────────────────────────`
+      subject: '【納品書】' + '{{documentNumber}}' + ' のご送付',
+      body: '{{customerName}}' + '\n\n' + 
+            'いつもお世話になっております、' + '{{companyName}}' + 'でございます。\n\n' + 
+            '納品書をお送りいたします。\n\n' + 
+            '納品書番号：' + '{{documentNumber}}' + '\n' + 
+            '納品日：' + '{{deliveryDate}}' + '\n' + 
+            '合計金額：' + '{{totalAmount}}' + '\n\n' + 
+            '添付ファイルをご確認ください。\n\n' + 
+            'ご不明な点がございましたら、お気軽にお問い合わせください。\n\n' + 
+            'よろしくお願いいたします。\n\n\n' + 
+            '──────────────────────────\n' + 
+            '{{companyName}}' + '\n' + 
+            '{{companyAddress}}' + '\n' + 
+            'TEL: ' + '{{companyPhone}}' + '\n' + 
+            'Email: ' + '{{companyEmail}}' + '\n' + 
+            '──────────────────────────'
     }
   ]);
 
@@ -197,10 +171,16 @@ Email: {{companyEmail}}
   };
 
   const getPreviewContent = (template: EmailTemplate): { subject: string; body: string } => {
+    // テンプレートが存在しない場合のエラーハンドリング
+    if (!template) {
+      return { subject: 'テンプレートが見つかりません', body: 'テンプレートが見つかりません' };
+    }
+
     try {
       // companyInfoが存在しない場合はデフォルト値を使用
       const safeCompanyInfo = companyInfo || {};
       
+      // サンプルデータを定義（全て文字列として確実に定義）
       const sampleData: Record<string, string> = {
         customerName: '社労士法人労務ニュース 御中',
         documentNumber: 'INV-20250729-001',
@@ -215,19 +195,25 @@ Email: {{companyEmail}}
         companyEmail: safeCompanyInfo.email || 'info@effect.moe',
       };
 
-      let subject = template.subject || '';
-      let body = template.body || '';
+      // テンプレートの値を安全に取得
+      let subject = String(template.subject || '');
+      let body = String(template.body || '');
 
+      // 変数置換を実行
       Object.entries(sampleData).forEach(([key, value]) => {
         const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
-        subject = subject.replace(regex, value || '');
-        body = body.replace(regex, value || '');
+        const safeValue = String(value || '');
+        subject = subject.replace(regex, safeValue);
+        body = body.replace(regex, safeValue);
       });
 
       return { subject, body };
     } catch (error) {
       logger.error('Error in getPreviewContent:', error);
-      return { subject: 'プレビューエラー', body: 'プレビューを生成できませんでした。' };
+      return { 
+        subject: 'プレビューエラー', 
+        body: 'プレビューを生成できませんでした。エラー: ' + (error instanceof Error ? error.message : String(error))
+      };
     }
   };
 
@@ -354,7 +340,7 @@ Email: {{companyEmail}}
         </Card>
 
         {/* プレビューエリア */}
-        {showPreview && activeTemplate && !isLoading && companyInfo && (
+        {showPreview && activeTemplate && !isLoading && (
           <Card>
             <CardHeader>
               <CardTitle>プレビュー</CardTitle>
@@ -366,9 +352,10 @@ Email: {{companyEmail}}
                   <div className="mt-1 p-3 bg-gray-50 rounded-md">
                     {(() => {
                       try {
-                        return getPreviewContent(activeTemplate).subject;
+                        const preview = getPreviewContent(activeTemplate);
+                        return preview?.subject || 'プレビューエラー';
                       } catch (error) {
-                        logger.error('Preview content error:', error);
+                        logger.error('Preview subject error:', error);
                         return 'プレビューエラー';
                       }
                     })()}
@@ -380,9 +367,10 @@ Email: {{companyEmail}}
                   <div className="mt-1 p-4 bg-gray-50 rounded-md whitespace-pre-wrap font-mono text-sm">
                     {(() => {
                       try {
-                        return getPreviewContent(activeTemplate).body;
+                        const preview = getPreviewContent(activeTemplate);
+                        return preview?.body || 'プレビューエラー';
                       } catch (error) {
-                        logger.error('Preview content error:', error);
+                        logger.error('Preview body error:', error);
                         return 'プレビューエラー';
                       }
                     })()}
