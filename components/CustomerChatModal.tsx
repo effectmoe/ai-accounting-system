@@ -97,7 +97,12 @@ export default function CustomerChatModal({ isOpen, onClose, onDataExtracted, fo
   };
 
   const handleSend = async () => {
-    if (!input.trim() || isLoading) return;
+    console.log('🚀 チャットボット handleSend 開始:', { input, isLoading });
+    
+    if (!input.trim() || isLoading) {
+      console.log('❌ 入力チェック失敗:', { inputTrim: input.trim(), isLoading });
+      return;
+    }
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -106,23 +111,36 @@ export default function CustomerChatModal({ isOpen, onClose, onDataExtracted, fo
       timestamp: new Date()
     };
 
+    console.log('📝 ユーザーメッセージ作成:', userMessage);
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
 
     try {
       // URLパターンを検出
+      console.log('🔍 URL検出チェック:', input);
       const urlMatch = input.match(/https?:\/\/[^\s]+/);
+      console.log('🔍 URL検出結果:', urlMatch);
+      
       if (urlMatch) {
+        console.log('✅ URL検出成功:', urlMatch[0]);
+        console.log('📡 API リクエスト開始');
         const response = await fetch('/api/extract-company-info', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ url: urlMatch[0] })
         });
 
-        if (!response.ok) throw new Error('会社情報の取得に失敗しました');
+        console.log('📡 API レスポンス受信:', { ok: response.ok, status: response.status });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('❌ API エラー:', errorText);
+          throw new Error('会社情報の取得に失敗しました');
+        }
 
         const data = await response.json();
+        console.log('📋 API レスポンスデータ:', data);
         
         // デバッグ: 抽出されたデータの詳細をログ出力
         console.log('🔍 Extracted company data from API:', JSON.stringify(data, null, 2));
@@ -140,8 +158,13 @@ export default function CustomerChatModal({ isOpen, onClose, onDataExtracted, fo
           timestamp: new Date()
         };
 
+        console.log('💬 アシスタントメッセージ設定');
         setMessages(prev => [...prev, assistantMessage]);
+        
+        console.log('📤 onDataExtracted コールバック実行:', data);
         onDataExtracted(data);
+        
+        console.log('✅ 処理完了 - トースト表示');
         toast.success('会社情報を入力しました');
       } else {
         // 通常のチャット応答または企業情報調査

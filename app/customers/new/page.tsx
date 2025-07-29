@@ -201,7 +201,8 @@ export default function NewCustomerPage() {
 
   // チャットから抽出されたデータを処理
   const handleDataExtracted = (data: any) => {
-    console.log('Extracted data received:', data);
+    console.log('🎯 handleDataExtracted 関数呼び出し開始');
+    console.log('📊 受信データ詳細:', JSON.stringify(data, null, 2));
     
     setFormData(prev => {
       const newFormData = { ...prev };
