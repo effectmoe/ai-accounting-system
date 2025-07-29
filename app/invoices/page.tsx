@@ -476,6 +476,7 @@ export default function InvoicesPage() {
                       />
                     </TableHead>
                     <TableHead>請求書情報</TableHead>
+                    <TableHead>タイトル</TableHead>
                     <TableHead>発行日</TableHead>
                     <TableHead>支払期限</TableHead>
                     <TableHead className="text-right">金額</TableHead>
@@ -516,11 +517,14 @@ export default function InvoicesPage() {
                              invoice.customerSnapshot?.companyName || 
                              '顧客名未設定'}
                           </div>
-                          {invoice.title && (
-                            <div className="text-xs text-gray-500 truncate max-w-[300px]">
-                              {invoice.title}
-                            </div>
-                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell 
+                        className="cursor-pointer"
+                        onClick={() => router.push(`/invoices/${invoice._id}`)}
+                      >
+                        <div className="text-sm text-gray-700 truncate max-w-[250px]">
+                          {invoice.title || '-'}
                         </div>
                       </TableCell>
                       <TableCell
