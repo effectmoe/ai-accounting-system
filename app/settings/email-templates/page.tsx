@@ -30,60 +30,86 @@ export default function EmailTemplatesPage() {
   const [templates, setTemplates] = useState<EmailTemplate[]>([
     {
       documentType: 'invoice',
-      subject: '請求書送付（' + '{{documentNumber}}' + '）',
-      body: '{{customerName}}' + '\n\n\n' + 
-            'いつもお世話になっております、' + '{{companyName}}' + 'でございます。\n\n' + 
-            'PDFファイルにて以下の内容の請求書をお送りさせていただきました。\n\n\n' + 
-            '請求書番号：' + '{{documentNumber}}' + '\n' + 
-            '{{documentTitle}}' + '請求金額：' + '{{totalAmount}}' + '\n' + 
-            'お支払期限：' + '{{dueDate}}' + '\n\n\n' + 
-            '添付ファイルをご確認の上、何卒期限までにお支払いをお願いいたします。\n' + 
-            'ご不明な点がございましたら、お気軽にお問い合わせくださいませ。\n\n' + 
-            'ご査収の程、お願いいたします。\n\n\n' + 
-            '──────────────────────────\n' + 
-            '{{companyName}}' + '\n' + 
-            '{{companyAddress}}' + '\n' + 
-            'TEL: ' + '{{companyPhone}}' + '\n' + 
-            'Email: ' + '{{companyEmail}}' + '\n' + 
-            '──────────────────────────'
+      subject: `請求書送付（{{documentNumber}}）`,
+      body: `{{customerName}}
+
+
+いつもお世話になっております、{{companyName}}でございます。
+
+PDFファイルにて以下の内容の請求書をお送りさせていただきました。
+
+
+請求書番号：{{documentNumber}}
+{{documentTitle}}請求金額：{{totalAmount}}
+お支払期限：{{dueDate}}
+
+
+添付ファイルをご確認の上、何卒期限までにお支払いをお願いいたします。
+ご不明な点がございましたら、お気軽にお問い合わせくださいませ。
+
+ご査収の程、お願いいたします。
+
+
+──────────────────────────
+{{companyName}}
+{{companyAddress}}
+TEL: {{companyPhone}}
+Email: {{companyEmail}}
+──────────────────────────`
     },
     {
       documentType: 'quote',
-      subject: '【見積書】' + '{{documentNumber}}' + ' のご送付',
-      body: '{{customerName}}' + '\n\n' + 
-            'いつもお世話になっております、' + '{{companyName}}' + 'でございます。\n\n' + 
-            'ご依頼いただきました見積書をお送りいたします。\n\n' + 
-            '見積書番号：' + '{{documentNumber}}' + '\n' + 
-            '見積金額：' + '{{totalAmount}}' + '\n' + 
-            '有効期限：' + '{{validityDate}}' + '\n\n' + 
-            '添付ファイルをご確認ください。\n\n' + 
-            'ご不明な点がございましたら、お気軽にお問い合わせください。\n\n' + 
-            'よろしくお願いいたします。\n\n\n' + 
-            '──────────────────────────\n' + 
-            '{{companyName}}' + '\n' + 
-            '{{companyAddress}}' + '\n' + 
-            'TEL: ' + '{{companyPhone}}' + '\n' + 
-            'Email: ' + '{{companyEmail}}' + '\n' + 
-            '──────────────────────────'
+      subject: `【見積書】{{documentNumber}} のご送付`,
+      body: `{{customerName}}
+
+いつもお世話になっております、{{companyName}}でございます。
+
+ご依頼いただきました見積書をお送りいたします。
+
+見積書番号：{{documentNumber}}
+見積金額：{{totalAmount}}
+有効期限：{{validityDate}}
+
+添付ファイルをご確認ください。
+
+ご不明な点がございましたら、お気軽にお問い合わせください。
+
+よろしくお願いいたします。
+
+
+──────────────────────────
+{{companyName}}
+{{companyAddress}}
+TEL: {{companyPhone}}
+Email: {{companyEmail}}
+──────────────────────────`
     },
     {
       documentType: 'delivery-note',
-      subject: '【納品書】' + '{{documentNumber}}' + ' のご送付',
-      body: '{{customerName}}' + '\n\n' + 
-            'いつもお世話になっております、' + '{{companyName}}' + 'でございます。\n\n' + 
-            '納品書をお送りいたします。\n\n' + 
-            '納品書番号：' + '{{documentNumber}}' + '\n' + 
-            '納品日：' + '{{deliveryDate}}' + '\n' + 
-            '合計金額：' + '{{totalAmount}}' + '\n\n' + 
-            '添付ファイルをご確認ください。\n\n' + 
-            'ご不明な点がございましたら、お気軽にお問い合わせください。\n\n' + 
-            'よろしくお願いいたします。\n\n\n' + 
-            '──────────────────────────\n' + 
-            '{{companyName}}' + '\n' + 
-            '{{companyAddress}}' + '\n' + 
-            'TEL: ' + '{{companyPhone}}' + '\n' + 
-            'Email: ' + '{{companyEmail}}' + '\n' + 
-            '──────────────────────────'
+      subject: `【納品書】{{documentNumber}} のご送付`,
+      body: `{{customerName}}
+
+いつもお世話になっております、{{companyName}}でございます。
+
+納品書をお送りいたします。
+
+納品書番号：{{documentNumber}}
+納品日：{{deliveryDate}}
+合計金額：{{totalAmount}}
+
+添付ファイルをご確認ください。
+
+ご不明な点がございましたら、お気軽にお問い合わせください。
+
+よろしくお願いいたします。
+
+
+──────────────────────────
+{{companyName}}
+{{companyAddress}}
+TEL: {{companyPhone}}
+Email: {{companyEmail}}
+──────────────────────────`
     }
   ]);
 
