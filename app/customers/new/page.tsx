@@ -206,7 +206,7 @@ export default function NewCustomerPage() {
     <>
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-2xl mx-auto">
-        <div className="mb-6 flex items-center gap-4">
+          <div className="mb-6 flex items-center gap-4">
           <Link
             href="/customers"
             className="flex items-center gap-2 text-gray-600 hover:text-gray-800"
