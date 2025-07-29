@@ -729,12 +729,13 @@ export default function QuoteDetailPage({ params }: QuoteDetailPageProps) {
         documentType="quote"
         documentId={quote._id || ''}
         documentNumber={quote.quoteNumber}
+        documentTitle={quote.title}
         customerEmail={quote.customer?.email}
         customerName={quote.customer?.companyName}
         customer={quote.customer}
         customerSnapshot={quote.customerSnapshot}
         totalAmount={quote.totalAmount}
-        dueDate={safeFormatDate(quote.validityDate, 'yyyy年MM月dd日')}
+        dueDate={quote.validityDate}
         onSuccess={fetchQuote}
       />
 

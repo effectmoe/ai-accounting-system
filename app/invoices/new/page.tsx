@@ -380,6 +380,11 @@ function NewInvoiceContent() {
       setCustomerName(data.customerName);
     }
     
+    // タイトル
+    if (data.title) {
+      setTitle(data.title);
+    }
+    
     // 日付
     if (data.invoiceDate) {
       setInvoiceDate(format(new Date(data.invoiceDate), 'yyyy-MM-dd'));

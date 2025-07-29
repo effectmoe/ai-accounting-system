@@ -17,6 +17,7 @@ interface EmailSendModalProps {
   documentType: 'quote' | 'invoice' | 'delivery-note';
   documentId: string;
   documentNumber: string;
+  documentTitle?: string; // 件名
   customerEmail?: string;
   customerName?: string;
   customer?: any; // 顧客情報全体
@@ -33,6 +34,7 @@ export default function EmailSendModal({
   documentType,
   documentId,
   documentNumber,
+  documentTitle,
   customerEmail = '',
   customerName = '',
   customer,
@@ -56,16 +58,28 @@ export default function EmailSendModal({
   // テンプレートに変数を適用する関数
   const applyTemplateVariables = (template: string) => {
     const companyName = companyInfo?.company_name || '株式会社EFFECT';
-    const formattedDueDate = dueDate ? new Date(dueDate).toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '年').replace(/年(\d{2})/, '年$1月').replace(/月(\d{2})/, '月$1日') : '';
+    // dueDateを安全に処理
+    let formattedDueDate = '';
+    if (dueDate) {
+      try {
+        const dateObj = new Date(dueDate);
+        if (!isNaN(dateObj.getTime())) {
+          formattedDueDate = dateObj.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '年').replace(/年(\d{2})/, '年$1月').replace(/月(\d{2})/, '月$1日');
+        }
+      } catch (e) {
+        logger.error('Error formatting due date:', e);
+      }
+    }
     const formattedDeliveryDate = deliveryDate ? new Date(deliveryDate).toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '年').replace(/年(\d{2})/, '年$1月').replace(/月(\d{2})/, '月$1日') : '';
     const formattedCustomerName = formatCustomerNameForEmail(customer, customerSnapshot);
     
     const variables = {
       customerName: formattedCustomerName,
       documentNumber: documentNumber,
+      documentTitle: documentTitle || '',
       totalAmount: `¥${totalAmount.toLocaleString()}`,
       dueDate: formattedDueDate,
-      validityDate: dueDate ? new Date(dueDate).toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '年').replace(/年(\d{2})/, '年$1月').replace(/月(\d{2})/, '月$1日') : '',
+      validityDate: dueDate ? formattedDueDate : '',
       deliveryDate: formattedDeliveryDate,
       companyName: companyName,
       companyAddress: companyInfo?.address || '',
@@ -116,7 +130,17 @@ export default function EmailSendModal({
       };
     } else if (documentType === 'invoice') {
       const companyName = companyInfo?.company_name || '株式会社EFFECT';
-      const formattedDueDate = dueDate ? new Date(dueDate).toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '年').replace(/年(\d{2})/, '年$1月').replace(/月(\d{2})/, '月$1日') : '';
+      let formattedDueDate = '';
+      if (dueDate) {
+        try {
+          const dateObj = new Date(dueDate);
+          if (!isNaN(dateObj.getTime())) {
+            formattedDueDate = dateObj.toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '年').replace(/年(\d{2})/, '年$1月').replace(/月(\d{2})/, '月$1日');
+          }
+        } catch (e) {
+          logger.error('Error formatting due date:', e);
+        }
+      }
       
       return {
         subject: `請求書送付（${documentNumber}）`,
@@ -129,8 +153,9 @@ PDFファイルにて以下の内容の請求書をお送りさせていただ�
 
 
 請求書番号：${documentNumber}
-請求金額：¥${totalAmount.toLocaleString()}
-${dueDate ? `お支払期限：${formattedDueDate}` : ''}
+${documentTitle ? `請求件名：${documentTitle}
+` : ''}請求金額：¥${totalAmount.toLocaleString()}
+${formattedDueDate ? `お支払期限：${formattedDueDate}` : ''}
 
 
 添付ファイルをご確認の上、何卒期限までにお支払いをお願いいたします。 

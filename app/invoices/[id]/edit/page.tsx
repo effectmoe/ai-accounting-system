@@ -83,6 +83,7 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
   
   // 請求書情報
   const [invoice, setInvoice] = useState<Invoice | null>(null);
+  const [title, setTitle] = useState(''); // 請求書のタイトル
   const [invoiceDate, setInvoiceDate] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [items, setItems] = useState<InvoiceItem[]>([]);
@@ -126,6 +127,7 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
       // 請求書データをフォームに設定
       setInvoice(data);
       setSelectedCustomerId(data.customerId || '');
+      setTitle(data.title || ''); // タイトルを設定
       
       // 顧客名の設定 - 既存顧客の場合は顧客名も設定
       if (data.customer) {
@@ -263,6 +265,7 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
       // 請求書を更新
       const invoiceData = {
         customerId,
+        title, // タイトルを追加
         invoiceDate: invoiceDate,
         dueDate: dueDate,
         items: items.filter(item => item.description),
@@ -474,6 +477,12 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
       }
     }
     
+    // タイトルの更新
+    if (data.title) {
+      logger.debug('[EditPage] Updating title to:', data.title);
+      setTitle(data.title);
+    }
+    
     // 日付は有効な値の場合のみ更新（1970-01-01は無視）
     if (data.invoiceDate && data.invoiceDate !== '1970-01-01' && new Date(data.invoiceDate).getFullYear() > 2000) {
       logger.debug('[EditPage] Updating invoice date to:', data.invoiceDate);
@@ -649,6 +658,18 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
                   />
                 </div>
               </div>
+            </div>
+
+            {/* タイトル */}
+            <div>
+              <Label htmlFor="title" className="text-sm font-medium text-gray-700 mb-1 block">件名</Label>
+              <Input
+                id="title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="請求書の件名を入力（例：ウェブサイト制作費用請求書）"
+                className="bg-white"
+              />
             </div>
 
             {/* 請求日・支払期限セクション */}

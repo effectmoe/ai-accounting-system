@@ -132,15 +132,27 @@ export async function DELETE(
     logger.debug('[DELETE /api/quotes/[id]] Quote ID:', id);
     
     const quoteService = new QuoteService();
-    const deleted = await quoteService.deleteQuote(id);
     
-    if (!deleted) {
+    // 削除前に見積書情報を取得（ログ用）
+    const quote = await quoteService.getQuote(id);
+    if (!quote) {
       return NextResponse.json(
         { error: 'Quote not found' },
         { status: 404 }
       );
     }
     
+    // 物理削除
+    const deleted = await quoteService.deleteQuote(id);
+    
+    if (!deleted) {
+      return NextResponse.json(
+        { error: 'Failed to delete quote' },
+        { status: 500 }
+      );
+    }
+    
+    logger.info(`Quote deleted successfully: ${quote.quoteNumber}`);
     return NextResponse.json({ success: true });
   } catch (error) {
     logger.error('Error deleting quote:', error);

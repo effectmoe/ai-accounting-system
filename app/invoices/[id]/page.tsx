@@ -32,10 +32,12 @@ import EmailSendModal from '@/components/email-send-modal';
 interface Invoice {
   _id: string;
   invoiceNumber: string;
+  title?: string;
   invoiceDate: string | Date;
   issueDate?: string | Date;
   dueDate: string;
   customerId: string;
+  customer?: any;
   customerSnapshot: {
     companyName: string;
     address: string;
@@ -678,12 +680,13 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
         documentType="invoice"
         documentId={invoice._id}
         documentNumber={invoice.invoiceNumber}
+        documentTitle={invoice.title}
         customerEmail={invoice.customerSnapshot?.email}
         customerName={invoice.customerSnapshot?.companyName}
         customer={invoice.customer}
         customerSnapshot={invoice.customerSnapshot}
         totalAmount={invoice.totalAmount}
-        dueDate={safeFormatDate(invoice.dueDate, 'yyyy年MM月dd日')}
+        dueDate={invoice.dueDate}
         onSuccess={fetchInvoice}
       />
     </div>
