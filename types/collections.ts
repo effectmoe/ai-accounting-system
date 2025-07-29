@@ -137,6 +137,7 @@ export interface BankAccount {
 export interface Invoice {
   _id?: ObjectId;
   invoiceNumber: string;
+  title?: string; // 請求書のタイトル（件名）
   customerId: ObjectId;
   customer?: Customer; // Populated field
   issueDate: Date;
@@ -184,6 +185,7 @@ export interface InvoiceItem {
 export interface Quote {
   _id?: ObjectId;
   quoteNumber: string;
+  title?: string; // 見積書のタイトル（件名）
   customerId: ObjectId;
   customer?: Customer; // Populated field
   issueDate: Date;

@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Search, FileText, Loader2, Sparkles, FileDown, CheckCircle2, Trash2 } from 'lucide-react';
+import { Plus, Search, FileText, Loader2, Sparkles, FileDown, CheckCircle2, Trash2, Copy } from 'lucide-react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { safeFormatDate } from '@/lib/date-utils';
@@ -25,6 +25,7 @@ import {
 interface Invoice {
   _id: string;
   invoiceNumber: string;
+  title?: string;
   invoiceDate: string;
   issueDate?: string;
   dueDate: string;
@@ -204,6 +205,42 @@ export default function InvoicesPage() {
     } catch (error) {
       logger.error('Error deleting invoice:', error);
       alert('請求書の削除に失敗しました');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleDuplicate = async (invoiceId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!confirm('この請求書を複製しますか？')) {
+      return;
+    }
+
+    setIsUpdating(true);
+    
+    try {
+      const response = await fetch(`/api/invoices/${invoiceId}/duplicate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // リストを再読み込み
+        await fetchInvoices();
+        alert('請求書を複製しました');
+        // 複製された請求書の編集ページに遷移
+        router.push(`/invoices/${data._id}/edit`);
+      } else {
+        throw new Error(data.error || '複製に失敗しました');
+      }
+    } catch (error) {
+      logger.error('Error duplicating invoice:', error);
+      alert('請求書の複製に失敗しました');
     } finally {
       setIsUpdating(false);
     }
@@ -438,8 +475,7 @@ export default function InvoicesPage() {
                         aria-label="すべて選択"
                       />
                     </TableHead>
-                    <TableHead>請求書番号</TableHead>
-                    <TableHead>顧客名</TableHead>
+                    <TableHead>請求書情報</TableHead>
                     <TableHead>発行日</TableHead>
                     <TableHead>支払期限</TableHead>
                     <TableHead className="text-right">金額</TableHead>
@@ -466,20 +502,26 @@ export default function InvoicesPage() {
                         />
                       </TableCell>
                       <TableCell 
-                        className="font-medium cursor-pointer"
-                        onClick={() => router.push(`/invoices/${invoice._id}`)}
-                      >
-                        {invoice.invoiceNumber}
-                      </TableCell>
-                      <TableCell
                         className="cursor-pointer"
                         onClick={() => router.push(`/invoices/${invoice._id}`)}
                       >
-                        {invoice.customer?.companyName || 
-                         invoice.customer?.name || 
-                         invoice.customer?.company || 
-                         invoice.customerSnapshot?.companyName || 
-                         '顧客名未設定'}
+                        <div className="space-y-1">
+                          <div className="font-medium text-sm">
+                            {invoice.invoiceNumber}
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            {invoice.customer?.companyName || 
+                             invoice.customer?.name || 
+                             invoice.customer?.company || 
+                             invoice.customerSnapshot?.companyName || 
+                             '顧客名未設定'}
+                          </div>
+                          {invoice.title && (
+                            <div className="text-xs text-gray-500 truncate max-w-[300px]">
+                              {invoice.title}
+                            </div>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell
                         className="cursor-pointer"
@@ -581,6 +623,15 @@ export default function InvoicesPage() {
                             title="PDFダウンロード"
                           >
                             <FileDown className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => handleDuplicate(invoice._id, e)}
+                            title="複製"
+                            disabled={isUpdating}
+                          >
+                            <Copy className="h-4 w-4" />
                           </Button>
                           <Button
                             variant="ghost"
