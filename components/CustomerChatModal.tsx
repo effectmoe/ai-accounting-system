@@ -124,9 +124,18 @@ export default function CustomerChatModal({ isOpen, onClose, onDataExtracted, fo
 
         const data = await response.json();
         
+        // デバッグ: 抽出されたデータの詳細をログ出力
+        console.log('🔍 Extracted company data from API:', JSON.stringify(data, null, 2));
+        console.log('📞 Contact info check:', {
+          phone: data.phone,
+          fax: data.fax,
+          email: data.email,
+          website: data.website
+        });
+        
         const assistantMessage: Message = {
           id: Date.now().toString(),
-          content: `会社情報を取得しました。以下の情報をフォームに入力します：\n\n会社名: ${data.companyName || '不明'}${data.companyNameKana ? `\n会社名カナ: ${data.companyNameKana}` : ''}${data.department ? `\n部署: ${data.department}` : ''}\n\n住所情報:${data.postalCode ? `\n郵便番号: ${data.postalCode}` : ''}${data.prefecture ? `\n都道府県: ${data.prefecture}` : ''}${data.city ? `\n市区町村: ${data.city}` : ''}${data.address1 ? `\n住所1: ${data.address1}` : ''}${data.address2 ? `\n住所2: ${data.address2}` : ''}${data.address ? `\n住所: ${data.address}` : '不明'}\n\n連絡先:\n電話番号: ${data.phone || '不明'}${data.fax ? `\nFAX: ${data.fax}` : ''}\nメール: ${data.email || '不明'}${data.website ? `\nウェブサイト: ${data.website}` : ''}${data.contactPerson ? `\n\n担当者情報:\n名前: ${data.contactPerson}` : ''}${data.notes ? `\n\n備考: ${data.notes}` : ''}`,
+          content: `会社情報を取得しました。以下の情報をフォームに入力します：\n\n会社名: ${data.companyName || '不明'}${data.companyNameKana ? `\n会社名カナ: ${data.companyNameKana}` : ''}${data.department ? `\n部署: ${data.department}` : ''}\n\n住所情報:${data.postalCode ? `\n郵便番号: ${data.postalCode}` : ''}${data.prefecture ? `\n都道府県: ${data.prefecture}` : ''}${data.city ? `\n市区町村: ${data.city}` : ''}${data.address1 ? `\n住所1: ${data.address1}` : ''}${data.address2 ? `\n住所2: ${data.address2}` : ''}${data.address ? `\n住所: ${data.address}` : '不明'}\n\n連絡先:\n電話番号: ${data.phone || '不明'}${data.fax ? `\nFAX: ${data.fax}` : '❌ FAX情報なし'}\nメール: ${data.email || '不明'}${data.website ? `\nウェブサイト: ${data.website}` : '❌ ウェブサイト情報なし'}\n\n🔍 デバッグ情報:\nFAXデータ: ${data.fax || 'null/undefined'}\nWebサイトデータ: ${data.website || 'null/undefined'}${data.contactPerson ? `\n\n担当者情報:\n名前: ${data.contactPerson}` : ''}${data.notes ? `\n\n備考: ${data.notes}` : ''}`,
           role: 'assistant',
           timestamp: new Date()
         };
