@@ -827,7 +827,7 @@ function NewInvoiceContent() {
                                 updateItem(index, 'productId', '');
                               }
                             }}
-                            className="flex-1 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            className="w-[250px] rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                           >
                             <option value="">商品マスターから選択...</option>
                             {products
@@ -842,7 +842,7 @@ function NewInvoiceContent() {
                             placeholder="品目名を入力"
                             value={item.description}
                             onChange={(e) => updateItem(index, 'description', e.target.value)}
-                            className="flex-1"
+                            className="flex-1 min-w-[250px]"
                           />
                           {/* 商品マスター登録ボタン - AIが作成した新しい商品の場合のみ表示 */}
                           {!item.productId && item.description && item.unitPrice > 0 && (
