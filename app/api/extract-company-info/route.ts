@@ -141,11 +141,27 @@ JSON形式で返してください。ウェブサイトに記載がない情報�
               const cityMatch = remaining.match(/^([^市区町村]+[市区町村])/);
               if (cityMatch) {
                 info.city = cityMatch[0];
-                // 住所1: 市区町村以降の部分を抽出
+                // 住所1と住所2: 市区町村以降の部分を抽出して分割
                 const address1Start = remaining.indexOf(cityMatch[0]) + cityMatch[0].length;
-                const address1 = remaining.substring(address1Start).trim();
-                if (address1) {
-                  info.address1 = address1;
+                const fullAddress = remaining.substring(address1Start).trim();
+                if (fullAddress) {
+                  // ビル名、建物名を住所2として分離
+                  // パターン: "弁天町5-2 内山南小倉駅前ビル501" のような形式
+                  const buildingMatch = fullAddress.match(/^([^町区市]+町?\d+(?:-\d+)*)\s+(.+)/);
+                  if (buildingMatch && buildingMatch[2]) {
+                    info.address1 = buildingMatch[1].trim();
+                    info.address2 = buildingMatch[2].trim();
+                  } else {
+                    // より汎用的なパターン: 数字の後にスペースがあり、その後に文字が続く
+                    const generalMatch = fullAddress.match(/^(.+\d+(?:-\d+)*)\s+(.+)/);
+                    if (generalMatch && generalMatch[2]) {
+                      info.address1 = generalMatch[1].trim();
+                      info.address2 = generalMatch[2].trim();
+                    } else {
+                      // 分離できない場合は全体を住所1に
+                      info.address1 = fullAddress;
+                    }
+                  }
                 }
               }
             }
