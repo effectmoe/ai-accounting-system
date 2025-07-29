@@ -51,6 +51,7 @@ async function sendEmail(options: {
       cc: options.cc || undefined,
       bcc: options.bcc || undefined,
       subject: options.subject,
+      text: options.body.replace(/<br>/g, '\n').replace(/<[^>]*>/g, ''), // HTMLタグを除去したプレーンテキスト版
       html: options.body,
       attachments: options.attachments?.map(att => ({
         filename: att.filename,
@@ -290,7 +291,16 @@ export async function POST(request: NextRequest) {
 
     // メールの件名と本文を設定
     const emailSubject = subject || defaultTemplate.subject;
-    const emailBody = customBody || defaultTemplate.body;
+    // プレーンテキストの改行を<br>タグに変換してHTMLメールとして送信
+    const plainTextBody = customBody || defaultTemplate.body;
+    const emailBody = plainTextBody.split('\n').map(line => {
+      // 空行は<br>タグとして扱う
+      if (line.trim() === '') {
+        return '<br>';
+      }
+      // 通常の行は<p>タグで囲む
+      return `<p style="margin: 0; line-height: 1.5;">${line}</p>`;
+    }).join('');
 
     // 添付ファイルの準備
     logger.debug('=== ATTACHMENT PREPARATION START ===');
