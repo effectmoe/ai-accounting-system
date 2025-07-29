@@ -209,6 +209,47 @@ export default function InvoicesPage() {
     }
   };
 
+  const handleBulkDelete = async () => {
+    if (selectedInvoices.size === 0) return;
+    
+    if (!confirm(`選択した${selectedInvoices.size}件の請求書を削除してもよろしいですか？この操作は取り消せません。`)) {
+      return;
+    }
+
+    setIsUpdating(true);
+    try {
+      const promises = Array.from(selectedInvoices).map(invoiceId =>
+        fetch(`/api/invoices/${invoiceId}`, {
+          method: 'DELETE',
+        })
+      );
+      
+      const results = await Promise.all(promises);
+      const successCount = results.filter(r => r.ok).length;
+      
+      if (successCount > 0) {
+        // 成功した削除を反映
+        setInvoices(prev => prev.filter(inv => !selectedInvoices.has(inv._id)));
+        setTotalCount(prev => prev - successCount);
+        setSelectedInvoices(new Set());
+        
+        if (successCount === selectedInvoices.size) {
+          logger.info(`All ${successCount} invoices deleted successfully`);
+        } else {
+          logger.warn(`${successCount} out of ${selectedInvoices.size} invoices deleted successfully`);
+          alert(`${successCount}件の請求書を削除しました。${selectedInvoices.size - successCount}件の削除に失敗しました。`);
+        }
+      } else {
+        throw new Error('Failed to delete any invoices');
+      }
+    } catch (error) {
+      logger.error('Error in bulk delete:', error);
+      alert('請求書の一括削除に失敗しました');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   const totalPages = Math.ceil(totalCount / itemsPerPage);
 
   return (
@@ -302,6 +343,21 @@ export default function InvoicesPage() {
                   onClick={() => setSelectedInvoices(new Set())}
                 >
                   選択解除
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleBulkDelete}
+                  disabled={isUpdating}
+                >
+                  {isUpdating ? (
+                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> 削除中...</>
+                  ) : (
+                    <>
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      一括削除
+                    </>
+                  )}
                 </Button>
               </div>
             </div>

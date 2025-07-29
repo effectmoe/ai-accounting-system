@@ -8,7 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Search, FileText, Loader2, Sparkles, FileDown, CheckCircle, Calculator, Trash2 } from 'lucide-react';
+import { Plus, Search, FileText, Loader2, Sparkles, FileDown, CheckCircle, Calculator, Trash2, CheckCircle2 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { safeFormatDate } from '@/lib/date-utils';
 import { cache, SimpleCache } from '@/lib/cache';
 
@@ -62,6 +63,7 @@ function QuotesPageContent() {
   const [aiOnlyFilter, setAiOnlyFilter] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [convertingQuotes, setConvertingQuotes] = useState<Set<string>>(new Set());
+  const [selectedQuotes, setSelectedQuotes] = useState<Set<string>>(new Set());
   const itemsPerPage = 20;
   const [error, setError] = useState<string | null>(null);
 
@@ -203,6 +205,68 @@ function QuotesPageContent() {
     }
   };
 
+  const handleBulkDelete = async () => {
+    if (selectedQuotes.size === 0) return;
+    
+    if (!confirm(`選択した${selectedQuotes.size}件の見積書を削除してもよろしいですか？この操作は取り消せません。`)) {
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const promises = Array.from(selectedQuotes).map(quoteId =>
+        fetch(`/api/quotes/${quoteId}`, {
+          method: 'DELETE',
+        })
+      );
+      
+      const results = await Promise.all(promises);
+      const successCount = results.filter(r => r.ok).length;
+      
+      if (successCount > 0) {
+        // 成功した削除を反映
+        setQuotes(prev => prev.filter(quote => !selectedQuotes.has(quote._id)));
+        setTotalCount(prev => prev - successCount);
+        setSelectedQuotes(new Set());
+        // キャッシュを無効化
+        cache.invalidate('quotes');
+        
+        if (successCount === selectedQuotes.size) {
+          logger.info(`All ${successCount} quotes deleted successfully`);
+        } else {
+          logger.warn(`${successCount} out of ${selectedQuotes.size} quotes deleted successfully`);
+          alert(`${successCount}件の見積書を削除しました。${selectedQuotes.size - successCount}件の削除に失敗しました。`);
+        }
+      } else {
+        throw new Error('Failed to delete any quotes');
+      }
+    } catch (error) {
+      logger.error('Error in bulk delete:', error);
+      alert('見積書の一括削除に失敗しました');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      const allIds = new Set(quotes.map(quote => quote._id));
+      setSelectedQuotes(allIds);
+    } else {
+      setSelectedQuotes(new Set());
+    }
+  };
+
+  const handleSelectQuote = (quoteId: string, checked: boolean) => {
+    const newSelection = new Set(selectedQuotes);
+    if (checked) {
+      newSelection.add(quoteId);
+    } else {
+      newSelection.delete(quoteId);
+    }
+    setSelectedQuotes(newSelection);
+  };
+
   const handleConvertToInvoice = async (quoteId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     
@@ -310,6 +374,46 @@ function QuotesPageContent() {
         </Card>
       </div>
 
+      {/* 一括操作バー */}
+      {selectedQuotes.size > 0 && (
+        <Card className="mb-4 bg-blue-50 border-blue-200">
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="h-5 w-5 text-blue-600" />
+                <span className="text-sm font-medium">
+                  {selectedQuotes.size}件の見積書を選択中
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedQuotes(new Set())}
+                >
+                  選択解除
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleBulkDelete}
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> 削除中...</>
+                  ) : (
+                    <>
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      一括削除
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* フィルター */}
       <Card className="mb-6">
         <CardContent className="pt-6">
@@ -389,6 +493,13 @@ function QuotesPageContent() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-[50px]">
+                      <Checkbox
+                        checked={selectedQuotes.size === quotes.length && quotes.length > 0}
+                        onCheckedChange={handleSelectAll}
+                        aria-label="すべて選択"
+                      />
+                    </TableHead>
                     <TableHead>見積書番号</TableHead>
                     <TableHead>顧客名</TableHead>
                     <TableHead>発行日</TableHead>
@@ -408,6 +519,15 @@ function QuotesPageContent() {
                       className="cursor-pointer hover:bg-gray-50"
                       onClick={() => router.push(`/quotes/${quote._id}`)}
                     >
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <Checkbox
+                          checked={selectedQuotes.has(quote._id)}
+                          onCheckedChange={(checked) => 
+                            handleSelectQuote(quote._id, checked as boolean)
+                          }
+                          aria-label={`${quote.quoteNumber}を選択`}
+                        />
+                      </TableCell>
                       <TableCell className="font-medium">
                         {quote.quoteNumber}
                       </TableCell>
@@ -440,7 +560,7 @@ function QuotesPageContent() {
                           </Badge>
                         )}
                       </TableCell>
-                      <TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
                         <div className="flex gap-1">
                           <Button
                             variant="ghost"
