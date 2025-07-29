@@ -9,7 +9,7 @@
     "env": {
       "NODE_ENV": "production",
       "NODE_OPTIONS": "--max-old-space-size=4096",
-      "FORCE_REBUILD": "2025-07-30-fax-website-debug-fix",
+      "FORCE_REBUILD": "2025-07-30-placeholder-investigation-debug",
       "DO_NOT_TRACK": "1",
       "NEXT_TELEMETRY_DISABLED": "1",
       "SKIP_DB_DURING_BUILD": "true"

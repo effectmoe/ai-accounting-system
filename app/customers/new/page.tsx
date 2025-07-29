@@ -97,12 +97,22 @@ export default function NewCustomerPage() {
         tags: formData.tags ? formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag) : [],
       };
 
-      // デバッグ: 送信前のフォームデータを確認
-      console.log('🚀 フォーム送信データ:', {
+      // デバッグ: 送信前のフォームデータを詳細確認
+      console.log('🚀 フォーム送信データ詳細:', {
         phone: submitData.phone,
         fax: submitData.fax,
         email: submitData.email,
-        website: submitData.website
+        website: submitData.website,
+        phoneInputValue: (document.getElementById('phone') as HTMLInputElement)?.value,
+        faxInputValue: (document.getElementById('fax') as HTMLInputElement)?.value,
+        emailInputValue: (document.getElementById('email') as HTMLInputElement)?.value,
+        websiteInputValue: (document.getElementById('website') as HTMLInputElement)?.value,
+        formDataState: {
+          phone: formData.phone,
+          fax: formData.fax,
+          email: formData.email,
+          website: formData.website
+        }
       });
 
       const response = await fetch('/api/customers', {
@@ -137,6 +147,17 @@ export default function NewCustomerPage() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     const finalValue = type === 'checkbox' ? (e.target as HTMLInputElement).checked : value;
+    
+    // デバッグ: 連絡先情報フィールドの変更を監視
+    if (['phone', 'fax', 'email', 'website'].includes(name)) {
+      console.log('📝 連絡先フィールド変更:', {
+        field: name,
+        oldValue: formData[name as keyof CustomerForm],
+        newValue: finalValue,
+        placeholderValue: (e.target as HTMLInputElement).placeholder
+      });
+    }
+    
     setFormData(prev => ({ ...prev, [name]: finalValue }));
     // エラーをクリア
     if (errors[name as keyof CustomerForm]) {
@@ -190,6 +211,16 @@ export default function NewCustomerPage() {
       if (data.companyNameKana) newFormData.companyNameKana = data.companyNameKana;
       if (data.department) newFormData.department = data.department;
 
+      // デバッグ: 受信した住所データを確認
+      console.log('🏠 住所データ確認:', {
+        postalCode: data.postalCode,
+        prefecture: data.prefecture,
+        city: data.city,
+        address1: data.address1,
+        address2: data.address2,
+        address: data.address
+      });
+
       // 住所情報の処理（APIからの分割済みデータを優先）
       if (data.postalCode) newFormData.postalCode = data.postalCode;
       if (data.prefecture) newFormData.prefecture = data.prefecture;  
@@ -198,7 +229,11 @@ export default function NewCustomerPage() {
       if (data.address2) newFormData.address2 = data.address2;
       
       // addressフィールドがある場合の処理（分割済みデータがない場合のみ）
-      if (data.address && !data.address1) {
+      // APIが既に分割済みのデータを提供している場合は、このフォールバック処理をスキップ
+      const hasPreSplitData = data.prefecture || data.city || data.address1;
+      console.log('🔍 分割済みデータチェック:', { hasPreSplitData, willSkipParsing: hasPreSplitData });
+      
+      if (data.address && !hasPreSplitData) {
         // 住所が分割されていない場合のみ処理
         console.log('Processing unsplit address:', data.address);
         
@@ -281,10 +316,24 @@ export default function NewCustomerPage() {
       // フォーム状態更新後の確認（次回render時）
       setTimeout(() => {
         console.log('⏰ 状態更新後の確認:', {
-          phone: newFormData.phone,
-          fax: newFormData.fax,
-          email: newFormData.email,
-          website: newFormData.website
+          formDataState: {
+            phone: newFormData.phone,
+            fax: newFormData.fax,
+            email: newFormData.email,
+            website: newFormData.website
+          },
+          actualInputValues: {
+            phone: (document.getElementById('phone') as HTMLInputElement)?.value,
+            fax: (document.getElementById('fax') as HTMLInputElement)?.value,
+            email: (document.getElementById('email') as HTMLInputElement)?.value,
+            website: (document.getElementById('website') as HTMLInputElement)?.value
+          },
+          placeholderValues: {
+            phone: (document.getElementById('phone') as HTMLInputElement)?.placeholder,
+            fax: (document.getElementById('fax') as HTMLInputElement)?.placeholder,
+            email: (document.getElementById('email') as HTMLInputElement)?.placeholder,
+            website: (document.getElementById('website') as HTMLInputElement)?.placeholder
+          }
         });
       }, 100);
       
