@@ -13,8 +13,8 @@ export async function GET(request: NextRequest) {
       search: searchParams.get('search') || undefined,
       page: searchParams.get('page') ? parseInt(searchParams.get('page')!) : 1,
       limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : 20,
-      sortBy: searchParams.get('sortBy') || 'companyName',
-      sortOrder: (searchParams.get('sortOrder') || 'asc') as 'asc' | 'desc'
+      sortBy: searchParams.get('sort') || 'createdAt',
+      sortOrder: (searchParams.get('order') || 'desc') as 'asc' | 'desc'
     };
 
     const result = await SupplierService.getSuppliers(params);
