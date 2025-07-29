@@ -203,8 +203,9 @@ export default function NewCustomerPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="max-w-2xl mx-auto">
+    <>
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-2xl mx-auto">
         <div className="mb-6 flex items-center gap-4">
           <Link
             href="/customers"
@@ -683,12 +684,24 @@ export default function NewCustomerPage() {
       </div>
       
       {/* チャットボタン */}
-      <button
-        onClick={() => setIsChatOpen(true)}
-        className="fixed bottom-4 right-4 bg-purple-600 text-white p-4 rounded-full shadow-lg hover:bg-purple-700 transition-colors z-40"
-      >
-        <MessageCircle className="w-6 h-6" />
-      </button>
+      <div className="fixed bottom-4 right-4 md:bottom-6 md:right-6" style={{ zIndex: 9999 }}>
+        <button
+          onClick={() => setIsChatOpen(true)}
+          className="group relative bg-purple-600 text-white p-4 rounded-full shadow-2xl hover:bg-purple-700 transition-all duration-200 hover:scale-110 flex items-center justify-center"
+          style={{ width: '60px', height: '60px' }}
+          aria-label="会社情報入力アシスタントを開く"
+        >
+          <MessageCircle className="w-7 h-7" />
+          <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center animate-pulse">
+            1
+          </span>
+        </button>
+        <div className="absolute bottom-full right-0 mb-2 hidden group-hover:block">
+          <div className="bg-gray-900 text-white text-sm rounded-lg px-3 py-2 whitespace-nowrap">
+            会社情報を自動入力
+          </div>
+        </div>
+      </div>
       
       {/* チャットモーダル */}
       <CustomerChatModal
@@ -696,6 +709,6 @@ export default function NewCustomerPage() {
         onClose={() => setIsChatOpen(false)}
         onDataExtracted={handleDataExtracted}
       />
-    </div>
+    </>
   );
 }
