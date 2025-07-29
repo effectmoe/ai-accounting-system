@@ -198,19 +198,19 @@ Email: {{companyEmail}}
       dueDate: '2025年07月31日',
       validityDate: '2025年08月31日',
       deliveryDate: '2025年07月29日',
-      companyName: companyInfo.company_name || '株式会社EFFECT',
-      companyAddress: companyInfo.address || '東京都千代田区大手町1-1-1',
-      companyPhone: companyInfo.phone || '03-1234-5678',
-      companyEmail: companyInfo.email || 'info@effect.moe',
+      companyName: (companyInfo && companyInfo.company_name) || '株式会社EFFECT',
+      companyAddress: (companyInfo && companyInfo.address) || '東京都千代田区大手町1-1-1',
+      companyPhone: (companyInfo && companyInfo.phone) || '03-1234-5678',
+      companyEmail: (companyInfo && companyInfo.email) || 'info@effect.moe',
     };
 
-    let subject = template.subject;
-    let body = template.body;
+    let subject = template.subject || '';
+    let body = template.body || '';
 
     Object.entries(sampleData).forEach(([key, value]) => {
       const regex = new RegExp(`{{${key}}}`, 'g');
-      subject = subject.replace(regex, value);
-      body = body.replace(regex, value);
+      subject = subject.replace(regex, value || '');
+      body = body.replace(regex, value || '');
     });
 
     return { subject, body };
@@ -332,7 +332,7 @@ Email: {{companyEmail}}
         </Card>
 
         {/* プレビューエリア */}
-        {showPreview && activeTemplate && (
+        {showPreview && activeTemplate && !isLoading && (
           <Card>
             <CardHeader>
               <CardTitle>プレビュー</CardTitle>
@@ -342,14 +342,28 @@ Email: {{companyEmail}}
                 <div>
                   <Label className="text-sm text-gray-500">件名</Label>
                   <div className="mt-1 p-3 bg-gray-50 rounded-md">
-                    {getPreviewContent(activeTemplate).subject}
+                    {(() => {
+                      try {
+                        return getPreviewContent(activeTemplate).subject;
+                      } catch (error) {
+                        logger.error('Preview content error:', error);
+                        return 'プレビューエラー';
+                      }
+                    })()}
                   </div>
                 </div>
 
                 <div>
                   <Label className="text-sm text-gray-500">本文</Label>
                   <div className="mt-1 p-4 bg-gray-50 rounded-md whitespace-pre-wrap font-mono text-sm">
-                    {getPreviewContent(activeTemplate).body}
+                    {(() => {
+                      try {
+                        return getPreviewContent(activeTemplate).body;
+                      } catch (error) {
+                        logger.error('Preview content error:', error);
+                        return 'プレビューエラー';
+                      }
+                    })()}
                   </div>
                 </div>
               </div>
