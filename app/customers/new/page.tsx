@@ -681,8 +681,8 @@ export default function NewCustomerPage() {
           </form>
         </div>
 
-        {/* 埋め込み型チャット機能 */}
-        <div className="mt-8">
+        {/* 埋め込み型チャット機能 - 中央下部に配置 */}
+        <div className="mt-8 flex justify-center">
           <CustomerChatModal
             isOpen={true}
             onClose={() => {}}
