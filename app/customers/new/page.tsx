@@ -172,30 +172,62 @@ export default function NewCustomerPage() {
 
   // チャットから抽出されたデータを処理
   const handleDataExtracted = (data: any) => {
-    setFormData(prev => ({
-      ...prev,
-      companyName: data.companyName || prev.companyName,
-      companyNameKana: data.companyNameKana || prev.companyNameKana,
-      department: data.department || prev.department,
-      postalCode: data.postalCode || prev.postalCode,
-      prefecture: data.prefecture || prev.prefecture,
-      city: data.city || prev.city,
-      address1: data.address1 || data.address || prev.address1,
-      address2: data.address2 || prev.address2,
-      phone: data.phone || prev.phone,
-      fax: data.fax || prev.fax,
-      email: data.email || prev.email,
-      website: data.website || prev.website,
-      notes: data.notes || prev.notes,
-      contacts: data.name ? [{
-        name: data.name,
-        nameKana: data.nameKana || '',
-        title: data.title || '',
-        email: data.email || '',
-        phone: data.phone || '',
-        isPrimary: true
-      }] : prev.contacts
-    }));
+    console.log('Extracted data received:', data);
+    
+    setFormData(prev => {
+      const newFormData = {
+        ...prev,
+        companyName: data.companyName || prev.companyName,
+        companyNameKana: data.companyNameKana || prev.companyNameKana,
+      };
+
+      // 住所情報の処理
+      if (data.postalCode) newFormData.postalCode = data.postalCode;
+      if (data.prefecture) newFormData.prefecture = data.prefecture;
+      if (data.city) newFormData.city = data.city;
+      if (data.address1) newFormData.address1 = data.address1;
+      if (data.address2) newFormData.address2 = data.address2;
+      
+      // addressフィールドがある場合の処理
+      if (data.address && !data.address1) {
+        // 住所が分割されていない場合
+        const addressMatch = data.address.match(/^(.+?[都道府県])(.+?[市区町村])(.*)/)
+        if (addressMatch) {
+          if (!data.prefecture) newFormData.prefecture = addressMatch[1];
+          if (!data.city) newFormData.city = addressMatch[2];
+          if (!data.address1) newFormData.address1 = addressMatch[3];
+        } else {
+          newFormData.address1 = data.address;
+        }
+      }
+
+      // 電話番号、FAX、メール
+      if (data.phone) newFormData.phone = data.phone;
+      if (data.fax) newFormData.fax = data.fax;
+      if (data.email) newFormData.email = data.email;
+      if (data.website) newFormData.website = data.website;
+      if (data.notes) newFormData.notes = data.notes;
+
+      // 担当者情報
+      if (data.name) {
+        newFormData.contacts = [{
+          name: data.name,
+          nameKana: data.nameKana || '',
+          title: data.title || data.department || '', // 役職がない場合は部署を使用
+          email: data.email || '',
+          phone: data.mobile || data.phone || '', // 携帯があれば優先
+          isPrimary: true
+        }];
+        
+        // 担当者の部署情報を会社の部署欄にも設定
+        if (data.department && !newFormData.department) {
+          newFormData.department = data.department;
+        }
+      }
+
+      console.log('Updated form data:', newFormData);
+      return newFormData;
+    });
     
     // エラーをクリア
     setErrors({});
