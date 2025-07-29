@@ -196,9 +196,9 @@ Email: {{companyEmail}}
     }
   };
 
-  const getPreviewContent = (template: EmailTemplate): { subject: string; body: string } => {
+  const getPreviewContent = (template: EmailTemplate | null | undefined): { subject: string; body: string } => {
     // テンプレートが存在しない場合のエラーハンドリング
-    if (!template) {
+    if (!template || !template.subject || !template.body) {
       return { subject: 'テンプレートが見つかりません', body: 'テンプレートが見つかりません' };
     }
 
@@ -217,7 +217,7 @@ Email: {{companyEmail}}
         deliveryDate: '2025年07月29日',
         companyName: safeCompanyInfo.name || safeCompanyInfo.company_name || '株式会社EFFECT',
         companyAddress: safeCompanyInfo.address || '東京都千代田区大手町1-1-1',
-        companyPhone: safeCompanyInfo.phone_number || safeCompanyInfo.phone || '03-1234-5678',
+        companyPhone: safeCompanyInfo.phone_number || safeCompanyInfo.phone || '03-1234-5678', 
         companyEmail: safeCompanyInfo.email || 'info@effect.moe',
       };
 
@@ -227,13 +227,20 @@ Email: {{companyEmail}}
 
       // 変数置換を実行
       Object.entries(sampleData).forEach(([key, value]) => {
-        const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
-        const safeValue = String(value || '');
-        subject = subject.replace(regex, safeValue);
-        body = body.replace(regex, safeValue);
+        try {
+          if (key && typeof key === 'string' && value !== undefined) {
+            const regex = new RegExp(`\\{\\{${key}\\}\\}`, 'g');
+            const safeValue = String(value || '');
+            subject = subject.replace(regex, safeValue);
+            body = body.replace(regex, safeValue);
+          }
+        } catch (replaceError) {
+          logger.error(`Error replacing variable ${key}:`, replaceError);
+          // エラーが発生した場合はそのまま継続
+        }
       });
 
-      return { subject, body };
+      return { subject: subject || '', body: body || '' };
     } catch (error) {
       logger.error('Error in getPreviewContent:', error);
       return { 
@@ -378,6 +385,9 @@ Email: {{companyEmail}}
                   <div className="mt-1 p-3 bg-gray-50 rounded-md">
                     {(() => {
                       try {
+                        if (!activeTemplate) {
+                          return 'テンプレートが選択されていません';
+                        }
                         const preview = getPreviewContent(activeTemplate);
                         return preview?.subject || 'プレビューエラー';
                       } catch (error) {
@@ -393,6 +403,9 @@ Email: {{companyEmail}}
                   <div className="mt-1 p-4 bg-gray-50 rounded-md whitespace-pre-wrap font-mono text-sm">
                     {(() => {
                       try {
+                        if (!activeTemplate) {
+                          return 'テンプレートが選択されていません';
+                        }
                         const preview = getPreviewContent(activeTemplate);
                         return preview?.body || 'プレビューエラー';
                       } catch (error) {
