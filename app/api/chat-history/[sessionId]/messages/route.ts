@@ -13,20 +13,22 @@ export async function POST(
   const chatHistoryService = getChatHistoryService();
   
   try {
-    logger.debug('[Add Message API] Received request for session:', params.sessionId);
+    const { sessionId } = params;
     const body = await request.json();
-    logger.debug('[Add Message API] Message body:', JSON.stringify(body));
-    
-    // セッションが存在するか確認
-    const session = await chatHistoryService.getSession(params.sessionId);
-    if (!session) {
-      logger.debug('[Add Message API] Session not found, creating new session');
-      // セッションが存在しない場合は作成
-      await chatHistoryService.createSession(undefined, `税務・会計相談 ${new Date().toLocaleDateString()}`);
+    const { content, role, metadata } = body;
+
+    if (!content || !role) {
+      return NextResponse.json(
+        { success: false, error: 'content and role are required' },
+        { status: 400 }
+      );
     }
-    
-    const message = await chatHistoryService.addMessage(params.sessionId, body);
-    logger.debug('[Add Message API] Message added successfully:', message.id);
+
+    const message = await chatHistoryService.addMessage(sessionId, {
+      content,
+      role,
+      metadata
+    });
 
     return NextResponse.json({
       success: true,
@@ -34,12 +36,56 @@ export async function POST(
     });
 
   } catch (error) {
-    logger.error('[Add Message API] Error:', error);
-    logger.error('[Add Message API] Stack:', error instanceof Error ? error.stack : 'No stack');
+    logger.error(`Chat message POST error for session ${params.sessionId}:`, error);
     return NextResponse.json(
       {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to add message'
+      },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * GET /api/chat-history/[sessionId]/messages
+ * セッションのメッセージ一覧を取得
+ */
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { sessionId: string } }
+) {
+  const chatHistoryService = getChatHistoryService();
+  
+  try {
+    const { sessionId } = params;
+    const session = await chatHistoryService.getSession(sessionId);
+
+    if (!session) {
+      return NextResponse.json(
+        { success: false, error: 'Session not found' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        messages: session.messages,
+        sessionInfo: {
+          title: session.title,
+          createdAt: session.createdAt,
+          updatedAt: session.updatedAt
+        }
+      }
+    });
+
+  } catch (error) {
+    logger.error(`Chat messages GET error for session ${params.sessionId}:`, error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to fetch messages'
       },
       { status: 500 }
     );
