@@ -11,18 +11,18 @@ interface Message {
   timestamp: Date;
 }
 
-interface CustomerChatModalProps {
+interface SupplierChatModalProps {
   isOpen: boolean;
   onClose: () => void;
   onDataExtracted: (data: any) => void;
   formData?: any; // 現在のフォームデータを受け取る
 }
 
-export default function CustomerChatModal({ isOpen, onClose, onDataExtracted, formData }: CustomerChatModalProps) {
+export default function SupplierChatModal({ isOpen, onClose, onDataExtracted, formData }: SupplierChatModalProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      content: '🤖 企業登録アシスタントです。\n\n● 会社情報の自動入力：\n  → URLを入力 または 名刺画像をアップロード\n\n● 登録された企業の詳細調査：\n  → 「どんな会社？」「詳しく教えて」などで質問\n\n例：https://roumunews.jp/',
+      content: '🤖 仕入先登録アシスタントです。\n\n● 仕入先情報の自動入力：\n  → URLを入力 または 名刺画像をアップロード\n\n● 登録された仕入先の詳細調査：\n  → 「どんな会社？」「詳しく教えて」などで質問\n\n例：https://example-supplier.co.jp/',
       role: 'assistant',
       timestamp: new Date()
     }
@@ -60,25 +60,25 @@ export default function CustomerChatModal({ isOpen, onClose, onDataExtracted, fo
           body: JSON.stringify({ url: urlMatch[0] })
         });
 
-        if (!response.ok) throw new Error('会社情報の取得に失敗しました');
+        if (!response.ok) throw new Error('仕入先情報の取得に失敗しました');
 
         const data = await response.json();
         
         const assistantMessage: Message = {
           id: Date.now().toString(),
-          content: `会社情報を取得しました。以下の情報をフォームに入力します：\n\n会社名: ${data.companyName || '不明'}${data.companyNameKana ? `\n会社名カナ: ${data.companyNameKana}` : ''}${data.department ? `\n部署: ${data.department}` : ''}\n\n住所情報:${data.postalCode ? `\n郵便番号: ${data.postalCode}` : ''}${data.prefecture ? `\n都道府県: ${data.prefecture}` : ''}${data.city ? `\n市区町村: ${data.city}` : ''}${data.address1 ? `\n住所1: ${data.address1}` : ''}${data.address2 ? `\n住所2: ${data.address2}` : ''}${data.address ? `\n住所: ${data.address}` : '不明'}\n\n連絡先:\n電話番号: ${data.phone || '不明'}${data.fax ? `\nFAX: ${data.fax}` : ''}\nメール: ${data.email || '不明'}${data.website ? `\nウェブサイト: ${data.website}` : ''}${data.contactPerson ? `\n\n担当者情報:\n名前: ${data.contactPerson}` : ''}${data.notes ? `\n\n備考: ${data.notes}` : ''}`,
+          content: `仕入先情報を取得しました。以下の情報をフォームに入力します：\n\n会社名: ${data.companyName || '不明'}${data.companyNameKana ? `\n会社名カナ: ${data.companyNameKana}` : ''}${data.department ? `\n部署: ${data.department}` : ''}\n\n住所情報:${data.postalCode ? `\n郵便番号: ${data.postalCode}` : ''}${data.prefecture ? `\n都道府県: ${data.prefecture}` : ''}${data.city ? `\n市区町村: ${data.city}` : ''}${data.address1 ? `\n住所1: ${data.address1}` : ''}${data.address2 ? `\n住所2: ${data.address2}` : ''}${data.address ? `\n住所: ${data.address}` : '不明'}\n\n連絡先:\n電話番号: ${data.phone || '不明'}${data.fax ? `\nFAX: ${data.fax}` : ''}\nメール: ${data.email || '不明'}${data.website ? `\nウェブサイト: ${data.website}` : ''}${data.contactPerson ? `\n\n担当者情報:\n名前: ${data.contactPerson}` : ''}${data.notes ? `\n\n備考: ${data.notes}` : ''}`,
           role: 'assistant',
           timestamp: new Date()
         };
 
         setMessages(prev => [...prev, assistantMessage]);
         onDataExtracted(data);
-        toast.success('会社情報を入力しました');
+        toast.success('仕入先情報を入力しました');
         
         // 企業深掘り調査を開始
         const investigateMessage: Message = {
           id: (Date.now() + 1).toString(),
-          content: '🔍 この企業についてさらに詳しく調査します...',
+          content: '🔍 この仕入先について詳しく調査します...',
           role: 'assistant',
           timestamp: new Date()
         };
@@ -130,33 +130,19 @@ export default function CustomerChatModal({ isOpen, onClose, onDataExtracted, fo
             };
             setMessages(prev => [...prev, assistantMessage]);
           } else {
-            throw new Error('企業情報の調査に失敗しました');
+            throw new Error('仕入先情報の調査に失敗しました');
           }
         } else {
-          // 企業登録に関係ない質問への応答
+          // 仕入先登録に関係ない質問への応答
           const assistantMessage: Message = {
             id: Date.now().toString(),
-            content: '😊 申し訳ございません。私は企業登録専用のアシスタントです。\n\n以下のことでお手伝いできます：\n• 企業情報の自動入力（URLまたは名刺画像）\n• 登録された企業の詳細情報提供\n\n他のことについてはお答えできかねます。',
+            content: '😊 申し訳ございません。私は仕入先登録専用のアシスタントです。\n\n以下のことでお手伝いできます：\n• 仕入先情報の自動入力（URLまたは名刺画像）\n• 登録された仕入先の詳細情報提供\n\n他のことについてはお答えできかねます。',
             role: 'assistant',
             timestamp: new Date()
           };
 
           setMessages(prev => [...prev, assistantMessage]);
         }
-      }
-
-        if (!response.ok) throw new Error('応答の取得に失敗しました');
-
-        const data = await response.json();
-        
-        const assistantMessage: Message = {
-          id: Date.now().toString(),
-          content: data.response,
-          role: 'assistant',
-          timestamp: new Date()
-        };
-
-        setMessages(prev => [...prev, assistantMessage]);
       }
     } catch (error) {
       console.error('Error:', error);
@@ -225,9 +211,9 @@ export default function CustomerChatModal({ isOpen, onClose, onDataExtracted, fo
   return (
     <div className="w-full h-[500px] bg-white rounded-lg border border-gray-200 flex flex-col">
       {/* ヘッダー */}
-      <div className="flex items-center gap-2 p-4 border-b bg-purple-50">
-        <Bot className="w-5 h-5 text-purple-600" />
-        <h3 className="font-semibold text-gray-800">会社情報入力アシスタント</h3>
+      <div className="flex items-center gap-2 p-4 border-b bg-orange-50">
+        <Bot className="w-5 h-5 text-orange-600" />
+        <h3 className="font-semibold text-gray-800">仕入先情報入力アシスタント</h3>
       </div>
 
       {/* メッセージエリア */}
@@ -239,7 +225,7 @@ export default function CustomerChatModal({ isOpen, onClose, onDataExtracted, fo
           >
             <div className={`flex gap-2 max-w-[80%] ${message.role === 'user' ? 'flex-row-reverse' : ''}`}>
               <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                message.role === 'user' ? 'bg-blue-500' : 'bg-purple-500'
+                message.role === 'user' ? 'bg-blue-500' : 'bg-orange-500'
               }`}>
                 {message.role === 'user' ? (
                   <User className="w-4 h-4 text-white" />
@@ -268,7 +254,7 @@ export default function CustomerChatModal({ isOpen, onClose, onDataExtracted, fo
         {isLoading && (
           <div className="flex justify-start">
             <div className="flex gap-2">
-              <div className="w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center">
                 <Bot className="w-4 h-4 text-white" />
               </div>
               <div className="bg-gray-100 rounded-lg px-4 py-2">
@@ -289,7 +275,7 @@ export default function CustomerChatModal({ isOpen, onClose, onDataExtracted, fo
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handleSend()}
             placeholder="質問を入力してください..."
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
             disabled={isLoading}
           />
           <input
@@ -301,14 +287,14 @@ export default function CustomerChatModal({ isOpen, onClose, onDataExtracted, fo
           />
           <button
             onClick={() => fileInputRef.current?.click()}
-            className="p-2 text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+            className="p-2 text-gray-600 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
             disabled={isLoading}
           >
             <Upload className="w-5 h-5" />
           </button>
           <button
             onClick={handleSend}
-            className="p-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50"
+            className="p-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50"
             disabled={!input.trim() || isLoading}
           >
             <Send className="w-5 h-5" />

@@ -17,10 +17,12 @@ import {
 import { ArrowLeft, Save, Building2 } from 'lucide-react';
 import { SupplierStatus, PaymentMethod } from '@/types/collections';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import SupplierChatModal from '@/components/SupplierChatModal';
 
 export default function NewSupplierPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<any>({});
   const [formData, setFormData] = useState({
     supplierCode: '',
     companyName: '',
@@ -94,6 +96,69 @@ export default function NewSupplierPage() {
       ...prev,
       contacts: newContacts,
     }));
+  };
+
+  // チャットから抽出されたデータを処理
+  const handleDataExtracted = (data: any) => {
+    console.log('Extracted data received:', data);
+    
+    setFormData(prev => {
+      const newFormData = {
+        ...prev,
+        companyName: data.companyName || prev.companyName,
+        companyNameKana: data.companyNameKana || prev.companyNameKana,
+      };
+
+      // 住所情報の処理
+      if (data.postalCode) newFormData.postalCode = data.postalCode;
+      if (data.prefecture) newFormData.prefecture = data.prefecture;
+      if (data.city) newFormData.city = data.city;
+      if (data.address1) newFormData.address1 = data.address1;
+      if (data.address2) newFormData.address2 = data.address2;
+      
+      // addressフィールドがある場合の処理
+      if (data.address && !data.address1) {
+        // 住所が分割されていない場合
+        const addressMatch = data.address.match(/^(.+?[都道府県])(.+?[市区町村])(.*)/)
+        if (addressMatch) {
+          if (!data.prefecture) newFormData.prefecture = addressMatch[1];
+          if (!data.city) newFormData.city = addressMatch[2];
+          if (!data.address1) newFormData.address1 = addressMatch[3];
+        } else {
+          newFormData.address1 = data.address;
+        }
+      }
+
+      // 電話番号、FAX、メール
+      if (data.phone) newFormData.phone = data.phone;
+      if (data.fax) newFormData.fax = data.fax;
+      if (data.email) newFormData.email = data.email;
+      if (data.website) newFormData.website = data.website;
+      if (data.notes) newFormData.notes = data.notes;
+
+      // 担当者情報
+      if (data.name) {
+        newFormData.contacts = [{
+          name: data.name,
+          nameKana: data.nameKana || '',
+          title: data.title || data.department || '', // 役職がない場合は部署を使用
+          email: data.email || '',
+          phone: data.mobile || data.phone || '', // 携帯があれば優先
+          isPrimary: true
+        }];
+        
+        // 担当者の部署情報を会社の部署欄にも設定
+        if (data.department && !newFormData.department) {
+          newFormData.department = data.department;
+        }
+      }
+
+      console.log('Updated form data:', newFormData);
+      return newFormData;
+    });
+    
+    // エラーをクリア
+    setErrors({});
   };
 
   return (
@@ -428,6 +493,16 @@ export default function NewSupplierPage() {
           </Button>
         </div>
       </form>
+
+      {/* 埋め込み型チャット機能 - 中央下部に配置 */}
+      <div className="mt-8 flex justify-center">
+        <SupplierChatModal
+          isOpen={true}
+          onClose={() => {}}
+          onDataExtracted={handleDataExtracted}
+          formData={formData}
+        />
+      </div>
     </div>
   );
 }
