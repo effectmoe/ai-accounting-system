@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withErrorHandler, ApiErrorResponse } from '@/lib/unified-error-handler';
 import { logger } from '@/lib/logger';
-import { getMastraInstance } from '@/lib/mastra';
+import { DocumentAnalysisClient, AzureKeyCredential } from '@azure/ai-form-recognizer';
+import { mastra } from '@/src/mastra';
 
 export const POST = withErrorHandler(async (request: NextRequest) => {
   const formData = await request.formData();
@@ -14,13 +15,76 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
   try {
     logger.info('Processing business card image:', imageFile.name);
 
-    // 画像をBase64に変換
+    // 画像バッファを取得
     const buffer = await imageFile.arrayBuffer();
+    const uint8Array = new Uint8Array(buffer);
+    
+    // Azure Form Recognizerの設定を確認
+    const azureEndpoint = process.env.AZURE_FORM_RECOGNIZER_ENDPOINT;
+    const azureKey = process.env.AZURE_FORM_RECOGNIZER_KEY;
+    
+    if (azureEndpoint && azureKey) {
+      // Azure Form Recognizerでビジネスカードを分析
+      try {
+        logger.info('Using Azure Form Recognizer for business card OCR');
+        
+        const client = new DocumentAnalysisClient(
+          azureEndpoint,
+          new AzureKeyCredential(azureKey)
+        );
+        
+        // prebuilt-businessCardモデルを使用
+        const poller = await client.beginAnalyzeDocument(
+          "prebuilt-businessCard",
+          uint8Array,
+          {
+            contentType: imageFile.type || 'image/jpeg'
+          }
+        );
+        
+        const result = await poller.pollUntilDone();
+        
+        if (result.documents && result.documents.length > 0) {
+          const businessCard = result.documents[0];
+          const fields = businessCard.fields || {};
+          
+          // Azure Form Recognizerの結果を整形
+          const extractedData = {
+            companyName: fields.CompanyNames?.values?.[0]?.content || null,
+            name: fields.ContactNames?.values?.[0]?.content || null,
+            department: fields.Departments?.values?.[0]?.content || null,
+            title: fields.JobTitles?.values?.[0]?.content || null,
+            phone: fields.WorkPhones?.values?.[0]?.content || fields.OtherPhones?.values?.[0]?.content || null,
+            mobile: fields.MobilePhones?.values?.[0]?.content || null,
+            fax: fields.Faxes?.values?.[0]?.content || null,
+            email: fields.Emails?.values?.[0]?.content || null,
+            website: fields.Websites?.values?.[0]?.content || null,
+            address: fields.Addresses?.values?.[0]?.content || null
+          };
+          
+          // 住所から詳細情報を抽出
+          if (extractedData.address) {
+            const addressParts = parseJapaneseAddress(extractedData.address);
+            Object.assign(extractedData, addressParts);
+          }
+          
+          logger.info('Extracted business card info from Azure:', extractedData);
+          
+          return NextResponse.json({
+            success: true,
+            ...extractedData
+          });
+        }
+      } catch (azureError) {
+        logger.warn('Azure Form Recognizer failed, falling back to Mastra:', azureError);
+      }
+    }
+    
+    // Azure Form Recognizerが利用できない場合はMastraエージェントを使用
+    logger.info('Using Mastra agent for business card OCR');
+    
     const base64 = Buffer.from(buffer).toString('base64');
     const mimeType = imageFile.type || 'image/jpeg';
-
-    // Mastraエージェントで名刺情報を抽出
-    const mastra = getMastraInstance();
     const agent = mastra.getAgent('imageAnalyzer');
     const dataUri = `data:${mimeType};base64,${base64}`;
     
@@ -115,3 +179,48 @@ JSON形式で返してください。見つからない情報はnullにしてく
     );
   }
 });
+
+// 日本の住所を解析する関数
+function parseJapaneseAddress(address: string): {
+  postalCode?: string;
+  prefecture?: string;
+  city?: string;
+  address1?: string;
+  address2?: string;
+} {
+  const result: any = {};
+  
+  // 郵便番号の抽出
+  const postalMatch = address.match(/〒?\s*(\d{3})[-\s]?(\d{4})/);
+  if (postalMatch) {
+    result.postalCode = `${postalMatch[1]}-${postalMatch[2]}`;
+    address = address.replace(postalMatch[0], '').trim();
+  }
+  
+  // 都道府県の抽出
+  const prefectureMatch = address.match(/(東京都|大阪府|京都府|北海道|[^都道府県]+[県])/);
+  if (prefectureMatch) {
+    result.prefecture = prefectureMatch[0];
+    const remaining = address.substring(prefectureMatch.index! + prefectureMatch[0].length);
+    
+    // 市区町村の抽出
+    const cityMatch = remaining.match(/^([^市区町村]+[市区町村])/);
+    if (cityMatch) {
+      result.city = cityMatch[0];
+      result.address1 = remaining.substring(cityMatch[0].length).trim();
+      
+      // ビル名などを分離
+      const buildingMatch = result.address1.match(/(.+?)([\s　]*)([^0-9０-９\s　]+ビル|[^0-9０-９\s　]+タワー|[^0-9０-９\s　]+マンション|[^0-9０-９\s　]+[0-9０-９]+F)(.*)$/);
+      if (buildingMatch) {
+        result.address1 = buildingMatch[1].trim();
+        result.address2 = (buildingMatch[3] + buildingMatch[4]).trim();
+      }
+    } else {
+      result.address1 = remaining.trim();
+    }
+  } else {
+    result.address1 = address;
+  }
+  
+  return result;
+}
