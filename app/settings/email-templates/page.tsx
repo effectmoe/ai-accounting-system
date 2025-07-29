@@ -207,17 +207,17 @@ export default function EmailTemplatesPage() {
       logger.debug('Safe company info:', safeCompanyInfo);
       
       const sampleData: Record<string, string> = {
-        customerName: '社労士法人労務ニュース 御中',
-        documentNumber: 'INV-20250729-001',
-        documentTitle: template.documentType === 'invoice' ? '請求件名：ウェブサイト制作費用\n' : template.documentType === 'quote' ? '見積件名：ウェブサイト制作費用\n' : '',
-        totalAmount: '¥1,000,000',
-        dueDate: '2025年07月31日',
-        validityDate: '2025年08月31日',
-        deliveryDate: '2025年07月29日',
-        companyName: String(safeCompanyInfo.name || safeCompanyInfo.company_name || '株式会社EFFECT'),
-        companyAddress: String(safeCompanyInfo.address || '東京都千代田区大手町1-1-1'),
-        companyPhone: String(safeCompanyInfo.phone_number || safeCompanyInfo.phone || '03-1234-5678'),
-        companyEmail: String(safeCompanyInfo.email || 'info@effect.moe'),
+        [PLACEHOLDERS.customerName]: '社労士法人労務ニュース 御中',
+        [PLACEHOLDERS.documentNumber]: 'INV-20250729-001',
+        [PLACEHOLDERS.documentTitle]: template.documentType === 'invoice' ? '請求件名：ウェブサイト制作費用\n' : template.documentType === 'quote' ? '見積件名：ウェブサイト制作費用\n' : '',
+        [PLACEHOLDERS.totalAmount]: '¥1,000,000',
+        [PLACEHOLDERS.dueDate]: '2025年07月31日',
+        [PLACEHOLDERS.validityDate]: '2025年08月31日',
+        [PLACEHOLDERS.deliveryDate]: '2025年07月29日',
+        [PLACEHOLDERS.companyName]: String(safeCompanyInfo.name || safeCompanyInfo.company_name || '株式会社EFFECT'),
+        [PLACEHOLDERS.companyAddress]: String(safeCompanyInfo.address || '東京都千代田区大手町1-1-1'),
+        [PLACEHOLDERS.companyPhone]: String(safeCompanyInfo.phone_number || safeCompanyInfo.phone || '03-1234-5678'),
+        [PLACEHOLDERS.companyEmail]: String(safeCompanyInfo.email || 'info@effect.moe'),
       };
 
       let subject = String(template.subject || '');
