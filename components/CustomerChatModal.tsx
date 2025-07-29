@@ -20,6 +20,8 @@ interface CustomerChatModalProps {
 }
 
 export default function CustomerChatModal({ isOpen, onClose, onDataExtracted, formData }: CustomerChatModalProps) {
+  console.log('🎯 CustomerChatModal コンポーネント初期化:', { isOpen, formData });
+  
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
@@ -36,14 +38,18 @@ export default function CustomerChatModal({ isOpen, onClose, onDataExtracted, fo
 
   // セッション初期化
   useEffect(() => {
+    console.log('🔄 useEffect[isOpen] 実行:', { isOpen, sessionId });
     if (isOpen && !sessionId) {
+      console.log('✅ セッション初期化条件満たした');
       initializeSession();
     }
   }, [isOpen]);
 
   // メッセージ更新時の履歴保存
   useEffect(() => {
+    console.log('🔄 useEffect[messages] 実行:', { sessionId, messagesLength: messages.length });
     if (sessionId && messages.length > 1) {
+      console.log('✅ メッセージ履歴保存条件満たした');
       saveMessageToHistory();
     }
   }, [messages, sessionId]);
@@ -334,8 +340,17 @@ export default function CustomerChatModal({ isOpen, onClose, onDataExtracted, fo
           <input
             type="text"
             value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+            onChange={(e) => {
+              console.log('🔧 入力フィールド変更:', e.target.value);
+              setInput(e.target.value);
+            }}
+            onKeyPress={(e) => {
+              console.log('⌨️ キー押下:', e.key);
+              if (e.key === 'Enter') {
+                console.log('↵ Enterキー検出 - handleSend実行');
+                handleSend();
+              }
+            }}
             placeholder="質問を入力してください..."
             className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
             disabled={isLoading}
@@ -355,7 +370,10 @@ export default function CustomerChatModal({ isOpen, onClose, onDataExtracted, fo
             <Upload className="w-5 h-5" />
           </button>
           <button
-            onClick={handleSend}
+            onClick={() => {
+              console.log('🖱️ 送信ボタンクリック:', { input, isLoading });
+              handleSend();
+            }}
             className="p-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50"
             disabled={!input.trim() || isLoading}
           >
