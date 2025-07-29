@@ -72,22 +72,37 @@ JSON形式で返してください。`
       
       if (jsonMatch) {
         const jsonString = jsonMatch[1] || jsonMatch[0];
-        const extractedData = JSON.parse(jsonString);
+        logger.debug('Extracted JSON string:', jsonString);
         
-        // websiteフィールドがない場合は元のURLを設定
-        if (!extractedData.website) {
-          extractedData.website = url;
+        try {
+          const extractedData = JSON.parse(jsonString);
+        
+          // websiteフィールドがない場合は元のURLを設定
+          if (!extractedData.website) {
+            extractedData.website = url;
+          }
+          
+          logger.info('Company info extracted via AI:', extractedData);
+          
+          return NextResponse.json({
+            success: true,
+            ...extractedData
+          });
+        } catch (parseError) {
+          logger.error('JSON parsing failed:', {
+            error: parseError.message,
+            jsonString: jsonString
+          });
         }
-        
-        logger.info('Company info extracted via AI:', extractedData);
-        
-        return NextResponse.json({
-          success: true,
-          ...extractedData
-        });
+      } else {
+        logger.warn('No JSON found in AI response:', responseText);
       }
     } catch (aiError) {
-      logger.warn('AI extraction failed, falling back to regex parsing:', aiError);
+      logger.error('AI extraction failed, falling back to regex parsing:', {
+        error: aiError.message,
+        stack: aiError.stack,
+        url: url
+      });
     }
 
     // 3. AIが失敗した場合のフォールバック：正規表現による抽出
