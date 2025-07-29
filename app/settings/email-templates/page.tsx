@@ -40,8 +40,7 @@ PDFファイルにて以下の内容の請求書をお送りさせていただ�
 
 
 請求書番号：{{documentNumber}}
-請求件名：{{documentTitle}}
-請求金額：{{totalAmount}}
+{{documentTitle}}請求金額：{{totalAmount}}
 お支払期限：{{dueDate}}
 
 
@@ -190,30 +189,35 @@ Email: {{companyEmail}}
   };
 
   const getPreviewContent = (template: EmailTemplate): { subject: string; body: string } => {
-    const sampleData = {
-      customerName: '社労士法人労務ニュース 御中',
-      documentNumber: 'INV-20250729-001',
-      documentTitle: template.documentType === 'invoice' ? 'ウェブサイト制作費用' : template.documentType === 'quote' ? 'ウェブサイト制作費用' : '',
-      totalAmount: '¥1,000,000',
-      dueDate: '2025年07月31日',
-      validityDate: '2025年08月31日',
-      deliveryDate: '2025年07月29日',
-      companyName: (companyInfo && companyInfo.company_name) || '株式会社EFFECT',
-      companyAddress: (companyInfo && companyInfo.address) || '東京都千代田区大手町1-1-1',
-      companyPhone: (companyInfo && companyInfo.phone) || '03-1234-5678',
-      companyEmail: (companyInfo && companyInfo.email) || 'info@effect.moe',
-    };
+    try {
+      const sampleData = {
+        customerName: '社労士法人労務ニュース 御中',
+        documentNumber: 'INV-20250729-001',
+        documentTitle: template.documentType === 'invoice' ? '請求件名：ウェブサイト制作費用\n' : template.documentType === 'quote' ? '見積件名：ウェブサイト制作費用\n' : '',
+        totalAmount: '¥1,000,000',
+        dueDate: '2025年07月31日',
+        validityDate: '2025年08月31日',
+        deliveryDate: '2025年07月29日',
+        companyName: (companyInfo && companyInfo.company_name) || '株式会社EFFECT',
+        companyAddress: (companyInfo && companyInfo.address) || '東京都千代田区大手町1-1-1',
+        companyPhone: (companyInfo && companyInfo.phone) || '03-1234-5678',
+        companyEmail: (companyInfo && companyInfo.email) || 'info@effect.moe',
+      };
 
-    let subject = template.subject || '';
-    let body = template.body || '';
+      let subject = template.subject || '';
+      let body = template.body || '';
 
-    Object.entries(sampleData).forEach(([key, value]) => {
-      const regex = new RegExp(`{{${key}}}`, 'g');
-      subject = subject.replace(regex, value || '');
-      body = body.replace(regex, value || '');
-    });
+      Object.entries(sampleData).forEach(([key, value]) => {
+        const regex = new RegExp(`{{${key}}}`, 'g');
+        subject = subject.replace(regex, value || '');
+        body = body.replace(regex, value || '');
+      });
 
-    return { subject, body };
+      return { subject, body };
+    } catch (error) {
+      logger.error('Error in getPreviewContent:', error);
+      return { subject: 'プレビューエラー', body: 'プレビューを生成できませんでした。' };
+    }
   };
 
   const getDocumentTypeLabel = (type: string) => {
