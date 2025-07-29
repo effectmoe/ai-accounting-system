@@ -51,9 +51,48 @@ export default function EmailSendModal({
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [companyInfo, setCompanyInfo] = useState<any>(null);
+  const [emailTemplates, setEmailTemplates] = useState<any[]>([]);
+
+  // テンプレートに変数を適用する関数
+  const applyTemplateVariables = (template: string) => {
+    const companyName = companyInfo?.company_name || '株式会社EFFECT';
+    const formattedDueDate = dueDate ? new Date(dueDate).toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '年').replace(/年(\d{2})/, '年$1月').replace(/月(\d{2})/, '月$1日') : '';
+    const formattedDeliveryDate = deliveryDate ? new Date(deliveryDate).toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '年').replace(/年(\d{2})/, '年$1月').replace(/月(\d{2})/, '月$1日') : '';
+    const formattedCustomerName = formatCustomerNameForEmail(customer, customerSnapshot);
+    
+    const variables = {
+      customerName: formattedCustomerName,
+      documentNumber: documentNumber,
+      totalAmount: `¥${totalAmount.toLocaleString()}`,
+      dueDate: formattedDueDate,
+      validityDate: dueDate ? new Date(dueDate).toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '年').replace(/年(\d{2})/, '年$1月').replace(/月(\d{2})/, '月$1日') : '',
+      deliveryDate: formattedDeliveryDate,
+      companyName: companyName,
+      companyAddress: companyInfo?.address || '',
+      companyPhone: companyInfo?.phone || '',
+      companyEmail: companyInfo?.email || '',
+    };
+    
+    let result = template;
+    Object.entries(variables).forEach(([key, value]) => {
+      const regex = new RegExp(`{{${key}}}`, 'g');
+      result = result.replace(regex, value);
+    });
+    
+    return result;
+  };
 
   // デフォルトの件名と本文を生成
   const getDefaultContent = () => {
+    // カスタムテンプレートがある場合はそれを使用
+    const customTemplate = emailTemplates.find(t => t.documentType === documentType);
+    if (customTemplate) {
+      return {
+        subject: applyTemplateVariables(customTemplate.subject),
+        body: applyTemplateVariables(customTemplate.body),
+      };
+    }
+    
     // 敬称付きの宛名を生成
     const formattedCustomerName = formatCustomerNameForEmail(customer, customerSnapshot);
     
@@ -122,22 +161,32 @@ ${deliveryDate ? `納品日：${deliveryDate}` : ''}
     }
   };
 
-  // 自社情報を取得
+  // 自社情報とメールテンプレートを取得
   React.useEffect(() => {
-    const fetchCompanyInfo = async () => {
+    const fetchData = async () => {
       try {
-        const response = await fetch('/api/company-info');
-        if (response.ok) {
-          const data = await response.json();
-          setCompanyInfo(data.companyInfo);
+        // 自社情報を取得
+        const companyResponse = await fetch('/api/company-info');
+        if (companyResponse.ok) {
+          const companyData = await companyResponse.json();
+          setCompanyInfo(companyData.companyInfo);
+        }
+        
+        // メールテンプレートを取得
+        const templateResponse = await fetch('/api/email-templates');
+        if (templateResponse.ok) {
+          const templateData = await templateResponse.json();
+          if (templateData.templates && templateData.templates.length > 0) {
+            setEmailTemplates(templateData.templates);
+          }
         }
       } catch (error) {
-        logger.error('Error fetching company info:', error);
+        logger.error('Error fetching data:', error);
       }
     };
     
     if (isOpen) {
-      fetchCompanyInfo();
+      fetchData();
     }
   }, [isOpen]);
 

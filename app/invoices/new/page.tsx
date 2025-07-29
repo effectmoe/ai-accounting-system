@@ -72,6 +72,7 @@ function NewInvoiceContent() {
   const [companyInfo, setCompanyInfo] = useState<any>(null);
   
   // 請求書情報
+  const [title, setTitle] = useState(''); // 請求書のタイトル
   const [invoiceDate, setInvoiceDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [dueDate, setDueDate] = useState(format(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'));
   const [items, setItems] = useState<InvoiceItem[]>([{
@@ -558,6 +559,7 @@ function NewInvoiceContent() {
       // 請求書を作成
       const invoiceData = {
         customerId,
+        title, // 請求書のタイトル
         invoiceDate: invoiceDate,
         dueDate: dueDate,
         items: items.filter(item => item.description), // 空の明細は除外
@@ -762,6 +764,19 @@ function NewInvoiceContent() {
                     disabled={!!selectedCustomerId}
                   />
                 </div>
+              </div>
+            </div>
+
+            {/* タイトル */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-900 pb-2 border-b border-gray-200">件名</h3>
+              <div>
+                <Input
+                  id="title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="請求書の件名を入力（例：ウェブサイト制作費用）"
+                />
               </div>
             </div>
 

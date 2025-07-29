@@ -73,6 +73,7 @@ function NewQuoteContent() {
   const [companyInfo, setCompanyInfo] = useState<any>(null);
   
   // 見積書情報
+  const [title, setTitle] = useState(''); // 見積書のタイトル
   const [quoteDate, setQuoteDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [validityDate, setValidityDate] = useState(format(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'));
   const [items, setItems] = useState<QuoteItem[]>([{
@@ -255,6 +256,7 @@ function NewQuoteContent() {
 
     const quoteData = {
       customerId: selectedCustomerId,
+      title, // 見積書のタイトル
       quoteDate, // フロントエンド用
       validityDate,
       items,
@@ -476,6 +478,17 @@ function NewQuoteContent() {
                 placeholder="顧客名を入力"
               />
             </div>
+          </div>
+
+          {/* タイトル */}
+          <div>
+            <Label htmlFor="title">件名</Label>
+            <Input
+              id="title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="見積書の件名を入力（例：ウェブサイト制作費用見積書）"
+            />
           </div>
 
           {/* 日付 */}

@@ -66,6 +66,7 @@ const Navigation = () => {
         { href: '/reports', label: 'レポート' },
         { href: '/faq', label: 'FAQ' },
         { href: '/settings', label: '設定' },
+        { href: '/settings/email-templates', label: 'メールテンプレート' },
       ]
     }
   ];

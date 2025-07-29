@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Search, FileText, Loader2, Sparkles, FileDown, CheckCircle, Calculator, Trash2, CheckCircle2 } from 'lucide-react';
+import { Plus, Search, FileText, Loader2, Sparkles, FileDown, CheckCircle, Calculator, Trash2, CheckCircle2, Copy } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { safeFormatDate } from '@/lib/date-utils';
 import { cache, SimpleCache } from '@/lib/cache';
@@ -17,6 +17,7 @@ import { logger } from '@/lib/logger';
 interface Quote {
   _id: string;
   quoteNumber: string;
+  title?: string;
   issueDate: string;
   validityDate: string;
   customer?: {
@@ -267,6 +268,43 @@ function QuotesPageContent() {
     setSelectedQuotes(newSelection);
   };
 
+  const handleDuplicate = async (quoteId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    
+    if (!confirm('この見積書を複製しますか？')) {
+      return;
+    }
+
+    setIsLoading(true);
+    
+    try {
+      const response = await fetch(`/api/quotes/${quoteId}/duplicate`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // キャッシュを無効化
+        cache.invalidate('quotes');
+        fetchQuotes(); // リストを再読み込み
+        alert('見積書を複製しました');
+        // 複製された見積書の編集ページに遷移
+        router.push(`/quotes/${data._id}/edit`);
+      } else {
+        throw new Error(data.error || '複製に失敗しました');
+      }
+    } catch (error) {
+      logger.error('Error duplicating quote:', error);
+      alert('見積書の複製に失敗しました');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleConvertToInvoice = async (quoteId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     
@@ -500,8 +538,7 @@ function QuotesPageContent() {
                         aria-label="すべて選択"
                       />
                     </TableHead>
-                    <TableHead>見積書番号</TableHead>
-                    <TableHead>顧客名</TableHead>
+                    <TableHead>見積書情報</TableHead>
                     <TableHead>発行日</TableHead>
                     <TableHead>有効期限</TableHead>
                     <TableHead className="text-right">金額</TableHead>
@@ -528,15 +565,24 @@ function QuotesPageContent() {
                           aria-label={`${quote.quoteNumber}を選択`}
                         />
                       </TableCell>
-                      <TableCell className="font-medium">
-                        {quote.quoteNumber}
-                      </TableCell>
                       <TableCell>
-                        {quote.customer?.companyName || 
-                         quote.customer?.name || 
-                         quote.customer?.company || 
-                         quote.customerSnapshot?.companyName || 
-                         '顧客名未設定'}
+                        <div className="space-y-1">
+                          <div className="font-medium text-sm">
+                            {quote.quoteNumber}
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            {quote.customer?.companyName || 
+                             quote.customer?.name || 
+                             quote.customer?.company || 
+                             quote.customerSnapshot?.companyName || 
+                             '顧客名未設定'}
+                          </div>
+                          {quote.title && (
+                            <div className="text-xs text-gray-500 truncate max-w-[300px]">
+                              {quote.title}
+                            </div>
+                          )}
+                        </div>
                       </TableCell>
                       <TableCell>
                         {safeFormatDate(quote.issueDate)}
@@ -572,6 +618,15 @@ function QuotesPageContent() {
                             title="PDFダウンロード"
                           >
                             <FileDown className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => handleDuplicate(quote._id, e)}
+                            title="複製"
+                            disabled={isLoading}
+                          >
+                            <Copy className="h-4 w-4" />
                           </Button>
                           {quote.status === 'accepted' && !quote.convertedToInvoiceId && (
                             <Button
