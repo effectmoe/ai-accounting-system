@@ -33,7 +33,6 @@ interface CustomerForm {
 export default function NewCustomerPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [isChatOpen, setIsChatOpen] = useState(false);
   const [formData, setFormData] = useState<CustomerForm>({
     customerId: '',
     companyName: '',
@@ -681,35 +680,81 @@ export default function NewCustomerPage() {
             </div>
           </form>
         </div>
-      </div>
-      </div>
-      
-      {/* チャットボタン */}
-      <div className="fixed bottom-4 right-4 md:bottom-6 md:right-6" style={{ zIndex: 9999 }}>
-        <button
-          onClick={() => setIsChatOpen(true)}
-          className="group relative bg-purple-600 text-white p-4 rounded-full shadow-2xl hover:bg-purple-700 transition-all duration-200 hover:scale-110 flex items-center justify-center"
-          style={{ width: '60px', height: '60px' }}
-          aria-label="会社情報入力アシスタントを開く"
-        >
-          <MessageCircle className="w-7 h-7" />
-          <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center animate-pulse">
-            1
-          </span>
-        </button>
-        <div className="absolute bottom-full right-0 mb-2 hidden group-hover:block">
-          <div className="bg-gray-900 text-white text-sm rounded-lg px-3 py-2 whitespace-nowrap">
-            会社情報を自動入力
+
+        {/* 会社情報入力アシスタント */}
+        <div className="mt-8 bg-white rounded-lg shadow">
+          <div className="p-6 border-b">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center">
+                <MessageCircle className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">会社情報入力アシスタント</h3>
+                <p className="text-sm text-gray-600">URLや名刺画像から会社情報を自動入力できます</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="h-96 flex flex-col">
+            {/* メッセージエリア */}
+            <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
+              <div className="space-y-4">
+                <div className="flex justify-start">
+                  <div className="flex gap-2 max-w-[80%]">
+                    <div className="w-8 h-8 rounded-full bg-purple-500 flex items-center justify-center">
+                      <MessageCircle className="w-4 h-4 text-white" />
+                    </div>
+                    <div className="bg-white rounded-lg px-4 py-2 shadow-sm">
+                      <p className="text-sm text-gray-800">
+                        こんにちは！会社情報の入力をお手伝いします。
+                      </p>
+                      <p className="text-sm text-gray-800 mt-2">
+                        以下の方法で会社情報を自動入力できます：<br />
+                        • 会社のウェブサイトURLを入力してください<br />
+                        • 名刺画像をアップロードしてください<br /><br />
+                        例：https://roumunews.jp/
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* 入力エリア */}
+            <div className="border-t p-4 bg-white">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="質問を入力してください..."
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  id="chat-file-input"
+                />
+                <label
+                  htmlFor="chat-file-input"
+                  className="p-2 text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors cursor-pointer"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                  </svg>
+                </label>
+                <button className="p-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                  </svg>
+                </button>
+              </div>
+              <p className="text-xs text-gray-500 mt-2">
+                URLを入力するか、名刺画像をアップロードしてください
+              </p>
+            </div>
           </div>
         </div>
       </div>
-      
-      {/* チャットモーダル */}
-      <CustomerChatModal
-        isOpen={isChatOpen}
-        onClose={() => setIsChatOpen(false)}
-        onDataExtracted={handleDataExtracted}
-      />
     </div>
   );
 }
