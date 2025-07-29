@@ -39,6 +39,9 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
 ウェブサイト、ニュース、SNS、企業データベースなど、あらゆる公開情報源から情報を収集してください。
 ${url ? `参考URL: ${url}` : ''}`;
     
+    logger.debug('Using agent:', agent.name || 'general');
+    logger.debug('Search query:', searchQuery);
+    
     const result = await agent.generate({
       messages: [{
         role: 'user',
@@ -46,7 +49,8 @@ ${url ? `参考URL: ${url}` : ''}`;
       }]
     });
 
-    const summary = result.text || '調査結果を取得できませんでした。';
+    logger.debug('Agent result:', result);
+    const summary = result.text || result.content || '調査結果を取得できませんでした。';
     
     // レスポンスを整形
     const formattedSummary = `🏢 **${companyName}の詳細情報**
