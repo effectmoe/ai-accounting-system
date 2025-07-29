@@ -50,6 +50,7 @@ export default function EmailSendModal({
   const [attachPdf, setAttachPdf] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [companyInfo, setCompanyInfo] = useState<any>(null);
 
   // デフォルトの件名と本文を生成
   const getDefaultContent = () => {
@@ -75,23 +76,28 @@ export default function EmailSendModal({
 よろしくお願いいたします。`,
       };
     } else if (documentType === 'invoice') {
+      const companyName = companyInfo?.company_name || '株式会社EFFECT';
+      const formattedDueDate = dueDate ? new Date(dueDate).toLocaleDateString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '年').replace(/年(\d{2})/, '年$1月').replace(/月(\d{2})/, '月$1日') : '';
+      
       return {
-        subject: `【請求書】${documentNumber} のご送付`,
+        subject: `請求書送付（${documentNumber}）`,
         body: `${formattedCustomerName}
 
-いつもお世話になっております。
 
-請求書をお送りいたします。
+いつもお世話になっております、${companyName}でございます。
+
+PDFファイルにて以下の内容の請求書をお送りさせていただきました。
+
 
 請求書番号：${documentNumber}
 請求金額：¥${totalAmount.toLocaleString()}
-${dueDate ? `お支払期限：${dueDate}` : ''}
+${dueDate ? `お支払期限：${formattedDueDate}` : ''}
 
-添付ファイルをご確認の上、期限までにお支払いをお願いいたします。
 
-ご不明な点がございましたら、お気軽にお問い合わせください。
+添付ファイルをご確認の上、何卒期限までにお支払いをお願いいたします。 
+ご不明な点がございましたら、お気軽にお問い合わせくださいませ。
 
-よろしくお願いいたします。`,
+ご査収の程、お願いいたします。`,
       };
     } else {
       // 納品書の場合
@@ -116,6 +122,25 @@ ${deliveryDate ? `納品日：${deliveryDate}` : ''}
     }
   };
 
+  // 自社情報を取得
+  React.useEffect(() => {
+    const fetchCompanyInfo = async () => {
+      try {
+        const response = await fetch('/api/company-info');
+        if (response.ok) {
+          const data = await response.json();
+          setCompanyInfo(data.companyInfo);
+        }
+      } catch (error) {
+        logger.error('Error fetching company info:', error);
+      }
+    };
+    
+    if (isOpen) {
+      fetchCompanyInfo();
+    }
+  }, [isOpen]);
+
   // モーダルが開いたときにデフォルト値を設定
   React.useEffect(() => {
     if (isOpen && !subject && !body) {
@@ -123,7 +148,7 @@ ${deliveryDate ? `納品日：${deliveryDate}` : ''}
       setSubject(defaultContent.subject);
       setBody(defaultContent.body);
     }
-  }, [isOpen]);
+  }, [isOpen, companyInfo]);
 
   const handleSend = async () => {
     setError(null);
