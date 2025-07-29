@@ -62,6 +62,53 @@ JSON形式で返してください。ウェブサイトに記載がない情報�
         logger.info('Extracted company info via Mastra:', extractedData);
         logger.debug('Mastra FAX field:', extractedData.fax);
         
+        // FAX番号が取得できていない場合はHTMLパースも試行
+        if (!extractedData.fax) {
+          logger.info('FAX number missing from Mastra, attempting HTML parse fallback');
+          
+          try {
+            const response = await fetch(url, {
+              headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+              }
+            });
+            
+            if (response.ok) {
+              const html = await response.text();
+              const extractInfo = (html: string) => {
+                // FAX番号の抽出のみ実行
+                const phonePatterns = [
+                  /<dt>(?:電話|TEL|Tel|Phone|TEL\/FAX)<\/dt>\s*<dd[^>]*>([^<]+)</dd>/i,
+                ];
+                
+                for (const pattern of phonePatterns) {
+                  const match = html.match(pattern);
+                  if (match) {
+                    const phone = match[1];
+                    let cleanPhone = phone.trim();
+                    
+                    if (cleanPhone.includes('/')) {
+                      const parts = cleanPhone.split('/');
+                      if (parts[1]) {
+                        return parts[1].trim().replace(/[^\d\-]/g, '');
+                      }
+                    }
+                  }
+                }
+                return null;
+              };
+              
+              const faxNumber = extractInfo(html);
+              if (faxNumber) {
+                extractedData.fax = faxNumber;
+                logger.info('FAX number extracted via HTML fallback:', faxNumber);
+              }
+            }
+          } catch (fallbackError) {
+            logger.warn('HTML fallback for FAX extraction failed:', fallbackError);
+          }
+        }
+        
         return NextResponse.json({
           success: true,
           ...extractedData
@@ -109,7 +156,7 @@ JSON形式で返してください。ウェブサイトに記載がない情報�
 
       // 住所の抽出
       const addressPatterns = [
-        /<dt>(?:住所|所在地|本社|Address)<\/dt>\s*<dd[^>]*>([^<]+(?:<br[^>]*>[^<]+)*)<\/dd>/i,
+        /<dt>(?:住所|所在地|本社|Address)<\/dt>\s*<dd[^>]*>([^<]+(?:<br[^>]*>[^<]+)*)</dd>/i,
         /(?:住所|所在地|本社|Address)[：:]\s*([^<\n]+)/i,
         /〒?\d{3}-?\d{4}[^<\n]+/,
         /(?:東京都|大阪府|京都府|北海道|福岡県|[^都道府県]+[県府市])[^<\n]{5,100}/,
@@ -172,7 +219,7 @@ JSON形式で返してください。ウェブサイトに記載がない情報�
 
       // 電話番号の抽出
       const phonePatterns = [
-        /<dt>(?:電話|TEL|Tel|Phone|TEL\/FAX)<\/dt>\s*<dd[^>]*>([^<\/]+)/i,
+        /<dt>(?:電話|TEL|Tel|Phone|TEL\/FAX)<\/dt>\s*<dd[^>]*>([^<]+)</dd>/i,
         /(?:電話|TEL|Tel|Phone)[：:]\s*([\d\-\(\)\s]+)/i,
         /0\d{1,4}-\d{1,4}-\d{4}/,
         /0\d{9,10}/,
