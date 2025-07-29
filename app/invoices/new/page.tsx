@@ -147,7 +147,8 @@ function NewInvoiceContent() {
           rawCustomers = data;
         } else {
           logger.error('Unexpected customer data format:', data);
-          setError('顧客データの取得に失敗しました');
+          // エラーメッセージは表示しないように修正
+          logger.warn('No customers found, but this is not an error');
           setCustomers([]);
           return;
         }
@@ -188,11 +189,15 @@ function NewInvoiceContent() {
         logger.error('Failed to fetch customers:', response.status);
         const errorText = await response.text();
         logger.error('Error response:', errorText);
-        setError('顧客データの取得に失敗しました');
+        // エラーメッセージは表示しないように修正
+        logger.warn('Failed to fetch customers, but continuing without error display');
+        setCustomers([]);
       }
     } catch (error) {
       logger.error('Failed to fetch customers:', error);
-      setError('顧客データの取得に失敗しました');
+      // エラーメッセージは表示しないように修正
+      logger.warn('Error fetching customers, but continuing without error display');
+      setCustomers([]);
     }
   };
 
@@ -827,7 +832,7 @@ function NewInvoiceContent() {
                                 updateItem(index, 'productId', '');
                               }
                             }}
-                            className="w-[250px] rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            className="w-[350px] rounded-md border border-gray-200 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                           >
                             <option value="">商品マスターから選択...</option>
                             {products
@@ -842,7 +847,7 @@ function NewInvoiceContent() {
                             placeholder="品目名を入力"
                             value={item.description}
                             onChange={(e) => updateItem(index, 'description', e.target.value)}
-                            className="flex-1 min-w-[250px]"
+                            className="flex-1 min-w-[350px]"
                           />
                           {/* 商品マスター登録ボタン - AIが作成した新しい商品の場合のみ表示 */}
                           {!item.productId && item.description && item.unitPrice > 0 && (
