@@ -103,10 +103,18 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    logger.debug('===== [Supplier API] DELETE Request START =====');
+    logger.debug('[1] Deleting supplier ID:', params.id);
+    
     const result = await SupplierService.deleteSupplier(params.id);
+    
+    logger.debug('[2] Delete result:', result);
+    logger.debug('===== [Supplier API] DELETE Request END =====');
+    
     return NextResponse.json(result);
   } catch (error: any) {
     logger.error('Error deleting supplier:', error);
+    logger.error('Error stack:', error.stack);
     
     if (error.message === 'Supplier not found') {
       return NextResponse.json(
@@ -116,7 +124,7 @@ export async function DELETE(
     }
     
     return NextResponse.json(
-      { error: 'Failed to delete supplier' },
+      { error: error.message || 'Failed to delete supplier' },
       { status: 500 }
     );
   }

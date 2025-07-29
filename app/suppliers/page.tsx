@@ -48,6 +48,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { toast } from 'react-hot-toast';
 
 function SuppliersPageContent() {
   const router = useRouter();
@@ -194,23 +195,32 @@ function SuppliersPageContent() {
     if (!supplierToDelete) return;
 
     try {
+      logger.debug('Deleting supplier:', supplierToDelete.id);
       const response = await fetch(`/api/suppliers/${supplierToDelete.id}`, {
         method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       });
 
+      const data = await response.json().catch(() => null);
+      
       if (response.ok) {
+        logger.info('Successfully deleted supplier:', supplierToDelete.id);
+        toast.success('仕入先を削除しました');
         // キャッシュを無効化
         cache.invalidate('suppliers');
         await fetchSuppliers();
         setShowDeleteDialog(false);
         setSupplierToDelete(null);
       } else {
-        const data = await response.json();
-        throw new Error(data.error || '削除に失敗しました');
+        throw new Error(data?.error || `削除に失敗しました (${response.status})`);
       }
     } catch (error) {
       logger.error('Error deleting supplier:', error);
-      setError(error instanceof Error ? error.message : '仕入先の削除に失敗しました。');
+      const errorMessage = error instanceof Error ? error.message : '仕入先の削除に失敗しました。';
+      setError(errorMessage);
+      toast.error(errorMessage);
       if (typeof window !== 'undefined' && (window as any).Sentry) {
         (window as any).Sentry.captureException(error);
       }
@@ -277,11 +287,44 @@ function SuppliersPageContent() {
 
   const handleBulkDelete = async () => {
     try {
-      const promises = selectedSupplierIds.map(id => 
-        fetch(`/api/suppliers/${id}`, { method: 'DELETE' })
+      logger.debug('Starting bulk delete for suppliers:', selectedSupplierIds);
+      
+      const results = await Promise.allSettled(
+        selectedSupplierIds.map(async (id) => {
+          const response = await fetch(`/api/suppliers/${id}`, { 
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+          
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+            throw new Error(`Failed to delete supplier ${id}: ${errorData.error || response.statusText}`);
+          }
+          
+          return { id, success: true };
+        })
       );
       
-      await Promise.all(promises);
+      const failures = results.filter(result => result.status === 'rejected');
+      const successes = results.filter(result => result.status === 'fulfilled');
+      
+      logger.debug('Bulk delete results:', { 
+        total: results.length, 
+        successes: successes.length, 
+        failures: failures.length 
+      });
+      
+      if (failures.length > 0) {
+        logger.error('Some suppliers failed to delete:', failures);
+        const errorMessage = `${failures.length}件の仕入先の削除に失敗しました。${successes.length}件は正常に削除されました。`;
+        setError(errorMessage);
+        toast.error(errorMessage);
+      } else {
+        logger.info(`Successfully deleted ${successes.length} suppliers`);
+        toast.success(`${successes.length}件の仕入先を削除しました`);
+      }
       
       // キャッシュを無効化
       cache.invalidate('suppliers');
@@ -290,7 +333,7 @@ function SuppliersPageContent() {
       setSelectedSupplierIds([]);
     } catch (error) {
       logger.error('Error bulk deleting suppliers:', error);
-      setError('一括削除に失敗しました。');
+      setError('一括削除に失敗しました。もう一度お試しください。');
     }
   };
 
