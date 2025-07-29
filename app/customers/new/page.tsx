@@ -97,6 +97,14 @@ export default function NewCustomerPage() {
         tags: formData.tags ? formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag) : [],
       };
 
+      // デバッグ: 送信前のフォームデータを確認
+      console.log('🚀 フォーム送信データ:', {
+        phone: submitData.phone,
+        fax: submitData.fax,
+        email: submitData.email,
+        website: submitData.website
+      });
+
       const response = await fetch('/api/customers', {
         method: 'POST',
         headers: {
@@ -269,6 +277,17 @@ export default function NewCustomerPage() {
         email: newFormData.email,
         website: newFormData.website
       });
+      
+      // フォーム状態更新後の確認（次回render時）
+      setTimeout(() => {
+        console.log('⏰ 状態更新後の確認:', {
+          phone: newFormData.phone,
+          fax: newFormData.fax,
+          email: newFormData.email,
+          website: newFormData.website
+        });
+      }, 100);
+      
       return newFormData;
     });
     
