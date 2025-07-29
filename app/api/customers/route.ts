@@ -341,6 +341,21 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
       updatedAt: now,
     };
 
+    // デバッグ: 保存前のデータをログ出力
+    logger.debug('🔍 Customer data before save:', {
+      phone: newCustomer.phone,
+      fax: newCustomer.fax,
+      email: newCustomer.email,
+      website: newCustomer.website
+    });
+    
+    console.log('💾 保存前データ確認:', {
+      phone: newCustomer.phone,
+      fax: newCustomer.fax,
+      email: newCustomer.email,
+      website: newCustomer.website
+    });
+
     // Mastraエージェント経由で顧客を作成（フォールバック付き）
     const result = await MastraCustomerAgent.createCustomer(
       {
@@ -348,6 +363,8 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
         name_kana: newCustomer.companyNameKana || '',
         email: newCustomer.email || '',
         phone: newCustomer.phone || '',
+        fax: newCustomer.fax || '',  // FAXも追加
+        website: newCustomer.website || '',  // ウェブサイトも追加
         address: `${newCustomer.prefecture || ''}${newCustomer.city || ''}${newCustomer.address1 || ''}${newCustomer.address2 || ''}`,
         tax_id: body.taxId || '',
         payment_terms: newCustomer.paymentTerms || 30,
@@ -356,7 +373,23 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
       },
       // フォールバック：既存のデータベース操作を使用
       async () => {
+        console.log('💾 フォールバック処理で保存するデータ:', {
+          phone: newCustomer.phone,
+          fax: newCustomer.fax,
+          email: newCustomer.email,
+          website: newCustomer.website
+        });
+        
         const insertResult = await collection.insertOne(newCustomer);
+        
+        // 保存後の確認
+        const savedCustomer = await collection.findOne({ _id: insertResult.insertedId });
+        console.log('💾 保存後のデータベース確認:', {
+          phone: savedCustomer?.phone,
+          fax: savedCustomer?.fax,
+          email: savedCustomer?.email,
+          website: savedCustomer?.website
+        });
         
         // アクティビティログを記録
         try {
@@ -375,6 +408,14 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
         };
       }
     );
+
+    // 最終レスポンス前の確認
+    console.log('📤 最終レスポンスデータ:', {
+      phone: newCustomer.phone,
+      fax: newCustomer.fax,
+      email: newCustomer.email,
+      website: newCustomer.website
+    });
 
     return NextResponse.json({
       success: true,
