@@ -14,38 +14,58 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
   try {
     logger.info('Extracting company info from URL:', url);
 
-    // まずMastraエージェントで情報抽出を試みる
+    // 1. まずHTMLを確実に取得
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('ウェブサイトの取得に失敗しました');
+    }
+
+    const html = await response.text();
+    logger.debug('HTML fetched successfully, length:', html.length);
+
+    // 2. AIで取得したHTMLから構造化データを抽出
     try {
       const agent = mastra.getAgent('webScraper');
       
       const result = await agent.generate({
         messages: [{
           role: 'user',
-          content: `次のURLにアクセスして、そのウェブサイトから会社情報を正確に抽出してください: ${url}
+          content: `以下のHTMLから会社情報を正確に抽出してJSON形式で返してください。
 
-重要: ウェブサイトに実際に記載されている情報のみを抽出してください。推測や仮定の情報は入れないでください。
+HTMLコンテンツ:
+${html.substring(0, 10000)} ${html.length > 10000 ? '...(truncated)' : ''}
 
-以下の情報を取得してください：
-- 会社名（companyName）
-- 郵便番号（postalCode）
-- 都道府県（prefecture）
-- 市区町村（city）
-- 住所1（address1） - 番地まで
-- 住所2（address2） - ビル名や階数
-- 電話番号（phone）
-- FAX番号（fax）
-- メールアドレス（email）
-- ウェブサイト（website）
-- 部署名（department）※あれば
-- 担当者名（contactPerson）※あれば
+抽出してください：
+- companyName: 会社名
+- postalCode: 郵便番号（XXX-XXXX形式）
+- prefecture: 都道府県
+- city: 市区町村
+- address1: 住所1（番地まで）
+- address2: 住所2（建物名・階数）
+- phone: 電話番号
+- fax: FAX番号
+- email: メールアドレス
+- website: ウェブサイトURL
+- department: 部署名（あれば）
+- contactPerson: 担当者名（あれば）
 
-JSON形式で返してください。ウェブサイトに記載がない情報はnullにしてください。`
+重要な指示：
+1. HTMLに実際に記載されている情報のみを抽出
+2. 推測や仮定は一切行わない
+3. 「TEL/FAX 093-562-2060/093-581-1110」のような形式では、TEL部分とFAX部分を正しく分離
+4. 見つからない情報はnullを設定
+
+JSON形式で返してください。`
         }]
       });
 
-      // レスポンスからJSONを抽出
       const responseText = result.text || '';
-      logger.debug('Agent response:', responseText);
+      logger.debug('AI extraction response:', responseText);
       
       const jsonMatch = responseText.match(/```json\s*([\s\S]*?)\s*```/) || 
                        responseText.match(/\{[\s\S]*\}/);
@@ -59,79 +79,18 @@ JSON形式で返してください。ウェブサイトに記載がない情報�
           extractedData.website = url;
         }
         
-        logger.info('Extracted company info via Mastra:', extractedData);
-        logger.debug('Mastra FAX field:', extractedData.fax);
-        
-        // FAX番号が取得できていない場合はHTMLパースも試行
-        if (!extractedData.fax) {
-          logger.info('FAX number missing from Mastra, attempting HTML parse fallback');
-          
-          try {
-            const response = await fetch(url, {
-              headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-              }
-            });
-            
-            if (response.ok) {
-              const html = await response.text();
-              const extractInfo = (html: string) => {
-                // FAX番号の抽出のみ実行
-                const phonePatterns = [
-                  /<dt>(?:電話|TEL|Tel|Phone|TEL\/FAX)<\/dt>\s*<dd[^>]*>([^<]+)<\/dd>/i,
-                ];
-                
-                for (const pattern of phonePatterns) {
-                  const match = html.match(pattern);
-                  if (match) {
-                    const phone = match[1];
-                    let cleanPhone = phone.trim();
-                    
-                    if (cleanPhone.includes('/')) {
-                      const parts = cleanPhone.split('/');
-                      if (parts[1]) {
-                        return parts[1].trim().replace(/[^\d\-]/g, '');
-                      }
-                    }
-                  }
-                }
-                return null;
-              };
-              
-              const faxNumber = extractInfo(html);
-              if (faxNumber) {
-                extractedData.fax = faxNumber;
-                logger.info('FAX number extracted via HTML fallback:', faxNumber);
-              }
-            }
-          } catch (fallbackError) {
-            logger.warn('HTML fallback for FAX extraction failed:', fallbackError);
-          }
-        }
+        logger.info('Company info extracted via AI:', extractedData);
         
         return NextResponse.json({
           success: true,
           ...extractedData
         });
       }
-    } catch (mastraError) {
-      logger.warn('Mastra extraction failed, falling back to HTML parsing:', mastraError);
+    } catch (aiError) {
+      logger.warn('AI extraction failed, falling back to regex parsing:', aiError);
     }
 
-    // Mastraが失敗した場合は、HTMLを直接取得して解析
-    const response = await fetch(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error('ウェブサイトの取得に失敗しました');
-    }
-
-    const html = await response.text();
-
-    // 基本的な情報抽出（正規表現を使用）
+    // 3. AIが失敗した場合のフォールバック：正規表現による抽出
     const extractInfo = (html: string) => {
       const info: any = {};
 
@@ -274,7 +233,7 @@ JSON形式で返してください。ウェブサイトに記載がない情報�
     };
 
     const companyInfo = extractInfo(html);
-    logger.info('Extracted company info via HTML parsing:', companyInfo);
+    logger.info('Company info extracted via regex fallback:', companyInfo);
 
     return NextResponse.json({
       success: true,
