@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { X, Send, Upload, Loader2, Bot, User } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { getChatHistoryService } from '@/services/chat-history.service';
 
 interface Message {
   id: string;
@@ -29,8 +30,67 @@ export default function SupplierChatModal({ isOpen, onClose, onDataExtracted, fo
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [sessionId, setSessionId] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // セッション初期化
+  useEffect(() => {
+    if (isOpen && !sessionId) {
+      initializeSession();
+    }
+  }, [isOpen]);
+
+  // メッセージ更新時の履歴保存
+  useEffect(() => {
+    if (sessionId && messages.length > 1) {
+      saveMessageToHistory();
+    }
+  }, [messages, sessionId]);
+
+  const initializeSession = async () => {
+    try {
+      const response = await fetch('/api/chat-history', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: '仕入先登録チャット',
+          userId: 'supplier-registration'
+        })
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        setSessionId(result.data.sessionId);
+      }
+    } catch (error) {
+      console.error('セッション初期化エラー:', error);
+    }
+  };
+
+  const saveMessageToHistory = async () => {
+    if (!sessionId) return;
+    
+    try {
+      const lastMessage = messages[messages.length - 1];
+      if (!lastMessage || lastMessage.id === '1') return;
+      
+      await fetch(`/api/chat-history/${sessionId}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          content: lastMessage.content,
+          role: lastMessage.role,
+          metadata: {
+            timestamp: lastMessage.timestamp,
+            context: 'supplier-registration'
+          }
+        })
+      });
+    } catch (error) {
+      console.error('メッセージ保存エラー:', error);
+    }
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
