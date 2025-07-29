@@ -70,6 +70,7 @@ export const createCustomerTool = {
       success: true,
       customer_id: result.insertedId.toString(),
       customer_code: customer.customerId,
+      insertedId: result.insertedId,
       ...customer
     };
   }
