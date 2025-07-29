@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withErrorHandler, ApiErrorResponse } from '@/lib/unified-error-handler';
 import { logger } from '@/lib/logger';
-import { getMastraInstance } from '@/lib/mastra';
+import { mastra } from '@/src/mastra';
 
 export const POST = withErrorHandler(async (request: NextRequest) => {
   const body = await request.json();
@@ -16,7 +16,6 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
 
     // まずMastraエージェントで情報抽出を試みる
     try {
-      const mastra = getMastraInstance();
       const agent = mastra.getAgent('webScraper');
       
       const result = await agent.generate({
