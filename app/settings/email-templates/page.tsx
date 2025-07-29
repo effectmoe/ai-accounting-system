@@ -40,6 +40,7 @@ PDFファイルにて以下の内容の請求書をお送りさせていただ�
 
 
 請求書番号：{{documentNumber}}
+請求件名：{{documentTitle}}
 請求金額：{{totalAmount}}
 お支払期限：{{dueDate}}
 
@@ -192,6 +193,7 @@ Email: {{companyEmail}}
     const sampleData = {
       customerName: '社労士法人労務ニュース 御中',
       documentNumber: 'INV-20250729-001',
+      documentTitle: template.documentType === 'invoice' ? 'ウェブサイト制作費用' : template.documentType === 'quote' ? 'ウェブサイト制作費用' : '',
       totalAmount: '¥1,000,000',
       dueDate: '2025年07月31日',
       validityDate: '2025年08月31日',
@@ -254,9 +256,12 @@ Email: {{companyEmail}}
         <AlertCircle className="h-4 w-4" />
         <AlertDescription>
           以下の変数を使用できます：
-          <code className="ml-2 text-sm bg-gray-100 px-1 py-0.5 rounded">
-            {`{{customerName}}, {{documentNumber}}, {{totalAmount}}, {{dueDate}}, {{companyName}}, {{companyPhone}}, {{companyEmail}}, {{companyAddress}}`}
-          </code>
+          <div className="mt-2 text-sm">
+            <div>共通：<code className="bg-gray-100 px-1 py-0.5 rounded">{{customerName}}, {{documentNumber}}, {{documentTitle}}, {{totalAmount}}, {{companyName}}, {{companyPhone}}, {{companyEmail}}, {{companyAddress}}</code></div>
+            <div>請求書：<code className="bg-gray-100 px-1 py-0.5 rounded">{{dueDate}}</code></div>
+            <div>見積書：<code className="bg-gray-100 px-1 py-0.5 rounded">{{validityDate}}</code></div>
+            <div>納品書：<code className="bg-gray-100 px-1 py-0.5 rounded">{{deliveryDate}}</code></div>
+          </div>
         </AlertDescription>
       </Alert>
 

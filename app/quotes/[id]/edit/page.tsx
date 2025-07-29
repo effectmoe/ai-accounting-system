@@ -45,6 +45,7 @@ function QuoteEditPageContent({ params }: QuoteEditPageProps) {
   // フォームデータ
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
   const [customerName, setCustomerName] = useState('');
+  const [title, setTitle] = useState(''); // 見積書のタイトル
   const [quoteDate, setQuoteDate] = useState('');
   const [validityDate, setValidityDate] = useState('');
   const [items, setItems] = useState<QuoteItem[]>([]);
@@ -76,6 +77,7 @@ function QuoteEditPageContent({ params }: QuoteEditPageProps) {
         // フォームデータを設定
         setSelectedCustomerId(quoteData.customerId?.toString() || '');
         setCustomerName(quoteData.customer?.companyName || '');
+        setTitle(quoteData.title || ''); // タイトルをセット
         setQuoteDate(format(new Date(quoteData.issueDate), 'yyyy-MM-dd'));
         setValidityDate(format(new Date(quoteData.validityDate), 'yyyy-MM-dd'));
         
@@ -224,6 +226,11 @@ function QuoteEditPageContent({ params }: QuoteEditPageProps) {
       })));
     }
     
+    // タイトルの更新
+    if (data.title) {
+      setTitle(data.title);
+    }
+    
     // 備考の更新
     if (data.notes) {
       setNotes(data.notes);
@@ -265,6 +272,7 @@ function QuoteEditPageContent({ params }: QuoteEditPageProps) {
 
     const updateData = {
       customerId: selectedCustomerId,
+      title, // タイトルを追加
       quoteDate,
       validityDate,
       items,
@@ -414,6 +422,17 @@ function QuoteEditPageContent({ params }: QuoteEditPageProps) {
                 placeholder="顧客名を入力"
               />
             </div>
+          </div>
+
+          {/* タイトル */}
+          <div>
+            <Label htmlFor="title">件名</Label>
+            <Input
+              id="title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="見積書の件名を入力（例：ウェブサイト制作費用見積書）"
+            />
           </div>
 
           {/* 日付 */}

@@ -318,6 +318,10 @@ function NewQuoteContent() {
       setCustomerName(data.customerName);
     }
     
+    if (data.title) {
+      setTitle(data.title);
+    }
+    
     if (data.items && Array.isArray(data.items)) {
       setItems(data.items.map((item: any) => ({
         description: item.description || item.itemName || '',

@@ -266,10 +266,12 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    logger.debug('[DELETE /api/invoices/[id]] Invoice ID:', params.id);
+    
     const invoiceService = new InvoiceService();
     
-    // キャンセル（論理削除）
-    const invoice = await invoiceService.cancelInvoice(params.id);
+    // 削除前に請求書情報を取得（アクティビティログ用）
+    const invoice = await invoiceService.getInvoice(params.id);
     if (!invoice) {
       return NextResponse.json(
         { error: 'Invoice not found' },
@@ -277,11 +279,40 @@ export async function DELETE(
       );
     }
     
-    return NextResponse.json({ success: true, invoice });
+    // 物理削除
+    const deleted = await invoiceService.deleteInvoice(params.id);
+    
+    if (!deleted) {
+      return NextResponse.json(
+        { error: 'Failed to delete invoice' },
+        { status: 500 }
+      );
+    }
+    
+    // 削除のアクティビティログを記録
+    try {
+      const customerName = invoice.customer?.companyName || invoice.customer?.name || '不明な顧客';
+      await ActivityLogService.log({
+        type: 'invoice_deleted',
+        targetType: 'invoice',
+        targetId: params.id,
+        description: `請求書 ${invoice.invoiceNumber} を削除しました`,
+        metadata: {
+          invoiceNumber: invoice.invoiceNumber,
+          customerName,
+          totalAmount: invoice.totalAmount,
+        },
+      });
+    } catch (logError) {
+      logger.error('Failed to log activity for invoice deletion:', logError);
+    }
+    
+    logger.info(`Invoice deleted successfully: ${invoice.invoiceNumber}`);
+    return NextResponse.json({ success: true });
   } catch (error) {
-    logger.error('Error cancelling invoice:', error);
+    logger.error('Error deleting invoice:', error);
     return NextResponse.json(
-      { error: 'Failed to cancel invoice' },
+      { error: 'Failed to delete invoice' },
       { status: 500 }
     );
   }
