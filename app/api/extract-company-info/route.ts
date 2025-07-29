@@ -3,6 +3,104 @@ import { withErrorHandler, ApiErrorResponse } from '@/lib/unified-error-handler'
 import { logger } from '@/lib/logger';
 import { mastra } from '@/src/mastra';
 
+// 会社名からカナを推測する関数
+function generateCompanyNameKana(companyName: string): string {
+  // 法人格を除去
+  let cleanName = companyName
+    .replace(/株式会社|有限会社|合同会社|一般社団法人|公益社団法人|一般財団法人|公益財団法人|特定非営利活動法人|NPO法人/g, '')
+    .trim();
+
+  // 基本的な変換マップ
+  const kanaMap: { [key: string]: string } = {
+    // ひらがな→カタカナ
+    'あ': 'ア', 'い': 'イ', 'う': 'ウ', 'え': 'エ', 'お': 'オ',
+    'か': 'カ', 'き': 'キ', 'く': 'ク', 'け': 'ケ', 'こ': 'コ',
+    'が': 'ガ', 'ぎ': 'ギ', 'ぐ': 'グ', 'げ': 'ゲ', 'ご': 'ゴ',
+    'さ': 'サ', 'し': 'シ', 'す': 'ス', 'せ': 'セ', 'そ': 'ソ',
+    'ざ': 'ザ', 'じ': 'ジ', 'ず': 'ズ', 'ぜ': 'ゼ', 'ぞ': 'ゾ',
+    'た': 'タ', 'ち': 'チ', 'つ': 'ツ', 'て': 'テ', 'と': 'ト',
+    'だ': 'ダ', 'ぢ': 'ヂ', 'づ': 'ヅ', 'で': 'デ', 'ど': 'ド',
+    'な': 'ナ', 'に': 'ニ', 'ぬ': 'ヌ', 'ね': 'ネ', 'の': 'ノ',
+    'は': 'ハ', 'hi': 'ヒ', 'ふ': 'フ', 'へ': 'ヘ', 'ほ': 'ホ',
+    'ば': 'バ', 'び': 'ビ', 'ぶ': 'ブ', 'べ': 'ベ', 'ぼ': 'ボ',
+    'ぱ': 'パ', 'ぴ': 'ピ', 'ぷ': 'プ', 'ぺ': 'ペ', 'ぽ': 'ポ',
+    'ま': 'マ', 'み': 'ミ', 'む': 'ム', 'め': 'メ', 'も': 'モ',
+    'や': 'ヤ', 'ゆ': 'ユ', 'よ': 'ヨ',
+    'ら': 'ラ', 'り': 'リ', 'る': 'ル', 'れ': 'レ', 'ろ': 'ロ',
+    'わ': 'ワ', 'ゐ': 'ヰ', 'ゑ': 'ヱ', 'を': 'ヲ', 'ん': 'ン',
+    // 英語→カタカナ
+    'a': 'エー', 'b': 'ビー', 'c': 'シー', 'd': 'ディー', 'e': 'イー',
+    'f': 'エフ', 'g': 'ジー', 'h': 'エイチ', 'i': 'アイ', 'j': 'ジェー',
+    'k': 'ケー', 'l': 'エル', 'm': 'エム', 'n': 'エヌ', 'o': 'オー',
+    'p': 'ピー', 'q': 'キュー', 'r': 'アール', 's': 'エス', 't': 'ティー',
+    'u': 'ユー', 'v': 'ブイ', 'w': 'ダブリュー', 'x': 'エックス',
+    'y': 'ワイ', 'z': 'ゼット',
+    // よくある単語の変換
+    'planning': 'プランニング', 'works': 'ワークス', 'work': 'ワーク',
+    'design': 'デザイン', 'office': 'オフィス', 'system': 'システム',
+    'service': 'サービス', 'company': 'カンパニー', 'group': 'グループ',
+    'corporation': 'コーポレーション', 'enterprise': 'エンタープライズ',
+    'solution': 'ソリューション', 'consulting': 'コンサルティング',
+    'technology': 'テクノロジー', 'innovation': 'イノベーション',
+    'creative': 'クリエイティブ', 'digital': 'デジタル',
+    'global': 'グローバル', 'international': 'インターナショナル'
+  };
+
+  // 特定の会社名パターンの変換
+  const companyPatterns: { [key: string]: string } = {
+    'ペイプランニングワークス': 'ペイプランニングワークス',
+    'pei': 'ペイ',
+    'PEI': 'ペイ',
+    'PayPlanningWorks': 'ペイプランニングワークス',
+    'Pay Planning Works': 'ペイプランニングワークス'
+  };
+
+  // 完全一致チェック
+  if (companyPatterns[cleanName]) {
+    return companyPatterns[cleanName];
+  }
+
+  // 文字単位での変換
+  let result = '';
+  let i = 0;
+  const lowerName = cleanName.toLowerCase();
+  
+  while (i < cleanName.length) {
+    let found = false;
+    
+    // 長い単語から順にチェック
+    for (let len = Math.min(15, cleanName.length - i); len > 0; len--) {
+      const substr = lowerName.substring(i, i + len);
+      if (kanaMap[substr]) {
+        result += kanaMap[substr];
+        i += len;
+        found = true;
+        break;
+      }
+    }
+    
+    // マッピングが見つからない場合
+    if (!found) {
+      const char = cleanName[i];
+      // カタカナはそのまま
+      if (char.match(/[ァ-ヴー]/)) {
+        result += char;
+      }
+      // ひらがなをカタカナに
+      else if (kanaMap[char]) {
+        result += kanaMap[char];
+      }
+      // その他は大文字に変換
+      else {
+        result += char.toUpperCase();
+      }
+      i++;
+    }
+  }
+  
+  return result || cleanName.toUpperCase();
+}
+
 export const POST = withErrorHandler(async (request: NextRequest) => {
   const body = await request.json();
   const { url } = body;
@@ -41,7 +139,8 @@ HTMLコンテンツ:
 ${html.substring(0, 10000)} ${html.length > 10000 ? '...(truncated)' : ''}
 
 抽出してください：
-- companyName: 会社名
+- companyName: 会社名（「株式会社」「有限会社」等の法人格は含める）
+- companyNameKana: 会社名カナ（法人格は除外し、社名のみカタカナで。HTMLに記載がない場合は会社名から推測して作成）
 - postalCode: 郵便番号（XXX-XXXX形式）
 - prefecture: 都道府県
 - city: 市区町村
@@ -56,9 +155,13 @@ ${html.substring(0, 10000)} ${html.length > 10000 ? '...(truncated)' : ''}
 
 重要な指示：
 1. HTMLに実際に記載されている情報のみを抽出
-2. 推測や仮定は一切行わない
+2. companyNameKanaについて：
+   - HTMLに明記されている場合はそれを使用
+   - 記載がない場合は会社名から推測してカタカナを生成
+   - 法人格（株式会社、有限会社など）は除外し、社名のみ
+   - 例：「株式会社ペイプランニングワークス」→「ペイプランニングワークス」
 3. 「TEL/FAX 093-562-2060/093-581-1110」のような形式では、TEL部分とFAX部分を正しく分離
-4. 見つからない情報はnullを設定
+4. 見つからない情報（companyNameKana以外）はnullを設定
 
 JSON形式で返してください。`
         }]
@@ -122,10 +225,35 @@ JSON形式で返してください。`
         const match = html.match(pattern);
         if (match && match[1]) {
           info.companyName = match[1].trim()
-            .replace(/株式会社|有限会社|\s*[\|｜].*/, '')
+            .replace(/\s*[\|｜].*/, '')
             .trim();
           break;
         }
+      }
+
+      // 会社名カナの抽出または推測
+      const companyNameKanaPatterns = [
+        /会社名\(カナ\)[：:]\s*([^<\n]+)/i,
+        /会社名カナ[：:]\s*([^<\n]+)/i,
+        /カナ[：:]\s*([^<\n]+)/i,
+        /フリガナ[：:]\s*([^<\n]+)/i,
+      ];
+
+      let foundKana = false;
+      for (const pattern of companyNameKanaPatterns) {
+        const match = html.match(pattern);
+        if (match && match[1]) {
+          info.companyNameKana = match[1].trim()
+            .replace(/カブシキガイシャ|ユウゲンガイシャ|ザイダンホウジン|シャダンホウジン/g, '')
+            .trim();
+          foundKana = true;
+          break;
+        }
+      }
+
+      // HTMLにカナ記載がない場合は会社名から推測
+      if (!foundKana && info.companyName) {
+        info.companyNameKana = generateCompanyNameKana(info.companyName);
       }
 
       // 住所の抽出
