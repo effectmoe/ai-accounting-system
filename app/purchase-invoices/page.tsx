@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Plus, Search, Filter, Edit, Trash2, Calendar, Building, FileText, DollarSign, ChevronLeft, ChevronRight, Upload, ScanLine, CheckCircle, Clock } from 'lucide-react';
+import { Plus, Search, Filter, Edit, Trash2, Calendar, Building, FileText, DollarSign, ChevronLeft, ChevronRight, Upload, ScanLine, CheckCircle, Clock, CheckCircle2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { PurchaseInvoice, PurchaseInvoiceStatus, Supplier } from '@/types/collections';
 
@@ -68,6 +68,7 @@ function PurchaseInvoicesPageContent() {
   const [showFilters, setShowFilters] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  const [selectedInvoices, setSelectedInvoices] = useState<Set<string>>(new Set());
   const [filters, setFilters] = useState<FilterState>({
     supplierId: '',
     status: '',
@@ -221,6 +222,85 @@ function PurchaseInvoicesPageContent() {
     setCurrentPage(1);
   };
 
+  // 全選択/解除
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      const allIds = new Set(purchaseInvoices.map(invoice => invoice._id?.toString() || ''));
+      setSelectedInvoices(allIds);
+    } else {
+      setSelectedInvoices(new Set());
+    }
+  };
+
+  // 個別選択
+  const handleSelectInvoice = (invoiceId: string, checked: boolean) => {
+    const newSelection = new Set(selectedInvoices);
+    if (checked) {
+      newSelection.add(invoiceId);
+    } else {
+      newSelection.delete(invoiceId);
+    }
+    setSelectedInvoices(newSelection);
+  };
+
+  // 一括削除
+  const handleBulkDelete = async () => {
+    if (selectedInvoices.size === 0) return;
+    
+    if (!confirm(`選択した${selectedInvoices.size}件の仕入請求書を削除してもよろしいですか？この操作は取り消せません。`)) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      logger.debug('Starting bulk delete for purchase invoices:', Array.from(selectedInvoices));
+      
+      const results = await Promise.allSettled(
+        Array.from(selectedInvoices).map(async (id) => {
+          const response = await fetch(`/api/purchase-invoices/${id}`, { 
+            method: 'DELETE',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+          
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(`Failed to delete purchase invoice ${id}: ${errorData.error || response.statusText}`);
+          }
+          
+          return { id, success: true };
+        })
+      );
+      
+      const failures = results.filter(result => result.status === 'rejected');
+      const successes = results.filter(result => result.status === 'fulfilled');
+      
+      logger.debug('Bulk delete results:', { 
+        total: results.length, 
+        successes: successes.length, 
+        failures: failures.length
+      });
+      
+      if (failures.length > 0) {
+        logger.error('Some purchase invoices failed to delete:', failures);
+        toast.error(`${failures.length}件の削除に失敗しました。${successes.length}件は削除されました。`);
+      } else {
+        logger.info(`Successfully deleted ${successes.length} purchase invoices`);
+        toast.success(`${successes.length}件の仕入請求書を削除しました`);
+      }
+      
+      // リフレッシュ
+      await fetchPurchaseInvoices(currentPage);
+      setSelectedInvoices(new Set());
+    } catch (error) {
+      logger.error('Error bulk deleting purchase invoices:', error);
+      toast.error('一括削除に失敗しました。もう一度お試しください。');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // 請求書の削除
   const handleDeleteInvoice = async (id: string) => {
     if (!confirm('この仕入請求書を削除してもよろしいですか？')) return;
@@ -288,6 +368,36 @@ function PurchaseInvoicesPageContent() {
           </Link>
         </div>
       </div>
+
+      {/* 一括操作バー */}
+      {selectedInvoices.size > 0 && (
+        <div className="bg-blue-50 rounded-lg border border-blue-200 p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="h-5 w-5 text-blue-600" />
+              <span className="text-sm font-medium">
+                {selectedInvoices.size}件の仕入請求書を選択中
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setSelectedInvoices(new Set())}
+                className="text-sm text-gray-600 hover:text-gray-800"
+              >
+                選択解除
+              </button>
+              <button
+                onClick={handleBulkDelete}
+                disabled={loading}
+                className="bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white px-4 py-2 rounded-md text-sm flex items-center gap-2"
+              >
+                <Trash2 size={16} />
+                一拼削除
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 検索とフィルター */}
       <div className="bg-white p-4 rounded-lg shadow">
@@ -482,6 +592,15 @@ function PurchaseInvoicesPageContent() {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
+                    <th className="px-3 py-3 text-left">
+                      <input
+                        type="checkbox"
+                        checked={purchaseInvoices.length > 0 && selectedInvoices.size === purchaseInvoices.length}
+                        onChange={(e) => handleSelectAll(e.target.checked)}
+                        className="rounded border-gray-300"
+                        aria-label="すべて選択"
+                      />
+                    </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       請求書番号
                     </th>
@@ -521,12 +640,21 @@ function PurchaseInvoicesPageContent() {
                       className="hover:bg-gray-50 cursor-pointer"
                       onClick={(e) => {
                         // アクションボタンがクリックされた場合は行クリックを無効化
-                        if ((e.target as HTMLElement).closest('button') || (e.target as HTMLElement).closest('a')) {
+                        if ((e.target as HTMLElement).closest('button') || (e.target as HTMLElement).closest('a') || (e.target as HTMLElement).closest('input')) {
                           return;
                         }
                         router.push(`/purchase-invoices/${invoice._id}`);
                       }}
                     >
+                      <td className="px-3 py-4" onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          checked={selectedInvoices.has(invoice._id?.toString() || '')}
+                          onChange={(e) => handleSelectInvoice(invoice._id?.toString() || '', e.target.checked)}
+                          className="rounded border-gray-300"
+                          aria-label={`${invoice.invoiceNumber}を選択`}
+                        />
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                         {invoice.invoiceNumber}
                       </td>
