@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Search, FileText, Loader2, Sparkles, FileDown, CheckCircle, Calculator } from 'lucide-react';
+import { Plus, Search, FileText, Loader2, Sparkles, FileDown, CheckCircle, Calculator, Trash2 } from 'lucide-react';
 import { safeFormatDate } from '@/lib/date-utils';
 import { cache, SimpleCache } from '@/lib/cache';
 
@@ -170,6 +170,37 @@ function QuotesPageContent() {
         {statusLabels[status] || status}
       </Badge>
     );
+  };
+
+  const handleDelete = async (quoteId: string) => {
+    if (!confirm('この見積書を削除してもよろしいですか？この操作は取り消せません。')) {
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/quotes/${quoteId}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete quote');
+      }
+      
+      // 見積書リストから削除
+      setQuotes(prev => prev.filter(quote => quote._id !== quoteId));
+      // 総数を減らす
+      setTotalCount(prev => prev - 1);
+      // キャッシュを無効化
+      cache.invalidate('quotes');
+      
+      logger.info(`Quote ${quoteId} deleted successfully`);
+    } catch (error) {
+      logger.error('Error deleting quote:', error);
+      alert('見積書の削除に失敗しました');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleConvertToInvoice = async (quoteId: string, e: React.MouseEvent) => {
@@ -450,6 +481,19 @@ function QuotesPageContent() {
                               <CheckCircle className="h-4 w-4" />
                             </Button>
                           )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(quote._id);
+                            }}
+                            title="削除"
+                            className="hover:bg-red-50 hover:text-red-600"
+                            disabled={isLoading}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
