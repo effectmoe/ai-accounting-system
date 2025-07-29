@@ -33,6 +33,9 @@ import {
   Phone,
   FileText,
   TrendingUp,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
 } from 'lucide-react';
 import { Supplier, SupplierStatus } from '@/types/collections';
 import { cache, SimpleCache } from '@/lib/cache';
@@ -61,17 +64,25 @@ function SuppliersPageContent() {
   const [stats, setStats] = useState<any>(null);
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [selectedSupplierIds, setSelectedSupplierIds] = useState<string[]>([]);
+  const [sortField, setSortField] = useState<string>('createdAt');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
 
   // URLパラメータから初期値を設定
   useEffect(() => {
     const search = searchParams.get('search') || '';
     const status = searchParams.get('status') || 'all';
     const page = parseInt(searchParams.get('page') || '1', 10);
+    const sort = searchParams.get('sort') || 'createdAt';
+    const order = searchParams.get('order') || 'desc';
 
     setSearchTerm(search);
     setDebouncedSearchTerm(search);
     setStatusFilter(status as SupplierStatus | 'all');
     setCurrentPage(page);
+    setSortField(sort);
+    setSortOrder(order as 'asc' | 'desc');
   }, [searchParams]);
 
   const fetchSuppliers = useCallback(async () => {
@@ -83,6 +94,8 @@ function SuppliersPageContent() {
         limit: '20',
         ...(debouncedSearchTerm && { search: debouncedSearchTerm }),
         ...(statusFilter !== 'all' && { status: statusFilter }),
+        sort: sortField,
+        order: sortOrder,
       };
 
       // キャッシュキーを生成
@@ -120,7 +133,7 @@ function SuppliersPageContent() {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, debouncedSearchTerm, statusFilter]);
+  }, [currentPage, debouncedSearchTerm, statusFilter, sortField, sortOrder]);
 
   // デバウンス処理
   useEffect(() => {
@@ -165,6 +178,8 @@ function SuppliersPageContent() {
     if (debouncedSearchTerm) params.set('search', debouncedSearchTerm);
     if (statusFilter !== 'all') params.set('status', statusFilter);
     if (currentPage > 1) params.set('page', currentPage.toString());
+    if (sortField !== 'createdAt') params.set('sort', sortField);
+    if (sortOrder !== 'desc') params.set('order', sortOrder);
 
     const queryString = params.toString();
     const newUrl = queryString ? `?${queryString}` : window.location.pathname;
@@ -173,7 +188,7 @@ function SuppliersPageContent() {
     if (window.location.search !== (queryString ? `?${queryString}` : '')) {
       router.replace(newUrl, { scroll: false });
     }
-  }, [debouncedSearchTerm, statusFilter, currentPage, router]);
+  }, [debouncedSearchTerm, statusFilter, currentPage, sortField, sortOrder, router]);
 
   const handleDelete = async () => {
     if (!supplierToDelete) return;
@@ -229,6 +244,56 @@ function SuppliersPageContent() {
     }).format(amount);
   };
 
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('asc');
+    }
+    setCurrentPage(1);
+  };
+
+  const SortIcon = ({ field }: { field: string }) => {
+    if (sortField !== field) return <ArrowUpDown className="h-4 w-4" />;
+    return sortOrder === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />;
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedSupplierIds(suppliers.map(supplier => supplier.id!));
+    } else {
+      setSelectedSupplierIds([]);
+    }
+  };
+
+  const handleSelectSupplier = (supplierId: string, checked: boolean) => {
+    if (checked) {
+      setSelectedSupplierIds([...selectedSupplierIds, supplierId]);
+    } else {
+      setSelectedSupplierIds(selectedSupplierIds.filter(id => id !== supplierId));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    try {
+      const promises = selectedSupplierIds.map(id => 
+        fetch(`/api/suppliers/${id}`, { method: 'DELETE' })
+      );
+      
+      await Promise.all(promises);
+      
+      // キャッシュを無効化
+      cache.invalidate('suppliers');
+      await fetchSuppliers();
+      setShowBulkDeleteDialog(false);
+      setSelectedSupplierIds([]);
+    } catch (error) {
+      logger.error('Error bulk deleting suppliers:', error);
+      setError('一括削除に失敗しました。');
+    }
+  };
+
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex justify-between items-center">
@@ -243,6 +308,22 @@ function SuppliersPageContent() {
           新規仕入先
         </Button>
       </div>
+
+      {selectedSupplierIds.length > 0 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center justify-between">
+          <span className="text-sm">
+            {selectedSupplierIds.length}件の仕入先が選択されています
+          </span>
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={() => setShowBulkDeleteDialog(true)}
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            一括削除
+          </Button>
+        </div>
+      )}
 
       <div className="flex gap-4 items-center">
         <div className="flex-1 relative">
@@ -292,11 +373,50 @@ function SuppliersPageContent() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>仕入先コード</TableHead>
-              <TableHead>会社名</TableHead>
+              <TableHead className="w-12">
+                <input
+                  type="checkbox"
+                  checked={suppliers.length > 0 && selectedSupplierIds.length === suppliers.length}
+                  onChange={(e) => handleSelectAll(e.target.checked)}
+                  className="rounded border-gray-300"
+                  aria-label="すべて選択"
+                />
+              </TableHead>
+              <TableHead>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 p-0 font-normal hover:bg-transparent"
+                  onClick={() => handleSort('supplierCode')}
+                >
+                  仕入先コード
+                  <SortIcon field="supplierCode" />
+                </Button>
+              </TableHead>
+              <TableHead>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 p-0 font-normal hover:bg-transparent"
+                  onClick={() => handleSort('companyName')}
+                >
+                  会社名
+                  <SortIcon field="companyName" />
+                </Button>
+              </TableHead>
               <TableHead>連絡先</TableHead>
               <TableHead>支払条件</TableHead>
-              <TableHead>買掛金残高</TableHead>
+              <TableHead>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 p-0 font-normal hover:bg-transparent"
+                  onClick={() => handleSort('currentBalance')}
+                >
+                  買掛金残高
+                  <SortIcon field="currentBalance" />
+                </Button>
+              </TableHead>
               <TableHead>ステータス</TableHead>
               <TableHead className="text-right">アクション</TableHead>
             </TableRow>
@@ -304,19 +424,28 @@ function SuppliersPageContent() {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8">
+                <TableCell colSpan={8} className="text-center py-8">
                   読み込み中...
                 </TableCell>
               </TableRow>
             ) : suppliers.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8">
+                <TableCell colSpan={8} className="text-center py-8">
                   仕入先が見つかりません
                 </TableCell>
               </TableRow>
             ) : (
               suppliers.map((supplier) => (
                 <TableRow key={supplier.id}>
+                  <TableCell>
+                    <input
+                      type="checkbox"
+                      checked={selectedSupplierIds.includes(supplier.id!)}
+                      onChange={(e) => handleSelectSupplier(supplier.id!, e.target.checked)}
+                      className="rounded border-gray-300"
+                      aria-label={`${supplier.companyName}を選択`}
+                    />
+                  </TableCell>
                   <TableCell className="font-medium">{supplier.supplierCode}</TableCell>
                   <TableCell>
                     <div>
@@ -583,6 +712,27 @@ function SuppliersPageContent() {
             </Button>
             <Button variant="destructive" onClick={handleDelete}>
               削除
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* 一括削除確認ダイアログ */}
+      <Dialog open={showBulkDeleteDialog} onOpenChange={setShowBulkDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>仕入先の一括削除</DialogTitle>
+            <DialogDescription>
+              選択した{selectedSupplierIds.length}件の仕入先を削除してもよろしいですか？
+              関連する発注書がある場合は、非アクティブ化されます。
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => setShowBulkDeleteDialog(false)}>
+              キャンセル
+            </Button>
+            <Button variant="destructive" onClick={handleBulkDelete}>
+              一括削除
             </Button>
           </div>
         </DialogContent>
