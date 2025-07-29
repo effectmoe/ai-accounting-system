@@ -201,6 +201,7 @@ export async function PUT(
     const updateData: any = {};
     
     if (body.customerId) updateData.customerId = body.customerId;
+    if (body.title !== undefined) updateData.title = body.title;
     if (body.invoiceDate) updateData.issueDate = new Date(body.invoiceDate);
     if (body.dueDate) updateData.dueDate = new Date(body.dueDate);
     if (body.items) {
