@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Search, FileText, Loader2, Sparkles, FileDown, CheckCircle2 } from 'lucide-react';
+import { Plus, Search, FileText, Loader2, Sparkles, FileDown, CheckCircle2, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { safeFormatDate } from '@/lib/date-utils';
@@ -178,6 +178,35 @@ export default function InvoicesPage() {
         {mapEnglishToJapaneseStatus(status)}
       </Badge>
     );
+  };
+
+  const handleDelete = async (invoiceId: string) => {
+    if (!confirm('この請求書を削除してもよろしいですか？この操作は取り消せません。')) {
+      return;
+    }
+
+    setIsUpdating(true);
+    try {
+      const response = await fetch(`/api/invoices/${invoiceId}`, {
+        method: 'DELETE',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to delete invoice');
+      }
+      
+      // 請求書リストから削除
+      setInvoices(prev => prev.filter(inv => inv._id !== invoiceId));
+      // 総数を減らす
+      setTotalCount(prev => prev - 1);
+      
+      logger.info(`Invoice ${invoiceId} deleted successfully`);
+    } catch (error) {
+      logger.error('Error deleting invoice:', error);
+      alert('請求書の削除に失敗しました');
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   const totalPages = Math.ceil(totalCount / itemsPerPage);
@@ -496,6 +525,19 @@ export default function InvoicesPage() {
                             title="PDFダウンロード"
                           >
                             <FileDown className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(invoice._id);
+                            }}
+                            title="削除"
+                            className="hover:bg-red-50 hover:text-red-600"
+                            disabled={isUpdating}
+                          >
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
                       </TableCell>
