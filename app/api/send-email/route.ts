@@ -383,16 +383,24 @@ export async function POST(request: NextRequest) {
       throw new Error('メール送信に失敗しました');
     }
 
-    // ステータスを自動更新（下書き → 保存済み）
-    if (document.status === 'draft') {
+    // ステータスを自動更新（メール送信成功時は送信済みに変更）
+    try {
       if (documentType === 'quote') {
         const quoteService = new QuoteService();
-        await quoteService.updateQuote(documentId, { status: 'saved' });
+        // 見積書のステータスを送信済みに更新（既に承認済みや拒否の場合は変更しない）
+        if (!['accepted', 'rejected', 'expired', 'converted'].includes(document.status)) {
+          await quoteService.updateQuote(documentId, { status: 'sent' });
+          logger.info(`Quote ${documentId} status updated to 'sent' after email send`);
+        }
       } else if (documentType === 'invoice') {
         const invoiceService = new InvoiceService();
-        await invoiceService.updateInvoice(documentId, { status: 'saved' });
+        // 請求書のステータスを送信済みに更新（既に支払済みやキャンセルの場合は変更しない）
+        if (!['paid', 'partially_paid', 'cancelled'].includes(document.status)) {
+          await invoiceService.updateInvoice(documentId, { status: 'sent' });
+          logger.info(`Invoice ${documentId} status updated to 'sent' after email send`);
+        }
       } else if (documentType === 'delivery-note') {
-        // 納品書のステータス更新（draft → sent）
+        // 納品書のステータス更新（送信済みに変更）
         const updateResponse = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/delivery-notes/${documentId}`, {
           method: 'PUT',
           headers: {
@@ -403,8 +411,13 @@ export async function POST(request: NextRequest) {
         
         if (!updateResponse.ok) {
           logger.error('Failed to update delivery note status');
+        } else {
+          logger.info(`Delivery note ${documentId} status updated to 'sent' after email send`);
         }
       }
+    } catch (statusUpdateError) {
+      // ステータス更新に失敗してもメール送信は成功しているのでエラーはログに記録するのみ
+      logger.error('Failed to update document status after email send:', statusUpdateError);
     }
 
     // 送信履歴を記録（将来的に実装）
