@@ -131,10 +131,18 @@ Email: {{companyEmail}}
         const data = await response.json();
         if (data.companyInfo) {
           setCompanyInfo(data.companyInfo);
+        } else {
+          // 会社情報が存在しない場合はデフォルト値を設定
+          setCompanyInfo({});
         }
+      } else {
+        // APIエラーの場合もデフォルト値を設定
+        setCompanyInfo({});
       }
     } catch (error) {
       logger.error('Error fetching company info:', error);
+      // エラーの場合もデフォルト値を設定
+      setCompanyInfo({});
     }
   };
 
@@ -190,6 +198,9 @@ Email: {{companyEmail}}
 
   const getPreviewContent = (template: EmailTemplate): { subject: string; body: string } => {
     try {
+      // companyInfoが存在しない場合はデフォルト値を使用
+      const safeCompanyInfo = companyInfo || {};
+      
       const sampleData = {
         customerName: '社労士法人労務ニュース 御中',
         documentNumber: 'INV-20250729-001',
@@ -198,10 +209,10 @@ Email: {{companyEmail}}
         dueDate: '2025年07月31日',
         validityDate: '2025年08月31日',
         deliveryDate: '2025年07月29日',
-        companyName: (companyInfo && companyInfo.company_name) || '株式会社EFFECT',
-        companyAddress: (companyInfo && companyInfo.address) || '東京都千代田区大手町1-1-1',
-        companyPhone: (companyInfo && companyInfo.phone) || '03-1234-5678',
-        companyEmail: (companyInfo && companyInfo.email) || 'info@effect.moe',
+        companyName: safeCompanyInfo.company_name || '株式会社EFFECT',
+        companyAddress: safeCompanyInfo.address || '東京都千代田区大手町1-1-1',
+        companyPhone: safeCompanyInfo.phone || '03-1234-5678',
+        companyEmail: safeCompanyInfo.email || 'info@effect.moe',
       };
 
       let subject = template.subject || '';
@@ -313,7 +324,14 @@ Email: {{companyEmail}}
             <div className="flex justify-between mt-6">
               <Button
                 variant="outline"
-                onClick={() => setShowPreview(!showPreview)}
+                onClick={() => {
+                  if (!companyInfo) {
+                    // 会社情報が読み込まれていない場合は再取得
+                    fetchCompanyInfo();
+                  }
+                  setShowPreview(!showPreview);
+                }}
+                disabled={isLoading}
               >
                 <Eye className="mr-2 h-4 w-4" />
                 プレビュー
@@ -336,7 +354,7 @@ Email: {{companyEmail}}
         </Card>
 
         {/* プレビューエリア */}
-        {showPreview && activeTemplate && !isLoading && (
+        {showPreview && activeTemplate && !isLoading && companyInfo && (
           <Card>
             <CardHeader>
               <CardTitle>プレビュー</CardTitle>
