@@ -144,20 +144,6 @@ export default function CustomerChatModal({ isOpen, onClose, onDataExtracted, fo
           setMessages(prev => [...prev, assistantMessage]);
         }
       }
-
-        if (!response.ok) throw new Error('応答の取得に失敗しました');
-
-        const data = await response.json();
-        
-        const assistantMessage: Message = {
-          id: Date.now().toString(),
-          content: data.response,
-          role: 'assistant',
-          timestamp: new Date()
-        };
-
-        setMessages(prev => [...prev, assistantMessage]);
-      }
     } catch (error) {
       console.error('Error:', error);
       toast.error('エラーが発生しました');
