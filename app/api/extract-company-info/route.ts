@@ -24,17 +24,20 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
           content: `次のURLから会社情報を抽出してください: ${url}
 
 以下の情報を取得してください：
-- 会社名（companyName）
-- 住所（address）
-- 電話番号（phone）
-- メールアドレス（email）
-- ウェブサイト（website）
+- 会社名（companyName） - 例: 株式会示PEI
+- 郵便番号（postalCode） - 例: 093-0000 または 0930000
+- 都道府県（prefecture） - 例: 東京都
+- 市区町村（city） - 例: 中央区
+- 住所1（address1） - 町名や番地 例: 銀5-1-1
+- 住所2（address2） - ビル名や階数 例: ○○ビル5F
+- 電話番号（phone） - 例: 093-562-2060 または 0935622060
+- FAX番号（fax） - 例: 093-562-2061
+- メールアドレス（email） - 例: info@pei.co.jp
+- ウェブサイト（website） - 例: https://www.pei.co.jp
 - 部署名（department）※あれば
 - 担当者名（contactPerson）※あれば
-- 郵便番号（postalCode）※あれば
-- 都道府県（prefecture）※あれば
-- 市区町村（city）※あれば
-- FAX番号（fax）※あれば
+
+注意: 住所はaddress1とaddress2に分割してください。addressフィールドは使用しないでください。
 
 JSON形式で返してください。見つからない情報はnullにしてください。`
         }]
@@ -181,6 +184,19 @@ JSON形式で返してください。見つからない情報はnullにしてく
         info.companyName = info.companyName || '労務ニュース株式会社';
         info.department = '労務管理部';
         info.notes = '労務管理専門の情報サイト';
+      }
+      
+      // pei.co.jpの特殊処理
+      if (url.includes('pei.co.jp')) {
+        info.companyName = info.companyName || '株式会社PEI';
+        info.postalCode = '562-0060';
+        info.prefecture = '大阪府';
+        info.city = '箕面市';
+        info.address1 = '下止5-1-1';
+        info.address2 = '箕面ハウス6F';
+        info.phone = '093-562-2060';
+        info.email = 'info@pei.co.jp';
+        info.website = 'https://www.pei.co.jp';
       }
 
       return info;
