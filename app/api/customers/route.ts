@@ -289,6 +289,10 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
 export const POST = withErrorHandler(async (request: NextRequest) => {
     const body = await request.json();
     
+    // デバッグ: リクエストボディをログ出力
+    logger.info('POST /api/customers - Request body:', body);
+    console.log('🔍 POST /api/customers - Full request body:', JSON.stringify(body, null, 2));
+    
     // 必須フィールドのチェック
     validateRequired(body, ['companyName']);
 
