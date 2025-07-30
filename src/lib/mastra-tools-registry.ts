@@ -17,7 +17,9 @@ export const toolsRegistry = {
   productAgent: [],
   refactorAgent: [],
   uiAgent: [],
-  constructionAgent: []
+  constructionAgent: [],
+  // Mastraのエージェント名も追加
+  'mastra-customer-agent': customerTools
 };
 
 /**
