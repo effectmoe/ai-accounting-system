@@ -328,14 +328,6 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
       website: body.website
     });
     
-    console.log('🆕 Mastraエージェントに渡す前のnewCustomer:', {
-      prefecture: newCustomer.prefecture,
-      city: newCustomer.city,
-      address1: newCustomer.address1,
-      fax: newCustomer.fax,
-      website: newCustomer.website,
-      postalCode: newCustomer.postalCode
-    });
     
     // 重要: 空文字列も保存するため、undefined への変換をしない
     const newCustomer: Partial<Customer> = {

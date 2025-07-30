@@ -15,7 +15,14 @@ export const createCustomerTool = {
       name_kana: { type: 'string', description: '顧客名（カナ）' },
       email: { type: 'string', description: 'メールアドレス' },
       phone: { type: 'string', description: '電話番号' },
-      address: { type: 'string', description: '住所' },
+      fax: { type: 'string', description: 'FAX番号' },
+      website: { type: 'string', description: 'ウェブサイト' },
+      postalCode: { type: 'string', description: '郵便番号' },
+      prefecture: { type: 'string', description: '都道府県' },
+      city: { type: 'string', description: '市区町村' },
+      address1: { type: 'string', description: '住所1（番地など）' },
+      address2: { type: 'string', description: '住所2（建物名など）' },
+      address: { type: 'string', description: '住所（個別フィールドが無い場合の全体住所）' },
       tax_id: { type: 'string', description: '法人番号または個人番号' },
       payment_terms: { type: 'number', description: '支払条件（日数）' },
       credit_limit: { type: 'number', description: '与信限度額' },
@@ -38,12 +45,15 @@ export const createCustomerTool = {
       }
     }
     
-    // 住所情報が個別に渡されている場合はそれを使用
+    // 住所情報が個別に渡されている場合はそれを優先使用
+    // addressフィールドを分割しないで、個別フィールドをそのまま使用
     let prefecture = params.prefecture || '';
     let city = params.city || '';
     let address1 = params.address1 || '';
     let address2 = params.address2 || '';
     let postalCode = params.postalCode || '';
+    let fax = params.fax || '';
+    let website = params.website || '';
     
     // 住所が分割されていない場合のみ、addressフィールドから分割を試みる
     if (!prefecture && !city && !address1 && params.address) {
@@ -74,14 +84,14 @@ export const createCustomerTool = {
       companyNameKana: params.name_kana,
       email: params.email,
       phone: params.phone,
-      fax: params.fax || '',
+      fax: fax,
       taxId: params.tax_id || '',
       postalCode: postalCode,
       prefecture: prefecture,
       city: city,
       address1: address1,
       address2: address2,
-      website: params.website || '',
+      website: website,
       paymentTerms: params.payment_terms || 30,
       creditLimit: params.credit_limit || 0,
       notes: params.notes || '',
@@ -91,6 +101,16 @@ export const createCustomerTool = {
       createdAt: new Date(),
       updatedAt: new Date()
     };
+    
+    console.log('🎯 Mastra createCustomerTool 保存前の最終データ:', {
+      prefecture: customer.prefecture,
+      city: customer.city,
+      address1: customer.address1,
+      address2: customer.address2,
+      fax: customer.fax,
+      website: customer.website,
+      postalCode: customer.postalCode
+    });
     
     const result = await collection.insertOne(customer);
     
