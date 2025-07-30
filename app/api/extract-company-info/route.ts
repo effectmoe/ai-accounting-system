@@ -138,13 +138,14 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
 HTMLコンテンツ:
 ${html.substring(0, 10000)} ${html.length > 10000 ? '...(truncated)' : ''}
 
-抽出してください：
+以下のフィールドを正確に抽出してください。特に住所の分割は厳密に行ってください：
+
 - companyName: 会社名（「株式会社」「有限会社」等の法人格は含める）
 - companyNameKana: 会社名カナ（法人格は除外し、社名のみカタカナで。HTMLに記載がない場合は会社名から推測して作成）
 - postalCode: 郵便番号（XXX-XXXX形式）
 - prefecture: 都道府県（「都」「道」「府」「県」で終わる部分のみ）
-- city: 市区町村（「市」「区」「町」「村」で終わる部分、「〇〇市△△区」のような政令指定都市の場合は市区まで含める）
-- address1: 住所1（市区町村の後の番地・丁目まで）
+- city: 市区町村（重要：政令指定都市の場合は「〇〇市△△区」の形式で市と区を連結）
+- address1: 住所1（番地・丁目のみ。「区」は絶対に含めない）
 - address2: 住所2（建物名・階数・部屋番号など）
 - phone: 電話番号
 - fax: FAX番号
@@ -171,6 +172,12 @@ ${html.substring(0, 10000)} ${html.length > 10000 ? '...(truncated)' : ''}
   → city: "北九州市小倉北区"
   → address1: "弁天町5-2"
   → address2: "内山南小倉駅前ビル501"
+
+厳格なルール：
+- cityフィールドには必ず「市」と「区」を両方含める（政令指定都市の場合）
+- address1フィールドには「区」を含めない、番地のみ
+- 「北九州市小倉北区」の場合：city="北九州市小倉北区"、address1="弁天町5-2"
+- 絶対にcity="北九州市"、address1="小倉北区弁天町5-2"としない
 
 その他の注意事項：
 1. HTMLに実際に記載されている情報のみを抽出
@@ -202,6 +209,33 @@ JSON形式で返してください。`
           // websiteフィールドがない場合は元のURLを設定
           if (!extractedData.website) {
             extractedData.website = url;
+          }
+          
+          // 住所データの後処理：AIが指示に従わない場合のための修正
+          if (extractedData.city && extractedData.address1) {
+            // cityが「市」のみで、address1が「区」で始まる場合の修正
+            if (extractedData.city.endsWith('市') && extractedData.address1.match(/^[^区]+区/)) {
+              const wardMatch = extractedData.address1.match(/^([^区]+区)(.*)$/);
+              if (wardMatch) {
+                // 市と区を結合してcityに設定
+                extractedData.city = extractedData.city + wardMatch[1];
+                // 区以降の部分をaddress1に設定
+                extractedData.address1 = wardMatch[2].trim();
+                logger.info('🔧 Address post-processing applied:', {
+                  originalCity: extractedData.city.replace(wardMatch[1], ''),
+                  originalAddress1: wardMatch[1] + wardMatch[2],
+                  newCity: extractedData.city,
+                  newAddress1: extractedData.address1
+                });
+              }
+            }
+            
+            // 特定のケースの修正（北九州市小倉北区など）
+            if (extractedData.city === '北九州市' && extractedData.address1.startsWith('小倉北区')) {
+              extractedData.city = '北九州市小倉北区';
+              extractedData.address1 = extractedData.address1.replace(/^小倉北区/, '').trim();
+              logger.info('🔧 Specific case correction applied for Kitakyushu');
+            }
           }
           
           logger.info('Company info extracted via AI:', extractedData);
@@ -324,12 +358,56 @@ JSON形式で返してください。`
             if (prefectureMatch) {
               info.prefecture = prefectureMatch[0];
               const remaining = addressWithoutPostal.substring(prefectureMatch.index + prefectureMatch[0].length);
-              const cityMatch = remaining.match(/^([^市区町村]+[市区町村])/);
+              
+              // 政令指定都市の区を含む市区町村の抽出
+              let city = '';
+              let addressAfterCity = remaining;
+              
+              // まず市を探す
+              const cityMatch = remaining.match(/^([^市]+市)/);
               if (cityMatch) {
-                info.city = cityMatch[0];
+                city = cityMatch[0];
+                const afterCity = remaining.substring(cityMatch[0].length);
+                
+                // 市の後に区があるかチェック（政令指定都市の場合）
+                const wardMatch = afterCity.match(/^([^区]+区)/);
+                if (wardMatch) {
+                  city += wardMatch[0];
+                  addressAfterCity = afterCity.substring(wardMatch[0].length);
+                } else {
+                  addressAfterCity = afterCity;
+                }
+              } else {
+                // 東京23区などの場合（市がない）
+                const wardOnlyMatch = remaining.match(/^([^区]+区)/);
+                if (wardOnlyMatch) {
+                  city = wardOnlyMatch[0];
+                  addressAfterCity = remaining.substring(wardOnlyMatch[0].length);
+                }
+              }
+              
+              if (city) {
+                info.city = city;
                 // 住所1と住所2: 市区町村以降の部分を抽出して分割
-                const address1Start = remaining.indexOf(cityMatch[0]) + cityMatch[0].length;
-                const fullAddress = remaining.substring(address1Start).trim();
+                let fullAddress = addressAfterCity.trim();
+                
+                // 特殊ケースの処理：cityが「市」のみでfullAddressが「区」で始まる場合
+                if (city.endsWith('市') && fullAddress.match(/^[^区]+区/)) {
+                  const wardMatch = fullAddress.match(/^([^区]+区)(.*)$/);
+                  if (wardMatch) {
+                    // 市と区を結合してcityに設定
+                    info.city = city + wardMatch[1];
+                    // 区以降の部分をfullAddressに設定
+                    fullAddress = wardMatch[2].trim();
+                    logger.info('🔧 Regex fallback: Address correction applied', {
+                      originalCity: city,
+                      originalFullAddress: addressAfterCity.trim(),
+                      newCity: info.city,
+                      newFullAddress: fullAddress
+                    });
+                  }
+                }
+                
                 if (fullAddress) {
                   // ビル名、建物名を住所2として分離
                   // パターン: "弁天町5-2 内山南小倉駅前ビル501" のような形式
