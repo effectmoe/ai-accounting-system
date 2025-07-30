@@ -2,6 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { MongoClient } from 'mongodb';
 
 export async function GET(request: NextRequest) {
+  // 🔥 緊急追加: 本番環境では無効化
+  if (process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production') {
+    return NextResponse.json(
+      { 
+        error: 'Test endpoint is disabled in production environment',
+        timestamp: new Date().toISOString()
+      }, 
+      { status: 403 }
+    );
+  }
+
   const result = {
     timestamp: new Date().toISOString(),
     env: {

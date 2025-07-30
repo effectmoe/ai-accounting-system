@@ -12,6 +12,7 @@ import {
   validateEmail,
   ApiErrorResponse 
 } from '@/lib/unified-error-handler';
+import { sanitizeCustomerData, sanitizeForLogging } from '@/lib/log-sanitizer';
 // GET: 顧客一覧取得
 export const GET = withErrorHandler(async (request: NextRequest) => {
     const { searchParams } = new URL(request.url);
@@ -289,9 +290,20 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
 export const POST = withErrorHandler(async (request: NextRequest) => {
     const body = await request.json();
     
-    // デバッグ: リクエストボディをログ出力
-    logger.info('POST /api/customers - Request body:', body);
-    console.log('🔍 POST /api/customers - Full request body:', JSON.stringify(body, null, 2));
+    // 🔒 セキュリティ改善: リクエストボディをサニタイズしてログ出力
+    const sanitizedBody = sanitizeCustomerData(body);
+    logger.info('POST /api/customers - Request received:', {
+      companyName: body.companyName,
+      hasEmail: !!body.email,
+      hasPhone: !!body.phone,
+      fieldsCount: Object.keys(body).length
+    });
+    
+    // 開発環境でのみ詳細ログ
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔍 POST /api/customers - Full request body (sanitized):', 
+        JSON.stringify(sanitizedBody, null, 2));
+    }
     
     // 必須フィールドのチェック
     validateRequired(body, ['companyName']);
@@ -451,14 +463,20 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
       website: newCustomer.website
     });
 
-    // resultの詳細をログ出力
-    logger.debug('MastraCustomerAgent result:', result);
-    console.log('📊 MastraCustomerAgent result details:', {
+    // 🔒 セキュリティ改善: resultをサニタイズしてログ出力
+    const sanitizedResult = sanitizeForLogging(result, ['insertedId', '_id']);
+    logger.debug('MastraCustomerAgent result received:', {
       hasInsertedId: !!result?.insertedId,
       resultType: typeof result,
       resultKeys: result ? Object.keys(result) : [],
-      fullResult: result
+      success: !!result
     });
+    
+    // 開発環境でのみ詳細ログ
+    if (process.env.NODE_ENV === 'development') {
+      console.log('📊 MastraCustomerAgent result details (sanitized):', 
+        JSON.stringify(sanitizedResult, null, 2));
+    }
 
     // insertedIdの取得（Mastraの戻り値またはMongoDBの戻り値から）
     const insertedId = result?.insertedId || result?._id || result?.customer_id;
