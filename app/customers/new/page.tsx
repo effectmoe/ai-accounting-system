@@ -208,6 +208,18 @@ export default function NewCustomerPage() {
     console.log('🎯 handleDataExtracted 関数呼び出し開始');
     console.log('📊 受信データ詳細:', JSON.stringify(data, null, 2));
     
+    // APIから返されたデータの検証
+    console.log('🔍 データ検証:', {
+      hasAddress: !!data.address,
+      hasPrefecture: !!data.prefecture,
+      hasCity: !!data.city,
+      hasAddress1: !!data.address1,
+      hasAddress2: !!data.address2,
+      hasFax: !!data.fax,
+      hasWebsite: !!data.website,
+      hasPostalCode: !!data.postalCode
+    });
+    
     setFormData(prev => {
       const newFormData = { ...prev };
 
@@ -234,33 +246,46 @@ export default function NewCustomerPage() {
       if (data.address2) newFormData.address2 = data.address2;
       
       // addressフィールドがある場合の処理（分割済みデータがない場合のみ）
-      // APIが既に分割済みのデータを提供している場合は、このフォールバック処理をスキップ
-      const hasPreSplitData = data.prefecture || data.city || data.address1;
-      console.log('🔍 分割済みデータチェック:', { hasPreSplitData, willSkipParsing: hasPreSplitData });
+      // 重要: APIが prefecture, city, address1, address2 を提供している場合は、address フィールドは無視する
+      const hasAllSplitData = data.prefecture && data.city && (data.address1 || data.address2);
+      console.log('🔍 分割済みデータチェック:', { 
+        hasAllSplitData, 
+        willSkipAddressParsing: hasAllSplitData,
+        providedFields: {
+          prefecture: data.prefecture,
+          city: data.city,
+          address1: data.address1,
+          address2: data.address2
+        }
+      });
       
-      if (data.address && !hasPreSplitData) {
-        // 住所が分割されていない場合のみ処理
-        console.log('Processing unsplit address:', data.address);
+      if (data.address && !hasAllSplitData) {
+        // 住所が完全に分割されていない場合のみ処理
+        console.log('⚠️ 完全な分割データがないため、addressフィールドから分割を試行:', data.address);
         
         // 郵便番号を除去
         let cleanAddress = data.address.replace(/〒?\d{3}-?\d{4}\s*/, '');
         
-        // 都道府県の抽出
-        const prefectureMatch = cleanAddress.match(/(東京都|大阪府|京都府|北海道|.+?県)/);
-        if (prefectureMatch) {
-          newFormData.prefecture = prefectureMatch[1];
-          cleanAddress = cleanAddress.replace(prefectureMatch[1], '');
+        // 都道府県の抽出（既にある場合はスキップ）
+        if (!data.prefecture) {
+          const prefectureMatch = cleanAddress.match(/(東京都|大阪府|京都府|北海道|.+?県)/);
+          if (prefectureMatch) {
+            newFormData.prefecture = prefectureMatch[1];
+            cleanAddress = cleanAddress.replace(prefectureMatch[1], '');
+          }
         }
         
-        // 市区町村の抽出
-        const cityMatch = cleanAddress.match(/^(.+?[市区町村])/);
-        if (cityMatch) {
-          newFormData.city = cityMatch[1];
-          cleanAddress = cleanAddress.replace(cityMatch[1], '');
+        // 市区町村の抽出（既にある場合はスキップ）
+        if (!data.city) {
+          const cityMatch = cleanAddress.match(/^(.+?[市区町村])/);
+          if (cityMatch) {
+            newFormData.city = cityMatch[1];
+            cleanAddress = cleanAddress.replace(cityMatch[1], '');
+          }
         }
         
-        // 残りを住所1に設定
-        if (cleanAddress.trim()) {
+        // 住所1の設定（既にある場合はスキップ）
+        if (!data.address1 && cleanAddress.trim()) {
           newFormData.address1 = cleanAddress.trim();
         }
         
@@ -594,6 +619,10 @@ export default function NewCustomerPage() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="03-1234-5679"
                   />
+                  {/* デバッグ情報 */}
+                  {process.env.NODE_ENV === 'development' && formData.fax && (
+                    <p className="text-xs text-gray-500 mt-1">Debug: {formData.fax}</p>
+                  )}
                 </div>
               </div>
 
