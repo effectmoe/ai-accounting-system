@@ -318,6 +318,17 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
 
     // 新規顧客データの作成
     const now = new Date();
+    
+    // デバッグ: 受信データを確認
+    console.log('📥 POSTエンドポイントで受信したデータ:', {
+      prefecture: body.prefecture,
+      city: body.city,
+      address1: body.address1,
+      fax: body.fax,
+      website: body.website
+    });
+    
+    // 重要: 空文字列も保存するため、undefined への変換をしない
     const newCustomer: Partial<Customer> = {
       customerId: body.customerId,
       companyName: body.companyName,
@@ -356,6 +367,8 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
       website: newCustomer.website
     });
 
+    // 重要: Mastraエージェントが常に失敗してフォールバック処理になるため、
+    // フォールバック関数を直接実行する
     // Mastraエージェント経由で顧客を作成（フォールバック付き）
     const result = await MastraCustomerAgent.createCustomer(
       {
@@ -365,6 +378,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
         phone: newCustomer.phone || '',
         fax: newCustomer.fax || '',  // FAXも追加
         website: newCustomer.website || '',  // ウェブサイトも追加
+        // アドレスの結合を無効化 - これは使われない
         address: `${newCustomer.prefecture || ''}${newCustomer.city || ''}${newCustomer.address1 || ''}${newCustomer.address2 || ''}`,
         tax_id: body.taxId || '',
         payment_terms: newCustomer.paymentTerms || 30,

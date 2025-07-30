@@ -116,6 +116,18 @@ export default function NewCustomerPage() {
           website: formData.website
         }
       });
+      
+      // 重要: 住所データも確認
+      console.log('🏠 送信時の住所データ:', {
+        prefecture: submitData.prefecture,
+        city: submitData.city,
+        address1: submitData.address1,
+        address2: submitData.address2,
+        postalCode: submitData.postalCode
+      });
+      
+      // JSON文字列化してデータ構造を確認
+      console.log('📋 完全なsubmitData:', JSON.stringify(submitData, null, 2));
 
       const response = await fetch('/api/customers', {
         method: 'POST',
@@ -218,6 +230,15 @@ export default function NewCustomerPage() {
       hasPostalCode: !!data.postalCode
     });
     
+    // 重要: データが正しく存在することを確認
+    console.log('📌 重要フィールド確認:', {
+      prefecture_value: data.prefecture,
+      city_value: data.city,
+      address1_value: data.address1,
+      fax_value: data.fax,
+      website_value: data.website
+    });
+    
     setFormData(prev => {
       const newFormData = { ...prev };
 
@@ -237,11 +258,27 @@ export default function NewCustomerPage() {
       });
 
       // 住所情報の処理（APIからの分割済みデータを優先）
-      if (data.postalCode) newFormData.postalCode = data.postalCode;
-      if (data.prefecture) newFormData.prefecture = data.prefecture;  
-      if (data.city) newFormData.city = data.city;
-      if (data.address1) newFormData.address1 = data.address1;
-      if (data.address2) newFormData.address2 = data.address2;
+      // 重要: データの存在を確認してから設定
+      if (data.postalCode !== undefined && data.postalCode !== null) {
+        newFormData.postalCode = data.postalCode;
+        console.log('✅ 郵便番号設定:', data.postalCode);
+      }
+      if (data.prefecture !== undefined && data.prefecture !== null) {
+        newFormData.prefecture = data.prefecture;
+        console.log('✅ 都道府県設定:', data.prefecture);  
+      }
+      if (data.city !== undefined && data.city !== null) {
+        newFormData.city = data.city;
+        console.log('✅ 市区町村設定:', data.city);
+      }
+      if (data.address1 !== undefined && data.address1 !== null) {
+        newFormData.address1 = data.address1;
+        console.log('✅ 住所1設定:', data.address1);
+      }
+      if (data.address2 !== undefined && data.address2 !== null) {
+        newFormData.address2 = data.address2;
+        console.log('✅ 住所2設定:', data.address2);
+      }
       
       // addressフィールドがある場合の処理（分割済みデータがない場合のみ）
       // 重要: APIが prefecture, city, address1, address2 を提供している場合は、address フィールドは無視する
@@ -312,25 +349,26 @@ export default function NewCustomerPage() {
       }
 
       // 会社の連絡先情報（担当者情報の後に処理して会社情報を優先）
-      if (data.phone) {
+      // 重要: 空文字列も有効な値として扱う
+      if (data.phone !== undefined && data.phone !== null) {
         newFormData.phone = data.phone;
-        console.log('Setting phone:', data.phone);
+        console.log('✅ 電話番号設定:', data.phone);
       }
-      if (data.fax) {
+      if (data.fax !== undefined && data.fax !== null) {
         newFormData.fax = data.fax;
-        console.log('Setting fax:', data.fax);
+        console.log('✅ FAX設定:', data.fax);
       }
-      if (data.email) {
+      if (data.email !== undefined && data.email !== null) {
         newFormData.email = data.email;
-        console.log('Setting email:', data.email);
+        console.log('✅ メール設定:', data.email);
       }
-      if (data.website) {
+      if (data.website !== undefined && data.website !== null) {
         newFormData.website = data.website;
-        console.log('Setting website:', data.website);
+        console.log('✅ ウェブサイト設定:', data.website);
       }
-      if (data.notes) {
+      if (data.notes !== undefined && data.notes !== null) {
         newFormData.notes = data.notes;
-        console.log('Setting notes:', data.notes);
+        console.log('✅ 備考設定:', data.notes);
       }
 
       console.log('Final form data:', newFormData);
