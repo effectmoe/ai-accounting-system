@@ -32,8 +32,6 @@ interface CustomerForm {
 
 export default function NewCustomerPage() {
   console.log('🚀 NewCustomerPage コンポーネント初期化');
-  console.error('🔥 ERROR TEST: NewCustomerPage loaded');
-  console.warn('🔥 WARN TEST: NewCustomerPage loaded');
   
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -375,22 +373,21 @@ export default function NewCustomerPage() {
   };
 
   return (
-    <div>
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-2xl mx-auto">
-          <div className="mb-6 flex items-center gap-4">
-            <Link
-              href="/customers"
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-800"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              戻る
-            </Link>
-            <h1 className="text-2xl font-bold">新規顧客登録</h1>
-          </div>
+    <div className="container mx-auto px-4 py-8">
+      <div className="max-w-2xl mx-auto">
+        <div className="mb-6 flex items-center gap-4">
+          <Link
+            href="/customers"
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-800"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            戻る
+          </Link>
+          <h1 className="text-2xl font-bold">新規顧客登録</h1>
+        </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <form onSubmit={handleSubmit} className="space-y-8">
+        <div className="bg-white rounded-lg shadow p-6">
+          <form onSubmit={handleSubmit} className="space-y-8">
             {/* 基本情報 */}
             <div className="space-y-6">
               <h3 className="text-lg font-medium text-gray-900 border-b pb-2">基本情報</h3>
@@ -860,8 +857,7 @@ export default function NewCustomerPage() {
 
         {/* 埋め込み型チャット機能 - 中央下部に配置 */}
         <div className="mt-8 flex justify-center">
-          <div className="w-full max-w-2xl p-4 border border-red-500">
-            <p className="text-red-600 font-bold">DEBUG: チャットボット表示テスト</p>
+          <div className="w-full max-w-2xl">
             <CustomerChatModal
               isOpen={true}
               onClose={() => {}}
@@ -870,7 +866,6 @@ export default function NewCustomerPage() {
             />
           </div>
         </div>
-      </div>
       </div>
     </div>
   );
