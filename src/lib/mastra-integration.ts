@@ -30,7 +30,7 @@ export async function executeMastraAgent(
   const startTime = Date.now();
   
   try {
-    logger.info(`Executing Mastra agent: ${agentName}.${operation}`);
+    logger.info(`Executing Mastra agent: ${agentName}.${operation}`, { data });
     
     // Mastraエージェントを取得
     const agents = await mastra.getAgents();
@@ -50,6 +50,7 @@ export async function executeMastraAgent(
       });
       
       if (fallbackFunction) {
+        logger.info('Using fallback function for operation');
         return await fallbackFunction();
       }
       throw new Error(`Agent ${agentName} not found and no fallback provided`);
@@ -58,20 +59,35 @@ export async function executeMastraAgent(
     // エージェントを実行
     // Mastraエージェントのツールに直接アクセスできないため、
     // ツールレジストリから取得
-    const tool = getTool(agentName, operation);
-    const result = await tool.handler(data);
-    
-    // 成功統計を記録
-    mastraStatsService.recordExecution({
-      agentName,
-      operation,
-      success: true,
-      executionTime: Date.now() - startTime,
-      timestamp: new Date()
-    });
-    
-    logger.info(`Mastra agent ${agentName}.${operation} executed successfully`);
-    return result;
+    try {
+      const tool = getTool(agentName, operation);
+      logger.debug(`Found tool: ${tool.name} for agent: ${agentName}`);
+      const result = await tool.handler(data);
+      
+      // 成功統計を記録
+      mastraStatsService.recordExecution({
+        agentName,
+        operation,
+        success: true,
+        executionTime: Date.now() - startTime,
+        timestamp: new Date()
+      });
+      
+      logger.info(`Mastra agent ${agentName}.${operation} executed successfully`);
+      return result;
+    } catch (toolError) {
+      logger.error(`Tool execution error for ${agentName}.${operation}:`, {
+        error: toolError instanceof Error ? toolError.message : toolError,
+        stack: toolError instanceof Error ? toolError.stack : undefined
+      });
+      
+      // ツールが見つからない場合もフォールバックを試す
+      if (fallbackFunction) {
+        logger.info(`Tool not found or failed, falling back to direct execution for ${agentName}.${operation}`);
+        return await fallbackFunction();
+      }
+      throw toolError;
+    }
     
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -86,11 +102,15 @@ export async function executeMastraAgent(
       error: errorMessage
     });
     
-    logger.error(`Error executing Mastra agent ${agentName}.${operation}:`, error);
+    logger.error(`Error executing Mastra agent ${agentName}.${operation}:`, {
+      error: errorMessage,
+      stack: error instanceof Error ? error.stack : undefined,
+      data
+    });
     
     // エラー時は既存の処理にフォールバック
     if (fallbackFunction) {
-      logger.info(`Falling back to direct execution for ${agentName}.${operation}`);
+      logger.info(`Error occurred, falling back to direct execution for ${agentName}.${operation}`);
       return await fallbackFunction();
     }
     
