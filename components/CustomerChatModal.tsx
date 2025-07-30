@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { X, Send, Upload, Loader2, Bot, User } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { getChatHistoryService } from '@/services/chat-history.service';
@@ -22,12 +22,12 @@ interface CustomerChatModalProps {
 export default function CustomerChatModal({ isOpen, onClose, onDataExtracted, formData }: CustomerChatModalProps) {
   console.log('🎯 CustomerChatModal コンポーネント初期化:', { isOpen, formData });
   
-  // 強制的にコンソールに出力してテスト
-  if (typeof window !== 'undefined') {
-    window.console.log('🔥 FORCED LOG: CustomerChatModal loaded');
-    console.error('🔥 ERROR LOG TEST: CustomerChatModal loaded');
-    console.warn('🔥 WARN LOG TEST: CustomerChatModal loaded');
-  }
+  // useEffectに移動して副作用として実行
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      window.console.log('🔥 FORCED LOG: CustomerChatModal loaded');
+    }
+  }, []);
   
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -39,7 +39,7 @@ export default function CustomerChatModal({ isOpen, onClose, onDataExtracted, fo
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [sessionId, setSessionId] = useState<string>('');
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -50,16 +50,17 @@ export default function CustomerChatModal({ isOpen, onClose, onDataExtracted, fo
       console.log('✅ セッション初期化条件満たした');
       initializeSession();
     }
-  }, [isOpen]);
+  }, [isOpen, sessionId]);
 
-  // メッセージ更新時の履歴保存
+  // メッセージ更新時の履歴保存（最後のメッセージのみ監視）
+  const lastMessageId = messages[messages.length - 1]?.id;
   useEffect(() => {
-    console.log('🔄 useEffect[messages] 実行:', { sessionId, messagesLength: messages.length });
-    if (sessionId && messages.length > 1) {
+    console.log('🔄 useEffect[lastMessageId] 実行:', { sessionId, lastMessageId });
+    if (sessionId && messages.length > 1 && lastMessageId !== '1') {
       console.log('✅ メッセージ履歴保存条件満たした');
       saveMessageToHistory();
     }
-  }, [messages, sessionId]);
+  }, [lastMessageId, sessionId, saveMessageToHistory]);
 
   const initializeSession = async () => {
     try {
@@ -81,7 +82,7 @@ export default function CustomerChatModal({ isOpen, onClose, onDataExtracted, fo
     }
   };
 
-  const saveMessageToHistory = async () => {
+  const saveMessageToHistory = useCallback(async () => {
     if (!sessionId) return;
     
     try {
@@ -103,7 +104,7 @@ export default function CustomerChatModal({ isOpen, onClose, onDataExtracted, fo
     } catch (error) {
       console.error('メッセージ保存エラー:', error);
     }
-  };
+  }, [sessionId, messages]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
