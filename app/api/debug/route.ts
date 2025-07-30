@@ -15,6 +15,7 @@ export async function GET(request: NextRequest) {
     mongodb: {
       connected: false,
       error: null as string | null,
+      details: {} as any,
     },
     mastra: {
       agents: [] as string[],
@@ -22,11 +23,19 @@ export async function GET(request: NextRequest) {
     },
   };
 
-  // MongoDB接続チェック
+  // MongoDB接続チェック（詳細情報付き）
   try {
     debug.mongodb.connected = await checkConnection();
+    if (!debug.mongodb.connected) {
+      debug.mongodb.error = 'Connection check returned false';
+    }
   } catch (error) {
     debug.mongodb.error = error instanceof Error ? error.message : 'Unknown error';
+    debug.mongodb.details = {
+      name: error instanceof Error ? error.name : 'Unknown',
+      stack: error instanceof Error ? error.stack?.split('\n').slice(0, 5) : undefined,
+      code: (error as any)?.code,
+    };
   }
 
   // Mastraエージェントチェック
