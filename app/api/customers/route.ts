@@ -451,10 +451,27 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
       website: newCustomer.website
     });
 
+    // resultの詳細をログ出力
+    logger.debug('MastraCustomerAgent result:', result);
+    console.log('📊 MastraCustomerAgent result details:', {
+      hasInsertedId: !!result?.insertedId,
+      resultType: typeof result,
+      resultKeys: result ? Object.keys(result) : [],
+      fullResult: result
+    });
+
+    // insertedIdの取得（Mastraの戻り値またはMongoDBの戻り値から）
+    const insertedId = result?.insertedId || result?._id || result?.customer_id;
+    
+    if (!insertedId) {
+      logger.error('No insertedId found in result:', result);
+      throw new ApiErrorResponse('顧客の作成に失敗しました', 500, 'CREATE_FAILED');
+    }
+
     return NextResponse.json({
       success: true,
-      _id: result.insertedId.toString(),
-      id: result.insertedId.toString(),
+      _id: insertedId.toString(),
+      id: insertedId.toString(),
       ...newCustomer,
     });
 });
