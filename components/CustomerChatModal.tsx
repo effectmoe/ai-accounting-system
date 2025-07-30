@@ -110,10 +110,14 @@ export default function CustomerChatModal({ isOpen, onClose, onDataExtracted, fo
   };
 
   const handleSend = async () => {
-    console.log('🚀 チャットボット handleSend 開始:', { input, isLoading });
+    if (typeof window !== 'undefined') {
+      window.console.log('🚀 チャットボット handleSend 開始:', { input, isLoading });
+    }
     
     if (!input.trim() || isLoading) {
-      console.log('❌ 入力チェック失敗:', { inputTrim: input.trim(), isLoading });
+      if (typeof window !== 'undefined') {
+        window.console.log('❌ 入力チェック失敗:', { inputTrim: input.trim(), isLoading });
+      }
       return;
     }
 
@@ -124,45 +128,61 @@ export default function CustomerChatModal({ isOpen, onClose, onDataExtracted, fo
       timestamp: new Date()
     };
 
-    console.log('📝 ユーザーメッセージ作成:', userMessage);
+    if (typeof window !== 'undefined') {
+      window.console.log('📝 ユーザーメッセージ作成:', userMessage);
+    }
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsLoading(true);
 
     try {
       // URLパターンを検出
-      console.log('🔍 URL検出チェック:', input);
+      if (typeof window !== 'undefined') {
+        window.console.log('🔍 URL検出チェック:', input);
+      }
       const urlMatch = input.match(/https?:\/\/[^\s]+/);
-      console.log('🔍 URL検出結果:', urlMatch);
+      if (typeof window !== 'undefined') {
+        window.console.log('🔍 URL検出結果:', urlMatch);
+      }
       
       if (urlMatch) {
-        console.log('✅ URL検出成功:', urlMatch[0]);
-        console.log('📡 API リクエスト開始');
+        if (typeof window !== 'undefined') {
+          window.console.log('✅ URL検出成功:', urlMatch[0]);
+          window.console.log('📡 API リクエスト開始');
+        }
         const response = await fetch('/api/extract-company-info', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ url: urlMatch[0] })
         });
 
-        console.log('📡 API レスポンス受信:', { ok: response.ok, status: response.status });
+        if (typeof window !== 'undefined') {
+          window.console.log('📡 API レスポンス受信:', { ok: response.ok, status: response.status });
+        }
         
         if (!response.ok) {
           const errorText = await response.text();
-          console.error('❌ API エラー:', errorText);
+          if (typeof window !== 'undefined') {
+            window.console.error('❌ API エラー:', errorText);
+          }
           throw new Error('会社情報の取得に失敗しました');
         }
 
         const data = await response.json();
-        console.log('📋 API レスポンスデータ:', data);
+        if (typeof window !== 'undefined') {
+          window.console.log('📋 API レスポンスデータ:', data);
+        }
         
         // デバッグ: 抽出されたデータの詳細をログ出力
-        console.log('🔍 Extracted company data from API:', JSON.stringify(data, null, 2));
-        console.log('📞 Contact info check:', {
-          phone: data.phone,
-          fax: data.fax,
-          email: data.email,
-          website: data.website
-        });
+        if (typeof window !== 'undefined') {
+          window.console.log('🔍 Extracted company data from API:', JSON.stringify(data, null, 2));
+          window.console.log('📞 Contact info check:', {
+            phone: data.phone,
+            fax: data.fax,
+            email: data.email,
+            website: data.website
+          });
+        }
         
         const assistantMessage: Message = {
           id: Date.now().toString(),
@@ -171,13 +191,19 @@ export default function CustomerChatModal({ isOpen, onClose, onDataExtracted, fo
           timestamp: new Date()
         };
 
-        console.log('💬 アシスタントメッセージ設定');
+        if (typeof window !== 'undefined') {
+          window.console.log('💬 アシスタントメッセージ設定');
+        }
         setMessages(prev => [...prev, assistantMessage]);
         
-        console.log('📤 onDataExtracted コールバック実行:', data);
+        if (typeof window !== 'undefined') {
+          window.console.log('📤 onDataExtracted コールバック実行:', data);
+        }
         onDataExtracted(data);
         
-        console.log('✅ 処理完了 - トースト表示');
+        if (typeof window !== 'undefined') {
+          window.console.log('✅ 処理完了 - トースト表示');
+        }
         toast.success('会社情報を入力しました');
       } else {
         // 通常のチャット応答または企業情報調査
@@ -348,13 +374,19 @@ export default function CustomerChatModal({ isOpen, onClose, onDataExtracted, fo
             type="text"
             value={input}
             onChange={(e) => {
-              console.log('🔧 入力フィールド変更:', e.target.value);
+              if (typeof window !== 'undefined') {
+                window.console.log('🔧 入力フィールド変更:', e.target.value);
+              }
               setInput(e.target.value);
             }}
             onKeyPress={(e) => {
-              console.log('⌨️ キー押下:', e.key);
+              if (typeof window !== 'undefined') {
+                window.console.log('⌨️ キー押下:', e.key);
+                if (e.key === 'Enter') {
+                  window.console.log('↵ Enterキー検出 - handleSend実行');
+                }
+              }
               if (e.key === 'Enter') {
-                console.log('↵ Enterキー検出 - handleSend実行');
                 handleSend();
               }
             }}
@@ -378,7 +410,9 @@ export default function CustomerChatModal({ isOpen, onClose, onDataExtracted, fo
           </button>
           <button
             onClick={() => {
-              console.log('🖱️ 送信ボタンクリック:', { input, isLoading });
+              if (typeof window !== 'undefined') {
+                window.console.log('🖱️ 送信ボタンクリック:', { input, isLoading });
+              }
               handleSend();
             }}
             className="p-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50"
