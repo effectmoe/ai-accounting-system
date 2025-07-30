@@ -31,6 +31,10 @@ interface CustomerForm {
 }
 
 export default function NewCustomerPage() {
+  console.log('🚀 NewCustomerPage コンポーネント初期化');
+  console.error('🔥 ERROR TEST: NewCustomerPage loaded');
+  console.warn('🔥 WARN TEST: NewCustomerPage loaded');
+  
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<CustomerForm>({
@@ -827,12 +831,15 @@ export default function NewCustomerPage() {
 
         {/* 埋め込み型チャット機能 - 中央下部に配置 */}
         <div className="mt-8 flex justify-center">
-          <CustomerChatModal
-            isOpen={true}
-            onClose={() => {}}
-            onDataExtracted={handleDataExtracted}
-            formData={formData}
-          />
+          <div className="w-full max-w-2xl p-4 border border-red-500">
+            <p className="text-red-600 font-bold">DEBUG: チャットボット表示テスト</p>
+            <CustomerChatModal
+              isOpen={true}
+              onClose={() => {}}
+              onDataExtracted={handleDataExtracted}
+              formData={formData}
+            />
+          </div>
         </div>
       </div>
       </div>

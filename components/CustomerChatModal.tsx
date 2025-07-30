@@ -22,6 +22,13 @@ interface CustomerChatModalProps {
 export default function CustomerChatModal({ isOpen, onClose, onDataExtracted, formData }: CustomerChatModalProps) {
   console.log('🎯 CustomerChatModal コンポーネント初期化:', { isOpen, formData });
   
+  // 強制的にコンソールに出力してテスト
+  if (typeof window !== 'undefined') {
+    window.console.log('🔥 FORCED LOG: CustomerChatModal loaded');
+    console.error('🔥 ERROR LOG TEST: CustomerChatModal loaded');
+    console.warn('🔥 WARN LOG TEST: CustomerChatModal loaded');
+  }
+  
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
