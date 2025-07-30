@@ -25,6 +25,7 @@ export const createCustomerTool = {
   },
   handler: async (params: any) => {
     logger.info('Creating customer via Mastra:', params);
+    console.log('🔍 Mastra createCustomerTool 受信パラメータ:', JSON.stringify(params, null, 2));
     
     const db = await getDatabase();
     const collection = db.collection('customers');
