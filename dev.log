@@ -2,9 +2,214 @@
 > mastra-accounting-automation@1.0.1 dev
 > next dev
 
-   ▲ Next.js 14.1.0
-   - Local:        http://localhost:3000
-   - Environments: .env.local, .env
+  ▲ Next.js 14.2.21
+  - Local:        http://localhost:3000
+  - Environments: .env.local, .env
 
- ✓ Ready in 1387ms
+ ✓ Starting...
+ ✓ Ready in 960ms
+ ✓ Compiled /middleware in 178ms (117 modules)
+ ✓ Compiled /api/customers in 276ms (146 modules)
+[2025-07-30T05:12:32.782Z] [DEBUG] Creating new MongoDB connection... 
+[2025-07-30T05:12:32.782Z] [DEBUG] MongoDB URI configured: mongodb+srv://***:***@accounting-cluster.nld0j20.mongodb.net/accounting?retryWrites=true&w=majority&appName=accounting-cluster
+[2025-07-30T05:12:32.866Z] [INFO] POST /api/customers - Request received: {
+  companyName: 'エラーテスト会社',
+  hasEmail: true,
+  hasPhone: false,
+  fieldsCount: 2
+}
+🔍 POST /api/customers - Full request body (sanitized): {
+  "companyName": "エラーテスト会社",
+  "email": "error-test@example.com"
+}
+[2025-07-30T05:12:33.539Z] [DEBUG] [MongoDB] Database name extracted from URI: "accounting" 
+[2025-07-30T05:12:33.540Z] [DEBUG] [MongoDB] Database name extracted from URI: "accounting" 
+[2025-07-30T05:12:33.540Z] [DEBUG] [MongoDB] Database name extracted from URI: "accounting" 
+[2025-07-30T05:12:33.565Z] [DEBUG] MongoDB connection verified with ping 
+[2025-07-30T05:12:33.754Z] [DEBUG] Reusing cached MongoDB connection 
+[2025-07-30T05:12:33.762Z] [DEBUG] Reusing cached MongoDB connection 
+📥 POSTエンドポイントで受信したデータ: {
+  prefecture: undefined,
+  city: undefined,
+  address1: undefined,
+  fax: undefined,
+  website: undefined
+}
+[2025-07-30T05:12:33.792Z] [DEBUG] 🔍 Customer data before save: {
+  phone: undefined,
+  fax: undefined,
+  email: 'error-test@example.com',
+  website: undefined
+}
+💾 保存前データ確認: {
+  phone: undefined,
+  fax: undefined,
+  email: 'error-test@example.com',
+  website: undefined
+}
+[2025-07-30T05:12:33.792Z] [INFO] Executing Mastra agent: customerAgent.create_customer {
+  data: {
+    name: 'エラーテスト会社',
+    name_kana: '',
+    email: 'error-test@example.com',
+    phone: '',
+    fax: '',
+    website: '',
+    postalCode: '',
+    prefecture: '',
+    city: '',
+    address1: '',
+    address2: '',
+    address: '',
+    tax_id: '',
+    payment_terms: 30,
+    credit_limit: 0,
+    notes: ''
+  }
+}
+[2025-07-30T05:12:33.793Z] [DEBUG] Found tool: create_customer for agent: customerAgent 
+[2025-07-30T05:12:33.793Z] [INFO] Creating customer via Mastra: {
+  name: 'エラーテスト会社',
+  name_kana: '',
+  email: 'error-test@example.com',
+  phone: '',
+  fax: '',
+  website: '',
+  postalCode: '',
+  prefecture: '',
+  city: '',
+  address1: '',
+  address2: '',
+  address: '',
+  tax_id: '',
+  payment_terms: 30,
+  credit_limit: 0,
+  notes: ''
+}
+🔍 Mastra createCustomerTool 受信パラメータ: {
+  "name": "エラーテスト会社",
+  "name_kana": "",
+  "email": "error-test@example.com",
+  "phone": "",
+  "fax": "",
+  "website": "",
+  "postalCode": "",
+  "prefecture": "",
+  "city": "",
+  "address1": "",
+  "address2": "",
+  "address": "",
+  "tax_id": "",
+  "payment_terms": 30,
+  "credit_limit": 0,
+  "notes": ""
+}
+[2025-07-30T05:12:33.793Z] [DEBUG] [MongoDB] Database name extracted from URI: "accounting" 
+[2025-07-30T05:12:33.816Z] [DEBUG] Reusing cached MongoDB connection 
+🎯 Mastra createCustomerTool 保存前の最終データ: {
+  prefecture: '',
+  city: '',
+  address1: '',
+  address2: '',
+  fax: '',
+  website: '',
+  postalCode: ''
+}
+[2025-07-30T05:12:33.870Z] [INFO] Mastra agent executed successfully: customerAgent.create_customer (78ms) 
+[2025-07-30T05:12:33.870Z] [INFO] Mastra agent customerAgent.create_customer executed successfully 
+📤 最終レスポンスデータ: {
+  phone: undefined,
+  fax: undefined,
+  email: 'error-test@example.com',
+  website: undefined
+}
+[2025-07-30T05:12:33.870Z] [DEBUG] MastraCustomerAgent result received: {
+  hasInsertedId: false,
+  resultType: 'object',
+  resultKeys: [
+    'success',       'customer_id',
+    'customer_code', 'customerId',
+    'companyName',   'companyNameKana',
+    'email',         'phone',
+    'fax',           'taxId',
+    'postalCode',    'prefecture',
+    'city',          'address1',
+    'address2',      'website',
+    'paymentTerms',  'creditLimit',
+    'notes',         'tags',
+    'contacts',      'isActive',
+    'createdAt',     'updatedAt',
+    '_id'
+  ],
+  success: true
+}
+📊 MastraCustomerAgent result details (sanitized): {
+  "success": true,
+  "customer_id": "***REDACTED***",
+  "customer_code": "CUST-1753852353841",
+  "customerId": "CUST-1753852353841",
+  "companyName": "エラーテスト会社",
+  "companyNameKana": "",
+  "email": "error-test@example.com",
+  "phone": "",
+  "fax": "",
+  "taxId": "***REDACTED***",
+  "postalCode": "",
+  "prefecture": "",
+  "city": "",
+  "address1": "",
+  "address2": "",
+  "website": "",
+  "paymentTerms": 30,
+  "creditLimit": 0,
+  "notes": "",
+  "tags": [],
+  "contacts": [],
+  "isActive": true,
+  "createdAt": {},
+  "updatedAt": {},
+  "_id": "***REDACTED***"
+}
+ POST /api/customers 200 in 1443ms
+[2025-07-30T05:12:45.982Z] [INFO] POST /api/customers - Request received: {
+  companyName: 'エラーテスト会社',
+  hasEmail: true,
+  hasPhone: false,
+  fieldsCount: 2
+}
+🔍 POST /api/customers - Full request body (sanitized): {
+  "companyName": "エラーテスト会社",
+  "email": "error-test@example.com"
+}
+[2025-07-30T05:12:45.983Z] [DEBUG] [MongoDB] Database name extracted from URI: "accounting" 
+[2025-07-30T05:12:46.008Z] [DEBUG] Reusing cached MongoDB connection 
+[2025-07-30T05:12:46.033Z] [WARN] API Warning {
+  statusCode: 409,
+  code: 'EMAIL_ALREADY_EXISTS',
+  message: 'このメールアドレスは既に登録されています',
+  details: undefined,
+  stack: 'ApiErrorResponse: このメールアドレスは既に登録されています\n' +
+    '    at eval (webpack-internal:///(rsc)/./app/api/customers/route.ts:404:19)\n' +
+    '    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\n' +
+    '    at async eval (webpack-internal:///(rsc)/./lib/unified-error-handler.ts:104:20)\n' +
+    '    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:57228\n' +
+    '    at async eT.execute (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:46851)\n' +
+    '    at async eT.handle (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:58562)\n' +
+    '    at async doRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1353:42)\n' +
+    '    at async cacheEntry.responseCache.get.routeKind (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1575:28)\n' +
+    '    at async DevServer.renderToResponseWithComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1483:28)\n' +
+    '    at async DevServer.renderPageComponent (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1911:24)\n' +
+    '    at async DevServer.renderToResponseImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1949:32)\n' +
+    '    at async DevServer.pipeImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:921:25)\n' +
+    '    at async NextNodeServer.handleCatchallRenderRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:272:17)\n' +
+    '    at async DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:817:17)\n' +
+    '    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:339:20\n' +
+    '    at async Span.traceAsyncFn (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/trace/trace.js:154:20)\n' +
+    '    at async DevServer.handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:336:24)\n' +
+    '    at async invokeRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:173:21)\n' +
+    '    at async handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:350:24)\n' +
+    '    at async requestHandlerImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:374:13)\n' +
+    '    at async Server.requestListener (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js:141:13)'
+}
+ POST /api/customers 409 in 59ms
 [?25h

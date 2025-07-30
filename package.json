@@ -39,7 +39,11 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "test:mcp-tools": "tsx scripts/test-mcp-tools.ts"
+    "test:mcp-tools": "tsx scripts/test-mcp-tools.ts",
+    "phase2:step1": "tsx scripts/create-performance-indexes.ts",
+    "phase2:indexes": "npm run phase2:step1",
+    "phase2:step3": "tsx scripts/migrate-primary-contact-fields.ts",
+    "phase2:migrate": "npm run phase2:step3"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^1.0.0",

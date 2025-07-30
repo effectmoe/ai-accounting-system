@@ -13,6 +13,9 @@ import {
   ApiErrorResponse 
 } from '@/lib/unified-error-handler';
 import { sanitizeCustomerData, sanitizeForLogging } from '@/lib/log-sanitizer';
+import { performanceCache } from '@/lib/cache/redis-cache';
+import { OptimizedCustomerQueries } from '@/lib/optimized-customer-queries';
+
 // GET: 顧客一覧取得
 export const GET = withErrorHandler(async (request: NextRequest) => {
     const { searchParams } = new URL(request.url);
@@ -73,6 +76,64 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
     const validSortField = validSortFields.includes(sortBy) ? sortBy : 'createdAt';
     const validSortOrder = ['asc', 'desc'].includes(sortOrder) ? sortOrder : 'desc';
 
+    // キャッシュパラメータ
+    const cacheParams = {
+      page,
+      limit,
+      search,
+      sortBy: validSortField,
+      sortOrder: validSortOrder,
+      filters
+    };
+
+    // キャッシュから取得を試みる
+    const cachedResult = await performanceCache.getCachedCustomerList(cacheParams);
+    if (cachedResult) {
+      logger.debug('📬 Returning cached customer list');
+      return NextResponse.json(cachedResult);
+    }
+
+    // 最適化クエリを使用
+    try {
+      const { customers, total } = await OptimizedCustomerQueries.getOptimizedCustomersList({
+        page,
+        limit,
+        skip,
+        search,
+        sortBy: validSortField,
+        sortOrder: validSortOrder,
+        filters
+      });
+
+      // MongoDBの_idをidに変換
+      const formattedCustomers = customers.map(customer => ({
+        ...customer,
+        _id: customer._id.toString(),
+        id: customer._id.toString(),
+      }));
+
+      const response = {
+        success: true,
+        customers: formattedCustomers,
+        total,
+        page,
+        limit,
+        sortBy: validSortField,
+        sortOrder: validSortOrder,
+        filters,
+      };
+
+      // 結果をキャッシュに保存
+      await performanceCache.cacheCustomerList(cacheParams, response);
+
+      return NextResponse.json(response);
+
+    } catch (error) {
+      logger.error('Failed to get customers with optimized query:', error);
+      // フォールバック: 従来のクエリ実行
+    }
+
+    // 以下は従来のクエリ（フォールバック用）
     const db = await getDatabase();
     const collection = db.collection('customers');
 
@@ -220,7 +281,7 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
         id: customer._id.toString(),
       }));
 
-      return NextResponse.json({
+      const response = {
         success: true,
         customers: formattedCustomers,
         total,
@@ -229,7 +290,12 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
         sortBy: validSortField,
         sortOrder: validSortOrder,
         filters,
-      });
+      };
+
+      // 集約結果もキャッシュに保存
+      await performanceCache.cacheCustomerList(cacheParams, response);
+
+      return NextResponse.json(response);
     }
 
     // 通常のソート処理
@@ -274,7 +340,7 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
       id: customer._id.toString(),
     }));
 
-    return NextResponse.json({
+    const response = {
       success: true,
       customers: formattedCustomers,
       total,
@@ -283,7 +349,12 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
       sortBy: validSortField,
       sortOrder: validSortOrder,
       filters,
-    });
+    };
+
+    // 結果をキャッシュに保存
+    await performanceCache.cacheCustomerList(cacheParams, response);
+
+    return NextResponse.json(response);
 });
 
 // POST: 新規顧客作成
@@ -356,7 +427,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     
     
     // 重要: 空文字列も保存するため、undefined への変換をしない
-    const newCustomer: Partial<Customer> = {
+    let newCustomer: Partial<Customer> = {
       customerId: body.customerId,
       companyName: body.companyName,
       companyNameKana: body.companyNameKana,
@@ -378,6 +449,9 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
       createdAt: now,
       updatedAt: now,
     };
+
+    // プライマリ連絡先フィールドを事前計算
+    newCustomer = await OptimizedCustomerQueries.preprocessCustomerData(newCustomer);
 
     // デバッグ: 保存前のデータをログ出力
     logger.debug('🔍 Customer data before save:', {
@@ -485,6 +559,9 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
       logger.error('No insertedId found in result:', result);
       throw new ApiErrorResponse('顧客の作成に失敗しました', 500, 'CREATE_FAILED');
     }
+
+    // キャッシュを無効化（新規顧客が追加されたため）
+    await performanceCache.invalidateCustomerCache();
 
     return NextResponse.json({
       success: true,
