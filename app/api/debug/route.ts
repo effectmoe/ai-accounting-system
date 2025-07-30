@@ -4,13 +4,25 @@ import { mastra } from '@/src/mastra';
 import { getAgentTools } from '@/src/lib/mastra-tools-registry';
 
 export async function GET(request: NextRequest) {
+  // 🔥 緊急追加: 本番環境では無効化
+  if (process.env.NODE_ENV === 'production' || process.env.VERCEL_ENV === 'production') {
+    return NextResponse.json(
+      { 
+        error: 'Debug endpoint is disabled in production environment',
+        timestamp: new Date().toISOString()
+      }, 
+      { status: 403 }
+    );
+  }
+
   const debug = {
     environment: {
       NODE_ENV: process.env.NODE_ENV,
       VERCEL: process.env.VERCEL,
       VERCEL_ENV: process.env.VERCEL_ENV,
+      // 🔒 セキュリティ改善: URIの存在のみ確認
       MONGODB_URI: process.env.MONGODB_URI ? '✅ Set' : '❌ Not Set',
-      MONGODB_DB_NAME: process.env.MONGODB_DB_NAME || 'Not Set',
+      MONGODB_DB_NAME: process.env.MONGODB_DB_NAME ? '✅ Set' : '❌ Not Set',
     },
     mongodb: {
       connected: false,
