@@ -1,5 +1,5 @@
 import { accountingTools } from '@/src/agents/tools/accounting-tools';
-import { customerTools } from '@/src/agents/tools/customer-tools';
+import { customerTools } from '@/src/mastra/tools/customer-tools';
 
 /**
  * Mastraエージェントのツールレジストリ
