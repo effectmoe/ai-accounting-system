@@ -37,8 +37,35 @@ export const createCustomerTool = {
       }
     }
     
-    // 住所を分解（簡易版）
-    const addressParts = params.address ? params.address.split(/(?=市|区|町|村)/) : [];
+    // 住所情報が個別に渡されている場合はそれを使用
+    let prefecture = params.prefecture || '';
+    let city = params.city || '';
+    let address1 = params.address1 || '';
+    let address2 = params.address2 || '';
+    let postalCode = params.postalCode || '';
+    
+    // 住所が分割されていない場合のみ、addressフィールドから分割を試みる
+    if (!prefecture && !city && !address1 && params.address) {
+      // 郵便番号を除去
+      let cleanAddress = params.address.replace(/〒?\d{3}-?\d{4}\s*/, '');
+      
+      // 都道府県の抽出
+      const prefectureMatch = cleanAddress.match(/(東京都|大阪府|京都府|北海道|.+?県)/);
+      if (prefectureMatch) {
+        prefecture = prefectureMatch[1];
+        cleanAddress = cleanAddress.replace(prefectureMatch[1], '');
+      }
+      
+      // 市区町村の抽出
+      const cityMatch = cleanAddress.match(/^(.+?[市区町村])/);
+      if (cityMatch) {
+        city = cityMatch[1];
+        cleanAddress = cleanAddress.replace(cityMatch[1], '');
+      }
+      
+      // 残りをaddress1に
+      address1 = cleanAddress.trim();
+    }
     
     const customer = {
       customerId: `CUST-${Date.now()}`,
@@ -46,14 +73,14 @@ export const createCustomerTool = {
       companyNameKana: params.name_kana,
       email: params.email,
       phone: params.phone,
-      fax: '',
+      fax: params.fax || '',
       taxId: params.tax_id || '',
-      postalCode: '',
-      prefecture: addressParts[0] || '',
-      city: addressParts[1] || '',
-      address1: addressParts.slice(2).join('') || '',
-      address2: '',
-      website: '',
+      postalCode: postalCode,
+      prefecture: prefecture,
+      city: city,
+      address1: address1,
+      address2: address2,
+      website: params.website || '',
       paymentTerms: params.payment_terms || 30,
       creditLimit: params.credit_limit || 0,
       notes: params.notes || '',
