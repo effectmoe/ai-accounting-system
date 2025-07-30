@@ -43,26 +43,8 @@ export default function CustomerChatModal({ isOpen, onClose, onDataExtracted, fo
   const fileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // セッション初期化
-  useEffect(() => {
-    console.log('🔄 useEffect[isOpen] 実行:', { isOpen, sessionId });
-    if (isOpen && !sessionId) {
-      console.log('✅ セッション初期化条件満たした');
-      initializeSession();
-    }
-  }, [isOpen, sessionId]);
-
-  // メッセージ更新時の履歴保存（最後のメッセージのみ監視）
-  const lastMessageId = messages[messages.length - 1]?.id;
-  useEffect(() => {
-    console.log('🔄 useEffect[lastMessageId] 実行:', { sessionId, lastMessageId });
-    if (sessionId && messages.length > 1 && lastMessageId !== '1') {
-      console.log('✅ メッセージ履歴保存条件満たした');
-      saveMessageToHistory();
-    }
-  }, [lastMessageId, sessionId, saveMessageToHistory]);
-
-  const initializeSession = async () => {
+  // 関数定義（useEffectより前に配置）
+  const initializeSession = useCallback(async () => {
     try {
       const response = await fetch('/api/chat-history', {
         method: 'POST',
@@ -80,15 +62,12 @@ export default function CustomerChatModal({ isOpen, onClose, onDataExtracted, fo
     } catch (error) {
       console.error('セッション初期化エラー:', error);
     }
-  };
+  }, []);
 
-  const saveMessageToHistory = useCallback(async () => {
-    if (!sessionId) return;
+  const saveMessageToHistory = useCallback(async (lastMessage?: Message) => {
+    if (!sessionId || !lastMessage || lastMessage.id === '1') return;
     
     try {
-      const lastMessage = messages[messages.length - 1];
-      if (!lastMessage || lastMessage.id === '1') return;
-      
       await fetch(`/api/chat-history/${sessionId}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -104,7 +83,36 @@ export default function CustomerChatModal({ isOpen, onClose, onDataExtracted, fo
     } catch (error) {
       console.error('メッセージ保存エラー:', error);
     }
-  }, [sessionId, messages]);
+  }, [sessionId]);
+
+  // セッション初期化
+  useEffect(() => {
+    console.log('🔄 useEffect[isOpen] 実行:', { isOpen, sessionId });
+    if (isOpen && !sessionId) {
+      console.log('✅ セッション初期化条件満たした');
+      initializeSession();
+    }
+  }, [isOpen, sessionId, initializeSession]);
+
+  // メッセージ更新時の履歴保存（最後のメッセージのみ監視）
+  useEffect(() => {
+    const lastMessageId = messages[messages.length - 1]?.id;
+    console.log('🔄 useEffect[messages] 実行:', { sessionId, lastMessageId, messagesLength: messages.length });
+    
+    if (!sessionId || messages.length <= 1 || lastMessageId === '1') {
+      return;
+    }
+    
+    const saveTimer = setTimeout(() => {
+      console.log('✅ メッセージ履歴保存実行');
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage) {
+        saveMessageToHistory(lastMessage);
+      }
+    }, 500); // 500ms遅延して保存
+    
+    return () => clearTimeout(saveTimer);
+  }, [messages.length, sessionId, saveMessageToHistory]); // messagesの長さのみを監視
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
