@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { checkConnection } from '@/lib/mongodb-client';
 import { mastra } from '@/src/mastra';
 import { getAgentTools } from '@/src/lib/mastra-tools-registry';
+import { performanceCache } from '@/lib/cache/redis-cache';
 
 export async function GET(request: NextRequest) {
   // 🔥 緊急追加: 本番環境では無効化
@@ -33,6 +34,11 @@ export async function GET(request: NextRequest) {
       agents: [] as string[],
       tools: {} as Record<string, any>,
     },
+    cache: {
+      enabled: false,
+      connected: false,
+      stats: {} as any,
+    },
   };
 
   // MongoDB接続チェック（詳細情報付き）
@@ -61,6 +67,18 @@ export async function GET(request: NextRequest) {
     }
   } catch (error) {
     debug.mastra.tools = { error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+
+  // キャッシュシステムチェック
+  try {
+    const cacheStats = await performanceCache.getStats();
+    debug.cache = {
+      enabled: cacheStats.enabled,
+      connected: cacheStats.connected,
+      stats: cacheStats.info || {}
+    };
+  } catch (error) {
+    debug.cache.stats = { error: error instanceof Error ? error.message : 'Unknown error' };
   }
 
   return NextResponse.json({
