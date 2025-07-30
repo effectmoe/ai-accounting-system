@@ -12,6 +12,7 @@ import { mastraProductAgent } from './agents/mastra-product-agent';
 import { mastraRefactorAgent } from './agents/mastra-refactor-agent';
 import { mastraUiAgent } from './agents/mastra-ui-agent';
 import { mastraConstructionAgent } from './agents/mastra-construction-agent';
+import { mastraWebScraperAgent } from './agents/mastra-web-scraper-agent';
 
 // Import workflows
 import { accountingWorkflow } from './workflows/accounting-workflow';
@@ -40,7 +41,8 @@ export const mastra = new Mastra({
     productAgent: mastraProductAgent,
     refactorAgent: mastraRefactorAgent,
     uiAgent: mastraUiAgent,
-    constructionAgent: mastraConstructionAgent
+    constructionAgent: mastraConstructionAgent,
+    webScraper: mastraWebScraperAgent
   },
   workflows: {
     accountingWorkflow,
@@ -62,7 +64,8 @@ export {
   mastraProductAgent,
   mastraRefactorAgent,
   mastraUiAgent,
-  mastraConstructionAgent
+  mastraConstructionAgent,
+  mastraWebScraperAgent
 };
 
 // Export workflows
