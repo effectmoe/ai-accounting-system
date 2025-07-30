@@ -301,8 +301,18 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
       throw new ApiErrorResponse('有効なメールアドレスを入力してください', 400, 'INVALID_EMAIL');
     }
 
-    const db = await getDatabase();
-    const collection = db.collection('customers');
+    let db, collection;
+    try {
+      db = await getDatabase();
+      collection = db.collection('customers');
+    } catch (dbError) {
+      logger.error('Failed to get database or collection:', dbError);
+      throw new ApiErrorResponse(
+        'データベース接続エラーが発生しました。しばらくしてから再度お試しください。',
+        503,
+        'DATABASE_CONNECTION_ERROR'
+      );
+    }
 
     // メールアドレスの重複チェック（メールアドレスが提供された場合のみ）
     if (body.email) {

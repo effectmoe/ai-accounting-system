@@ -113,13 +113,19 @@ async function connectToDatabase(): Promise<{ client: MongoClient; db: Db }> {
     
     // Vercel推奨の接続オプション（ビルド時は短いタイムアウト）
     const isBuilding = process.env.NEXT_PHASE === 'phase-production-build';
+    const isVercel = process.env.VERCEL === '1';
     const options = {
-      maxPoolSize: isBuilding ? 1 : 10,
-      serverSelectionTimeoutMS: isBuilding ? 5000 : 10000, // ビルド時は5秒
+      maxPoolSize: isBuilding ? 1 : (isVercel ? 5 : 10),
+      serverSelectionTimeoutMS: isBuilding ? 5000 : (isVercel ? 20000 : 10000), // Vercelは20秒
       socketTimeoutMS: isBuilding ? 5000 : 45000,
-      connectTimeoutMS: isBuilding ? 5000 : 10000, // ビルド時は5秒
+      connectTimeoutMS: isBuilding ? 5000 : (isVercel ? 20000 : 10000), // Vercelは20秒
       retryWrites: true,
-      w: 'majority'
+      w: 'majority',
+      // Vercel環境での追加オプション
+      ...(isVercel && {
+        tls: true,
+        authSource: 'admin',
+      })
     };
     
     const client = new MongoClient(uri, options);
@@ -621,6 +627,12 @@ export async function checkConnection(): Promise<boolean> {
       return false;
     }
     
+    // Vercel環境でのビルド時チェック
+    if (SKIP_DB_DURING_BUILD) {
+      logger.debug('Skipping database connection during build');
+      return false;
+    }
+    
     const { db } = await connectToDatabase();
     await db.command({ ping: 1 });
     logger.debug('MongoDB connection successful');
@@ -631,8 +643,15 @@ export async function checkConnection(): Promise<boolean> {
     if (error instanceof Error) {
       logger.error('Error details:', {
         name: error.name,
-        message: error.message
+        message: error.message,
+        code: (error as any).code,
+        codeName: (error as any).codeName,
       });
+    }
+    
+    // DatabaseErrorの場合は詳細情報を出力
+    if (error instanceof DatabaseError) {
+      logger.error('DatabaseError code:', error.code);
     }
     
     // キャッシュをクリア
