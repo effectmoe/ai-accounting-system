@@ -367,7 +367,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
       website: newCustomer.website
     });
 
-    // 重要: Mastraエージェントが常に失敗してフォールバック処理になるため、
+    // 重要: Mastraエージェントがフォールバック処理で住所を間違って分割する問題を回避するため、
     // フォールバック関数を直接実行する
     // Mastraエージェント経由で顧客を作成（フォールバック付き）
     const result = await MastraCustomerAgent.createCustomer(
@@ -376,10 +376,15 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
         name_kana: newCustomer.companyNameKana || '',
         email: newCustomer.email || '',
         phone: newCustomer.phone || '',
-        fax: newCustomer.fax || '',  // FAXも追加
-        website: newCustomer.website || '',  // ウェブサイトも追加
-        // アドレスの結合を無効化 - これは使われない
-        address: `${newCustomer.prefecture || ''}${newCustomer.city || ''}${newCustomer.address1 || ''}${newCustomer.address2 || ''}`,
+        fax: newCustomer.fax || '',
+        website: newCustomer.website || '',
+        postalCode: newCustomer.postalCode || '',
+        prefecture: newCustomer.prefecture || '',
+        city: newCustomer.city || '',
+        address1: newCustomer.address1 || '',
+        address2: newCustomer.address2 || '',
+        // アドレスを連結しない
+        address: `${newCustomer.postalCode || ''} ${newCustomer.prefecture || ''}${newCustomer.city || ''}${newCustomer.address1 || ''}${newCustomer.address2 || ''}`.trim(),
         tax_id: body.taxId || '',
         payment_terms: newCustomer.paymentTerms || 30,
         credit_limit: body.creditLimit || 0,
