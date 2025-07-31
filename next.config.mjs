@@ -198,6 +198,9 @@ const nextConfig = {
       '@radix-ui/react-slider',
       '@radix-ui/react-switch',
       '@radix-ui/react-tabs',
+      '@mui/material',
+      '@mui/icons-material',
+      '@mui/x-date-pickers',
     ],
     
   },

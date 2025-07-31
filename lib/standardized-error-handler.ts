@@ -251,3 +251,10 @@ export function withStandardizedErrorHandling(context: string) {
     };
   };
 }
+
+/**
+ * 標準化されたエラーハンドリング関数（エクスポート用）
+ */
+export function handleStandardizedError(error: unknown, context: string): never {
+  return StandardizedErrorHandler.handleError(error, context);
+}

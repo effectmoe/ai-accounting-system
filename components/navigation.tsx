@@ -41,6 +41,7 @@ const Navigation = () => {
       items: [
         { href: '/quotes', label: '見積書' },
         { href: '/invoices', label: '請求書' },
+        { href: '/recurring-invoices', label: '定期請求書' },
         { href: '/delivery-notes', label: '納品書' },
       ]
     },
@@ -177,6 +178,7 @@ const Navigation = () => {
                           : 'text-gray-600 hover:bg-gray-50 hover:text-gray-800'
                       } block px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200`}
                       onClick={() => setIsOpen(false)}
+                      suppressHydrationWarning
                     >
                       {item.label}
                     </Link>

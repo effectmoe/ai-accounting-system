@@ -165,6 +165,9 @@ export interface Invoice {
     timestamp?: Date;
   };
   aiConversationId?: string; // AI会話履歴のID
+  // 定期請求書関連
+  recurringInvoiceId?: ObjectId; // 元の定期請求書ID
+  installmentNumber?: number; // 何回目の請求か
   createdAt?: Date;
   updatedAt?: Date;
 }

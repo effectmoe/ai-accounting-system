@@ -55,6 +55,14 @@ const quickActions = [
     badge: 'AI対応'
   },
   {
+    title: '定期請求書作成',
+    description: '分割払い・定期支払いの管理',
+    href: '/recurring-invoices',
+    icon: Clock,
+    color: 'from-cyan-500 to-cyan-600',
+    badge: '新機能'
+  },
+  {
     title: 'OCRスキャン',
     description: '領収書や請求書をスキャンして自動読み取り',
     href: '/documents',
