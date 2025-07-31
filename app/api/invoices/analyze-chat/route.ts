@@ -541,9 +541,21 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
           // 定期請求書の処理（ユーザー指定に基づく）
           if (isRecurring && userSpecifiedAmount && monthCount) {
             // 定期請求書として1項目のみ作成
-            const monthlyAmount = isTaxIncluded 
-              ? Math.floor(userSpecifiedAmount / 1.1) // 税込みから税抜きを計算
-              : userSpecifiedAmount; // 税抜き金額
+            let monthlyAmount, taxAmount;
+            
+            if (isTaxIncluded) {
+              // 税込み金額から逆算（端数を適切に処理）
+              const totalWithTax = userSpecifiedAmount;
+              // 税抜き金額 = 税込み金額 / 1.1 を端数処理
+              monthlyAmount = Math.round(totalWithTax / 1.1);
+              // 税額 = 税込み金額 - 税抜き金額
+              const monthlyTaxAmount = totalWithTax - monthlyAmount;
+              taxAmount = monthlyTaxAmount * monthCount;
+            } else {
+              // 税抜き金額から計算
+              monthlyAmount = userSpecifiedAmount;
+              taxAmount = Math.floor(monthlyAmount * monthCount * 0.1);
+            }
             
             const description = currentInvoiceData?.items?.[0]?.description || 'LLMOフルコンサルティング';
             
@@ -553,16 +565,25 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
               unitPrice: monthlyAmount,
               amount: monthlyAmount * monthCount,
               taxRate: 0.1,
-              taxAmount: Math.floor(monthlyAmount * monthCount * 0.1)
+              taxAmount: taxAmount
             }];
             
             foundItemList = true;
             logger.debug('[AI] Created recurring invoice item:', newItems[0]);
           } else if (userSpecifiedAmount && !foundItemList) {
             // 通常の請求書で金額が指定された場合
-            const baseAmount = isTaxIncluded 
-              ? Math.floor(userSpecifiedAmount / 1.1) // 税込みから税抜きを計算
-              : userSpecifiedAmount; // 税抜き金額
+            let baseAmount, taxAmount;
+            
+            if (isTaxIncluded) {
+              // 税込み金額から逆算
+              const totalWithTax = userSpecifiedAmount;
+              baseAmount = Math.round(totalWithTax / 1.1);
+              taxAmount = totalWithTax - baseAmount;
+            } else {
+              // 税抜き金額から計算
+              baseAmount = userSpecifiedAmount;
+              taxAmount = Math.floor(baseAmount * 0.1);
+            }
               
             if (currentInvoiceData?.items && currentInvoiceData.items.length > 0) {
               // 既存項目の金額を更新
@@ -572,7 +593,7 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
                     ...item,
                     unitPrice: baseAmount,
                     amount: baseAmount * item.quantity,
-                    taxAmount: Math.floor(baseAmount * item.quantity * 0.1)
+                    taxAmount: isTaxIncluded ? (taxAmount * item.quantity) : Math.floor(baseAmount * item.quantity * 0.1)
                   };
                 }
                 return item;
@@ -586,7 +607,7 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
                 unitPrice: baseAmount,
                 amount: baseAmount,
                 taxRate: 0.1,
-                taxAmount: Math.floor(baseAmount * 0.1)
+                taxAmount: taxAmount
               }];
               foundItemList = true;
             }
@@ -604,7 +625,14 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
                 
                 // AIが提示した金額が税込みか税抜きかを判定
                 const aiAmountIsTaxIncluded = line.includes('税込') || !line.includes('税抜');
-                const baseAmount = aiAmountIsTaxIncluded ? Math.floor(amount / 1.1) : amount;
+                let baseAmount, itemTaxAmount;
+                if (aiAmountIsTaxIncluded) {
+                  baseAmount = Math.round(amount / 1.1);
+                  itemTaxAmount = amount - baseAmount;
+                } else {
+                  baseAmount = amount;
+                  itemTaxAmount = Math.floor(baseAmount * 0.1);
+                }
                 
                 newItems.push({
                   description: description,
@@ -612,7 +640,7 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
                   unitPrice: baseAmount,
                   amount: baseAmount,
                   taxRate: 0.1,
-                  taxAmount: Math.floor(baseAmount * 0.1)
+                  taxAmount: itemTaxAmount
                 });
               }
             }

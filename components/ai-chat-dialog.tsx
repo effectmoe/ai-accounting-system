@@ -507,11 +507,10 @@ export default function AIChatDialog({
 
   // 会話を完了して請求書データを確定
   const completeConversation = () => {
-    // 顧客名または明細が存在し、合計金額が0より大きい場合に確定可能
+    // 顧客名または明細が存在する場合に確定可能（金額は後で再計算されるため）
     if (currentInvoiceData && 
         ((currentInvoiceData.customerName && currentInvoiceData.customerName.trim() !== '') || 
-         (currentInvoiceData.items && currentInvoiceData.items.length > 0)) &&
-        currentInvoiceData.totalAmount > 0) {
+         (currentInvoiceData.items && currentInvoiceData.items.length > 0))) {
       logger.debug('[Frontend] Completing conversation with data:', JSON.parse(JSON.stringify(currentInvoiceData)));
       logger.debug('[Frontend] Final data details:', {
         items: JSON.parse(JSON.stringify(currentInvoiceData.items)),
@@ -562,9 +561,6 @@ export default function AIChatDialog({
       } else {
         if (!currentInvoiceData.customerName?.trim() && (!currentInvoiceData.items || currentInvoiceData.items.length === 0)) {
           errorDetails.push('顧客名と明細の両方が未入力です');
-        }
-        if (currentInvoiceData.totalAmount <= 0) {
-          errorDetails.push('合計金額が0円以下です');
         }
       }
       setError(`${documentType === 'quote' ? '見積書' : '請求書'}データを確定できません。\n${errorDetails.join('\n')}`);
@@ -724,8 +720,7 @@ export default function AIChatDialog({
                 const buttonDisabled = 
                   !currentInvoiceData || 
                   isLoading ||
-                  (!currentInvoiceData.customerName?.trim() && (!currentInvoiceData.items || currentInvoiceData.items.length === 0)) ||
-                  (currentInvoiceData.totalAmount <= 0);
+                  (!currentInvoiceData.customerName?.trim() && (!currentInvoiceData.items || currentInvoiceData.items.length === 0));
                   
                 logger.debug('[Frontend] Button disabled state:', {
                   disabled: buttonDisabled,
@@ -737,8 +732,7 @@ export default function AIChatDialog({
                   conditions: {
                     noData: !currentInvoiceData,
                     loading: isLoading,
-                    noCustomerAndNoItems: !currentInvoiceData?.customerName?.trim() && (!currentInvoiceData?.items || currentInvoiceData.items.length === 0),
-                    noTotal: currentInvoiceData?.totalAmount <= 0
+                    noCustomerAndNoItems: !currentInvoiceData?.customerName?.trim() && (!currentInvoiceData?.items || currentInvoiceData.items.length === 0)
                   }
                 });
                 
@@ -1058,9 +1052,7 @@ export default function AIChatDialog({
                 !currentInvoiceData || 
                 isLoading ||
                 // 顧客名が空かつ明細がない場合
-                (!currentInvoiceData.customerName?.trim() && (!currentInvoiceData.items || currentInvoiceData.items.length === 0)) ||
-                // 合計金額が0以下の場合
-                (currentInvoiceData.totalAmount <= 0)
+                (!currentInvoiceData.customerName?.trim() && (!currentInvoiceData.items || currentInvoiceData.items.length === 0))
               }
             >
               <CheckCircle className="mr-2 h-4 w-4" />
