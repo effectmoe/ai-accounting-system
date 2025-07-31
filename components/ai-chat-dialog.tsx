@@ -71,8 +71,8 @@ export default function AIChatDialog({
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [currentInvoiceData, setCurrentInvoiceData] = useState<any>(
     mode === 'create' 
-      ? { items: [], subtotal: 0, taxAmount: 0, totalAmount: 0 } 
-      : (initialInvoiceData || { items: [], subtotal: 0, taxAmount: 0, totalAmount: 0 })
+      ? { customerName: '', items: [], subtotal: 0, taxAmount: 0, totalAmount: 0 } 
+      : (initialInvoiceData || { customerName: '', items: [], subtotal: 0, taxAmount: 0, totalAmount: 0 })
   );
   const [conversationId, setConversationId] = useState<string | null>(normalizeConversationId(existingConversationId));
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -507,7 +507,11 @@ export default function AIChatDialog({
 
   // 会話を完了して請求書データを確定
   const completeConversation = () => {
-    if (currentInvoiceData && (currentInvoiceData.customerName || (currentInvoiceData.items && currentInvoiceData.items.length > 0))) {
+    // 顧客名または明細が存在し、合計金額が0より大きい場合に確定可能
+    if (currentInvoiceData && 
+        ((currentInvoiceData.customerName && currentInvoiceData.customerName.trim() !== '') || 
+         (currentInvoiceData.items && currentInvoiceData.items.length > 0)) &&
+        currentInvoiceData.totalAmount > 0) {
       logger.debug('[Frontend] Completing conversation with data:', JSON.parse(JSON.stringify(currentInvoiceData)));
       logger.debug('[Frontend] Final data details:', {
         items: JSON.parse(JSON.stringify(currentInvoiceData.items)),
@@ -551,7 +555,19 @@ export default function AIChatDialog({
         onComplete(completeData);
       }
     } else {
-      setError(`${documentType === 'quote' ? '見積書' : '請求書'}データがまだ作成されていません。`);
+      // エラーの詳細を表示
+      let errorDetails = [];
+      if (!currentInvoiceData) {
+        errorDetails.push('データが存在しません');
+      } else {
+        if (!currentInvoiceData.customerName?.trim() && (!currentInvoiceData.items || currentInvoiceData.items.length === 0)) {
+          errorDetails.push('顧客名と明細の両方が未入力です');
+        }
+        if (currentInvoiceData.totalAmount <= 0) {
+          errorDetails.push('合計金額が0円以下です');
+        }
+      }
+      setError(`${documentType === 'quote' ? '見積書' : '請求書'}データを確定できません。\n${errorDetails.join('\n')}`);
     }
   };
 
@@ -642,7 +658,7 @@ export default function AIChatDialog({
               e.preventDefault();
               // ダイアログを閉じる際にデータをリセット
               setMessages([]);
-              setCurrentInvoiceData({ items: [], subtotal: 0, taxAmount: 0, totalAmount: 0 });
+              setCurrentInvoiceData({ customerName: '', items: [], subtotal: 0, taxAmount: 0, totalAmount: 0 });
               setSessionId(null);
               setConversationId(null); // 次回開く時は新しい会話IDを生成
               setError(null);
@@ -703,6 +719,28 @@ export default function AIChatDialog({
                 const totalAmount = currentInvoiceData.totalAmount || 0;
                 
                 logger.debug('[Frontend] Display calculation:', { subtotal, taxAmount, totalAmount });
+                
+                // デバッグ: ボタンの有効化条件をチェック
+                const buttonDisabled = 
+                  !currentInvoiceData || 
+                  isLoading ||
+                  (!currentInvoiceData.customerName?.trim() && (!currentInvoiceData.items || currentInvoiceData.items.length === 0)) ||
+                  (currentInvoiceData.totalAmount <= 0);
+                  
+                logger.debug('[Frontend] Button disabled state:', {
+                  disabled: buttonDisabled,
+                  hasData: !!currentInvoiceData,
+                  isLoading,
+                  customerName: currentInvoiceData?.customerName,
+                  itemsLength: currentInvoiceData?.items?.length || 0,
+                  totalAmount: currentInvoiceData?.totalAmount || 0,
+                  conditions: {
+                    noData: !currentInvoiceData,
+                    loading: isLoading,
+                    noCustomerAndNoItems: !currentInvoiceData?.customerName?.trim() && (!currentInvoiceData?.items || currentInvoiceData.items.length === 0),
+                    noTotal: currentInvoiceData?.totalAmount <= 0
+                  }
+                });
                 
                 return totalAmount > 0 ? (
                   <p>合計: ¥{totalAmount.toLocaleString()}（税込）</p>
@@ -896,7 +934,7 @@ export default function AIChatDialog({
                   e.preventDefault();
                   // ダイアログを閉じる際にデータをリセット
                   setMessages([]);
-                  setCurrentInvoiceData({ items: [], subtotal: 0, taxAmount: 0, totalAmount: 0 });
+                  setCurrentInvoiceData({ customerName: '', items: [], subtotal: 0, taxAmount: 0, totalAmount: 0 });
                   setSessionId(null);
                   setConversationId(null); // 次回開く時は新しい会話IDを生成
                   setError(null);
@@ -1016,7 +1054,14 @@ export default function AIChatDialog({
                 logger.debug('[AIChatDialog] Calling completeConversation');
                 completeConversation();
               }}
-              disabled={!currentInvoiceData || (!currentInvoiceData.customerName && (!currentInvoiceData.items || currentInvoiceData.items.length === 0)) || isLoading}
+              disabled={
+                !currentInvoiceData || 
+                isLoading ||
+                // 顧客名が空かつ明細がない場合
+                (!currentInvoiceData.customerName?.trim() && (!currentInvoiceData.items || currentInvoiceData.items.length === 0)) ||
+                // 合計金額が0以下の場合
+                (currentInvoiceData.totalAmount <= 0)
+              }
             >
               <CheckCircle className="mr-2 h-4 w-4" />
               会話を終了して確定

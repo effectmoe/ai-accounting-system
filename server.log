@@ -408,3 +408,20 @@ Import trace for requested module:
  ✓ Compiled in 101ms (474 modules)
  ✓ Compiled in 158ms (474 modules)
  ✓ Compiled in 109ms (474 modules)
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, lstat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/app'
+<w> [webpack.cache.PackFileCacheStrategy/webpack.FileSystemInfo] Resolving '../../../../.next/server/app/api/extract-company-info/route' in /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server for build dependencies doesn't lead to expected result '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/app/api/extract-company-info/route.js', but to 'Error: Can't resolve '../../../../.next/server/app/api/extract-company-info/route' in '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server'' instead. Resolving dependencies are ignored for this path.
+<w>  at resolve commonjs file ../../../../.next/server/app/api/extract-company-info/route (expected /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/app/api/extract-company-info/route.js)
+<w>  at file dependencies /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js
+<w>  at file /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js
+<w>  at file dependencies /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js
+<w>  at file /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js
+<w>  at file dependencies /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/utils.js
+<w>  at file /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/utils.js
+<w>  at file dependencies /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/handle-externals.js
+<w>  at file /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/handle-externals.js
+<w>  at file dependencies /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at file /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+<w>  at resolve commonjs /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/webpack/loaders/next-swc-loader.js
+ ✓ Compiled in 199ms (474 modules)
+ ✓ Compiled in 107ms (474 modules)
+ ✓ Compiled in 107ms (474 modules)
