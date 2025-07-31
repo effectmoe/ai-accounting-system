@@ -1,1062 +1,410 @@
 
-> mastra-accounting-automation@1.0.0 dev
+> mastra-accounting-automation@1.0.1 dev
 > next dev
 
-   ▲ Next.js 14.1.0
-   - Local:        http://localhost:3000
-   - Environments: .env.local, .env
+  ▲ Next.js 14.2.21
+  - Local:        http://localhost:3002
+  - Environments: .env.local, .env
 
- ✓ Ready in 1062ms
- ✓ Compiled /middleware in 148ms (64 modules)
- ✓ Compiled /api/documents/list in 121ms (40 modules)
-Creating new MongoDB connection...
-MongoDB URI configured: mongodb+srv://***:***@accounting-cluster.nld0j20.mongodb.net/accounting?retryWrites=true&w=majority&appName=accounting-cluster
-Documents list API - MongoDB URI exists: true
-MongoDB connection verified with ping
-Reusing cached MongoDB connection
-Raw documents from database: 1
-First document raw data: {
-  _id: new ObjectId('686de42824009ad5c5b13920'),
-  companyId: '11111111-1111-1111-1111-111111111111',
-  fileName: 'スキャン_20250705-2350.pdf',
-  fileType: 'application/pdf',
-  fileSize: 579577,
-  documentType: 'receipt',
-  vendorName: 'タイムズ',
-  totalAmount: 800,
-  taxAmount: 0,
-  documentDate: 2025-05-25T00:00:00.000Z,
-  issue_date: 2025-05-25T00:00:00.000Z,
-  receipt_date: '2025-05-25',
-  category: '旅費交通費',
-  subcategory: null,
-  extractedText: '{\n' +
-    '  "merchantName": "タイムズ",\n' +
-    '  "merchantPhoneNumber": "TEL:0120-70-8924\\n4010001137272",\n' +
-    '  "transactionDate": "2025年 5月25日",\n' +
-    '  "transactionTime": "13:53",\n' +
-    '  "total": 800,\n' +
-    '  "items": [],\n' +
-    '  "customFields": {\n' +
-    '    "MerchantPhoneNumber": "TEL:0120-70-8924\\n4010001137272",\n' +
-    '    "TransactionTime": "13:53"\n' +
-    '  }\n' +
-    '}',
-  confidence: 0.995,
-  ocrStatus: 'completed',
-  ocrResultId: '686de42824009ad5c5b1391f',
-  gridfsFileId: '686de42824009ad5c5b1391b',
-  status: 'pending',
-  createdAt: 2025-07-09T03:38:16.918Z,
-  updatedAt: 2025-07-09T03:38:16.918Z
+ ✓ Starting...
+ ✓ Ready in 975ms
+ ✓ Compiled /middleware in 166ms (117 modules)
+ ✓ Compiled /api/health in 143ms (106 modules)
+[2025-07-30T09:27:36.234Z] [DEBUG] Creating new MongoDB connection... 
+[2025-07-30T09:27:36.235Z] [DEBUG] MongoDB URI configured: mongodb+srv://***:***@accounting-cluster.nld0j20.mongodb.net/accounting?retryWrites=true&w=majority&appName=accounting-cluster
+[2025-07-30T09:27:36.239Z] [DEBUG] MongoDB connection check... 
+[2025-07-30T09:27:37.044Z] [DEBUG] [MongoDB] Database name extracted from URI: "accounting" 
+[2025-07-30T09:27:37.045Z] [DEBUG] [MongoDB] Database name extracted from URI: "accounting" 
+[2025-07-30T09:27:37.045Z] [DEBUG] [MongoDB] Database name extracted from URI: "accounting" 
+[2025-07-30T09:27:37.069Z] [DEBUG] MongoDB connection verified with ping 
+[2025-07-30T09:27:37.267Z] [DEBUG] Reusing cached MongoDB connection 
+[2025-07-30T09:27:37.271Z] [DEBUG] Reusing cached MongoDB connection 
+[2025-07-30T09:27:37.303Z] [DEBUG] MongoDB connection successful 
+ GET /api/health 503 in 1344ms
+ ✓ Compiled /api/extract-company-info in 185ms (142 modules)
+[2025-07-30T09:27:55.736Z] [DEBUG] [MongoDB] Database name extracted from URI: "accounting" 
+[2025-07-30T09:27:55.736Z] [DEBUG] [MongoDB] Database name extracted from URI: "accounting" 
+[2025-07-30T09:27:55.760Z] [DEBUG] Reusing cached MongoDB connection 
+[2025-07-30T09:27:55.771Z] [DEBUG] Reusing cached MongoDB connection 
+[2025-07-30T09:27:55.876Z] [INFO] Extracting company info from URL: https://abposter.jp/basic/tokusho.html
+[2025-07-30T09:27:55.938Z] [DEBUG] HTML fetched successfully, length: 42637
+[2025-07-30T09:27:55.940Z] [ERROR] AI extraction failed, falling back to regex parsing: {
+  error: `Message with role "undefined" must have either a 'content' property (string or array) or a 'parts' property (array) that is not empty, null, or undefined. Received message: {\n` +
+    '  "messages": [\n' +
+    '    {\n' +
+    '      "role": "user",\n' +
+    `      "content": "以下のHTMLから会社情報を正確に抽出してJSON形式で返してください。\\n\\nHTMLコンテンツ:\\n<!DOCTYPE html>\\n<html lang=\\"ja\\">\\n<head>\\n\\t<meta charset=\\"UTF-8\\">\\n\\t<!-- Google Tag Manager -->\\n<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':\\n\\tnew Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],\\n\\tj=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=\\n\\t'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);\\n\\t})(window,document,'script','dataLayer','GTM-NWVRFH67');</script>\\n\\t<!-- End Google Tag Manager -->\\n\\t<!-- Google Tag Manager -->\\n<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':\\nnew Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],\\nj=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=\\n'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);\\n})(window,document,'script','dataLayer','GTM-NK864D6K');</script>\\n    <!-- End Google Tag Manager -->\\n\\n\\t<!--GMO Google Tag Manager -->\\n    \\n    <!-- Yahoo Ad -->\\n<script async src=\\"https://s.yimg.jp/images/listing/tool/cv/ytag.js\\"></script>\\n<script>\\nwindow.yjDataLayer = window.yjDataLayer || [];\\nfunction ytag() { yjDataLayer.push(arguments); }\\nytag({\\"type\\":\\"ycl_cookie\\", \\"config\\":{\\"ycl_use_non_cookie_storage\\":true}});\\n</script>\\n    <!-- End Yahoo Ad -->\\n    \\n    <!-- Yahoo Ad -->\\n<script async src=\\"https://s.yimg.jp/images/listing/tool/cv/ytag.js\\"></script>\\n<script>\\nwindow.yjDataLayer = window.yjDataLayer || [];\\nfunction ytag() { yjDataLayer.push(arguments); }\\n</script>\\n    <!-- End Yahoo Ad -->\\n\\t<title>特定商取引法│ポスター印刷のABポスター</title>\\n\\t<meta name=\\"description\\" content=\\"ポスター印刷専門店のABポスターは、「当日印刷」、「当日発送」で、「ポスター印刷」と「タペストリー」最新鋭の印刷設備と技術で印刷いたします。16時まで当日発送のポスター印刷をご検討の際にはまず弊社にお声がけください。\\">\\n\\t<meta name=\\"keywords\\" content=\\"ポスター印刷,ポスター当日,ポスター作成,ポスター当日発送\\">\\n\\t<meta name=\\"viewport\\" content=\\"width=device-width,initial-scale=1\\">\\n\\t<!--※カートから直前のページに戻る※-->\\n\\t<meta name=\\"referrer\\" content=\\"no-referrer-when-downgrade\\">\\n\\t\\n\\t<link rel=\\"canonical\\" href=\\"https://abposter.jp/basic/kiyaku.html\\">\\n\\t<link rel=\\"stylesheet\\" href=\\"../css/poster_style.css\\" type=\\"text/css\\" media=\\"screen\\" />\\n\\t<link rel=\\"stylesheet\\" type=\\"text/css\\" href=\\"../css/tsuiki.min.css\\">\\n\\t<link rel=\\"stylesheet\\" type=\\"text/css\\" href=\\"../css/style.min2402230216.css\\">\\n\\t<link rel=\\"stylesheet\\" type=\\"text/css\\" href=\\"../css/style-hd.css?210608\\">\\n\\t<link rel=\\"stylesheet\\" type=\\"text/css\\" href=\\"../css/h2h3.css\\">\\n\\t<link rel=\\"stylesheet\\" type=\\"text/css\\" href=\\"../css/accordion.css\\">\\n\\t<link rel=\\"stylesheet\\" type=\\"text/css\\" href=\\"../css/p_index.css\\">\\n\\t<link rel=\\"stylesheet\\" type=\\"text/css\\" href=\\"../css/sidebanner240308.css\\">\\n\\t<link rel=\\"stylesheet\\" type=\\"text/css\\" href=\\"../css/contents.css\\">\\n\\t<link rel=\\"stylesheet\\" type=\\"text/css\\" href=\\"../css/test_print.css?ver1.6\\">\\n\\t<link rel=\\"stylesheet\\" href=\\"../css/ppbtn.css\\">\\n\\t\\n\\t<script src=\\"https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js\\"></script>\\n\\t<script type=\\"text/javascript\\" src=\\"../js/img-switch.js\\"></script>\\n\\t<script src=\\"../js/iscroll.js\\"></script>\\n\\t<script src=\\"../js/drawer.min.js\\"></script>\\n\\t<script src=\\"../js/jquery.flexslider-min.js\\"></script>\\n\\t<script src=\\"https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js\\"></script>\\n\\t<script src=\\"../js/setting.js\\"></script>\\n\\n<!-- Yahoo Tag -->\\n<script async src=\\"https://s.yimg.jp/images/listing/tool/cv/ytag.js\\"></script>\\n<script>\\nwindow.yjDataLayer = window.yjDataLayer || [];\\nfunction ytag() { yjDataLayer.push(arguments); }\\nytag({\\"type\\":\\"ycl_cookie\\", \\"config\\":{\\"ycl_use_non_cookie_storage\\":true}});\\n</script>\\n\\n<script async src=\\"https://s.yimg.jp/images/listing/tool/cv/ytag.js\\"></script>\\n<script>\\nwindow.yjDataLayer = window.yjDataLayer || [];\\nfunction ytag() { yjDataLayer.push(arguments); }\\nytag({\\"type\\":\\"ycl_cookie\\", \\"config\\":{\\"ycl_use_non_cookie_storage\\":true}});\\n</script>\\n<!-- End Yahoo Tag -->\\n\\n<style>\\n  .pc { display: block !important; }\\n  .sp { display: none !important; }\\n\\n  @media only screen and (max-width: 600px) {\\n  .pc { display: none !important; }\\n  .sp { display: block !important; }\\n}\\n</style>\\n\\n\\t<!--※※affiliate TAG※※-->\\n\\t<script src=\\"https://r.moshimo.com/af/r/maftag.js\\"></script>\\n</head>\\n\\n<body class=\\"drawer drawer--right drawer-responsive\\">\\n<!-- Google Tag Manager (noscript) -->\\n<noscript><iframe src=\\"https://www.googletagmanager.com/ns.html?id=GTM-NK864D6K\\"\\nheight=\\"0\\" width=\\"0\\" style=\\"display:none;visibility:hidden\\"></iframe></noscript>\\n<!-- End Google Tag Manager (noscript) -->\\n\\n<div class=\\"htop\\"><a href=\\"https://abposter.jp/\\"><h1 style=\\"display:inline\\">特定商取引法</h1></a>│ポスター印刷のABポスター</div>\\n\\n<!-- ハンバーガーボタン -->\\n<button type=\\"button\\" class=\\"drawer-toggle drawer-hamburger\\">\\n  <span class=\\"sr-only\\">toggle navigation</span>\\n  <span class=\\"drawer-hamburger-icon\\"></span>\\n    <span class=\\"dw-menu\\">MENU</span>\\n  </button>\\n \\n<!-- ナビゲーションの中身 -->\\n    <nav class=\\"drawer-nav\\" role=\\"navigation\\">\\n      <ul class=\\"drawer-menu\\">\\n        <li><a class=\\"drawer-brand\\" href=\\"https://abposter.jp/\\">HOME</a></li>\\n        <li><a class=\\"drawer-menu-item\\" href=\\"https://store.abposter.jp/CART/login.php\\" target=\\"_blank\\">ログイン</a></li>\\n        <li><a class=\\"drawer-menu-item\\" href=\\"https://store.abposter.jp/CART/newmem.php\\" target=\\"_blank\\">会員登録</a></li>\\n        <li><a class=\\"drawer-menu-item\\" href=\\"https://store.abposter.jp/CART/cart.php\\" target=\\"_blank\\">カートを見る</a></li>\\n        <li><a class=\\"drawer-menu-item\\" href=\\"https://abposter.jp/toiawase/toiawase.html\\">お問合せ</a></li>\\n        <li><a class=\\"drawer-menu-item\\" href=\\"https://abposter.jp/mitsumori/mitsumori.html\\">お見積り</a></li>\\n\\n  \\t<!-- ポスター印刷  -->\\n        <li class=\\"drawer-dropdown\\">\\n    \\t  <a class=\\"drawer-menu-item\\" href=\\"#\\" data-toggle=\\"dropdown\\">ポスター印刷<span class=\\"drawer-caret\\"></span></a>\\n          <ul class=\\"drawer-dropdown-menu\\">\\n            <li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/\\">ポスター印刷用紙一覧</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/mat.html\\">厚手マットコート紙</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/gloss.html\\">厚手光沢紙</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/h_gloss.html\\">厚手半光沢紙</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/yupo.html\\">合成紙</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/p_yupo.html\\">合成紙糊付き</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/photo.html\\">フォト光沢紙</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/photo_p.html\\">フォトパール半光沢紙</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/film.html\\">電飾用バックライトフィルム</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/tarpo.html\\">屋内用ターポリン</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/cloth.html\\">防炎クロス</a></li>\\n          </ul>\\n        </li>\\n\\n    \\t<!-- 大判印刷 -->\\n\\t\\t\\t<li class=\\"drawer-dropdown\\">\\n\\t\\t\\t\\t<a class=\\"drawer-menu-item\\" href=\\"#\\" data-toggle=\\"dropdown\\">大判印刷<span class=\\"icon_accordion-1\\"></span><span class=\\"icon_accordion-2\\"></span></a>\\n\\t\\t\\t\\t<ul class=\\"drawer-dropdown-menu\\">\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/page/wide\\">大判印刷用紙一覧</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_gloss.html\\">光沢フォトペーパー</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_parl.html\\">フォトパールペーパー</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_yupo.html\\">厚手ハイグレード合成紙</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_tarpo.html\\">ハイグレード防炎ターポリン</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_mesh.html\\">メッシュターポリン</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_blfilm.html\\">バックライトフィルム糊付き</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_mat.html\\">厚手マットコート紙</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_enbil_s.html\\">短期用塩ビ＋ラミネート</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_enbil_m.html\\">中期用塩ビ＋ラミネート</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_enbil_l.html\\">長期用塩ビ＋ラミネート</a></li>\\n\\t\\t\\t\\t</ul>\\n\\t\\t\\t</li>\\n\\n    \\t<!-- 学会ポスター印刷 -->\\n        <li class=\\"drawer-dropdown\\">\\n    \\t  <a class=\\"drawer-menu-item\\" href=\\"#\\" data-toggle=\\"dropdown\\">学会ポスター印刷<span class=\\"drawer-caret\\"></span></a>\\n          <ul class=\\"drawer-dropdown-menu\\">\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/society/g_mat.html\\">厚手マットコート紙</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/society/g_gloss.html\\">厚手光沢紙</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/society/g_hgloss.html\\">厚手半光沢紙</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/society/g_photo.html\\">フォト光沢紙</a></li>\\`... 2592 more characters,
+  stack: `Error: Message with role "undefined" must have either a 'content' property (string or array) or a 'parts' property (array) that is not empty, null, or undefined. Received message: {\n` +
+    '  "messages": [\n' +
+    '    {\n' +
+    '      "role": "user",\n' +
+    `      "content": "以下のHTMLから会社情報を正確に抽出してJSON形式で返してください。\\n\\nHTMLコンテンツ:\\n<!DOCTYPE html>\\n<html lang=\\"ja\\">\\n<head>\\n\\t<meta charset=\\"UTF-8\\">\\n\\t<!-- Google Tag Manager -->\\n<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':\\n\\tnew Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],\\n\\tj=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=\\n\\t'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);\\n\\t})(window,document,'script','dataLayer','GTM-NWVRFH67');</script>\\n\\t<!-- End Google Tag Manager -->\\n\\t<!-- Google Tag Manager -->\\n<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':\\nnew Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],\\nj=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=\\n'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);\\n})(window,document,'script','dataLayer','GTM-NK864D6K');</script>\\n    <!-- End Google Tag Manager -->\\n\\n\\t<!--GMO Google Tag Manager -->\\n    \\n    <!-- Yahoo Ad -->\\n<script async src=\\"https://s.yimg.jp/images/listing/tool/cv/ytag.js\\"></script>\\n<script>\\nwindow.yjDataLayer = window.yjDataLayer || [];\\nfunction ytag() { yjDataLayer.push(arguments); }\\nytag({\\"type\\":\\"ycl_cookie\\", \\"config\\":{\\"ycl_use_non_cookie_storage\\":true}});\\n</script>\\n    <!-- End Yahoo Ad -->\\n    \\n    <!-- Yahoo Ad -->\\n<script async src=\\"https://s.yimg.jp/images/listing/tool/cv/ytag.js\\"></script>\\n<script>\\nwindow.yjDataLayer = window.yjDataLayer || [];\\nfunction ytag() { yjDataLayer.push(arguments); }\\n</script>\\n    <!-- End Yahoo Ad -->\\n\\t<title>特定商取引法│ポスター印刷のABポスター</title>\\n\\t<meta name=\\"description\\" content=\\"ポスター印刷専門店のABポスターは、「当日印刷」、「当日発送」で、「ポスター印刷」と「タペストリー」最新鋭の印刷設備と技術で印刷いたします。16時まで当日発送のポスター印刷をご検討の際にはまず弊社にお声がけください。\\">\\n\\t<meta name=\\"keywords\\" content=\\"ポスター印刷,ポスター当日,ポスター作成,ポスター当日発送\\">\\n\\t<meta name=\\"viewport\\" content=\\"width=device-width,initial-scale=1\\">\\n\\t<!--※カートから直前のページに戻る※-->\\n\\t<meta name=\\"referrer\\" content=\\"no-referrer-when-downgrade\\">\\n\\t\\n\\t<link rel=\\"canonical\\" href=\\"https://abposter.jp/basic/kiyaku.html\\">\\n\\t<link rel=\\"stylesheet\\" href=\\"../css/poster_style.css\\" type=\\"text/css\\" media=\\"screen\\" />\\n\\t<link rel=\\"stylesheet\\" type=\\"text/css\\" href=\\"../css/tsuiki.min.css\\">\\n\\t<link rel=\\"stylesheet\\" type=\\"text/css\\" href=\\"../css/style.min2402230216.css\\">\\n\\t<link rel=\\"stylesheet\\" type=\\"text/css\\" href=\\"../css/style-hd.css?210608\\">\\n\\t<link rel=\\"stylesheet\\" type=\\"text/css\\" href=\\"../css/h2h3.css\\">\\n\\t<link rel=\\"stylesheet\\" type=\\"text/css\\" href=\\"../css/accordion.css\\">\\n\\t<link rel=\\"stylesheet\\" type=\\"text/css\\" href=\\"../css/p_index.css\\">\\n\\t<link rel=\\"stylesheet\\" type=\\"text/css\\" href=\\"../css/sidebanner240308.css\\">\\n\\t<link rel=\\"stylesheet\\" type=\\"text/css\\" href=\\"../css/contents.css\\">\\n\\t<link rel=\\"stylesheet\\" type=\\"text/css\\" href=\\"../css/test_print.css?ver1.6\\">\\n\\t<link rel=\\"stylesheet\\" href=\\"../css/ppbtn.css\\">\\n\\t\\n\\t<script src=\\"https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js\\"></script>\\n\\t<script type=\\"text/javascript\\" src=\\"../js/img-switch.js\\"></script>\\n\\t<script src=\\"../js/iscroll.js\\"></script>\\n\\t<script src=\\"../js/drawer.min.js\\"></script>\\n\\t<script src=\\"../js/jquery.flexslider-min.js\\"></script>\\n\\t<script src=\\"https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js\\"></script>\\n\\t<script src=\\"../js/setting.js\\"></script>\\n\\n<!-- Yahoo Tag -->\\n<script async src=\\"https://s.yimg.jp/images/listing/tool/cv/ytag.js\\"></script>\\n<script>\\nwindow.yjDataLayer = window.yjDataLayer || [];\\nfunction ytag() { yjDataLayer.push(arguments); }\\nytag({\\"type\\":\\"ycl_cookie\\", \\"config\\":{\\"ycl_use_non_cookie_storage\\":true}});\\n</script>\\n\\n<script async src=\\"https://s.yimg.jp/images/listing/tool/cv/ytag.js\\"></script>\\n<script>\\nwindow.yjDataLayer = window.yjDataLayer || [];\\nfunction ytag() { yjDataLayer.push(arguments); }\\nytag({\\"type\\":\\"ycl_cookie\\", \\"config\\":{\\"ycl_use_non_cookie_storage\\":true}});\\n</script>\\n<!-- End Yahoo Tag -->\\n\\n<style>\\n  .pc { display: block !important; }\\n  .sp { display: none !important; }\\n\\n  @media only screen and (max-width: 600px) {\\n  .pc { display: none !important; }\\n  .sp { display: block !important; }\\n}\\n</style>\\n\\n\\t<!--※※affiliate TAG※※-->\\n\\t<script src=\\"https://r.moshimo.com/af/r/maftag.js\\"></script>\\n</head>\\n\\n<body class=\\"drawer drawer--right drawer-responsive\\">\\n<!-- Google Tag Manager (noscript) -->\\n<noscript><iframe src=\\"https://www.googletagmanager.com/ns.html?id=GTM-NK864D6K\\"\\nheight=\\"0\\" width=\\"0\\" style=\\"display:none;visibility:hidden\\"></iframe></noscript>\\n<!-- End Google Tag Manager (noscript) -->\\n\\n<div class=\\"htop\\"><a href=\\"https://abposter.jp/\\"><h1 style=\\"display:inline\\">特定商取引法</h1></a>│ポスター印刷のABポスター</div>\\n\\n<!-- ハンバーガーボタン -->\\n<button type=\\"button\\" class=\\"drawer-toggle drawer-hamburger\\">\\n  <span class=\\"sr-only\\">toggle navigation</span>\\n  <span class=\\"drawer-hamburger-icon\\"></span>\\n    <span class=\\"dw-menu\\">MENU</span>\\n  </button>\\n \\n<!-- ナビゲーションの中身 -->\\n    <nav class=\\"drawer-nav\\" role=\\"navigation\\">\\n      <ul class=\\"drawer-menu\\">\\n        <li><a class=\\"drawer-brand\\" href=\\"https://abposter.jp/\\">HOME</a></li>\\n        <li><a class=\\"drawer-menu-item\\" href=\\"https://store.abposter.jp/CART/login.php\\" target=\\"_blank\\">ログイン</a></li>\\n        <li><a class=\\"drawer-menu-item\\" href=\\"https://store.abposter.jp/CART/newmem.php\\" target=\\"_blank\\">会員登録</a></li>\\n        <li><a class=\\"drawer-menu-item\\" href=\\"https://store.abposter.jp/CART/cart.php\\" target=\\"_blank\\">カートを見る</a></li>\\n        <li><a class=\\"drawer-menu-item\\" href=\\"https://abposter.jp/toiawase/toiawase.html\\">お問合せ</a></li>\\n        <li><a class=\\"drawer-menu-item\\" href=\\"https://abposter.jp/mitsumori/mitsumori.html\\">お見積り</a></li>\\n\\n  \\t<!-- ポスター印刷  -->\\n        <li class=\\"drawer-dropdown\\">\\n    \\t  <a class=\\"drawer-menu-item\\" href=\\"#\\" data-toggle=\\"dropdown\\">ポスター印刷<span class=\\"drawer-caret\\"></span></a>\\n          <ul class=\\"drawer-dropdown-menu\\">\\n            <li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/\\">ポスター印刷用紙一覧</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/mat.html\\">厚手マットコート紙</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/gloss.html\\">厚手光沢紙</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/h_gloss.html\\">厚手半光沢紙</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/yupo.html\\">合成紙</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/p_yupo.html\\">合成紙糊付き</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/photo.html\\">フォト光沢紙</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/photo_p.html\\">フォトパール半光沢紙</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/film.html\\">電飾用バックライトフィルム</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/tarpo.html\\">屋内用ターポリン</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/cloth.html\\">防炎クロス</a></li>\\n          </ul>\\n        </li>\\n\\n    \\t<!-- 大判印刷 -->\\n\\t\\t\\t<li class=\\"drawer-dropdown\\">\\n\\t\\t\\t\\t<a class=\\"drawer-menu-item\\" href=\\"#\\" data-toggle=\\"dropdown\\">大判印刷<span class=\\"icon_accordion-1\\"></span><span class=\\"icon_accordion-2\\"></span></a>\\n\\t\\t\\t\\t<ul class=\\"drawer-dropdown-menu\\">\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/page/wide\\">大判印刷用紙一覧</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_gloss.html\\">光沢フォトペーパー</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_parl.html\\">フォトパールペーパー</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_yupo.html\\">厚手ハイグレード合成紙</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_tarpo.html\\">ハイグレード防炎ターポリン</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_mesh.html\\">メッシュターポリン</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_blfilm.html\\">バックライトフィルム糊付き</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_mat.html\\">厚手マットコート紙</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_enbil_s.html\\">短期用塩ビ＋ラミネート</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_enbil_m.html\\">中期用塩ビ＋ラミネート</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_enbil_l.html\\">長期用塩ビ＋ラミネート</a></li>\\n\\t\\t\\t\\t</ul>\\n\\t\\t\\t</li>\\n\\n    \\t<!-- 学会ポスター印刷 -->\\n        <li class=\\"drawer-dropdown\\">\\n    \\t  <a class=\\"drawer-menu-item\\" href=\\"#\\" data-toggle=\\"dropdown\\">学会ポスター印刷<span class=\\"drawer-caret\\"></span></a>\\n          <ul class=\\"drawer-dropdown-menu\\">\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/society/g_mat.html\\">厚手マットコート紙</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/society/g_gloss.html\\">厚手光沢紙</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/society/g_hgloss.html\\">厚手半光沢紙</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/society/g_photo.html\\">フォト光沢紙</a`... 6466 more characters,
+  url: 'https://abposter.jp/basic/tokusho.html'
 }
-Formatted documents: 1
-First formatted document: {
-  id: '686de42824009ad5c5b13920',
-  company_id: '11111111-1111-1111-1111-111111111111',
-  document_type: 'receipt',
-  document_number: 'DOC-c5b13920',
-  status: 'pending',
-  issue_date: 2025-05-25T00:00:00.000Z,
-  partner_name: 'タイムズ',
-  partner_address: '',
-  total_amount: 800,
-  tax_amount: 0,
-  subtotal: 800,
-  notes: '',
-  created_at: 2025-07-09T03:38:16.918Z,
-  updated_at: 2025-07-09T03:38:16.918Z,
-  file_name: 'スキャン_20250705-2350.pdf',
-  file_type: 'application/pdf',
-  file_size: 579577,
-  vendor_name: 'タイムズ',
-  receipt_date: 2025-05-25T00:00:00.000Z,
-  category: '旅費交通費',
-  extracted_text: '{\n' +
-    '  "merchantName": "タイムズ",\n' +
-    '  "merchantPhoneNumber": "TEL:0120-70-8924\\n4010001137272",\n' +
-    '  "transactionDate": "2025年 5月25日",\n' +
-    '  "transactionTime": "13:53",\n' +
-    '  "total": 800,\n' +
-    '  "items": [],\n' +
-    '  "customFields": {\n' +
-    '    "MerchantPhoneNumber": "TEL:0120-70-8924\\n4010001137272",\n' +
-    '    "TransactionTime": "13:53"\n' +
-    '  }\n' +
-    '}',
-  confidence: 0.995,
-  ocr_status: 'completed',
-  ocr_result_id: '686de42824009ad5c5b1391f',
-  gridfs_file_id: '686de42824009ad5c5b1391b',
-  journalId: undefined
+[2025-07-30T09:27:55.942Z] [INFO] Company info extracted via regex fallback: {
+  companyName: '特定商取引法│ポスター印刷のABポスター',
+  companyNameKana: '特定商取引法│ポスター印刷ノエービーポスター',
+  address: '2402230216.css">',
+  postalCode: '240-2230',
+  website: 'https://abposter.jp/basic/tokusho.html'
 }
-Reusing cached MongoDB connection
- ✓ Compiled /api/files/[id] in 30ms (42 modules)
-Reusing cached MongoDB connection
-Creating new MongoDB connection...
-MongoDB URI configured: mongodb+srv://***:***@accounting-cluster.nld0j20.mongodb.net/accounting?retryWrites=true&w=majority&appName=accounting-cluster
-File API called with ID: 686de42824009ad5c5b1391b
-Reusing cached MongoDB connection
-Searching for file with ObjectId: 686de42824009ad5c5b1391b
-Found files: 0
-File not found in GridFS
- ○ Compiling /documents ...
- ✓ Compiled /documents in 2.1s (732 modules)
- ✓ Compiled in 91ms (339 modules)
-Documents list API - MongoDB URI exists: true
-Reusing cached MongoDB connection
-Reusing cached MongoDB connection
-Raw documents from database: 1
-First document raw data: {
-  _id: new ObjectId('686de42824009ad5c5b13920'),
-  companyId: '11111111-1111-1111-1111-111111111111',
-  fileName: 'スキャン_20250705-2350.pdf',
-  fileType: 'application/pdf',
-  fileSize: 579577,
-  documentType: 'receipt',
-  vendorName: 'タイムズ',
-  totalAmount: 800,
-  taxAmount: 0,
-  documentDate: 2025-05-25T00:00:00.000Z,
-  issue_date: 2025-05-25T00:00:00.000Z,
-  receipt_date: '2025-05-25',
-  category: '旅費交通費',
-  subcategory: null,
-  extractedText: '{\n' +
-    '  "merchantName": "タイムズ",\n' +
-    '  "merchantPhoneNumber": "TEL:0120-70-8924\\n4010001137272",\n' +
-    '  "transactionDate": "2025年 5月25日",\n' +
-    '  "transactionTime": "13:53",\n' +
-    '  "total": 800,\n' +
-    '  "items": [],\n' +
-    '  "customFields": {\n' +
-    '    "MerchantPhoneNumber": "TEL:0120-70-8924\\n4010001137272",\n' +
-    '    "TransactionTime": "13:53"\n' +
-    '  }\n' +
-    '}',
-  confidence: 0.995,
-  ocrStatus: 'completed',
-  ocrResultId: '686de42824009ad5c5b1391f',
-  gridfsFileId: '686de42824009ad5c5b1391b',
-  status: 'pending',
-  createdAt: 2025-07-09T03:38:16.918Z,
-  updatedAt: 2025-07-09T03:38:16.918Z
+[2025-07-30T09:27:55.942Z] [DEBUG] 🔍 Contact info check (regex): {
+  phone: undefined,
+  fax: undefined,
+  email: undefined,
+  website: 'https://abposter.jp/basic/tokusho.html'
 }
-Formatted documents: 1
-First formatted document: {
-  id: '686de42824009ad5c5b13920',
-  company_id: '11111111-1111-1111-1111-111111111111',
-  document_type: 'receipt',
-  document_number: 'DOC-c5b13920',
-  status: 'pending',
-  issue_date: 2025-05-25T00:00:00.000Z,
-  partner_name: 'タイムズ',
-  partner_address: '',
-  total_amount: 800,
-  tax_amount: 0,
-  subtotal: 800,
-  notes: '',
-  created_at: 2025-07-09T03:38:16.918Z,
-  updated_at: 2025-07-09T03:38:16.918Z,
-  file_name: 'スキャン_20250705-2350.pdf',
-  file_type: 'application/pdf',
-  file_size: 579577,
-  vendor_name: 'タイムズ',
-  receipt_date: 2025-05-25T00:00:00.000Z,
-  category: '旅費交通費',
-  extracted_text: '{\n' +
-    '  "merchantName": "タイムズ",\n' +
-    '  "merchantPhoneNumber": "TEL:0120-70-8924\\n4010001137272",\n' +
-    '  "transactionDate": "2025年 5月25日",\n' +
-    '  "transactionTime": "13:53",\n' +
-    '  "total": 800,\n' +
-    '  "items": [],\n' +
-    '  "customFields": {\n' +
-    '    "MerchantPhoneNumber": "TEL:0120-70-8924\\n4010001137272",\n' +
-    '    "TransactionTime": "13:53"\n' +
-    '  }\n' +
-    '}',
-  confidence: 0.995,
-  ocr_status: 'completed',
-  ocr_result_id: '686de42824009ad5c5b1391f',
-  gridfs_file_id: '686de42824009ad5c5b1391b',
-  journalId: undefined
+ POST /api/extract-company-info 200 in 431ms
+[2025-07-30T09:28:07.638Z] [INFO] Extracting company info from URL: https://abposter.jp/basic/tokusho.html
+[2025-07-30T09:28:07.690Z] [DEBUG] HTML fetched successfully, length: 42637
+[2025-07-30T09:28:07.690Z] [ERROR] AI extraction failed, falling back to regex parsing: {
+  error: `Message with role "undefined" must have either a 'content' property (string or array) or a 'parts' property (array) that is not empty, null, or undefined. Received message: {\n` +
+    '  "messages": [\n' +
+    '    {\n' +
+    '      "role": "user",\n' +
+    `      "content": "以下のHTMLから会社情報を正確に抽出してJSON形式で返してください。\\n\\nHTMLコンテンツ:\\n<!DOCTYPE html>\\n<html lang=\\"ja\\">\\n<head>\\n\\t<meta charset=\\"UTF-8\\">\\n\\t<!-- Google Tag Manager -->\\n<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':\\n\\tnew Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],\\n\\tj=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=\\n\\t'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);\\n\\t})(window,document,'script','dataLayer','GTM-NWVRFH67');</script>\\n\\t<!-- End Google Tag Manager -->\\n\\t<!-- Google Tag Manager -->\\n<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':\\nnew Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],\\nj=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=\\n'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);\\n})(window,document,'script','dataLayer','GTM-NK864D6K');</script>\\n    <!-- End Google Tag Manager -->\\n\\n\\t<!--GMO Google Tag Manager -->\\n    \\n    <!-- Yahoo Ad -->\\n<script async src=\\"https://s.yimg.jp/images/listing/tool/cv/ytag.js\\"></script>\\n<script>\\nwindow.yjDataLayer = window.yjDataLayer || [];\\nfunction ytag() { yjDataLayer.push(arguments); }\\nytag({\\"type\\":\\"ycl_cookie\\", \\"config\\":{\\"ycl_use_non_cookie_storage\\":true}});\\n</script>\\n    <!-- End Yahoo Ad -->\\n    \\n    <!-- Yahoo Ad -->\\n<script async src=\\"https://s.yimg.jp/images/listing/tool/cv/ytag.js\\"></script>\\n<script>\\nwindow.yjDataLayer = window.yjDataLayer || [];\\nfunction ytag() { yjDataLayer.push(arguments); }\\n</script>\\n    <!-- End Yahoo Ad -->\\n\\t<title>特定商取引法│ポスター印刷のABポスター</title>\\n\\t<meta name=\\"description\\" content=\\"ポスター印刷専門店のABポスターは、「当日印刷」、「当日発送」で、「ポスター印刷」と「タペストリー」最新鋭の印刷設備と技術で印刷いたします。16時まで当日発送のポスター印刷をご検討の際にはまず弊社にお声がけください。\\">\\n\\t<meta name=\\"keywords\\" content=\\"ポスター印刷,ポスター当日,ポスター作成,ポスター当日発送\\">\\n\\t<meta name=\\"viewport\\" content=\\"width=device-width,initial-scale=1\\">\\n\\t<!--※カートから直前のページに戻る※-->\\n\\t<meta name=\\"referrer\\" content=\\"no-referrer-when-downgrade\\">\\n\\t\\n\\t<link rel=\\"canonical\\" href=\\"https://abposter.jp/basic/kiyaku.html\\">\\n\\t<link rel=\\"stylesheet\\" href=\\"../css/poster_style.css\\" type=\\"text/css\\" media=\\"screen\\" />\\n\\t<link rel=\\"stylesheet\\" type=\\"text/css\\" href=\\"../css/tsuiki.min.css\\">\\n\\t<link rel=\\"stylesheet\\" type=\\"text/css\\" href=\\"../css/style.min2402230216.css\\">\\n\\t<link rel=\\"stylesheet\\" type=\\"text/css\\" href=\\"../css/style-hd.css?210608\\">\\n\\t<link rel=\\"stylesheet\\" type=\\"text/css\\" href=\\"../css/h2h3.css\\">\\n\\t<link rel=\\"stylesheet\\" type=\\"text/css\\" href=\\"../css/accordion.css\\">\\n\\t<link rel=\\"stylesheet\\" type=\\"text/css\\" href=\\"../css/p_index.css\\">\\n\\t<link rel=\\"stylesheet\\" type=\\"text/css\\" href=\\"../css/sidebanner240308.css\\">\\n\\t<link rel=\\"stylesheet\\" type=\\"text/css\\" href=\\"../css/contents.css\\">\\n\\t<link rel=\\"stylesheet\\" type=\\"text/css\\" href=\\"../css/test_print.css?ver1.6\\">\\n\\t<link rel=\\"stylesheet\\" href=\\"../css/ppbtn.css\\">\\n\\t\\n\\t<script src=\\"https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js\\"></script>\\n\\t<script type=\\"text/javascript\\" src=\\"../js/img-switch.js\\"></script>\\n\\t<script src=\\"../js/iscroll.js\\"></script>\\n\\t<script src=\\"../js/drawer.min.js\\"></script>\\n\\t<script src=\\"../js/jquery.flexslider-min.js\\"></script>\\n\\t<script src=\\"https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js\\"></script>\\n\\t<script src=\\"../js/setting.js\\"></script>\\n\\n<!-- Yahoo Tag -->\\n<script async src=\\"https://s.yimg.jp/images/listing/tool/cv/ytag.js\\"></script>\\n<script>\\nwindow.yjDataLayer = window.yjDataLayer || [];\\nfunction ytag() { yjDataLayer.push(arguments); }\\nytag({\\"type\\":\\"ycl_cookie\\", \\"config\\":{\\"ycl_use_non_cookie_storage\\":true}});\\n</script>\\n\\n<script async src=\\"https://s.yimg.jp/images/listing/tool/cv/ytag.js\\"></script>\\n<script>\\nwindow.yjDataLayer = window.yjDataLayer || [];\\nfunction ytag() { yjDataLayer.push(arguments); }\\nytag({\\"type\\":\\"ycl_cookie\\", \\"config\\":{\\"ycl_use_non_cookie_storage\\":true}});\\n</script>\\n<!-- End Yahoo Tag -->\\n\\n<style>\\n  .pc { display: block !important; }\\n  .sp { display: none !important; }\\n\\n  @media only screen and (max-width: 600px) {\\n  .pc { display: none !important; }\\n  .sp { display: block !important; }\\n}\\n</style>\\n\\n\\t<!--※※affiliate TAG※※-->\\n\\t<script src=\\"https://r.moshimo.com/af/r/maftag.js\\"></script>\\n</head>\\n\\n<body class=\\"drawer drawer--right drawer-responsive\\">\\n<!-- Google Tag Manager (noscript) -->\\n<noscript><iframe src=\\"https://www.googletagmanager.com/ns.html?id=GTM-NK864D6K\\"\\nheight=\\"0\\" width=\\"0\\" style=\\"display:none;visibility:hidden\\"></iframe></noscript>\\n<!-- End Google Tag Manager (noscript) -->\\n\\n<div class=\\"htop\\"><a href=\\"https://abposter.jp/\\"><h1 style=\\"display:inline\\">特定商取引法</h1></a>│ポスター印刷のABポスター</div>\\n\\n<!-- ハンバーガーボタン -->\\n<button type=\\"button\\" class=\\"drawer-toggle drawer-hamburger\\">\\n  <span class=\\"sr-only\\">toggle navigation</span>\\n  <span class=\\"drawer-hamburger-icon\\"></span>\\n    <span class=\\"dw-menu\\">MENU</span>\\n  </button>\\n \\n<!-- ナビゲーションの中身 -->\\n    <nav class=\\"drawer-nav\\" role=\\"navigation\\">\\n      <ul class=\\"drawer-menu\\">\\n        <li><a class=\\"drawer-brand\\" href=\\"https://abposter.jp/\\">HOME</a></li>\\n        <li><a class=\\"drawer-menu-item\\" href=\\"https://store.abposter.jp/CART/login.php\\" target=\\"_blank\\">ログイン</a></li>\\n        <li><a class=\\"drawer-menu-item\\" href=\\"https://store.abposter.jp/CART/newmem.php\\" target=\\"_blank\\">会員登録</a></li>\\n        <li><a class=\\"drawer-menu-item\\" href=\\"https://store.abposter.jp/CART/cart.php\\" target=\\"_blank\\">カートを見る</a></li>\\n        <li><a class=\\"drawer-menu-item\\" href=\\"https://abposter.jp/toiawase/toiawase.html\\">お問合せ</a></li>\\n        <li><a class=\\"drawer-menu-item\\" href=\\"https://abposter.jp/mitsumori/mitsumori.html\\">お見積り</a></li>\\n\\n  \\t<!-- ポスター印刷  -->\\n        <li class=\\"drawer-dropdown\\">\\n    \\t  <a class=\\"drawer-menu-item\\" href=\\"#\\" data-toggle=\\"dropdown\\">ポスター印刷<span class=\\"drawer-caret\\"></span></a>\\n          <ul class=\\"drawer-dropdown-menu\\">\\n            <li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/\\">ポスター印刷用紙一覧</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/mat.html\\">厚手マットコート紙</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/gloss.html\\">厚手光沢紙</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/h_gloss.html\\">厚手半光沢紙</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/yupo.html\\">合成紙</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/p_yupo.html\\">合成紙糊付き</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/photo.html\\">フォト光沢紙</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/photo_p.html\\">フォトパール半光沢紙</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/film.html\\">電飾用バックライトフィルム</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/tarpo.html\\">屋内用ターポリン</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/cloth.html\\">防炎クロス</a></li>\\n          </ul>\\n        </li>\\n\\n    \\t<!-- 大判印刷 -->\\n\\t\\t\\t<li class=\\"drawer-dropdown\\">\\n\\t\\t\\t\\t<a class=\\"drawer-menu-item\\" href=\\"#\\" data-toggle=\\"dropdown\\">大判印刷<span class=\\"icon_accordion-1\\"></span><span class=\\"icon_accordion-2\\"></span></a>\\n\\t\\t\\t\\t<ul class=\\"drawer-dropdown-menu\\">\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/page/wide\\">大判印刷用紙一覧</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_gloss.html\\">光沢フォトペーパー</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_parl.html\\">フォトパールペーパー</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_yupo.html\\">厚手ハイグレード合成紙</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_tarpo.html\\">ハイグレード防炎ターポリン</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_mesh.html\\">メッシュターポリン</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_blfilm.html\\">バックライトフィルム糊付き</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_mat.html\\">厚手マットコート紙</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_enbil_s.html\\">短期用塩ビ＋ラミネート</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_enbil_m.html\\">中期用塩ビ＋ラミネート</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_enbil_l.html\\">長期用塩ビ＋ラミネート</a></li>\\n\\t\\t\\t\\t</ul>\\n\\t\\t\\t</li>\\n\\n    \\t<!-- 学会ポスター印刷 -->\\n        <li class=\\"drawer-dropdown\\">\\n    \\t  <a class=\\"drawer-menu-item\\" href=\\"#\\" data-toggle=\\"dropdown\\">学会ポスター印刷<span class=\\"drawer-caret\\"></span></a>\\n          <ul class=\\"drawer-dropdown-menu\\">\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/society/g_mat.html\\">厚手マットコート紙</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/society/g_gloss.html\\">厚手光沢紙</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/society/g_hgloss.html\\">厚手半光沢紙</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/society/g_photo.html\\">フォト光沢紙</a></li>\\`... 2592 more characters,
+  stack: `Error: Message with role "undefined" must have either a 'content' property (string or array) or a 'parts' property (array) that is not empty, null, or undefined. Received message: {\n` +
+    '  "messages": [\n' +
+    '    {\n' +
+    '      "role": "user",\n' +
+    `      "content": "以下のHTMLから会社情報を正確に抽出してJSON形式で返してください。\\n\\nHTMLコンテンツ:\\n<!DOCTYPE html>\\n<html lang=\\"ja\\">\\n<head>\\n\\t<meta charset=\\"UTF-8\\">\\n\\t<!-- Google Tag Manager -->\\n<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':\\n\\tnew Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],\\n\\tj=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=\\n\\t'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);\\n\\t})(window,document,'script','dataLayer','GTM-NWVRFH67');</script>\\n\\t<!-- End Google Tag Manager -->\\n\\t<!-- Google Tag Manager -->\\n<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':\\nnew Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],\\nj=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=\\n'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);\\n})(window,document,'script','dataLayer','GTM-NK864D6K');</script>\\n    <!-- End Google Tag Manager -->\\n\\n\\t<!--GMO Google Tag Manager -->\\n    \\n    <!-- Yahoo Ad -->\\n<script async src=\\"https://s.yimg.jp/images/listing/tool/cv/ytag.js\\"></script>\\n<script>\\nwindow.yjDataLayer = window.yjDataLayer || [];\\nfunction ytag() { yjDataLayer.push(arguments); }\\nytag({\\"type\\":\\"ycl_cookie\\", \\"config\\":{\\"ycl_use_non_cookie_storage\\":true}});\\n</script>\\n    <!-- End Yahoo Ad -->\\n    \\n    <!-- Yahoo Ad -->\\n<script async src=\\"https://s.yimg.jp/images/listing/tool/cv/ytag.js\\"></script>\\n<script>\\nwindow.yjDataLayer = window.yjDataLayer || [];\\nfunction ytag() { yjDataLayer.push(arguments); }\\n</script>\\n    <!-- End Yahoo Ad -->\\n\\t<title>特定商取引法│ポスター印刷のABポスター</title>\\n\\t<meta name=\\"description\\" content=\\"ポスター印刷専門店のABポスターは、「当日印刷」、「当日発送」で、「ポスター印刷」と「タペストリー」最新鋭の印刷設備と技術で印刷いたします。16時まで当日発送のポスター印刷をご検討の際にはまず弊社にお声がけください。\\">\\n\\t<meta name=\\"keywords\\" content=\\"ポスター印刷,ポスター当日,ポスター作成,ポスター当日発送\\">\\n\\t<meta name=\\"viewport\\" content=\\"width=device-width,initial-scale=1\\">\\n\\t<!--※カートから直前のページに戻る※-->\\n\\t<meta name=\\"referrer\\" content=\\"no-referrer-when-downgrade\\">\\n\\t\\n\\t<link rel=\\"canonical\\" href=\\"https://abposter.jp/basic/kiyaku.html\\">\\n\\t<link rel=\\"stylesheet\\" href=\\"../css/poster_style.css\\" type=\\"text/css\\" media=\\"screen\\" />\\n\\t<link rel=\\"stylesheet\\" type=\\"text/css\\" href=\\"../css/tsuiki.min.css\\">\\n\\t<link rel=\\"stylesheet\\" type=\\"text/css\\" href=\\"../css/style.min2402230216.css\\">\\n\\t<link rel=\\"stylesheet\\" type=\\"text/css\\" href=\\"../css/style-hd.css?210608\\">\\n\\t<link rel=\\"stylesheet\\" type=\\"text/css\\" href=\\"../css/h2h3.css\\">\\n\\t<link rel=\\"stylesheet\\" type=\\"text/css\\" href=\\"../css/accordion.css\\">\\n\\t<link rel=\\"stylesheet\\" type=\\"text/css\\" href=\\"../css/p_index.css\\">\\n\\t<link rel=\\"stylesheet\\" type=\\"text/css\\" href=\\"../css/sidebanner240308.css\\">\\n\\t<link rel=\\"stylesheet\\" type=\\"text/css\\" href=\\"../css/contents.css\\">\\n\\t<link rel=\\"stylesheet\\" type=\\"text/css\\" href=\\"../css/test_print.css?ver1.6\\">\\n\\t<link rel=\\"stylesheet\\" href=\\"../css/ppbtn.css\\">\\n\\t\\n\\t<script src=\\"https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js\\"></script>\\n\\t<script type=\\"text/javascript\\" src=\\"../js/img-switch.js\\"></script>\\n\\t<script src=\\"../js/iscroll.js\\"></script>\\n\\t<script src=\\"../js/drawer.min.js\\"></script>\\n\\t<script src=\\"../js/jquery.flexslider-min.js\\"></script>\\n\\t<script src=\\"https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js\\"></script>\\n\\t<script src=\\"../js/setting.js\\"></script>\\n\\n<!-- Yahoo Tag -->\\n<script async src=\\"https://s.yimg.jp/images/listing/tool/cv/ytag.js\\"></script>\\n<script>\\nwindow.yjDataLayer = window.yjDataLayer || [];\\nfunction ytag() { yjDataLayer.push(arguments); }\\nytag({\\"type\\":\\"ycl_cookie\\", \\"config\\":{\\"ycl_use_non_cookie_storage\\":true}});\\n</script>\\n\\n<script async src=\\"https://s.yimg.jp/images/listing/tool/cv/ytag.js\\"></script>\\n<script>\\nwindow.yjDataLayer = window.yjDataLayer || [];\\nfunction ytag() { yjDataLayer.push(arguments); }\\nytag({\\"type\\":\\"ycl_cookie\\", \\"config\\":{\\"ycl_use_non_cookie_storage\\":true}});\\n</script>\\n<!-- End Yahoo Tag -->\\n\\n<style>\\n  .pc { display: block !important; }\\n  .sp { display: none !important; }\\n\\n  @media only screen and (max-width: 600px) {\\n  .pc { display: none !important; }\\n  .sp { display: block !important; }\\n}\\n</style>\\n\\n\\t<!--※※affiliate TAG※※-->\\n\\t<script src=\\"https://r.moshimo.com/af/r/maftag.js\\"></script>\\n</head>\\n\\n<body class=\\"drawer drawer--right drawer-responsive\\">\\n<!-- Google Tag Manager (noscript) -->\\n<noscript><iframe src=\\"https://www.googletagmanager.com/ns.html?id=GTM-NK864D6K\\"\\nheight=\\"0\\" width=\\"0\\" style=\\"display:none;visibility:hidden\\"></iframe></noscript>\\n<!-- End Google Tag Manager (noscript) -->\\n\\n<div class=\\"htop\\"><a href=\\"https://abposter.jp/\\"><h1 style=\\"display:inline\\">特定商取引法</h1></a>│ポスター印刷のABポスター</div>\\n\\n<!-- ハンバーガーボタン -->\\n<button type=\\"button\\" class=\\"drawer-toggle drawer-hamburger\\">\\n  <span class=\\"sr-only\\">toggle navigation</span>\\n  <span class=\\"drawer-hamburger-icon\\"></span>\\n    <span class=\\"dw-menu\\">MENU</span>\\n  </button>\\n \\n<!-- ナビゲーションの中身 -->\\n    <nav class=\\"drawer-nav\\" role=\\"navigation\\">\\n      <ul class=\\"drawer-menu\\">\\n        <li><a class=\\"drawer-brand\\" href=\\"https://abposter.jp/\\">HOME</a></li>\\n        <li><a class=\\"drawer-menu-item\\" href=\\"https://store.abposter.jp/CART/login.php\\" target=\\"_blank\\">ログイン</a></li>\\n        <li><a class=\\"drawer-menu-item\\" href=\\"https://store.abposter.jp/CART/newmem.php\\" target=\\"_blank\\">会員登録</a></li>\\n        <li><a class=\\"drawer-menu-item\\" href=\\"https://store.abposter.jp/CART/cart.php\\" target=\\"_blank\\">カートを見る</a></li>\\n        <li><a class=\\"drawer-menu-item\\" href=\\"https://abposter.jp/toiawase/toiawase.html\\">お問合せ</a></li>\\n        <li><a class=\\"drawer-menu-item\\" href=\\"https://abposter.jp/mitsumori/mitsumori.html\\">お見積り</a></li>\\n\\n  \\t<!-- ポスター印刷  -->\\n        <li class=\\"drawer-dropdown\\">\\n    \\t  <a class=\\"drawer-menu-item\\" href=\\"#\\" data-toggle=\\"dropdown\\">ポスター印刷<span class=\\"drawer-caret\\"></span></a>\\n          <ul class=\\"drawer-dropdown-menu\\">\\n            <li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/\\">ポスター印刷用紙一覧</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/mat.html\\">厚手マットコート紙</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/gloss.html\\">厚手光沢紙</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/h_gloss.html\\">厚手半光沢紙</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/yupo.html\\">合成紙</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/p_yupo.html\\">合成紙糊付き</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/photo.html\\">フォト光沢紙</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/photo_p.html\\">フォトパール半光沢紙</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/film.html\\">電飾用バックライトフィルム</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/tarpo.html\\">屋内用ターポリン</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/cloth.html\\">防炎クロス</a></li>\\n          </ul>\\n        </li>\\n\\n    \\t<!-- 大判印刷 -->\\n\\t\\t\\t<li class=\\"drawer-dropdown\\">\\n\\t\\t\\t\\t<a class=\\"drawer-menu-item\\" href=\\"#\\" data-toggle=\\"dropdown\\">大判印刷<span class=\\"icon_accordion-1\\"></span><span class=\\"icon_accordion-2\\"></span></a>\\n\\t\\t\\t\\t<ul class=\\"drawer-dropdown-menu\\">\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/page/wide\\">大判印刷用紙一覧</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_gloss.html\\">光沢フォトペーパー</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_parl.html\\">フォトパールペーパー</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_yupo.html\\">厚手ハイグレード合成紙</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_tarpo.html\\">ハイグレード防炎ターポリン</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_mesh.html\\">メッシュターポリン</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_blfilm.html\\">バックライトフィルム糊付き</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_mat.html\\">厚手マットコート紙</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_enbil_s.html\\">短期用塩ビ＋ラミネート</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_enbil_m.html\\">中期用塩ビ＋ラミネート</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_enbil_l.html\\">長期用塩ビ＋ラミネート</a></li>\\n\\t\\t\\t\\t</ul>\\n\\t\\t\\t</li>\\n\\n    \\t<!-- 学会ポスター印刷 -->\\n        <li class=\\"drawer-dropdown\\">\\n    \\t  <a class=\\"drawer-menu-item\\" href=\\"#\\" data-toggle=\\"dropdown\\">学会ポスター印刷<span class=\\"drawer-caret\\"></span></a>\\n          <ul class=\\"drawer-dropdown-menu\\">\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/society/g_mat.html\\">厚手マットコート紙</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/society/g_gloss.html\\">厚手光沢紙</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/society/g_hgloss.html\\">厚手半光沢紙</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/society/g_photo.html\\">フォト光沢紙</a`... 6466 more characters,
+  url: 'https://abposter.jp/basic/tokusho.html'
 }
-Reusing cached MongoDB connection
-Documents list API - MongoDB URI exists: true
-Reusing cached MongoDB connection
-Raw documents from database: 1
-First document raw data: {
-  _id: new ObjectId('686de42824009ad5c5b13920'),
-  companyId: '11111111-1111-1111-1111-111111111111',
-  fileName: 'スキャン_20250705-2350.pdf',
-  fileType: 'application/pdf',
-  fileSize: 579577,
-  documentType: 'receipt',
-  vendorName: 'タイムズ',
-  totalAmount: 800,
-  taxAmount: 0,
-  documentDate: 2025-05-25T00:00:00.000Z,
-  issue_date: 2025-05-25T00:00:00.000Z,
-  receipt_date: '2025-05-25',
-  category: '旅費交通費',
-  subcategory: null,
-  extractedText: '{\n' +
-    '  "merchantName": "タイムズ",\n' +
-    '  "merchantPhoneNumber": "TEL:0120-70-8924\\n4010001137272",\n' +
-    '  "transactionDate": "2025年 5月25日",\n' +
-    '  "transactionTime": "13:53",\n' +
-    '  "total": 800,\n' +
-    '  "items": [],\n' +
-    '  "customFields": {\n' +
-    '    "MerchantPhoneNumber": "TEL:0120-70-8924\\n4010001137272",\n' +
-    '    "TransactionTime": "13:53"\n' +
-    '  }\n' +
-    '}',
-  confidence: 0.995,
-  ocrStatus: 'completed',
-  ocrResultId: '686de42824009ad5c5b1391f',
-  gridfsFileId: '686de42824009ad5c5b1391b',
-  status: 'pending',
-  createdAt: 2025-07-09T03:38:16.918Z,
-  updatedAt: 2025-07-09T03:38:16.918Z
+[2025-07-30T09:28:07.691Z] [INFO] Company info extracted via regex fallback: {
+  companyName: '特定商取引法│ポスター印刷のABポスター',
+  companyNameKana: '特定商取引法│ポスター印刷ノエービーポスター',
+  address: '2402230216.css">',
+  postalCode: '240-2230',
+  website: 'https://abposter.jp/basic/tokusho.html'
 }
-Formatted documents: 1
-First formatted document: {
-  id: '686de42824009ad5c5b13920',
-  company_id: '11111111-1111-1111-1111-111111111111',
-  document_type: 'receipt',
-  document_number: 'DOC-c5b13920',
-  status: 'pending',
-  issue_date: 2025-05-25T00:00:00.000Z,
-  partner_name: 'タイムズ',
-  partner_address: '',
-  total_amount: 800,
-  tax_amount: 0,
-  subtotal: 800,
-  notes: '',
-  created_at: 2025-07-09T03:38:16.918Z,
-  updated_at: 2025-07-09T03:38:16.918Z,
-  file_name: 'スキャン_20250705-2350.pdf',
-  file_type: 'application/pdf',
-  file_size: 579577,
-  vendor_name: 'タイムズ',
-  receipt_date: 2025-05-25T00:00:00.000Z,
-  category: '旅費交通費',
-  extracted_text: '{\n' +
-    '  "merchantName": "タイムズ",\n' +
-    '  "merchantPhoneNumber": "TEL:0120-70-8924\\n4010001137272",\n' +
-    '  "transactionDate": "2025年 5月25日",\n' +
-    '  "transactionTime": "13:53",\n' +
-    '  "total": 800,\n' +
-    '  "items": [],\n' +
-    '  "customFields": {\n' +
-    '    "MerchantPhoneNumber": "TEL:0120-70-8924\\n4010001137272",\n' +
-    '    "TransactionTime": "13:53"\n' +
-    '  }\n' +
-    '}',
-  confidence: 0.995,
-  ocr_status: 'completed',
-  ocr_result_id: '686de42824009ad5c5b1391f',
-  gridfs_file_id: '686de42824009ad5c5b1391b',
-  journalId: undefined
+[2025-07-30T09:28:07.691Z] [DEBUG] 🔍 Contact info check (regex): {
+  phone: undefined,
+  fax: undefined,
+  email: undefined,
+  website: 'https://abposter.jp/basic/tokusho.html'
 }
-Reusing cached MongoDB connection
- ✓ Compiled /not-found in 151ms (714 modules)
- ✓ Compiled in 110ms (339 modules)
- ✓ Compiled /not-found in 56ms (688 modules)
- ✓ Compiled /_error in 377ms (851 modules)
- ⨯ Error: Cannot find module './1638.js'
-Require stack:
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/pages/_document.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/utils.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-middleware.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-reloader-webpack.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js
-    at Function.<anonymous> (node:internal/modules/cjs/loader:1405:15)
-    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require-hook.js:55:36
-    at defaultResolveImpl (node:internal/modules/cjs/loader:1061:19)
-    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1066:22)
-    at Function._load (node:internal/modules/cjs/loader:1215:37)
-    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
-    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
-    at Module.<anonymous> (node:internal/modules/cjs/loader:1491:12)
-    at mod.require (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require-hook.js:65:28)
-    at require (node:internal/modules/helpers:135:16)
-    at __webpack_require__.f.require (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:198:28)
-    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:111:40
-    at Array.reduce (<anonymous>)
-    at __webpack_require__.e (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:110:67)
-    at Array.map (<anonymous>)
-    at __webpack_require__.X (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:162:22)
-    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/app/documents/page.js:18:5340
-    at Object.<anonymous> (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/app/documents/page.js:18:5393)
-    at Module._compile (node:internal/modules/cjs/loader:1734:14)
-    at Object..js (node:internal/modules/cjs/loader:1899:10)
-    at Module.load (node:internal/modules/cjs/loader:1469:32)
-    at Function._load (node:internal/modules/cjs/loader:1286:12)
-    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
-    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
-    at Module.<anonymous> (node:internal/modules/cjs/loader:1491:12)
-    at mod.require (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require-hook.js:65:28)
-    at require (node:internal/modules/helpers:135:16)
-    at requirePage (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js:109:84)
-    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js:74:84
-    at async loadComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js:74:26)
-    at async DevServer.findPageComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:675:36) {
-  code: 'MODULE_NOT_FOUND',
-  requireStack: [
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/pages/_document.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/utils.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-middleware.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-reloader-webpack.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js'
-  ],
-  page: '/documents'
+ POST /api/extract-company-info 200 in 61ms
+[2025-07-30T09:29:22.131Z] [INFO] Extracting company info from URL: https://abposter.jp/basic/tokusho.html
+[2025-07-30T09:29:22.190Z] [DEBUG] HTML fetched successfully, length: 42637
+[2025-07-30T09:29:22.191Z] [ERROR] AI extraction failed, falling back to regex parsing: {
+  error: `Message with role "undefined" must have either a 'content' property (string or array) or a 'parts' property (array) that is not empty, null, or undefined. Received message: {\n` +
+    '  "messages": [\n' +
+    '    {\n' +
+    '      "role": "user",\n' +
+    `      "content": "以下のHTMLから会社情報を正確に抽出してJSON形式で返してください。\\n\\nHTMLコンテンツ:\\n<!DOCTYPE html>\\n<html lang=\\"ja\\">\\n<head>\\n\\t<meta charset=\\"UTF-8\\">\\n\\t<!-- Google Tag Manager -->\\n<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':\\n\\tnew Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],\\n\\tj=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=\\n\\t'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);\\n\\t})(window,document,'script','dataLayer','GTM-NWVRFH67');</script>\\n\\t<!-- End Google Tag Manager -->\\n\\t<!-- Google Tag Manager -->\\n<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':\\nnew Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],\\nj=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=\\n'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);\\n})(window,document,'script','dataLayer','GTM-NK864D6K');</script>\\n    <!-- End Google Tag Manager -->\\n\\n\\t<!--GMO Google Tag Manager -->\\n    \\n    <!-- Yahoo Ad -->\\n<script async src=\\"https://s.yimg.jp/images/listing/tool/cv/ytag.js\\"></script>\\n<script>\\nwindow.yjDataLayer = window.yjDataLayer || [];\\nfunction ytag() { yjDataLayer.push(arguments); }\\nytag({\\"type\\":\\"ycl_cookie\\", \\"config\\":{\\"ycl_use_non_cookie_storage\\":true}});\\n</script>\\n    <!-- End Yahoo Ad -->\\n    \\n    <!-- Yahoo Ad -->\\n<script async src=\\"https://s.yimg.jp/images/listing/tool/cv/ytag.js\\"></script>\\n<script>\\nwindow.yjDataLayer = window.yjDataLayer || [];\\nfunction ytag() { yjDataLayer.push(arguments); }\\n</script>\\n    <!-- End Yahoo Ad -->\\n\\t<title>特定商取引法│ポスター印刷のABポスター</title>\\n\\t<meta name=\\"description\\" content=\\"ポスター印刷専門店のABポスターは、「当日印刷」、「当日発送」で、「ポスター印刷」と「タペストリー」最新鋭の印刷設備と技術で印刷いたします。16時まで当日発送のポスター印刷をご検討の際にはまず弊社にお声がけください。\\">\\n\\t<meta name=\\"keywords\\" content=\\"ポスター印刷,ポスター当日,ポスター作成,ポスター当日発送\\">\\n\\t<meta name=\\"viewport\\" content=\\"width=device-width,initial-scale=1\\">\\n\\t<!--※カートから直前のページに戻る※-->\\n\\t<meta name=\\"referrer\\" content=\\"no-referrer-when-downgrade\\">\\n\\t\\n\\t<link rel=\\"canonical\\" href=\\"https://abposter.jp/basic/kiyaku.html\\">\\n\\t<link rel=\\"stylesheet\\" href=\\"../css/poster_style.css\\" type=\\"text/css\\" media=\\"screen\\" />\\n\\t<link rel=\\"stylesheet\\" type=\\"text/css\\" href=\\"../css/tsuiki.min.css\\">\\n\\t<link rel=\\"stylesheet\\" type=\\"text/css\\" href=\\"../css/style.min2402230216.css\\">\\n\\t<link rel=\\"stylesheet\\" type=\\"text/css\\" href=\\"../css/style-hd.css?210608\\">\\n\\t<link rel=\\"stylesheet\\" type=\\"text/css\\" href=\\"../css/h2h3.css\\">\\n\\t<link rel=\\"stylesheet\\" type=\\"text/css\\" href=\\"../css/accordion.css\\">\\n\\t<link rel=\\"stylesheet\\" type=\\"text/css\\" href=\\"../css/p_index.css\\">\\n\\t<link rel=\\"stylesheet\\" type=\\"text/css\\" href=\\"../css/sidebanner240308.css\\">\\n\\t<link rel=\\"stylesheet\\" type=\\"text/css\\" href=\\"../css/contents.css\\">\\n\\t<link rel=\\"stylesheet\\" type=\\"text/css\\" href=\\"../css/test_print.css?ver1.6\\">\\n\\t<link rel=\\"stylesheet\\" href=\\"../css/ppbtn.css\\">\\n\\t\\n\\t<script src=\\"https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js\\"></script>\\n\\t<script type=\\"text/javascript\\" src=\\"../js/img-switch.js\\"></script>\\n\\t<script src=\\"../js/iscroll.js\\"></script>\\n\\t<script src=\\"../js/drawer.min.js\\"></script>\\n\\t<script src=\\"../js/jquery.flexslider-min.js\\"></script>\\n\\t<script src=\\"https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js\\"></script>\\n\\t<script src=\\"../js/setting.js\\"></script>\\n\\n<!-- Yahoo Tag -->\\n<script async src=\\"https://s.yimg.jp/images/listing/tool/cv/ytag.js\\"></script>\\n<script>\\nwindow.yjDataLayer = window.yjDataLayer || [];\\nfunction ytag() { yjDataLayer.push(arguments); }\\nytag({\\"type\\":\\"ycl_cookie\\", \\"config\\":{\\"ycl_use_non_cookie_storage\\":true}});\\n</script>\\n\\n<script async src=\\"https://s.yimg.jp/images/listing/tool/cv/ytag.js\\"></script>\\n<script>\\nwindow.yjDataLayer = window.yjDataLayer || [];\\nfunction ytag() { yjDataLayer.push(arguments); }\\nytag({\\"type\\":\\"ycl_cookie\\", \\"config\\":{\\"ycl_use_non_cookie_storage\\":true}});\\n</script>\\n<!-- End Yahoo Tag -->\\n\\n<style>\\n  .pc { display: block !important; }\\n  .sp { display: none !important; }\\n\\n  @media only screen and (max-width: 600px) {\\n  .pc { display: none !important; }\\n  .sp { display: block !important; }\\n}\\n</style>\\n\\n\\t<!--※※affiliate TAG※※-->\\n\\t<script src=\\"https://r.moshimo.com/af/r/maftag.js\\"></script>\\n</head>\\n\\n<body class=\\"drawer drawer--right drawer-responsive\\">\\n<!-- Google Tag Manager (noscript) -->\\n<noscript><iframe src=\\"https://www.googletagmanager.com/ns.html?id=GTM-NK864D6K\\"\\nheight=\\"0\\" width=\\"0\\" style=\\"display:none;visibility:hidden\\"></iframe></noscript>\\n<!-- End Google Tag Manager (noscript) -->\\n\\n<div class=\\"htop\\"><a href=\\"https://abposter.jp/\\"><h1 style=\\"display:inline\\">特定商取引法</h1></a>│ポスター印刷のABポスター</div>\\n\\n<!-- ハンバーガーボタン -->\\n<button type=\\"button\\" class=\\"drawer-toggle drawer-hamburger\\">\\n  <span class=\\"sr-only\\">toggle navigation</span>\\n  <span class=\\"drawer-hamburger-icon\\"></span>\\n    <span class=\\"dw-menu\\">MENU</span>\\n  </button>\\n \\n<!-- ナビゲーションの中身 -->\\n    <nav class=\\"drawer-nav\\" role=\\"navigation\\">\\n      <ul class=\\"drawer-menu\\">\\n        <li><a class=\\"drawer-brand\\" href=\\"https://abposter.jp/\\">HOME</a></li>\\n        <li><a class=\\"drawer-menu-item\\" href=\\"https://store.abposter.jp/CART/login.php\\" target=\\"_blank\\">ログイン</a></li>\\n        <li><a class=\\"drawer-menu-item\\" href=\\"https://store.abposter.jp/CART/newmem.php\\" target=\\"_blank\\">会員登録</a></li>\\n        <li><a class=\\"drawer-menu-item\\" href=\\"https://store.abposter.jp/CART/cart.php\\" target=\\"_blank\\">カートを見る</a></li>\\n        <li><a class=\\"drawer-menu-item\\" href=\\"https://abposter.jp/toiawase/toiawase.html\\">お問合せ</a></li>\\n        <li><a class=\\"drawer-menu-item\\" href=\\"https://abposter.jp/mitsumori/mitsumori.html\\">お見積り</a></li>\\n\\n  \\t<!-- ポスター印刷  -->\\n        <li class=\\"drawer-dropdown\\">\\n    \\t  <a class=\\"drawer-menu-item\\" href=\\"#\\" data-toggle=\\"dropdown\\">ポスター印刷<span class=\\"drawer-caret\\"></span></a>\\n          <ul class=\\"drawer-dropdown-menu\\">\\n            <li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/\\">ポスター印刷用紙一覧</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/mat.html\\">厚手マットコート紙</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/gloss.html\\">厚手光沢紙</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/h_gloss.html\\">厚手半光沢紙</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/yupo.html\\">合成紙</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/p_yupo.html\\">合成紙糊付き</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/photo.html\\">フォト光沢紙</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/photo_p.html\\">フォトパール半光沢紙</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/film.html\\">電飾用バックライトフィルム</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/tarpo.html\\">屋内用ターポリン</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/cloth.html\\">防炎クロス</a></li>\\n          </ul>\\n        </li>\\n\\n    \\t<!-- 大判印刷 -->\\n\\t\\t\\t<li class=\\"drawer-dropdown\\">\\n\\t\\t\\t\\t<a class=\\"drawer-menu-item\\" href=\\"#\\" data-toggle=\\"dropdown\\">大判印刷<span class=\\"icon_accordion-1\\"></span><span class=\\"icon_accordion-2\\"></span></a>\\n\\t\\t\\t\\t<ul class=\\"drawer-dropdown-menu\\">\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/page/wide\\">大判印刷用紙一覧</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_gloss.html\\">光沢フォトペーパー</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_parl.html\\">フォトパールペーパー</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_yupo.html\\">厚手ハイグレード合成紙</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_tarpo.html\\">ハイグレード防炎ターポリン</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_mesh.html\\">メッシュターポリン</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_blfilm.html\\">バックライトフィルム糊付き</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_mat.html\\">厚手マットコート紙</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_enbil_s.html\\">短期用塩ビ＋ラミネート</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_enbil_m.html\\">中期用塩ビ＋ラミネート</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_enbil_l.html\\">長期用塩ビ＋ラミネート</a></li>\\n\\t\\t\\t\\t</ul>\\n\\t\\t\\t</li>\\n\\n    \\t<!-- 学会ポスター印刷 -->\\n        <li class=\\"drawer-dropdown\\">\\n    \\t  <a class=\\"drawer-menu-item\\" href=\\"#\\" data-toggle=\\"dropdown\\">学会ポスター印刷<span class=\\"drawer-caret\\"></span></a>\\n          <ul class=\\"drawer-dropdown-menu\\">\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/society/g_mat.html\\">厚手マットコート紙</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/society/g_gloss.html\\">厚手光沢紙</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/society/g_hgloss.html\\">厚手半光沢紙</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/society/g_photo.html\\">フォト光沢紙</a></li>\\`... 2592 more characters,
+  stack: `Error: Message with role "undefined" must have either a 'content' property (string or array) or a 'parts' property (array) that is not empty, null, or undefined. Received message: {\n` +
+    '  "messages": [\n' +
+    '    {\n' +
+    '      "role": "user",\n' +
+    `      "content": "以下のHTMLから会社情報を正確に抽出してJSON形式で返してください。\\n\\nHTMLコンテンツ:\\n<!DOCTYPE html>\\n<html lang=\\"ja\\">\\n<head>\\n\\t<meta charset=\\"UTF-8\\">\\n\\t<!-- Google Tag Manager -->\\n<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':\\n\\tnew Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],\\n\\tj=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=\\n\\t'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);\\n\\t})(window,document,'script','dataLayer','GTM-NWVRFH67');</script>\\n\\t<!-- End Google Tag Manager -->\\n\\t<!-- Google Tag Manager -->\\n<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':\\nnew Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],\\nj=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=\\n'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);\\n})(window,document,'script','dataLayer','GTM-NK864D6K');</script>\\n    <!-- End Google Tag Manager -->\\n\\n\\t<!--GMO Google Tag Manager -->\\n    \\n    <!-- Yahoo Ad -->\\n<script async src=\\"https://s.yimg.jp/images/listing/tool/cv/ytag.js\\"></script>\\n<script>\\nwindow.yjDataLayer = window.yjDataLayer || [];\\nfunction ytag() { yjDataLayer.push(arguments); }\\nytag({\\"type\\":\\"ycl_cookie\\", \\"config\\":{\\"ycl_use_non_cookie_storage\\":true}});\\n</script>\\n    <!-- End Yahoo Ad -->\\n    \\n    <!-- Yahoo Ad -->\\n<script async src=\\"https://s.yimg.jp/images/listing/tool/cv/ytag.js\\"></script>\\n<script>\\nwindow.yjDataLayer = window.yjDataLayer || [];\\nfunction ytag() { yjDataLayer.push(arguments); }\\n</script>\\n    <!-- End Yahoo Ad -->\\n\\t<title>特定商取引法│ポスター印刷のABポスター</title>\\n\\t<meta name=\\"description\\" content=\\"ポスター印刷専門店のABポスターは、「当日印刷」、「当日発送」で、「ポスター印刷」と「タペストリー」最新鋭の印刷設備と技術で印刷いたします。16時まで当日発送のポスター印刷をご検討の際にはまず弊社にお声がけください。\\">\\n\\t<meta name=\\"keywords\\" content=\\"ポスター印刷,ポスター当日,ポスター作成,ポスター当日発送\\">\\n\\t<meta name=\\"viewport\\" content=\\"width=device-width,initial-scale=1\\">\\n\\t<!--※カートから直前のページに戻る※-->\\n\\t<meta name=\\"referrer\\" content=\\"no-referrer-when-downgrade\\">\\n\\t\\n\\t<link rel=\\"canonical\\" href=\\"https://abposter.jp/basic/kiyaku.html\\">\\n\\t<link rel=\\"stylesheet\\" href=\\"../css/poster_style.css\\" type=\\"text/css\\" media=\\"screen\\" />\\n\\t<link rel=\\"stylesheet\\" type=\\"text/css\\" href=\\"../css/tsuiki.min.css\\">\\n\\t<link rel=\\"stylesheet\\" type=\\"text/css\\" href=\\"../css/style.min2402230216.css\\">\\n\\t<link rel=\\"stylesheet\\" type=\\"text/css\\" href=\\"../css/style-hd.css?210608\\">\\n\\t<link rel=\\"stylesheet\\" type=\\"text/css\\" href=\\"../css/h2h3.css\\">\\n\\t<link rel=\\"stylesheet\\" type=\\"text/css\\" href=\\"../css/accordion.css\\">\\n\\t<link rel=\\"stylesheet\\" type=\\"text/css\\" href=\\"../css/p_index.css\\">\\n\\t<link rel=\\"stylesheet\\" type=\\"text/css\\" href=\\"../css/sidebanner240308.css\\">\\n\\t<link rel=\\"stylesheet\\" type=\\"text/css\\" href=\\"../css/contents.css\\">\\n\\t<link rel=\\"stylesheet\\" type=\\"text/css\\" href=\\"../css/test_print.css?ver1.6\\">\\n\\t<link rel=\\"stylesheet\\" href=\\"../css/ppbtn.css\\">\\n\\t\\n\\t<script src=\\"https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js\\"></script>\\n\\t<script type=\\"text/javascript\\" src=\\"../js/img-switch.js\\"></script>\\n\\t<script src=\\"../js/iscroll.js\\"></script>\\n\\t<script src=\\"../js/drawer.min.js\\"></script>\\n\\t<script src=\\"../js/jquery.flexslider-min.js\\"></script>\\n\\t<script src=\\"https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js\\"></script>\\n\\t<script src=\\"../js/setting.js\\"></script>\\n\\n<!-- Yahoo Tag -->\\n<script async src=\\"https://s.yimg.jp/images/listing/tool/cv/ytag.js\\"></script>\\n<script>\\nwindow.yjDataLayer = window.yjDataLayer || [];\\nfunction ytag() { yjDataLayer.push(arguments); }\\nytag({\\"type\\":\\"ycl_cookie\\", \\"config\\":{\\"ycl_use_non_cookie_storage\\":true}});\\n</script>\\n\\n<script async src=\\"https://s.yimg.jp/images/listing/tool/cv/ytag.js\\"></script>\\n<script>\\nwindow.yjDataLayer = window.yjDataLayer || [];\\nfunction ytag() { yjDataLayer.push(arguments); }\\nytag({\\"type\\":\\"ycl_cookie\\", \\"config\\":{\\"ycl_use_non_cookie_storage\\":true}});\\n</script>\\n<!-- End Yahoo Tag -->\\n\\n<style>\\n  .pc { display: block !important; }\\n  .sp { display: none !important; }\\n\\n  @media only screen and (max-width: 600px) {\\n  .pc { display: none !important; }\\n  .sp { display: block !important; }\\n}\\n</style>\\n\\n\\t<!--※※affiliate TAG※※-->\\n\\t<script src=\\"https://r.moshimo.com/af/r/maftag.js\\"></script>\\n</head>\\n\\n<body class=\\"drawer drawer--right drawer-responsive\\">\\n<!-- Google Tag Manager (noscript) -->\\n<noscript><iframe src=\\"https://www.googletagmanager.com/ns.html?id=GTM-NK864D6K\\"\\nheight=\\"0\\" width=\\"0\\" style=\\"display:none;visibility:hidden\\"></iframe></noscript>\\n<!-- End Google Tag Manager (noscript) -->\\n\\n<div class=\\"htop\\"><a href=\\"https://abposter.jp/\\"><h1 style=\\"display:inline\\">特定商取引法</h1></a>│ポスター印刷のABポスター</div>\\n\\n<!-- ハンバーガーボタン -->\\n<button type=\\"button\\" class=\\"drawer-toggle drawer-hamburger\\">\\n  <span class=\\"sr-only\\">toggle navigation</span>\\n  <span class=\\"drawer-hamburger-icon\\"></span>\\n    <span class=\\"dw-menu\\">MENU</span>\\n  </button>\\n \\n<!-- ナビゲーションの中身 -->\\n    <nav class=\\"drawer-nav\\" role=\\"navigation\\">\\n      <ul class=\\"drawer-menu\\">\\n        <li><a class=\\"drawer-brand\\" href=\\"https://abposter.jp/\\">HOME</a></li>\\n        <li><a class=\\"drawer-menu-item\\" href=\\"https://store.abposter.jp/CART/login.php\\" target=\\"_blank\\">ログイン</a></li>\\n        <li><a class=\\"drawer-menu-item\\" href=\\"https://store.abposter.jp/CART/newmem.php\\" target=\\"_blank\\">会員登録</a></li>\\n        <li><a class=\\"drawer-menu-item\\" href=\\"https://store.abposter.jp/CART/cart.php\\" target=\\"_blank\\">カートを見る</a></li>\\n        <li><a class=\\"drawer-menu-item\\" href=\\"https://abposter.jp/toiawase/toiawase.html\\">お問合せ</a></li>\\n        <li><a class=\\"drawer-menu-item\\" href=\\"https://abposter.jp/mitsumori/mitsumori.html\\">お見積り</a></li>\\n\\n  \\t<!-- ポスター印刷  -->\\n        <li class=\\"drawer-dropdown\\">\\n    \\t  <a class=\\"drawer-menu-item\\" href=\\"#\\" data-toggle=\\"dropdown\\">ポスター印刷<span class=\\"drawer-caret\\"></span></a>\\n          <ul class=\\"drawer-dropdown-menu\\">\\n            <li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/\\">ポスター印刷用紙一覧</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/mat.html\\">厚手マットコート紙</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/gloss.html\\">厚手光沢紙</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/h_gloss.html\\">厚手半光沢紙</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/yupo.html\\">合成紙</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/p_yupo.html\\">合成紙糊付き</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/photo.html\\">フォト光沢紙</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/photo_p.html\\">フォトパール半光沢紙</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/film.html\\">電飾用バックライトフィルム</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/tarpo.html\\">屋内用ターポリン</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/poster/cloth.html\\">防炎クロス</a></li>\\n          </ul>\\n        </li>\\n\\n    \\t<!-- 大判印刷 -->\\n\\t\\t\\t<li class=\\"drawer-dropdown\\">\\n\\t\\t\\t\\t<a class=\\"drawer-menu-item\\" href=\\"#\\" data-toggle=\\"dropdown\\">大判印刷<span class=\\"icon_accordion-1\\"></span><span class=\\"icon_accordion-2\\"></span></a>\\n\\t\\t\\t\\t<ul class=\\"drawer-dropdown-menu\\">\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/page/wide\\">大判印刷用紙一覧</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_gloss.html\\">光沢フォトペーパー</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_parl.html\\">フォトパールペーパー</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_yupo.html\\">厚手ハイグレード合成紙</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_tarpo.html\\">ハイグレード防炎ターポリン</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_mesh.html\\">メッシュターポリン</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_blfilm.html\\">バックライトフィルム糊付き</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_mat.html\\">厚手マットコート紙</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_enbil_s.html\\">短期用塩ビ＋ラミネート</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_enbil_m.html\\">中期用塩ビ＋ラミネート</a></li>\\n\\t\\t\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/wide/w_enbil_l.html\\">長期用塩ビ＋ラミネート</a></li>\\n\\t\\t\\t\\t</ul>\\n\\t\\t\\t</li>\\n\\n    \\t<!-- 学会ポスター印刷 -->\\n        <li class=\\"drawer-dropdown\\">\\n    \\t  <a class=\\"drawer-menu-item\\" href=\\"#\\" data-toggle=\\"dropdown\\">学会ポスター印刷<span class=\\"drawer-caret\\"></span></a>\\n          <ul class=\\"drawer-dropdown-menu\\">\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/society/g_mat.html\\">厚手マットコート紙</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/society/g_gloss.html\\">厚手光沢紙</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/society/g_hgloss.html\\">厚手半光沢紙</a></li>\\n\\t\\t\\t<li><a class=\\"drawer-dropdown-menu-item\\" href=\\"https://abposter.jp/society/g_photo.html\\">フォト光沢紙</a`... 6466 more characters,
+  url: 'https://abposter.jp/basic/tokusho.html'
 }
- ⨯ Error: Cannot find module './1638.js'
-Require stack:
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/pages/_document.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/utils.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-middleware.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-reloader-webpack.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js
-    at Function.<anonymous> (node:internal/modules/cjs/loader:1405:15)
-    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require-hook.js:55:36
-    at defaultResolveImpl (node:internal/modules/cjs/loader:1061:19)
-    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1066:22)
-    at Function._load (node:internal/modules/cjs/loader:1215:37)
-    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
-    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
-    at Module.<anonymous> (node:internal/modules/cjs/loader:1491:12)
-    at mod.require (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require-hook.js:65:28)
-    at require (node:internal/modules/helpers:135:16)
-    at __webpack_require__.f.require (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:198:28)
-    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:111:40
-    at Array.reduce (<anonymous>)
-    at __webpack_require__.e (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:110:67)
-    at Array.map (<anonymous>)
-    at __webpack_require__.X (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:162:22)
-    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/app/documents/page.js:18:5340
-    at Object.<anonymous> (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/app/documents/page.js:18:5393)
-    at Module._compile (node:internal/modules/cjs/loader:1734:14)
-    at Object..js (node:internal/modules/cjs/loader:1899:10)
-    at Module.load (node:internal/modules/cjs/loader:1469:32)
-    at Function._load (node:internal/modules/cjs/loader:1286:12)
-    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
-    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
-    at Module.<anonymous> (node:internal/modules/cjs/loader:1491:12)
-    at mod.require (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require-hook.js:65:28)
-    at require (node:internal/modules/helpers:135:16)
-    at requirePage (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js:109:84)
-    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js:74:84
-    at async loadComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js:74:26)
-    at async DevServer.findPageComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:675:36) {
-  code: 'MODULE_NOT_FOUND',
-  requireStack: [
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/pages/_document.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/utils.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-middleware.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-reloader-webpack.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js'
-  ],
-  page: '/documents'
+[2025-07-30T09:29:22.193Z] [INFO] Company info extracted via regex fallback: {
+  companyName: '特定商取引法│ポスター印刷のABポスター',
+  companyNameKana: '特定商取引法│ポスター印刷ノエービーポスター',
+  address: '2402230216.css">',
+  postalCode: '240-2230',
+  website: 'https://abposter.jp/basic/tokusho.html'
 }
- ⨯ Error: Cannot find module './1638.js'
-Require stack:
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/pages/_document.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/utils.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-middleware.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-reloader-webpack.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js
-    at Function.<anonymous> (node:internal/modules/cjs/loader:1405:15)
-    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require-hook.js:55:36
-    at defaultResolveImpl (node:internal/modules/cjs/loader:1061:19)
-    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1066:22)
-    at Function._load (node:internal/modules/cjs/loader:1215:37)
-    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
-    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
-    at Module.<anonymous> (node:internal/modules/cjs/loader:1491:12)
-    at mod.require (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require-hook.js:65:28)
-    at require (node:internal/modules/helpers:135:16)
-    at __webpack_require__.f.require (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:198:28)
-    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:111:40
-    at Array.reduce (<anonymous>)
-    at __webpack_require__.e (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:110:67)
-    at Array.map (<anonymous>)
-    at __webpack_require__.X (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:162:22)
-    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/app/documents/page.js:18:5340
-    at Object.<anonymous> (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/app/documents/page.js:18:5393)
-    at Module._compile (node:internal/modules/cjs/loader:1734:14)
-    at Object..js (node:internal/modules/cjs/loader:1899:10)
-    at Module.load (node:internal/modules/cjs/loader:1469:32)
-    at Function._load (node:internal/modules/cjs/loader:1286:12)
-    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
-    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
-    at Module.<anonymous> (node:internal/modules/cjs/loader:1491:12)
-    at mod.require (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require-hook.js:65:28)
-    at require (node:internal/modules/helpers:135:16)
-    at requirePage (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js:109:84)
-    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js:74:84
-    at async loadComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js:74:26)
-    at async DevServer.findPageComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:675:36) {
-  code: 'MODULE_NOT_FOUND',
-  requireStack: [
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/pages/_document.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/utils.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-middleware.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-reloader-webpack.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js'
-  ],
-  page: '/documents'
+[2025-07-30T09:29:22.193Z] [DEBUG] 🔍 Contact info check (regex): {
+  phone: undefined,
+  fax: undefined,
+  email: undefined,
+  website: 'https://abposter.jp/basic/tokusho.html'
 }
- ✓ Compiled in 75ms (464 modules)
- ⨯ Error: Cannot find module './1638.js'
-Require stack:
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/pages/_document.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/utils.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-middleware.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-reloader-webpack.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js
-    at Function.<anonymous> (node:internal/modules/cjs/loader:1405:15)
-    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require-hook.js:55:36
-    at defaultResolveImpl (node:internal/modules/cjs/loader:1061:19)
-    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1066:22)
-    at Function._load (node:internal/modules/cjs/loader:1215:37)
-    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
-    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
-    at Module.<anonymous> (node:internal/modules/cjs/loader:1491:12)
-    at mod.require (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require-hook.js:65:28)
-    at require (node:internal/modules/helpers:135:16)
-    at __webpack_require__.f.require (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:198:28)
-    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:111:40
-    at Array.reduce (<anonymous>)
-    at __webpack_require__.e (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:110:67)
-    at Array.map (<anonymous>)
-    at __webpack_require__.X (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:162:22)
-    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/app/documents/page.js:18:5340
-    at Object.<anonymous> (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/app/documents/page.js:18:5393)
-    at Module._compile (node:internal/modules/cjs/loader:1734:14)
-    at Object..js (node:internal/modules/cjs/loader:1899:10)
-    at Module.load (node:internal/modules/cjs/loader:1469:32)
-    at Function._load (node:internal/modules/cjs/loader:1286:12)
-    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
-    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
-    at Module.<anonymous> (node:internal/modules/cjs/loader:1491:12)
-    at mod.require (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require-hook.js:65:28)
-    at require (node:internal/modules/helpers:135:16)
-    at requirePage (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js:109:84)
-    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js:74:84
-    at async loadComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js:74:26)
-    at async DevServer.findPageComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:675:36) {
-  code: 'MODULE_NOT_FOUND',
-  requireStack: [
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/pages/_document.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/utils.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-middleware.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-reloader-webpack.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js'
-  ],
-  page: '/documents'
+ POST /api/extract-company-info 200 in 69ms
+ ✓ Compiled in 10ms
+ ⨯ ./app/api/extract-company-info/route.ts
+Error: 
+  [31mx[0m A 'break' statement can only be used within an enclosing iteration or switch statement
+     ,-[[36;1;4m/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/app/api/extract-company-info/route.ts[0m:466:1]
+ [2m466[0m |                 }
+ [2m467[0m |               }
+ [2m468[0m |             }
+ [2m469[0m |             break;
+     : [31;1m            ^^^^^^[0m
+ [2m470[0m |           }
+ [2m471[0m |         }
+ [2m472[0m |       }
+     `----
+
+  [31mx[0m Expected a semicolon
+     ,-[[36;1;4m/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/app/api/extract-company-info/route.ts[0m:472:1]
+ [2m472[0m |       }
+ [2m473[0m | 
+ [2m474[0m |       // 電話番号の抽出 - より広範囲なパターン
+ [2m475[0m |       const phonePatterns = [
+     : [31;1m      ^[0m
+ [2m476[0m |         // フリーダイヤルパターン
+ [2m477[0m |         /0120-[\d\-]+/,
+ [2m478[0m |         // dt/dd構造
+     `----
+
+  [31mx[0m Expected ',', got ';'
+     ,-[[36;1;4m/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/app/api/extract-company-info/route.ts[0m:530:1]
+ [2m530[0m |       // 特殊処理は削除 - 実際の情報のみを抽出する
+ [2m531[0m | 
+ [2m532[0m |       return info;
+ [2m533[0m |     };
+     : [31;1m     ^[0m
+ [2m534[0m | 
+ [2m535[0m |     const companyInfo = extractInfo(html);
+ [2m536[0m |     logger.info('Company info extracted via regex fallback:', companyInfo);
+     `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./app/api/extract-company-info/route.ts
+ ○ Compiling /_not-found ...
+ ⨯ ./app/api/extract-company-info/route.ts
+Error: 
+  [31mx[0m A 'break' statement can only be used within an enclosing iteration or switch statement
+     ,-[[36;1;4m/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/app/api/extract-company-info/route.ts[0m:466:1]
+ [2m466[0m |                 }
+ [2m467[0m |               }
+ [2m468[0m |             }
+ [2m469[0m |             break;
+     : [31;1m            ^^^^^^[0m
+ [2m470[0m |           }
+ [2m471[0m |         }
+ [2m472[0m |       }
+     `----
+
+  [31mx[0m Expected a semicolon
+     ,-[[36;1;4m/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/app/api/extract-company-info/route.ts[0m:472:1]
+ [2m472[0m |       }
+ [2m473[0m | 
+ [2m474[0m |       // 電話番号の抽出 - より広範囲なパターン
+ [2m475[0m |       const phonePatterns = [
+     : [31;1m      ^[0m
+ [2m476[0m |         // フリーダイヤルパターン
+ [2m477[0m |         /0120-[\d\-]+/,
+ [2m478[0m |         // dt/dd構造
+     `----
+
+  [31mx[0m Expected ',', got ';'
+     ,-[[36;1;4m/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/app/api/extract-company-info/route.ts[0m:530:1]
+ [2m530[0m |       // 特殊処理は削除 - 実際の情報のみを抽出する
+ [2m531[0m | 
+ [2m532[0m |       return info;
+ [2m533[0m |     };
+     : [31;1m     ^[0m
+ [2m534[0m | 
+ [2m535[0m |     const companyInfo = extractInfo(html);
+ [2m536[0m |     logger.info('Company info extracted via regex fallback:', companyInfo);
+     `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./app/api/extract-company-info/route.ts
+ ⨯ ./app/api/extract-company-info/route.ts
+Error: 
+  [31mx[0m A 'break' statement can only be used within an enclosing iteration or switch statement
+     ,-[[36;1;4m/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/app/api/extract-company-info/route.ts[0m:466:1]
+ [2m466[0m |                 }
+ [2m467[0m |               }
+ [2m468[0m |             }
+ [2m469[0m |             break;
+     : [31;1m            ^^^^^^[0m
+ [2m470[0m |           }
+ [2m471[0m |         }
+ [2m472[0m |       }
+     `----
+
+  [31mx[0m Expected a semicolon
+     ,-[[36;1;4m/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/app/api/extract-company-info/route.ts[0m:472:1]
+ [2m472[0m |       }
+ [2m473[0m | 
+ [2m474[0m |       // 電話番号の抽出 - より広範囲なパターン
+ [2m475[0m |       const phonePatterns = [
+     : [31;1m      ^[0m
+ [2m476[0m |         // フリーダイヤルパターン
+ [2m477[0m |         /0120-[\d\-]+/,
+ [2m478[0m |         // dt/dd構造
+     `----
+
+  [31mx[0m Expected ',', got ';'
+     ,-[[36;1;4m/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/app/api/extract-company-info/route.ts[0m:530:1]
+ [2m530[0m |       // 特殊処理は削除 - 実際の情報のみを抽出する
+ [2m531[0m | 
+ [2m532[0m |       return info;
+ [2m533[0m |     };
+     : [31;1m     ^[0m
+ [2m534[0m | 
+ [2m535[0m |     const companyInfo = extractInfo(html);
+ [2m536[0m |     logger.info('Company info extracted via regex fallback:', companyInfo);
+     `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./app/api/extract-company-info/route.ts
+ POST /api/extract-company-info 500 in 3118ms
+ ✓ Compiled /_error in 172ms (516 modules)
+ ⨯ ./app/api/extract-company-info/route.ts
+Error: 
+  [31mx[0m Expected a semicolon
+     ,-[[36;1;4m/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/app/api/extract-company-info/route.ts[0m:471:1]
+ [2m471[0m |       }
+ [2m472[0m | 
+ [2m473[0m |       // 電話番号の抽出 - より広範囲なパターン
+ [2m474[0m |       const phonePatterns = [
+     : [31;1m      ^[0m
+ [2m475[0m |         // フリーダイヤルパターン
+ [2m476[0m |         /0120-[\d\-]+/,
+ [2m477[0m |         // dt/dd構造
+     `----
+
+  [31mx[0m Expected ',', got ';'
+     ,-[[36;1;4m/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/app/api/extract-company-info/route.ts[0m:529:1]
+ [2m529[0m |       // 特殊処理は削除 - 実際の情報のみを抽出する
+ [2m530[0m | 
+ [2m531[0m |       return info;
+ [2m532[0m |     };
+     : [31;1m     ^[0m
+ [2m533[0m | 
+ [2m534[0m |     const companyInfo = extractInfo(html);
+ [2m535[0m |     logger.info('Company info extracted via regex fallback:', companyInfo);
+     `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./app/api/extract-company-info/route.ts
+ ⨯ ./app/api/extract-company-info/route.ts
+Error: 
+  [31mx[0m Expected a semicolon
+     ,-[[36;1;4m/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/app/api/extract-company-info/route.ts[0m:471:1]
+ [2m471[0m |       }
+ [2m472[0m | 
+ [2m473[0m |       // 電話番号の抽出 - より広範囲なパターン
+ [2m474[0m |       const phonePatterns = [
+     : [31;1m      ^[0m
+ [2m475[0m |         // フリーダイヤルパターン
+ [2m476[0m |         /0120-[\d\-]+/,
+ [2m477[0m |         // dt/dd構造
+     `----
+
+  [31mx[0m Expected ',', got ';'
+     ,-[[36;1;4m/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/app/api/extract-company-info/route.ts[0m:529:1]
+ [2m529[0m |       // 特殊処理は削除 - 実際の情報のみを抽出する
+ [2m530[0m | 
+ [2m531[0m |       return info;
+ [2m532[0m |     };
+     : [31;1m     ^[0m
+ [2m533[0m | 
+ [2m534[0m |     const companyInfo = extractInfo(html);
+ [2m535[0m |     logger.info('Company info extracted via regex fallback:', companyInfo);
+     `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./app/api/extract-company-info/route.ts
+ ⨯ ./app/api/extract-company-info/route.ts
+Error: 
+  [31mx[0m Expected a semicolon
+     ,-[[36;1;4m/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/app/api/extract-company-info/route.ts[0m:471:1]
+ [2m471[0m |       }
+ [2m472[0m | 
+ [2m473[0m |       // 電話番号の抽出 - より広範囲なパターン
+ [2m474[0m |       const phonePatterns = [
+     : [31;1m      ^[0m
+ [2m475[0m |         // フリーダイヤルパターン
+ [2m476[0m |         /0120-[\d\-]+/,
+ [2m477[0m |         // dt/dd構造
+     `----
+
+  [31mx[0m Expected ',', got ';'
+     ,-[[36;1;4m/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/app/api/extract-company-info/route.ts[0m:529:1]
+ [2m529[0m |       // 特殊処理は削除 - 実際の情報のみを抽出する
+ [2m530[0m | 
+ [2m531[0m |       return info;
+ [2m532[0m |     };
+     : [31;1m     ^[0m
+ [2m533[0m | 
+ [2m534[0m |     const companyInfo = extractInfo(html);
+ [2m535[0m |     logger.info('Company info extracted via regex fallback:', companyInfo);
+     `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./app/api/extract-company-info/route.ts
+ POST /api/extract-company-info 500 in 129ms
+ ○ Compiling /_error ...
+ ✓ Compiled /_error in 139ms (474 modules)
+ ✓ Compiled in 146ms (516 modules)
+ ✓ Compiled /api/extract-company-info in 62ms (139 modules)
+[2025-07-30T09:33:59.577Z] [INFO] Extracting company info from URL: https://abposter.jp/basic/tokusho.html
+[2025-07-30T09:33:59.656Z] [DEBUG] HTML fetched successfully, length: 42637
+[2025-07-30T09:33:59.656Z] [INFO] Skipping AI extraction, using regex fallback only 
+[2025-07-30T09:33:59.658Z] [INFO] Company info extracted via regex fallback: {
+  companyName: 'ポスター印刷のABポスター',
+  companyNameKana: 'ポスター印刷ノエービーポスター',
+  address: '〒169-0074東京都新宿区北新宿4-17-2',
+  postalCode: '169-0074',
+  prefecture: '東京都',
+  city: '新宿区',
+  address1: '北新宿4-17-2',
+  phone: '0120-970-111',
+  website: 'https://abposter.jp/basic/tokusho.html'
 }
- ✓ Compiled in 64ms (464 modules)
- ⨯ Error: Cannot find module './1638.js'
-Require stack:
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/pages/_document.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/utils.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-middleware.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-reloader-webpack.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js
-    at Function.<anonymous> (node:internal/modules/cjs/loader:1405:15)
-    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require-hook.js:55:36
-    at defaultResolveImpl (node:internal/modules/cjs/loader:1061:19)
-    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1066:22)
-    at Function._load (node:internal/modules/cjs/loader:1215:37)
-    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
-    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
-    at Module.<anonymous> (node:internal/modules/cjs/loader:1491:12)
-    at mod.require (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require-hook.js:65:28)
-    at require (node:internal/modules/helpers:135:16)
-    at __webpack_require__.f.require (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:198:28)
-    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:111:40
-    at Array.reduce (<anonymous>)
-    at __webpack_require__.e (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:110:67)
-    at Array.map (<anonymous>)
-    at __webpack_require__.X (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:162:22)
-    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/app/documents/page.js:18:5340
-    at Object.<anonymous> (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/app/documents/page.js:18:5393)
-    at Module._compile (node:internal/modules/cjs/loader:1734:14)
-    at Object..js (node:internal/modules/cjs/loader:1899:10)
-    at Module.load (node:internal/modules/cjs/loader:1469:32)
-    at Function._load (node:internal/modules/cjs/loader:1286:12)
-    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
-    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
-    at Module.<anonymous> (node:internal/modules/cjs/loader:1491:12)
-    at mod.require (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require-hook.js:65:28)
-    at require (node:internal/modules/helpers:135:16)
-    at requirePage (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js:109:84)
-    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js:74:84
-    at async loadComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js:74:26)
-    at async DevServer.findPageComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:675:36) {
-  code: 'MODULE_NOT_FOUND',
-  requireStack: [
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/pages/_document.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/utils.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-middleware.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-reloader-webpack.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js'
-  ],
-  page: '/documents'
+[2025-07-30T09:33:59.658Z] [DEBUG] 🔍 Contact info check (regex): {
+  phone: '0120-970-111',
+  fax: undefined,
+  email: undefined,
+  website: 'https://abposter.jp/basic/tokusho.html'
 }
- ✓ Compiled in 61ms (464 modules)
- ⨯ Error: Cannot find module './1638.js'
-Require stack:
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/pages/_document.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/utils.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-middleware.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-reloader-webpack.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js
-- /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js
-    at Function.<anonymous> (node:internal/modules/cjs/loader:1405:15)
-    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require-hook.js:55:36
-    at defaultResolveImpl (node:internal/modules/cjs/loader:1061:19)
-    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1066:22)
-    at Function._load (node:internal/modules/cjs/loader:1215:37)
-    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
-    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
-    at Module.<anonymous> (node:internal/modules/cjs/loader:1491:12)
-    at mod.require (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require-hook.js:65:28)
-    at require (node:internal/modules/helpers:135:16)
-    at __webpack_require__.f.require (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:198:28)
-    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:111:40
-    at Array.reduce (<anonymous>)
-    at __webpack_require__.e (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:110:67)
-    at Array.map (<anonymous>)
-    at __webpack_require__.X (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js:162:22)
-    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/app/documents/page.js:18:5340
-    at Object.<anonymous> (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/app/documents/page.js:18:5393)
-    at Module._compile (node:internal/modules/cjs/loader:1734:14)
-    at Object..js (node:internal/modules/cjs/loader:1899:10)
-    at Module.load (node:internal/modules/cjs/loader:1469:32)
-    at Function._load (node:internal/modules/cjs/loader:1286:12)
-    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
-    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
-    at Module.<anonymous> (node:internal/modules/cjs/loader:1491:12)
-    at mod.require (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require-hook.js:65:28)
-    at require (node:internal/modules/helpers:135:16)
-    at requirePage (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js:109:84)
-    at /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js:74:84
-    at async loadComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js:74:26)
-    at async DevServer.findPageComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:675:36) {
-  code: 'MODULE_NOT_FOUND',
-  requireStack: [
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/webpack-runtime.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/server/pages/_document.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/require.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/load-components.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/build/utils.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-middleware.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/hot-reloader-webpack.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js',
-    '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js'
-  ],
-  page: '/documents'
+ POST /api/extract-company-info 200 in 174ms
+[2025-07-30T09:34:23.150Z] [INFO] Extracting company info from URL: https://abposter.jp/basic/tokusho.html
+[2025-07-30T09:34:23.227Z] [DEBUG] HTML fetched successfully, length: 42637
+[2025-07-30T09:34:23.227Z] [INFO] Skipping AI extraction, using regex fallback only 
+[2025-07-30T09:34:23.228Z] [INFO] Company info extracted via regex fallback: {
+  companyName: 'ポスター印刷のABポスター',
+  companyNameKana: 'ポスター印刷ノエービーポスター',
+  address: '〒169-0074東京都新宿区北新宿4-17-2',
+  postalCode: '169-0074',
+  prefecture: '東京都',
+  city: '新宿区',
+  address1: '北新宿4-17-2',
+  phone: '0120-970-111',
+  website: 'https://abposter.jp/basic/tokusho.html'
 }
- ✓ Compiled in 96ms (462 modules)
- ✓ Compiled in 63ms (462 modules)
- ✓ Compiled in 57ms (462 modules)
- ✓ Compiled in 72ms (462 modules)
- ✓ Compiled in 127ms (860 modules)
- ✓ Compiled in 102ms (860 modules)
- ✓ Compiled in 108ms (860 modules)
- ✓ Compiled in 53ms (462 modules)
- ✓ Compiled in 157ms (860 modules)
- ✓ Compiled in 86ms (462 modules)
- ✓ Compiled in 62ms (462 modules)
- ✓ Compiled in 128ms (860 modules)
- ✓ Compiled in 67ms (462 modules)
- ✓ Compiled in 58ms (462 modules)
- ✓ Compiled in 107ms (860 modules)
- ✓ Compiled in 134ms (462 modules)
- ✓ Compiled in 76ms (462 modules)
- ✓ Compiled in 124ms (860 modules)
- ✓ Compiled in 64ms (462 modules)
- ✓ Compiled in 60ms (462 modules)
- ✓ Compiled in 110ms (860 modules)
- ✓ Compiled in 132ms (860 modules)
- ✓ Compiled in 110ms (860 modules)
- ✓ Compiled in 110ms (860 modules)
- ✓ Compiled in 71ms (462 modules)
- ✓ Compiled in 148ms (860 modules)
- ✓ Compiled in 100ms (860 modules)
- ✓ Compiled in 100ms (860 modules)
- ✓ Compiled in 106ms (860 modules)
- ✓ Compiled in 102ms (462 modules)
- ✓ Compiled in 143ms (860 modules)
- ✓ Compiled in 72ms (462 modules)
- ✓ Compiled in 68ms (462 modules)
- ✓ Compiled in 60ms (462 modules)
- ✓ Compiled in 63ms (462 modules)
- ✓ Compiled in 65ms (462 modules)
- ✓ Compiled in 108ms (910 modules)
-[Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'] {
-  errno: -2,
-  code: 'ENOENT',
-  syscall: 'stat',
-  path: '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'
+[2025-07-30T09:34:23.228Z] [DEBUG] 🔍 Contact info check (regex): {
+  phone: '0120-970-111',
+  fax: undefined,
+  email: undefined,
+  website: 'https://abposter.jp/basic/tokusho.html'
 }
-[Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'] {
-  errno: -2,
-  code: 'ENOENT',
-  syscall: 'stat',
-  path: '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'
-}
- ⨯ unhandledRejection: [Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'] {
-  errno: -2,
-  code: 'ENOENT',
-  syscall: 'stat',
-  path: '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'
-}
- ⨯ unhandledRejection: [Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'] {
-  errno: -2,
-  code: 'ENOENT',
-  syscall: 'stat',
-  path: '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'
-}
-<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'
- ✓ Compiled in 76ms (462 modules)
- ✓ Compiled in 66ms (462 modules)
- ✓ Compiled in 83ms (910 modules)
- ✓ Compiled /api/files/[id] in 62ms (422 modules)
-Reusing cached MongoDB connection
-Reusing cached MongoDB connection
-Creating new MongoDB connection...
-MongoDB URI configured: mongodb+srv://***:***@accounting-cluster.nld0j20.mongodb.net/accounting?retryWrites=true&w=majority&appName=accounting-cluster
-[Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/server-development/0.pack.gz'] {
-  errno: -2,
-  code: 'ENOENT',
-  syscall: 'stat',
-  path: '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/server-development/0.pack.gz'
-}
-[Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/server-development/0.pack.gz'] {
-  errno: -2,
-  code: 'ENOENT',
-  syscall: 'stat',
-  path: '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/server-development/0.pack.gz'
-}
- ⨯ unhandledRejection: [Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/server-development/0.pack.gz'] {
-  errno: -2,
-  code: 'ENOENT',
-  syscall: 'stat',
-  path: '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/server-development/0.pack.gz'
-}
- ⨯ unhandledRejection: [Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/server-development/0.pack.gz'] {
-  errno: -2,
-  code: 'ENOENT',
-  syscall: 'stat',
-  path: '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/server-development/0.pack.gz'
-}
-<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/server-development/0.pack.gz'
- ✓ Compiled in 88ms (462 modules)
- ✓ Compiled in 74ms (462 modules)
- ✓ Compiled in 97ms (860 modules)
- ✓ Compiled /api/debug/gridfs in 32ms (422 modules)
-Reusing cached MongoDB connection
-Reusing cached MongoDB connection
- ✓ Compiled /api/files/[id] in 32ms (424 modules)
-Reusing cached MongoDB connection
-Reusing cached MongoDB connection
-Creating new MongoDB connection...
-MongoDB URI configured: mongodb+srv://***:***@accounting-cluster.nld0j20.mongodb.net/accounting?retryWrites=true&w=majority&appName=accounting-cluster
- ✓ Compiled /api/files/[id]/direct in 32ms (426 modules)
-Reusing cached MongoDB connection
-Creating new MongoDB connection...
-MongoDB URI configured: mongodb+srv://***:***@accounting-cluster.nld0j20.mongodb.net/accounting?retryWrites=true&w=majority&appName=accounting-cluster
-Direct file API called with ID: 686de42824009ad5c5b1391b
-Reusing cached MongoDB connection
-Direct file error: TypeError: Cannot convert argument to a ByteString because the character at index 18 has a value of 12473 which is greater than 255.
-    at webidl.converters.ByteString (node:internal/deps/undici/undici:3889:17)
-    at Object.record<ByteString, ByteString> (node:internal/deps/undici/undici:3796:32)
-    at webidl.converters.HeadersInit (node:internal/deps/undici/undici:9023:67)
-    at Object.ResponseInit (node:internal/deps/undici/undici:3852:21)
-    at new Response (node:internal/deps/undici/undici:9128:34)
-    at GET (webpack-internal:///(rsc)/./app/api/files/[id]/direct/route.ts:57:16)
-    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:63809
-    at async eU.execute (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:53964)
-    at async eU.handle (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/compiled/next-server/app-route.runtime.dev.js:6:65062)
-    at async doRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1333:42)
-    at async cacheEntry.responseCache.get.routeKind (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1543:40)
-    at async DevServer.renderToResponseWithComponentsImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1463:28)
-    at async DevServer.renderPageComponent (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1856:24)
-    at async DevServer.renderToResponseImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:1894:32)
-    at async DevServer.pipeImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:911:25)
-    at async NextNodeServer.handleCatchallRenderRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/next-server.js:271:17)
-    at async DevServer.handleRequestImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/base-server.js:807:17)
-    at async /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:331:20
-    at async Span.traceAsyncFn (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/trace/trace.js:151:20)
-    at async DevServer.handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/dev/next-dev-server.js:328:24)
-    at async invokeRender (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:163:21)
-    at async handleRequest (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:342:24)
-    at async requestHandlerImpl (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/router-server.js:366:13)
-    at async Server.requestListener (/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/next/dist/server/lib/start-server.js:140:13)
- ✓ Compiled in 102ms (888 modules)
- ✓ Compiled in 85ms (888 modules)
-Direct file API called with ID: 686de42824009ad5c5b1391b
-Reusing cached MongoDB connection
-Reusing cached MongoDB connection
-Creating new MongoDB connection...
-MongoDB URI configured: mongodb+srv://***:***@accounting-cluster.nld0j20.mongodb.net/accounting?retryWrites=true&w=majority&appName=accounting-cluster
-MongoDB connection verified with ping
- ✓ Compiled in 118ms (886 modules)
- ✓ Compiled /api/accounts/learn in 62ms (423 modules)
-Learn API - MongoDB URI exists: true
-Reusing cached MongoDB connection
-Reusing cached MongoDB connection
-Reusing cached MongoDB connection
-Reusing cached MongoDB connection
-Reusing cached MongoDB connection
- ✓ Compiled in 115ms (885 modules)
- ✓ Compiled in 116ms (860 modules)
- ✓ Compiled in 57ms (462 modules)
- ✓ Compiled in 121ms (462 modules)
- ✓ Compiled in 61ms (462 modules)
- ✓ Compiled in 58ms (462 modules)
- ✓ Compiled in 66ms (462 modules)
- ✓ Compiled /api/learning/list in 69ms (422 modules)
-Reusing cached MongoDB connection
-Reusing cached MongoDB connection
-Reusing cached MongoDB connection
-Reusing cached MongoDB connection
- ✓ Compiled in 120ms (462 modules)
- ✓ Compiled in 125ms (860 modules)
- ✓ Compiled in 74ms (462 modules)
- ✓ Compiled in 69ms (462 modules)
- ✓ Compiled in 57ms (462 modules)
- ✓ Compiled in 61ms (462 modules)
- ✓ Compiled in 61ms (462 modules)
- ✓ Compiled in 56ms (462 modules)
- ✓ Compiled in 71ms (846 modules)
- ✓ Compiled in 61ms (462 modules)
- ✓ Compiled in 74ms (462 modules)
- ✓ Compiled in 95ms (910 modules)
- ✓ Compiled in 67ms (462 modules)
- ✓ Compiled in 83ms (910 modules)
- ✓ Compiled in 63ms (462 modules)
- ✓ Compiled in 78ms (910 modules)
- ✓ Compiled in 58ms (462 modules)
- ✓ Compiled in 71ms (910 modules)
- ✓ Compiled in 58ms (462 modules)
- ✓ Compiled in 76ms (910 modules)
- ✓ Compiled in 105ms (860 modules)
- ✓ Compiled in 69ms (462 modules)
- ✓ Compiled in 53ms (462 modules)
- ✓ Compiled in 75ms (462 modules)
- ✓ Compiled in 114ms (910 modules)
- ✓ Compiled in 78ms (462 modules)
- ✓ Compiled in 69ms (910 modules)
- ✓ Compiled in 58ms (462 modules)
- ✓ Compiled in 75ms (910 modules)
- ✓ Compiled in 60ms (462 modules)
- ✓ Compiled in 67ms (910 modules)
- ✓ Compiled in 56ms (462 modules)
- ✓ Compiled in 57ms (462 modules)
- ✓ Compiled in 68ms (910 modules)
- ✓ Compiled in 104ms (860 modules)
- ✓ Compiled in 84ms (860 modules)
- ✓ Compiled in 77ms (462 modules)
- ✓ Compiled in 82ms (910 modules)
- ✓ Compiled in 59ms (462 modules)
- ✓ Compiled in 56ms (462 modules)
- ✓ Compiled in 79ms (910 modules)
- ✓ Compiled in 87ms (462 modules)
- ✓ Compiled in 82ms (910 modules)
- ✓ Compiled in 67ms (462 modules)
- ✓ Compiled in 57ms (462 modules)
- ✓ Compiled in 77ms (462 modules)
- ✓ Compiled in 75ms (910 modules)
- ✓ Compiled in 104ms (462 modules)
- ✓ Compiled in 58ms (462 modules)
- ✓ Compiled in 56ms (462 modules)
- ✓ Compiled in 58ms (462 modules)
- ✓ Compiled in 64ms (462 modules)
- ✓ Compiled in 59ms (462 modules)
- ✓ Compiled in 63ms (462 modules)
- ✓ Compiled in 80ms (462 modules)
- ✓ Compiled in 87ms (462 modules)
- ✓ Compiled in 63ms (462 modules)
- ✓ Compiled in 79ms (462 modules)
- ✓ Compiled in 70ms (462 modules)
- ✓ Compiled in 76ms (462 modules)
- ✓ Compiled in 110ms (846 modules)
-[Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/server-development/1.pack.gz'] {
-  errno: -2,
-  code: 'ENOENT',
-  syscall: 'stat',
-  path: '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/server-development/1.pack.gz'
-}
-[Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/server-development/1.pack.gz'] {
-  errno: -2,
-  code: 'ENOENT',
-  syscall: 'stat',
-  path: '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/server-development/1.pack.gz'
-}
- ⨯ unhandledRejection: [Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/server-development/1.pack.gz'] {
-  errno: -2,
-  code: 'ENOENT',
-  syscall: 'stat',
-  path: '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/server-development/1.pack.gz'
-}
- ⨯ unhandledRejection: [Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/server-development/1.pack.gz'] {
-  errno: -2,
-  code: 'ENOENT',
-  syscall: 'stat',
-  path: '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/server-development/1.pack.gz'
-}
-<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/server-development/1.pack.gz'
-[Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'] {
-  errno: -2,
-  code: 'ENOENT',
-  syscall: 'stat',
-  path: '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'
-}
-[Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'] {
-  errno: -2,
-  code: 'ENOENT',
-  syscall: 'stat',
-  path: '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'
-}
- ⨯ unhandledRejection: [Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'] {
-  errno: -2,
-  code: 'ENOENT',
-  syscall: 'stat',
-  path: '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'
-}
- ⨯ unhandledRejection: [Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'] {
-  errno: -2,
-  code: 'ENOENT',
-  syscall: 'stat',
-  path: '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'
-}
-<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'
- ✓ Compiled in 81ms (462 modules)
- ✓ Compiled in 70ms (462 modules)
- ✓ Compiled in 63ms (462 modules)
- ✓ Compiled in 61ms (462 modules)
- ✓ Compiled in 69ms (462 modules)
- ✓ Compiled in 59ms (462 modules)
- ✓ Compiled in 77ms (462 modules)
-[Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'] {
-  errno: -2,
-  code: 'ENOENT',
-  syscall: 'stat',
-  path: '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'
-}
-[Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'] {
-  errno: -2,
-  code: 'ENOENT',
-  syscall: 'stat',
-  path: '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'
-}
- ⨯ unhandledRejection: [Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'] {
-  errno: -2,
-  code: 'ENOENT',
-  syscall: 'stat',
-  path: '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'
-}
- ⨯ unhandledRejection: [Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'] {
-  errno: -2,
-  code: 'ENOENT',
-  syscall: 'stat',
-  path: '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'
-}
-<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'
- ✓ Compiled in 54ms (846 modules)
- ✓ Compiled in 63ms (462 modules)
- ✓ Compiled in 56ms (846 modules)
- ✓ Compiled in 66ms (462 modules)
- ✓ Compiled in 64ms (462 modules)
- ✓ Compiled in 71ms (462 modules)
- ✓ Compiled in 73ms (462 modules)
- ✓ Compiled in 86ms (462 modules)
- ✓ Compiled in 81ms (462 modules)
- ✓ Compiled in 63ms (462 modules)
-[Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'] {
-  errno: -2,
-  code: 'ENOENT',
-  syscall: 'stat',
-  path: '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'
-}
-[Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'] {
-  errno: -2,
-  code: 'ENOENT',
-  syscall: 'stat',
-  path: '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'
-}
- ⨯ unhandledRejection: [Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'] {
-  errno: -2,
-  code: 'ENOENT',
-  syscall: 'stat',
-  path: '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'
-}
- ⨯ unhandledRejection: [Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'] {
-  errno: -2,
-  code: 'ENOENT',
-  syscall: 'stat',
-  path: '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'
-}
-<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, stat '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development/0.pack.gz'
- ✓ Compiled in 63ms (462 modules)
- ✓ Compiled in 66ms (462 modules)
- ✓ Compiled in 59ms (462 modules)
- ✓ Compiled in 81ms (462 modules)
- ✓ Compiled in 88ms (462 modules)
- ✓ Compiled in 65ms (462 modules)
- ✓ Compiled in 84ms (462 modules)
- ✓ Compiled in 71ms (462 modules)
- ✓ Compiled in 68ms (462 modules)
- ✓ Compiled in 95ms (462 modules)
- ✓ Compiled in 84ms (462 modules)
- ✓ Compiled in 64ms (462 modules)
- ✓ Compiled in 75ms (462 modules)
- ✓ Compiled in 63ms (462 modules)
- ✓ Compiled in 66ms (462 modules)
- ✓ Compiled in 71ms (462 modules)
- ✓ Compiled in 69ms (462 modules)
- ✓ Compiled in 132ms (860 modules)
- ✓ Compiled in 96ms (860 modules)
- ✓ Compiled in 78ms (462 modules)
- ✓ Compiled in 70ms (462 modules)
- ✓ Compiled in 59ms (462 modules)
- ✓ Compiled in 71ms (462 modules)
- ✓ Compiled in 67ms (462 modules)
- ✓ Compiled in 91ms (462 modules)
- ✓ Compiled in 67ms (462 modules)
-<w> [webpack.cache.PackFileCacheStrategy] Restoring pack from /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development.pack.gz failed: TypeError: Cannot read properties of undefined (reading 'hasStartTime')
- ✓ Compiled in 73ms (846 modules)
-<w> [webpack.cache.PackFileCacheStrategy] Restoring pack from /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development.pack.gz failed: TypeError: Cannot read properties of undefined (reading 'hasStartTime')
- ✓ Compiled in 100ms (462 modules)
- ✓ Compiled in 85ms (462 modules)
-<w> [webpack.cache.PackFileCacheStrategy] Restoring pack from /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development.pack.gz failed: TypeError: Cannot read properties of undefined (reading 'hasStartTime')
- ✓ Compiled in 100ms (462 modules)
- ✓ Compiled in 65ms (462 modules)
-<w> [webpack.cache.PackFileCacheStrategy] Restoring pack from /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development.pack.gz failed: TypeError: Cannot read properties of undefined (reading 'hasStartTime')
- ✓ Compiled in 73ms (462 modules)
- ✓ Compiled in 63ms (462 modules)
- ✓ Compiled in 58ms (462 modules)
- ✓ Compiled in 111ms (910 modules)
-<w> [webpack.cache.PackFileCacheStrategy] Restoring pack from /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development.pack.gz failed: TypeError: Cannot read properties of undefined (reading 'hasStartTime')
- ✓ Compiled in 70ms (462 modules)
- ✓ Compiled in 82ms (910 modules)
- ✓ Compiled in 58ms (462 modules)
- ✓ Compiled in 71ms (910 modules)
- ✓ Compiled in 72ms (462 modules)
- ✓ Compiled in 93ms (910 modules)
- ✓ Compiled in 77ms (462 modules)
- ✓ Compiled in 99ms (910 modules)
-<w> [webpack.cache.PackFileCacheStrategy] Restoring pack from /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development.pack.gz failed: TypeError: Cannot read properties of undefined (reading 'hasStartTime')
- ✓ Compiled in 78ms (462 modules)
- ✓ Compiled in 69ms (910 modules)
- ✓ Compiled in 72ms (462 modules)
- ✓ Compiled in 64ms (462 modules)
- ✓ Compiled in 63ms (462 modules)
- ✓ Compiled in 66ms (462 modules)
- ✓ Compiled in 63ms (462 modules)
- ✓ Compiled in 60ms (462 modules)
-<w> [webpack.cache.PackFileCacheStrategy] Restoring pack from /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development.pack.gz failed: TypeError: Cannot read properties of undefined (reading 'hasStartTime')
- ✓ Compiled in 84ms (462 modules)
- ✓ Compiled in 74ms (462 modules)
- ✓ Compiled in 119ms (860 modules)
-<w> [webpack.cache.PackFileCacheStrategy] Restoring pack from /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development.pack.gz failed: TypeError: Cannot read properties of undefined (reading 'hasStartTime')
- ✓ Compiled in 98ms (462 modules)
- ✓ Compiled in 61ms (462 modules)
- ✓ Compiled in 66ms (462 modules)
- ✓ Compiled in 65ms (462 modules)
- ✓ Compiled in 77ms (462 modules)
- ✓ Compiled in 68ms (462 modules)
-<w> [webpack.cache.PackFileCacheStrategy] Restoring pack from /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development.pack.gz failed: TypeError: Cannot read properties of undefined (reading 'hasStartTime')
- ✓ Compiled in 71ms (462 modules)
- ✓ Compiled in 64ms (462 modules)
- ✓ Compiled in 62ms (462 modules)
-<w> [webpack.cache.PackFileCacheStrategy] Restoring pack from /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development.pack.gz failed: TypeError: Cannot read properties of undefined (reading 'hasStartTime')
- ✓ Compiled in 85ms (462 modules)
- ✓ Compiled in 66ms (462 modules)
- ✓ Compiled in 63ms (462 modules)
- ✓ Compiled in 72ms (462 modules)
- ✓ Compiled in 62ms (462 modules)
- ✓ Compiled in 60ms (462 modules)
-<w> [webpack.cache.PackFileCacheStrategy] Restoring pack from /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development.pack.gz failed: TypeError: Cannot read properties of undefined (reading 'hasStartTime')
- ✓ Compiled in 69ms (462 modules)
- ✓ Compiled in 63ms (462 modules)
- ✓ Compiled in 59ms (462 modules)
- ✓ Compiled in 65ms (462 modules)
- ✓ Compiled in 72ms (462 modules)
- ✓ Compiled in 66ms (462 modules)
-<w> [webpack.cache.PackFileCacheStrategy] Restoring pack from /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development.pack.gz failed: TypeError: Cannot read properties of undefined (reading 'hasStartTime')
- ✓ Compiled in 72ms (462 modules)
- ✓ Compiled in 65ms (462 modules)
- ✓ Compiled in 60ms (462 modules)
- ✓ Compiled in 63ms (462 modules)
- ✓ Compiled in 61ms (462 modules)
- ✓ Compiled in 58ms (462 modules)
-<w> [webpack.cache.PackFileCacheStrategy] Restoring pack from /Users/tonychustudio/Documents/aam-orchestration/accounting-automation/.next/cache/webpack/client-development.pack.gz failed: TypeError: Cannot read properties of undefined (reading 'hasStartTime')
- ✓ Compiled in 69ms (462 modules)
- ✓ Compiled in 63ms (462 modules)
- ✓ Compiled in 108ms (398 modules)
- ✓ Compiled in 73ms (398 modules)
-[?25h
+ POST /api/extract-company-info 200 in 83ms
+ ✓ Compiled in 235ms (516 modules)
+ ✓ Compiled in 112ms (474 modules)
+ ✓ Compiled in 106ms (474 modules)
+ ✓ Compiled in 112ms (474 modules)
+ ✓ Compiled in 104ms (474 modules)
+ ✓ Compiled in 143ms (474 modules)
+ ✓ Compiled in 109ms (474 modules)
+ ✓ Compiled in 106ms (474 modules)
+ ✓ Compiled in 178ms (474 modules)
+ ✓ Compiled in 103ms (474 modules)
+ ✓ Compiled in 118ms (474 modules)
+ ✓ Compiled in 103ms (474 modules)
+ ✓ Compiled in 182ms (474 modules)
+ ✓ Compiled in 101ms (474 modules)
+ ✓ Compiled in 102ms (474 modules)
+ ✓ Compiled in 115ms (474 modules)
+ ✓ Compiled in 103ms (474 modules)
+ ✓ Compiled in 119ms (474 modules)
+ ✓ Compiled in 126ms (474 modules)
+ ✓ Compiled in 101ms (474 modules)
+ ✓ Compiled in 158ms (474 modules)
+ ✓ Compiled in 109ms (474 modules)

@@ -336,6 +336,80 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
           items: currentInvoiceData?.items ? [...currentInvoiceData.items] : []
         };
         
+        // ユーザー入力から直接情報を抽出（AI応答より優先）
+        const userInput = conversation.toLowerCase();
+        
+        // 顧客名の抽出（ユーザー入力優先）
+        const customerNamePatterns = [
+          /([^\s]+(?:株式会社|会社|商事|工業|製作所|ストア|ショップ|サービス|システム|コーポレーション))(?:に|へ|向け|宛|様|さん)?/,
+          /([^\s]+会社)(?:に|へ|向け|宛|様|さん)?/,
+          /([^\s]+商事)(?:に|へ|向け|宛|様|さん)?/
+        ];
+        
+        let userSpecifiedCustomerName = null;
+        for (const pattern of customerNamePatterns) {
+          const match = conversation.match(pattern);
+          if (match && match[1]) {
+            userSpecifiedCustomerName = match[1].replace(/さん$|様$/g, '').trim();
+            logger.debug('[AI] User specified customer name:', userSpecifiedCustomerName);
+            break;
+          }
+        }
+        
+        // 支払方法の抽出
+        if (userInput.includes('カード') || userInput.includes('クレジット')) {
+          updatedData.paymentMethod = 'credit_card';
+          logger.debug('[AI] Payment method set to credit_card based on user input');
+        }
+        
+        // 金額の抽出（税込み・税抜きの判定を含む）
+        let userSpecifiedAmount = null;
+        let isTaxIncluded = false;
+        
+        // 税込み金額のパターン
+        const taxIncludedPatterns = [
+          /税込み?(\d+)万円/,
+          /税込(\d+)万円/,
+          /(\d+)万円.*税込/,
+          /月(\d+)万円/  // 「月10万円」は通常税込み
+        ];
+        
+        for (const pattern of taxIncludedPatterns) {
+          const match = conversation.match(pattern);
+          if (match) {
+            userSpecifiedAmount = parseInt(match[1]) * 10000;
+            isTaxIncluded = true;
+            logger.debug('[AI] Tax-included amount specified by user:', userSpecifiedAmount);
+            break;
+          }
+        }
+        
+        // 税抜き金額のパターン（明示的に指定された場合のみ）
+        if (!userSpecifiedAmount) {
+          const taxExcludedPatterns = [
+            /税抜き?(\d+)万円/,
+            /税別(\d+)万円/,
+            /(\d+)万円.*税抜/,
+            /(\d+)万円.*税別/
+          ];
+          
+          for (const pattern of taxExcludedPatterns) {
+            const match = conversation.match(pattern);
+            if (match) {
+              const baseAmount = parseInt(match[1]) * 10000;
+              userSpecifiedAmount = baseAmount; // 税抜き金額として保存
+              isTaxIncluded = false;
+              logger.debug('[AI] Tax-excluded amount specified by user:', userSpecifiedAmount);
+              break;
+            }
+          }
+        }
+        
+        // 定期請求の判定
+        const isRecurring = userInput.includes('定期') || userInput.includes('毎月') || userInput.includes('月額');
+        const recurringMonths = conversation.match(/(\d+)ヶ月/) || conversation.match(/(\d+)か月/);
+        const monthCount = recurringMonths ? parseInt(recurringMonths[1]) : null;
+        
         if (aiResponse) {
           logger.debug('[AI] Processing AI response for data extraction');
           logger.debug('[AI] AI Response:', aiResponse);
@@ -345,9 +419,11 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
           let newItems = [];
           let foundItemList = false;
           
-          // 顧客名の抽出
-          // 編集モードの場合の顧客名処理
-          if (mode === 'edit') {
+          // 顧客名の最終決定（ユーザー指定を最優先）
+          if (userSpecifiedCustomerName) {
+            updatedData.customerName = userSpecifiedCustomerName;
+            logger.debug('[AI] Using user-specified customer name:', userSpecifiedCustomerName);
+          } else if (mode === 'edit') {
             // 初期データから元の顧客名を取得
             const originalCustomerName = initialInvoiceData?.customerName || currentInvoiceData?.customerName || '';
             logger.debug('[AI] Edit mode - Original customer name:', originalCustomerName);
@@ -462,25 +538,83 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
             logger.debug('[AI] No amount found in user input or not in edit mode. Mode:', mode);
           }
           
-          // 番号付き項目を探す（例：1. システム構築費：1,200,000円）
-          for (const line of lines) {
-            const itemMatch = line.match(/^(\d+)\.\s*([^：]+)：\s*([\d,]+)円/);
-            if (itemMatch) {
-              foundItemList = true;
-              const itemNumber = parseInt(itemMatch[1]);
-              const description = itemMatch[2].trim();
-              const amount = parseInt(itemMatch[3].replace(/,/g, ''));
+          // 定期請求書の処理（ユーザー指定に基づく）
+          if (isRecurring && userSpecifiedAmount && monthCount) {
+            // 定期請求書として1項目のみ作成
+            const monthlyAmount = isTaxIncluded 
+              ? Math.floor(userSpecifiedAmount / 1.1) // 税込みから税抜きを計算
+              : userSpecifiedAmount; // 税抜き金額
+            
+            const description = currentInvoiceData?.items?.[0]?.description || 'LLMOフルコンサルティング';
+            
+            newItems = [{
+              description: `${description}（月額 × ${monthCount}ヶ月）`,
+              quantity: monthCount,
+              unitPrice: monthlyAmount,
+              amount: monthlyAmount * monthCount,
+              taxRate: 0.1,
+              taxAmount: Math.floor(monthlyAmount * monthCount * 0.1)
+            }];
+            
+            foundItemList = true;
+            logger.debug('[AI] Created recurring invoice item:', newItems[0]);
+          } else if (userSpecifiedAmount && !foundItemList) {
+            // 通常の請求書で金額が指定された場合
+            const baseAmount = isTaxIncluded 
+              ? Math.floor(userSpecifiedAmount / 1.1) // 税込みから税抜きを計算
+              : userSpecifiedAmount; // 税抜き金額
               
-              logger.debug(`[AI] Found item ${itemNumber}: ${description} = ${amount}円`);
-              
-              newItems.push({
-                description: description,
-                quantity: 1,
-                unitPrice: amount,
-                amount: amount,
-                taxRate: 0.1,
-                taxAmount: Math.floor(amount * 0.1)
+            if (currentInvoiceData?.items && currentInvoiceData.items.length > 0) {
+              // 既存項目の金額を更新
+              newItems = currentInvoiceData.items.map((item, index) => {
+                if (index === 0) {
+                  return {
+                    ...item,
+                    unitPrice: baseAmount,
+                    amount: baseAmount * item.quantity,
+                    taxAmount: Math.floor(baseAmount * item.quantity * 0.1)
+                  };
+                }
+                return item;
               });
+              foundItemList = true;
+            } else {
+              // 新規項目を作成
+              newItems = [{
+                description: '請求項目',
+                quantity: 1,
+                unitPrice: baseAmount,
+                amount: baseAmount,
+                taxRate: 0.1,
+                taxAmount: Math.floor(baseAmount * 0.1)
+              }];
+              foundItemList = true;
+            }
+          } else {
+            // AIの応答から番号付き項目を探す（フォールバック）
+            for (const line of lines) {
+              const itemMatch = line.match(/^(\d+)\.\s*([^：]+)：\s*([\d,]+)円/);
+              if (itemMatch) {
+                foundItemList = true;
+                const itemNumber = parseInt(itemMatch[1]);
+                const description = itemMatch[2].trim();
+                const amount = parseInt(itemMatch[3].replace(/,/g, ''));
+                
+                logger.debug(`[AI] Found item ${itemNumber}: ${description} = ${amount}円`);
+                
+                // AIが提示した金額が税込みか税抜きかを判定
+                const aiAmountIsTaxIncluded = line.includes('税込') || !line.includes('税抜');
+                const baseAmount = aiAmountIsTaxIncluded ? Math.floor(amount / 1.1) : amount;
+                
+                newItems.push({
+                  description: description,
+                  quantity: 1,
+                  unitPrice: baseAmount,
+                  amount: baseAmount,
+                  taxRate: 0.1,
+                  taxAmount: Math.floor(baseAmount * 0.1)
+                });
+              }
             }
           }
           

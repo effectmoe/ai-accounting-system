@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { logger } from '@/lib/logger';
+import { SearchableSelect } from '@/components/ui/SearchableSelect';
 import { 
   ArrowLeft, 
   Save, 
@@ -258,18 +259,17 @@ export default function CreateDeliveryNotePage() {
             <CardContent className="space-y-4">
               <div>
                 <Label htmlFor="customer">顧客 *</Label>
-                <Select value={formData.customerId} onValueChange={(value) => setFormData({...formData, customerId: value})}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="顧客を選択してください" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {customers.map((customer) => (
-                      <SelectItem key={customer._id?.toString()} value={customer._id?.toString() || ''}>
-                        {customer.companyName}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <SearchableSelect
+                  id="customer"
+                  value={formData.customerId}
+                  onChange={(value) => setFormData({...formData, customerId: value})}
+                  options={customers.map((customer) => ({
+                    value: customer._id?.toString() || '',
+                    label: customer.companyName || '名称未設定'
+                  }))}
+                  placeholder="顧客を検索または選択"
+                  required
+                />
               </div>
 
               <div className="grid grid-cols-2 gap-4">

@@ -15,6 +15,7 @@ import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import AIChatDialog from '@/components/ai-chat-dialog';
 import { calculateDueDate } from '@/utils/payment-terms';
+import { SearchableSelect } from '@/components/ui/SearchableSelect';
 
 interface InvoiceItem {
   description: string;
@@ -705,30 +706,22 @@ function NewInvoiceContent() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="customer" className="text-sm font-medium text-gray-700 mb-1 block">既存顧客から選択</Label>
-                  <select
+                  <SearchableSelect
                     id="customer"
                     value={selectedCustomerId}
-                    onChange={(e) => {
-                      logger.debug('Selected customer ID:', e.target.value);
-                      setSelectedCustomerId(e.target.value);
+                    onChange={(value) => {
+                      logger.debug('Selected customer ID:', value);
+                      setSelectedCustomerId(value);
                       // 既存顧客を選択した場合、新規顧客名をクリア
-                      if (e.target.value) {
+                      if (value) {
                         setCustomerName('');
                       }
                     }}
-                    className="flex h-10 w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm ring-offset-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gray-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    <option value="">既存顧客から選択...</option>
-                    {customers.length === 0 ? (
-                      <option value="" disabled>
-                        顧客が登録されていません
-                      </option>
-                    ) : (
-                      customers
-                        .filter(customer => {
-                          // 厳密なチェック: customerが存在し、_idプロパティを持っていることを確認
-                          return customer && typeof customer === 'object' && '_id' in customer && customer._id;
-                        })
+                    options={customers
+                      .filter(customer => {
+                        // 厳密なチェック: customerが存在し、_idプロパティを持っていることを確認
+                        return customer && typeof customer === 'object' && '_id' in customer && customer._id;
+                      })
                         .map((customer) => {
                           // 顧客データの存在確認とフィールドの安全な参照
                           let displayName = '名称未設定';
@@ -744,14 +737,14 @@ function NewInvoiceContent() {
                             }
                           }
                           
-                          return (
-                            <option key={customer._id} value={customer._id}>
-                              {displayName}
-                            </option>
-                          );
-                        })
-                    )}
-                  </select>
+                          return {
+                            value: customer._id,
+                            label: displayName
+                          };
+                        })}
+                    placeholder="顧客を検索または選択"
+                    disabled={!!customerName}
+                  />
                 </div>
                 <div>
                   <Label htmlFor="customerName" className="text-sm font-medium text-gray-700 mb-1 block">または新規顧客名を入力</Label>

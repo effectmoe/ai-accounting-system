@@ -14,6 +14,7 @@ import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import AIChatDialog from '@/components/ai-chat-dialog';
 import { calculateDueDate } from '@/utils/payment-terms';
+import { SearchableSelect } from '@/components/ui/SearchableSelect';
 
 import { logger } from '@/lib/logger';
 interface QuoteItem {
@@ -459,19 +460,17 @@ function NewQuoteContent() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="customer">顧客 *</Label>
-              <select
+              <SearchableSelect
                 id="customer"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 value={selectedCustomerId}
-                onChange={(e) => handleCustomerChange(e.target.value)}
-              >
-                <option value="">顧客を選択してください</option>
-                {customers.map((customer) => (
-                  <option key={customer._id} value={customer._id}>
-                    {customer.companyName || customer.name || customer.company || '名前未設定'}
-                  </option>
-                ))}
-              </select>
+                onChange={handleCustomerChange}
+                options={customers.map((customer) => ({
+                  value: customer._id,
+                  label: customer.companyName || customer.name || customer.company || '名前未設定'
+                }))}
+                placeholder="顧客を検索または選択"
+                required
+              />
             </div>
             <div>
               <Label htmlFor="customerName">顧客名（表示用）</Label>
