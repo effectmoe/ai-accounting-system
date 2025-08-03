@@ -67,8 +67,101 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
             address2: null
           };
           
-          // 住所から詳細情報を抽出（AI解析を使用）
-          if (extractedData.address) {
+          // Azure Form Recognizerから取得した住所情報をデバッグログ出力
+          logger.info('Azure Form Recognizer extracted address:', {
+            fullAddress: extractedData.address,
+            allAddressValues: fields.Addresses?.values?.map(v => v.content) || []
+          });
+          
+          // Azureの住所マッピングが不完全な場合、OCR結果全体をMastraで解析
+          if (!extractedData.address || extractedData.address.length < 20 || 
+              (!extractedData.address.includes('市') && !extractedData.address.includes('区') && 
+               !extractedData.address.includes('町') && !extractedData.address.includes('村'))) {
+            
+            logger.info('Azure address mapping incomplete, using Mastra for full OCR analysis');
+            logger.info('Azure OCR full content:', result.content);
+            
+            try {
+              // DeepSeek APIを直接呼び出し（Mastraエージェントのツール問題を回避）
+              const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${process.env.DEEPSEEK_API_KEY}`,
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                  model: 'deepseek-chat',
+                  messages: [{
+                    role: 'user',
+                    content: `以下のOCR結果から住所情報と会社名カナを抽出して、JSONで返してください：
+
+OCR結果:
+${result.content}
+
+抽出してほしい情報：
+**住所情報:**
+- postalCode: 郵便番号（XXX-XXXX形式）
+- prefecture: 都道府県
+- city: 市区町村（政令指定都市の場合は「市区」を連結）
+- address1: 番地・丁目
+- address2: 建物名・階数
+
+**会社名カナ生成:**
+- companyNameKana: 会社名の振り仮名（カタカナ）を生成してください
+  - 株式会社、有限会社、合同会社、一般社団法人などの法人格接頭辞は除外
+  - 例：「株式会社アベック商事」→「アベックショウジ」
+  - 例：「有限会社田中製作所」→「タナカセイサクショ」
+  - 例：「合同会社スカイテック」→「スカイテック」
+
+JSON形式のみで返してください。`
+                  }],
+                  temperature: 0.1,
+                  max_tokens: 1000
+                })
+              });
+
+              const aiResult = await response.json();
+              const responseText = aiResult.choices?.[0]?.message?.content || '';
+              const jsonMatch = responseText.match(/```json\s*([\s\S]*?)\s*```/) || 
+                               responseText.match(/\{[\s\S]*\}/);
+              
+              if (jsonMatch) {
+                const jsonString = jsonMatch[1] || jsonMatch[0];
+                const aiAddressParts = JSON.parse(jsonString);
+                
+                logger.info('Mastra extracted address parts:', aiAddressParts);
+                
+                // Mastraの結果でAzureの不完全な住所情報を補完
+                Object.assign(extractedData, aiAddressParts);
+                
+                // 完全な住所を再構築
+                const fullAddressParts = [
+                  aiAddressParts.postalCode ? `〒${aiAddressParts.postalCode}` : '',
+                  aiAddressParts.prefecture || '',
+                  aiAddressParts.city || '',
+                  aiAddressParts.address1 || '',
+                  aiAddressParts.address2 || ''
+                ].filter(part => part).join(' ');
+                
+                extractedData.address = fullAddressParts;
+                logger.info('Reconstructed full address:', fullAddressParts);
+              }
+            } catch (mastraError) {
+              logger.error('Mastra address extraction failed:', mastraError);
+              // Mastraが失敗した場合は元のAzure結果で住所解析を実行
+              if (extractedData.address) {
+                try {
+                  const addressParts = await parseAddressWithAI(extractedData.address);
+                  Object.assign(extractedData, addressParts);
+                } catch (aiError) {
+                  logger.warn('AI address parsing failed, using fallback:', aiError);
+                  const addressParts = parseJapaneseAddress(extractedData.address);
+                  Object.assign(extractedData, addressParts);
+                }
+              }
+            }
+          } else {
+            // Azureの住所が十分な場合は通常の解析を実行
             try {
               const addressParts = await parseAddressWithAI(extractedData.address);
               Object.assign(extractedData, addressParts);
@@ -76,6 +169,16 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
               logger.warn('AI address parsing failed, using fallback:', aiError);
               const addressParts = parseJapaneseAddress(extractedData.address);
               Object.assign(extractedData, addressParts);
+            }
+          }
+          
+          // 会社名カナを生成
+          if (extractedData.companyName && !extractedData.companyNameKana) {
+            try {
+              const companyKana = await generateCompanyNameKana(extractedData.companyName);
+              extractedData.companyNameKana = companyKana;
+            } catch (kanaError) {
+              logger.warn('Company name kana generation failed:', kanaError);
             }
           }
           
@@ -107,17 +210,22 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
             type: 'text',
             text: `この名刺画像から会社情報と個人情報を正確に抽出してJSONで返してください。
 
+💡 特に住所の完全な抽出に注意してください：
+- 郵便番号から建物名・階数まで全て抽出する
+- 「北九州市小倉南区南方2-5-22 2F」のような詳細な住所情報を見落とさない
+
 重要な注意事項：
 1. 日本語の住所は以下のように分割してください：
    - 郵便番号: "802-0976"のような形式（〒マークは除く）
    - 都道府県: "福岡県"、"東京都"など（都道府県で終わる部分のみ）
    - 市区町村: "北九州市小倉南区"、"千代田区"など（市区町村を含める）
    - 住所1: "南方2-5-22"など（番地部分）
-   - 住所2: "2F"、"〇〇ビル501"など（建物名・階数）
+   - 住所2: "2F"、"3階"、"〇〇ビル501"など（建物名・階数）
 
 2. 抽出する情報：
 - companyName: 会社名（株式会社、有限会社などの法人格を含む）
-- companyNameKana: 会社名カナ（あれば）
+- companyNameKana: 会社名の振り仮名（カタカナ）を生成（法人格接頭辞は除外）
+  例：「株式会社アベック商事」→「アベックショウジ」
 - name: 氏名
 - nameKana: 氏名カナ（あれば）
 - department: 部署名
@@ -141,6 +249,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
 - address1: "南方2-5-22"
 - address2: "2F"
 
+🔍 画像をよく見て、住所の詳細部分（市区町村、番地、建物名）を見落とさないようにしてください。
 見つからない情報はnullを設定してください。
 JSON形式のみで返してください。`
           },
@@ -165,6 +274,16 @@ JSON形式のみで返してください。`
       if (jsonMatch) {
         const jsonString = jsonMatch[1] || jsonMatch[0];
         const extractedData = JSON.parse(jsonString);
+        
+        // 会社名カナを生成（Mastraエージェントが生成していない場合）
+        if (extractedData.companyName && !extractedData.companyNameKana) {
+          try {
+            const companyKana = await generateCompanyNameKana(extractedData.companyName);
+            extractedData.companyNameKana = companyKana;
+          } catch (kanaError) {
+            logger.warn('Company name kana generation failed:', kanaError);
+          }
+        }
         
         logger.info('Extracted business card info:', extractedData);
         
@@ -277,6 +396,9 @@ function parseJapaneseAddress(address: string): {
 } {
   const result: any = {};
   
+  logger.info('parseJapaneseAddress input:', address);
+  
+  
   // 郵便番号の抽出
   const postalMatch = address.match(/〒?\s*(\d{3})[-\s]?(\d{4})/);
   if (postalMatch) {
@@ -310,5 +432,60 @@ function parseJapaneseAddress(address: string): {
     result.address1 = address;
   }
   
+  logger.info('parseJapaneseAddress output:', result);
   return result;
+}
+
+// 会社名からカナを生成する関数
+async function generateCompanyNameKana(companyName: string): Promise<string | null> {
+  try {
+    logger.info('Generating company name kana for:', companyName);
+    
+    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.DEEPSEEK_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'deepseek-chat',
+        messages: [{
+          role: 'user',
+          content: `以下の会社名から、法人格接頭辞を除外したカタカナ読みを生成してください：
+
+会社名: ${companyName}
+
+ルール：
+1. 株式会社、有限会社、合同会社、一般社団法人、合名会社、合資会社、医療法人、社会福祉法人などの法人格接頭辞は除外
+2. カタカナのみで返す（ひらがな、漢字、英数字は含めない）
+3. 長音符「ー」は使用可能
+
+例：
+- 「株式会社山田商事」→「ヤマダショウジ」  
+- 「有限会社田中製作所」→「タナカセイサクショ」
+- 「合同会社スカイテック」→「スカイテック」
+- 「医療法人清水会」→「シミズカイ」
+
+カタカナのみで返してください。`
+        }],
+        temperature: 0.1,
+        max_tokens: 100
+      })
+    });
+
+    const aiResult = await response.json();
+    const responseText = aiResult.choices?.[0]?.message?.content || '';
+    
+    // カタカナのみを抽出（英数字、記号、ひらがなを除外）
+    const kanaMatch = responseText.match(/[ァ-ヴー]+/);
+    const companyKana = kanaMatch ? kanaMatch[0] : null;
+    
+    logger.info('Generated company name kana:', { input: companyName, output: companyKana });
+    
+    return companyKana;
+    
+  } catch (error) {
+    logger.error('Company name kana generation error:', error);
+    throw error;
+  }
 }
