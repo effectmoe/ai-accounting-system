@@ -2,8 +2,22 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+  
+  // 認証が不要なパス
+  const publicPaths = [
+    '/api/auth',
+    '/api/auth/check',
+    '/api/auth/logout',
+    '/api/webhook/',
+    '/_next/',
+    '/favicon.ico',
+  ];
+  
+  const isPublicPath = publicPaths.some(path => pathname.startsWith(path));
+  
   // APIリクエストの場合はCORSヘッダーを追加
-  if (request.nextUrl.pathname.startsWith('/api/')) {
+  if (pathname.startsWith('/api/')) {
     // プリフライトリクエストへの対応
     if (request.method === 'OPTIONS') {
       return new NextResponse(null, {
@@ -25,12 +39,22 @@ export function middleware(request: NextRequest) {
     return response;
   }
 
-  // Webhook エンドポイントは認証をスキップ
-  if (request.nextUrl.pathname.startsWith('/api/webhook/')) {
-    return NextResponse.next();
+  // パスワード認証が有効な場合のチェック
+  if (process.env.SITE_PASSWORD && !isPublicPath) {
+    const authToken = request.cookies.get('auth-token');
+    
+    if (!authToken || authToken.value !== 'authenticated') {
+      // 認証されていない場合、APIリクエストには401を返す
+      if (pathname.startsWith('/api/')) {
+        return NextResponse.json(
+          { error: 'Unauthorized' },
+          { status: 401 }
+        );
+      }
+      // ページリクエストの場合は、クライアントサイドで処理
+    }
   }
 
-  // その他のリクエストはそのまま通す
   return NextResponse.next();
 }
 
