@@ -431,6 +431,16 @@ export default function CustomerChatModal({ isOpen, onClose, onDataExtracted, fo
       // 住所情報 - 必ず表示セクションを作成
       messageContent += '\n【住所情報】\n';
       
+      // デバッグ: 住所フィールドの値を確認
+      console.log('🏠 住所データ確認:', {
+        postalCode: data.postalCode,
+        prefecture: data.prefecture,
+        city: data.city,
+        address1: data.address1,
+        address2: data.address2,
+        address: data.address
+      });
+      
       // 郵便番号
       if (data.postalCode) {
         messageContent += `〒${data.postalCode}\n`;
@@ -450,8 +460,15 @@ export default function CustomerChatModal({ isOpen, onClose, onDataExtracted, fo
         fullAddress = data.address;
       }
       
+      // デバッグ: 構築された住所を確認
+      console.log('🏠 構築された住所:', fullAddress);
+      
       // 住所がある場合は表示、ない場合も「未取得」と表示
-      messageContent += fullAddress.trim() || '住所: 未取得';
+      if (fullAddress.trim()) {
+        messageContent += '住所: ' + fullAddress.trim();
+      } else {
+        messageContent += '住所: 未取得';
+      }
       messageContent += '\n';
       
       messageContent += '\nこの情報をフォームに入力します。';
