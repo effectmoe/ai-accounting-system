@@ -5,8 +5,8 @@ export const mastraCustomerAgent = new Agent({
   name: 'mastra-customer-agent',
   description: '顧客情報の管理・分析・レポート生成を行うエージェント',
   model: {
-    provider: 'deepseek',
-    name: 'deepseek-chat',
+    provider: 'openai',
+    name: 'gpt-4',
   },
   instructions: `
 あなたは顧客管理専門のAIエージェントです。

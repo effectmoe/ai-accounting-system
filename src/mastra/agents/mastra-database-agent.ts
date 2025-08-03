@@ -4,8 +4,8 @@ export const mastraDatabaseAgent = new Agent({
   name: 'mastra-database-agent',
   description: 'MongoDBデータベース操作とデータ管理を行うエージェント',
   model: {
-    provider: 'deepseek',
-    name: 'deepseek-chat',
+    provider: 'openai',
+    name: 'gpt-4',
   },
   instructions: `
 あなたはMongoDBデータベース管理専門のAIエージェントです。
