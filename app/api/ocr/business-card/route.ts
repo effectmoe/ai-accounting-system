@@ -149,6 +149,7 @@ JSON形式のみで返してください。`
                 const aiAddressParts = JSON.parse(jsonString);
                 
                 logger.info('Mastra extracted address parts:', aiAddressParts);
+                console.log('🏠 DeepSeek APIが抽出した住所詳細:', JSON.stringify(aiAddressParts, null, 2));
                 
                 // Mastraの結果でAzureの不完全な住所情報を補完
                 Object.assign(extractedData, aiAddressParts);
@@ -212,6 +213,11 @@ JSON形式のみで返してください。`
           console.log('address2:', extractedData.address2);
           console.log('address (full):', extractedData.address);
           console.log('========================');
+          
+          // 住所データが存在することを確認
+          const hasAddressData = extractedData.prefecture || extractedData.city || extractedData.address1 || extractedData.address;
+          console.log('住所データ存在確認:', hasAddressData);
+          console.log('返却データ全体:', JSON.stringify(extractedData, null, 2));
           
           return NextResponse.json({
             success: true,
