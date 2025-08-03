@@ -224,11 +224,22 @@ export default function CustomerChatModal({ isOpen, onClose, onDataExtracted, fo
         if (hasAddressInfo) {
           messageContent += '\n\n住所情報:';
           if (data.postalCode) messageContent += `\n郵便番号: ${data.postalCode}`;
-          if (data.prefecture) messageContent += `\n都道府県: ${data.prefecture}`;
-          if (data.city) messageContent += `\n市区町村: ${data.city}`;
-          if (data.address1) messageContent += `\n住所1: ${data.address1}`;
-          if (data.address2) messageContent += `\n住所2: ${data.address2}`;
-          if (data.address && !data.prefecture && !data.city) messageContent += `\n住所: ${data.address}`;
+          
+          // 住所を一行で表示
+          let fullAddress = '';
+          if (data.prefecture) fullAddress += data.prefecture;
+          if (data.city) fullAddress += data.city;
+          if (data.address1) fullAddress += data.address1;
+          if (data.address2) fullAddress += ' ' + data.address2;
+          
+          // addressフィールドがある場合（個別フィールドがない場合）
+          if (!fullAddress && data.address) {
+            fullAddress = data.address;
+          }
+          
+          if (fullAddress) {
+            messageContent += '\n' + fullAddress.trim();
+          }
         }
         
         // 連絡先情報（ある場合のみ）
