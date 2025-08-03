@@ -72,6 +72,10 @@ function NewInvoiceContent() {
   // 会社情報
   const [companyInfo, setCompanyInfo] = useState<any>(null);
   
+  // 仕入先見積書との関連
+  const [sourceSupplierQuoteId, setSourceSupplierQuoteId] = useState<string | null>(null);
+  const [sourceSupplierQuote, setSourceSupplierQuote] = useState<any>(null);
+  
   // 請求書情報
   const [title, setTitle] = useState(''); // 請求書のタイトル
   const [invoiceDate, setInvoiceDate] = useState(format(new Date(), 'yyyy-MM-dd'));
@@ -96,7 +100,14 @@ function NewInvoiceContent() {
     fetchCustomers();
     fetchProducts();
     fetchDefaultBankInfo();
-  }, []);
+    
+    // URLパラメータから仕入先見積書IDを取得
+    const supplierQuoteId = searchParams.get('sourceSupplierQuoteId');
+    if (supplierQuoteId) {
+      setSourceSupplierQuoteId(supplierQuoteId);
+      fetchSupplierQuote(supplierQuoteId);
+    }
+  }, [searchParams]);
 
   // URLパラメータに基づいてAIチャットを自動的に開く
   useEffect(() => {
@@ -300,6 +311,42 @@ function NewInvoiceContent() {
       }
     } catch (error) {
       logger.error('Failed to fetch default bank info:', error);
+    }
+  };
+
+  // 仕入先見積書データを取得
+  const fetchSupplierQuote = async (id: string) => {
+    try {
+      const response = await fetch(`/api/supplier-quotes/${id}`);
+      if (!response.ok) throw new Error('Failed to fetch supplier quote');
+      
+      const supplierQuote = await response.json();
+      setSourceSupplierQuote(supplierQuote);
+      
+      // 仕入先見積書のデータを請求書フォームに反映
+      if (supplierQuote.subject) {
+        setTitle(supplierQuote.subject);
+      }
+      
+      // 明細項目を変換（金額は手動で調整可能）
+      if (supplierQuote.items && supplierQuote.items.length > 0) {
+        const convertedItems = supplierQuote.items.map((item: any) => ({
+          description: item.itemName,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice * 1.3, // デフォルトで30%のマージンを追加
+          amount: item.quantity * (item.unitPrice * 1.3),
+          taxRate: item.taxRate || 0.1,
+          taxAmount: Math.floor(item.quantity * (item.unitPrice * 1.3) * (item.taxRate || 0.1)),
+          unit: item.unit || '',
+          productId: item.productId || '',
+        }));
+        setItems(convertedItems);
+      }
+      
+      setSuccessMessage('仕入先見積書のデータを読み込みました。金額を確認して調整してください。');
+    } catch (error) {
+      logger.error('Error fetching supplier quote:', error);
+      setError('仕入先見積書の取得に失敗しました');
     }
   };
 
@@ -562,6 +609,18 @@ function NewInvoiceContent() {
         logger.debug('New customer created:', customerId);
       }
 
+      // 利益計算（仕入先見積書がある場合）
+      let costAmount = undefined;
+      let profitAmount = undefined;
+      let profitMargin = undefined;
+      
+      if (sourceSupplierQuote) {
+        costAmount = sourceSupplierQuote.totalAmount;
+        const totalAmount = totals.totalAmount;
+        profitAmount = totalAmount - costAmount;
+        profitMargin = totalAmount > 0 ? (profitAmount / totalAmount) * 100 : 0;
+      }
+
       // 請求書を作成
       const invoiceData = {
         customerId,
@@ -573,6 +632,10 @@ function NewInvoiceContent() {
         paymentMethod,
         isGeneratedByAI: !!aiConversationId,
         aiConversationId,
+        sourceSupplierQuoteId,
+        costAmount,
+        profitAmount,
+        profitMargin,
       };
 
       logger.debug('Creating invoice with data:', invoiceData);
@@ -590,6 +653,18 @@ function NewInvoiceContent() {
       }
 
       const invoice = await response.json();
+      
+      // 仕入先見積書を更新して関連を作成
+      if (sourceSupplierQuoteId) {
+        await fetch(`/api/supplier-quotes/${sourceSupplierQuoteId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            relatedInvoiceIds: [...(sourceSupplierQuote.relatedInvoiceIds || []), invoice._id]
+          }),
+        });
+      }
+      
       logger.debug('Invoice created successfully:', invoice);
       router.push(`/invoices/${invoice._id}`);
     } catch (error) {
@@ -605,6 +680,45 @@ function NewInvoiceContent() {
   return (
     <div className="container mx-auto p-6 max-w-6xl">
       <h1 className="text-3xl font-bold mb-6">請求書作成</h1>
+
+      {/* 仕入先見積書との関連情報 */}
+      {sourceSupplierQuote && (
+        <Card className="mb-6 border-purple-200 bg-purple-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-purple-700">
+              <FileText className="h-5 w-5" />
+              仕入先見積書から作成中
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <p className="text-sm">
+                <span className="font-medium">見積書番号:</span> {sourceSupplierQuote.quoteNumber}
+              </p>
+              <p className="text-sm">
+                <span className="font-medium">仕入先:</span> {sourceSupplierQuote.supplier?.companyName || sourceSupplierQuote.vendorName || '未設定'}
+              </p>
+              <p className="text-sm">
+                <span className="font-medium">原価:</span> ¥{sourceSupplierQuote.totalAmount.toLocaleString()}
+              </p>
+              <div className="mt-4 p-3 bg-white rounded-lg border border-purple-200">
+                <p className="text-sm font-medium text-purple-700 mb-1">利益計算</p>
+                <div className="space-y-1">
+                  <p className="text-sm">
+                    <span className="text-gray-600">売価:</span> ¥{totals.totalAmount.toLocaleString()}
+                  </p>
+                  <p className="text-sm">
+                    <span className="text-gray-600">利益額:</span> ¥{(totals.totalAmount - sourceSupplierQuote.totalAmount).toLocaleString()}
+                  </p>
+                  <p className="text-sm">
+                    <span className="text-gray-600">利益率:</span> {totals.totalAmount > 0 ? ((totals.totalAmount - sourceSupplierQuote.totalAmount) / totals.totalAmount * 100).toFixed(1) : 0}%
+                  </p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* 作成方法の選択 */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">

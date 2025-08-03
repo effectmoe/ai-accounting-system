@@ -168,6 +168,16 @@ export interface Invoice {
   // 定期請求書関連
   recurringInvoiceId?: ObjectId; // 元の定期請求書ID
   installmentNumber?: number; // 何回目の請求か
+  
+  // 仕入先見積書との関連
+  sourceSupplierQuoteId?: ObjectId; // 元となった仕入先見積書ID
+  sourceSupplierQuote?: SupplierQuote; // Populated field
+  
+  // 利益計算用フィールド
+  costAmount?: number; // 原価（仕入先見積書の金額）
+  profitAmount?: number; // 利益額（請求額 - 原価）
+  profitMargin?: number; // 利益率（利益額 / 請求額 * 100）
+  
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -224,6 +234,23 @@ export interface Quote {
     invoiceRegistrationNumber?: string;
     stampImage?: string;
   };
+  ocrFiles?: Array<{
+    id: string;
+    filename: string;
+    uploadedAt: Date;
+    fileType?: string;
+    fileSize?: number;
+  }>;
+  
+  // 仕入先見積書との関連
+  sourceSupplierQuoteId?: ObjectId; // 元となった仕入先見積書ID
+  sourceSupplierQuote?: SupplierQuote; // Populated field
+  
+  // 利益計算用フィールド
+  costAmount?: number; // 原価（仕入先見積書の金額）
+  profitAmount?: number; // 利益額（見積額 - 原価）
+  profitMargin?: number; // 利益率（利益額 / 見積額 * 100）
+  
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -1199,6 +1226,10 @@ export interface SupplierQuote {
   convertedToPurchaseOrderId?: ObjectId;
   convertedToPurchaseOrderDate?: Date;
   
+  // 弊社見積書・請求書への変換情報
+  relatedQuoteIds?: ObjectId[]; // 関連する弊社見積書ID
+  relatedInvoiceIds?: ObjectId[]; // 関連する弊社請求書ID
+  
   // AI生成情報
   isGeneratedByAI?: boolean;
   aiGenerationMetadata?: {
@@ -1206,6 +1237,14 @@ export interface SupplierQuote {
     confidence?: number;
     timestamp?: Date;
   };
+  
+  ocrFiles?: Array<{
+    id: string;
+    filename: string;
+    uploadedAt: Date;
+    fileType?: string;
+    fileSize?: number;
+  }>;
   
   createdAt?: Date;
   updatedAt?: Date;

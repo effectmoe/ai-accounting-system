@@ -78,6 +78,10 @@ export class QuoteService {
           if (quote.customerId) {
             quote.customer = customerMap.get(quote.customerId.toString());
           }
+          // ocrFilesフィールドが未定義の場合は空配列で初期化
+          if (!quote.ocrFiles) {
+            quote.ocrFiles = [];
+          }
         });
       }
 
@@ -196,6 +200,16 @@ export class QuoteService {
       // 銀行口座情報を取得
       if (quote.bankAccountId) {
         quote.bankAccount = await db.findById<BankAccount>(Collections.BANK_ACCOUNTS, quote.bankAccountId);
+      }
+
+      // ocrFilesフィールドが未定義の場合は空配列で初期化
+      if (!quote.ocrFiles) {
+        quote.ocrFiles = [];
+      }
+      
+      // 仕入先見積書情報を取得
+      if (quote.sourceSupplierQuoteId) {
+        quote.sourceSupplierQuote = await db.findById(Collections.SUPPLIER_QUOTES, quote.sourceSupplierQuoteId);
       }
 
       return quote;
