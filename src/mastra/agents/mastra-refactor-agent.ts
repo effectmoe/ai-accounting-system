@@ -4,8 +4,8 @@ export const mastraRefactorAgent = new Agent({
   name: 'mastra-refactor-agent',
   description: 'コードリファクタリングと最適化を行うエージェント',
   model: {
-    provider: 'openai',
-    name: 'gpt-4',
+    provider: 'deepseek',
+    name: 'deepseek-chat',
   },
   instructions: `
 あなたはコードリファクタリング専門のAIエージェントです。
