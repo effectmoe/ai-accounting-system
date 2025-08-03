@@ -446,7 +446,7 @@ export default function CustomerChatModal({ isOpen, onClose, onDataExtracted, fo
   if (!isOpen) return null;
 
   return (
-    <div className="w-full h-[300px] bg-white rounded-lg border border-gray-200 flex flex-col">
+    <div className="w-full h-[500px] bg-white rounded-lg border border-gray-200 flex flex-col">
       {/* ヘッダー */}
       <div className="flex items-center gap-2 p-4 border-b bg-purple-50">
         <Bot className="w-5 h-5 text-purple-600" />
