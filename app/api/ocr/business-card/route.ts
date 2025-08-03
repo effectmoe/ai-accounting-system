@@ -85,7 +85,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     
     const base64 = Buffer.from(buffer).toString('base64');
     const mimeType = imageFile.type || 'image/jpeg';
-    const agent = mastra.getAgent('imageAnalyzer');
+    const agent = mastra.getAgent('ocrAgent');
     const dataUri = `data:${mimeType};base64,${base64}`;
     
     const result = await agent.generate({
