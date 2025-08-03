@@ -182,6 +182,20 @@ export default function CustomerChatModal({ isOpen, onClose, onDataExtracted, fo
           window.console.log('📋 API レスポンスデータ:', data);
         }
         
+        // エラーチェック
+        if (!data.success || data.error) {
+          const errorMessage = data.error || '会社情報の取得に失敗しました';
+          const assistantMessage: Message = {
+            id: Date.now().toString(),
+            content: `❌ ${errorMessage}\n\n💡 ヒント：\n• 別の会社URLを試してみてください\n• または名刺画像をアップロードしてください\n• 手動で情報を入力することも可能です`,
+            role: 'assistant',
+            timestamp: new Date()
+          };
+          setMessages(prev => [...prev, assistantMessage]);
+          toast.error(errorMessage);
+          return;
+        }
+        
         // デバッグ: 抽出されたデータの詳細をログ出力
         if (typeof window !== 'undefined') {
           window.console.log('🔍 Extracted company data from API:', JSON.stringify(data, null, 2));
