@@ -405,7 +405,7 @@ export default function CustomerChatModal({ isOpen, onClose, onDataExtracted, fo
       if (data.website) messageContent += `ウェブサイト: ${data.website}\n`;
       
       // 住所情報
-      const hasAddress = data.postalCode || data.prefecture || data.city || data.address1 || data.address2;
+      const hasAddress = data.postalCode || data.prefecture || data.city || data.address1 || data.address2 || data.address;
       if (hasAddress) {
         messageContent += '\n【住所情報】\n';
         if (data.postalCode) messageContent += `〒${data.postalCode}\n`;
@@ -416,6 +416,12 @@ export default function CustomerChatModal({ isOpen, onClose, onDataExtracted, fo
         if (data.city) fullAddress += data.city;
         if (data.address1) fullAddress += data.address1;
         if (data.address2) fullAddress += ' ' + data.address2;
+        
+        // addressフィールドがある場合はそれも表示
+        if (!fullAddress && data.address) {
+          fullAddress = data.address;
+        }
+        
         if (fullAddress) messageContent += fullAddress.trim() + '\n';
       }
       

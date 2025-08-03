@@ -203,6 +203,16 @@ JSON形式のみで返してください。`
           
           logger.info('Extracted business card info from Azure:', extractedData);
           
+          // レスポンス前の最終データ確認
+          console.log('=== FINAL RESPONSE DATA ===');
+          console.log('postalCode:', extractedData.postalCode);
+          console.log('prefecture:', extractedData.prefecture);
+          console.log('city:', extractedData.city);
+          console.log('address1:', extractedData.address1);
+          console.log('address2:', extractedData.address2);
+          console.log('address (full):', extractedData.address);
+          console.log('========================');
+          
           return NextResponse.json({
             success: true,
             ...extractedData
