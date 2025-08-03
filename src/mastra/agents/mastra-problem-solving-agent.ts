@@ -4,8 +4,8 @@ export const mastraProblemSolvingAgent = new Agent({
   name: 'mastra-problem-solving-agent',
   description: '問題解決とトラブルシューティングを行うエージェント',
   model: {
-    provider: 'deepseek',
-    name: 'deepseek-chat',
+    provider: 'openai',
+    name: 'gpt-4',
   },
   instructions: `
 あなたは問題解決専門のAIエージェントです。
