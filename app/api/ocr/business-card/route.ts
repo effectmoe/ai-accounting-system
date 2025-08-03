@@ -49,7 +49,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
           const fields = businessCard.fields || {};
           
           // Azure Form Recognizerの結果を整形
-          const extractedData = {
+          let extractedData = {
             companyName: fields.CompanyNames?.values?.[0]?.content || null,
             name: fields.ContactNames?.values?.[0]?.content || null,
             department: fields.Departments?.values?.[0]?.content || null,
@@ -59,13 +59,24 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
             fax: fields.Faxes?.values?.[0]?.content || null,
             email: fields.Emails?.values?.[0]?.content || null,
             website: fields.Websites?.values?.[0]?.content || null,
-            address: fields.Addresses?.values?.[0]?.content || null
+            address: fields.Addresses?.values?.[0]?.content || null,
+            postalCode: null,
+            prefecture: null,
+            city: null,
+            address1: null,
+            address2: null
           };
           
-          // 住所から詳細情報を抽出
+          // 住所から詳細情報を抽出（AI解析を使用）
           if (extractedData.address) {
-            const addressParts = parseJapaneseAddress(extractedData.address);
-            Object.assign(extractedData, addressParts);
+            try {
+              const addressParts = await parseAddressWithAI(extractedData.address);
+              Object.assign(extractedData, addressParts);
+            } catch (aiError) {
+              logger.warn('AI address parsing failed, using fallback:', aiError);
+              const addressParts = parseJapaneseAddress(extractedData.address);
+              Object.assign(extractedData, addressParts);
+            }
           }
           
           logger.info('Extracted business card info from Azure:', extractedData);
@@ -198,7 +209,65 @@ JSON形式のみで返してください。`
   }
 });
 
-// 日本の住所を解析する関数
+// AI による住所解析関数
+async function parseAddressWithAI(address: string): Promise<{
+  postalCode?: string;
+  prefecture?: string;
+  city?: string;
+  address1?: string;
+  address2?: string;
+}> {
+  try {
+    const agent = mastra.getAgent('ocrAgent');
+    
+    const result = await agent.generate({
+      messages: [{
+        role: 'user',
+        content: `以下の日本の住所を詳細に分割してJSONで返してください：
+
+住所: ${address}
+
+以下の形式で正確に分割してください：
+{
+  "postalCode": "XXX-XXXX", // 郵便番号（〒は除く）
+  "prefecture": "〇〇県", // 都道府県
+  "city": "〇〇市〇〇区", // 市区町村（政令指定都市の区も含む）
+  "address1": "番地・丁目", // 番地部分
+  "address2": "建物名・階数" // 建物名、階数（2F、3階など）
+}
+
+重要な注意点：
+- 「北九州市小倉南区」のような政令指定都市は、市と区を組み合わせてcityとして扱う
+- 「2F」「3階」「101号室」などは address2 に入れる
+- 見つからない項目はnullを設定
+- JSONのみ返してください（説明文は不要）`
+      }]
+    });
+
+    const responseText = result.text || '';
+    
+    // JSONを抽出
+    const jsonMatch = responseText.match(/```json\s*([\s\S]*?)\s*```/) || 
+                     responseText.match(/\{[\s\S]*\}/);
+    
+    if (jsonMatch) {
+      const jsonString = jsonMatch[1] || jsonMatch[0];
+      const parsed = JSON.parse(jsonString);
+      
+      logger.info('AI parsed address:', { input: address, output: parsed });
+      return parsed;
+    }
+    
+    throw new Error('JSONの抽出に失敗しました');
+    
+  } catch (error) {
+    logger.error('AI address parsing failed, falling back to regex:', error);
+    // AI解析が失敗した場合は従来の関数にフォールバック
+    return parseJapaneseAddress(address);
+  }
+}
+
+// 日本の住所を解析する関数（フォールバック用）
 function parseJapaneseAddress(address: string): {
   postalCode?: string;
   prefecture?: string;
@@ -221,17 +290,18 @@ function parseJapaneseAddress(address: string): {
     result.prefecture = prefectureMatch[0];
     const remaining = address.substring(prefectureMatch.index! + prefectureMatch[0].length);
     
-    // 市区町村の抽出
-    const cityMatch = remaining.match(/^([^市区町村]+[市区町村])/);
+    // 市区町村の抽出（政令指定都市の区も含む）
+    // 「北九州市小倉南区」「札幌市中央区」などにマッチ
+    const cityMatch = remaining.match(/^(.+?市.+?区|.+?[市区町村])/);
     if (cityMatch) {
-      result.city = cityMatch[0];
-      result.address1 = remaining.substring(cityMatch[0].length).trim();
+      result.city = cityMatch[1];
+      result.address1 = remaining.substring(cityMatch[1].length).trim();
       
-      // ビル名などを分離
-      const buildingMatch = result.address1.match(/(.+?)([\s　]*)([^0-9０-９\s　]+ビル|[^0-9０-９\s　]+タワー|[^0-9０-９\s　]+マンション|[^0-9０-９\s　]+[0-9０-９]+F)(.*)$/);
+      // ビル名・階数などを分離（「2F」「3階」「101号室」など）
+      const buildingMatch = result.address1.match(/(.+?)\s*([0-9０-９]+[FfＦｆ階]|.+?(?:ビル|タワー|マンション|ハイツ|コーポ|アパート).*)$/);
       if (buildingMatch) {
         result.address1 = buildingMatch[1].trim();
-        result.address2 = (buildingMatch[3] + buildingMatch[4]).trim();
+        result.address2 = buildingMatch[2].trim();
       }
     } else {
       result.address1 = remaining.trim();

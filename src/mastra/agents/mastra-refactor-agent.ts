@@ -1,10 +1,11 @@
 import { Agent } from '@mastra/core';
+import { deepseekProvider } from '../setup-deepseek';
 
 export const mastraRefactorAgent = new Agent({
   name: 'mastra-refactor-agent',
   description: 'コードリファクタリングと最適化を行うエージェント',
   model: {
-    provider: 'deepseek',
+    provider: deepseekProvider,
     name: 'deepseek-chat',
   },
   instructions: `
@@ -27,7 +28,7 @@ export const mastraRefactorAgent = new Agent({
 
 コードの保守性、可読性、パフォーマンスを向上させる提案を行います。
 `,
-  tools: [
+  getTools: () => [
     {
       name: 'analyze_code_quality',
       description: 'コード品質を分析します',

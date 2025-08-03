@@ -1,10 +1,11 @@
 import { Agent } from '@mastra/core';
+import { deepseekProvider } from '../setup-deepseek';
 
 export const mastraUiAgent = new Agent({
   name: 'mastra-ui-agent',
   description: 'UIコンポーネント生成とユーザーインターフェース管理エージェント',
   model: {
-    provider: 'deepseek',
+    provider: deepseekProvider,
     name: 'deepseek-chat',
   },
   instructions: `
@@ -28,7 +29,7 @@ export const mastraUiAgent = new Agent({
 
 日本語UIに完全対応し、使いやすさとアクセシビリティを重視した実装を提供します。
 `,
-  tools: [
+  getTools: () => [
     {
       name: 'create_component',
       description: 'Reactコンポーネントを生成します',

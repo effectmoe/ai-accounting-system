@@ -1,11 +1,12 @@
 import { Agent } from '@mastra/core';
 import { customerTools } from '../tools/customer-tools';
+import { deepseekProvider } from '../setup-deepseek';
 
 export const mastraCustomerAgent = new Agent({
   name: 'mastra-customer-agent',
   description: '顧客情報の管理・分析・レポート生成を行うエージェント',
   model: {
-    provider: 'deepseek',
+    provider: deepseekProvider,
     name: 'deepseek-chat',
   },
   instructions: `
@@ -28,5 +29,5 @@ export const mastraCustomerAgent = new Agent({
 
 日本のビジネス慣習を理解し、適切な敬語と対応を心がけます。
 `,
-  tools: customerTools,
+  getTools: () => customerTools,
 });

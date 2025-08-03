@@ -1,11 +1,12 @@
 import { Agent } from '@mastra/core';
 import { accountingTools } from '../tools/accounting-tools';
+import { deepseekProvider } from '../setup-deepseek';
 
 export const mastraAccountingAgent = new Agent({
   name: 'mastra-accounting-agent',
   description: '会計処理・仕訳作成・請求書処理・財務レポート生成を行う日本税制対応エージェント',
   model: {
-    provider: 'deepseek',
+    provider: deepseekProvider,
     name: 'deepseek-chat',
   },
   instructions: `
@@ -28,5 +29,5 @@ export const mastraAccountingAgent = new Agent({
 
 常に正確で迅速な会計処理を提供し、日本の税制に完全準拠した処理を行います。
 `,
-  tools: accountingTools,
+  getTools: () => accountingTools,
 });

@@ -1,10 +1,11 @@
 import { Agent } from '@mastra/core';
+import { deepseekProvider } from '../setup-deepseek';
 
 export const mastraProblemSolvingAgent = new Agent({
   name: 'mastra-problem-solving-agent',
   description: '問題解決とトラブルシューティングを行うエージェント',
   model: {
-    provider: 'deepseek',
+    provider: deepseekProvider,
     name: 'deepseek-chat',
   },
   instructions: `
@@ -27,7 +28,7 @@ export const mastraProblemSolvingAgent = new Agent({
 
 迅速かつ正確な問題解決を提供し、将来の問題を予防する提案を行います。
 `,
-  tools: [
+  getTools: () => [
     {
       name: 'diagnose_error',
       description: 'エラーを診断します',

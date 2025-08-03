@@ -1,10 +1,11 @@
 import { Agent } from '@mastra/core';
+import { deepseekProvider } from '../setup-deepseek';
 
 export const mastraConstructionAgent = new Agent({
   name: 'mastra-construction-agent',
   description: 'システム構築とアーキテクチャ設計を行うエージェント',
   model: {
-    provider: 'deepseek',
+    provider: deepseekProvider,
     name: 'deepseek-chat',
   },
   instructions: `
@@ -28,7 +29,7 @@ export const mastraConstructionAgent = new Agent({
 
 ベストプラクティスに従った、スケーラブルで保守しやすいシステムを設計します。
 `,
-  tools: [
+  getTools: () => [
     {
       name: 'design_architecture',
       description: 'システムアーキテクチャを設計します',

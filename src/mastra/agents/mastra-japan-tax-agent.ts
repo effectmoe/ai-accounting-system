@@ -1,10 +1,11 @@
 import { Agent } from '@mastra/core';
+import { deepseekProvider } from '../setup-deepseek';
 
 export const mastraJapanTaxAgent = new Agent({
   name: 'mastra-japan-tax-agent',
   description: '日本の税制に完全対応した税務計算・申告支援エージェント',
   model: {
-    provider: 'deepseek',
+    provider: deepseekProvider,
     name: 'deepseek-chat',
   },
   instructions: `
@@ -29,7 +30,7 @@ export const mastraJapanTaxAgent = new Agent({
 最新の税制改正に対応し、正確な税務処理を提供します。
 令和6年（2024年）の税制に完全準拠しています。
 `,
-  tools: [
+  getTools: () => [
     {
       name: 'calculate_consumption_tax',
       description: '消費税を計算します（軽減税率対応）',
