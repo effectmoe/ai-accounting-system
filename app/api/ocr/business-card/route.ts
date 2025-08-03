@@ -73,10 +73,19 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
             allAddressValues: fields.Addresses?.values?.map(v => v.content) || []
           });
           
+          // 全フィールドをログ出力して確認
+          logger.info('Azure Form Recognizer all fields:', {
+            CompanyNames: fields.CompanyNames?.values || [],
+            ContactNames: fields.ContactNames?.values || [],
+            Addresses: fields.Addresses?.values || [],
+            Phones: fields.WorkPhones?.values || [],
+            Emails: fields.Emails?.values || [],
+            allFieldNames: Object.keys(fields)
+          });
+          
           // Azureの住所マッピングが不完全な場合、OCR結果全体をMastraで解析
-          if (!extractedData.address || extractedData.address.length < 20 || 
-              (!extractedData.address.includes('市') && !extractedData.address.includes('区') && 
-               !extractedData.address.includes('町') && !extractedData.address.includes('村'))) {
+          // 住所がない場合は必ずDeepSeekで解析する
+          if (!extractedData.address || extractedData.address === null) {
             
             logger.info('Azure address mapping incomplete, using Mastra for full OCR analysis');
             logger.info('Azure OCR full content:', result.content);
