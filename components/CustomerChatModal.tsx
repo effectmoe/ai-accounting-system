@@ -381,9 +381,49 @@ export default function CustomerChatModal({ isOpen, onClose, onDataExtracted, fo
         timestamp: new Date()
       };
 
+      // 名刺情報を整形して表示
+      let messageContent = '名刺から以下の情報を読み取りました：\n\n';
+      
+      // 会社情報
+      messageContent += '【会社情報】\n';
+      if (data.companyName) messageContent += `会社名: ${data.companyName}\n`;
+      if (data.companyNameKana) messageContent += `会社名カナ: ${data.companyNameKana}\n`;
+      
+      // 個人情報
+      messageContent += '\n【担当者情報】\n';
+      if (data.name) messageContent += `氏名: ${data.name}\n`;
+      if (data.nameKana) messageContent += `氏名カナ: ${data.nameKana}\n`;
+      if (data.department) messageContent += `部署: ${data.department}\n`;
+      if (data.title) messageContent += `役職: ${data.title}\n`;
+      
+      // 連絡先
+      messageContent += '\n【連絡先】\n';
+      if (data.phone) messageContent += `電話番号: ${data.phone}\n`;
+      if (data.mobile) messageContent += `携帯番号: ${data.mobile}\n`;
+      if (data.fax) messageContent += `FAX: ${data.fax}\n`;
+      if (data.email) messageContent += `メール: ${data.email}\n`;
+      if (data.website) messageContent += `ウェブサイト: ${data.website}\n`;
+      
+      // 住所情報
+      const hasAddress = data.postalCode || data.prefecture || data.city || data.address1 || data.address2;
+      if (hasAddress) {
+        messageContent += '\n【住所情報】\n';
+        if (data.postalCode) messageContent += `〒${data.postalCode}\n`;
+        
+        // 住所を一行で表示
+        let fullAddress = '';
+        if (data.prefecture) fullAddress += data.prefecture;
+        if (data.city) fullAddress += data.city;
+        if (data.address1) fullAddress += data.address1;
+        if (data.address2) fullAddress += ' ' + data.address2;
+        if (fullAddress) messageContent += fullAddress.trim() + '\n';
+      }
+      
+      messageContent += '\nこの情報をフォームに入力します。';
+      
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
-        content: `名刺から以下の情報を読み取りました：\n\n会社名: ${data.companyName || '不明'}${data.companyNameKana ? `\n会社名カナ: ${data.companyNameKana}` : ''}\n氏名: ${data.name || '不明'}${data.nameKana ? ` (${data.nameKana})` : ''}\n${data.department ? `部署: ${data.department}\n` : ''}${data.title ? `役職: ${data.title}\n` : ''}電話番号: ${data.phone || '不明'}${data.mobile ? `\n携帯番号: ${data.mobile}` : ''}${data.fax ? `\nFAX: ${data.fax}` : ''}\nメール: ${data.email || '不明'}${data.website ? `\nウェブサイト: ${data.website}` : ''}${data.postalCode ? `\n\n住所情報:\n郵便番号: ${data.postalCode}` : ''}${data.prefecture ? `\n都道府県: ${data.prefecture}` : ''}${data.city ? `\n市区町村: ${data.city}` : ''}${data.address1 ? `\n住所1: ${data.address1}` : ''}${data.address2 ? `\n住所2: ${data.address2}` : ''}${data.address && !data.address1 ? `\n住所: ${data.address}` : ''}\n\nこの情報をフォームに入力します。`,
+        content: messageContent,
         role: 'assistant',
         timestamp: new Date()
       };

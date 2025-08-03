@@ -94,26 +94,44 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
         content: [
           {
             type: 'text',
-            text: `この名刺画像から以下の情報を抽出してください：
+            text: `この名刺画像から会社情報と個人情報を正確に抽出してJSONで返してください。
 
-- 会社名（companyName）
-- 会社名カナ（companyNameKana）※あれば
-- 氏名（name）
-- 氏名カナ（nameKana）※あれば
-- 部署（department）
-- 役職（title）
-- 電話番号（phone）
-- 携帯番号（mobile）※あれば
-- FAX番号（fax）※あれば
-- メールアドレス（email）
-- 郵便番号（postalCode）
-- 都道府県（prefecture）
-- 市区町村（city）
-- 住所1（address1）
-- 住所2（address2）※ビル名など
-- ウェブサイト（website）※あれば
+重要な注意事項：
+1. 日本語の住所は以下のように分割してください：
+   - 郵便番号: "802-0976"のような形式（〒マークは除く）
+   - 都道府県: "福岡県"、"東京都"など（都道府県で終わる部分のみ）
+   - 市区町村: "北九州市小倉南区"、"千代田区"など（市区町村を含める）
+   - 住所1: "南方2-5-22"など（番地部分）
+   - 住所2: "2F"、"〇〇ビル501"など（建物名・階数）
 
-JSON形式で返してください。見つからない情報はnullにしてください。`
+2. 抽出する情報：
+- companyName: 会社名（株式会社、有限会社などの法人格を含む）
+- companyNameKana: 会社名カナ（あれば）
+- name: 氏名
+- nameKana: 氏名カナ（あれば）
+- department: 部署名
+- title: 役職
+- phone: 電話番号（ハイフン付き）
+- mobile: 携帯番号（あれば）
+- fax: FAX番号（あれば）
+- email: メールアドレス
+- postalCode: 郵便番号（XXX-XXXX形式）
+- prefecture: 都道府県
+- city: 市区町村（政令指定都市の場合は"市区"を連結）
+- address1: 番地
+- address2: 建物名・階数など
+- website: ウェブサイト（あれば）
+
+3. 実際の例：
+住所が"〒802-0976 福岡県北九州市小倉南区南方2-5-22 2F"の場合：
+- postalCode: "802-0976"
+- prefecture: "福岡県"
+- city: "北九州市小倉南区"
+- address1: "南方2-5-22"
+- address2: "2F"
+
+見つからない情報はnullを設定してください。
+JSON形式のみで返してください。`
           },
           {
             type: 'image_url',
