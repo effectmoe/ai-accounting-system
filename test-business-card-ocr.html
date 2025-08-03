@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>名刺OCRテスト - DeepSeek API直接呼び出し版</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .result {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 3px;
+            margin-top: 10px;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .loading { background: #d1ecf1; color: #0c5460; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #6c757d; cursor: not-allowed; }
+        .address-details {
+            margin-top: 15px;
+            padding: 10px;
+            border: 2px solid #28a745;
+            border-radius: 5px;
+            background: #f8fff9;
+        }
+        .address-field {
+            margin: 5px 0;
+            padding: 5px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <h1>名刺OCRテスト - DeepSeek API直接呼び出し版</h1>
+    
+    <div class="test-section">
+        <h2>🏪 本番環境テスト (Vercel)</h2>
+        <p>修正されたDeepSeek API直接呼び出し版をテスト</p>
+        <input type="file" id="fileInputProd" accept=".jpg,.jpeg,.png">
+        <button onclick="testBusinessCardOCR('production')" id="testProdBtn">本番環境でテスト実行</button>
+        <div id="statusProd" class="result"></div>
+        <div id="resultProd"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>🖥️ ローカル環境テスト</h2>
+        <input type="file" id="fileInputLocal" accept=".jpg,.jpeg,.png">
+        <button onclick="testBusinessCardOCR('local')" id="testLocalBtn">ローカル環境でテスト実行</button>
+        <div id="statusLocal" class="result"></div>
+        <div id="resultLocal"></div>
+    </div>
+
+    <script>
+        const BASE_URLS = {
+            production: 'https://accounting-automation-mwqxtfunl-effectmoes-projects.vercel.app',
+            local: 'http://localhost:3000'
+        };
+
+        async function testBusinessCardOCR(environment) {
+            const fileInput = document.getElementById(`fileInput${environment.charAt(0).toUpperCase() + environment.slice(1)}`);
+            const file = fileInput.files[0];
+            const status = document.getElementById(`status${environment.charAt(0).toUpperCase() + environment.slice(1)}`);
+            const result = document.getElementById(`result${environment.charAt(0).toUpperCase() + environment.slice(1)}`);
+            const button = document.getElementById(`test${environment.charAt(0).toUpperCase() + environment.slice(1)}Btn`);
+            
+            if (!file) {
+                alert('ファイルを選択してください');
+                return;
+            }
+            
+            button.disabled = true;
+            status.className = 'result loading';
+            status.textContent = '名刺OCR処理中...';
+            result.innerHTML = '';
+            
+            try {
+                console.log(`🚀 ${environment}環境で名刺OCRテスト開始`);
+                console.log('ファイル:', file.name, 'サイズ:', file.size, 'タイプ:', file.type);
+                
+                const formData = new FormData();
+                formData.append('image', file);
+                
+                const response = await fetch(`${BASE_URLS[environment]}/api/ocr/business-card`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const responseData = await response.json();
+                console.log('レスポンス:', responseData);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${JSON.stringify(responseData)}`);
+                }
+                
+                if (responseData.success) {
+                    status.className = 'result success';
+                    status.textContent = '✅ 名刺OCR処理成功！';
+                    
+                    // 住所詳細の表示
+                    let addressDetailsHtml = '';
+                    if (responseData.postalCode || responseData.prefecture || responseData.city || responseData.address1 || responseData.address2) {
+                        addressDetailsHtml = `
+                            <div class="address-details">
+                                <h3>🏠 住所詳細分析結果</h3>
+                                <div class="address-field"><strong>郵便番号:</strong> ${responseData.postalCode || '未取得'}</div>
+                                <div class="address-field"><strong>都道府県:</strong> ${responseData.prefecture || '未取得'}</div>
+                                <div class="address-field"><strong>市区町村:</strong> ${responseData.city || '未取得'}</div>
+                                <div class="address-field"><strong>番地:</strong> ${responseData.address1 || '未取得'}</div>
+                                <div class="address-field"><strong>建物名・階数:</strong> ${responseData.address2 || '未取得'}</div>
+                                <div class="address-field"><strong>完全住所:</strong> ${responseData.address || '未取得'}</div>
+                            </div>
+                        `;
+                    }
+                    
+                    result.innerHTML = `
+                        <h3>📋 抽出されたデータ</h3>
+                        <div class="address-field"><strong>会社名:</strong> ${responseData.companyName || '未取得'}</div>
+                        <div class="address-field"><strong>会社名カナ:</strong> ${responseData.companyNameKana || '未取得'} ${responseData.companyNameKana ? '<span style="color: #28a745;">✅ AI生成</span>' : '<span style="color: #dc3545;">❌ 生成失敗</span>'}</div>
+                        <div class="address-field"><strong>氏名:</strong> ${responseData.name || '未取得'}</div>
+                        <div class="address-field"><strong>部署:</strong> ${responseData.department || '未取得'}</div>
+                        <div class="address-field"><strong>役職:</strong> ${responseData.title || '未取得'}</div>
+                        <div class="address-field"><strong>電話:</strong> ${responseData.phone || '未取得'}</div>
+                        <div class="address-field"><strong>携帯:</strong> ${responseData.mobile || '未取得'}</div>
+                        <div class="address-field"><strong>FAX:</strong> ${responseData.fax || '未取得'}</div>
+                        <div class="address-field"><strong>メール:</strong> ${responseData.email || '未取得'}</div>
+                        <div class="address-field"><strong>ウェブサイト:</strong> ${responseData.website || '未取得'}</div>
+                        ${addressDetailsHtml}
+                        
+                        <h3>🔧 技術的詳細</h3>
+                        <pre style="background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto;">${JSON.stringify(responseData, null, 2)}</pre>
+                    `;
+                    
+                    // 住所詳細がちゃんと取得できているかチェック
+                    const hasAddressDetails = responseData.city && responseData.address1;
+                    if (hasAddressDetails) {
+                        console.log('✅ 住所詳細取得成功:', {
+                            city: responseData.city,
+                            address1: responseData.address1,
+                            address2: responseData.address2
+                        });
+                    } else {
+                        console.warn('⚠️ 住所詳細が不完全:', {
+                            city: responseData.city,
+                            address1: responseData.address1,
+                            fullAddress: responseData.address
+                        });
+                    }
+                    
+                } else {
+                    throw new Error(responseData.error || '名刺OCR処理に失敗しました');
+                }
+                
+            } catch (error) {
+                console.error('❌ エラー:', error);
+                status.className = 'result error';
+                status.textContent = '❌ エラー: ' + error.message;
+                result.innerHTML = `
+                    <h3>エラー詳細</h3>
+                    <pre style="background: #f8d7da; padding: 10px; border-radius: 3px; color: #721c24;">${error.stack || error.message}</pre>
+                `;
+            } finally {
+                button.disabled = false;
+            }
+        }
+
+        // ページ読み込み時の設定
+        window.onload = function() {
+            console.log('📝 名刺OCRテストページ読み込み完了');
+            console.log('🎯 テスト目的: DeepSeek API直接呼び出しによる住所詳細抽出の確認');
+            console.log('📍 期待結果: 市区町村、番地、建物名が正しく分離されて表示される');
+        };
+    </script>
+</body>
+</html>
