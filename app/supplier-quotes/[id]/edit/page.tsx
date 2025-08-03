@@ -331,47 +331,38 @@ export default function EditSupplierQuotePage() {
               <tbody className="bg-white divide-y divide-gray-200">
                 {formData.items?.map((item, index) => (
                   <tr key={index}>
-                    <td className="px-6 py-4">
-                      <div className="space-y-2">
-                        <input
-                          type="text"
-                          value={item.itemName}
-                          onChange={(e) => updateItem(index, 'itemName', e.target.value)}
-                          placeholder="項目名"
-                          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          required
-                        />
-                        <input
-                          type="text"
-                          value={item.description || ''}
-                          onChange={(e) => updateItem(index, 'description', e.target.value)}
-                          placeholder="説明（任意）"
-                          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        />
-                      </div>
+                    <td className="px-6 py-4 align-top">
+                      <input
+                        type="text"
+                        value={item.itemName}
+                        onChange={(e) => updateItem(index, 'itemName', e.target.value)}
+                        placeholder="項目名"
+                        className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm bg-white hover:border-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        required
+                      />
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 py-4 whitespace-nowrap align-top">
                       <input
                         type="number"
                         value={item.quantity}
                         onChange={(e) => updateItem(index, 'quantity', Number(e.target.value))}
                         min="1"
-                        className="w-24 border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-24 border border-gray-300 rounded-md px-3 py-2 text-sm bg-white hover:border-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       />
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 py-4 whitespace-nowrap align-top">
                       <input
                         type="number"
                         value={item.unitPrice}
                         onChange={(e) => updateItem(index, 'unitPrice', Number(e.target.value))}
                         min="0"
-                        className="w-32 border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="w-32 border border-gray-300 rounded-md px-3 py-2 text-sm bg-white hover:border-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       />
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 align-top">
                       ¥{(item.amount || 0).toLocaleString()}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 py-4 whitespace-nowrap align-top">
                       <input
                         type="number"
                         value={item.taxRate}
@@ -382,10 +373,10 @@ export default function EditSupplierQuotePage() {
                       />
                       <span className="text-sm text-gray-500 ml-1">%</span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 align-top">
                       ¥{(item.taxAmount || 0).toLocaleString()}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 py-4 whitespace-nowrap align-top">
                       <button
                         type="button"
                         onClick={() => removeItem(index)}
