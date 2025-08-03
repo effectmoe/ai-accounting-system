@@ -193,9 +193,53 @@ export default function CustomerChatModal({ isOpen, onClose, onDataExtracted, fo
           });
         }
         
+        // 取得できた情報のみを表示
+        let messageContent = '会社情報を取得しました。以下の情報をフォームに入力します：\n\n';
+        
+        // 会社名は必須
+        messageContent += `会社名: ${data.companyName || '不明'}`;
+        if (data.companyNameKana) {
+          messageContent += `\n会社名カナ: ${data.companyNameKana}`;
+        }
+        if (data.department) {
+          messageContent += `\n部署: ${data.department}`;
+        }
+        
+        // 住所情報（ある場合のみ）
+        const hasAddressInfo = data.postalCode || data.prefecture || data.city || data.address1 || data.address2 || data.address;
+        if (hasAddressInfo) {
+          messageContent += '\n\n住所情報:';
+          if (data.postalCode) messageContent += `\n郵便番号: ${data.postalCode}`;
+          if (data.prefecture) messageContent += `\n都道府県: ${data.prefecture}`;
+          if (data.city) messageContent += `\n市区町村: ${data.city}`;
+          if (data.address1) messageContent += `\n住所1: ${data.address1}`;
+          if (data.address2) messageContent += `\n住所2: ${data.address2}`;
+          if (data.address && !data.prefecture && !data.city) messageContent += `\n住所: ${data.address}`;
+        }
+        
+        // 連絡先情報（ある場合のみ）
+        const hasContactInfo = data.phone || data.fax || data.email || data.website;
+        if (hasContactInfo) {
+          messageContent += '\n\n連絡先:';
+          if (data.phone) messageContent += `\n電話番号: ${data.phone}`;
+          if (data.fax) messageContent += `\nFAX: ${data.fax}`;
+          if (data.email) messageContent += `\nメール: ${data.email}`;
+          if (data.website) messageContent += `\nウェブサイト: ${data.website}`;
+        }
+        
+        // 担当者情報（ある場合のみ）
+        if (data.contactPerson) {
+          messageContent += `\n\n担当者情報:\n名前: ${data.contactPerson}`;
+        }
+        
+        // 備考（ある場合のみ）
+        if (data.notes) {
+          messageContent += `\n\n備考: ${data.notes}`;
+        }
+        
         const assistantMessage: Message = {
           id: Date.now().toString(),
-          content: `会社情報を取得しました。以下の情報をフォームに入力します：\n\n会社名: ${data.companyName || '不明'}${data.companyNameKana ? `\n会社名カナ: ${data.companyNameKana}` : ''}${data.department ? `\n部署: ${data.department}` : ''}\n\n住所情報:${data.postalCode ? `\n郵便番号: ${data.postalCode}` : ''}${data.prefecture ? `\n都道府県: ${data.prefecture}` : ''}${data.city ? `\n市区町村: ${data.city}` : ''}${data.address1 ? `\n住所1: ${data.address1}` : ''}${data.address2 ? `\n住所2: ${data.address2}` : ''}${data.address ? `\n住所: ${data.address}` : '不明'}\n\n連絡先:\n電話番号: ${data.phone || '不明'}${data.fax ? `\nFAX: ${data.fax}` : '❌ FAX情報なし'}\nメール: ${data.email || '不明'}${data.website ? `\nウェブサイト: ${data.website}` : '❌ ウェブサイト情報なし'}\n\n🔍 デバッグ情報:\nFAXデータ: ${data.fax || 'null/undefined'}\nWebサイトデータ: ${data.website || 'null/undefined'}${data.contactPerson ? `\n\n担当者情報:\n名前: ${data.contactPerson}` : ''}${data.notes ? `\n\n備考: ${data.notes}` : ''}`,
+          content: messageContent,
           role: 'assistant',
           timestamp: new Date()
         };
@@ -217,7 +261,27 @@ export default function CustomerChatModal({ isOpen, onClose, onDataExtracted, fo
       } else {
         // 通常のチャット応答または企業情報調査
         const currentCompanyName = formData?.companyName || '';
-        const isAskingAboutCompany = input.includes('どんな会社') || input.includes('詳しく') || input.includes('教えて') || input.includes('調べ');
+        
+        // より柔軟なキーワード判定
+        const isAskingAboutCompany = 
+          input.includes('どんな会社') || 
+          input.includes('詳しく') || 
+          input.includes('教えて') || 
+          input.includes('調べ') ||
+          input.includes('企業') ||
+          input.includes('会社') ||
+          input.includes('事業') ||
+          input.includes('サービス') ||
+          input.includes('業務') ||
+          input.includes('何をして');
+        
+        // 担当者情報の追加要求を検出
+        const isAskingToAddContact = 
+          input.includes('担当者') ||
+          input.includes('連絡先') ||
+          input.includes('追加') ||
+          input.includes('入力') ||
+          input.includes('登録');
         
         if (isAskingAboutCompany && currentCompanyName) {
           // 企業深掘り調査
@@ -242,11 +306,20 @@ export default function CustomerChatModal({ isOpen, onClose, onDataExtracted, fo
           } else {
             throw new Error('企業情報の調査に失敗しました');
           }
-        } else {
-          // 企業登録に関係ない質問への応答
+        } else if (isAskingToAddContact) {
+          // 担当者情報の追加に関する案内
           const assistantMessage: Message = {
             id: Date.now().toString(),
-            content: '😊 申し訳ございません。私は企業登録専用のアシスタントです。\n\n以下のことでお手伝いできます：\n• 企業情報の自動入力（URLまたは名刺画像）\n• 登録された企業の詳細情報提供\n\n他のことについてはお答えできかねます。',
+            content: '担当者情報の追加については、以下の方法があります：\n\n1. 名刺画像をアップロード（📷ボタン）\n   → 名刺から担当者情報を自動読み取り\n\n2. 企業のURLを入力\n   → ウェブサイトから連絡先情報を取得\n\n3. フォームに直接入力\n   → 画面下部の「担当者を追加」ボタンから手動入力\n\nどの方法でも簡単に追加できます！',
+            role: 'assistant',
+            timestamp: new Date()
+          };
+          setMessages(prev => [...prev, assistantMessage]);
+        } else {
+          // より詳細なヘルプメッセージ
+          const assistantMessage: Message = {
+            id: Date.now().toString(),
+            content: '私は企業登録をサポートするアシスタントです。\n\n📝 できること：\n• URLから企業情報を自動取得\n• 名刺画像から情報を読み取り\n• 登録済み企業の詳細調査\n\n💡 使い方の例：\n• 「https://example.com」→ サイトから情報取得\n• 名刺画像をアップロード → OCRで読み取り\n• 「この会社について教えて」→ 企業情報を調査\n\nご質問の内容をもう少し詳しくお聞かせください。',
             role: 'assistant',
             timestamp: new Date()
           };
