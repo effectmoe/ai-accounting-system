@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>名刺OCR直接テスト</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 1200px; 
+            margin: 0 auto; 
+            padding: 20px; 
+        }
+        .container { 
+            display: flex; 
+            gap: 20px; 
+        }
+        .section { 
+            flex: 1; 
+            border: 1px solid #ddd; 
+            padding: 20px; 
+            border-radius: 5px; 
+        }
+        button { 
+            background: #007bff; 
+            color: white; 
+            border: none; 
+            padding: 10px 20px; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            margin-top: 10px;
+        }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #6c757d; cursor: not-allowed; }
+        .result { 
+            background: #f5f5f5; 
+            padding: 15px; 
+            border-radius: 5px; 
+            margin-top: 15px; 
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .address-highlight {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .field-value {
+            background: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 名刺OCR API直接テスト</h1>
+    <p>APIレスポンスの住所フィールドを詳細に確認します</p>
+    
+    <div class="container">
+        <div class="section">
+            <h2>1. 画像アップロード</h2>
+            <input type="file" id="fileInput" accept="image/*">
+            <br>
+            <button onclick="testOCR()" id="testBtn">OCRテスト実行</button>
+            <div id="status"></div>
+        </div>
+        
+        <div class="section">
+            <h2>2. APIレスポンス（生データ）</h2>
+            <div id="rawResponse" class="result"></div>
+        </div>
+        
+        <div class="section">
+            <h2>3. 住所フィールド解析</h2>
+            <div id="addressAnalysis"></div>
+        </div>
+    </div>
+
+    <script>
+        async function testOCR() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            const status = document.getElementById('status');
+            const rawResponse = document.getElementById('rawResponse');
+            const addressAnalysis = document.getElementById('addressAnalysis');
+            const button = document.getElementById('testBtn');
+            
+            if (!file) {
+                alert('ファイルを選択してください');
+                return;
+            }
+            
+            button.disabled = true;
+            status.textContent = '🔄 OCR処理中...';
+            rawResponse.textContent = '';
+            addressAnalysis.innerHTML = '';
+            
+            try {
+                const formData = new FormData();
+                formData.append('image', file);
+                
+                const baseUrl = window.location.hostname === 'localhost' 
+                    ? 'http://localhost:3002' 
+                    : 'https://accounting-automation-am691fbss-effectmoes-projects.vercel.app';
+                
+                console.log('📡 API呼び出し:', baseUrl + '/api/ocr/business-card');
+                
+                const response = await fetch(baseUrl + '/api/ocr/business-card', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                // 生データ表示
+                rawResponse.textContent = JSON.stringify(data, null, 2);
+                
+                if (data.success) {
+                    status.textContent = '✅ OCR処理成功';
+                    status.className = 'success';
+                    
+                    // 住所フィールド解析
+                    let analysisHtml = '<div class="address-highlight">';
+                    analysisHtml += '<h3>🏠 住所関連フィールドの値</h3>';
+                    
+                    const addressFields = {
+                        'postalCode': '郵便番号',
+                        'prefecture': '都道府県',
+                        'city': '市区町村',
+                        'address1': '番地',
+                        'address2': '建物名・階',
+                        'address': '住所（統合）'
+                    };
+                    
+                    for (const [field, label] of Object.entries(addressFields)) {
+                        const value = data[field];
+                        const displayValue = value || '❌ null/undefined';
+                        const className = value ? 'field-value' : 'field-value error';
+                        
+                        analysisHtml += `
+                            <div style="margin: 8px 0;">
+                                <strong>${label} (${field}):</strong> 
+                                <span class="${className}">${displayValue}</span>
+                            </div>
+                        `;
+                    }
+                    
+                    // 住所が取得できているかの判定
+                    const hasAnyAddress = data.prefecture || data.city || data.address1 || data.address;
+                    
+                    analysisHtml += `
+                        <div style="margin-top: 15px; padding: 10px; background: ${hasAnyAddress ? '#d4edda' : '#f8d7da'}; border-radius: 5px;">
+                            <strong>判定:</strong> ${hasAnyAddress ? '✅ 住所データあり' : '❌ 住所データなし'}
+                        </div>
+                    `;
+                    
+                    analysisHtml += '</div>';
+                    
+                    // その他の取得データ
+                    analysisHtml += '<div style="margin-top: 20px;">';
+                    analysisHtml += '<h3>📋 その他の取得データ</h3>';
+                    analysisHtml += `<div>会社名: <span class="field-value">${data.companyName || '未取得'}</span></div>`;
+                    analysisHtml += `<div>会社名カナ: <span class="field-value">${data.companyNameKana || '未取得'}</span></div>`;
+                    analysisHtml += `<div>担当者名: <span class="field-value">${data.name || '未取得'}</span></div>`;
+                    analysisHtml += `<div>電話番号: <span class="field-value">${data.phone || '未取得'}</span></div>`;
+                    analysisHtml += `<div>メール: <span class="field-value">${data.email || '未取得'}</span></div>`;
+                    analysisHtml += '</div>';
+                    
+                    addressAnalysis.innerHTML = analysisHtml;
+                    
+                } else {
+                    status.textContent = '❌ OCR処理失敗';
+                    status.className = 'error';
+                    addressAnalysis.innerHTML = '<div class="error">エラー: ' + (data.error || '不明なエラー') + '</div>';
+                }
+                
+            } catch (error) {
+                console.error('エラー:', error);
+                status.textContent = '❌ エラー発生';
+                status.className = 'error';
+                rawResponse.textContent = error.toString();
+            } finally {
+                button.disabled = false;
+            }
+        }
+        
+        // ページ読み込み時
+        window.onload = function() {
+            console.log('🎯 名刺OCR直接テストページ');
+            console.log('📍 このページでAPIレスポンスの住所フィールドを詳細に確認できます');
+        };
+    </script>
+</body>
+</html>

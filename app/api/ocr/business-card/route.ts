@@ -146,7 +146,27 @@ JSON形式のみで返してください。`
               
               if (jsonMatch) {
                 const jsonString = jsonMatch[1] || jsonMatch[0];
-                const aiAddressParts = JSON.parse(jsonString);
+                const aiResponse = JSON.parse(jsonString);
+                
+                // 日本語キー「住所情報」からデータを取得
+                let aiAddressParts = {};
+                if (aiResponse['住所情報']) {
+                  aiAddressParts = aiResponse['住所情報'];
+                } else {
+                  // 通常の英語キーの場合
+                  aiAddressParts = {
+                    postalCode: aiResponse.postalCode,
+                    prefecture: aiResponse.prefecture,
+                    city: aiResponse.city,
+                    address1: aiResponse.address1,
+                    address2: aiResponse.address2
+                  };
+                }
+                
+                // 会社名カナを取得
+                if (aiResponse.companyNameKana) {
+                  aiAddressParts.companyNameKana = aiResponse.companyNameKana;
+                }
                 
                 logger.info('Mastra extracted address parts:', aiAddressParts);
                 console.log('🏠 DeepSeek APIが抽出した住所詳細:', JSON.stringify(aiAddressParts, null, 2));
