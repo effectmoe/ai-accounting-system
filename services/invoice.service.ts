@@ -194,6 +194,11 @@ export class InvoiceService {
       if (invoice.bankAccountId) {
         invoice.bankAccount = await db.findById<BankAccount>(Collections.BANK_ACCOUNTS, invoice.bankAccountId);
       }
+      
+      // 仕入先見積書情報を取得
+      if (invoice.sourceSupplierQuoteId) {
+        invoice.sourceSupplierQuote = await db.findById(Collections.SUPPLIER_QUOTES, invoice.sourceSupplierQuoteId);
+      }
 
       return invoice;
     } catch (error) {

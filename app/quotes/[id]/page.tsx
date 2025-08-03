@@ -34,6 +34,7 @@ import { ja } from 'date-fns/locale';
 import { Quote, QuoteStatus } from '@/types/collections';
 import { safeFormatDate } from '@/lib/date-utils';
 import EmailSendModal from '@/components/email-send-modal';
+import SimpleQuoteOcrFiles from '@/components/simple-quote-ocr-files';
 
 const statusLabels: Record<QuoteStatus, string> = {
   draft: '下書き',
@@ -434,6 +435,50 @@ export default function QuoteDetailPage({ params }: QuoteDetailPageProps) {
         </div>
       </div>
 
+      {/* 仕入先見積書との関連情報 */}
+      {quote.sourceSupplierQuoteId && quote.sourceSupplierQuote && (
+        <Card className="mb-6 border-green-200 bg-green-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-green-700">
+              <Package className="h-5 w-5" />
+              仕入先見積書から作成
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <p className="text-sm">
+                <span className="font-medium">見積書番号:</span>{' '}
+                <a
+                  href={`/supplier-quotes/${quote.sourceSupplierQuoteId}`}
+                  className="text-green-600 hover:text-green-800 underline"
+                >
+                  {quote.sourceSupplierQuote.quoteNumber}
+                </a>
+              </p>
+              <p className="text-sm">
+                <span className="font-medium">仕入先:</span> {quote.sourceSupplierQuote.supplier?.companyName || quote.sourceSupplierQuote.vendorName || '未設定'}
+              </p>
+              <p className="text-sm">
+                <span className="font-medium">原価:</span> ¥{(quote.costAmount || 0).toLocaleString()}
+              </p>
+              <div className="mt-4 p-3 bg-white rounded-lg border border-green-200">
+                <p className="text-sm font-medium text-green-700 mb-1">利益計算</p>
+                <div className="space-y-1">
+                  <p className="text-sm">
+                    <span className="text-gray-600">売価:</span> ¥{(quote.totalAmount || 0).toLocaleString()}
+                  </p>
+                  <p className="text-sm">
+                    <span className="text-gray-600">利益額:</span> ¥{(quote.profitAmount || 0).toLocaleString()}
+                  </p>
+                  <p className="text-sm">
+                    <span className="text-gray-600">利益率:</span> {(quote.profitMargin || 0).toFixed(1)}%
+                  </p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* 見積書情報 */}
       <Card className="mb-6">
@@ -622,6 +667,15 @@ export default function QuoteDetailPage({ params }: QuoteDetailPageProps) {
           <Separator className="my-6" />
         </CardContent>
       </Card>
+
+      {/* OCRファイル */}
+      <div className="mb-6">
+        <SimpleQuoteOcrFiles 
+          quoteId={quote._id || ''} 
+          files={quote.ocrFiles || []}
+          onUpdate={fetchQuote}
+        />
+      </div>
 
       {/* その他情報 */}
       <Card className="mb-6">

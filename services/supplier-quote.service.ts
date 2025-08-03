@@ -188,6 +188,11 @@ export class SupplierQuoteService {
         }
       }
 
+      // ocrFilesフィールドが未定義の場合は空配列で初期化
+      if (!quote.ocrFiles) {
+        quote.ocrFiles = [];
+      }
+
       return quote;
     } catch (error) {
       logger.error('Error in getSupplierQuote:', error);
@@ -303,10 +308,9 @@ export class SupplierQuoteService {
       const now = new Date();
       const year = now.getFullYear().toString();
       const month = (now.getMonth() + 1).toString().padStart(2, '0');
-      const day = now.getDate().toString().padStart(2, '0');
       
-      // プレフィックスを作成
-      const prefix = `SQ-${year}${month}${day}`;
+      // プレフィックスを作成（年月形式）
+      const prefix = `SQ-${year}${month}`;
       
       // 同じプレフィックスを持つ最大のシーケンス番号を取得
       const existingQuotes = await db.find<SupplierQuote>(this.collectionName, {
@@ -319,6 +323,7 @@ export class SupplierQuoteService {
       let seq = 1;
       if (existingQuotes.length > 0) {
         const lastQuoteNumber = existingQuotes[0].quoteNumber;
+        // 4桁の連番を抽出
         const lastSeq = lastQuoteNumber.split('-').pop();
         if (lastSeq && !isNaN(parseInt(lastSeq))) {
           seq = parseInt(lastSeq) + 1;
@@ -330,7 +335,8 @@ export class SupplierQuoteService {
       let quoteNumber = '';
       
       while (attempts < 100) {
-        quoteNumber = `${prefix}-${seq.toString().padStart(3, '0')}`;
+        // 4桁の連番でフォーマット
+        quoteNumber = `${prefix}-${seq.toString().padStart(4, '0')}`;
         
         // 重複チェック
         const existing = await db.findOne<SupplierQuote>(this.collectionName, {
@@ -338,6 +344,7 @@ export class SupplierQuoteService {
         });
         
         if (!existing) {
+          logger.info(`Generated supplier quote number: ${quoteNumber}`);
           return quoteNumber;
         }
         
@@ -348,7 +355,7 @@ export class SupplierQuoteService {
       // 100回試しても重複が解消されない場合は、タイムスタンプを追加
       logger.warn('Failed to generate unique quote number after 100 attempts');
       const timestamp = Date.now().toString().slice(-6);
-      return `${prefix}-${seq.toString().padStart(3, '0')}-${timestamp}`;
+      return `${prefix}-${seq.toString().padStart(4, '0')}-${timestamp}`;
       
     } catch (error) {
       logger.error('Error in generateSupplierQuoteNumber:', error);

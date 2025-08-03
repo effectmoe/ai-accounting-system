@@ -83,6 +83,14 @@ export default function EditSupplierQuotePage() {
       newItems[index].amount = amount;
       newItems[index].taxAmount = taxAmount;
     }
+    
+    // 金額から単価を逆算（金額÷数量）
+    if (field === 'amount' && newItems[index].quantity > 0) {
+      const item = newItems[index];
+      // 小数点第2位まで保持
+      item.unitPrice = Math.round((value / item.quantity) * 100) / 100;
+      item.taxAmount = Math.round(item.amount * (item.taxRate / 100));
+    }
 
     setFormData(prev => ({ ...prev, items: newItems }));
   };
@@ -356,11 +364,20 @@ export default function EditSupplierQuotePage() {
                         value={item.unitPrice}
                         onChange={(e) => updateItem(index, 'unitPrice', Number(e.target.value))}
                         min="0"
+                        step="0.01"
                         className="w-32 border border-gray-300 rounded-md px-3 py-2 text-sm bg-white hover:border-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       />
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 align-middle">
-                      ¥{(item.amount || 0).toLocaleString()}
+                    <td className="px-6 py-4 whitespace-nowrap align-middle">
+                      <div className="flex flex-col">
+                        <input
+                          type="number"
+                          value={item.amount}
+                          onChange={(e) => updateItem(index, 'amount', Number(e.target.value))}
+                          min="0"
+                          className="w-32 border border-gray-300 rounded-md px-3 py-2 text-sm bg-white hover:border-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap align-middle">
                       <input
@@ -426,7 +443,7 @@ export default function EditSupplierQuotePage() {
         </div>
 
         {/* 保存ボタン */}
-        <div className="flex justify-end gap-4">
+        <div className="flex justify-end gap-4 pb-20">
           <Link
             href={`/supplier-quotes/${quoteId}`}
             className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"

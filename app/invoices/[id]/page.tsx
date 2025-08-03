@@ -77,6 +77,11 @@ interface Invoice {
   notes?: string;
   isGeneratedByAI?: boolean;
   aiConversationId?: string;
+  sourceSupplierQuoteId?: string;
+  sourceSupplierQuote?: any;
+  costAmount?: number;
+  profitAmount?: number;
+  profitMargin?: number;
 }
 
 const statusLabels: Record<string, string> = {
@@ -398,6 +403,51 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
           )}
         </div>
       </div>
+
+      {/* 仕入先見積書との関連情報 */}
+      {invoice.sourceSupplierQuoteId && invoice.sourceSupplierQuote && (
+        <Card className="mb-6 border-green-200 bg-green-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-green-700">
+              <Package className="h-5 w-5" />
+              仕入先見積書から作成
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <p className="text-sm">
+                <span className="font-medium">見積書番号:</span>{' '}
+                <a
+                  href={`/supplier-quotes/${invoice.sourceSupplierQuoteId}`}
+                  className="text-green-600 hover:text-green-800 underline"
+                >
+                  {invoice.sourceSupplierQuote.quoteNumber}
+                </a>
+              </p>
+              <p className="text-sm">
+                <span className="font-medium">仕入先:</span> {invoice.sourceSupplierQuote.supplier?.companyName || invoice.sourceSupplierQuote.vendorName || '未設定'}
+              </p>
+              <p className="text-sm">
+                <span className="font-medium">原価:</span> ¥{(invoice.costAmount || 0).toLocaleString()}
+              </p>
+              <div className="mt-4 p-3 bg-white rounded-lg border border-green-200">
+                <p className="text-sm font-medium text-green-700 mb-1">利益計算</p>
+                <div className="space-y-1">
+                  <p className="text-sm">
+                    <span className="text-gray-600">売価:</span> ¥{(invoice.totalAmount || 0).toLocaleString()}
+                  </p>
+                  <p className="text-sm">
+                    <span className="text-gray-600">利益額:</span> ¥{(invoice.profitAmount || 0).toLocaleString()}
+                  </p>
+                  <p className="text-sm">
+                    <span className="text-gray-600">利益率:</span> {(invoice.profitMargin || 0).toFixed(1)}%
+                  </p>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* 請求書情報 */}
       <Card className="mb-6">
