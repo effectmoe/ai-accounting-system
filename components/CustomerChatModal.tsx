@@ -222,7 +222,7 @@ export default function CustomerChatModal({ isOpen, onClose, onDataExtracted, fo
         // 住所情報（ある場合のみ）
         const hasAddressInfo = data.postalCode || data.prefecture || data.city || data.address1 || data.address2 || data.address;
         if (hasAddressInfo) {
-          messageContent += '\n\n住所情報:';
+          messageContent += '\n\n【住所情報】';
           if (data.postalCode) messageContent += `\n郵便番号: ${data.postalCode}`;
           
           // 住所を一行で表示
@@ -238,14 +238,14 @@ export default function CustomerChatModal({ isOpen, onClose, onDataExtracted, fo
           }
           
           if (fullAddress) {
-            messageContent += '\n' + fullAddress.trim();
+            messageContent += '\n住所: ' + fullAddress.trim();
           }
         }
         
         // 連絡先情報（ある場合のみ）
         const hasContactInfo = data.phone || data.fax || data.email || data.website;
         if (hasContactInfo) {
-          messageContent += '\n\n連絡先:';
+          messageContent += '\n\n【連絡先】';
           if (data.phone) messageContent += `\n電話番号: ${data.phone}`;
           if (data.fax) messageContent += `\nFAX: ${data.fax}`;
           if (data.email) messageContent += `\nメール: ${data.email}`;
@@ -384,6 +384,19 @@ export default function CustomerChatModal({ isOpen, onClose, onDataExtracted, fo
       if (!response.ok) throw new Error('名刺の読み取りに失敗しました');
 
       const data = await response.json();
+      
+      // デバッグ: OCR APIレスポンスの詳細をログ出力
+      if (typeof window !== 'undefined') {
+        window.console.log('📋 Business card OCR API response:', JSON.stringify(data, null, 2));
+        window.console.log('🏠 Address fields check:', {
+          postalCode: data.postalCode,
+          prefecture: data.prefecture,
+          city: data.city,
+          address1: data.address1,
+          address2: data.address2,
+          address: data.address
+        });
+      }
       
       const userMessage: Message = {
         id: Date.now().toString(),
