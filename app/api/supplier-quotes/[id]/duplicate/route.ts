@@ -22,7 +22,7 @@ export async function POST(
     }
     
     // 新しい見積書番号を生成
-    const newQuoteNumber = await supplierQuoteService.generateQuoteNumber();
+    const newQuoteNumber = await supplierQuoteService.generateSupplierQuoteNumber();
     
     // 見積書データをコピー（IDと一部フィールドを除外）
     const {
