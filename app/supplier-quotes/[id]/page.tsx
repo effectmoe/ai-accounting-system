@@ -384,6 +384,15 @@ export default function SupplierQuoteDetailPage() {
           {/* 見積項目 */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">見積項目</h2>
+            {/* デバッグ情報 */}
+            {process.env.NODE_ENV === 'development' && (
+              <div className="mb-4 p-4 bg-gray-100 rounded text-xs">
+                <p>項目数: {quote.items.length}</p>
+                {quote.items.map((item, index) => (
+                  <p key={index}>項目{index + 1}: {item.itemName}</p>
+                ))}
+              </div>
+            )}
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
@@ -413,7 +422,7 @@ export default function SupplierQuoteDetailPage() {
                     <tr key={index}>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">{item.itemName}</div>
-                        {item.description && (
+                        {item.description && item.description !== item.itemName && (
                           <div className="text-sm text-gray-500">{item.description}</div>
                         )}
                         {item.remarks && (
