@@ -145,8 +145,15 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
           role: 'user',
           content: `以下のHTMLから会社情報を正確に抽出してJSON形式で返してください。
 
+重要：もしHTMLが空または会社情報が見つからない場合は、エラーメッセージを含むJSONを返してください。
+例：{"error": "会社情報が見つかりませんでした", "website": "${url}"}
+
 HTMLコンテンツ:
 ${html.substring(0, 15000)} ${html.length > 15000 ? '...(truncated)' : ''}
+
+HTMLの内容を確認してください：
+- 実際に会社情報が含まれているか
+- NotionやGoogle Docsのような動的サイトで内容が読み込まれていない可能性があるか
 
 以下のフィールドを正確に抽出してください。特に住所の分割は厳密に行ってください：
 
@@ -217,6 +224,12 @@ JSON形式のみで返してください。説明文は不要です。`
         
         try {
           const extractedData = JSON.parse(jsonString);
+          
+          // エラーチェック
+          if (extractedData.error) {
+            logger.warn('AI could not extract company info:', extractedData.error);
+            throw new Error(extractedData.error);
+          }
         
           // websiteフィールドがない場合は元のURLを設定
           if (!extractedData.website) {
@@ -288,6 +301,19 @@ JSON形式のみで返してください。説明文は不要です。`
         error: aiError.message,
         stack: aiError.stack,
         url: url
+      });
+    }
+
+    // NotionやGoogle Docsなどの動的サイトの検出
+    if (html.length < 1000 || 
+        html.includes('notion-app-inner') || 
+        html.includes('notion.site') ||
+        !html.includes('body')) {
+      logger.warn('Dynamic website detected, cannot extract company info');
+      return NextResponse.json({
+        success: false,
+        error: 'この形式のウェブサイトからは会社情報を自動取得できません。会社情報を手動で入力してください。',
+        website: url
       });
     }
 
