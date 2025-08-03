@@ -4,6 +4,7 @@ import './globals.css'
 import Navigation from '@/components/navigation'
 import { Toaster } from 'react-hot-toast'
 import EnhancedMastraChat from '@/components/EnhancedMastraChat'
+import { AuthProvider } from '@/components/auth-provider'
 // import ChatbotEmbed from '@/components/ChatbotEmbed' // Intercom設定が不完全なため一時的に無効化
 // import { AppInitializer } from './app'
 
@@ -50,13 +51,15 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <body className={inter.className}>
-        <Navigation />
-        <main className="min-h-screen bg-gray-50 pt-24 lg:pt-16">
-          {children}
-        </main>
-        <Toaster position="top-right" />
-        <EnhancedMastraChat />
-        {/* <ChatbotEmbed /> */} {/* Intercom設定が不完全なため一時的に無効化 */}
+        <AuthProvider>
+          <Navigation />
+          <main className="min-h-screen bg-gray-50 pt-24 lg:pt-16">
+            {children}
+          </main>
+          <Toaster position="top-right" />
+          <EnhancedMastraChat />
+          {/* <ChatbotEmbed /> */} {/* Intercom設定が不完全なため一時的に無効化 */}
+        </AuthProvider>
       </body>
     </html>
   )
