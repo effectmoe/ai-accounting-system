@@ -1,4 +1,5 @@
 import { Mastra } from "@mastra/core";
+import { deepseekProvider } from './setup-deepseek';
 
 // Import all agents
 import { mastraAccountingAgent } from './agents/mastra-accounting-agent';
@@ -30,6 +31,7 @@ export const mastra = new Mastra({
     port: 4111,
     timeout: 30000
   },
+  providers: [deepseekProvider],
   agents: {
     accountingAgent: mastraAccountingAgent,
     customerAgent: mastraCustomerAgent,
