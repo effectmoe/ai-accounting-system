@@ -83,9 +83,19 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
             allFieldNames: Object.keys(fields)
           });
           
-          // Azureの住所マッピングが不完全な場合、OCR結果全体をMastraで解析
-          // 住所がない場合は必ずDeepSeekで解析する
-          if (!extractedData.address || extractedData.address === null) {
+          // OCR全文から住所を探す
+          logger.info('Azure OCR full content:', result.content);
+          
+          // OCR結果から住所を抽出（正規表現で検索）
+          const addressMatch = result.content.match(/(?:〒?\d{3}-?\d{4}\s*)?(?:東京都|大阪府|京都府|北海道|[^都道府県]+県)(.+?)(?=\s*電話|TEL|FAX|メール|$)/s);
+          if (addressMatch && !extractedData.address) {
+            extractedData.address = addressMatch[0].trim();
+            logger.info('Address extracted from OCR content:', extractedData.address);
+          }
+          
+          // 住所情報の分割処理
+          // 住所が取得できていても、詳細な分割が必要
+          if (extractedData.address || result.content.includes('県') || result.content.includes('市')) {
             
             logger.info('Azure address mapping incomplete, using Mastra for full OCR analysis');
             logger.info('Azure OCR full content:', result.content);
