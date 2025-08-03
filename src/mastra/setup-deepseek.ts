@@ -1,11 +1,13 @@
 // DeepSeekプロバイダーの設定
-import { createOpenAICompatible } from '@mastra/core';
-
-// DeepSeekプロバイダーを設定
-export const deepseekProvider = createOpenAICompatible({
+// 直接設定オブジェクトとして定義
+export const deepseekProvider = {
   name: 'deepseek',
   apiKey: process.env.DEEPSEEK_API_KEY || '',
   baseURL: 'https://api.deepseek.com/v1',
+  headers: {
+    'Authorization': `Bearer ${process.env.DEEPSEEK_API_KEY}`,
+    'Content-Type': 'application/json'
+  },
   models: {
     'deepseek-chat': {
       id: 'deepseek-chat',
@@ -13,7 +15,7 @@ export const deepseekProvider = createOpenAICompatible({
       maxCompletionTokens: 4096,
     }
   }
-});
+};
 
 // DeepSeekモデルを作成
 export function createDeepSeekModel() {

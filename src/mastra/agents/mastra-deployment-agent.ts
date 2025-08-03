@@ -1,10 +1,11 @@
 import { Agent } from '@mastra/core';
+import { deepseekProvider } from '../setup-deepseek';
 
 export const mastraDeploymentAgent = new Agent({
   name: 'mastra-deployment-agent',
   description: 'デプロイメントとCI/CD管理を行うエージェント',
   model: {
-    provider: 'deepseek',
+    provider: deepseekProvider,
     name: 'deepseek-chat',
   },
   instructions: `
@@ -28,7 +29,7 @@ export const mastraDeploymentAgent = new Agent({
 
 安全で信頼性の高いデプロイメントプロセスを提供します。
 `,
-  tools: [
+  getTools: () => [
     {
       name: 'create_deployment_pipeline',
       description: 'デプロイメントパイプラインを作成します',

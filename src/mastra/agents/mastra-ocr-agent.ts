@@ -35,7 +35,7 @@ export const mastraOcrAgent = new Agent({
 
 高精度なOCR処理と、文脈を理解した情報抽出を提供します。
 `,
-  tools: [
+  getTools: () => [
     {
       name: 'process_document_image',
       description: '文書画像をOCR処理してテキストを抽出します',

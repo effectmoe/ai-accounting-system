@@ -1,10 +1,11 @@
 import { Agent } from '@mastra/core';
+import { deepseekProvider } from '../setup-deepseek';
 
 export const mastraProductAgent = new Agent({
   name: 'mastra-product-agent',
   description: '商品・サービス管理と在庫管理を行うエージェント',
   model: {
-    provider: 'deepseek',
+    provider: deepseekProvider,
     name: 'deepseek-chat',
   },
   instructions: `
@@ -28,7 +29,7 @@ export const mastraProductAgent = new Agent({
 
 日本の商習慣に対応し、JAN/EANコード、品番管理をサポートします。
 `,
-  tools: [
+  getTools: () => [
     {
       name: 'create_product',
       description: '新商品を登録します',

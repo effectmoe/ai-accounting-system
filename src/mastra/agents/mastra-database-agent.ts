@@ -1,10 +1,11 @@
 import { Agent } from '@mastra/core';
+import { deepseekProvider } from '../setup-deepseek';
 
 export const mastraDatabaseAgent = new Agent({
   name: 'mastra-database-agent',
   description: 'MongoDBデータベース操作とデータ管理を行うエージェント',
   model: {
-    provider: 'deepseek',
+    provider: deepseekProvider,
     name: 'deepseek-chat',
   },
   instructions: `
@@ -28,7 +29,7 @@ export const mastraDatabaseAgent = new Agent({
 
 MongoDBのベストプラクティスに従い、効率的で安全なデータ操作を提供します。
 `,
-  tools: [
+  getTools: () => [
     {
       name: 'execute_query',
       description: 'MongoDBクエリを実行します',
