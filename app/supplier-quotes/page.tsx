@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Plus, Search, Filter, Edit, Trash2, Calendar, Building, FileText, TrendingUp, ChevronLeft, ChevronRight, Upload, ScanLine, CheckCircle2 } from 'lucide-react';
+import { Plus, Search, Filter, Edit, Trash2, Calendar, Building, FileText, TrendingUp, ChevronLeft, ChevronRight, Upload, ScanLine, CheckCircle2, Copy } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { SupplierQuote, SupplierQuoteStatus, Supplier } from '@/types/collections';
 
@@ -232,6 +232,93 @@ export default function SupplierQuotesPage() {
     }
   };
 
+  // 見積書の複製
+  const handleDuplicateQuote = async (id: string) => {
+    if (!confirm('この仕入先見積書を複製しますか？')) return;
+
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/supplier-quotes/${id}/duplicate`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to duplicate supplier quote');
+      }
+
+      const newQuote = await response.json();
+      toast.success(`仕入先見積書を複製しました: ${newQuote.quoteNumber}`);
+      
+      // 新しい見積書の編集画面に遷移
+      router.push(`/supplier-quotes/${newQuote._id}/edit`);
+    } catch (error) {
+      logger.error('Error duplicating supplier quote:', error);
+      toast.error('仕入先見積書の複製に失敗しました');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 複数の見積書を一括複製
+  const handleBulkDuplicate = async () => {
+    if (selectedQuotes.size === 0) return;
+    
+    if (!confirm(`選択した${selectedQuotes.size}件の仕入先見積書を複製しますか？`)) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      logger.debug('Starting bulk duplicate for supplier quotes:', Array.from(selectedQuotes));
+      
+      const results = await Promise.allSettled(
+        Array.from(selectedQuotes).map(async (id) => {
+          const response = await fetch(`/api/supplier-quotes/${id}/duplicate`, { 
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
+          
+          if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(`Failed to duplicate supplier quote ${id}: ${errorData.error || response.statusText}`);
+          }
+          
+          const newQuote = await response.json();
+          return { id, newQuote, success: true };
+        })
+      );
+      
+      const failures = results.filter(result => result.status === 'rejected');
+      const successes = results.filter(result => result.status === 'fulfilled');
+      
+      logger.debug('Bulk duplicate results:', { 
+        total: results.length, 
+        successes: successes.length, 
+        failures: failures.length
+      });
+      
+      if (failures.length > 0) {
+        logger.error('Some supplier quotes failed to duplicate:', failures);
+        toast.error(`${failures.length}件の複製に失敗しました。${successes.length}件は複製されました。`);
+      } else {
+        logger.info(`Successfully duplicated ${successes.length} supplier quotes`);
+        toast.success(`${successes.length}件の仕入先見積書を複製しました`);
+      }
+      
+      // リフレッシュ
+      await fetchSupplierQuotes(currentPage);
+      setSelectedQuotes(new Set());
+    } catch (error) {
+      logger.error('Error bulk duplicating supplier quotes:', error);
+      toast.error('一括複製に失敗しました。もう一度お試しください。');
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   // ページネーション
   const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
@@ -304,6 +391,14 @@ export default function SupplierQuotesPage() {
                 className="text-sm text-gray-600 hover:text-gray-800"
               >
                 選択解除
+              </button>
+              <button
+                onClick={handleBulkDuplicate}
+                disabled={loading}
+                className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-4 py-2 rounded-md text-sm flex items-center gap-2"
+              >
+                <Copy size={16} />
+                一括複製
               </button>
               <button
                 onClick={handleBulkDelete}
@@ -568,15 +663,24 @@ export default function SupplierQuotesPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex items-center justify-end gap-2" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          onClick={() => handleDuplicateQuote(quote._id?.toString()!)}
+                          className="text-gray-600 hover:text-gray-800"
+                          title="複製"
+                        >
+                          <Copy size={16} />
+                        </button>
                         <Link
                           href={`/supplier-quotes/${quote._id?.toString()}/edit`}
                           className="text-blue-600 hover:text-blue-800"
+                          title="編集"
                         >
                           <Edit size={16} />
                         </Link>
                         <button
                           onClick={() => handleDeleteQuote(quote._id?.toString()!)}
                           className="text-red-600 hover:text-red-800"
+                          title="削除"
                         >
                           <Trash2 size={16} />
                         </button>
