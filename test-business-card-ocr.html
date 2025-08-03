@@ -117,6 +117,15 @@
                     status.className = 'result success';
                     status.textContent = '✅ 名刺OCR処理成功！';
                     
+                    // APIレスポンスの住所フィールドを詳細確認
+                    console.log('🔍 住所フィールド詳細確認:');
+                    console.log('prefecture:', responseData.prefecture);
+                    console.log('city:', responseData.city);
+                    console.log('address1:', responseData.address1);
+                    console.log('address2:', responseData.address2);
+                    console.log('address:', responseData.address);
+                    console.log('postalCode:', responseData.postalCode);
+                    
                     // 住所詳細の表示
                     let addressDetailsHtml = '';
                     if (responseData.postalCode || responseData.prefecture || responseData.city || responseData.address1 || responseData.address2) {

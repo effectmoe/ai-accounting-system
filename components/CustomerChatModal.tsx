@@ -428,26 +428,31 @@ export default function CustomerChatModal({ isOpen, onClose, onDataExtracted, fo
       if (data.email) messageContent += `メール: ${data.email}\n`;
       if (data.website) messageContent += `ウェブサイト: ${data.website}\n`;
       
-      // 住所情報
-      const hasAddress = data.postalCode || data.prefecture || data.city || data.address1 || data.address2 || data.address;
-      if (hasAddress) {
-        messageContent += '\n【住所情報】\n';
-        if (data.postalCode) messageContent += `〒${data.postalCode}\n`;
-        
-        // 住所を一行で表示
-        let fullAddress = '';
-        if (data.prefecture) fullAddress += data.prefecture;
-        if (data.city) fullAddress += data.city;
-        if (data.address1) fullAddress += data.address1;
-        if (data.address2) fullAddress += ' ' + data.address2;
-        
-        // addressフィールドがある場合はそれも表示
-        if (!fullAddress && data.address) {
-          fullAddress = data.address;
-        }
-        
-        if (fullAddress) messageContent += fullAddress.trim() + '\n';
+      // 住所情報 - 必ず表示セクションを作成
+      messageContent += '\n【住所情報】\n';
+      
+      // 郵便番号
+      if (data.postalCode) {
+        messageContent += `〒${data.postalCode}\n`;
       }
+      
+      // 住所を構築
+      let fullAddress = '';
+      
+      // 個別フィールドから住所を構築
+      if (data.prefecture) fullAddress += data.prefecture;
+      if (data.city) fullAddress += data.city;
+      if (data.address1) fullAddress += data.address1;
+      if (data.address2) fullAddress += ' ' + data.address2;
+      
+      // 個別フィールドがない場合、addressフィールドを使用
+      if (!fullAddress.trim() && data.address) {
+        fullAddress = data.address;
+      }
+      
+      // 住所がある場合は表示、ない場合も「未取得」と表示
+      messageContent += fullAddress.trim() || '住所: 未取得';
+      messageContent += '\n';
       
       messageContent += '\nこの情報をフォームに入力します。';
       
