@@ -136,17 +136,44 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     const html = await response.text();
     logger.debug('HTML fetched successfully, length:', html.length);
     
-    // NotionやGoogle Docsなどの動的サイトの検出（早期チェック）
-    if (html.length < 1000 || 
-        html.includes('notion-app-inner') || 
-        html.includes('notion.site') ||
-        url.includes('notion.site') ||
-        url.includes('notion.so') ||
-        !html.includes('body')) {
-      logger.warn('Dynamic website detected, cannot extract company info from:', url);
+    // 動的サイト（SPA、JavaScript依存サイト）の検出
+    const isDynamicSite = (
+      // HTMLサイズが小さすぎる（基本的なHTMLのみ）
+      html.length < 1000 ||
+      // bodyタグが存在しない（不完全なHTML）
+      !html.includes('body') ||
+      // よくあるSPA/動的サイトの特徴
+      html.includes('id="root"') ||
+      html.includes('id="app"') ||
+      html.includes('id="__next"') ||
+      html.includes('id="nuxt"') ||
+      html.includes('class="app"') ||
+      // 特定の動的サイトサービス
+      html.includes('notion-app-inner') ||
+      html.includes('docs.google.com') ||
+      html.includes('figma.com') ||
+      html.includes('canva.com') ||
+      // SPAフレームワークの痕跡
+      html.includes('react') && html.includes('reactdom') ||
+      html.includes('vue.js') ||
+      html.includes('angular') ||
+      // URLベースの検出
+      url.includes('notion.site') ||
+      url.includes('notion.so') ||
+      url.includes('docs.google.com') ||
+      url.includes('figma.com') ||
+      url.includes('canva.com') ||
+      url.includes('app.') || // app.example.com のような形式
+      // HTMLに実際のコンテンツがほとんどない
+      (html.includes('<script>') && html.split('<script>').length > 3 && 
+       !html.includes('会社') && !html.includes('企業') && !html.includes('株式会社'))
+    );
+
+    if (isDynamicSite) {
+      logger.warn('Dynamic/SPA website detected, cannot extract company info from:', url);
       return NextResponse.json({
         success: false,
-        error: 'この形式のウェブサイトからは会社情報を自動取得できません。会社情報を手動で入力してください。',
+        error: 'このウェブサイトは動的コンテンツ（JavaScript）で構成されているため、会社情報を自動取得できません。会社情報を手動で入力してください。',
         website: url
       });
     }
