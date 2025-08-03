@@ -135,6 +135,21 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
 
     const html = await response.text();
     logger.debug('HTML fetched successfully, length:', html.length);
+    
+    // NotionやGoogle Docsなどの動的サイトの検出（早期チェック）
+    if (html.length < 1000 || 
+        html.includes('notion-app-inner') || 
+        html.includes('notion.site') ||
+        url.includes('notion.site') ||
+        url.includes('notion.so') ||
+        !html.includes('body')) {
+      logger.warn('Dynamic website detected, cannot extract company info from:', url);
+      return NextResponse.json({
+        success: false,
+        error: 'この形式のウェブサイトからは会社情報を自動取得できません。会社情報を手動で入力してください。',
+        website: url
+      });
+    }
 
     // 2. AIで取得したHTMLから構造化データを抽出
     try {
@@ -301,19 +316,6 @@ JSON形式のみで返してください。説明文は不要です。`
         error: aiError.message,
         stack: aiError.stack,
         url: url
-      });
-    }
-
-    // NotionやGoogle Docsなどの動的サイトの検出
-    if (html.length < 1000 || 
-        html.includes('notion-app-inner') || 
-        html.includes('notion.site') ||
-        !html.includes('body')) {
-      logger.warn('Dynamic website detected, cannot extract company info');
-      return NextResponse.json({
-        success: false,
-        error: 'この形式のウェブサイトからは会社情報を自動取得できません。会社情報を手動で入力してください。',
-        website: url
       });
     }
 
