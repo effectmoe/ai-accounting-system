@@ -1,4 +1,5 @@
 import { createAgent } from '@mastra/core';
+import { deepseekProvider } from '../providers';
 
 // MCPツールを活用する高度なエージェント例
 export const mcpEnabledAgent = createAgent({
@@ -6,8 +7,8 @@ export const mcpEnabledAgent = createAgent({
   name: 'MCP統合エージェント',
   description: 'MCPツールを活用して高度なタスクを実行するエージェント',
   model: {
-    provider: 'openai',
-    name: 'gpt-4',
+    provider: deepseekProvider,
+    name: 'deepseek-chat',
     toolChoice: 'auto'
   },
   instructions: `あなたはMCPツールを活用する高度なAIアシスタントです。
