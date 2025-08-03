@@ -893,14 +893,16 @@ export default function NewCustomerPage() {
           </form>
         </div>
 
-        {/* 埋め込み型チャット機能 - 固定位置で表示 */}
-        <div className="fixed bottom-4 right-4 w-96 z-50">
-          <CustomerChatModal
-            isOpen={true}
-            onClose={() => {}}
-            onDataExtracted={handleDataExtracted}
-            formData={formData}
-          />
+        {/* 埋め込み型チャット機能 - 中央下部に配置 */}
+        <div className="mt-8 flex justify-center">
+          <div className="w-full max-w-2xl">
+            <CustomerChatModal
+              isOpen={true}
+              onClose={() => {}}
+              onDataExtracted={handleDataExtracted}
+              formData={formData}
+            />
+          </div>
         </div>
       </div>
     </div>
