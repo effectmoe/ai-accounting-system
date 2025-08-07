@@ -4,6 +4,7 @@
 
 import { SBIBankCSVRow, BankTransaction, CSVImportResult } from '@/types/bank-csv';
 import { parse } from 'csv-parse/sync';
+import { normalizeBankString } from './string-normalizer';
 
 /**
  * 住信SBIネット銀行のCSVをパース
@@ -136,11 +137,9 @@ export function extractDeposits(transactions: BankTransaction[]): BankTransactio
 
 /**
  * 振込人名を正規化（マッチング精度向上のため）
+ * @deprecated normalizeBankStringを使用してください
  */
 export function normalizeCustomerName(name: string): string {
-  return name
-    .replace(/[\s　]+/g, '') // スペースを除去
-    .replace(/[（(].*?[）)]/g, '') // カッコ内を除去
-    .replace(/カ）|ユ）|シャ）|ド）/g, '') // 法人格の略称を除去
-    .toUpperCase(); // 大文字に統一
+  // 新しい正規化関数を使用
+  return normalizeBankString(name);
 }
