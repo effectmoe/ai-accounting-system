@@ -43,6 +43,7 @@ const Navigation = () => {
         { href: '/invoices', label: '請求書' },
         { href: '/recurring-invoices', label: '定期請求書' },
         { href: '/delivery-notes', label: '納品書' },
+        { href: '/bank-import', label: '銀行取引インポート' },
       ]
     },
     {
