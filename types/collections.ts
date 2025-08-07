@@ -194,6 +194,29 @@ export interface InvoiceItem {
   notes?: string;
 }
 
+// 入金記録インターフェース
+export interface PaymentRecord {
+  _id?: ObjectId;
+  invoiceId: ObjectId;
+  invoice?: Invoice; // Populated field
+  paymentNumber: string; // PR-YYYYMMDD-001形式
+  paymentDate: Date;
+  amount: number;
+  paymentMethod: 'bank_transfer' | 'cash' | 'credit_card' | 'check' | 'other';
+  bankName?: string; // 振込元銀行名
+  accountName?: string; // 振込元口座名義
+  referenceNumber?: string; // 振込参照番号
+  notes?: string;
+  status: 'pending' | 'confirmed' | 'cancelled';
+  confirmedBy?: string;
+  confirmedAt?: Date;
+  cancelledBy?: string;
+  cancelledAt?: Date;
+  cancelReason?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
 // 見積書インターフェース
 export interface Quote {
   _id?: ObjectId;

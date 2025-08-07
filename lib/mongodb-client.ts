@@ -684,6 +684,7 @@ export const Collections = {
   BANK_ACCOUNTS: 'bankAccounts',
   PRODUCTS: 'products',
   QUOTES: 'quotes',
+  PAYMENT_RECORDS: 'paymentRecords',
   SUPPLIERS: 'suppliers',
   SUPPLIER_QUOTES: 'supplierQuotes',
   PURCHASE_ORDERS: 'purchaseOrders',

@@ -9,10 +9,11 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Search, FileText, Loader2, Sparkles, FileDown, CheckCircle2, Trash2, Copy } from 'lucide-react';
+import { Plus, Search, FileText, Loader2, Sparkles, FileDown, CheckCircle2, Trash2, Copy, Coins } from 'lucide-react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { safeFormatDate } from '@/lib/date-utils';
+import { PaymentRecordDialog } from '@/components/payment-record-dialog';
 
 import { logger } from '@/lib/logger';
 import { 
@@ -55,6 +56,7 @@ export default function InvoicesPage() {
   const [selectedInvoices, setSelectedInvoices] = useState<Set<string>>(new Set());
   const [bulkStatus, setBulkStatus] = useState<string>('');
   const [isUpdating, setIsUpdating] = useState(false);
+  const [paymentDialogInvoice, setPaymentDialogInvoice] = useState<Invoice | null>(null);
   const itemsPerPage = 20;
 
   useEffect(() => {
@@ -617,6 +619,18 @@ export default function InvoicesPage() {
                       </TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()}>
                         <div className="flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPaymentDialogInvoice(invoice);
+                            }}
+                            title="入金記録"
+                            className={invoice.status === 'paid' ? 'text-green-600' : ''}
+                          >
+                            <Coins className="h-4 w-4" />
+                          </Button>
                           <Button
                             variant="ghost"
                             size="sm"
