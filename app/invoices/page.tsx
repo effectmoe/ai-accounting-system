@@ -699,6 +699,19 @@ export default function InvoicesPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* 入金記録ダイアログ */}
+      {paymentDialogInvoice && (
+        <PaymentRecordDialog
+          isOpen={!!paymentDialogInvoice}
+          onClose={() => setPaymentDialogInvoice(null)}
+          invoice={paymentDialogInvoice}
+          onSuccess={() => {
+            setPaymentDialogInvoice(null);
+            fetchInvoices(); // 請求書リストを再読み込み
+          }}
+        />
+      )}
     </div>
   );
 }
