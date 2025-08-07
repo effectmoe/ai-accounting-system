@@ -8,7 +8,12 @@ import { Collections } from '@/lib/mongodb-client';
 import { BankTransaction, AutoMatchResult } from '@/types/bank-csv';
 import { Invoice } from '@/types/collections';
 import { PaymentRecordService } from './payment-record.service';
-import { normalizeCustomerName } from '@/lib/bank-csv-parser';
+import { 
+  normalizeBankString, 
+  calculateSimilarity, 
+  isMatch,
+  findBestMatch 
+} from '@/lib/string-normalizer';
 import { logger } from '@/lib/logger';
 
 const paymentRecordService = new PaymentRecordService();
@@ -65,36 +70,38 @@ export class BankImportService {
       matchReason = '金額が完全一致';
     } else if (exactAmountMatches.length > 1 && transaction.customerName) {
       // 金額が一致する請求書が複数ある場合、顧客名でフィルタリング
-      const normalizedTransactionName = normalizeCustomerName(transaction.customerName);
+      const customerNames = exactAmountMatches.map(inv => 
+        inv.customer?.companyName || 
+        inv.customer?.name || 
+        inv.customerSnapshot?.companyName || ''
+      );
       
-      for (const invoice of exactAmountMatches) {
-        const customerName = invoice.customer?.companyName || 
-                           invoice.customer?.name || 
-                           invoice.customerSnapshot?.companyName || '';
-        const normalizedInvoiceName = normalizeCustomerName(customerName);
-        
-        if (normalizedInvoiceName.includes(normalizedTransactionName) ||
-            normalizedTransactionName.includes(normalizedInvoiceName)) {
-          bestMatch = invoice;
-          confidence = 'high';
-          matchReason = '金額と顧客名が一致';
-          break;
-        }
-      }
+      // 最も類似度の高い顧客を見つける
+      const { match: bestCustomerName, similarity } = findBestMatch(
+        transaction.customerName,
+        customerNames
+      );
       
-      if (!bestMatch) {
-        // 部分一致を試みる
-        for (const invoice of exactAmountMatches) {
-          const customerName = invoice.customer?.companyName || 
-                             invoice.customer?.name || 
-                             invoice.customerSnapshot?.companyName || '';
-          if (this.fuzzyMatch(transaction.customerName, customerName)) {
-            bestMatch = invoice;
-            confidence = 'medium';
-            matchReason = '金額が一致、顧客名が部分一致';
-            break;
-          }
-        }
+      if (bestCustomerName && similarity >= 0.8) {
+        // 類似度80%以上なら高信頼度
+        bestMatch = exactAmountMatches.find(inv => {
+          const name = inv.customer?.companyName || 
+                      inv.customer?.name || 
+                      inv.customerSnapshot?.companyName || '';
+          return name === bestCustomerName;
+        });
+        confidence = 'high';
+        matchReason = `金額完全一致、顧客名一致（類似度: ${Math.round(similarity * 100)}%）`;
+      } else if (bestCustomerName && similarity >= 0.6) {
+        // 類似度60%以上なら中信頼度
+        bestMatch = exactAmountMatches.find(inv => {
+          const name = inv.customer?.companyName || 
+                      inv.customer?.name || 
+                      inv.customerSnapshot?.companyName || '';
+          return name === bestCustomerName;
+        });
+        confidence = 'medium';
+        matchReason = `金額完全一致、顧客名部分一致（類似度: ${Math.round(similarity * 100)}%）`;
       }
     }
 
@@ -113,21 +120,38 @@ export class BankImportService {
         matchReason = '金額が近似一致（±10%以内）';
       } else if (nearMatches.length > 1 && transaction.customerName) {
         // 顧客名でフィルタリング
-        const normalizedTransactionName = normalizeCustomerName(transaction.customerName);
+        const customerNames = nearMatches.map(inv => 
+          inv.customer?.companyName || 
+          inv.customer?.name || 
+          inv.customerSnapshot?.companyName || ''
+        );
         
-        for (const invoice of nearMatches) {
-          const customerName = invoice.customer?.companyName || 
-                             invoice.customer?.name || 
-                             invoice.customerSnapshot?.companyName || '';
-          const normalizedInvoiceName = normalizeCustomerName(customerName);
-          
-          if (normalizedInvoiceName.includes(normalizedTransactionName) ||
-              normalizedTransactionName.includes(normalizedInvoiceName)) {
-            bestMatch = invoice;
-            confidence = 'medium';
-            matchReason = '金額が近似一致、顧客名が一致';
-            break;
-          }
+        // 最も類似度の高い顧客を見つける
+        const { match: bestCustomerName, similarity } = findBestMatch(
+          transaction.customerName,
+          customerNames
+        );
+        
+        if (bestCustomerName && similarity >= 0.7) {
+          // 類似度70%以上なら中信頼度
+          bestMatch = nearMatches.find(inv => {
+            const name = inv.customer?.companyName || 
+                        inv.customer?.name || 
+                        inv.customerSnapshot?.companyName || '';
+            return name === bestCustomerName;
+          });
+          confidence = 'medium';
+          matchReason = `金額近似一致（±10%）、顧客名一致（類似度: ${Math.round(similarity * 100)}%）`;
+        } else if (bestCustomerName && similarity >= 0.5) {
+          // 類似度50%以上なら低信頼度
+          bestMatch = nearMatches.find(inv => {
+            const name = inv.customer?.companyName || 
+                        inv.customer?.name || 
+                        inv.customerSnapshot?.companyName || '';
+            return name === bestCustomerName;
+          });
+          confidence = 'low';
+          matchReason = `金額近似一致（±10%）、顧客名部分一致（類似度: ${Math.round(similarity * 100)}%）`;
         }
       }
     }
@@ -164,28 +188,10 @@ export class BankImportService {
 
   /**
    * あいまい文字列マッチング
+   * @deprecated calculateSimilarity を使用してください
    */
   private fuzzyMatch(str1: string, str2: string): boolean {
-    const normalized1 = normalizeCustomerName(str1);
-    const normalized2 = normalizeCustomerName(str2);
-    
-    // 片方が他方に含まれているか
-    if (normalized1.includes(normalized2) || normalized2.includes(normalized1)) {
-      return true;
-    }
-    
-    // 共通部分が50%以上あるか
-    const minLength = Math.min(normalized1.length, normalized2.length);
-    const maxLength = Math.max(normalized1.length, normalized2.length);
-    let commonChars = 0;
-    
-    for (let i = 0; i < minLength; i++) {
-      if (normalized1[i] === normalized2[i]) {
-        commonChars++;
-      }
-    }
-    
-    return commonChars / maxLength >= 0.5;
+    return isMatch(str1, str2, 0.5);
   }
 
   /**

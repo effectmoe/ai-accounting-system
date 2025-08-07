@@ -3,9 +3,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { ChevronDown } from 'lucide-react';
+
+interface NavItem {
+  href?: string;
+  label: string;
+  dropdown?: boolean;
+  items?: { href: string; label: string; }[];
+}
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
   const pathname = usePathname();
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -74,10 +83,20 @@ const Navigation = () => {
   ];
 
   // 主要なナビゲーション項目（常に表示）
-  const mainNavItems = [
+  const mainNavItems: NavItem[] = [
     { href: '/', label: 'ダッシュボード' },
-    { href: '/documents', label: '書類管理' },
-    { href: '/deals', label: '案件管理' },
+    { 
+      label: '販売管理',
+      dropdown: true,
+      items: [
+        { href: '/quotes', label: '見積書' },
+        { href: '/invoices', label: '請求書' },
+        { href: '/recurring-invoices', label: '定期請求書' },
+        { href: '/delivery-notes', label: '納品書' },
+        { href: '/bank-import', label: '銀行取引インポート' },
+      ]
+    },
+    { href: '/customers', label: '顧客管理' },
   ];
 
   const isActive = (href: string) => {
@@ -100,17 +119,55 @@ const Navigation = () => {
             {/* 主要メニューのみ表示 */}
             <div className="hidden md:ml-6 md:flex md:space-x-4">
               {mainNavItems.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`${
-                    isActive(item.href)
-                      ? 'border-indigo-500 text-gray-900'
-                      : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                  } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200`}
-                >
-                  {item.label}
-                </Link>
+                <div key={item.label} className="relative">
+                  {item.dropdown ? (
+                    <div
+                      className="relative"
+                      onMouseEnter={() => setDropdownOpen(item.label)}
+                      onMouseLeave={() => setDropdownOpen(null)}
+                    >
+                      <button
+                        className={`${
+                          item.items?.some(subItem => isActive(subItem.href))
+                            ? 'border-indigo-500 text-gray-900'
+                            : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                        } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200`}
+                      >
+                        {item.label}
+                        <ChevronDown className="ml-1 h-4 w-4" />
+                      </button>
+                      {dropdownOpen === item.label && (
+                        <div className="absolute top-full left-0 mt-2 w-48 bg-white shadow-lg rounded-md py-1 z-50">
+                          {item.items?.map((subItem) => (
+                            <Link
+                              key={subItem.href}
+                              href={subItem.href}
+                              className={`${
+                                isActive(subItem.href)
+                                  ? 'bg-indigo-50 text-indigo-700'
+                                  : 'text-gray-700 hover:bg-gray-50'
+                              } block px-4 py-2 text-sm`}
+                              onClick={() => setDropdownOpen(null)}
+                            >
+                              {subItem.label}
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ) : item.href ? (
+                    <Link
+                      href={item.href}
+                      className={`${
+                        isActive(item.href)
+                          ? 'border-indigo-500 text-gray-900'
+                          : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                      } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200`}
+                    >
+                      {item.label}
+                    </Link>
+                  ) : null}
+                </div>
               ))}
             </div>
           </div>
