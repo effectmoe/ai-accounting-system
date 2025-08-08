@@ -24,6 +24,9 @@ interface CustomerForm {
   website: string;
   paymentTerms: string;
   contacts: Contact[];
+  // メール送信先設定
+  emailRecipientPreference: 'representative' | 'contact' | 'both';
+  primaryContactIndex: number;
   tags: string;
   notes: string;
   isActive: boolean;
@@ -52,6 +55,8 @@ export default function EditCustomerPage() {
     website: '',
     paymentTerms: '',
     contacts: [],
+    emailRecipientPreference: 'representative', // デフォルトは代表者メール
+    primaryContactIndex: 0,
     tags: '',
     notes: '',
     isActive: true,
@@ -89,6 +94,8 @@ export default function EditCustomerPage() {
             website: customer.website || '',
             paymentTerms: customer.paymentTerms ? customer.paymentTerms.toString() : '',
             contacts: customer.contacts || [],
+            emailRecipientPreference: customer.emailRecipientPreference || 'representative',
+            primaryContactIndex: customer.primaryContactIndex !== undefined ? customer.primaryContactIndex : 0,
             tags: Array.isArray(customer.tags) ? customer.tags.join(', ') : '',
             notes: customer.notes || '',
             isActive: customer.isActive !== undefined ? customer.isActive : true,
@@ -128,6 +135,20 @@ export default function EditCustomerPage() {
 
     if (formData.paymentTerms && !/^\d+$/.test(formData.paymentTerms)) {
       newErrors.paymentTerms = '支払いサイトは数値で入力してください';
+    }
+
+    // メール送信先設定のバリデーション
+    if (formData.emailRecipientPreference === 'contact' || formData.emailRecipientPreference === 'both') {
+      const primaryContact = formData.contacts[formData.primaryContactIndex];
+      if (!primaryContact?.email) {
+        newErrors.emailRecipientPreference = '選択した担当者にメールアドレスが設定されていません';
+      }
+    }
+    
+    if (formData.emailRecipientPreference === 'representative' || formData.emailRecipientPreference === 'both') {
+      if (!formData.email) {
+        newErrors.emailRecipientPreference = '代表者メールアドレスが設定されていません';
+      }
     }
 
     setErrors(newErrors);
@@ -516,6 +537,113 @@ export default function EditCustomerPage() {
                     placeholder="https://example.com"
                   />
                 </div>
+              </div>
+            </div>
+
+            {/* メール送信先設定 */}
+            <div className="space-y-6">
+              <h3 className="text-lg font-medium text-gray-900 border-b pb-2">メール送信先設定</h3>
+              
+              <div className="space-y-4">
+                <p className="text-sm text-gray-600">
+                  請求書や見積書を送信する際のメールアドレスを選択してください。
+                </p>
+                
+                <div className="space-y-3">
+                  {/* 代表者メールアドレスに送信 */}
+                  <label className="flex items-start cursor-pointer">
+                    <input
+                      type="radio"
+                      name="emailRecipientPreference"
+                      value="representative"
+                      checked={formData.emailRecipientPreference === 'representative'}
+                      onChange={(e) => setFormData(prev => ({ ...prev, emailRecipientPreference: e.target.value as 'representative' | 'contact' | 'both' }))}
+                      className="mt-1 mr-3"
+                    />
+                    <div>
+                      <span className="font-medium">代表者メールアドレスに送信</span>
+                      {formData.email && (
+                        <p className="text-sm text-gray-600 mt-1">送信先: {formData.email}</p>
+                      )}
+                      {!formData.email && (
+                        <p className="text-sm text-red-500 mt-1">※ 代表者メールアドレスが設定されていません</p>
+                      )}
+                    </div>
+                  </label>
+
+                  {/* 担当者メールアドレスに送信 */}
+                  <label className="flex items-start cursor-pointer">
+                    <input
+                      type="radio"
+                      name="emailRecipientPreference"
+                      value="contact"
+                      checked={formData.emailRecipientPreference === 'contact'}
+                      onChange={(e) => setFormData(prev => ({ ...prev, emailRecipientPreference: e.target.value as 'representative' | 'contact' | 'both' }))}
+                      className="mt-1 mr-3"
+                    />
+                    <div className="flex-1">
+                      <span className="font-medium">担当者メールアドレスに送信</span>
+                      {formData.contacts.length > 0 && (
+                        <div className="mt-2">
+                          <select
+                            value={formData.primaryContactIndex}
+                            onChange={(e) => setFormData(prev => ({ ...prev, primaryContactIndex: parseInt(e.target.value) }))}
+                            className="w-full max-w-md px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            disabled={formData.emailRecipientPreference !== 'contact' && formData.emailRecipientPreference !== 'both'}
+                          >
+                            {formData.contacts.map((contact, index) => (
+                              <option key={index} value={index}>
+                                {contact.name || `担当者 ${index + 1}`}
+                                {contact.email ? ` (${contact.email})` : ' (メールアドレス未設定)'}
+                              </option>
+                            ))}
+                          </select>
+                          {formData.contacts[formData.primaryContactIndex]?.email && (
+                            <p className="text-sm text-gray-600 mt-1">
+                              送信先: {formData.contacts[formData.primaryContactIndex].email}
+                            </p>
+                          )}
+                          {!formData.contacts[formData.primaryContactIndex]?.email && (
+                            <p className="text-sm text-red-500 mt-1">
+                              ※ 選択した担当者にメールアドレスが設定されていません
+                            </p>
+                          )}
+                        </div>
+                      )}
+                      {formData.contacts.length === 0 && (
+                        <p className="text-sm text-red-500 mt-1">※ 担当者が登録されていません</p>
+                      )}
+                    </div>
+                  </label>
+
+                  {/* 両方に送信 */}
+                  <label className="flex items-start cursor-pointer">
+                    <input
+                      type="radio"
+                      name="emailRecipientPreference"
+                      value="both"
+                      checked={formData.emailRecipientPreference === 'both'}
+                      onChange={(e) => setFormData(prev => ({ ...prev, emailRecipientPreference: e.target.value as 'representative' | 'contact' | 'both' }))}
+                      className="mt-1 mr-3"
+                    />
+                    <div>
+                      <span className="font-medium">両方に送信</span>
+                      <p className="text-sm text-gray-600 mt-1">
+                        代表者メールアドレスと担当者メールアドレスの両方に送信します
+                      </p>
+                      {formData.email && formData.contacts[formData.primaryContactIndex]?.email && (
+                        <div className="text-sm text-gray-600 mt-1">
+                          <p>代表者: {formData.email}</p>
+                          <p>担当者: {formData.contacts[formData.primaryContactIndex].email}</p>
+                        </div>
+                      )}
+                    </div>
+                  </label>
+                </div>
+
+                {errors.emailRecipientPreference && (
+                  <p className="text-sm text-red-500">{errors.emailRecipientPreference}</p>
+                )}
               </div>
             </div>
 

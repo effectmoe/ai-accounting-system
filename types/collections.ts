@@ -73,6 +73,9 @@ export interface Customer extends TimestampedDocument, TaggableDocument {
   website?: string;
   paymentTerms?: number; // 支払いサイト（日数）
   contacts?: Contact[];
+  // メール送信先設定
+  emailRecipientPreference?: 'representative' | 'contact' | 'both'; // 'representative' = 代表者メール, 'contact' = 担当者メール, 'both' = 両方
+  primaryContactIndex?: number; // 主担当者のcontacts配列でのインデックス
   tags?: string[];
   notes?: string;
   isActive?: boolean;
@@ -87,7 +90,8 @@ export interface Contact {
   title?: string;
   email?: string;
   phone?: string;
-  isPrimary?: boolean;
+  isPrimary?: boolean; // 主担当者フラグ
+  isEmailRecipient?: boolean; // メール受信者フラグ
 }
 
 // 会社情報インターフェース

@@ -3,7 +3,9 @@ import { QuoteService } from '@/services/quote.service';
 import { InvoiceService } from '@/services/invoice.service';
 import { generatePDFBase64 } from '@/lib/pdf-export';
 import { DocumentData } from '@/lib/document-generator';
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
+import { db } from '@/lib/mongodb-client';
+import { Customer } from '@/types/collections';
 
 import { logger } from '@/lib/logger';
 // 日本語フォント処理のためにNode.js Runtimeを使用
@@ -22,14 +24,92 @@ interface EmailRequest {
   pdfBase64?: string; // クライアントで生成されたPDFのBase64データ
 }
 
-// Gmail SMTP設定
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.GMAIL_USER || 'info@effect.moe',
-    pass: process.env.GMAIL_APP_PASSWORD || 'zrvn vpbs bgcx leyo'
-  }
+// Resend設定
+const resendApiKey = process.env.RESEND_API_KEY;
+logger.debug('Resend API初期化:', {
+  apiKeyExists: !!resendApiKey,
+  apiKeyPrefix: resendApiKey?.substring(0, 10),
+  apiKeyLength: resendApiKey?.length
 });
+const resend = new Resend(resendApiKey);
+
+// 顧客のメール設定に基づいて送信先を取得するヘルパー関数
+async function getEmailRecipients(customerId?: string): Promise<{ to: string[]; cc?: string[] }> {
+  if (!customerId) {
+    logger.debug('No customerId provided, returning default');
+    return { to: [] };
+  }
+
+  try {
+    logger.debug(`Getting email recipients for customer: ${customerId}`);
+    const customer = await db.findById<Customer>('customers', customerId);
+    
+    if (!customer) {
+      logger.debug(`Customer not found: ${customerId}`);
+      return { to: [] };
+    }
+
+    const recipients: { to: string[]; cc?: string[] } = { to: [] };
+    
+    switch (customer.emailRecipientPreference) {
+      case 'representative':
+        // 代表者（会社のメールアドレス）に送信
+        if (customer.email) {
+          recipients.to.push(customer.email);
+          logger.debug(`Added representative email: ${customer.email}`);
+        }
+        break;
+        
+      case 'contact':
+        // 主担当者に送信
+        if (customer.contacts && customer.contacts.length > 0) {
+          const primaryContact = customer.primaryContactIndex !== undefined && customer.primaryContactIndex >= 0
+            ? customer.contacts[customer.primaryContactIndex]
+            : customer.contacts.find(contact => contact.isPrimary) || customer.contacts[0];
+          
+          if (primaryContact?.email) {
+            recipients.to.push(primaryContact.email);
+            logger.debug(`Added contact email: ${primaryContact.email} (${primaryContact.name})`);
+          }
+        }
+        break;
+        
+      case 'both':
+        // 両方に送信
+        if (customer.email) {
+          recipients.to.push(customer.email);
+          logger.debug(`Added representative email: ${customer.email}`);
+        }
+        if (customer.contacts && customer.contacts.length > 0) {
+          const primaryContact = customer.primaryContactIndex !== undefined && customer.primaryContactIndex >= 0
+            ? customer.contacts[customer.primaryContactIndex]
+            : customer.contacts.find(contact => contact.isPrimary) || customer.contacts[0];
+          
+          if (primaryContact?.email && primaryContact.email !== customer.email) {
+            // CCに追加（代表者と重複しない場合）
+            if (!recipients.cc) recipients.cc = [];
+            recipients.cc.push(primaryContact.email);
+            logger.debug(`Added contact email to CC: ${primaryContact.email} (${primaryContact.name})`);
+          }
+        }
+        break;
+        
+      default:
+        // デフォルトは代表者メール
+        if (customer.email) {
+          recipients.to.push(customer.email);
+          logger.debug(`Added default representative email: ${customer.email}`);
+        }
+        break;
+    }
+
+    logger.debug(`Email recipients determined:`, recipients);
+    return recipients;
+  } catch (error) {
+    logger.error('Error getting email recipients:', error);
+    return { to: [] };
+  }
+}
 
 // メール送信サービス
 async function sendEmail(options: {
@@ -45,36 +125,79 @@ async function sendEmail(options: {
   }>;
 }) {
   try {
-    const mailOptions = {
-      from: `${process.env.EMAIL_FROM_NAME || '株式会社EFFECT'} <${process.env.EMAIL_FROM_ADDRESS || 'info@effect.moe'}>`,
-      to: options.to,
-      cc: options.cc || undefined,
-      bcc: options.bcc || undefined,
-      subject: options.subject,
-      text: options.body.replace(/<br>/g, '\n').replace(/<[^>]*>/g, ''), // HTMLタグを除去したプレーンテキスト版
-      html: options.body,
-      attachments: options.attachments?.map(att => ({
-        filename: att.filename,
-        content: att.content,
-        encoding: 'base64' as const,
-        contentType: att.contentType
-      }))
-    };
-
-    logger.debug('Sending email via Gmail:', {
+    logger.debug('Sending email via Resend:', {
       to: options.to,
       cc: options.cc,
       bcc: options.bcc,
       subject: options.subject,
       hasAttachments: !!options.attachments?.length,
+      apiKeyExists: !!process.env.RESEND_API_KEY,
     });
 
-    const info = await transporter.sendMail(mailOptions);
-    
-    logger.debug('Email sent successfully:', info.messageId);
-    return { success: true, messageId: info.messageId };
+    if (!process.env.RESEND_API_KEY) {
+      throw new Error('RESEND_API_KEY is not configured');
+    }
+
+    // Resendでメール送信
+    const fromAddress = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
+    const fromName = process.env.EMAIL_FROM_NAME || '株式会社EFFECT';
+
+    // 環境変数デバッグ
+    logger.debug('Resend環境変数の確認:', {
+      RESEND_API_KEY_EXISTS: !!process.env.RESEND_API_KEY,
+      RESEND_API_KEY_PREFIX: process.env.RESEND_API_KEY?.substring(0, 10),
+      RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL,
+      EMAIL_FROM_NAME: process.env.EMAIL_FROM_NAME,
+      finalFromAddress: fromAddress,
+      finalFromName: fromName
+    });
+
+    const emailData = {
+      from: `${fromName} <${fromAddress}>`,
+      to: [options.to],
+      ...(options.cc && { cc: [options.cc] }),
+      ...(options.bcc && { bcc: [options.bcc] }),
+      subject: options.subject,
+      html: options.body,
+      ...(options.attachments && options.attachments.length > 0 && {
+        attachments: options.attachments.map(att => ({
+          filename: att.filename,
+          content: att.content,
+          type: att.contentType,
+        }))
+      }),
+    };
+
+    logger.debug('Sending email with Resend data:', {
+      from: emailData.from,
+      to: emailData.to,
+      subject: emailData.subject,
+      hasAttachments: !!emailData.attachments?.length,
+    });
+
+    const { data, error: resendError } = await resend.emails.send(emailData);
+
+    if (resendError) {
+      logger.error('Resend送信エラー:', resendError);
+      logger.error('Resendエラー詳細:', {
+        name: resendError.name,
+        message: resendError.message,
+        response: (resendError as any).response,
+        statusCode: (resendError as any).statusCode
+      });
+      throw new Error(`Resend API error: ${resendError.message || 'Unknown error'}`);
+    }
+
+    logger.debug('Email sent successfully via Resend:', data);
+    logger.info('メール送信成功:', {
+      messageId: data?.id,
+      from: emailData.from,
+      to: emailData.to,
+      subject: emailData.subject
+    });
+    return { success: true, messageId: data?.id || 'unknown' };
   } catch (error) {
-    logger.error('Gmail送信エラー:', error);
+    logger.error('メール送信エラー:', error);
     throw new Error(`メール送信に失敗しました: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
@@ -364,13 +487,39 @@ export async function POST(request: NextRequest) {
     logger.debug('=== ATTACHMENT PREPARATION END ===');
     logger.debug('Final attachments array:', attachments.map(a => ({ filename: a.filename, size: a.content.length })));
 
+    // 顧客のメール設定に基づいて送信先を決定
+    let finalTo = to;
+    let finalCc = cc;
+    
+    if (document.customer?._id || document.customer?.id || document.customerId) {
+      const customerId = document.customer?._id || document.customer?.id || document.customerId;
+      logger.debug(`Getting email recipients for customer ID: ${customerId}`);
+      
+      const recipients = await getEmailRecipients(customerId);
+      if (recipients.to.length > 0) {
+        finalTo = recipients.to[0]; // 主送信先
+        if (recipients.to.length > 1) {
+          // 複数の送信先がある場合、追加をCCに
+          finalCc = cc ? `${cc},${recipients.to.slice(1).join(',')}` : recipients.to.slice(1).join(',');
+        }
+        if (recipients.cc && recipients.cc.length > 0) {
+          // 顧客設定のCCも追加
+          finalCc = finalCc ? `${finalCc},${recipients.cc.join(',')}` : recipients.cc.join(',');
+        }
+        logger.debug(`Email recipients from customer settings - To: ${finalTo}, CC: ${finalCc}`);
+      } else {
+        logger.debug('No email recipients found in customer settings, using provided TO address');
+      }
+    }
+
     // メール送信
     logger.debug('Sending email with attachments count:', attachments.length);
     logger.debug('Email attachments:', attachments.map(a => ({ filename: a.filename, size: a.content.length })));
+    logger.debug(`Final email recipients - To: ${finalTo}, CC: ${finalCc}, BCC: ${bcc}`);
     
     const result = await sendEmail({
-      to,
-      cc,
+      to: finalTo,
+      cc: finalCc,
       bcc,
       subject: emailSubject,
       body: emailBody,
