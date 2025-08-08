@@ -14,6 +14,11 @@ export async function GET(request: NextRequest) {
     USE_AZURE_MONGODB: process.env.USE_AZURE_MONGODB || 'Not set',
     NEXT_PUBLIC_USE_AZURE_MONGODB: process.env.NEXT_PUBLIC_USE_AZURE_MONGODB || 'Not set',
     
+    // Resend設定
+    RESEND_API_KEY: process.env.RESEND_API_KEY ? `✅ Set (${process.env.RESEND_API_KEY.substring(0, 10)}...)` : '❌ Missing',
+    RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL || '❌ Missing',
+    EMAIL_FROM_NAME: process.env.EMAIL_FROM_NAME || '❌ Missing',
+    
     // Runtime info
     NODE_ENV: process.env.NODE_ENV,
     VERCEL: process.env.VERCEL ? 'Yes' : 'No',
