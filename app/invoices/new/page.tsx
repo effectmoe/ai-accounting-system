@@ -427,41 +427,31 @@ function NewInvoiceContent() {
       console.log('❌ [DEBUG] No items found in invoiceData');
     }
     
+    // notesのデフォルト値を設定
+    if (!invoiceData.notes && defaultBankInfo) {
+      invoiceData.notes = defaultBankInfo;
+      console.log('🔄 [DEBUG] Added default bank info to notes');
+    }
+    
+    // aiConversationIdを確保
+    invoiceData.aiConversationId = invoiceData.aiConversationId || Date.now().toString();
+    console.log('🔄 [DEBUG] Set aiConversationId:', invoiceData.aiConversationId);
+    
+    // まずフォームにデータを適用（ユーザーが内容を確認できるように）
+    console.log('🔄 [DEBUG] Applying data to form first...');
+    applyInvoiceData(invoiceData);
+    setAiConversationId(invoiceData.aiConversationId);
+    console.log('✅ [DEBUG] Data applied to form successfully');
+    
     // ダイアログを閉じる
     console.log('🔄 [DEBUG] Closing AI chat dialog');
     setShowAIChat(false);
     setAiDataApplied(true);
-    setSuccessMessage('AI会話から請求書を作成中...');
+    setSuccessMessage('AI会話から請求書データを取得しました。内容を確認の上、保存してください。');
     
-    // AIチャットのデータをそのまま使用して請求書を作成
-    try {
-      console.log('🔄 [DEBUG] Starting invoice creation process');
-      
-      // notesのデフォルト値を設定
-      if (!invoiceData.notes && defaultBankInfo) {
-        invoiceData.notes = defaultBankInfo;
-        console.log('🔄 [DEBUG] Added default bank info to notes');
-      }
-      
-      // aiConversationIdを確保
-      invoiceData.aiConversationId = invoiceData.aiConversationId || Date.now().toString();
-      console.log('🔄 [DEBUG] Set aiConversationId:', invoiceData.aiConversationId);
-      
-      // 即座に請求書を作成（データが直接渡される）
-      console.log('🔄 [DEBUG] Calling saveInvoiceWithData...');
-      await saveInvoiceWithData(invoiceData);
-      console.log('✅ [DEBUG] saveInvoiceWithData completed successfully');
-      
-      // 作成成功後、フォームにもデータを反映（履歴表示用）
-      console.log('🔄 [DEBUG] Applying data to form...');
-      applyInvoiceData(invoiceData);
-      setAiConversationId(invoiceData.aiConversationId);
-      console.log('✅ [DEBUG] Data applied to form successfully');
-    } catch (error) {
-      console.error('❌ [DEBUG] Error in handleAIChatComplete:', error);
-      logger.error('[InvoiceNew] Failed to create invoice from AI chat:', error);
-      setError('請求書の作成に失敗しました');
-    }
+    // 自動保存は行わず、ユーザーが手動で保存するようにする
+    // これにより、ユーザーが内容を確認・修正してから保存できる
+    console.log('✅ [DEBUG] AI chat data has been applied to form. User can now review and save manually.');
   };
 
   // 請求書データを適用する共通関数
@@ -473,8 +463,43 @@ function NewInvoiceContent() {
       console.log('🔄 [DEBUG] Setting selectedCustomerId:', data.customerId);
       setSelectedCustomerId(data.customerId);
     } else if (data.customerName) {
-      console.log('🔄 [DEBUG] Setting customerName:', data.customerName);
-      setCustomerName(data.customerName);
+      console.log('🔄 [DEBUG] Processing customerName:', data.customerName);
+      
+      // 既存の顧客から名前で検索
+      const existingCustomer = customers.find(customer => {
+        if (!customer) return false;
+        
+        const customerNameToCheck = data.customerName.toLowerCase().trim();
+        
+        // 複数のフィールドで検索
+        if ('companyName' in customer && customer.companyName) {
+          if (customer.companyName.toLowerCase().includes(customerNameToCheck) || customerNameToCheck.includes(customer.companyName.toLowerCase())) {
+            return true;
+          }
+        }
+        if ('name' in customer && (customer as any).name) {
+          if ((customer as any).name.toLowerCase().includes(customerNameToCheck) || customerNameToCheck.includes((customer as any).name.toLowerCase())) {
+            return true;
+          }
+        }
+        if ('company' in customer && (customer as any).company) {
+          if ((customer as any).company.toLowerCase().includes(customerNameToCheck) || customerNameToCheck.includes((customer as any).company.toLowerCase())) {
+            return true;
+          }
+        }
+        
+        return false;
+      });
+      
+      if (existingCustomer) {
+        console.log('🔄 [DEBUG] Found existing customer:', existingCustomer._id);
+        setSelectedCustomerId(existingCustomer._id);
+        setCustomerName(''); // 既存顧客が選択された場合は手入力をクリア
+      } else {
+        console.log('🔄 [DEBUG] Setting customerName for manual entry:', data.customerName);
+        setSelectedCustomerId('');
+        setCustomerName(data.customerName);
+      }
     }
     
     // タイトル
@@ -499,7 +524,36 @@ function NewInvoiceContent() {
     if (data.items && data.items.length > 0) {
       console.log('🔄 [DEBUG] Setting items, count:', data.items.length);
       console.log('🔄 [DEBUG] Items data:', data.items);
-      setItems(data.items);
+      
+      // 明細データを適切な形式に変換
+      const processedItems = data.items.map((item: any, index: number) => {
+        console.log(`🔄 [DEBUG] Processing item ${index}:`, item);
+        
+        const processedItem = {
+          description: item.description || '',
+          quantity: parseFloat(item.quantity) || 1,
+          unitPrice: parseFloat(item.unitPrice) || 0,
+          amount: parseFloat(item.amount) || parseFloat(item.unitPrice) * parseFloat(item.quantity) || 0,
+          taxRate: parseFloat(item.taxRate) || 0.1,
+          taxAmount: parseFloat(item.taxAmount) || 0,
+          unit: item.unit || '件',
+          productId: item.productId || '',
+        };
+        
+        // taxAmountが設定されていない場合は計算
+        if (!item.taxAmount && processedItem.amount > 0) {
+          processedItem.taxAmount = Math.round(processedItem.amount * processedItem.taxRate);
+        }
+        
+        console.log(`🔄 [DEBUG] Processed item ${index}:`, processedItem);
+        return processedItem;
+      });
+      
+      setItems(processedItems);
+      console.log('🔄 [DEBUG] All items processed and set');
+    } else {
+      console.log('🔄 [DEBUG] No items to process, clearing items list');
+      setItems([]);
     }
     
     // その他
@@ -517,7 +571,44 @@ function NewInvoiceContent() {
     }
     
     console.log('✅ [DEBUG] applyInvoiceData completed');
+    
+    // フォーム状態の最終確認
+    setTimeout(() => {
+      console.log('🔍 [DEBUG] Final form state check:');
+      console.log('  - selectedCustomerId:', selectedCustomerId);
+      console.log('  - customerName:', customerName);
+      console.log('  - title:', title);
+      console.log('  - invoiceDate:', invoiceDate);
+      console.log('  - dueDate:', dueDate);
+      console.log('  - items count:', items.length);
+      console.log('  - notes:', notes);
+      console.log('  - paymentMethod:', paymentMethod);
+    }, 100);
   };
+
+  // 明細データの変更を監視するuseEffect
+  useEffect(() => {
+    console.log('🔄 [DEBUG] Items state changed:', items.length, 'items');
+    items.forEach((item, index) => {
+      console.log(`🔄 [DEBUG] Item ${index}:`, item);
+    });
+  }, [items]);
+
+  // AIチャット完了後の状態を監視
+  useEffect(() => {
+    if (aiDataApplied) {
+      console.log('🔄 [DEBUG] AI data applied - Form state check:');
+      console.log('  - selectedCustomerId:', selectedCustomerId);
+      console.log('  - customerName:', customerName);
+      console.log('  - title:', title);
+      console.log('  - items:', items);
+      
+      // 明細が空の場合は警告を出す
+      if (items.length === 0) {
+        console.log('⚠️ [DEBUG] WARNING: AI data applied but no items found!');
+      }
+    }
+  }, [aiDataApplied, selectedCustomerId, customerName, title, items]);
 
   // 明細行を追加
   const addItem = () => {
@@ -1365,6 +1456,7 @@ function NewInvoiceContent() {
         isOpen={showAIChat}
         onClose={() => setShowAIChat(false)}
         onComplete={handleAIChatComplete}
+        onDataApply={handleAIChatComplete}
         companyId={companyInfo?._id || 'default-company'}
         mode={aiDataApplied ? "edit" : "create"}
         initialInvoiceData={aiDataApplied ? {
