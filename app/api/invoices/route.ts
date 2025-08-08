@@ -96,6 +96,16 @@ export async function POST(request: NextRequest) {
     // Mastraエージェント経由で請求書を作成（既存機能へのフォールバック付き）
     let invoice;
     try {
+      // Mastraを一時的に無効化して、直接サービスを使用
+      logger.debug('Creating invoice directly with service (Mastra temporarily disabled)');
+      invoice = await invoiceService.createInvoice(invoiceData);
+      logger.debug('Invoice created successfully:', {
+        _id: invoice?._id,
+        invoiceNumber: invoice?.invoiceNumber,
+        hasId: !!invoice?._id
+      });
+      
+      /* 一時的にMastraを無効化
       invoice = await MastraAccountingAgent.createInvoice(
         {
           customer_name: invoiceData.customer?.companyName || invoiceData.customerName || '',
@@ -115,11 +125,11 @@ export async function POST(request: NextRequest) {
           return createdInvoice;
         }
       );
-    } catch (mastraError) {
-      logger.error('Mastra agent failed, using direct service:', mastraError);
-      // Mastraエージェントが完全に失敗した場合は直接サービスを使用
-      invoice = await invoiceService.createInvoice(invoiceData);
-      logger.debug('Invoice created directly after Mastra failure:', invoice);
+      */
+    } catch (error) {
+      logger.error('Invoice creation failed:', error);
+      // エラーを再スロー
+      throw error;
     }
     
     // 確実に_idが存在することを確認

@@ -44,8 +44,67 @@ export default function EmailSendModal({
   deliveryDate,
   onSuccess,
 }: EmailSendModalProps) {
-  const [to, setTo] = useState(customerEmail);
-  const [cc, setCc] = useState('');
+  // 顧客のメール設定に基づいて初期メールアドレスを決定
+  const getInitialEmailAddress = () => {
+    // 顧客情報が存在する場合
+    if (customer) {
+      const preference = customer.emailRecipientPreference || 'representative';
+      
+      switch (preference) {
+        case 'contact':
+          // 担当者メールを使用
+          if (customer.contacts && customer.contacts.length > 0) {
+            const primaryContact = customer.primaryContactIndex !== undefined && customer.primaryContactIndex >= 0
+              ? customer.contacts[customer.primaryContactIndex]
+              : customer.contacts.find((contact: any) => contact.isPrimary) || customer.contacts[0];
+            
+            if (primaryContact?.email) {
+              logger.debug(`Initial email set to contact: ${primaryContact.email} (preference: ${preference})`);
+              return primaryContact.email;
+            }
+          }
+          // 担当者がいない場合は代表メールにフォールバック
+          logger.debug(`No contact email found, falling back to representative: ${customerEmail}`);
+          return customerEmail;
+          
+        case 'both':
+          // 代表メールをメインにして、担当者はCCに入れる（後で処理）
+          logger.debug(`Initial email set to representative (both mode): ${customerEmail}`);
+          return customerEmail;
+          
+        case 'representative':
+        default:
+          // 代表メールを使用
+          logger.debug(`Initial email set to representative: ${customerEmail} (preference: ${preference})`);
+          return customerEmail;
+      }
+    }
+    
+    // 顧客情報がない場合はcustomerEmailを使用
+    logger.debug(`No customer object, using provided customerEmail: ${customerEmail}`);
+    return customerEmail;
+  };
+
+  // CCメールアドレスを初期化（bothモードの場合）
+  const getInitialCcAddress = () => {
+    if (customer && customer.emailRecipientPreference === 'both') {
+      // bothモードの場合、担当者メールをCCに追加
+      if (customer.contacts && customer.contacts.length > 0) {
+        const primaryContact = customer.primaryContactIndex !== undefined && customer.primaryContactIndex >= 0
+          ? customer.contacts[customer.primaryContactIndex]
+          : customer.contacts.find((contact: any) => contact.isPrimary) || customer.contacts[0];
+        
+        if (primaryContact?.email && primaryContact.email !== customerEmail) {
+          logger.debug(`Initial CC set to contact email (both mode): ${primaryContact.email}`);
+          return primaryContact.email;
+        }
+      }
+    }
+    return '';
+  };
+
+  const [to, setTo] = useState(getInitialEmailAddress());
+  const [cc, setCc] = useState(getInitialCcAddress());
   const [bcc, setBcc] = useState('');
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
