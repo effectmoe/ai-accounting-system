@@ -210,8 +210,8 @@ export default function AIChatDialog({
     }
   }, [messages]);
 
-  // 強制再レンダリング用のステート
-  const [renderKey, setRenderKey] = useState(0);
+  // ボタンの有効/無効状態を管理
+  const [isButtonDisabled, setIsButtonDisabled] = useState(true);
   
   // ボタンが有効かどうかを計算する関数
   const isButtonEnabled = () => {
@@ -229,31 +229,39 @@ export default function AIChatDialog({
     return hasCustomerName || hasItems;
   };
 
-  // currentInvoiceDataの変更を監視
+  // currentInvoiceDataの変更を監視してボタン状態を更新
   useEffect(() => {
-    const enabled = isButtonEnabled();
-    const shouldBeDisabled = isLoading || 
-      !currentInvoiceData || 
-      (!currentInvoiceData.customerName?.trim() && (!currentInvoiceData.items || currentInvoiceData.items.length === 0));
+    // ローディング中はスキップ
+    if (isLoading) {
+      setIsButtonDisabled(true);
+      return;
+    }
     
-    logger.debug('[Frontend] Button state check:', {
+    // データの有効性をチェック
+    const hasValidCustomerName = currentInvoiceData?.customerName && 
+                                 typeof currentInvoiceData.customerName === 'string' && 
+                                 currentInvoiceData.customerName.trim().length > 0;
+    const hasValidItems = currentInvoiceData?.items && 
+                         Array.isArray(currentInvoiceData.items) && 
+                         currentInvoiceData.items.length > 0;
+    
+    const shouldEnableButton = hasValidCustomerName || hasValidItems;
+    
+    logger.debug('[Frontend] Button state update:', {
       customerName: currentInvoiceData?.customerName,
       customerNameType: typeof currentInvoiceData?.customerName,
-      customerNameLength: currentInvoiceData?.customerName?.length,
-      customerNameTrimmedLength: currentInvoiceData?.customerName?.trim?.()?.length,
+      hasValidCustomerName,
       items: currentInvoiceData?.items,
       itemsIsArray: Array.isArray(currentInvoiceData?.items),
       itemsLength: currentInvoiceData?.items?.length,
-      isEnabled: enabled,
-      shouldBeDisabled,
-      isLoading
+      hasValidItems,
+      shouldEnableButton,
+      isLoading,
+      currentButtonState: isButtonDisabled
     });
     
-    // データがある場合は強制再レンダリング
-    if (!shouldBeDisabled && !isLoading) {
-      logger.debug('[Frontend] Button should be enabled, triggering re-render');
-      setRenderKey(prev => prev + 1);
-    }
+    // ボタンの状態を更新
+    setIsButtonDisabled(!shouldEnableButton);
   }, [currentInvoiceData, isLoading]);
 
   // カーソル位置を保存・取得する関数
@@ -529,12 +537,17 @@ export default function AIChatDialog({
           }
           
           logger.debug('[Frontend] State update END - returning newData');
+          
+          // ボタン状態を即座に更新
+          const hasValidCustomer = newData.customerName && newData.customerName.trim().length > 0;
+          const hasValidItems = newData.items && newData.items.length > 0;
+          if (hasValidCustomer || hasValidItems) {
+            logger.debug('[Frontend] Valid data detected, enabling button immediately');
+            setIsButtonDisabled(false);
+          }
+          
           return newData;
         });
-        
-        // 強制再レンダリングをトリガー
-        logger.debug('[Frontend] Triggering force re-render');
-        setRenderKey(prev => prev + 1);
       } else {
         logger.debug('[Frontend] No data in result, not updating currentInvoiceData');
       }
@@ -1023,12 +1036,8 @@ export default function AIChatDialog({
               </Button>
             </div>
             {(() => {
-              const shouldBeDisabled = isLoading || 
-                !currentInvoiceData || 
-                (!currentInvoiceData.customerName?.trim() && (!currentInvoiceData.items || currentInvoiceData.items.length === 0));
-              
               logger.debug('[Button Direct Check] Button disabled state:', {
-                shouldBeDisabled,
+                isButtonDisabled,
                 isLoading,
                 hasData: !!currentInvoiceData,
                 customerName: currentInvoiceData?.customerName,
@@ -1038,7 +1047,6 @@ export default function AIChatDialog({
               return null;
             })()}
             <Button
-              key={`complete-btn-${renderKey}`}
               onClick={async (e) => {
                 e.preventDefault();
                 
@@ -1137,11 +1145,7 @@ export default function AIChatDialog({
                 logger.debug('[AIChatDialog] Calling completeConversation');
                 completeConversation();
               }}
-              disabled={
-                isLoading || 
-                !currentInvoiceData || 
-                (!currentInvoiceData.customerName?.trim() && (!currentInvoiceData.items || currentInvoiceData.items.length === 0))
-              }
+              disabled={isButtonDisabled}
             >
               <CheckCircle className="mr-2 h-4 w-4" />
               会話を終了して確定
