@@ -3,7 +3,6 @@ import { QuoteService } from '@/services/quote.service';
 import { InvoiceService } from '@/services/invoice.service';
 import { generatePDFBase64 } from '@/lib/pdf-export';
 import { DocumentData } from '@/lib/document-generator';
-import { Resend } from 'resend';
 import { db } from '@/lib/mongodb-client';
 import { Customer } from '@/types/collections';
 
@@ -24,14 +23,30 @@ interface EmailRequest {
   pdfBase64?: string; // クライアントで生成されたPDFのBase64データ
 }
 
-// Resend設定
-const resendApiKey = process.env.RESEND_API_KEY;
-logger.debug('Resend API初期化:', {
-  apiKeyExists: !!resendApiKey,
-  apiKeyPrefix: resendApiKey?.substring(0, 10),
-  apiKeyLength: resendApiKey?.length
-});
-const resend = new Resend(resendApiKey);
+// Resendのインスタンスをグローバルに保持（遅延初期化）
+let resendInstance: any = null;
+
+// Resendの遅延初期化関数
+async function getResendInstance() {
+  if (!resendInstance) {
+    const resendApiKey = process.env.RESEND_API_KEY;
+    
+    if (!resendApiKey) {
+      throw new Error('RESEND_API_KEY is not configured');
+    }
+    
+    // 動的インポート
+    const { Resend } = await import('resend');
+    resendInstance = new Resend(resendApiKey);
+    
+    logger.debug('Resend initialized:', {
+      apiKeyExists: true,
+      apiKeyPrefix: resendApiKey.substring(0, 10)
+    });
+  }
+  
+  return resendInstance;
+}
 
 // 顧客のメール設定に基づいて送信先を取得するヘルパー関数
 async function getEmailRecipients(customerId?: string): Promise<{ to: string[]; cc?: string[] }> {
@@ -134,9 +149,8 @@ async function sendEmail(options: {
       apiKeyExists: !!process.env.RESEND_API_KEY,
     });
 
-    if (!process.env.RESEND_API_KEY) {
-      throw new Error('RESEND_API_KEY is not configured');
-    }
+    // Resendインスタンスを取得（遅延初期化）
+    const resend = await getResendInstance();
 
     // Resendでメール送信
     const fromAddress = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
