@@ -12,6 +12,8 @@ export interface InvoiceSearchParams {
   isGeneratedByAI?: boolean;
   limit?: number;
   skip?: number;
+  sortBy?: string;
+  sortOrder?: string;
 }
 
 export interface InvoiceSearchResult {
@@ -54,10 +56,31 @@ export class InvoiceService {
 
       const limit = params.limit || 20;
       const skip = params.skip || 0;
+      
+      // ソート設定（フィールド名のマッピング）
+      const fieldMapping: Record<string, string> = {
+        'invoiceDate': 'issueDate',  // フロントエンドはinvoiceDateを送るが、DBではissueDate
+        'invoiceNumber': 'invoiceNumber',
+        'title': 'title',
+        'dueDate': 'dueDate',
+        'totalAmount': 'totalAmount',
+        'status': 'status',
+        'isGeneratedByAI': 'isGeneratedByAI'
+      };
+      
+      const sortBy = fieldMapping[params.sortBy || 'invoiceDate'] || 'issueDate';
+      const sortOrder = params.sortOrder === 'asc' ? 1 : -1;
+      const sortObj: any = {};
+      sortObj[sortBy] = sortOrder;
+      
+      // 二次ソート用のフィールドを追加
+      if (sortBy !== 'invoiceNumber') {
+        sortObj.invoiceNumber = -1;
+      }
 
       // 請求書を取得
       const invoices = await db.find<Invoice>(this.collectionName, filter, {
-        sort: { issueDate: -1, invoiceNumber: -1 },
+        sort: sortObj,
         limit: limit + 1, // hasMoreを判定するため1件多く取得
         skip,
       });

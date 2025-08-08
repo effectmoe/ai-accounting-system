@@ -13,6 +13,8 @@ export interface QuoteSearchParams {
   isGeneratedByAI?: boolean;
   limit?: number;
   skip?: number;
+  sortBy?: string;
+  sortOrder?: string;
 }
 
 export interface QuoteSearchResult {
@@ -55,10 +57,31 @@ export class QuoteService {
 
       const limit = params.limit || 20;
       const skip = params.skip || 0;
+      
+      // ソート設定（フィールド名のマッピング）
+      const fieldMapping: Record<string, string> = {
+        'quoteDate': 'issueDate',  // フロントエンドはquoteDateを送るが、DBではissueDate
+        'quoteNumber': 'quoteNumber',
+        'title': 'title',
+        'expiryDate': 'expiryDate',
+        'totalAmount': 'totalAmount',
+        'status': 'status',
+        'isGeneratedByAI': 'isGeneratedByAI'
+      };
+      
+      const sortBy = fieldMapping[params.sortBy || 'quoteDate'] || 'issueDate';
+      const sortOrder = params.sortOrder === 'asc' ? 1 : -1;
+      const sortObj: any = {};
+      sortObj[sortBy] = sortOrder;
+      
+      // 二次ソート用のフィールドを追加
+      if (sortBy !== 'quoteNumber') {
+        sortObj.quoteNumber = -1;
+      }
 
       // 見積書を取得
       const quotes = await db.find<Quote>(this.collectionName, filter, {
-        sort: { issueDate: -1, quoteNumber: -1 },
+        sort: sortObj,
         limit: limit + 1, // hasMoreを判定するため1件多く取得
         skip,
       });

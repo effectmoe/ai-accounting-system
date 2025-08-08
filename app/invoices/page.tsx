@@ -57,11 +57,13 @@ export default function InvoicesPage() {
   const [bulkStatus, setBulkStatus] = useState<string>('');
   const [isUpdating, setIsUpdating] = useState(false);
   const [paymentDialogInvoice, setPaymentDialogInvoice] = useState<Invoice | null>(null);
+  const [sortBy, setSortBy] = useState<string>('invoiceDate');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const itemsPerPage = 20;
 
   useEffect(() => {
     fetchInvoices();
-  }, [statusFilter, aiOnlyFilter, currentPage]);
+  }, [statusFilter, aiOnlyFilter, currentPage, sortBy, sortOrder]);
 
   const fetchInvoices = async () => {
     setIsLoading(true);
@@ -69,6 +71,8 @@ export default function InvoicesPage() {
       const params = new URLSearchParams({
         limit: itemsPerPage.toString(),
         skip: ((currentPage - 1) * itemsPerPage).toString(),
+        sortBy: sortBy,
+        sortOrder: sortOrder,
       });
 
       if (statusFilter !== 'all') {
@@ -95,6 +99,23 @@ export default function InvoicesPage() {
   const handleSearch = () => {
     // TODO: 検索機能の実装
     logger.debug('Search:', searchQuery);
+  };
+
+  const handleSort = (field: string) => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortOrder('desc');
+    }
+    setCurrentPage(1); // ソート変更時は最初のページに戻る
+  };
+
+  const getSortIcon = (field: string) => {
+    if (sortBy !== field) {
+      return null;
+    }
+    return sortOrder === 'asc' ? '↑' : '↓';
   };
 
   const handleStatusChange = async (invoiceId: string, newStatus: string) => {
@@ -477,13 +498,69 @@ export default function InvoicesPage() {
                         aria-label="すべて選択"
                       />
                     </TableHead>
-                    <TableHead>請求書情報</TableHead>
-                    <TableHead>タイトル</TableHead>
-                    <TableHead>発行日</TableHead>
-                    <TableHead>支払期限</TableHead>
-                    <TableHead className="text-right">金額</TableHead>
-                    <TableHead>ステータス</TableHead>
-                    <TableHead>作成方法</TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-gray-100 select-none" 
+                      onClick={() => handleSort('invoiceNumber')}
+                    >
+                      <div className="flex items-center">
+                        請求書情報
+                        <span className="ml-1 text-xs">{getSortIcon('invoiceNumber')}</span>
+                      </div>
+                    </TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-gray-100 select-none" 
+                      onClick={() => handleSort('title')}
+                    >
+                      <div className="flex items-center">
+                        タイトル
+                        <span className="ml-1 text-xs">{getSortIcon('title')}</span>
+                      </div>
+                    </TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-gray-100 select-none" 
+                      onClick={() => handleSort('invoiceDate')}
+                    >
+                      <div className="flex items-center">
+                        発行日
+                        <span className="ml-1 text-xs">{getSortIcon('invoiceDate')}</span>
+                      </div>
+                    </TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-gray-100 select-none" 
+                      onClick={() => handleSort('dueDate')}
+                    >
+                      <div className="flex items-center">
+                        支払期限
+                        <span className="ml-1 text-xs">{getSortIcon('dueDate')}</span>
+                      </div>
+                    </TableHead>
+                    <TableHead 
+                      className="text-right cursor-pointer hover:bg-gray-100 select-none" 
+                      onClick={() => handleSort('totalAmount')}
+                    >
+                      <div className="flex items-center justify-end">
+                        金額
+                        <span className="ml-1 text-xs">{getSortIcon('totalAmount')}</span>
+                      </div>
+                    </TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-gray-100 select-none" 
+                      onClick={() => handleSort('status')}
+                    >
+                      <div className="flex items-center">
+                        ステータス
+                        <span className="ml-1 text-xs">{getSortIcon('status')}</span>
+                      </div>
+                    </TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-gray-100 select-none" 
+                      onClick={() => handleSort('isGeneratedByAI')}
+                    >
+                      <div className="flex items-center">
+                        作成方法
+                        <span className="ml-1 text-xs">{getSortIcon('isGeneratedByAI')}</span>
+                      </div>
+                    </TableHead>
                     <TableHead>アクション</TableHead>
                   </TableRow>
                 </TableHeader>
