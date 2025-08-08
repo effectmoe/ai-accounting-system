@@ -165,10 +165,8 @@ ${context.availableActions.map(action => `• ${action}`).join('\n')}
       // コンテキスト認識されたプロンプトを作成
       const contextualPrompt = ContextAnalyzer.getContextualPrompt(context, userMessage);
       
-      // エージェント別のエンドポイントを使用
-      const endpoint = selectedAgent === 'general' 
-        ? '/api/mastra/working'
-        : '/api/mastra/chat';
+      // すべてのエージェントで同じエンドポイントを使用
+      const endpoint = '/api/mastra/chat';
       
       const body = selectedAgent === 'general'
         ? { 
@@ -196,15 +194,30 @@ ${context.availableActions.map(action => `• ${action}`).join('\n')}
         body: JSON.stringify(body)
       });
 
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.status} ${response.statusText}`);
+      }
+
       const data = await response.json();
+      
+      // API応答の検証
+      if (!data || typeof data !== 'object') {
+        throw new Error('Invalid API response format');
+      }
+      
+      // エラーレスポンスの処理
+      if (data.success === false || data.error) {
+        throw new Error(data.error || 'API returned error');
+      }
       
       const assistantMessage = { 
         role: 'assistant', 
-        content: data.response || 'エラーが発生しました',
+        content: data.response || data.message || 'システムからの応答がありませんでした。',
         metadata: {
           ...data.metadata,
           agent: selectedAgent,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          success: data.success
         }
       };
       
@@ -231,11 +244,28 @@ ${context.availableActions.map(action => `• ${action}`).join('\n')}
         }
       }
     } catch (error) {
+      console.error('Chat error:', error);
+      
+      // エラーメッセージをより詳細に
+      let errorMessage = 'エラーが発生しました。もう一度お試しください。';
+      
+      if (error instanceof Error) {
+        // 特定のエラーパターンに応じてメッセージをカスタマイズ
+        if (error.message.includes('mastra.init')) {
+          errorMessage = '会計エージェントの初期化に問題があります。システム管理者にお問い合わせください。';
+        } else if (error.message.includes('network') || error.message.includes('fetch')) {
+          errorMessage = 'ネットワークエラーが発生しました。インターネット接続を確認してお試しください。';
+        } else if (error.message.includes('timeout')) {
+          errorMessage = 'リクエストがタイムアウトしました。しばらく待ってからお試しください。';
+        }
+      }
+      
       setMessages(prev => [...prev, { 
         role: 'assistant', 
-        content: 'エラーが発生しました。もう一度お試しください。',
+        content: errorMessage,
         metadata: { 
           error: true,
+          errorType: error instanceof Error ? error.name : 'Unknown',
           timestamp: new Date().toISOString()
         }
       }]);

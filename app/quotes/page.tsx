@@ -65,6 +65,8 @@ function QuotesPageContent() {
   const [currentPage, setCurrentPage] = useState(1);
   const [convertingQuotes, setConvertingQuotes] = useState<Set<string>>(new Set());
   const [selectedQuotes, setSelectedQuotes] = useState<Set<string>>(new Set());
+  const [sortBy, setSortBy] = useState<string>('issueDate');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const itemsPerPage = 20;
   const [error, setError] = useState<string | null>(null);
 
@@ -99,7 +101,7 @@ function QuotesPageContent() {
 
   useEffect(() => {
     fetchQuotes();
-  }, [statusFilter, aiOnlyFilter, currentPage, debouncedSearchQuery]);
+  }, [statusFilter, aiOnlyFilter, currentPage, debouncedSearchQuery, sortBy, sortOrder]);
 
   // URLパラメータを更新
   useEffect(() => {
@@ -125,6 +127,8 @@ function QuotesPageContent() {
       const params = {
         limit: itemsPerPage.toString(),
         skip: ((currentPage - 1) * itemsPerPage).toString(),
+        sortBy: sortBy,
+        sortOrder: sortOrder,
         ...(debouncedSearchQuery && { search: debouncedSearchQuery }),
         ...(statusFilter !== 'all' && { status: statusFilter }),
         ...(aiOnlyFilter && { isGeneratedByAI: 'true' }),
@@ -166,6 +170,22 @@ function QuotesPageContent() {
     }
   };
 
+  const handleSort = (field: string) => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortOrder('desc');
+    }
+    setCurrentPage(1); // ソート変更時は最初のページに戻る
+  };
+
+  const getSortIcon = (field: string) => {
+    if (sortBy !== field) {
+      return null;
+    }
+    return sortOrder === 'asc' ? '↑' : '↓';
+  };
 
   const getStatusBadge = (status: string) => {
     return (
@@ -538,13 +558,69 @@ function QuotesPageContent() {
                         aria-label="すべて選択"
                       />
                     </TableHead>
-                    <TableHead>見積書情報</TableHead>
-                    <TableHead>タイトル</TableHead>
-                    <TableHead>発行日</TableHead>
-                    <TableHead>有効期限</TableHead>
-                    <TableHead className="text-right">金額</TableHead>
-                    <TableHead>ステータス</TableHead>
-                    <TableHead>作成方法</TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-gray-100 select-none" 
+                      onClick={() => handleSort('quoteNumber')}
+                    >
+                      <div className="flex items-center">
+                        見積書情報
+                        <span className="ml-1 text-xs">{getSortIcon('quoteNumber')}</span>
+                      </div>
+                    </TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-gray-100 select-none" 
+                      onClick={() => handleSort('title')}
+                    >
+                      <div className="flex items-center">
+                        タイトル
+                        <span className="ml-1 text-xs">{getSortIcon('title')}</span>
+                      </div>
+                    </TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-gray-100 select-none" 
+                      onClick={() => handleSort('issueDate')}
+                    >
+                      <div className="flex items-center">
+                        発行日
+                        <span className="ml-1 text-xs">{getSortIcon('issueDate')}</span>
+                      </div>
+                    </TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-gray-100 select-none" 
+                      onClick={() => handleSort('validityDate')}
+                    >
+                      <div className="flex items-center">
+                        有効期限
+                        <span className="ml-1 text-xs">{getSortIcon('validityDate')}</span>
+                      </div>
+                    </TableHead>
+                    <TableHead 
+                      className="text-right cursor-pointer hover:bg-gray-100 select-none" 
+                      onClick={() => handleSort('totalAmount')}
+                    >
+                      <div className="flex items-center justify-end">
+                        金額
+                        <span className="ml-1 text-xs">{getSortIcon('totalAmount')}</span>
+                      </div>
+                    </TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-gray-100 select-none" 
+                      onClick={() => handleSort('status')}
+                    >
+                      <div className="flex items-center">
+                        ステータス
+                        <span className="ml-1 text-xs">{getSortIcon('status')}</span>
+                      </div>
+                    </TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-gray-100 select-none" 
+                      onClick={() => handleSort('isGeneratedByAI')}
+                    >
+                      <div className="flex items-center">
+                        作成方法
+                        <span className="ml-1 text-xs">{getSortIcon('isGeneratedByAI')}</span>
+                      </div>
+                    </TableHead>
                     <TableHead>アクション</TableHead>
                   </TableRow>
                 </TableHeader>

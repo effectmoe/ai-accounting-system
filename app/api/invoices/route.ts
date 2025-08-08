@@ -17,6 +17,8 @@ export async function GET(request: NextRequest) {
     const isGeneratedByAI = searchParams.get('isGeneratedByAI') === 'true' ? true : undefined;
     const limit = parseInt(searchParams.get('limit') || '20');
     const skip = parseInt(searchParams.get('skip') || '0');
+    const sortBy = searchParams.get('sortBy') || 'invoiceDate';
+    const sortOrder = searchParams.get('sortOrder') || 'desc';
 
     const result = await invoiceService.searchInvoices({
       customerId,
@@ -26,6 +28,8 @@ export async function GET(request: NextRequest) {
       isGeneratedByAI,
       limit,
       skip,
+      sortBy,
+      sortOrder,
     });
 
     return NextResponse.json(result);
