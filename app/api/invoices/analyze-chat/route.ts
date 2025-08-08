@@ -148,11 +148,21 @@ export async function POST(request: NextRequest) {
       currentInvoiceData.items.forEach((item, index) => {
         logger.debug(`[DEBUG] Item ${index + 1}:`, {
           description: item.description,
+          unitPrice: item.unitPrice,
+          quantity: item.quantity,
           amount: item.amount,
-          taxAmount: item.taxAmount
+          taxAmount: item.taxAmount,
+          taxRate: item.taxRate
         });
       });
     }
+    
+    // デバッグ: 受信した顧客名を詳細にログ
+    logger.debug('[DEBUG] Customer name analysis:', {
+      currentCustomerName: currentInvoiceData?.customerName,
+      customerNameType: typeof currentInvoiceData?.customerName,
+      customerNameLength: currentInvoiceData?.customerName?.length || 0
+    });
 
     // DeepSeek APIを最優先で使用
     const deepseekApiKey = process.env.DEEPSEEK_API_KEY;
@@ -341,9 +351,13 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
         
         // 顧客名の抽出（ユーザー入力優先）
         const customerNamePatterns = [
-          /([^\s]+(?:株式会社|会社|商事|工業|製作所|ストア|ショップ|サービス|システム|コーポレーション))(?:に|へ|向け|宛|様|さん)?/,
-          /([^\s]+会社)(?:に|へ|向け|宛|様|さん)?/,
-          /([^\s]+商事)(?:に|へ|向け|宛|様|さん)?/
+          // 株式会社（長い社名に対応）
+          /(株式会社[ァ-ヴーぁ-ゔ一-龯A-Za-z0-9]{2,20})(?:に|へ|向け|宛|様|さん)?/,
+          // 従来パターンも保持（短い社名対応）
+          /([^\s]{2,15}(?:株式会社|有限会社|合同会社|合資会社|合名会社|一般社団法人|一般財団法人))(?:に|へ|向け|宛|様|さん)?/,
+          /([^\s]{2,15}(?:会社|商事|工業|製作所|ストア|ショップ|サービス|システム|コーポレーション))(?:に|へ|向け|宛|様|さん)?/,
+          // 「ベイプランニングワークス」のようなカタカナ社名
+          /([ァ-ヴー]{4,15}(?:ワークス|サービス|システム|コンサル|プランニング|マーケティング))(?:に|へ|向け|宛|様|さん)?/
         ];
         
         let userSpecifiedCustomerName = null;
@@ -418,6 +432,76 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
           const lines = aiResponse.split('\n');
           let newItems = [];
           let foundItemList = false;
+          
+          // 最初にユーザーの会話から直接データを抽出（AIレスポンスより優先）
+          logger.debug('[AI] Extracting data directly from user conversation:', conversation);
+          
+          // ユーザー会話から商品名を抽出（日本語商品名パターンに対応）
+          const productNamePatterns = [
+            // 「エンボスJP：2530NA0388」のような形式（最優先）
+            /([ァ-ヴー\w]+(?:JP|jp)?[：:][A-Za-z0-9]+)/g,
+            // カタカナ商品名：英数字コード
+            /([ァ-ヴー]{2,10}[：:][A-Za-z0-9]{6,})/g,
+            // 「〇〇費」「〇〇料」「〇〇代」の形式
+            /([ァ-ヴーぁ-ゔ一-龯\w\s]{3,20}(?:費|料|代|サービス|システム|制作|開発|コンサル))/g,
+            // 英数字混在の商品コード
+            /([A-Za-z]+[0-9]+[A-Za-z0-9]*)/g,
+            // カタカナと英数字の組み合わせ（汎用）
+            /([ァ-ヴー]{2,}[A-Za-z0-9：:]+[A-Za-z0-9]*)/g
+          ];
+          
+          let extractedProductName = '';
+          for (const pattern of productNamePatterns) {
+            const matches = conversation.matchAll(pattern);
+            for (const match of matches) {
+              if (match[1] && match[1].length >= 5) { // 5文字以上の商品名のみ
+                extractedProductName = match[1].trim();
+                logger.debug('[AI] Extracted product name from conversation:', extractedProductName);
+                break;
+              }
+            }
+            if (extractedProductName) break;
+          }
+          
+          // ユーザー会話から金額を抽出（より詳細なパターン）
+          const amountPatterns = [
+            // 税込み金額を最優先で検出
+            /(\d{1,3}(?:,\d{3})*|\d+)\s*円\s*[（(]税込[）)]/g,
+            /税込み?[\s　]*(\d{1,3}(?:,\d{3})*|\d+)\s*円/g,
+            /税込[\s　]+(\d{1,3}(?:,\d{3})*|\d+)\s*円/g,
+            // 通常の金額パターン
+            /(\d{1,3}(?:,\d{3})*|\d+)\s*円/g,
+            // 万円単位
+            /(\d+)\s*万\s*(\d{1,3}(?:,\d{3})*|\d+)?\s*円/g
+          ];
+          
+          let extractedAmount = 0;
+          let extractedTaxIncluded = false;
+          for (const pattern of amountPatterns) {
+            const matches = conversation.matchAll(pattern);
+            for (const match of matches) {
+              if (match[1]) {
+                // 万円単位の処理
+                if (pattern.source.includes('万')) {
+                  const manAmount = parseInt(match[1].replace(/,/g, ''));
+                  const senAmount = match[2] ? parseInt(match[2].replace(/,/g, '')) : 0;
+                  extractedAmount = manAmount * 10000 + senAmount;
+                } else {
+                  extractedAmount = parseInt(match[1].replace(/,/g, ''));
+                }
+                
+                extractedTaxIncluded = pattern.source.includes('税込') || match[0].includes('税込');
+                logger.debug('[AI] Extracted amount from conversation:', {
+                  amount: extractedAmount,
+                  taxIncluded: extractedTaxIncluded,
+                  originalText: match[0],
+                  patternUsed: pattern.source
+                });
+                break;
+              }
+            }
+            if (extractedAmount > 0) break;
+          }
           
           // 顧客名の最終決定（ユーザー指定を最優先）
           if (userSpecifiedCustomerName) {
@@ -570,30 +654,43 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
             
             foundItemList = true;
             logger.debug('[AI] Created recurring invoice item:', newItems[0]);
-          } else if (userSpecifiedAmount && !foundItemList) {
-            // 通常の請求書で金額が指定された場合
+          } else if ((userSpecifiedAmount > 0 || extractedAmount > 0) && !foundItemList) {
+            // 通常の請求書で金額が指定された場合（ユーザー指定またはAI会話抽出）
+            const finalAmount = userSpecifiedAmount || extractedAmount;
+            const finalTaxIncluded = isTaxIncluded || extractedTaxIncluded;
+            const finalProductName = extractedProductName || '請求項目';
+            
             let baseAmount, taxAmount;
             
-            if (isTaxIncluded) {
+            if (finalTaxIncluded) {
               // 税込み金額から逆算
-              const totalWithTax = userSpecifiedAmount;
+              const totalWithTax = finalAmount;
               baseAmount = Math.round(totalWithTax / 1.1);
               taxAmount = totalWithTax - baseAmount;
             } else {
               // 税抜き金額から計算
-              baseAmount = userSpecifiedAmount;
+              baseAmount = finalAmount;
               taxAmount = Math.floor(baseAmount * 0.1);
             }
+            
+            logger.debug('[AI] Using extracted data for item creation:', {
+              finalAmount,
+              finalTaxIncluded,
+              finalProductName,
+              baseAmount,
+              taxAmount
+            });
               
             if (currentInvoiceData?.items && currentInvoiceData.items.length > 0) {
-              // 既存項目の金額を更新
+              // 既存項目の金額と商品名を更新
               newItems = currentInvoiceData.items.map((item, index) => {
                 if (index === 0) {
                   return {
                     ...item,
+                    description: finalProductName !== '請求項目' ? finalProductName : item.description,
                     unitPrice: baseAmount,
                     amount: baseAmount * item.quantity,
-                    taxAmount: isTaxIncluded ? (taxAmount * item.quantity) : Math.floor(baseAmount * item.quantity * 0.1)
+                    taxAmount: finalTaxIncluded ? (taxAmount * item.quantity) : Math.floor(baseAmount * item.quantity * 0.1)
                   };
                 }
                 return item;
@@ -602,7 +699,7 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
             } else {
               // 新規項目を作成
               newItems = [{
-                description: '請求項目',
+                description: finalProductName,
                 quantity: 1,
                 unitPrice: baseAmount,
                 amount: baseAmount,
@@ -1071,29 +1168,65 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
                         `例：「田中商事に50万円の請求書」`;
       }
       
-      // 既存の顧客マッチング処理
+      // 既存の顧客マッチング処理（詳細ログ付き）
       let matchedCustomerId: string | null = null;
       
       if (customerName && customerName !== '未設定顧客') {
         try {
+          logger.debug('[CUSTOMER_MATCH] Starting customer matching with name:', customerName);
           const customerService = new CustomerService();
           const searchResult = await customerService.getCustomers({ 
             limit: 100
           });
           
-          // 顧客名で部分一致検索
-          const matchedCustomers = searchResult.customers.filter(c => 
-            c.companyName.includes(customerName) || 
-            (c.contactName && c.contactName.includes(customerName))
+          logger.debug('[CUSTOMER_MATCH] Total customers found:', searchResult.customers.length);
+          logger.debug('[CUSTOMER_MATCH] First 5 customer names:', 
+            searchResult.customers.slice(0, 5).map(c => c.companyName)
           );
+          
+          // 顧客名で厳密な一致検索（部分一致は危険なため完全一致を優先）
+          const matchedCustomers = searchResult.customers.filter(c => {
+            // 完全一致を最優先
+            if (c.companyName === customerName) return true;
+            if (c.contactName && c.contactName === customerName) return true;
+            
+            // 完全一致しない場合は、より厳密な条件でのみ部分一致を許可
+            // 顧客名が短すぎる場合（3文字以下）は部分一致を避ける
+            if (customerName.length <= 3) return false;
+            
+            // 顧客名に「株式会社」「有限会社」などが含まれる場合のみ部分一致を許可
+            const hasCompanyType = /株式会社|有限会社|合同会社|合資会社|合名会社|一般社団法人|一般財団法人/.test(customerName);
+            if (hasCompanyType) {
+              return c.companyName.includes(customerName) || 
+                     (c.contactName && c.contactName.includes(customerName));
+            }
+            
+            return false;
+          });
+          
+          logger.debug('[CUSTOMER_MATCH] Matched customers:', matchedCustomers.map(c => ({
+            id: c._id,
+            companyName: c.companyName,
+            contactName: c.contactName
+          })));
           
           if (matchedCustomers.length > 0) {
             matchedCustomerId = matchedCustomers[0]._id!.toString();
+            const originalCustomerName = customerName;
             customerName = matchedCustomers[0].companyName;
+            logger.debug('[CUSTOMER_MATCH] Selected customer:', {
+              id: matchedCustomerId,
+              originalName: originalCustomerName,
+              selectedName: customerName
+            });
+          } else {
+            logger.debug('[CUSTOMER_MATCH] No matching customer found for:', customerName);
           }
         } catch (err) {
-          logger.error('Customer search error:', err);
+          logger.error('[CUSTOMER_MATCH] Customer search error:', err);
         }
+      } else {
+        logger.debug('[CUSTOMER_MATCH] Skipping customer matching - invalid name:', customerName);
       }
       
       // 質問タイプを分析する関数
@@ -1204,9 +1337,20 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
         totalAmount,
         itemsDetail: invoiceData.items.map(item => ({
           description: item.description,
+          unitPrice: item.unitPrice,
+          quantity: item.quantity,
           amount: item.amount,
-          taxAmount: item.taxAmount
+          taxAmount: item.taxAmount,
+          taxRate: item.taxRate
         }))
+      });
+      
+      // 最終的なレスポンスデータの詳細ログ
+      logger.debug('[API] Final response customer info:', {
+        customerName: invoiceData.customerName,
+        customerId,
+        matchedCustomerId,
+        originalCustomerName: customerName
       });
       
       // 編集モードの場合、既存データを優先的に保持
