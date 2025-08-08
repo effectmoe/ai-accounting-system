@@ -786,7 +786,14 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
           
           // extractedDataに更新されたデータを設定
           extractedData = updatedData;
+          
+          // 顧客名が確実に含まれているか確認
+          if (!extractedData.customerName && updatedData.customerName) {
+            extractedData.customerName = updatedData.customerName;
+          }
+          
           logger.debug('[AI] Final extracted data:', JSON.stringify(extractedData, null, 2));
+          logger.debug('[AI] Customer name in extracted data:', extractedData.customerName);
         }
         
         // フォールバック処理 - AIが番号付き項目を出力しなかった場合
@@ -911,7 +918,8 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
           totalAmount,
         } : {
           customerId: null,
-          customerName: finalData.customerName || '',
+          // 新規作成モードでは、extractedDataに顧客名があれば使用
+          customerName: finalData.customerName || extractedData?.customerName || updatedData?.customerName || '',
           items: finalData.items || [],
           invoiceDate: finalData.invoiceDate,
           dueDate: finalData.dueDate,
@@ -922,7 +930,14 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
           totalAmount,
         };
         
+        // 顧客名が空の場合、updatedDataから再度チェック
+        if (!responseData.customerName && updatedData?.customerName) {
+          responseData.customerName = updatedData.customerName;
+          logger.debug('[API/AI] Customer name was empty, using updatedData:', updatedData.customerName);
+        }
+        
         logger.debug('[API/AI] Response data customer name:', responseData.customerName);
+        logger.debug('[API/AI] Full response data:', JSON.stringify(responseData, null, 2));
         
         const response = {
           success: true,
