@@ -5,6 +5,21 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
+    // 環境変数のチェック
+    if (!process.env.DEEPSEEK_API_KEY) {
+      console.warn('⚠️ DEEPSEEK_API_KEY is not configured');
+      return NextResponse.json({
+        success: true,
+        response: 'AIアシスタント機能は現在設定中です。基本的な会計機能は通常通りご利用いただけます。',
+        agentName: 'system',
+        timestamp: new Date().toISOString(),
+        metadata: {
+          fallback: true,
+          reason: 'configuration-pending'
+        }
+      });
+    }
+    
     const body = await request.json();
     const { messages, agent: agentName = 'accountingAgent', message, context } = body;
     
@@ -44,24 +59,37 @@ export async function POST(request: NextRequest) {
     } catch (generateError: any) {
       console.error('❌ エージェント生成エラー:', generateError);
       
-      // Mastra初期化エラーの場合、フォールバック応答を返す
-      if (generateError?.message?.includes('init') || generateError?.message?.includes('undefined')) {
-        const fallbackResponses: Record<string, string> = {
-          'accountingAgent': '申し訳ございません。会計システムの初期化中です。しばらくお待ちください。',
-          'customerAgent': '顧客管理システムを準備中です。少々お待ちください。',
-          'ocrAgent': 'OCR処理システムを初期化中です。',
-          'databaseAgent': 'データベース接続を確立中です。',
-          'general': 'システムを初期化中です。もう少しお待ちください。'
+      // API キーエラーまたはMastra初期化エラーの場合
+      if (generateError?.message?.includes('DEEPSEEK_API_KEY') || 
+          generateError?.message?.includes('API key') ||
+          generateError?.message?.includes('init') || 
+          generateError?.message?.includes('undefined')) {
+        
+        // デバッグ用の簡易応答を返す
+        const debugResponses: Record<string, string> = {
+          'accountingAgent': '現在、会計エージェントは一時的に利用できません。システムの設定を確認中です。',
+          'customerAgent': '顧客管理エージェントは現在メンテナンス中です。',
+          'ocrAgent': 'OCR処理エージェントは準備中です。',
+          'databaseAgent': 'データベースエージェントは設定待ちです。',
+          'general': 'AIエージェントは現在利用できません。しばらくお待ちください。'
         };
+        
+        // 環境変数の確認（デバッグ用）
+        const hasApiKey = !!process.env.DEEPSEEK_API_KEY;
+        console.log('DeepSeek API key configured:', hasApiKey);
         
         return NextResponse.json({
           success: true,
-          response: fallbackResponses[agentName] || 'システムを準備中です。',
+          response: debugResponses[agentName] || 'エージェントは現在利用できません。',
           agentName: agentName,
           timestamp: new Date().toISOString(),
           metadata: {
             fallback: true,
-            reason: 'initialization'
+            reason: hasApiKey ? 'agent-initialization' : 'api-key-missing',
+            debug: process.env.NODE_ENV === 'development' ? {
+              hasApiKey,
+              errorMessage: generateError?.message?.substring(0, 100)
+            } : undefined
           }
         });
       }
