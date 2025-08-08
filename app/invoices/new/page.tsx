@@ -654,18 +654,30 @@ function NewInvoiceContent() {
 
       const invoice = await response.json();
       
-      // 仕入先見積書を更新して関連を作成
-      if (sourceSupplierQuoteId) {
-        await fetch(`/api/supplier-quotes/${sourceSupplierQuoteId}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            relatedInvoiceIds: [...(sourceSupplierQuote.relatedInvoiceIds || []), invoice._id]
-          }),
-        });
+      // 請求書IDの確認
+      if (!invoice || !invoice._id) {
+        logger.error('Invoice response missing _id:', invoice);
+        throw new Error('請求書は作成されましたが、IDが取得できませんでした。請求書一覧から確認してください。');
       }
       
-      logger.debug('Invoice created successfully:', invoice);
+      logger.debug('Invoice created successfully with ID:', invoice._id);
+      
+      // 仕入先見積書を更新して関連を作成
+      if (sourceSupplierQuoteId && invoice._id) {
+        try {
+          await fetch(`/api/supplier-quotes/${sourceSupplierQuoteId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              relatedInvoiceIds: [...(sourceSupplierQuote.relatedInvoiceIds || []), invoice._id]
+            }),
+          });
+        } catch (supplierError) {
+          logger.error('Failed to update supplier quote relation:', supplierError);
+          // 関連付けの失敗は致命的ではないので続行
+        }
+      }
+      
       router.push(`/invoices/${invoice._id}`);
     } catch (error) {
       logger.error('Error saving invoice:', error);
