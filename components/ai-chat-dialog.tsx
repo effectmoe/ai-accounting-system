@@ -237,7 +237,7 @@ export default function AIChatDialog({
       return;
     }
     
-    // データの有効性をチェック
+    // データの有効性をチェック - より詳細なログを追加
     const hasValidCustomerName = currentInvoiceData?.customerName && 
                                  typeof currentInvoiceData.customerName === 'string' && 
                                  currentInvoiceData.customerName.trim().length > 0;
@@ -246,6 +246,23 @@ export default function AIChatDialog({
                          currentInvoiceData.items.length > 0;
     
     const shouldEnableButton = hasValidCustomerName || hasValidItems;
+    
+    // コンソールにも出力して確認しやすくする
+    console.log('[AI Chat Dialog] Button validation check:', {
+      customerName: currentInvoiceData?.customerName,
+      customerNameType: typeof currentInvoiceData?.customerName,
+      customerNameLength: currentInvoiceData?.customerName?.length,
+      customerNameTrimmedLength: currentInvoiceData?.customerName?.trim()?.length,
+      hasValidCustomerName,
+      items: currentInvoiceData?.items,
+      itemsIsArray: Array.isArray(currentInvoiceData?.items),
+      itemsLength: currentInvoiceData?.items?.length,
+      hasValidItems,
+      shouldEnableButton,
+      isLoading,
+      currentButtonState: isButtonDisabled,
+      fullData: currentInvoiceData
+    });
     
     logger.debug('[Frontend] Button state update:', {
       customerName: currentInvoiceData?.customerName,
@@ -491,6 +508,19 @@ export default function AIChatDialog({
           logger.debug('[Frontend] Result data from backend:', result.data);
           logger.debug('[Frontend] Customer name in result:', result.data.customerName);
           
+          // 重要: customerNameが空文字列の場合も有効な値として扱う
+          const hasCustomerNameInResult = 'customerName' in result.data;
+          const customerNameValue = hasCustomerNameInResult 
+            ? result.data.customerName 
+            : (prev?.customerName || '');
+          
+          console.log('[AI Chat Dialog] Customer name update:', {
+            hasCustomerNameInResult,
+            resultCustomerName: result.data.customerName,
+            prevCustomerName: prev?.customerName,
+            finalCustomerName: customerNameValue
+          });
+          
           // itemsの更新は、バックエンドが明示的に送信した場合のみ行う
           // バックエンドは常に完全な更新後のitemsを送信するので、そのまま使用する
           const newData = {
@@ -504,8 +534,8 @@ export default function AIChatDialog({
             // 日付フィールドも含める
             invoiceDate: result.data.invoiceDate !== undefined ? result.data.invoiceDate : prev.invoiceDate,
             dueDate: result.data.dueDate !== undefined ? result.data.dueDate : prev.dueDate,
-            // その他のフィールドも確実に含める
-            customerName: result.data.customerName !== undefined ? result.data.customerName : prev.customerName,
+            // その他のフィールドも確実に含める（customerNameを明示的に設定）
+            customerName: customerNameValue,
             notes: result.data.notes !== undefined ? result.data.notes : prev.notes,
             paymentMethod: result.data.paymentMethod !== undefined ? result.data.paymentMethod : prev.paymentMethod
           };
