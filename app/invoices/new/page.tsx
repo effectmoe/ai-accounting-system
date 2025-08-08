@@ -418,30 +418,22 @@ function NewInvoiceContent() {
     setAiDataApplied(true);
     setSuccessMessage('AI会話から請求書を作成中...');
     
-    // データを適用してすぐに保存を実行
+    // AIチャットのデータをそのまま使用して請求書を作成
     try {
-      // 顧客情報を設定
-      if (invoiceData.customerId) {
-        setSelectedCustomerId(invoiceData.customerId);
-      } else if (invoiceData.customerName) {
-        setCustomerName(invoiceData.customerName);
+      // notesのデフォルト値を設定
+      if (!invoiceData.notes && defaultBankInfo) {
+        invoiceData.notes = defaultBankInfo;
       }
       
-      // その他のデータを設定
-      if (invoiceData.title) setTitle(invoiceData.title);
-      if (invoiceData.invoiceDate) setInvoiceDate(format(new Date(invoiceData.invoiceDate), 'yyyy-MM-dd'));
-      if (invoiceData.dueDate) setDueDate(format(new Date(invoiceData.dueDate), 'yyyy-MM-dd'));
-      if (invoiceData.items && invoiceData.items.length > 0) setItems(invoiceData.items);
-      if (invoiceData.notes) {
-        setNotes(invoiceData.notes);
-      } else if (defaultBankInfo) {
-        setNotes(defaultBankInfo);
-      }
-      if (invoiceData.paymentMethod) setPaymentMethod(invoiceData.paymentMethod);
-      setAiConversationId(invoiceData.aiConversationId || Date.now().toString());
+      // aiConversationIdを確保
+      invoiceData.aiConversationId = invoiceData.aiConversationId || Date.now().toString();
       
       // 即座に請求書を作成（データが直接渡される）
       await saveInvoiceWithData(invoiceData);
+      
+      // 作成成功後、フォームにもデータを反映（履歴表示用）
+      applyInvoiceData(invoiceData);
+      setAiConversationId(invoiceData.aiConversationId);
     } catch (error) {
       logger.error('[InvoiceNew] Failed to create invoice from AI chat:', error);
       setError('請求書の作成に失敗しました');
@@ -601,14 +593,26 @@ function NewInvoiceContent() {
   // 請求書を保存
   // データを直接受け取って請求書を保存する関数（AIチャット用）
   const saveInvoiceWithData = async (data: any) => {
-    logger.debug('[InvoiceNew] saveInvoiceWithData called with:', data);
+    logger.debug('[InvoiceNew] saveInvoiceWithData called with:', JSON.stringify(data, null, 2));
+    logger.debug('[InvoiceNew] Data breakdown:', {
+      hasCustomerId: !!data.customerId,
+      hasCustomerName: !!data.customerName,
+      customerName: data.customerName,
+      itemsCount: data.items?.length || 0,
+      items: data.items,
+      totalAmount: data.totalAmount,
+      subtotal: data.subtotal,
+      taxAmount: data.taxAmount
+    });
     
     if (!data.customerId && !data.customerName) {
+      logger.error('[InvoiceNew] No customer information provided');
       setError('顧客を選択するか、顧客名を入力してください');
       return;
     }
 
     if (!data.items || data.items.length === 0 || data.items.every((item: any) => !item.description)) {
+      logger.error('[InvoiceNew] No valid items provided');
       setError('少なくとも1つの明細を入力してください');
       return;
     }
@@ -655,6 +659,7 @@ function NewInvoiceContent() {
       // 請求書を作成
       const invoiceData = {
         customerId,
+        customerName: !customerId ? data.customerName : undefined, // customerIdがない場合はcustomerNameも送る
         title: data.title || '',
         invoiceDate: data.invoiceDate || new Date().toISOString(),
         dueDate: data.dueDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
@@ -669,7 +674,9 @@ function NewInvoiceContent() {
         profitMargin,
       };
 
-      logger.debug('Creating invoice with data:', invoiceData);
+      logger.debug('Creating invoice with data:', JSON.stringify(invoiceData, null, 2));
+      logger.debug('Customer info:', { customerId, customerName: data.customerName });
+      logger.debug('Items to be created:', invoiceData.items);
 
       const response = await fetch('/api/invoices', {
         method: 'POST',
