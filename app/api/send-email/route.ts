@@ -118,7 +118,13 @@ async function getEmailRecipients(customerId?: string): Promise<{ to: string[]; 
         break;
     }
 
-    logger.debug(`Email recipients determined:`, recipients);
+    logger.debug(`Email recipients determined:`, {
+      preference: customer.emailRecipientPreference,
+      to: recipients.to,
+      cc: recipients.cc,
+      customerEmail: customer.email,
+      primaryContact: customer.contacts?.[0]?.email
+    });
     return recipients;
   } catch (error) {
     logger.error('Error getting email recipients:', error);
@@ -505,13 +511,18 @@ export async function POST(request: NextRequest) {
     let finalTo = to;
     let finalCc = cc;
     
-    if (document.customer?._id || document.customer?.id || document.customerId) {
-      const customerId = document.customer?._id || document.customer?.id || document.customerId;
+    // 顧客IDを取得（複数のパターンに対応）
+    const customerId = document.customerId || document.customer?._id || document.customer?.id;
+    
+    if (customerId) {
       logger.debug(`Getting email recipients for customer ID: ${customerId}`);
       
       const recipients = await getEmailRecipients(customerId);
       if (recipients.to.length > 0) {
+        // 顧客設定のメールアドレスを優先的に使用
         finalTo = recipients.to[0]; // 主送信先
+        logger.debug(`Using customer preference email: ${finalTo} (override client provided: ${to})`);
+        
         if (recipients.to.length > 1) {
           // 複数の送信先がある場合、追加をCCに
           finalCc = cc ? `${cc},${recipients.to.slice(1).join(',')}` : recipients.to.slice(1).join(',');
@@ -523,7 +534,11 @@ export async function POST(request: NextRequest) {
         logger.debug(`Email recipients from customer settings - To: ${finalTo}, CC: ${finalCc}`);
       } else {
         logger.debug('No email recipients found in customer settings, using provided TO address');
+        // 顧客設定がない場合は、クライアントから渡されたアドレスを使用
+        logger.debug(`Using client provided email: ${to}`);
       }
+    } else {
+      logger.debug('No customer ID found, using client provided email');
     }
 
     // メール送信
