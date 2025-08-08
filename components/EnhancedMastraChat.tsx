@@ -365,9 +365,10 @@ ${context.availableActions.map(action => `• ${action}`).join('\n')}
   }
 
   return (
-    <div className={`fixed bottom-8 right-6 bg-white rounded-xl shadow-2xl z-50 transition-all border border-gray-200 ${
+    <div className={`fixed right-6 bg-white rounded-xl shadow-2xl z-50 transition-all border border-gray-200 ${
       isMinimized ? 'w-80 h-14' : 'w-[420px] h-[600px]'
-    }`}>
+    }`}
+    style={{ bottom: '120px' }}>
       {/* ヘッダー */}
       <div className={`${currentAgent.color} text-white p-4 rounded-t-xl`}>
         <div className="flex justify-between items-center mb-2">
