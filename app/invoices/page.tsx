@@ -68,10 +68,20 @@ export default function InvoicesPage() {
   const fetchInvoices = async () => {
     setIsLoading(true);
     try {
+      // フロントエンドのソートフィールドをバックエンドのフィールド名にマッピング
+      const sortFieldMap: Record<string, string> = {
+        'invoiceNumber': 'invoiceNumber',
+        'invoiceDate': 'issueDate',  // バックエンドではissueDateフィールド
+        'dueDate': 'dueDate',
+        'totalAmount': 'totalAmount',
+        'status': 'status',
+        'isGeneratedByAI': 'isGeneratedByAI'
+      };
+      
       const params = new URLSearchParams({
         limit: itemsPerPage.toString(),
         skip: ((currentPage - 1) * itemsPerPage).toString(),
-        sortBy: sortBy,
+        sortBy: sortFieldMap[sortBy] || sortBy,
         sortOrder: sortOrder,
       });
 

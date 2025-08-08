@@ -1,104 +1,124 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { mastra } from '@/src/mastra';
+import { callDeepSeek } from '@/src/mastra/setup-deepseek';
+import { InvoiceService } from '@/services/invoice.service';
+import { QuoteService } from '@/services/quote.service';
+import { CustomerService } from '@/services/customer.service';
+import { SupplierService } from '@/services/supplier.service';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
-    // 環境変数のチェック
-    if (!process.env.DEEPSEEK_API_KEY) {
-      console.warn('⚠️ DEEPSEEK_API_KEY is not configured');
-      return NextResponse.json({
-        success: true,
-        response: 'AIアシスタント機能は現在設定中です。基本的な会計機能は通常通りご利用いただけます。',
-        agentName: 'system',
-        timestamp: new Date().toISOString(),
-        metadata: {
-          fallback: true,
-          reason: 'configuration-pending'
-        }
-      });
-    }
-    
     const body = await request.json();
-    const { messages, agent: agentName = 'accountingAgent', message, context } = body;
+    const { message, agent: agentName = 'general', context } = body;
     
-    // messagesまたはmessageから統一フォーマットへ変換
-    const chatMessages = messages || (message ? [{ role: 'user', content: message }] : []);
+    // データベースから実際のデータを取得
+    const invoiceService = new InvoiceService();
+    const quoteService = new QuoteService();
+    const customerService = new CustomerService();
+    const supplierService = new SupplierService();
     
-    console.log('🤖 Mastraエージェントチャット:');
-    console.log('- エージェント:', agentName);
-    console.log('- メッセージ数:', chatMessages?.length || 0);
-    console.log('- コンテキスト:', context);
+    // 現在の月と先月を計算
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1;
+    const lastMonth = currentMonth === 1 ? 12 : currentMonth - 1;
+    const lastMonthYear = currentMonth === 1 ? currentYear - 1 : currentYear;
     
-    // Mastraエージェントを取得
-    const agent = mastra.getAgent(agentName);
+    // 現在月のデータ取得
+    const startOfCurrentMonth = new Date(currentYear, currentMonth - 1, 1);
+    const endOfCurrentMonth = new Date(currentYear, currentMonth, 0, 23, 59, 59, 999);
     
-    if (!agent) {
-      return NextResponse.json({
-        success: false,
-        error: `エージェント '${agentName}' が見つかりません`,
-        availableAgents: Object.keys(mastra.agents || {})
-      }, { status: 400 });
-    }
-    
-    // エージェントでメッセージ処理
-    try {
-      const result = await agent.generate({
-        messages: chatMessages
-      });
-      
-      console.log('✅ エージェント応答:', result.text?.substring(0, 100) + '...');
-      
-      return NextResponse.json({
-        success: true,
-        response: result.text || result,
-        agentName: agentName,
-        timestamp: new Date().toISOString()
-      });
-    } catch (generateError: any) {
-      console.error('❌ エージェント生成エラー:', generateError);
-      
-      // API キーエラーまたはMastra初期化エラーの場合
-      if (generateError?.message?.includes('DEEPSEEK_API_KEY') || 
-          generateError?.message?.includes('API key') ||
-          generateError?.message?.includes('init') || 
-          generateError?.message?.includes('undefined')) {
-        
-        // デバッグ用の簡易応答を返す
-        const debugResponses: Record<string, string> = {
-          'accountingAgent': '現在、会計エージェントは一時的に利用できません。システムの設定を確認中です。',
-          'customerAgent': '顧客管理エージェントは現在メンテナンス中です。',
-          'ocrAgent': 'OCR処理エージェントは準備中です。',
-          'databaseAgent': 'データベースエージェントは設定待ちです。',
-          'general': 'AIエージェントは現在利用できません。しばらくお待ちください。'
-        };
-        
-        // 環境変数の確認（デバッグ用）
-        const hasApiKey = !!process.env.DEEPSEEK_API_KEY;
-        console.log('DeepSeek API key configured:', hasApiKey);
-        
-        return NextResponse.json({
-          success: true,
-          response: debugResponses[agentName] || 'エージェントは現在利用できません。',
-          agentName: agentName,
-          timestamp: new Date().toISOString(),
-          metadata: {
-            fallback: true,
-            reason: hasApiKey ? 'agent-initialization' : 'api-key-missing',
-            debug: process.env.NODE_ENV === 'development' ? {
-              hasApiKey,
-              errorMessage: generateError?.message?.substring(0, 100)
-            } : undefined
-          }
-        });
+    const currentMonthInvoices = await invoiceService.findAll({
+      issueDate: {
+        $gte: startOfCurrentMonth.toISOString(),
+        $lte: endOfCurrentMonth.toISOString()
       }
-      
-      throw generateError;
+    });
+    
+    // 先月のデータ取得
+    const startOfLastMonth = new Date(lastMonthYear, lastMonth - 1, 1);
+    const endOfLastMonth = new Date(lastMonthYear, lastMonth, 0, 23, 59, 59, 999);
+    
+    const lastMonthInvoices = await invoiceService.findAll({
+      issueDate: {
+        $gte: startOfLastMonth.toISOString(),
+        $lte: endOfLastMonth.toISOString()
+      }
+    });
+    
+    // 見積書データ取得
+    const currentMonthQuotes = await quoteService.findAll({
+      issueDate: {
+        $gte: startOfCurrentMonth.toISOString(),
+        $lte: endOfCurrentMonth.toISOString()
+      }
+    });
+    
+    // 顧客と仕入先データ取得
+    const customers = await customerService.findAll({});
+    const suppliers = await supplierService.findAll({});
+    
+    // 売上計算
+    const currentMonthRevenue = currentMonthInvoices.reduce(
+      (sum, inv) => sum + (inv.totalAmount || 0), 0
+    );
+    const lastMonthRevenue = lastMonthInvoices.reduce(
+      (sum, inv) => sum + (inv.totalAmount || 0), 0
+    );
+    
+    // 見積金額計算
+    const currentMonthQuoteAmount = currentMonthQuotes.reduce(
+      (sum, quote) => sum + (quote.totalAmount || 0), 0
+    );
+    
+    // システムプロンプトを生成（請求書生成と同じ形式）
+    const systemPrompt = `あなたは日本の会計システムのAIアシスタントです。
+現在のシステムデータ:
+- 今月（${currentYear}年${currentMonth}月）の売上: ¥${currentMonthRevenue.toLocaleString()}（請求書${currentMonthInvoices.length}件）
+- 先月（${lastMonthYear}年${lastMonth}月）の売上: ¥${lastMonthRevenue.toLocaleString()}（請求書${lastMonthInvoices.length}件）
+- 今月の見積金額: ¥${currentMonthQuoteAmount.toLocaleString()}（見積書${currentMonthQuotes.length}件）
+- 登録顧客数: ${customers.length}社
+- 登録仕入先数: ${suppliers.length}社
+
+主要顧客:
+${customers.slice(0, 5).map(c => `- ${c.companyName || c.name}: 取引回数${c.transactionCount || 0}回`).join('\n')}
+
+最新の請求書:
+${currentMonthInvoices.slice(0, 5).map(inv => 
+  `- ${inv.invoiceNumber}: ${inv.customer?.companyName || '顧客未設定'} ¥${(inv.totalAmount || 0).toLocaleString()}`
+).join('\n')}
+
+ユーザーの質問に対して、上記の実際のデータを使用して具体的に回答してください。`;
+
+    // DeepSeek APIを直接呼び出し（請求書生成と完全に同じ方法）
+    const messages = [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: message }
+    ];
+    
+    const response = await callDeepSeek(messages);
+    
+    if (!response.choices || !response.choices[0]) {
+      throw new Error('AIからの応答が不正です');
     }
+    
+    return NextResponse.json({
+      success: true,
+      response: response.choices[0].message.content,
+      agentName: agentName,
+      timestamp: new Date().toISOString(),
+      metadata: {
+        dataLoaded: true,
+        currentMonthRevenue,
+        lastMonthRevenue,
+        invoiceCount: currentMonthInvoices.length,
+        customerCount: customers.length
+      }
+    });
     
   } catch (error) {
-    console.error('❌ Mastraチャットエラー:', error);
+    console.error('❌ Chat API Error:', error);
     return NextResponse.json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -108,16 +128,9 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET() {
-  try {
-    return NextResponse.json({
-      success: true,
-      availableAgents: Object.keys(mastra.agents || {}),
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    return NextResponse.json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 });
-  }
+  return NextResponse.json({
+    success: true,
+    message: 'Chat API is ready',
+    timestamp: new Date().toISOString()
+  });
 }

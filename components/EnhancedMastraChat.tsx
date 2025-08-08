@@ -288,14 +288,15 @@ ${context.availableActions.map(action => `• ${action}`).join('\n')}
         {/* 統合チャットボタン */}
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-8 right-6 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-full p-4 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 z-50"
+          className="fixed right-6 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-full p-4 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 z-50"
+          style={{ bottom: '120px' }}
           title={`${currentAgent.name} - ${currentAgent.specialty}`}
         >
           <currentAgent.icon size={24} />
         </button>
         
         {/* エージェント選択ボタン */}
-        <div className="fixed bottom-8 right-24">
+        <div className="fixed right-24" style={{ bottom: '120px' }}>
           <button
             onClick={() => setShowAgentMenu(!showAgentMenu)}
             className="bg-gray-800 text-white rounded-full p-3 shadow-lg hover:bg-gray-700 transition-colors"

@@ -124,10 +124,21 @@ function QuotesPageContent() {
     setIsLoading(true);
     setError(null);
     try {
+      // フロントエンドのソートフィールドをバックエンドのフィールド名にマッピング
+      const sortFieldMap: Record<string, string> = {
+        'quoteNumber': 'quoteNumber',
+        'title': 'title',
+        'issueDate': 'issueDate',
+        'validityDate': 'validityDate',
+        'totalAmount': 'totalAmount',
+        'status': 'status',
+        'isGeneratedByAI': 'isGeneratedByAI'
+      };
+      
       const params = {
         limit: itemsPerPage.toString(),
         skip: ((currentPage - 1) * itemsPerPage).toString(),
-        sortBy: sortBy,
+        sortBy: sortFieldMap[sortBy] || sortBy,
         sortOrder: sortOrder,
         ...(debouncedSearchQuery && { search: debouncedSearchQuery }),
         ...(statusFilter !== 'all' && { status: statusFilter }),
