@@ -1,0 +1,3 @@
+RESEND_API_KEY=re_KFUUbVaW_Jokf7aMFXaLayZMmSq2gVS8w
+RESEND_FROM_EMAIL=accounting@effect.moe
+EMAIL_FROM_NAME=株式会社EFFECT
