@@ -389,6 +389,9 @@ function NewInvoiceContent() {
 
   // AIチャットダイアログからのデータを適用
   const handleAIChatComplete = async (invoiceData: any) => {
+    console.log('🔄 [DEBUG] handleAIChatComplete called');
+    console.log('🔄 [DEBUG] Raw invoiceData:', JSON.stringify(invoiceData, null, 2));
+    
     logger.debug('[InvoiceNew] Received data from AI chat:', invoiceData);
     logger.debug('[InvoiceNew] Data details:', {
       items: invoiceData.items,
@@ -400,8 +403,17 @@ function NewInvoiceContent() {
     
     // 各項目の詳細をログ出力
     if (invoiceData.items && invoiceData.items.length > 0) {
+      console.log('🔄 [DEBUG] Items found:', invoiceData.items.length);
       logger.debug('[InvoiceNew] Items received:');
       invoiceData.items.forEach((item: any, index: number) => {
+        console.log(`🔄 [DEBUG] Item ${index}:`, {
+          description: item.description,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          amount: item.amount,
+          taxAmount: item.taxAmount,
+          total: item.amount + item.taxAmount
+        });
         logger.debug(`[InvoiceNew] Item ${index}:`, {
           description: item.description,
           quantity: item.quantity,
@@ -411,30 +423,42 @@ function NewInvoiceContent() {
           total: item.amount + item.taxAmount
         });
       });
+    } else {
+      console.log('❌ [DEBUG] No items found in invoiceData');
     }
     
     // ダイアログを閉じる
+    console.log('🔄 [DEBUG] Closing AI chat dialog');
     setShowAIChat(false);
     setAiDataApplied(true);
     setSuccessMessage('AI会話から請求書を作成中...');
     
     // AIチャットのデータをそのまま使用して請求書を作成
     try {
+      console.log('🔄 [DEBUG] Starting invoice creation process');
+      
       // notesのデフォルト値を設定
       if (!invoiceData.notes && defaultBankInfo) {
         invoiceData.notes = defaultBankInfo;
+        console.log('🔄 [DEBUG] Added default bank info to notes');
       }
       
       // aiConversationIdを確保
       invoiceData.aiConversationId = invoiceData.aiConversationId || Date.now().toString();
+      console.log('🔄 [DEBUG] Set aiConversationId:', invoiceData.aiConversationId);
       
       // 即座に請求書を作成（データが直接渡される）
+      console.log('🔄 [DEBUG] Calling saveInvoiceWithData...');
       await saveInvoiceWithData(invoiceData);
+      console.log('✅ [DEBUG] saveInvoiceWithData completed successfully');
       
       // 作成成功後、フォームにもデータを反映（履歴表示用）
+      console.log('🔄 [DEBUG] Applying data to form...');
       applyInvoiceData(invoiceData);
       setAiConversationId(invoiceData.aiConversationId);
+      console.log('✅ [DEBUG] Data applied to form successfully');
     } catch (error) {
+      console.error('❌ [DEBUG] Error in handleAIChatComplete:', error);
       logger.error('[InvoiceNew] Failed to create invoice from AI chat:', error);
       setError('請求書の作成に失敗しました');
     }
@@ -442,41 +466,57 @@ function NewInvoiceContent() {
 
   // 請求書データを適用する共通関数
   const applyInvoiceData = (data: any) => {
+    console.log('🔄 [DEBUG] applyInvoiceData called with:', JSON.stringify(data, null, 2));
+    
     // 顧客情報
     if (data.customerId) {
+      console.log('🔄 [DEBUG] Setting selectedCustomerId:', data.customerId);
       setSelectedCustomerId(data.customerId);
     } else if (data.customerName) {
+      console.log('🔄 [DEBUG] Setting customerName:', data.customerName);
       setCustomerName(data.customerName);
     }
     
     // タイトル
     if (data.title) {
+      console.log('🔄 [DEBUG] Setting title:', data.title);
       setTitle(data.title);
     }
     
     // 日付
     if (data.invoiceDate) {
-      setInvoiceDate(format(new Date(data.invoiceDate), 'yyyy-MM-dd'));
+      const formattedDate = format(new Date(data.invoiceDate), 'yyyy-MM-dd');
+      console.log('🔄 [DEBUG] Setting invoiceDate:', formattedDate);
+      setInvoiceDate(formattedDate);
     }
     if (data.dueDate) {
-      setDueDate(format(new Date(data.dueDate), 'yyyy-MM-dd'));
+      const formattedDate = format(new Date(data.dueDate), 'yyyy-MM-dd');
+      console.log('🔄 [DEBUG] Setting dueDate:', formattedDate);
+      setDueDate(formattedDate);
     }
     
     // 明細
     if (data.items && data.items.length > 0) {
+      console.log('🔄 [DEBUG] Setting items, count:', data.items.length);
+      console.log('🔄 [DEBUG] Items data:', data.items);
       setItems(data.items);
     }
     
     // その他
     if (data.notes) {
+      console.log('🔄 [DEBUG] Setting notes:', data.notes);
       setNotes(data.notes);
     } else if (defaultBankInfo) {
+      console.log('🔄 [DEBUG] Setting default bank info as notes:', defaultBankInfo);
       // AI会話で備考が指定されていない場合は、デフォルト銀行口座情報を使用
       setNotes(defaultBankInfo);
     }
     if (data.paymentMethod) {
+      console.log('🔄 [DEBUG] Setting paymentMethod:', data.paymentMethod);
       setPaymentMethod(data.paymentMethod);
     }
+    
+    console.log('✅ [DEBUG] applyInvoiceData completed');
   };
 
   // 明細行を追加
@@ -593,6 +633,9 @@ function NewInvoiceContent() {
   // 請求書を保存
   // データを直接受け取って請求書を保存する関数（AIチャット用）
   const saveInvoiceWithData = async (data: any) => {
+    console.log('🔄 [DEBUG] saveInvoiceWithData called');
+    console.log('🔄 [DEBUG] Data received:', JSON.stringify(data, null, 2));
+    
     logger.debug('[InvoiceNew] saveInvoiceWithData called with:', JSON.stringify(data, null, 2));
     logger.debug('[InvoiceNew] Data breakdown:', {
       hasCustomerId: !!data.customerId,

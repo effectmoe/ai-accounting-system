@@ -612,11 +612,21 @@ export default function AIChatDialog({
 
   // 会話を完了して請求書データを確定
   const completeConversation = () => {
+    console.log('🚀 [AI-CHAT] completeConversation called');
+    console.log('🚀 [AI-CHAT] currentInvoiceData:', JSON.stringify(currentInvoiceData, null, 2));
+    
     logger.debug('[completeConversation] Called with currentInvoiceData:', currentInvoiceData);
     
     // 顧客名または明細が存在する場合に確定可能（金額は後で再計算されるため）
     const hasValidCustomerName = currentInvoiceData?.customerName && currentInvoiceData.customerName.trim() !== '';
     const hasValidItems = currentInvoiceData?.items && currentInvoiceData.items.length > 0;
+    
+    console.log('🚀 [AI-CHAT] Validation results:', {
+      hasValidCustomerName,
+      hasValidItems,
+      customerName: currentInvoiceData?.customerName,
+      itemsLength: currentInvoiceData?.items?.length
+    });
     
     logger.debug('[completeConversation] Validation:', {
       hasValidCustomerName,
@@ -626,6 +636,8 @@ export default function AIChatDialog({
     });
     
     if (currentInvoiceData && (hasValidCustomerName || hasValidItems)) {
+      console.log('🚀 [AI-CHAT] Data validation passed, preparing complete data');
+      
       logger.debug('[Frontend] Completing conversation with data:', JSON.parse(JSON.stringify(currentInvoiceData)));
       logger.debug('[Frontend] Final data details:', {
         items: JSON.parse(JSON.stringify(currentInvoiceData.items)),
@@ -641,8 +653,17 @@ export default function AIChatDialog({
       
       // 各アイテムの詳細も個別にログ
       if (currentInvoiceData.items && currentInvoiceData.items.length > 0) {
+        console.log('🚀 [AI-CHAT] Items details:');
         logger.debug('[Frontend] Final items breakdown:');
         currentInvoiceData.items.forEach((item, index) => {
+          console.log(`🚀 [AI-CHAT] Item ${index}:`, {
+            description: item.description,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            amount: item.amount,
+            taxAmount: item.taxAmount,
+            total: item.amount + item.taxAmount
+          });
           logger.debug(`[Frontend] Final Item ${index}:`, {
             description: item.description,
             quantity: item.quantity,
@@ -660,15 +681,23 @@ export default function AIChatDialog({
         aiConversationId: conversationId
       };
       
+      console.log('🚀 [AI-CHAT] Final complete data:', JSON.stringify(completeData, null, 2));
+      console.log('🚀 [AI-CHAT] Checking callbacks - onDataApply:', !!onDataApply, 'onComplete:', !!onComplete);
+      
       logger.debug('[Frontend] Complete data to be passed:', completeData);
       
       // 新しいコールバックがある場合はそれを優先使用
       if (onDataApply) {
+        console.log('🚀 [AI-CHAT] Calling onDataApply callback');
         onDataApply(completeData);
       } else if (onComplete) {
+        console.log('🚀 [AI-CHAT] Calling onComplete callback');
         onComplete(completeData);
+      } else {
+        console.error('❌ [AI-CHAT] No callback functions available!');
       }
     } else {
+      console.log('❌ [AI-CHAT] Data validation failed');
       // エラーの詳細を表示
       let errorDetails = [];
       if (!currentInvoiceData) {
