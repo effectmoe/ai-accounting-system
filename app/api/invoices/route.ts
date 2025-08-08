@@ -94,27 +94,41 @@ export async function POST(request: NextRequest) {
     }
     
     // Mastraエージェント経由で請求書を作成（既存機能へのフォールバック付き）
-    const invoice = await MastraAccountingAgent.createInvoice(
-      {
-        customer_name: invoiceData.customer?.companyName || invoiceData.customerName || '',
-        items: invoiceData.items.map((item: any) => ({
-          description: item.itemName || item.description,
-          quantity: item.quantity,
-          unit_price: item.unitPrice
-        })),
-        tax_rate: invoiceData.taxRate || 0.1,
-        due_date: invoiceData.dueDate?.toISOString(),
-        company_id: invoiceData.companyId || 'default'
-      },
-      // フォールバック：既存のサービスを使用
-      async () => {
-        const createdInvoice = await invoiceService.createInvoice(invoiceData);
-        logger.debug('Invoice created via fallback:', createdInvoice);
-        return createdInvoice;
-      }
-    );
+    let invoice;
+    try {
+      invoice = await MastraAccountingAgent.createInvoice(
+        {
+          customer_name: invoiceData.customer?.companyName || invoiceData.customerName || '',
+          items: invoiceData.items.map((item: any) => ({
+            description: item.itemName || item.description,
+            quantity: item.quantity,
+            unit_price: item.unitPrice
+          })),
+          tax_rate: invoiceData.taxRate || 0.1,
+          due_date: invoiceData.dueDate?.toISOString(),
+          company_id: invoiceData.companyId || 'default'
+        },
+        // フォールバック：既存のサービスを使用
+        async () => {
+          const createdInvoice = await invoiceService.createInvoice(invoiceData);
+          logger.debug('Invoice created via fallback:', createdInvoice);
+          return createdInvoice;
+        }
+      );
+    } catch (mastraError) {
+      logger.error('Mastra agent failed, using direct service:', mastraError);
+      // Mastraエージェントが完全に失敗した場合は直接サービスを使用
+      invoice = await invoiceService.createInvoice(invoiceData);
+      logger.debug('Invoice created directly after Mastra failure:', invoice);
+    }
     
-    logger.debug('Invoice created via Mastra agent:', invoice);
+    // 確実に_idが存在することを確認
+    if (!invoice || !invoice._id) {
+      logger.error('Created invoice missing _id:', invoice);
+      throw new Error('Invoice was created but ID is missing');
+    }
+    
+    logger.debug('Invoice created successfully with ID:', invoice._id);
     
     // アクティビティログを記録
     try {
