@@ -78,7 +78,6 @@ export default function AIChatDialog({
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [cursorPosition, setCursorPosition] = useState<number>(0);
-  const [isButtonDisabled, setIsButtonDisabled] = useState<boolean>(true);
   
   // 音声認識フック
   const {
@@ -211,45 +210,44 @@ export default function AIChatDialog({
     }
   }, [messages]);
 
-  // currentInvoiceDataとisLoadingの変更を監視してボタン状態を更新
-  useEffect(() => {
-    // isLoadingの時は状態を変更しない（前の状態を維持）
-    if (isLoading) {
-      logger.debug('[Frontend] Loading - keeping button state as is');
-      return;
+  // 強制再レンダリング用のステート
+  const [renderKey, setRenderKey] = useState(0);
+  
+  // ボタンが有効かどうかを計算する関数
+  const isButtonEnabled = () => {
+    if (!currentInvoiceData || isLoading) {
+      return false;
     }
     
-    if (currentInvoiceData) {
-      const hasCustomerName = currentInvoiceData.customerName && 
-                             typeof currentInvoiceData.customerName === 'string' && 
-                             currentInvoiceData.customerName.trim().length > 0;
-      const hasItems = currentInvoiceData.items && 
-                      Array.isArray(currentInvoiceData.items) && 
-                      currentInvoiceData.items.length > 0;
-      const shouldEnable = hasCustomerName || hasItems;
-      
-      const newDisabledState = !shouldEnable;
-      setIsButtonDisabled(newDisabledState);
-      
-      logger.debug('[Frontend] Button state check:', {
-        customerName: currentInvoiceData.customerName,
-        customerNameType: typeof currentInvoiceData.customerName,
-        customerNameLength: currentInvoiceData.customerName?.length,
-        customerNameTrimmedLength: currentInvoiceData.customerName?.trim?.()?.length,
-        hasCustomerName,
-        items: currentInvoiceData.items,
-        itemsIsArray: Array.isArray(currentInvoiceData.items),
-        itemsLength: currentInvoiceData.items?.length,
-        hasItems,
-        shouldEnable,
-        newDisabledState,
-        isLoading
-      });
-    } else {
-      setIsButtonDisabled(true);
-      logger.debug('[Frontend] Button disabled - no data:', { 
-        currentInvoiceData
-      });
+    const hasCustomerName = currentInvoiceData.customerName && 
+                           typeof currentInvoiceData.customerName === 'string' && 
+                           currentInvoiceData.customerName.trim().length > 0;
+    const hasItems = currentInvoiceData.items && 
+                    Array.isArray(currentInvoiceData.items) && 
+                    currentInvoiceData.items.length > 0;
+    
+    return hasCustomerName || hasItems;
+  };
+
+  // currentInvoiceDataの変更を監視
+  useEffect(() => {
+    const enabled = isButtonEnabled();
+    logger.debug('[Frontend] Button state check:', {
+      customerName: currentInvoiceData?.customerName,
+      customerNameType: typeof currentInvoiceData?.customerName,
+      customerNameLength: currentInvoiceData?.customerName?.length,
+      customerNameTrimmedLength: currentInvoiceData?.customerName?.trim?.()?.length,
+      items: currentInvoiceData?.items,
+      itemsIsArray: Array.isArray(currentInvoiceData?.items),
+      itemsLength: currentInvoiceData?.items?.length,
+      isEnabled: enabled,
+      isLoading
+    });
+    
+    // データがある場合は強制再レンダリング
+    if (enabled && !isLoading) {
+      logger.debug('[Frontend] Data is valid, triggering re-render');
+      setRenderKey(prev => prev + 1);
     }
   }, [currentInvoiceData, isLoading]);
 
@@ -444,10 +442,11 @@ export default function AIChatDialog({
                                  Array.isArray(result.data.items) && 
                                  result.data.items.length > 0;
         
-        if (responseHasCustomerName || responseHasItems) {
-          logger.debug('[Frontend] API response has valid data - enabling button');
-          setIsButtonDisabled(false);
-        }
+        logger.debug('[Frontend] API response validation:', {
+          responseHasCustomerName,
+          responseHasItems,
+          shouldEnableButton: responseHasCustomerName || responseHasItems
+        });
         
         // 各項目の詳細をログ出力
         if (result.data.items && result.data.items.length > 0) {
@@ -527,6 +526,10 @@ export default function AIChatDialog({
           logger.debug('[Frontend] State update END - returning newData');
           return newData;
         });
+        
+        // 強制再レンダリングをトリガー
+        logger.debug('[Frontend] Triggering force re-render');
+        setRenderKey(prev => prev + 1);
       } else {
         logger.debug('[Frontend] No data in result, not updating currentInvoiceData');
       }
@@ -1015,6 +1018,7 @@ export default function AIChatDialog({
               </Button>
             </div>
             <Button
+              key={`complete-btn-${renderKey}`}
               onClick={async (e) => {
                 e.preventDefault();
                 
@@ -1113,7 +1117,16 @@ export default function AIChatDialog({
                 logger.debug('[AIChatDialog] Calling completeConversation');
                 completeConversation();
               }}
-              disabled={isLoading || isButtonDisabled}
+              disabled={(() => {
+                const enabled = isButtonEnabled();
+                logger.debug('[Button Render] Button enabled state:', {
+                  enabled,
+                  customerName: currentInvoiceData?.customerName,
+                  itemsLength: currentInvoiceData?.items?.length,
+                  isLoading
+                });
+                return !enabled;
+              })()}
             >
               <CheckCircle className="mr-2 h-4 w-4" />
               会話を終了して確定
