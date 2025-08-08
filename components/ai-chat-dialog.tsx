@@ -213,27 +213,42 @@ export default function AIChatDialog({
 
   // currentInvoiceDataとisLoadingの変更を監視してボタン状態を更新
   useEffect(() => {
-    if (currentInvoiceData && !isLoading) {
-      const hasCustomerName = currentInvoiceData.customerName && currentInvoiceData.customerName.trim().length > 0;
-      const hasItems = currentInvoiceData.items && currentInvoiceData.items.length > 0;
+    // isLoadingの時は状態を変更しない（前の状態を維持）
+    if (isLoading) {
+      logger.debug('[Frontend] Loading - keeping button state as is');
+      return;
+    }
+    
+    if (currentInvoiceData) {
+      const hasCustomerName = currentInvoiceData.customerName && 
+                             typeof currentInvoiceData.customerName === 'string' && 
+                             currentInvoiceData.customerName.trim().length > 0;
+      const hasItems = currentInvoiceData.items && 
+                      Array.isArray(currentInvoiceData.items) && 
+                      currentInvoiceData.items.length > 0;
       const shouldEnable = hasCustomerName || hasItems;
       
-      setIsButtonDisabled(!shouldEnable);
+      const newDisabledState = !shouldEnable;
+      setIsButtonDisabled(newDisabledState);
       
-      logger.debug('[Frontend] Button state updated:', {
-        data: currentInvoiceData,
+      logger.debug('[Frontend] Button state check:', {
+        customerName: currentInvoiceData.customerName,
+        customerNameType: typeof currentInvoiceData.customerName,
+        customerNameLength: currentInvoiceData.customerName?.length,
+        customerNameTrimmedLength: currentInvoiceData.customerName?.trim?.()?.length,
         hasCustomerName,
-        customerNameTrimmed: currentInvoiceData.customerName?.trim(),
+        items: currentInvoiceData.items,
+        itemsIsArray: Array.isArray(currentInvoiceData.items),
+        itemsLength: currentInvoiceData.items?.length,
         hasItems,
-        itemsCount: currentInvoiceData.items?.length || 0,
-        buttonDisabled: !shouldEnable,
+        shouldEnable,
+        newDisabledState,
         isLoading
       });
     } else {
       setIsButtonDisabled(true);
-      logger.debug('[Frontend] Button disabled - no data or loading:', { 
-        hasData: !!currentInvoiceData, 
-        isLoading 
+      logger.debug('[Frontend] Button disabled - no data:', { 
+        currentInvoiceData
       });
     }
   }, [currentInvoiceData, isLoading]);
@@ -420,6 +435,19 @@ export default function AIChatDialog({
           totalAmount: result.data.totalAmount,
           customerName: result.data.customerName
         });
+        
+        // APIレスポンス直後にボタン状態をチェック
+        const responseHasCustomerName = result.data.customerName && 
+                                        typeof result.data.customerName === 'string' && 
+                                        result.data.customerName.trim().length > 0;
+        const responseHasItems = result.data.items && 
+                                 Array.isArray(result.data.items) && 
+                                 result.data.items.length > 0;
+        
+        if (responseHasCustomerName || responseHasItems) {
+          logger.debug('[Frontend] API response has valid data - enabling button');
+          setIsButtonDisabled(false);
+        }
         
         // 各項目の詳細をログ出力
         if (result.data.items && result.data.items.length > 0) {
