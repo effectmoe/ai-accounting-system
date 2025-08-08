@@ -103,8 +103,8 @@ export default function EmailSendModal({
     return '';
   };
 
-  const [to, setTo] = useState(getInitialEmailAddress());
-  const [cc, setCc] = useState(getInitialCcAddress());
+  const [to, setTo] = useState('');
+  const [cc, setCc] = useState('');
   const [bcc, setBcc] = useState('');
   const [subject, setSubject] = useState('');
   const [body, setBody] = useState('');
@@ -408,7 +408,8 @@ ${deliveryDate ? `納品日：${deliveryDate}` : ''}
 
   const handleClose = () => {
     if (!isSending) {
-      setTo(customerEmail);
+      // すべてのフィールドをリセット
+      setTo('');
       setCc('');
       setBcc('');
       setSubject('');
@@ -419,16 +420,30 @@ ${deliveryDate ? `納品日：${deliveryDate}` : ''}
     }
   };
 
-  // モーダルを開いた時にフィールドをリセット
+  // モーダルを開いた時にフィールドをリセットし、顧客設定に基づいてメールアドレスを設定
   React.useEffect(() => {
     if (isOpen) {
-      setTo(customerEmail);
-      setCc('');
+      // 顧客のメール設定に基づいて初期メールアドレスを設定
+      const initialEmail = getInitialEmailAddress();
+      const initialCc = getInitialCcAddress();
+      
+      logger.debug('Setting initial email addresses on modal open:', {
+        customer: customer ? customer.companyName : 'No customer',
+        preference: customer?.emailRecipientPreference || 'not set',
+        initialEmail,
+        initialCc,
+        customerEmail,
+        hasContacts: customer?.contacts?.length > 0,
+        primaryContact: customer?.contacts?.[customer.primaryContactIndex || 0]?.email
+      });
+      
+      setTo(initialEmail);
+      setCc(initialCc);
       setBcc('');
       setAttachPdf(true);
       setError(null);
     }
-  }, [isOpen, customerEmail]);
+  }, [isOpen, customer, customerEmail]);
 
   if (!isOpen) return null;
 

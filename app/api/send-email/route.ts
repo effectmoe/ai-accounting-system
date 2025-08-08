@@ -222,6 +222,25 @@ async function sendEmail(options: {
   }
 }
 
+// 送信専用メールの注意書きHTML
+function getReplyNoticeHtml(): string {
+  return `
+<div style="background-color: #FEF3C7; border: 2px solid #F59E0B; border-radius: 8px; padding: 16px; margin: 24px 0; text-align: center;">
+  <p style="margin: 0; color: #92400E; font-weight: bold; font-size: 14px;">
+    📧 このメールは送信専用です
+  </p>
+  <p style="margin: 8px 0 0 0; color: #78350F; font-size: 14px;">
+    ご返信・お問い合わせは下記メールアドレスまでお願いいたします
+  </p>
+  <p style="margin: 12px 0 0 0;">
+    <a href="mailto:info@effect.moe" style="background-color: #3B82F6; color: white; padding: 10px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold; font-size: 16px;">
+      ✉️ info@effect.moe
+    </a>
+  </p>
+</div>
+  `.trim();
+}
+
 // デフォルトのメールテンプレート
 function getDefaultEmailTemplate(
   documentType: 'quote' | 'invoice' | 'delivery-note',
@@ -231,10 +250,15 @@ function getDefaultEmailTemplate(
   dueDate?: string,
   deliveryDate?: string
 ): { subject: string; body: string } {
+  // 送信専用の注意書きHTMLを取得
+  const replyNotice = getReplyNoticeHtml();
+  
   if (documentType === 'quote') {
     return {
       subject: `【見積書】${documentNumber} のご送付`,
       body: `
+${replyNotice}
+
 <p>${customerName} 様</p>
 
 <p>いつもお世話になっております。</p>
@@ -255,6 +279,8 @@ function getDefaultEmailTemplate(
     return {
       subject: `【請求書】${documentNumber} のご送付`,
       body: `
+${replyNotice}
+
 <p>${customerName} 様</p>
 
 <p>いつもお世話になっております。</p>
@@ -277,6 +303,8 @@ ${dueDate ? `<strong>お支払期限：</strong>${dueDate}` : ''}</p>
     return {
       subject: `【納品書】${documentNumber} のご送付`,
       body: `
+${replyNotice}
+
 <p>${customerName} 様</p>
 
 <p>いつもお世話になっております。</p>
@@ -434,16 +462,25 @@ export async function POST(request: NextRequest) {
 
     // メールの件名と本文を設定
     const emailSubject = subject || defaultTemplate.subject;
-    // プレーンテキストの改行を<br>タグに変換してHTMLメールとして送信
-    const plainTextBody = customBody || defaultTemplate.body;
-    const emailBody = plainTextBody.split('\n').map(line => {
-      // 空行は<br>タグとして扱う
-      if (line.trim() === '') {
-        return '<br>';
-      }
-      // 通常の行は<p>タグで囲む
-      return `<p style="margin: 0; line-height: 1.5;">${line}</p>`;
-    }).join('');
+    
+    // カスタム本文が渡された場合も送信専用の注意書きを追加
+    let emailBody: string;
+    if (customBody) {
+      // カスタム本文の場合は、送信専用の注意書きを先頭に追加
+      const replyNotice = getReplyNoticeHtml();
+      const plainTextBody = customBody.split('\n').map(line => {
+        // 空行は<br>タグとして扱う
+        if (line.trim() === '') {
+          return '<br>';
+        }
+        // 通常の行は<p>タグで囲む
+        return `<p style="margin: 0; line-height: 1.5;">${line}</p>`;
+      }).join('');
+      emailBody = `${replyNotice}\n\n${plainTextBody}`;
+    } else {
+      // デフォルトテンプレートの場合（既に注意書きが含まれている）
+      emailBody = defaultTemplate.body;
+    }
 
     // 添付ファイルの準備
     logger.debug('=== ATTACHMENT PREPARATION START ===');
