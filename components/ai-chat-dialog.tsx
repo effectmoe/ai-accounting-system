@@ -507,10 +507,20 @@ export default function AIChatDialog({
 
   // 会話を完了して請求書データを確定
   const completeConversation = () => {
+    logger.debug('[completeConversation] Called with currentInvoiceData:', currentInvoiceData);
+    
     // 顧客名または明細が存在する場合に確定可能（金額は後で再計算されるため）
-    if (currentInvoiceData && 
-        ((currentInvoiceData.customerName && currentInvoiceData.customerName.trim() !== '') || 
-         (currentInvoiceData.items && currentInvoiceData.items.length > 0))) {
+    const hasValidCustomerName = currentInvoiceData?.customerName && currentInvoiceData.customerName.trim() !== '';
+    const hasValidItems = currentInvoiceData?.items && currentInvoiceData.items.length > 0;
+    
+    logger.debug('[completeConversation] Validation:', {
+      hasValidCustomerName,
+      hasValidItems,
+      customerName: currentInvoiceData?.customerName,
+      itemsLength: currentInvoiceData?.items?.length
+    });
+    
+    if (currentInvoiceData && (hasValidCustomerName || hasValidItems)) {
       logger.debug('[Frontend] Completing conversation with data:', JSON.parse(JSON.stringify(currentInvoiceData)));
       logger.debug('[Frontend] Final data details:', {
         items: JSON.parse(JSON.stringify(currentInvoiceData.items)),
@@ -960,6 +970,7 @@ export default function AIChatDialog({
                 logger.debug('[AIChatDialog] Current data:', currentInvoiceData);
                 logger.debug('[AIChatDialog] Data validation:', {
                   hasCustomerName: !!currentInvoiceData?.customerName,
+                  customerNameTrimmed: currentInvoiceData?.customerName?.trim(),
                   hasItems: !!(currentInvoiceData?.items && currentInvoiceData.items.length > 0),
                   itemsCount: currentInvoiceData?.items?.length || 0,
                   customerName: currentInvoiceData?.customerName,
@@ -1048,12 +1059,28 @@ export default function AIChatDialog({
                 logger.debug('[AIChatDialog] Calling completeConversation');
                 completeConversation();
               }}
-              disabled={
-                !currentInvoiceData || 
-                isLoading ||
-                // 顧客名が空かつ明細がない場合
-                (!currentInvoiceData.customerName?.trim() && (!currentInvoiceData.items || currentInvoiceData.items.length === 0))
-              }
+              disabled={(() => {
+                const noData = !currentInvoiceData;
+                const loading = isLoading;
+                const noCustomerName = !currentInvoiceData?.customerName?.trim();
+                const noItems = !currentInvoiceData?.items || currentInvoiceData.items.length === 0;
+                const shouldDisable = noData || loading || (noCustomerName && noItems);
+                
+                // デバッグ用ログ（開発環境のみ）
+                if (process.env.NODE_ENV === 'development') {
+                  logger.debug('[AIChatDialog] Button disabled check:', {
+                    noData,
+                    loading,
+                    noCustomerName,
+                    noItems,
+                    shouldDisable,
+                    customerName: currentInvoiceData?.customerName,
+                    itemsLength: currentInvoiceData?.items?.length
+                  });
+                }
+                
+                return shouldDisable;
+              })()}
             >
               <CheckCircle className="mr-2 h-4 w-4" />
               会話を終了して確定
