@@ -349,22 +349,27 @@ ${currentInvoiceData ? `顧客名: ${currentInvoiceData.customerName || '未設�
         // ユーザー入力から直接情報を抽出（AI応答より優先）
         const userInput = conversation.toLowerCase();
         
-        // 顧客名の抽出（ユーザー入力優先）
+        // 顧客名の抽出（ユーザー入力優先） - より確実なパターンマッチング
         const customerNamePatterns = [
-          // 株式会社（長い社名に対応）
-          /(株式会社[ァ-ヴーぁ-ゔ一-龯A-Za-z0-9]{2,20})(?:に|へ|向け|宛|様|さん)?/,
-          // 従来パターンも保持（短い社名対応）
-          /([^\s]{2,15}(?:株式会社|有限会社|合同会社|合資会社|合名会社|一般社団法人|一般財団法人))(?:に|へ|向け|宛|様|さん)?/,
-          /([^\s]{2,15}(?:会社|商事|工業|製作所|ストア|ショップ|サービス|システム|コーポレーション))(?:に|へ|向け|宛|様|さん)?/,
-          // 「ベイプランニングワークス」のようなカタカナ社名
-          /([ァ-ヴー]{4,15}(?:ワークス|サービス|システム|コンサル|プランニング|マーケティング))(?:に|へ|向け|宛|様|さん)?/
+          // 株式会社（前置）
+          /(株式会社[ァ-ヴーぁ-ゔ一-龯A-Za-z0-9ー]{1,15})/,
+          // 株式会社（後置）
+          /([ァ-ヴーぁ-ゔ一-龯A-Za-z0-9ー]{1,15}株式会社)/,
+          // 有限会社等
+          /([ァ-ヴーぁ-ゔ一-龯A-Za-z0-9ー]{1,15}(?:有限会社|合同会社|合資会社|合名会社))/,
+          // その他法人
+          /([ァ-ヴーぁ-ゔ一-龯A-Za-z0-9ー]{1,15}(?:一般社団法人|一般財団法人|社団法人|財団法人))/,
+          // 一般的な会社名パターン
+          /([ァ-ヴーぁ-ゔ一-龯A-Za-z0-9ー]{2,15}(?:商事|工業|製作所|ストア|ショップ|サービス|システム|コーポレーション))/,
+          // カタカナ社名（ワークスなど）
+          /([ァ-ヴー]{3,15}(?:ワークス|サービス|システム|コンサル|プランニング|マーケティング))/
         ];
         
         let userSpecifiedCustomerName = null;
         for (const pattern of customerNamePatterns) {
           const match = conversation.match(pattern);
           if (match && match[1]) {
-            userSpecifiedCustomerName = match[1].replace(/さん$|様$/g, '').trim();
+            userSpecifiedCustomerName = match[1].trim();
             logger.debug('[AI] User specified customer name:', userSpecifiedCustomerName);
             break;
           }
