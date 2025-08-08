@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { callDeepSeek } from '@/src/mastra/setup-deepseek';
-import { InvoiceService } from '@/services/invoice.service';
-import { QuoteService } from '@/services/quote.service';
-import { CustomerService } from '@/services/customer.service';
-import { SupplierService } from '@/services/supplier.service';
+import { db } from '@/lib/mongodb-client';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,12 +9,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { message, agent: agentName = 'general', context } = body;
     
-    // データベースから実際のデータを取得
-    const invoiceService = new InvoiceService();
-    const quoteService = new QuoteService();
-    const customerService = new CustomerService();
-    const supplierService = new SupplierService();
-    
     // 現在の月と先月を計算
     const now = new Date();
     const currentYear = now.getFullYear();
@@ -25,11 +16,11 @@ export async function POST(request: NextRequest) {
     const lastMonth = currentMonth === 1 ? 12 : currentMonth - 1;
     const lastMonthYear = currentMonth === 1 ? currentYear - 1 : currentYear;
     
-    // 現在月のデータ取得
+    // 現在月のデータ取得（MongoDBから直接）
     const startOfCurrentMonth = new Date(currentYear, currentMonth - 1, 1);
     const endOfCurrentMonth = new Date(currentYear, currentMonth, 0, 23, 59, 59, 999);
     
-    const currentMonthInvoices = await invoiceService.findAll({
+    const currentMonthInvoices = await db.find('invoices', {
       issueDate: {
         $gte: startOfCurrentMonth.toISOString(),
         $lte: endOfCurrentMonth.toISOString()
@@ -40,7 +31,7 @@ export async function POST(request: NextRequest) {
     const startOfLastMonth = new Date(lastMonthYear, lastMonth - 1, 1);
     const endOfLastMonth = new Date(lastMonthYear, lastMonth, 0, 23, 59, 59, 999);
     
-    const lastMonthInvoices = await invoiceService.findAll({
+    const lastMonthInvoices = await db.find('invoices', {
       issueDate: {
         $gte: startOfLastMonth.toISOString(),
         $lte: endOfLastMonth.toISOString()
@@ -48,7 +39,7 @@ export async function POST(request: NextRequest) {
     });
     
     // 見積書データ取得
-    const currentMonthQuotes = await quoteService.findAll({
+    const currentMonthQuotes = await db.find('quotes', {
       issueDate: {
         $gte: startOfCurrentMonth.toISOString(),
         $lte: endOfCurrentMonth.toISOString()
@@ -56,23 +47,23 @@ export async function POST(request: NextRequest) {
     });
     
     // 顧客と仕入先データ取得
-    const customers = await customerService.findAll({});
-    const suppliers = await supplierService.findAll({});
+    const customers = await db.find('customers', {});
+    const suppliers = await db.find('suppliers', {});
     
     // 売上計算
     const currentMonthRevenue = currentMonthInvoices.reduce(
-      (sum, inv) => sum + (inv.totalAmount || 0), 0
+      (sum: number, inv: any) => sum + (inv.totalAmount || 0), 0
     );
     const lastMonthRevenue = lastMonthInvoices.reduce(
-      (sum, inv) => sum + (inv.totalAmount || 0), 0
+      (sum: number, inv: any) => sum + (inv.totalAmount || 0), 0
     );
     
     // 見積金額計算
     const currentMonthQuoteAmount = currentMonthQuotes.reduce(
-      (sum, quote) => sum + (quote.totalAmount || 0), 0
+      (sum: number, quote: any) => sum + (quote.totalAmount || 0), 0
     );
     
-    // システムプロンプトを生成（請求書生成と同じ形式）
+    // システムプロンプトを生成
     const systemPrompt = `あなたは日本の会計システムのAIアシスタントです。
 現在のシステムデータ:
 - 今月（${currentYear}年${currentMonth}月）の売上: ¥${currentMonthRevenue.toLocaleString()}（請求書${currentMonthInvoices.length}件）
@@ -82,16 +73,16 @@ export async function POST(request: NextRequest) {
 - 登録仕入先数: ${suppliers.length}社
 
 主要顧客:
-${customers.slice(0, 5).map(c => `- ${c.companyName || c.name}: 取引回数${c.transactionCount || 0}回`).join('\n')}
+${customers.slice(0, 5).map((c: any) => `- ${c.companyName || c.name}: 取引回数${c.transactionCount || 0}回`).join('\n')}
 
 最新の請求書:
-${currentMonthInvoices.slice(0, 5).map(inv => 
+${currentMonthInvoices.slice(0, 5).map((inv: any) => 
   `- ${inv.invoiceNumber}: ${inv.customer?.companyName || '顧客未設定'} ¥${(inv.totalAmount || 0).toLocaleString()}`
 ).join('\n')}
 
 ユーザーの質問に対して、上記の実際のデータを使用して具体的に回答してください。`;
 
-    // DeepSeek APIを直接呼び出し（請求書生成と完全に同じ方法）
+    // DeepSeek APIを直接呼び出し
     const messages = [
       { role: 'system', content: systemPrompt },
       { role: 'user', content: message }
