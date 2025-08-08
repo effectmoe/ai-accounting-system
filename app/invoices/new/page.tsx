@@ -403,7 +403,8 @@ function NewInvoiceContent() {
     
     // 各項目の詳細をログ出力
     if (invoiceData.items && invoiceData.items.length > 0) {
-      console.log('🔄 [DEBUG] Items found:', invoiceData.items.length);
+      console.log('✅ [DEBUG] Items found:', invoiceData.items.length);
+      console.log('✅ [DEBUG] Items array type check:', Array.isArray(invoiceData.items));
       logger.debug('[InvoiceNew] Items received:');
       invoiceData.items.forEach((item: any, index: number) => {
         console.log(`🔄 [DEBUG] Item ${index}:`, {
@@ -425,6 +426,9 @@ function NewInvoiceContent() {
       });
     } else {
       console.log('❌ [DEBUG] No items found in invoiceData');
+      console.log('❌ [DEBUG] invoiceData.items is:', invoiceData.items);
+      console.log('❌ [DEBUG] typeof invoiceData.items:', typeof invoiceData.items);
+      console.log('❌ [DEBUG] Is array?', Array.isArray(invoiceData.items));
     }
     
     // notesのデフォルト値を設定
@@ -443,11 +447,13 @@ function NewInvoiceContent() {
     setAiConversationId(invoiceData.aiConversationId);
     console.log('✅ [DEBUG] Data applied to form successfully');
     
-    // ダイアログを閉じる
-    console.log('🔄 [DEBUG] Closing AI chat dialog');
-    setShowAIChat(false);
-    setAiDataApplied(true);
-    setSuccessMessage('AI会話から請求書データを取得しました。内容を確認の上、保存してください。');
+    // 状態更新を待ってからAI適用フラグを設定
+    setTimeout(() => {
+      console.log('🔄 [DEBUG] Closing AI chat dialog and setting AI data applied flag');
+      setShowAIChat(false);
+      setAiDataApplied(true);
+      setSuccessMessage('AI会話から請求書データを取得しました。内容を確認の上、保存してください。');
+    }, 100);
     
     // 自動保存は行わず、ユーザーが手動で保存するようにする
     // これにより、ユーザーが内容を確認・修正してから保存できる
@@ -550,7 +556,8 @@ function NewInvoiceContent() {
       });
       
       setItems(processedItems);
-      console.log('🔄 [DEBUG] All items processed and set');
+      console.log('🔄 [DEBUG] All items processed and set, count:', processedItems.length);
+      console.log('🔄 [DEBUG] Processed items array:', processedItems);
     } else {
       console.log('🔄 [DEBUG] No items to process, clearing items list');
       setItems([]);
