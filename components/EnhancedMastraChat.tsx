@@ -288,14 +288,14 @@ ${context.availableActions.map(action => `• ${action}`).join('\n')}
         {/* 統合チャットボタン */}
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-4 right-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-full p-4 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 z-50"
+          className="fixed bottom-8 right-6 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-full p-4 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 z-50"
           title={`${currentAgent.name} - ${currentAgent.specialty}`}
         >
           <currentAgent.icon size={24} />
         </button>
         
         {/* エージェント選択ボタン */}
-        <div className="fixed bottom-4 right-20">
+        <div className="fixed bottom-8 right-24">
           <button
             onClick={() => setShowAgentMenu(!showAgentMenu)}
             className="bg-gray-800 text-white rounded-full p-3 shadow-lg hover:bg-gray-700 transition-colors"
@@ -364,8 +364,8 @@ ${context.availableActions.map(action => `• ${action}`).join('\n')}
   }
 
   return (
-    <div className={`fixed bottom-4 right-4 bg-white rounded-xl shadow-2xl z-50 transition-all border border-gray-200 ${
-      isMinimized ? 'w-80 h-14' : 'w-[420px] h-[650px]'
+    <div className={`fixed bottom-8 right-6 bg-white rounded-xl shadow-2xl z-50 transition-all border border-gray-200 ${
+      isMinimized ? 'w-80 h-14' : 'w-[420px] h-[600px]'
     }`}>
       {/* ヘッダー */}
       <div className={`${currentAgent.color} text-white p-4 rounded-t-xl`}>
@@ -409,7 +409,7 @@ ${context.availableActions.map(action => `• ${action}`).join('\n')}
       {!isMinimized && (
         <>
           {/* メッセージエリア */}
-          <div className="flex-1 overflow-y-auto p-4 h-[480px] bg-gray-50">
+          <div className="flex-1 overflow-y-auto p-4 h-[430px] bg-gray-50">
             {messages.map((msg, idx) => (
               <div
                 key={idx}
