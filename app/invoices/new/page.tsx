@@ -388,13 +388,14 @@ function NewInvoiceContent() {
   };
 
   // AIチャットダイアログからのデータを適用
-  const handleAIChatComplete = (invoiceData: any) => {
+  const handleAIChatComplete = async (invoiceData: any) => {
     logger.debug('[InvoiceNew] Received data from AI chat:', invoiceData);
     logger.debug('[InvoiceNew] Data details:', {
       items: invoiceData.items,
       subtotal: invoiceData.subtotal,
       taxAmount: invoiceData.taxAmount,
-      totalAmount: invoiceData.totalAmount
+      totalAmount: invoiceData.totalAmount,
+      customerName: invoiceData.customerName
     });
     
     // 各項目の詳細をログ出力
@@ -412,11 +413,39 @@ function NewInvoiceContent() {
       });
     }
     
-    applyInvoiceData(invoiceData);
-    setAiConversationId(Date.now().toString());
+    // ダイアログを閉じる
     setShowAIChat(false);
     setAiDataApplied(true);
-    setSuccessMessage('AI会話から請求書データを作成しました。内容を確認してください。');
+    setSuccessMessage('AI会話から請求書を作成中...');
+    
+    // データを適用してすぐに保存を実行
+    try {
+      // 顧客情報を設定
+      if (invoiceData.customerId) {
+        setSelectedCustomerId(invoiceData.customerId);
+      } else if (invoiceData.customerName) {
+        setCustomerName(invoiceData.customerName);
+      }
+      
+      // その他のデータを設定
+      if (invoiceData.title) setTitle(invoiceData.title);
+      if (invoiceData.invoiceDate) setInvoiceDate(format(new Date(invoiceData.invoiceDate), 'yyyy-MM-dd'));
+      if (invoiceData.dueDate) setDueDate(format(new Date(invoiceData.dueDate), 'yyyy-MM-dd'));
+      if (invoiceData.items && invoiceData.items.length > 0) setItems(invoiceData.items);
+      if (invoiceData.notes) {
+        setNotes(invoiceData.notes);
+      } else if (defaultBankInfo) {
+        setNotes(defaultBankInfo);
+      }
+      if (invoiceData.paymentMethod) setPaymentMethod(invoiceData.paymentMethod);
+      setAiConversationId(invoiceData.aiConversationId || Date.now().toString());
+      
+      // 即座に請求書を作成（データが直接渡される）
+      await saveInvoiceWithData(invoiceData);
+    } catch (error) {
+      logger.error('[InvoiceNew] Failed to create invoice from AI chat:', error);
+      setError('請求書の作成に失敗しました');
+    }
   };
 
   // 請求書データを適用する共通関数
@@ -570,6 +599,124 @@ function NewInvoiceContent() {
   };
 
   // 請求書を保存
+  // データを直接受け取って請求書を保存する関数（AIチャット用）
+  const saveInvoiceWithData = async (data: any) => {
+    logger.debug('[InvoiceNew] saveInvoiceWithData called with:', data);
+    
+    if (!data.customerId && !data.customerName) {
+      setError('顧客を選択するか、顧客名を入力してください');
+      return;
+    }
+
+    if (!data.items || data.items.length === 0 || data.items.every((item: any) => !item.description)) {
+      setError('少なくとも1つの明細を入力してください');
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // 新規顧客の場合は先に作成
+      let customerId = data.customerId;
+      if (!customerId && data.customerName) {
+        logger.debug('Creating new customer:', data.customerName);
+        const customerResponse = await fetch('/api/customers', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            companyName: data.customerName
+          }),
+        });
+        
+        if (!customerResponse.ok) {
+          const errorData = await customerResponse.json();
+          logger.error('Customer creation failed:', errorData);
+          throw new Error(errorData.error || 'Failed to create customer');
+        }
+        
+        const newCustomer = await customerResponse.json();
+        customerId = newCustomer._id;
+        logger.debug('New customer created:', customerId);
+      }
+
+      // 利益計算（仕入先見積書がある場合）
+      let costAmount = undefined;
+      let profitAmount = undefined;
+      let profitMargin = undefined;
+      
+      if (sourceSupplierQuote) {
+        costAmount = sourceSupplierQuote.totalAmount;
+        const totalAmount = data.totalAmount || 0;
+        profitAmount = totalAmount - costAmount;
+        profitMargin = totalAmount > 0 ? (profitAmount / totalAmount) * 100 : 0;
+      }
+
+      // 請求書を作成
+      const invoiceData = {
+        customerId,
+        title: data.title || '',
+        invoiceDate: data.invoiceDate || new Date().toISOString(),
+        dueDate: data.dueDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        items: data.items.filter((item: any) => item.description),
+        notes: data.notes || defaultBankInfo || '',
+        paymentMethod: data.paymentMethod || '',
+        isGeneratedByAI: true,
+        aiConversationId: data.aiConversationId || Date.now().toString(),
+        sourceSupplierQuoteId,
+        costAmount,
+        profitAmount,
+        profitMargin,
+      };
+
+      logger.debug('Creating invoice with data:', invoiceData);
+
+      const response = await fetch('/api/invoices', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(invoiceData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        logger.error('Invoice creation failed:', errorData);
+        throw new Error(errorData.details || errorData.error || 'Failed to create invoice');
+      }
+
+      const invoice = await response.json();
+      
+      // 請求書IDの確認
+      if (!invoice || !invoice._id) {
+        logger.error('Invoice response missing _id:', invoice);
+        throw new Error('請求書は作成されましたが、IDが取得できませんでした。請求書一覧から確認してください。');
+      }
+      
+      logger.debug('Invoice created successfully with ID:', invoice._id);
+      
+      // 仕入先見積書を更新して関連を作成
+      if (sourceSupplierQuoteId && invoice._id) {
+        try {
+          await fetch(`/api/supplier-quotes/${sourceSupplierQuoteId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              relatedInvoiceIds: [...(sourceSupplierQuote.relatedInvoiceIds || []), invoice._id]
+            }),
+          });
+        } catch (supplierError) {
+          logger.error('Failed to update supplier quote relation:', supplierError);
+        }
+      }
+      
+      router.push(`/invoices/${invoice._id}`);
+    } catch (error) {
+      logger.error('Error saving invoice:', error);
+      setError(error instanceof Error ? error.message : '請求書の作成に失敗しました');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const saveInvoice = async () => {
     if (!selectedCustomerId && !customerName) {
       setError('顧客を選択するか、顧客名を入力してください');
