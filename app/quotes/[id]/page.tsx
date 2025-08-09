@@ -27,7 +27,8 @@ import {
   MessageSquare,
   Send,
   FileDown,
-  Package
+  Package,
+  Sparkles
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
@@ -354,6 +355,15 @@ export default function QuoteDetailPage({ params }: QuoteDetailPageProps) {
           >
             <Download className="mr-2 h-4 w-4" />
             PDF印刷
+          </Button>
+          {/* HTML見積書ボタン */}
+          <Button
+            variant="outline"
+            onClick={() => router.push(`/quotes/${quote._id}/html-editor`)}
+            className="bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 border-purple-200"
+          >
+            <Sparkles className="mr-2 h-4 w-4 text-purple-600" />
+            HTML見積書
           </Button>
           {/* メール送信ボタン */}
           <Button
