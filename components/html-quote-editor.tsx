@@ -115,8 +115,6 @@ export default function HtmlQuoteEditor({
   const [includeTracking, setIncludeTracking] = useState(true);
   const [includeInteractiveElements, setIncludeInteractiveElements] = useState(true); // デフォルトはオン
   const [attachPdf, setAttachPdf] = useState(true);
-  const [previewMode, setPreviewMode] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
-  const [useWebLayout, setUseWebLayout] = useState(true); // Web最適化レイアウト使用フラグ
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isSending, setIsSending] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -462,7 +460,7 @@ export default function HtmlQuoteEditor({
   }, [previewWindow]);
 
   return (
-    <div className="space-y-6 pb-32">
+    <div className="space-y-6 pb-40">
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -470,7 +468,7 @@ export default function HtmlQuoteEditor({
             HTML見積書エディタ
           </CardTitle>
           <p className="text-sm text-muted-foreground mt-2">
-            見積書の内容を編集し、HTML形式でメール送信できます。
+            見積書の内容を編集し、HTML形式でプレビューできます。
             各タブで詳細な設定が可能です。
           </p>
         </CardHeader>
@@ -1029,160 +1027,60 @@ export default function HtmlQuoteEditor({
 
             {/* プレビュータブ */}
             <TabsContent value="preview" className="space-y-4">
-              {/* メニューボタンを複数行配置に変更 */}
-              <div className="space-y-3">
-                {/* 第1行: デバイスプレビューモード */}
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-sm font-medium text-muted-foreground mr-2">表示モード:</span>
+              {/* シンプル化されたアクションバー */}
+              <div className="flex items-center justify-end gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const url = `/quotes/view/${quote._id}`;
+                    window.open(url, '_blank');
+                  }}
+                >
+                  <ExternalLink className="h-4 w-4 mr-2" />
+                  ブラウザで表示
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSave}
+                  disabled={isSaving}
+                >
+                  {isSaving ? (
+                    <>
+                      <Save className="h-4 w-4 mr-2 animate-spin" />
+                      保存中...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4 mr-2" />
+                      保存
+                    </>
+                  )}
+                </Button>
+                {onSend && (
                   <Button
-                    variant={previewMode === 'desktop' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setPreviewMode('desktop')}
-                    className="min-w-[90px]"
-                  >
-                    <Monitor className="h-4 w-4 mr-1" />
-                    デスクトップ
-                  </Button>
-                  <Button
-                    variant={previewMode === 'tablet' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setPreviewMode('tablet')}
-                    className="min-w-[80px]"
-                  >
-                    <Smartphone className="h-4 w-4 rotate-90 mr-1" />
-                    タブレット
-                  </Button>
-                  <Button
-                    variant={previewMode === 'mobile' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setPreviewMode('mobile')}
-                    className="min-w-[80px]"
-                  >
-                    <Smartphone className="h-4 w-4 mr-1" />
-                    モバイル
-                  </Button>
-                </div>
-
-                {/* 第2行: レイアウト選択 */}
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-sm font-medium text-muted-foreground mr-2">レイアウト:</span>
-                  <Button
-                    variant={useWebLayout ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setUseWebLayout(true)}
-                    className="min-w-[120px]"
-                  >
-                    <Globe className="h-4 w-4 mr-1" />
-                    Web最適化
-                  </Button>
-                  <Button
-                    variant={!useWebLayout ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setUseWebLayout(false)}
-                    className="min-w-[100px]"
-                  >
-                    <Mail className="h-4 w-4 mr-1" />
-                    メール用
-                  </Button>
-                </div>
-                
-                {/* 第3行: アクションボタン */}
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-sm font-medium text-muted-foreground mr-2">アクション:</span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={openFullScreenPreview}
-                    className="min-w-[120px]"
-                  >
-                    <Eye className="h-4 w-4 mr-1" />
-                    全画面プレビュー
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      const url = `/quotes/view/${quote._id}`;
-                      window.open(url, '_blank');
-                    }}
-                    className="min-w-[100px]"
-                  >
-                    <Globe className="h-4 w-4 mr-1" />
-                    ブラウザで表示
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={copyHtml}
-                    className="min-w-[100px]"
-                  >
-                    {copied ? (
-                      <Check className="h-4 w-4 mr-1" />
-                    ) : (
-                      <Copy className="h-4 w-4 mr-1" />
-                    )}
-                    HTMLをコピー
-                  </Button>
-                </div>
-                
-                {/* 第4行: 送信・保存ボタン */}
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-sm font-medium text-muted-foreground mr-2">操作:</span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleSave}
-                    disabled={isSaving}
-                    className="min-w-[70px]"
-                  >
-                    {isSaving ? (
-                      <>
-                        <Save className="h-4 w-4 mr-1 animate-spin" />
-                        保存中
-                      </>
-                    ) : (
-                      <>
-                        <Save className="h-4 w-4 mr-1" />
-                        保存
-                      </>
-                    )}
-                  </Button>
-                  <Button
-                    size="sm"
                     onClick={handleSend}
                     disabled={isSending || !recipientEmail}
-                    className="min-w-[70px]"
                   >
                     {isSending ? (
                       <>
-                        <Send className="h-4 w-4 mr-1 animate-spin" />
-                        送信中
+                        <Send className="h-4 w-4 mr-2 animate-spin" />
+                        送信中...
                       </>
                     ) : (
                       <>
-                        <Send className="h-4 w-4 mr-1" />
+                        <Send className="h-4 w-4 mr-2" />
                         送信
                       </>
                     )}
                   </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setActiveTab('settings')}
-                    className="min-w-[80px]"
-                  >
-                    <Mail className="h-4 w-4 mr-1" />
-                    送信設定
-                  </Button>
-                </div>
+                )}
               </div>
 
+              {/* プレビューエリア（レスポンシブ対応） */}
               <div
-                className={`border rounded-lg overflow-hidden ${
-                  previewMode === 'mobile' ? 'max-w-sm mx-auto' :
-                  previewMode === 'tablet' ? 'max-w-2xl mx-auto' :
-                  ''
-                }`}
+                className="border rounded-lg overflow-hidden"
                 style={{ height: '600px' }}
               >
                 <iframe
@@ -1213,22 +1111,24 @@ export default function HtmlQuoteEditor({
                 </>
               )}
             </Button>
-            <Button
-              onClick={handleSend}
-              disabled={isSending || !recipientEmail}
-            >
-              {isSending ? (
-                <>
-                  <Send className="h-4 w-4 mr-2 animate-spin" />
-                  送信中...
-                </>
-              ) : (
-                <>
-                  <Send className="h-4 w-4 mr-2" />
-                  送信
-                </>
-              )}
-            </Button>
+            {onSend && (
+              <Button
+                onClick={handleSend}
+                disabled={isSending || !recipientEmail}
+              >
+                {isSending ? (
+                  <>
+                    <Send className="h-4 w-4 mr-2 animate-spin" />
+                    送信中...
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-4 w-4 mr-2" />
+                    送信
+                  </>
+                )}
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>

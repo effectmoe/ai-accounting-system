@@ -143,14 +143,6 @@ export default function QuoteHtmlTemplate({
             <Text style={headerText}>{companyInfo?.companyName || companyInfo?.name || '会社名'}</Text>
           </Section>
 
-          {/* オンライン表示リンク */}
-          {viewOnlineUrl && (
-            <Section style={viewOnlineSection}>
-              <Link href={viewOnlineUrl} style={viewOnlineLink}>
-                ブラウザで表示 →
-              </Link>
-            </Section>
-          )}
 
           {/* メインコンテンツ */}
           <Section style={mainContent}>
@@ -443,17 +435,19 @@ const main = {
   backgroundColor: '#f6f9fc',
   fontFamily:
     '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif',
+  width: '100%',
 };
 
 const container = {
   backgroundColor: '#ffffff',
   margin: '0 auto',
-  padding: '20px 0 48px',
-  marginBottom: '64px',
+  padding: '20px 10px',
+  width: '100%',
+  maxWidth: '600px',
 };
 
 const header = {
-  padding: '32px 48px',
+  padding: '24px 20px',
   textAlign: 'center' as const,
   backgroundColor: '#f8fafc',
 };
@@ -470,7 +464,7 @@ const headerText = {
 };
 
 const viewOnlineSection = {
-  padding: '12px 48px',
+  padding: '12px 20px',
   textAlign: 'right' as const,
 };
 
@@ -481,7 +475,7 @@ const viewOnlineLink = {
 };
 
 const mainContent = {
-  padding: '0 48px',
+  padding: '0 20px',
 };
 
 const h1 = {
@@ -826,7 +820,7 @@ const companyWebsite = {
 };
 
 const footer = {
-  padding: '32px 48px',
+  padding: '24px 20px',
   textAlign: 'center' as const,
   backgroundColor: '#f8fafc',
 };

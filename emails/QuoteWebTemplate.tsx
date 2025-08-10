@@ -155,17 +155,68 @@ export default function QuoteWebTemplate({
   };
 
   return (
-    <div style={containerStyle}>
+    <div style={containerStyle} className="main-container">
+      {/* ビューポート設定 */}
+      <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+      
       {/* レスポンシブ対応のCSS */}
       <style dangerouslySetInnerHTML={{
         __html: `
-          /* ツールチップのホバー効果 */
+          /* リセットとベース設定 */
+          * {
+            box-sizing: border-box;
+          }
+          
+          html {
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+          }
+          
+          body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            overflow-x: hidden;
+          }
+          
+          /* コンテナの基本設定 */
+          @media screen and (min-width: 1200px) {
+            .main-container {
+              max-width: 1200px !important;
+              margin: 0 auto !important;
+            }
+          }
+          
+          @media screen and (min-width: 768px) and (max-width: 1199px) {
+            .main-container {
+              max-width: 90% !important;
+              margin: 0 auto !important;
+            }
+          }
+          
+          @media screen and (max-width: 767px) {
+            .main-container {
+              max-width: 100% !important;
+              padding: 0 1rem !important;
+            }
+          }
+          
+          /* ツールチップのホバー効果とタッチ対応 */
           .tooltip-wrapper {
             position: relative;
             display: inline-block;
           }
           
-          .tooltip-wrapper:hover .tooltip-content {
+          /* デスクトップ: ホバーで表示 */
+          @media (hover: hover) and (pointer: fine) {
+            .tooltip-wrapper:hover .tooltip-content {
+              visibility: visible !important;
+              opacity: 1 !important;
+            }
+          }
+          
+          /* モバイル: タップで表示 */
+          .tooltip-wrapper.active .tooltip-content {
             visibility: visible !important;
             opacity: 1 !important;
           }
@@ -202,31 +253,187 @@ export default function QuoteWebTemplate({
             border-color: #1f2937 transparent transparent transparent;
           }
           
-          @media (max-width: 768px) {
-            .quote-header { flex-direction: column !important; text-align: center !important; }
-            .quote-info-grid { grid-template-columns: 1fr !important; gap: 1rem !important; }
-            .quote-parties-grid { grid-template-columns: 1fr !important; gap: 2rem !important; }
-            .quote-summary { padding: 1rem !important; }
-            .quote-actions { flex-direction: column !important; gap: 0.75rem !important; }
-            .suggested-options-grid { grid-template-columns: 1fr !important; }
+          /* デスクトップファースト → モバイルファーストアプローチに変更 */
+          @media screen and (max-width: 768px) {
+            html, body {
+              font-size: 16px !important;
+              width: 100% !important;
+              overflow-x: hidden !important;
+            }
+            
+            .quote-header { 
+              flex-direction: column !important; 
+              text-align: center !important;
+              padding: 1rem !important;
+              width: 100% !important;
+            }
+            
+            .quote-info-grid { 
+              grid-template-columns: 1fr !important; 
+              gap: 1rem !important; 
+            }
+            
+            .quote-parties-grid { 
+              grid-template-columns: 1fr !important; 
+              gap: 1.5rem !important; 
+            }
+            
+            .quote-summary { 
+              padding: 1.5rem !important;
+              width: 100% !important;
+              min-width: auto !important;
+            }
+            
+            .quote-actions { 
+              flex-direction: column !important; 
+              gap: 1rem !important;
+              padding: 0 1rem !important;
+            }
+            
+            .suggested-options-grid { 
+              grid-template-columns: 1fr !important; 
+            }
+            
+            /* モバイルでの文字サイズと余白調整 */
+            h1 { 
+              font-size: 1.75rem !important;
+              margin: 1rem 0 !important;
+              line-height: 1.3 !important;
+            }
+            
+            h2 { 
+              font-size: 1.5rem !important;
+              margin-bottom: 1rem !important;
+            }
+            
+            h3 { 
+              font-size: 1.25rem !important; 
+            }
+            
+            /* 項目カードの調整 */
+            .item-card {
+              padding: 1.25rem !important;
+            }
+            
+            .item-name {
+              font-size: 1rem !important;
+              margin-bottom: 0.5rem !important;
+            }
+            
+            .item-amount {
+              font-size: 1.125rem !important;
+            }
+            
+            .item-details {
+              font-size: 0.875rem !important;
+              line-height: 1.6 !important;
+              margin: 0.75rem 0 !important;
+            }
+            
+            .item-meta {
+              font-size: 0.8125rem !important;
+            }
+            
+            /* ボタンの調整 */
+            .cta-button {
+              padding: 1rem 1.5rem !important;
+              font-size: 1rem !important;
+              width: 100% !important;
+              min-width: auto !important;
+            }
+            
+            /* 情報カードの調整 */
+            .info-card {
+              padding: 1.25rem !important;
+            }
+            
+            /* パーティカードの調整 */
+            .party-card {
+              padding: 1.25rem !important;
+            }
+            
+            .party-details {
+              font-size: 0.9375rem !important;
+              line-height: 1.75 !important;
+            }
             
             /* モバイルでのツールチップ調整 */
             .tooltip-content {
               white-space: normal;
-              width: 250px;
-              max-width: 85vw;
+              width: calc(100vw - 3rem);
+              max-width: 300px;
+              left: 50%;
+              transform: translateX(-50%);
+              font-size: 0.875rem;
+              padding: 0.875rem;
+            }
+            
+            /* ツールチップが画面外に出ないように調整 */
+            .tooltip-wrapper:first-child .tooltip-content {
               left: 0;
               transform: none;
-              font-size: 12px;
+            }
+            
+            .tooltip-wrapper:last-child .tooltip-content {
+              left: auto;
+              right: 0;
+              transform: none;
             }
           }
-          @media (min-width: 769px) and (max-width: 1024px) {
-            .quote-info-grid { grid-template-columns: repeat(2, 1fr) !important; }
-            .suggested-options-grid { grid-template-columns: repeat(2, 1fr) !important; }
+          
+          /* タブレット向けレイアウト */
+          @media screen and (min-width: 769px) and (max-width: 1024px) {
+            .main-container {
+              padding: 0 2rem !important;
+            }
+            
+            .quote-info-grid { 
+              grid-template-columns: repeat(2, 1fr) !important; 
+            }
+            
+            .suggested-options-grid { 
+              grid-template-columns: repeat(2, 1fr) !important; 
+            }
+            
+            h1 {
+              font-size: 2.25rem !important;
+            }
+            
+            h2 {
+              font-size: 1.75rem !important;
+            }
           }
-          @media (min-width: 1025px) {
-            .quote-info-grid { grid-template-columns: repeat(3, 1fr) !important; }
-            .suggested-options-grid { grid-template-columns: repeat(3, 1fr) !important; }
+          
+          /* デスクトップ向けレイアウト */
+          @media screen and (min-width: 1025px) {
+            .main-container {
+              padding: 0 2rem !important;
+            }
+            
+            .quote-info-grid { 
+              grid-template-columns: repeat(3, 1fr) !important; 
+            }
+            
+            .suggested-options-grid { 
+              grid-template-columns: repeat(3, 1fr) !important; 
+            }
+            
+            h1 {
+              font-size: 2.5rem !important;
+            }
+            
+            h2 {
+              font-size: 1.875rem !important;
+            }
+            
+            .quote-parties-grid {
+              grid-template-columns: repeat(2, 1fr) !important;
+            }
+            
+            .quote-actions {
+              flex-direction: row !important;
+              justify-content: center !important;
+            }
           }
         `
       }} />
@@ -245,6 +452,41 @@ export default function QuoteWebTemplate({
           </div>
         </div>
       </header>
+
+      {/* JavaScriptでタッチイベントを処理 */}
+      <script dangerouslySetInnerHTML={{
+        __html: `
+          // モバイルでのツールチップタッチ対応
+          if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
+            document.addEventListener('DOMContentLoaded', function() {
+              const tooltipWrappers = document.querySelectorAll('.tooltip-wrapper');
+              
+              tooltipWrappers.forEach(wrapper => {
+                wrapper.addEventListener('touchstart', function(e) {
+                  e.stopPropagation();
+                  
+                  // 他のアクティブなツールチップを閉じる
+                  document.querySelectorAll('.tooltip-wrapper.active').forEach(w => {
+                    if (w !== wrapper) w.classList.remove('active');
+                  });
+                  
+                  // 現在のツールチップをトグル
+                  wrapper.classList.toggle('active');
+                });
+              });
+              
+              // 画面の他の場所をタップしたらツールチップを閉じる
+              document.addEventListener('touchstart', function(e) {
+                if (!e.target.closest('.tooltip-wrapper')) {
+                  document.querySelectorAll('.tooltip-wrapper.active').forEach(w => {
+                    w.classList.remove('active');
+                  });
+                }
+              });
+            });
+          }
+        `
+      }} />
 
       {/* メインコンテンツ */}
       <main style={mainStyle}>
@@ -267,15 +509,15 @@ export default function QuoteWebTemplate({
         {/* 見積書情報（3カラム→2カラム→1カラム） */}
         <section style={quoteInfoSectionStyle}>
           <div style={quoteInfoGridStyle} className="quote-info-grid">
-            <div style={infoCardStyle}>
+            <div style={infoCardStyle} className="info-card">
               <div style={infoLabelStyle}>見積書番号</div>
               <div style={infoValueStyle}>{quote.quoteNumber}</div>
             </div>
-            <div style={infoCardStyle}>
+            <div style={infoCardStyle} className="info-card">
               <div style={infoLabelStyle}>発行日</div>
               <div style={infoValueStyle}>{formatDate(quote.issueDate)}</div>
             </div>
-            <div style={infoCardStyle}>
+            <div style={infoCardStyle} className="info-card">
               <div style={infoLabelStyle}>有効期限</div>
               <div style={infoValueStyle}>{formatDate(quote.validityDate)}</div>
             </div>
@@ -288,9 +530,9 @@ export default function QuoteWebTemplate({
         <section style={partiesSectionStyle}>
           <div style={partiesGridStyle} className="quote-parties-grid">
             {/* 見積先 */}
-            <div style={partyCardStyle}>
+            <div style={partyCardStyle} className="party-card">
               <h3 style={partyTitleStyle}>見積先</h3>
-              <div style={partyDetailsStyle}>
+              <div style={partyDetailsStyle} className="party-details">
                 <div style={partyCompanyStyle}>{quote.customer?.companyName || '顧客未設定'}</div>
                 {quote.customer?.contacts?.[0]?.name && (
                   <div>{quote.customer.contacts[0].name} 様</div>
@@ -310,9 +552,9 @@ export default function QuoteWebTemplate({
             </div>
 
             {/* 見積元 */}
-            <div style={partyCardStyle}>
+            <div style={partyCardStyle} className="party-card">
               <h3 style={partyTitleStyle}>見積元</h3>
-              <div style={partyDetailsStyle}>
+              <div style={partyDetailsStyle} className="party-details">
                 <div style={partyCompanyStyle}>{companyInfo?.companyName || companyInfo?.name || '会社名未設定'}</div>
                 {/* 住所の組み立て */}
                 {(companyInfo?.postalCode || companyInfo?.prefecture || companyInfo?.city || companyInfo?.address1 || companyInfo?.address2 || companyInfo?.address) && (
@@ -345,9 +587,9 @@ export default function QuoteWebTemplate({
           {/* モバイル対応の項目リスト */}
           <div style={itemsContainerStyle}>
             {quote.items.map((item, index) => (
-              <div key={index} style={itemCardStyle}>
+              <div key={index} style={itemCardStyle} className="item-card">
                 <div style={itemHeaderStyle}>
-                  <div style={itemNameStyle}>
+                  <div style={itemNameStyle} className="item-name">
                     {item.productLink ? (
                       <a href={item.productLink} style={productLinkStyle}>
                         {item.tooltip ? 
@@ -361,19 +603,19 @@ export default function QuoteWebTemplate({
                         (item.itemName || item.description || '')
                     )}
                   </div>
-                  <div style={itemAmountStyle}>
+                  <div style={itemAmountStyle} className="item-amount">
                     {formatCurrency(item.amount)}
                   </div>
                 </div>
                 {item.details && (
-                  <div style={itemDetailsStyle}>
+                  <div style={itemDetailsStyle} className="item-details">
                     {item.tooltip ? 
                       renderDetailsWithTooltip(item.details, item.tooltip) :
                       item.details
                     }
                   </div>
                 )}
-                <div style={itemMetaStyle}>
+                <div style={itemMetaStyle} className="item-meta">
                   <span>{item.quantity} {item.unit || '個'}</span>
                   <span>×</span>
                   <span>{formatCurrency(item.unitPrice)}</span>
@@ -438,13 +680,12 @@ export default function QuoteWebTemplate({
           <div style={ctaContainerStyle} className="quote-actions">
             {acceptUrl && (
               <div style={buttonWrapperStyle}>
-                <a href={acceptUrl} style={primaryButtonStyle}>
+                <a href={acceptUrl} style={primaryButtonStyle} className="cta-button">
                   見積を承認する
                 </a>
-                <div style={buttonDescriptionStyle}>
-                  <div>このボタンをクリックすると見積金額が確定し、</div>
-                  <div>PDFのお見積書が添付されたメールが送信されます</div>
-                </div>
+                <p style={buttonDescriptionStyle}>
+                  見積金額を確定してPDF発行
+                </p>
               </div>
             )}
             {/* 相談ボタンをmailtoリンクに変更 */}
@@ -459,13 +700,13 @@ export default function QuoteWebTemplate({
                   `よろしくお願いいたします。`
                 )}`}
                 style={secondaryButtonStyle}
+                className="cta-button"
               >
                 相談する
               </a>
-              <div style={buttonDescriptionStyle}>
-                <div>このボタンをクリックするとメールソフトが起動し、</div>
-                <div>見積についてのご質問をメールで送信できます</div>
-              </div>
+              <p style={buttonDescriptionStyle}>
+                ご質問・ご相談はこちら
+              </p>
             </div>
           </div>
         </section>
@@ -516,6 +757,10 @@ const containerStyle = {
   color: '#1f2937',
   lineHeight: '1.6',
   minHeight: '100vh',
+  width: '100%',
+  maxWidth: '100%',
+  margin: '0',
+  padding: '0',
 };
 
 const headerStyle = {
@@ -525,12 +770,14 @@ const headerStyle = {
 };
 
 const headerContentStyle = {
+  width: '100%',
   maxWidth: '1200px',
   margin: '0 auto',
   padding: '0 2rem',
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'center',
+  boxSizing: 'border-box' as const,
 };
 
 const logoSectionStyle = {
@@ -557,9 +804,11 @@ const viewOnlineStyle = {
 };
 
 const mainStyle = {
+  width: '100%',
   maxWidth: '1200px',
   margin: '0 auto',
   padding: '2rem',
+  boxSizing: 'border-box' as const,
 };
 
 const titleSectionStyle = {
@@ -827,62 +1076,65 @@ const ctaSectionStyle = {
 
 const ctaContainerStyle = {
   display: 'flex',
-  gap: '4rem',
+  gap: '2rem',
   justifyContent: 'center',
   alignItems: 'stretch',
-  flexWrap: 'wrap' as const,
+  flexWrap: 'nowrap' as const,
+  maxWidth: '600px',
+  margin: '0 auto',
 };
 
 const primaryButtonStyle = {
   display: 'inline-block',
   backgroundColor: '#3B82F6',
   color: '#ffffff',
-  padding: '1rem 3rem',
-  borderRadius: '0.5rem',
+  padding: '0.875rem 2rem',
+  borderRadius: '0.375rem',
   textDecoration: 'none',
-  fontSize: '1.0625rem',
-  fontWeight: '600',
-  minWidth: '220px',
+  fontSize: '1rem',
+  fontWeight: '500',
+  minWidth: '180px',
   textAlign: 'center' as const,
   boxSizing: 'border-box' as const,
-  transition: 'background-color 0.2s ease',
+  transition: 'all 0.2s ease',
   lineHeight: '1.5',
+  boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
 };
 
 const secondaryButtonStyle = {
   display: 'inline-block',
   backgroundColor: '#ffffff',
-  color: '#3B82F6',
-  padding: '0.875rem 3rem',
-  borderRadius: '0.5rem',
+  color: '#6b7280',
+  padding: '0.75rem 2rem',
+  borderRadius: '0.375rem',
   textDecoration: 'none',
-  fontSize: '1.0625rem',
-  fontWeight: '600',
-  border: '2px solid #3B82F6',
-  minWidth: '220px',
+  fontSize: '1rem',
+  fontWeight: '500',
+  border: '1px solid #e5e7eb',
+  minWidth: '180px',
   textAlign: 'center' as const,
   boxSizing: 'border-box' as const,
-  transition: 'border-color 0.2s ease, color 0.2s ease',
+  transition: 'all 0.2s ease',
   lineHeight: '1.5',
+  boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
 };
 
 const buttonWrapperStyle = {
   display: 'flex',
   flexDirection: 'column' as const,
   alignItems: 'center',
-  gap: '0.875rem',
-  minWidth: '280px',
-  maxWidth: '360px',
+  gap: '0.5rem',
+  flex: 1,
 };
 
 const buttonDescriptionStyle = {
-  fontSize: '0.8125rem',
-  color: '#6b7280',
-  lineHeight: '1.6',
+  fontSize: '0.75rem',
+  color: '#9ca3af',
+  lineHeight: '1.4',
   textAlign: 'center' as const,
-  marginTop: '0',
+  margin: '0',
   width: '100%',
-  letterSpacing: '-0.01em',
+  fontWeight: '400',
 };
 
 const notesSectionStyle = {
@@ -914,10 +1166,12 @@ const footerStyle = {
 };
 
 const footerContentStyle = {
+  width: '100%',
   maxWidth: '1200px',
   margin: '0 auto',
   padding: '0 2rem',
   textAlign: 'center' as const,
+  boxSizing: 'border-box' as const,
 };
 
 const footerTextStyle = {

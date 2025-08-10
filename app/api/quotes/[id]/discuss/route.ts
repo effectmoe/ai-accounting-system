@@ -79,18 +79,19 @@ export async function POST(
       }
     });
 
-    // メール通知を送信
-    try {
-      // メール送信設定
-      const transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST || 'smtp.gmail.com',
-        port: parseInt(process.env.SMTP_PORT || '587'),
-        secure: false,
-        auth: {
-          user: process.env.SMTP_USER,
-          pass: process.env.SMTP_PASS,
-        },
-      });
+    // メール通知を送信（オプション - SMTP設定がある場合のみ）
+    if (process.env.SMTP_USER && process.env.SMTP_PASS) {
+      try {
+        // メール送信設定
+        const transporter = nodemailer.createTransport({
+          host: process.env.SMTP_HOST || 'smtp.gmail.com',
+          port: parseInt(process.env.SMTP_PORT || '587'),
+          secure: false,
+          auth: {
+            user: process.env.SMTP_USER,
+            pass: process.env.SMTP_PASS,
+          },
+        });
       
       // 会社情報を取得
       const companyInfo = await db.collection('company_info').findOne({});

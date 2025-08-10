@@ -92,28 +92,7 @@ export default function HtmlQuoteEditorPage() {
     }
   };
 
-  const handleSend = async (emailOptions: any) => {
-    try {
-      // メール送信履歴を記録
-      const response = await fetch(`/api/quotes/${quoteId}/email-history`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sentAt: new Date().toISOString(),
-          sentTo: emailOptions.recipientEmail,
-          sentBy: 'HTML Editor',
-          trackingId: emailOptions.trackingId,
-          type: 'html',
-        }),
-      });
-
-      if (!response.ok) {
-        logger.warn('Failed to record email history');
-      }
-    } catch (error) {
-      logger.error('Error recording email history:', error);
-    }
-  };
+  // 送信機能は削除（プレビューページでのみ使用可能）
 
   if (isLoading) {
     return (
@@ -152,7 +131,7 @@ export default function HtmlQuoteEditorPage() {
         </Button>
         <h1 className="text-3xl font-bold">HTML見積書エディタ</h1>
         <p className="text-muted-foreground mt-2">
-          インタラクティブなHTML形式の見積書を作成・送信できます
+          インタラクティブなHTML形式の見積書を作成・編集できます
         </p>
       </div>
 
@@ -161,7 +140,7 @@ export default function HtmlQuoteEditorPage() {
         quote={quote}
         companyInfo={companyInfo}
         onSave={handleSave}
-        onSend={handleSend}
+        // onSendは削除（送信機能はプレビューページでのみ使用可能）
       />
     </div>
   );
