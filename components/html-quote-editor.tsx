@@ -55,7 +55,6 @@ import {
 } from 'lucide-react';
 import { Quote, CompanyInfo } from '@/types/collections';
 import { generateDefaultSuggestedOptions, generateDefaultTooltips } from '@/lib/html-quote-generator';
-import { sendQuoteEmail } from '@/lib/resend-service';
 import { logger } from '@/lib/logger';
 import { EmailTemplate } from '@/components/email-template-manager';
 
@@ -180,21 +179,27 @@ export default function HtmlQuoteEditor({
         if (pdfResponse.ok) {
           const blob = await pdfResponse.blob();
           const arrayBuffer = await blob.arrayBuffer();
-          pdfBuffer = Buffer.from(arrayBuffer);
+          pdfBuffer = Buffer.from(arrayBuffer).toString('base64'); // Base64エンコード
         }
       }
 
-      // メール送信
-      const result = await sendQuoteEmail({
-        quote: editedQuote,
-        companyInfo,
-        recipientEmail,
-        recipientName,
-        customMessage,
-        attachPdf,
-        pdfBuffer,
-        suggestedOptions: includeInteractiveElements ? suggestedOptions : [],
+      // APIエンドポイント経由でメール送信
+      const response = await fetch('/api/quotes/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          quote: editedQuote,
+          companyInfo,
+          recipientEmail,
+          recipientName,
+          customMessage,
+          attachPdf,
+          pdfBuffer,
+          suggestedOptions: includeInteractiveElements ? suggestedOptions : [],
+        }),
       });
+
+      const result = await response.json();
 
       if (result.success) {
         alert('見積書を送信しました');
