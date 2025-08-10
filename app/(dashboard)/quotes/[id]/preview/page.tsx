@@ -70,29 +70,6 @@ export default function QuotePreviewPage() {
     }
   };
 
-  const handleSend = async (recipientEmail: string, recipientName?: string, customMessage?: string) => {
-    try {
-      const response = await fetch(`/api/quotes/${params.id}/send`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          recipientEmail,
-          recipientName,
-          customMessage,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('送信に失敗しました');
-      }
-
-      toast.success('見積書を送信しました');
-      router.push(`/quotes/${params.id}`);
-    } catch (err) {
-      logger.error('Error sending quote:', err);
-      toast.error('送信に失敗しました');
-    }
-  };
 
   if (loading) {
     return (
@@ -141,7 +118,6 @@ export default function QuotePreviewPage() {
         quote={quote}
         companyInfo={companyInfo}
         onSave={handleSave}
-        onSend={handleSend}
       />
     </div>
   );
