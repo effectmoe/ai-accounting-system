@@ -47,6 +47,7 @@ import {
   Globe,
   Smartphone,
   Monitor,
+  ExternalLink,
   X,
   ChevronUp,
   ChevronDown,
