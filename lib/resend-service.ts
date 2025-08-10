@@ -84,7 +84,7 @@ export async function sendQuoteEmail(
 
     // Resendでメール送信
     const { data, error } = await resend.emails.send({
-      from: `${companyInfo.name} <${companyInfo.email || 'noreply@accounting-automation.vercel.app'}>`,
+      from: `${companyInfo.companyName || companyInfo.name || '会社名'} <${companyInfo.email || 'noreply@accounting-automation.vercel.app'}>`,
       to: recipientEmail,
       cc: ccEmails,
       bcc: bccEmails,
@@ -184,7 +184,7 @@ export async function sendBatchQuoteEmails(
         });
 
         return {
-          from: `${emailOptions.companyInfo.name} <${emailOptions.companyInfo.email || 'noreply@accounting-automation.vercel.app'}>`,
+          from: `${emailOptions.companyInfo.companyName || emailOptions.companyInfo.name || '会社名'} <${emailOptions.companyInfo.email || 'noreply@accounting-automation.vercel.app'}>`,
           to: emailOptions.recipientEmail,
           subject: htmlQuoteResult.subject,
           html: htmlQuoteResult.html,
