@@ -55,7 +55,14 @@ export default function HtmlQuoteEditorPage() {
         });
       } else {
         const companyData = await companyResponse.json();
-        setCompanyInfo(companyData);
+        // APIレスポンスから正しいフィールドを取得
+        if (companyData.companyInfo) {
+          setCompanyInfo(companyData.companyInfo);
+        } else if (companyData.company_info) {
+          setCompanyInfo(companyData.company_info);
+        } else {
+          setCompanyInfo(companyData);
+        }
       }
     } catch (error) {
       logger.error('Error fetching data:', error);

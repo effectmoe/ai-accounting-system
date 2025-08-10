@@ -58,6 +58,7 @@ const nextConfig = {
         '@opentelemetry/api': false,
         '@opentelemetry/instrumentation': false,
         '@opentelemetry/instrumentation-http': false,
+        '@opentelemetry': false,
       };
     }
 
@@ -95,6 +96,9 @@ const nextConfig = {
         }),
         new webpack.IgnorePlugin({
           resourceRegExp: /rollup/,
+        }),
+        new webpack.IgnorePlugin({
+          resourceRegExp: /@opentelemetry/,
         })
       );
     }

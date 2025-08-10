@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>営業担当者問題 - デバッグガイド v2</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #1f2937;
+            border-bottom: 3px solid #ef4444;
+            padding-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .warning-badge {
+            background: #ef4444;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: normal;
+        }
+        .debug-section {
+            background: #fef2f2;
+            border: 2px solid #ef4444;
+            padding: 25px;
+            border-radius: 12px;
+            margin: 30px 0;
+        }
+        .debug-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #991b1b;
+            margin-bottom: 15px;
+        }
+        .console-command {
+            background: #1f2937;
+            color: #10b981;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            margin: 10px 0;
+            position: relative;
+        }
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .copy-btn:hover {
+            background: #2563eb;
+        }
+        .step-list {
+            counter-reset: step;
+            list-style: none;
+            padding: 0;
+        }
+        .step-item {
+            counter-increment: step;
+            padding: 20px 0;
+            border-bottom: 1px solid #e5e7eb;
+            position: relative;
+            padding-left: 60px;
+        }
+        .step-item:before {
+            content: counter(step);
+            position: absolute;
+            left: 0;
+            top: 20px;
+            background: #ef4444;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 18px;
+        }
+        .step-item:last-child {
+            border-bottom: none;
+        }
+        .expected-output {
+            background: #f3f4f6;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 13px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+        }
+        .problem-box {
+            background: #fef2f2;
+            border-left: 4px solid #ef4444;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .solution-box {
+            background: #f0fdf4;
+            border-left: 4px solid #10b981;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .highlight {
+            background: #fbbf24;
+            color: #1f2937;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>
+            🔍 営業担当者問題 - デバッグガイド v2
+            <span class="warning-badge">未解決</span>
+        </h1>
+        
+        <div class="debug-section">
+            <div class="debug-title">⚠️ 現在の問題</div>
+            <div class="problem-box">
+                <strong>症状：</strong>送信設定タブで「送信者名（担当者）」に入力した名前がプレビューに反映されない
+            </div>
+            <div class="problem-box">
+                <strong>期待される動作：</strong>入力した担当者名が「見積元」セクションの「担当者：」に表示される
+            </div>
+        </div>
+
+        <div class="debug-section">
+            <div class="debug-title">🛠️ デバッグ手順</div>
+            <ol class="step-list">
+                <li class="step-item">
+                    <strong>開発者ツールを開く</strong><br>
+                    Chrome: F12 または 右クリック → 「検証」<br>
+                    Consoleタブを選択
+                </li>
+                
+                <li class="step-item">
+                    <strong>初期値を確認</strong><br>
+                    ページをリロード後、以下のログを確認：
+                    <div class="expected-output">=== Initial Values Debug ===
+initialQuote.assignee: （値を確認）
+staffName initial value: （値を確認）
+companyInfo?.representativeName: （値を確認）</div>
+                </li>
+                
+                <li class="step-item">
+                    <strong>送信設定タブで担当者名を入力</strong><br>
+                    「送信者名（担当者）」フィールドに名前を入力<br>
+                    例：「営業担当者の名前」
+                </li>
+                
+                <li class="step-item">
+                    <strong>状態変更ログを確認</strong><br>
+                    入力後、以下のログが表示されるか確認：
+                    <div class="expected-output">[送信設定タブ] 担当者名変更: 営業担当者の名前
+=== staffName Changed Effect ===
+New staffName: 営業担当者の名前
+Current editedQuote.assignee before update: （前の値）
+Updating editedQuote.assignee from: （前の値） to: 営業担当者の名前
+Updated editedQuote: {...}</div>
+                </li>
+                
+                <li class="step-item">
+                    <strong>プレビュータブをクリック</strong><br>
+                    プレビュー生成時のログを確認：
+                    <div class="expected-output">=== Preview Generation Debug ===
+1. staffName: 営業担当者の名前
+2. editedQuote.assignee: 営業担当者の名前
+3. companyInfo?.representativeName: （会社代表者名）
+4. Final assignee (calculated): 営業担当者の名前
+5. Full previewQuote: {...}</div>
+                </li>
+                
+                <li class="step-item">
+                    <strong>手動でデータを確認</strong><br>
+                    Consoleで以下のコマンドを実行：
+                    <div class="console-command">
+// 現在の状態を確認
+document.querySelector('#sender-name')?.value
+<button class="copy-btn" onclick="copyToClipboard(this)">コピー</button>
+                    </div>
+                </li>
+            </ol>
+        </div>
+
+        <div class="debug-section">
+            <div class="debug-title">💡 考えられる原因</div>
+            
+            <div class="problem-box">
+                <strong>1. 初期値が空の場合</strong><br>
+                新規作成時に quote.assignee が undefined または空文字列
+            </div>
+            
+            <div class="problem-box">
+                <strong>2. 状態の同期タイミング</strong><br>
+                useEffect の実行タイミングとプレビュー生成のタイミングのずれ
+            </div>
+            
+            <div class="problem-box">
+                <strong>3. プレビューAPIへのデータ送信</strong><br>
+                プレビュー生成時に assignee が正しく送信されていない
+            </div>
+        </div>
+
+        <div class="debug-section">
+            <div class="debug-title">✅ 追加の確認コマンド</div>
+            
+            <div class="console-command">
+// グローバル変数として一時的に保存されているか確認
+window.staffName = '田中太郎';
+// プレビューを再生成
+document.querySelector('[data-tab="preview"]')?.click();
+<button class="copy-btn" onclick="copyToClipboard(this)">コピー</button>
+            </div>
+            
+            <div class="console-command">
+// React DevToolsがインストールされている場合
+// Components タブで HtmlQuoteEditor を探し、
+// props と state を確認
+<button class="copy-btn" onclick="copyToClipboard(this)">コピー</button>
+            </div>
+        </div>
+
+        <div class="solution-box">
+            <strong>🔧 一時的な回避策：</strong><br>
+            1. 基本情報タブの「担当者名」フィールドに入力<br>
+            2. その後、送信設定タブでも同じ名前を入力<br>
+            3. プレビューを確認
+        </div>
+    </div>
+
+    <script>
+        function copyToClipboard(button) {
+            const codeBlock = button.parentElement;
+            const code = codeBlock.textContent.replace('コピー', '').trim();
+            navigator.clipboard.writeText(code).then(() => {
+                button.textContent = 'コピー済み！';
+                setTimeout(() => {
+                    button.textContent = 'コピー';
+                }, 2000);
+            });
+        }
+    </script>
+</body>
+</html>
