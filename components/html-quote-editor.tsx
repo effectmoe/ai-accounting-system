@@ -296,18 +296,19 @@ export default function HtmlQuoteEditor({
                   <Card key={index} className="p-3">
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
-                        <p className="font-medium">{item.description}</p>
+                        <p className="font-medium">{item.itemName || item.description || ''}</p>
                         <p className="text-sm text-muted-foreground">
-                          {item.quantity} {item.unit} × ¥{item.unitPrice.toLocaleString()} = ¥{item.amount.toLocaleString()}
+                          {item.quantity} {item.unit || '個'} × ¥{item.unitPrice.toLocaleString()} = ¥{item.amount.toLocaleString()}
                         </p>
                       </div>
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => {
-                          const url = prompt(`${item.description}の詳細ページURLを入力:`, productLinks.get(item.description) || '');
+                          const itemText = item.itemName || item.description || '';
+                          const url = prompt(`${itemText}の詳細ページURLを入力:`, productLinks.get(itemText) || '');
                           if (url) {
-                            addProductLink(item.description, url);
+                            addProductLink(itemText, url);
                           }
                         }}
                       >

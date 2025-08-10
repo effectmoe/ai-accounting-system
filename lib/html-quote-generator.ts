@@ -121,7 +121,7 @@ function enhanceQuoteItems(
       
       // ツールチップを追加
       if (tooltips) {
-        const tooltip = findTooltipForItem(item.description, tooltips);
+        const tooltip = findTooltipForItem(item.itemName || item.description || '', tooltips);
         if (tooltip) {
           enhanced.tooltip = tooltip;
         }
@@ -129,16 +129,17 @@ function enhanceQuoteItems(
 
       // 商品リンクを追加
       if (productLinks) {
-        const link = productLinks.get(item.productId || item.description);
+        const link = productLinks.get(item.productId || item.itemName || item.description || '');
         if (link) {
           enhanced.productLink = link;
         }
       }
 
       // 詳細説明を追加
-      if (item.description.length > 50) {
-        enhanced.details = item.description;
-        enhanced.description = item.description.substring(0, 50) + '...';
+      const itemText = item.itemName || item.description || '';
+      if (itemText.length > 50) {
+        enhanced.details = itemText;
+        enhanced.itemName = itemText.substring(0, 50) + '...';
       }
 
       return enhanced;
@@ -182,14 +183,14 @@ function generatePlainText(quote: Quote, companyInfo: CompanyInfo): string {
   lines.push('');
   lines.push(`見積書番号: ${quote.quoteNumber}`);
   lines.push(`発行日: ${formatDate(quote.issueDate)}`);
-  lines.push(`有効期限: ${formatDate(quote.validUntil)}`);
+  lines.push(`有効期限: ${formatDate(quote.validityDate)}`);
   lines.push('');
   lines.push('-' .repeat(60));
   lines.push('【見積内容】');
   lines.push('-' .repeat(60));
   
   quote.items.forEach((item, index) => {
-    lines.push(`${index + 1}. ${item.description}`);
+    lines.push(`${index + 1}. ${item.itemName || item.description || ''}`);
     lines.push(`   数量: ${item.quantity} ${item.unit || '個'}`);
     lines.push(`   単価: ${formatCurrency(item.unitPrice)}`);
     lines.push(`   金額: ${formatCurrency(item.amount)}`);
@@ -210,9 +211,16 @@ function generatePlainText(quote: Quote, companyInfo: CompanyInfo): string {
   
   lines.push('');
   lines.push('=' .repeat(60));
-  lines.push(companyInfo.name);
-  if (companyInfo.address) {
-    lines.push(`〒${companyInfo.postalCode} ${companyInfo.address}`);
+  lines.push(companyInfo.companyName || companyInfo.name || '');
+  if (companyInfo.postalCode) {
+    const address = [
+      `〒${companyInfo.postalCode}`,
+      companyInfo.prefecture,
+      companyInfo.city,
+      companyInfo.address1,
+      companyInfo.address2
+    ].filter(Boolean).join(' ');
+    lines.push(address);
   }
   if (companyInfo.phone) {
     lines.push(`TEL: ${companyInfo.phone}`);
@@ -231,10 +239,11 @@ function generatePlainText(quote: Quote, companyInfo: CompanyInfo): string {
  * 件名生成
  */
 function generateSubject(quote: Quote, companyInfo: CompanyInfo): string {
+  const companyName = companyInfo.companyName || companyInfo.name || '';
   if (quote.title) {
-    return `【お見積書】${quote.title} - ${companyInfo.name}`;
+    return `【お見積書】${quote.title} - ${companyName}`;
   }
-  return `お見積書（No.${quote.quoteNumber}）- ${companyInfo.name}`;
+  return `お見積書（No.${quote.quoteNumber}）- ${companyName}`;
 }
 
 /**
@@ -245,7 +254,7 @@ function generatePreviewText(quote: Quote, companyInfo: CompanyInfo): string {
   if (quote.title) {
     return `${quote.title} お見積金額：${total}`;
   }
-  return `お見積金額：${total} | 有効期限：${formatDate(quote.validUntil)}`;
+  return `お見積金額：${total} | 有効期限：${formatDate(quote.validityDate)}`;
 }
 
 /**
