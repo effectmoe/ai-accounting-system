@@ -316,132 +316,141 @@ export default function QuoteDetailPage({ params }: QuoteDetailPageProps) {
           </Button>
           <h1 className="text-3xl font-bold">見積書詳細</h1>
         </div>
-        <div className="flex gap-2">
-          {/* 編集ボタン（承認済み・請求書変換済み以外） */}
-          {quote.status !== 'accepted' && quote.status !== 'converted' && (
-            <>
-              <Button
-                variant="outline"
-                onClick={() => router.push(`/quotes/${quote._id}/edit`)}
-              >
-                <Edit className="mr-2 h-4 w-4" />
-                編集
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => router.push(`/quotes/${quote._id}/edit?mode=ai`)}
-              >
-                <MessageSquare className="mr-2 h-4 w-4" />
-                AI会話で編集
-              </Button>
-            </>
-          )}
-          <Button
-            variant="outline"
-            onClick={() => setShowPdfPreview(true)}
-          >
-            <Eye className="mr-2 h-4 w-4" />
-            プレビュー
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => {
-              // 新しいウィンドウを開いて印刷ダイアログを表示
-              const printWindow = window.open(`/api/quotes/${quote._id}/pdf?print=true`, '_blank', 'width=800,height=600');
-              if (printWindow) {
-                printWindow.focus();
-              }
-            }}
-          >
-            <Download className="mr-2 h-4 w-4" />
-            PDF印刷
-          </Button>
-          {/* HTML見積書ボタン */}
-          <Button
-            variant="outline"
-            onClick={() => router.push(`/quotes/${quote._id}/html-editor`)}
-            className="bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 border-purple-200"
-          >
-            <Sparkles className="mr-2 h-4 w-4 text-purple-600" />
-            HTML見積書
-          </Button>
-          {/* メール送信ボタン */}
-          <Button
-            variant="outline"
-            onClick={() => setShowEmailModal(true)}
-          >
-            <Send className="mr-2 h-4 w-4" />
-            メール送信
-          </Button>
-          {quote.status === 'draft' && (
-            <Button
-              onClick={() => updateQuoteStatus('saved')}
-              disabled={isUpdatingStatus}
-            >
-              <Send className="mr-2 h-4 w-4" />
-              保存済みにする
-            </Button>
-          )}
-          {quote.status === 'saved' && (
-            <Button
-              variant="default"
-              onClick={() => updateQuoteStatus('accepted')}
-              disabled={isUpdatingStatus}
-            >
-              <CheckCircle className="mr-2 h-4 w-4" />
-              承認済みにする
-            </Button>
-          )}
-          {quote.status === 'accepted' && !quote.convertedToInvoiceId && (
-            <Button
-              onClick={handleConvertToInvoice}
-              disabled={isConverting}
-              className="bg-purple-600 hover:bg-purple-700 text-white"
-            >
-              {isConverting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  変換中...
-                </>
-              ) : (
-                <>
-                  <Calculator className="mr-2 h-4 w-4" />
-                  請求書に変換
-                </>
-              )}
-            </Button>
-          )}
-          {/* 納品書作成ボタン */}
-          {['sent', 'saved', 'accepted'].includes(quote.status) && (
+        <div className="flex flex-col gap-2">
+          {/* 1行目: 基本操作ボタン */}
+          <div className="flex gap-2 justify-end">
+            {/* 編集ボタン（承認済み・請求書変換済み以外） */}
+            {quote.status !== 'accepted' && quote.status !== 'converted' && (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => router.push(`/quotes/${quote._id}/edit`)}
+                >
+                  <Edit className="mr-2 h-4 w-4" />
+                  編集
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => router.push(`/quotes/${quote._id}/edit?mode=ai`)}
+                >
+                  <MessageSquare className="mr-2 h-4 w-4" />
+                  AI会話で編集
+                </Button>
+              </>
+            )}
             <Button
               variant="outline"
-              onClick={handleConvertToDeliveryNote}
-              disabled={isConverting}
-              className="bg-orange-50 hover:bg-orange-100 border-orange-200 text-orange-700"
+              size="sm"
+              onClick={() => setShowPdfPreview(true)}
             >
-              {isConverting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  変換中...
-                </>
-              ) : (
-                <>
-                  <Package className="mr-2 h-4 w-4" />
-                  納品書作成
-                </>
-              )}
+              <Eye className="mr-2 h-4 w-4" />
+              プレビュー
             </Button>
-          )}
-          {['draft', 'saved'].includes(quote.status) && (
             <Button
-              variant="destructive"
-              onClick={handleDelete}
-              disabled={isUpdatingStatus}
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                // 新しいウィンドウを開いて印刷ダイアログを表示
+                const printWindow = window.open(`/api/quotes/${quote._id}/pdf?print=true`, '_blank', 'width=800,height=600');
+                if (printWindow) {
+                  printWindow.focus();
+                }
+              }}
             >
-              <Trash2 className="mr-2 h-4 w-4" />
-              キャンセル
+              <Download className="mr-2 h-4 w-4" />
+              PDF印刷
             </Button>
-          )}
+            {/* HTML見積書ボタン */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => router.push(`/quotes/${quote._id}/html-editor`)}
+              className="bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 border-purple-200"
+            >
+              <Sparkles className="mr-2 h-4 w-4 text-purple-600" />
+              HTML見積書エディタ
+            </Button>
+          </div>
+          
+          {/* 2行目: ステータス変更・アクションボタン */}
+          <div className="flex gap-2 justify-end">
+            {quote.status === 'draft' && (
+              <Button
+                size="sm"
+                onClick={() => updateQuoteStatus('saved')}
+                disabled={isUpdatingStatus}
+              >
+                <Send className="mr-2 h-4 w-4" />
+                保存済みにする
+              </Button>
+            )}
+            {quote.status === 'saved' && (
+              <Button
+                variant="default"
+                size="sm"
+                onClick={() => updateQuoteStatus('accepted')}
+                disabled={isUpdatingStatus}
+              >
+                <CheckCircle className="mr-2 h-4 w-4" />
+                承認済みにする
+              </Button>
+            )}
+            {quote.status === 'accepted' && !quote.convertedToInvoiceId && (
+              <Button
+                size="sm"
+                onClick={handleConvertToInvoice}
+                disabled={isConverting}
+                className="bg-purple-600 hover:bg-purple-700 text-white"
+              >
+                {isConverting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    変換中...
+                  </>
+                ) : (
+                  <>
+                    <Calculator className="mr-2 h-4 w-4" />
+                    請求書に変換
+                  </>
+                )}
+              </Button>
+            )}
+            {/* 納品書作成ボタン */}
+            {['sent', 'saved', 'accepted'].includes(quote.status) && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleConvertToDeliveryNote}
+                disabled={isConverting}
+                className="bg-orange-50 hover:bg-orange-100 border-orange-200 text-orange-700"
+              >
+                {isConverting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    変換中...
+                  </>
+                ) : (
+                  <>
+                    <Package className="mr-2 h-4 w-4" />
+                    納品書作成
+                  </>
+                )}
+              </Button>
+            )}
+            {['draft', 'saved'].includes(quote.status) && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleDelete}
+                disabled={isUpdatingStatus}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                キャンセル
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 

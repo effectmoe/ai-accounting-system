@@ -115,9 +115,9 @@ export default function AcceptQuotePage() {
           </CardHeader>
           <CardContent>
             <p className="text-center text-muted-foreground mb-6">
-              担当者より改めてご連絡させていただきます。
+              承認内容を受け付けました。
               <br />
-              承認済みのPDFはメールでお送りします。
+              詳細は担当者よりご連絡させていただきます。
             </p>
             <div className="flex flex-col gap-2">
               <Button onClick={() => router.push(`/quotes/view/${params.id}`)}>

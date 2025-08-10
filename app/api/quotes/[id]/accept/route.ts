@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 import { logger } from '@/lib/logger';
-import nodemailer from 'nodemailer';
 import { generateQuotePDF } from '@/lib/pdf-generator';
+import { sendQuoteEmail } from '@/lib/resend-service';
 
 export async function POST(
   request: NextRequest,
@@ -65,29 +65,17 @@ export async function POST(
       }
     });
 
-    // メール通知を送信
+    // Resendでメール通知を送信
     try {
+      // 会社情報を取得
+      const companyInfo = await db.collection('company_info').findOne({});
+      
       // PDFを生成
       const pdfBuffer = await generateQuotePDF(quote);
       
-      // メール送信設定
-      const transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST || 'smtp.gmail.com',
-        port: parseInt(process.env.SMTP_PORT || '587'),
-        secure: false,
-        auth: {
-          user: process.env.SMTP_USER,
-          pass: process.env.SMTP_PASS,
-        },
-      });
-      
       // 1. 顧客への承認確認メール（PDF添付）
       if (quote.customer?.email) {
-        await transporter.sendMail({
-          from: process.env.SMTP_FROM || 'noreply@example.com',
-          to: quote.customer.email,
-          subject: `【承認確認】見積書 ${quote.quoteNumber}`,
-          text: `
+        const customMessage = `
 お世話になっております。
 
 見積書「${quote.quoteNumber}」をご承認いただき、誠にありがとうございます。
@@ -96,39 +84,36 @@ export async function POST(
 見積金額: ¥${quote.totalAmount.toLocaleString()}（税込）
 
 ご不明な点がございましたら、お気軽にお問い合わせください。
-
 よろしくお願いいたします。
-          `,
-          html: `
-<p>お世話になっております。</p>
-<p>見積書「${quote.quoteNumber}」をご承認いただき、誠にありがとうございます。<br>
-正式な見積書PDFを添付させていただきます。</p>
-<p><strong>見積金額: ¥${quote.totalAmount.toLocaleString()}（税込）</strong></p>
-<p>ご不明な点がございましたら、お気軽にお問い合わせください。</p>
-<p>よろしくお願いいたします。</p>
-          `,
-          attachments: [
-            {
-              filename: `見積書_${quote.quoteNumber}.pdf`,
-              content: pdfBuffer,
-              contentType: 'application/pdf',
-            },
-          ],
+        `;
+        
+        const emailResult = await sendQuoteEmail({
+          quote,
+          companyInfo: companyInfo || {},
+          recipientEmail: quote.customer.email,
+          recipientName: quote.customer.contacts?.[0]?.name || quote.customer.companyName,
+          customMessage,
+          attachPdf: true,
+          pdfBuffer,
+          replyTo: companyInfo?.email,
+          tags: [
+            { name: 'type', value: 'acceptance_confirmation' },
+            { name: 'action', value: 'quote_accepted' }
+          ]
         });
         
-        logger.info(`Acceptance email sent to ${quote.customer.email} for quote ${quote.quoteNumber}`);
+        if (emailResult.success) {
+          logger.info(`Acceptance email sent to ${quote.customer.email} for quote ${quote.quoteNumber}`);
+        } else {
+          logger.error(`Failed to send acceptance email: ${emailResult.error}`);
+        }
       }
       
       // 2. 社内担当者への承認通知メール
-      const companyInfo = await db.collection('company_info').findOne({});
-      const internalEmail = companyInfo?.email || process.env.INTERNAL_NOTIFY_EMAIL || process.env.SMTP_FROM;
+      const internalEmail = companyInfo?.email || process.env.INTERNAL_NOTIFY_EMAIL;
       
       if (internalEmail) {
-        await transporter.sendMail({
-          from: process.env.SMTP_FROM || 'noreply@example.com',
-          to: internalEmail,
-          subject: `【承認通知】見積書 ${quote.quoteNumber} が承認されました`,
-          text: `
+        const internalMessage = `
 見積書が承認されました。
 
 見積書番号: ${quote.quoteNumber}
@@ -147,67 +132,32 @@ IPアドレス: ${ipAddress || '不明'}
 3. 顧客への追加連絡（必要に応じて）
 
 詳細は管理画面でご確認ください。
-          `,
-          html: `
-<h3>見積書承認通知</h3>
-<p>見積書が承認されました。</p>
-
-<table style="border-collapse: collapse; margin: 20px 0;">
-  <tr>
-    <td style="padding: 8px; border: 1px solid #ddd; background: #f5f5f5; font-weight: bold;">見積書番号</td>
-    <td style="padding: 8px; border: 1px solid #ddd;">${quote.quoteNumber}</td>
-  </tr>
-  <tr>
-    <td style="padding: 8px; border: 1px solid #ddd; background: #f5f5f5; font-weight: bold;">顧客名</td>
-    <td style="padding: 8px; border: 1px solid #ddd;">${quote.customer?.companyName || '未設定'}</td>
-  </tr>
-  <tr>
-    <td style="padding: 8px; border: 1px solid #ddd; background: #f5f5f5; font-weight: bold;">見積金額</td>
-    <td style="padding: 8px; border: 1px solid #ddd;">¥${quote.totalAmount.toLocaleString()}（税込）</td>
-  </tr>
-  <tr>
-    <td style="padding: 8px; border: 1px solid #ddd; background: #f5f5f5; font-weight: bold;">承認日時</td>
-    <td style="padding: 8px; border: 1px solid #ddd;">${new Date(acceptedAt).toLocaleString('ja-JP')}</td>
-  </tr>
-  <tr>
-    <td style="padding: 8px; border: 1px solid #ddd; background: #f5f5f5; font-weight: bold;">承認者</td>
-    <td style="padding: 8px; border: 1px solid #ddd;">${acceptedBy || '未設定'}</td>
-  </tr>
-</table>
-
-<h4>承認者情報</h4>
-<ul>
-  <li>IPアドレス: ${ipAddress || '不明'}</li>
-  <li>ブラウザ: ${userAgent || '不明'}</li>
-</ul>
-
-<h4>次のアクション</h4>
-<ol>
-  <li>請求書の発行準備</li>
-  <li>納品・作業スケジュールの確認</li>
-  <li>顧客への追加連絡（必要に応じて）</li>
-</ol>
-
-<p style="margin-top: 30px;">
-  <a href="${process.env.NEXT_PUBLIC_BASE_URL || 'https://accounting-automation.vercel.app'}/quotes/${quoteId}" 
-     style="background: #3B82F6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">
-    管理画面で詳細を確認
-  </a>
-</p>
-          `,
-          attachments: [
-            {
-              filename: `見積書_${quote.quoteNumber}.pdf`,
-              content: pdfBuffer,
-              contentType: 'application/pdf',
-            },
-          ],
+        `;
+        
+        const internalEmailResult = await sendQuoteEmail({
+          quote: {
+            ...quote,
+            title: `【承認通知】見積書 ${quote.quoteNumber} が承認されました`
+          },
+          companyInfo: companyInfo || {},
+          recipientEmail: internalEmail,
+          customMessage: internalMessage,
+          attachPdf: true,
+          pdfBuffer,
+          tags: [
+            { name: 'type', value: 'internal_notification' },
+            { name: 'action', value: 'quote_accepted' }
+          ]
         });
         
-        logger.info(`Internal notification sent for quote ${quote.quoteNumber} approval`);
+        if (internalEmailResult.success) {
+          logger.info(`Internal notification sent for quote ${quote.quoteNumber} approval`);
+        } else {
+          logger.error(`Failed to send internal notification: ${internalEmailResult.error}`);
+        }
       }
     } catch (emailError) {
-      logger.error('Error sending acceptance email:', emailError);
+      logger.error('Error sending acceptance emails via Resend:', emailError);
       // メール送信エラーは承認処理を失敗させない
     }
 
