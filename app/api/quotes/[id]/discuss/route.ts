@@ -153,9 +153,10 @@ ${message || 'ご質問内容が入力されていません'}
       });
       
       logger.info(`Discussion email sent for quote ${quote.quoteNumber}`);
-    } catch (emailError) {
-      logger.error('Error sending discussion email:', emailError);
-      // メール送信エラーは処理を失敗させない
+      } catch (emailError) {
+        logger.error('Error sending discussion email:', emailError);
+        // メール送信エラーは処理を失敗させない
+      }
     }
 
     logger.info(`Inquiry received for quote ${quote.quoteNumber} from ${contactEmail}`);
