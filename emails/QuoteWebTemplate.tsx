@@ -529,9 +529,9 @@ export default function QuoteWebTemplate({
         {/* 取引先情報（2カラム→1カラム） */}
         <section style={partiesSectionStyle}>
           <div style={partiesGridStyle} className="quote-parties-grid">
-            {/* 見積先 */}
+            {/* 送信先 */}
             <div style={partyCardStyle} className="party-card">
-              <h3 style={partyTitleStyle}>お客様</h3>
+              <h3 style={partyTitleStyle}>送信先</h3>
               <div style={partyDetailsStyle} className="party-details">
                 <div style={partyCompanyStyle}>{quote.customer?.companyName || '顧客未設定'}</div>
                 {quote.customer?.contacts?.[0]?.name && (
@@ -553,7 +553,7 @@ export default function QuoteWebTemplate({
 
             {/* 発行元 */}
             <div style={partyCardStyle} className="party-card">
-              <h3 style={partyTitleStyle}>当社</h3>
+              <h3 style={partyTitleStyle}>発行元</h3>
               <div style={partyDetailsStyle} className="party-details">
                 <div style={partyCompanyStyle}>{companyInfo?.companyName || companyInfo?.name || '会社名未設定'}</div>
                 {/* 住所の組み立て */}
