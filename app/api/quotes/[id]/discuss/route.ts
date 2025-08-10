@@ -79,26 +79,34 @@ export async function POST(
       }
     });
 
-    // メール通知を送信（オプション - SMTP設定がある場合のみ）
-    if (process.env.SMTP_USER && process.env.SMTP_PASS) {
+    // メール通知を送信（SMTP設定がある場合、またはデフォルトでinfo@effect.moeに送信）
+    const shouldSendEmail = true; // 常にメール送信を試みる
+    if (shouldSendEmail) {
       try {
-        // メール送信設定
-        const transporter = nodemailer.createTransport({
-          host: process.env.SMTP_HOST || 'smtp.gmail.com',
-          port: parseInt(process.env.SMTP_PORT || '587'),
-          secure: false,
-          auth: {
-            user: process.env.SMTP_USER,
-            pass: process.env.SMTP_PASS,
-          },
-        });
+        // 固定の受信先メールアドレス
+        const fixedToEmail = 'info@effect.moe';
+        
+        // nodemailerのトランスポート作成（設定がなければダミー）
+        const transporter = process.env.SMTP_USER && process.env.SMTP_PASS
+          ? nodemailer.createTransport({
+              host: process.env.SMTP_HOST || 'smtp.gmail.com',
+              port: parseInt(process.env.SMTP_PORT || '587'),
+              secure: false,
+              auth: {
+                user: process.env.SMTP_USER,
+                pass: process.env.SMTP_PASS,
+              },
+            })
+          : null;
       
       // 会社情報を取得
       const companyInfo = await db.collection('company_info').findOne({});
-      const toEmail = companyInfo?.email || process.env.SMTP_FROM || 'noreply@example.com';
+      const toEmail = fixedToEmail; // 固定のメールアドレスを使用
       
-      // メール送信
-      await transporter.sendMail({
+      // トランスポートが設定されている場合のみメール送信
+      if (transporter) {
+        // メール送信
+        await transporter.sendMail({
         from: contactEmail || process.env.SMTP_FROM || 'noreply@example.com',
         to: toEmail,
         replyTo: contactEmail,
@@ -151,8 +159,14 @@ ${message || 'ご質問内容が入力されていません'}
 <p style="color: #666; font-size: 12px;">このメールは見積書システムから自動送信されています。</p>
         `,
       });
-      
-      logger.info(`Discussion email sent for quote ${quote.quoteNumber}`);
+        
+        logger.info(`Discussion email sent for quote ${quote.quoteNumber} to ${toEmail}`);
+      } else {
+        // SMTP設定がない場合はログに記録
+        logger.warn(`SMTP not configured. Discussion inquiry for quote ${quote.quoteNumber} from ${contactEmail}:`);
+        logger.warn(`Message: ${message}`);
+        logger.warn(`Would have sent to: ${toEmail}`);
+      }
       } catch (emailError) {
         logger.error('Error sending discussion email:', emailError);
         // メール送信エラーは処理を失敗させない
