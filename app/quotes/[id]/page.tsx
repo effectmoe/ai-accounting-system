@@ -372,6 +372,16 @@ export default function QuoteDetailPage({ params }: QuoteDetailPageProps) {
               <Sparkles className="mr-2 h-4 w-4 text-purple-600" />
               HTML見積書エディタ
             </Button>
+            {/* メール送信ボタン（プレビューページへ） */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => router.push(`/quotes/${quote._id}/preview`)}
+              className="bg-gradient-to-r from-blue-50 to-cyan-50 hover:from-blue-100 hover:to-cyan-100 border-blue-200"
+            >
+              <Send className="mr-2 h-4 w-4 text-blue-600" />
+              メール送信
+            </Button>
           </div>
           
           {/* 2行目: ステータス変更・アクションボタン */}
