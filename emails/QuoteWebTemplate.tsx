@@ -688,26 +688,16 @@ export default function QuoteWebTemplate({
                 </p>
               </div>
             )}
-            {/* 相談ボタンをmailtoリンクに変更 */}
-            <div style={buttonWrapperStyle}>
-              <a 
-                href={`mailto:${companyInfo?.email || 'info@example.com'}?subject=${encodeURIComponent(`【ご質問】見積書 ${quote.quoteNumber} について`)}&body=${encodeURIComponent(
-                  `お世話になっております。\n\n` +
-                  `見積書番号: ${quote.quoteNumber}\n` +
-                  `お客様: ${quote.customer?.companyName || '未設定'}\n` +
-                  `見積金額: ¥${quote.totalAmount?.toLocaleString() || '0'}（税込）\n\n` +
-                  `【ご質問内容】\n\n\n\n` +
-                  `よろしくお願いいたします。`
-                )}`}
-                style={secondaryButtonStyle}
-                className="cta-button"
-              >
-                相談する
-              </a>
-              <p style={buttonDescriptionStyle}>
-                ご質問・ご相談はこちら
-              </p>
-            </div>
+            {discussUrl && (
+              <div style={buttonWrapperStyle}>
+                <a href={discussUrl} style={secondaryButtonStyle} className="cta-button">
+                  相談する
+                </a>
+                <p style={buttonDescriptionStyle}>
+                  ご質問・ご相談はこちら
+                </p>
+              </div>
+            )}
           </div>
         </section>
 
