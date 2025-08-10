@@ -38,6 +38,58 @@ interface SuggestedOption {
   ctaUrl: string;
 }
 
+// ツールチップ用語を検出してライトグレーマーカーを付ける関数
+const renderDetailsWithTooltip = (details: string, tooltip: string) => {
+  // ツールチップ内の主要な用語を抽出（ROI、KPI、CRMなどの英語略語を優先）
+  const englishKeywords = tooltip.match(/\b[A-Z]{2,}\b/g) || [];
+  // カタカナのキーワードも抽出
+  const katakanaKeywords = tooltip.match(/[ァ-ヶー]{3,}/g) || [];
+  // 専門用語的な漢字のキーワードも抽出
+  const kanjiKeywords = tooltip.match(/[一-龯]{2,4}(?:率|額|費|価|値|量|数)/g) || [];
+  
+  const allKeywords = [...englishKeywords, ...katakanaKeywords, ...kanjiKeywords];
+  let processedDetails = details;
+  
+  // 各キーワードをライトグレーマーカー付きスパンに変換
+  allKeywords.forEach(keyword => {
+    if (details.includes(keyword)) {
+      const markerStyle = `
+        background: linear-gradient(180deg, transparent 60%, #e5e7eb 60%);
+        cursor: help;
+        position: relative;
+        border-radius: 2px;
+        padding: 0 1px;
+      `;
+      processedDetails = processedDetails.replace(
+        new RegExp(`(${keyword})`, 'g'),
+        `<span style="${markerStyle}" title="${tooltip}">$1</span>`
+      );
+    }
+  });
+  
+  // キーワードが見つからない場合は、文頭の重要そうな語句にマーカーを付ける
+  if (processedDetails === details && details.length > 0) {
+    // 最初の単語（英数字または3文字以上の語句）を対象にする
+    const firstWord = details.match(/^[A-Za-z0-9]+|^[ァ-ヶー]{2,}|^[一-龯]{2,}/);
+    if (firstWord && firstWord[0]) {
+      const word = firstWord[0];
+      const markerStyle = `
+        background: linear-gradient(180deg, transparent 60%, #e5e7eb 60%);
+        cursor: help;
+        position: relative;
+        border-radius: 2px;
+        padding: 0 1px;
+      `;
+      processedDetails = details.replace(
+        word,
+        `<span style="${markerStyle}" title="${tooltip}">${word}</span>`
+      );
+    }
+  }
+  
+  return <span dangerouslySetInnerHTML={{ __html: processedDetails }} />;
+};
+
 export default function QuoteHtmlTemplate({
   quote,
   companyInfo,
@@ -73,22 +125,22 @@ export default function QuoteHtmlTemplate({
     <Html>
       <Head />
       <Preview>
-        {quote.title || `お見積書 #${quote.quoteNumber}`} - {companyInfo.companyName || companyInfo.name || ''}より
+        {quote.title || `お見積書 #${quote.quoteNumber}`} - {companyInfo?.companyName || companyInfo?.name || '株式会社'}より
       </Preview>
       <Body style={main}>
         <Container style={container}>
           {/* ヘッダー */}
           <Section style={header}>
-            {companyInfo.logoUrl && (
+            {companyInfo?.logoUrl && (
               <Img
                 src={companyInfo.logoUrl}
                 width="150"
                 height="50"
-                alt={companyInfo.companyName || companyInfo.name || ''}
+                alt={companyInfo?.companyName || companyInfo?.name || ''}
                 style={logo}
               />
             )}
-            <Text style={headerText}>{companyInfo.companyName || companyInfo.name || ''}</Text>
+            <Text style={headerText}>{companyInfo?.companyName || companyInfo?.name || '会社名'}</Text>
           </Section>
 
           {/* オンライン表示リンク */}
@@ -104,11 +156,9 @@ export default function QuoteHtmlTemplate({
           <Section style={mainContent}>
             <Heading style={h1}>お見積書</Heading>
             
-            {recipientName && (
-              <Text style={greeting}>
-                {recipientName} 様
-              </Text>
-            )}
+            <Text style={greeting}>
+              {recipientName || quote.customerName || quote.customer?.name || 'お客様'} 様
+            </Text>
 
             <Text style={message}>
               平素より格別のご高配を賜り、厚く御礼申し上げます。
@@ -153,18 +203,23 @@ export default function QuoteHtmlTemplate({
                       <Text style={itemName}>
                         {item.productLink ? (
                           <Link href={item.productLink} style={productLink}>
-                            {item.itemName || item.description || ''}
+                            {item.tooltip ? 
+                              renderDetailsWithTooltip(item.itemName || item.description || '', item.tooltip) :
+                              (item.itemName || item.description || '')
+                            }
                           </Link>
                         ) : (
-                          item.itemName || item.description || ''
+                          item.tooltip ? 
+                            renderDetailsWithTooltip(item.itemName || item.description || '', item.tooltip) :
+                            (item.itemName || item.description || '')
                         )}
                       </Text>
                       {item.details && (
-                        <Text style={itemDetails}>{item.details}</Text>
-                      )}
-                      {item.tooltip && (
-                        <Text style={tooltip}>
-                          💡 {item.tooltip}
+                        <Text style={item.tooltip ? itemDetailsWithTooltip : itemDetails}>
+                          {item.tooltip ? 
+                            renderDetailsWithTooltip(item.details, item.tooltip) :
+                            item.details
+                          }
                         </Text>
                       )}
                     </Column>
@@ -300,28 +355,47 @@ export default function QuoteHtmlTemplate({
               <Hr style={divider} />
               <Row>
                 <Column>
-                  <Text style={companyName}>{companyInfo.companyName || companyInfo.name || ''}</Text>
+                  <Text style={companyName}>{companyInfo?.companyName || companyInfo?.name || '株式会社'}</Text>
                   <Text style={companyDetails}>
-                    {companyInfo.postalCode && `〒${companyInfo.postalCode}`}
-                    {companyInfo.prefecture && ` ${companyInfo.prefecture}`}
-                    {companyInfo.city && `${companyInfo.city}`}
-                    {companyInfo.address1 && `${companyInfo.address1}`}
-                    {companyInfo.address2 && ` ${companyInfo.address2}`}
+                    {companyInfo?.postalCode && `〒${companyInfo.postalCode}`}
+                    {companyInfo?.prefecture && ` ${companyInfo.prefecture}`}
+                    {companyInfo?.city && `${companyInfo.city}`}
+                    {companyInfo?.address1 && `${companyInfo.address1}`}
+                    {companyInfo?.address2 && ` ${companyInfo.address2}`}
                   </Text>
-                  {companyInfo.phone && (
+                  {companyInfo?.phone && (
                     <Text style={companyDetails}>
                       TEL: {companyInfo.phone}
                     </Text>
                   )}
-                  {companyInfo.email && (
+                  {companyInfo?.email && (
                     <Text style={companyDetails}>
                       Email: {companyInfo.email}
                     </Text>
                   )}
-                  {companyInfo.website && (
+                  {companyInfo?.website && (
                     <Link href={companyInfo.website} style={companyWebsite}>
                       {companyInfo.website}
                     </Link>
+                  )}
+                  {quote.assignee && (
+                    <Text style={companyDetails}>
+                      担当者: {quote.assignee}
+                    </Text>
+                  )}
+                  <Hr style={signatureDivider} />
+                  <Text style={signatureText}>
+                    {companyInfo?.companyName || companyInfo?.name || '株式会社'}
+                  </Text>
+                  {companyInfo?.representativeName && (
+                    <Text style={signatureName}>
+                      代表取締役 {companyInfo.representativeName}
+                    </Text>
+                  )}
+                  {quote.assignee && (
+                    <Text style={signatureAssignee}>
+                      担当: {quote.assignee}
+                    </Text>
                   )}
                 </Column>
               </Row>
@@ -331,7 +405,7 @@ export default function QuoteHtmlTemplate({
           {/* フッター */}
           <Section style={footer}>
             <Text style={footerText}>
-              このメールは {companyInfo.companyName || companyInfo.name || ''} より送信されました。
+              このメールは {companyInfo?.companyName || companyInfo?.name || '株式会社'} より送信されました。
             </Text>
             <Text style={footerLinks}>
               <Link href={`${baseUrl}/privacy`} style={footerLink}>
@@ -519,15 +593,14 @@ const itemDetails = {
   lineHeight: '20px',
 };
 
-const tooltip = {
+const itemDetailsWithTooltip = {
   fontSize: '13px',
-  color: '#059669',
-  backgroundColor: '#ecfdf5',
-  padding: '4px 8px',
-  borderRadius: '4px',
-  display: 'inline-block',
+  color: '#6b7280',
   margin: '4px 0',
+  lineHeight: '20px',
 };
+
+// tooltipHintとtooltipMarkerは削除（新しいマーカー方式を使用）
 
 const itemQuantityColumn = {
   width: '15%',
@@ -773,4 +846,29 @@ const footerLinks = {
 const footerLink = {
   color: '#3B82F6',
   textDecoration: 'none',
+};
+
+const signatureDivider = {
+  borderColor: '#e5e7eb',
+  margin: '20px 0 10px 0',
+};
+
+const signatureText = {
+  fontSize: '14px',
+  color: '#1f2937',
+  fontWeight: 'bold',
+  margin: '10px 0 5px 0',
+};
+
+const signatureName = {
+  fontSize: '16px',
+  color: '#1f2937',
+  fontWeight: 'bold',
+  margin: '5px 0',
+};
+
+const signatureAssignee = {
+  fontSize: '13px',
+  color: '#6b7280',
+  margin: '5px 0',
 };

@@ -1,5 +1,6 @@
 import { render } from '@react-email/render';
 import QuoteHtmlTemplate from '@/emails/QuoteHtmlTemplate';
+import QuoteWebTemplate from '@/emails/QuoteWebTemplate';
 import { Quote, CompanyInfo } from '@/types/collections';
 import { logger } from '@/lib/logger';
 
@@ -13,6 +14,7 @@ export interface HtmlQuoteOptions {
   suggestedOptions?: SuggestedOption[];
   tooltips?: Map<string, string>;
   productLinks?: Map<string, string>;
+  useWebLayout?: boolean; // Web最適化レイアウト使用フラグ
 }
 
 export interface SuggestedOption {
@@ -49,6 +51,7 @@ export async function generateHtmlQuote(
       suggestedOptions = [],
       tooltips,
       productLinks,
+      useWebLayout = false, // デフォルトは従来のメールテンプレート
     } = options;
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://accounting-automation.vercel.app';
@@ -65,9 +68,11 @@ export async function generateHtmlQuote(
       ? `${baseUrl}/api/tracking/open?id=${trackingId}&doc=quote&qid=${quote._id}`
       : undefined;
 
-    // HTML生成
-    const html = render(
-      QuoteHtmlTemplate({
+    // HTML生成 - レイアウトに応じてテンプレートを選択
+    const TemplateComponent = useWebLayout ? QuoteWebTemplate : QuoteHtmlTemplate;
+    
+    const html = await render(
+      TemplateComponent({
         quote: enhancedQuote,
         companyInfo,
         recipientName,
@@ -77,7 +82,10 @@ export async function generateHtmlQuote(
         trackingPixelUrl,
         customMessage,
         suggestedOptions: includeInteractiveElements ? suggestedOptions : [],
-      })
+      }),
+      {
+        pretty: true,
+      }
     );
 
     // プレーンテキスト版も生成

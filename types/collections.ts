@@ -228,6 +228,9 @@ export interface Quote {
   title?: string; // 見積書のタイトル（件名）
   customerId: ObjectId;
   customer?: Customer; // Populated field
+  customerName?: string; // 顧客名
+  customerEmail?: string; // 顧客メールアドレス
+  assignee?: string; // 担当者名
   issueDate: Date;
   validityDate: Date; // 見積書有効期限
   items: QuoteItem[];
@@ -287,11 +290,17 @@ export interface QuoteItem {
   itemName: string;
   description?: string;
   quantity: number;
+  unit?: string; // 単位（個、時間、回など）
   unitPrice: number;
   amount: number;
   taxRate?: number;
   taxAmount?: number;
   notes?: string;
+  // HTML見積書用の拡張フィールド
+  productId?: string; // 商品ID
+  productLink?: string; // 商品詳細ページへのリンク
+  tooltip?: string; // ツールチップ説明文
+  details?: string; // 詳細説明
 }
 
 // 納品書インターフェース

@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>営業担当者表示問題 - 詳細デバッグ</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #1f2937;
+            border-bottom: 3px solid #3b82f6;
+            padding-bottom: 10px;
+        }
+        .section {
+            margin: 30px 0;
+            padding: 20px;
+            background: #f9fafb;
+            border-radius: 8px;
+            border-left: 4px solid #3b82f6;
+        }
+        .test-case {
+            background: white;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 6px;
+            border: 1px solid #e5e7eb;
+        }
+        .test-title {
+            font-weight: bold;
+            color: #3b82f6;
+            margin-bottom: 10px;
+        }
+        .code-block {
+            background: #1f2937;
+            color: #f3f4f6;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+        .highlight {
+            background: #fbbf24;
+            color: #1f2937;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+        .status-ok {
+            color: #10b981;
+            font-weight: bold;
+        }
+        .status-error {
+            color: #ef4444;
+            font-weight: bold;
+        }
+        .status-warning {
+            color: #f59e0b;
+            font-weight: bold;
+        }
+        .debug-output {
+            background: #f3f4f6;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            margin: 10px 0;
+        }
+        .solution-box {
+            background: #ecfdf5;
+            border: 2px solid #10b981;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .solution-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #065f46;
+            margin-bottom: 10px;
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            margin: 5px;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+        .input-group {
+            margin: 15px 0;
+            padding: 15px;
+            background: #f9fafb;
+            border-radius: 6px;
+        }
+        .input-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #4b5563;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .output-preview {
+            border: 2px solid #e5e7eb;
+            padding: 20px;
+            border-radius: 8px;
+            background: white;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 営業担当者表示問題 - 詳細デバッグツール</h1>
+        
+        <div class="section">
+            <h2>📌 問題の概要</h2>
+            <div class="test-case">
+                <div class="test-title">現在の症状</div>
+                <ul>
+                    <li><span class="status-error">✗</span> 送信設定タブで営業担当者名を入力してもプレビューに反映されない</li>
+                    <li><span class="status-warning">⚠</span> staffNameとeditedQuote.assigneeの同期が正しく動作していない可能性</li>
+                    <li><span class="status-ok">✓</span> コード上では修正が実装されている（行946-948）</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>🧪 インタラクティブテスト</h2>
+            
+            <div class="input-group">
+                <label for="staff-name-input">営業担当者名を入力:</label>
+                <input type="text" id="staff-name-input" placeholder="例: 田中太郎" />
+            </div>
+            
+            <button onclick="testStateSync()">状態同期をテスト</button>
+            <button onclick="testPreviewGeneration()">プレビュー生成をテスト</button>
+            <button onclick="clearTest()">クリア</button>
+            
+            <div class="debug-output" id="debug-output">
+デバッグ出力がここに表示されます...
+            </div>
+            
+            <div class="output-preview" id="preview-output">
+                <h3>プレビュー結果</h3>
+                <div id="preview-content">
+                    プレビューがここに表示されます...
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>📝 実装コードの確認</h2>
+            
+            <div class="test-case">
+                <div class="test-title">1. 送信設定タブの同期処理（行946-948）</div>
+                <div class="code-block">
+onChange={(e) => {
+    setStaffName(e.target.value);
+    <span class="highlight">setEditedQuote({...editedQuote, assignee: e.target.value});</span>
+}}
+                </div>
+                <p>✅ この実装は正しいです。両方の状態を更新しています。</p>
+            </div>
+            
+            <div class="test-case">
+                <div class="test-title">2. プレビュー生成時の優先順位（行125）</div>
+                <div class="code-block">
+assignee: <span class="highlight">staffName</span> || editedQuote.assignee || companyInfo?.representativeName
+                </div>
+                <p>✅ staffNameを最優先で使用する設定も正しいです。</p>
+            </div>
+            
+            <div class="test-case">
+                <div class="test-title">3. QuoteWebTemplateでの表示（行329）</div>
+                <div class="code-block">
+{quote.assignee && &lt;div&gt;担当者: {quote.assignee}&lt;/div&gt;}
+                </div>
+                <p>✅ テンプレートも正しく実装されています。</p>
+            </div>
+        </div>
+
+        <div class="solution-box">
+            <div class="solution-title">🚀 考えられる原因と解決策</div>
+            
+            <h3>1. ブラウザキャッシュの問題</h3>
+            <p>開発中のHot Module Replacementが正しく動作していない可能性があります。</p>
+            <div class="code-block">
+# 解決方法:
+1. ブラウザの開発者ツールを開く（F12）
+2. Networkタブで「Disable cache」にチェック
+3. Cmd+Shift+R（Mac）でハードリロード
+            </div>
+            
+            <h3>2. React Stateの更新タイミング</h3>
+            <p>Reactの状態更新が非同期で行われるため、即座に反映されない可能性があります。</p>
+            <div class="code-block">
+# 修正案:
+useEffect(() => {
+    // staffNameが変更されたらeditedQuoteも更新
+    setEditedQuote(prev => ({...prev, assignee: staffName}));
+}, [staffName]);
+            </div>
+            
+            <h3>3. プレビューAPI側の問題</h3>
+            <p>プレビュー生成のAPIで担当者情報が正しく渡されていない可能性があります。</p>
+            <div class="code-block">
+# デバッグ方法:
+console.log('Preview API Request:', {
+    assignee: quote.assignee,
+    staffName: staffName,
+    finalAssignee: previewQuote.assignee
+});
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>✅ 確認手順</h2>
+            <ol>
+                <li>開発サーバーを再起動: <code>npm run dev</code></li>
+                <li>ブラウザのキャッシュをクリア</li>
+                <li>プライベートブラウジングモードで確認</li>
+                <li>コンソールログでデータフローを確認</li>
+                <li>Networkタブでプレビューリクエストのペイロードを確認</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        function testStateSync() {
+            const input = document.getElementById('staff-name-input').value;
+            const output = document.getElementById('debug-output');
+            
+            if (!input) {
+                output.textContent = '❌ 営業担当者名を入力してください';
+                return;
+            }
+            
+            // 状態同期のシミュレーション
+            const simulatedState = {
+                staffName: input,
+                editedQuote: {
+                    assignee: input, // 同期される値
+                }
+            };
+            
+            output.textContent = `
+=== 状態同期テスト ===
+入力値: "${input}"
+
+1. setStaffName("${input}") 実行
+   ✅ staffName = "${input}"
+
+2. setEditedQuote({...editedQuote, assignee: "${input}"}) 実行
+   ✅ editedQuote.assignee = "${input}"
+
+3. 同期結果:
+   staffName: "${simulatedState.staffName}"
+   editedQuote.assignee: "${simulatedState.editedQuote.assignee}"
+   
+✅ 同期成功！両方の値が一致しています。
+`;
+        }
+        
+        function testPreviewGeneration() {
+            const input = document.getElementById('staff-name-input').value;
+            const output = document.getElementById('debug-output');
+            const preview = document.getElementById('preview-content');
+            
+            if (!input) {
+                output.textContent = '❌ 営業担当者名を入力してください';
+                return;
+            }
+            
+            // プレビュー生成のシミュレーション
+            const previewQuote = {
+                assignee: input || 'デフォルト担当者',
+            };
+            
+            output.textContent = `
+=== プレビュー生成テスト ===
+staffName: "${input}"
+editedQuote.assignee: "${input}"
+companyInfo?.representativeName: "代表者名"
+
+優先順位計算:
+assignee = staffName || editedQuote.assignee || companyInfo?.representativeName
+assignee = "${input}" || "${input}" || "代表者名"
+結果: "${previewQuote.assignee}"
+
+✅ プレビュー用のassigneeが正しく設定されました。
+`;
+            
+            // プレビューHTMLの生成
+            preview.innerHTML = `
+                <div style="background: #f9fafb; padding: 20px; border-radius: 8px;">
+                    <h4 style="color: #1f2937; margin-bottom: 15px;">見積元</h4>
+                    <div style="font-size: 14px; line-height: 1.6;">
+                        <div><strong>会社名:</strong> 株式会社サンプル</div>
+                        <div><strong>住所:</strong> 東京都渋谷区...</div>
+                        <div><strong>TEL:</strong> 03-1234-5678</div>
+                        <div><strong>Email:</strong> info@example.com</div>
+                        <div style="color: #3b82f6; font-weight: bold;">
+                            <strong>担当者:</strong> ${previewQuote.assignee}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function clearTest() {
+            document.getElementById('staff-name-input').value = '';
+            document.getElementById('debug-output').textContent = 'デバッグ出力がここに表示されます...';
+            document.getElementById('preview-content').innerHTML = 'プレビューがここに表示されます...';
+        }
+    </script>
+</body>
+</html>

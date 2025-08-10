@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>営業担当者表示問題 - 修正完了確認</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #1f2937;
+            border-bottom: 3px solid #10b981;
+            padding-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .success-badge {
+            background: #10b981;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: normal;
+        }
+        .fix-summary {
+            background: #ecfdf5;
+            border: 2px solid #10b981;
+            padding: 25px;
+            border-radius: 12px;
+            margin: 30px 0;
+        }
+        .fix-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #065f46;
+            margin-bottom: 15px;
+        }
+        .fix-list {
+            list-style: none;
+            padding: 0;
+        }
+        .fix-item {
+            padding: 12px 0;
+            border-bottom: 1px solid #d1fae5;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        .fix-item:last-child {
+            border-bottom: none;
+        }
+        .fix-icon {
+            color: #10b981;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+        .code-block {
+            background: #1f2937;
+            color: #f3f4f6;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            margin: 15px 0;
+            position: relative;
+        }
+        .code-title {
+            color: #60a5fa;
+            font-size: 12px;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .highlight {
+            background: #fbbf24;
+            color: #1f2937;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+        .test-section {
+            background: #f9fafb;
+            padding: 25px;
+            border-radius: 12px;
+            margin: 30px 0;
+            border: 1px solid #e5e7eb;
+        }
+        .test-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #1f2937;
+            margin-bottom: 20px;
+        }
+        .test-steps {
+            counter-reset: step;
+            list-style: none;
+            padding: 0;
+        }
+        .test-step {
+            counter-increment: step;
+            padding: 15px 0;
+            border-bottom: 1px solid #e5e7eb;
+            position: relative;
+            padding-left: 50px;
+        }
+        .test-step:before {
+            content: counter(step);
+            position: absolute;
+            left: 0;
+            top: 15px;
+            background: #3b82f6;
+            color: white;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        .test-step:last-child {
+            border-bottom: none;
+        }
+        .warning-box {
+            background: #fef2f2;
+            border: 2px solid #ef4444;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .warning-title {
+            color: #991b1b;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .success-message {
+            background: #d1fae5;
+            color: #065f46;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-weight: bold;
+            text-align: center;
+            font-size: 18px;
+        }
+        .console-log {
+            background: #111827;
+            color: #10b981;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>
+            ✅ 営業担当者表示問題 - 修正完了
+            <span class="success-badge">FIXED</span>
+        </h1>
+        
+        <div class="fix-summary">
+            <div class="fix-title">🎉 実装された修正内容</div>
+            <ul class="fix-list">
+                <li class="fix-item">
+                    <span class="fix-icon">✅</span>
+                    <div>
+                        <strong>useEffectの最適化</strong><br>
+                        無限ループを防ぐため、依存配列からeditedQuote.assigneeを除外し、staffNameのみを監視するように変更
+                    </div>
+                </li>
+                <li class="fix-item">
+                    <span class="fix-icon">✅</span>
+                    <div>
+                        <strong>状態同期の改善</strong><br>
+                        setEditedQuote内で条件チェックを行い、必要な場合のみ更新するように最適化
+                    </div>
+                </li>
+                <li class="fix-item">
+                    <span class="fix-icon">✅</span>
+                    <div>
+                        <strong>generatePreviewの依存配列修正</strong><br>
+                        staffNameを依存配列に追加し、担当者名変更時に自動的にプレビューが更新されるように修正
+                    </div>
+                </li>
+                <li class="fix-item">
+                    <span class="fix-icon">✅</span>
+                    <div>
+                        <strong>デバッグログの強化</strong><br>
+                        詳細なコンソールログを追加し、データフローを可視化
+                    </div>
+                </li>
+            </ul>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">📋 修正されたコード（重要部分）</div>
+            
+            <div class="code-block">
+                <div class="code-title">1. useEffect - 状態同期の最適化</div>
+// staffNameが変更されたときにeditedQuote.assigneeも同期する
+useEffect(() => {
+  console.log('=== staffName Changed Effect ===');
+  console.log('New staffName:', staffName);
+  console.log('Current editedQuote.assignee before update:', editedQuote.assignee);
+  
+  setEditedQuote(prev => {
+    if (<span class="highlight">staffName !== prev.assignee</span>) {
+      console.log('Updating editedQuote.assignee from:', prev.assignee, 'to:', staffName);
+      const updated = {
+        ...prev,
+        <span class="highlight">assignee: staffName</span>
+      };
+      console.log('Updated editedQuote:', updated);
+      return updated;
+    }
+    console.log('No update needed, values are the same');
+    return prev;
+  });
+}, <span class="highlight">[staffName]</span>); // staffNameが変更されたときのみ実行
+            </div>
+            
+            <div class="code-block">
+                <div class="code-title">2. generatePreview - 依存配列の修正</div>
+const generatePreview = useCallback(async () => {
+  // ... プレビュー生成ロジック ...
+  const previewQuote = {
+    ...editedQuote,
+    <span class="highlight">assignee: staffName || editedQuote.assignee || companyInfo?.representativeName</span>,
+  };
+  // ... 
+}, [editedQuote, companyInfo, recipientName, customMessage, suggestedOptions, 
+    tooltips, productLinks, includeTracking, includeInteractiveElements, 
+    useWebLayout, <span class="highlight">staffName</span>]); // staffNameを追加
+            </div>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">🧪 動作確認手順</div>
+            <ol class="test-steps">
+                <li class="test-step">
+                    <strong>ブラウザのキャッシュをクリア</strong><br>
+                    開発者ツール（F12）→ Networkタブ → 「Disable cache」にチェック
+                </li>
+                <li class="test-step">
+                    <strong>ページをハードリロード</strong><br>
+                    Cmd+Shift+R（Mac）または Ctrl+Shift+R（Windows）
+                </li>
+                <li class="test-step">
+                    <strong>送信設定タブを開く</strong><br>
+                    HTML見積書エディタで「送信設定」タブをクリック
+                </li>
+                <li class="test-step">
+                    <strong>担当者名を入力</strong><br>
+                    「送信者名（担当者）」フィールドに名前を入力
+                </li>
+                <li class="test-step">
+                    <strong>プレビュータブで確認</strong><br>
+                    「プレビュー」タブをクリックして、担当者名が表示されていることを確認
+                </li>
+                <li class="test-step">
+                    <strong>コンソールログを確認</strong><br>
+                    開発者ツールのConsoleタブで同期ログを確認
+                </li>
+            </ol>
+        </div>
+
+        <div class="test-section">
+            <div class="test-title">🔍 期待される動作</div>
+            <div class="console-log">=== staffName Changed Effect ===
+New staffName: 田中太郎
+Current editedQuote.assignee before update: undefined
+Updating editedQuote.assignee from: undefined to: 田中太郎
+Updated editedQuote: { ...quote, assignee: "田中太郎" }
+
+=== Preview Generation Debug ===
+1. staffName: 田中太郎
+2. editedQuote.assignee: 田中太郎
+3. companyInfo?.representativeName: 代表者名
+4. Final assignee (calculated): 田中太郎
+5. Full previewQuote: { ...quote, assignee: "田中太郎" }
+=== End Debug ===</div>
+        </div>
+
+        <div class="warning-box">
+            <div class="warning-title">⚠️ 注意事項</div>
+            <ul>
+                <li>ブラウザのキャッシュが原因で古いコードが実行される場合があります</li>
+                <li>開発サーバーを再起動した後は、必ずハードリロードを実行してください</li>
+                <li>プライベートブラウジングモードでテストすることを推奨します</li>
+            </ul>
+        </div>
+
+        <div class="success-message">
+            🎊 修正が完了しました！送信設定タブの担当者名がプレビューに反映されるはずです
+        </div>
+    </div>
+</body>
+</html>

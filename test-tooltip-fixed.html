@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ツールチップ修正確認</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #1f2937;
+            border-bottom: 3px solid #10b981;
+            padding-bottom: 10px;
+        }
+        .demo-section {
+            margin: 30px 0;
+            padding: 20px;
+            background: #f9fafb;
+            border-radius: 8px;
+        }
+        .demo-item {
+            padding: 20px;
+            margin: 15px 0;
+            background: white;
+            border-radius: 6px;
+            border: 1px solid #e5e7eb;
+        }
+        .tooltip-wrapper {
+            position: relative;
+            display: inline-block;
+        }
+        .tooltip-trigger {
+            background: linear-gradient(180deg, transparent 60%, #fef3c7 60%);
+            cursor: help;
+            border-radius: 2px;
+            padding: 0 2px;
+            position: relative;
+        }
+        .tooltip-content {
+            visibility: hidden;
+            opacity: 0;
+            position: absolute;
+            bottom: 100%;
+            left: 0;
+            transform: none;
+            background-color: #1f2937;
+            color: white;
+            padding: 10px 14px;
+            border-radius: 6px;
+            font-size: 13px;
+            white-space: normal;
+            width: 280px;
+            max-width: 90vw;
+            z-index: 1000;
+            margin-bottom: 8px;
+            transition: opacity 0.2s, visibility 0.2s;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            line-height: 1.4;
+        }
+        .tooltip-content::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 20px;
+            transform: none;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #1f2937 transparent transparent transparent;
+        }
+        .tooltip-wrapper:hover .tooltip-content {
+            visibility: visible;
+            opacity: 1;
+        }
+        .fix-list {
+            background: #ecfdf5;
+            border: 2px solid #10b981;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .fix-item {
+            padding: 10px 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        .fix-icon {
+            color: #10b981;
+            font-size: 20px;
+        }
+        .code-block {
+            background: #1f2937;
+            color: #f3f4f6;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+        .highlight {
+            color: #fbbf24;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✅ ツールチップ修正完了</h1>
+        
+        <div class="fix-list">
+            <h2>🎉 実装された修正</h2>
+            <div class="fix-item">
+                <span class="fix-icon">✅</span>
+                <div>
+                    <strong>マーカー色を黄色に変更</strong><br>
+                    グレー（#e5e7eb）から黄色（#fef3c7）に変更
+                </div>
+            </div>
+            <div class="fix-item">
+                <span class="fix-icon">✅</span>
+                <div>
+                    <strong>ツールチップに💡アイコンを追加</strong><br>
+                    説明文の先頭に💡アイコンを表示
+                </div>
+            </div>
+            <div class="fix-item">
+                <span class="fix-icon">✅</span>
+                <div>
+                    <strong>見切れ問題を解決</strong><br>
+                    左寄せ配置とmax-width設定で画面端での表示を改善
+                </div>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>📝 実際の表示例</h2>
+            
+            <div class="demo-item">
+                <h3>見積項目の例</h3>
+                <p>
+                    <span class="tooltip-wrapper">
+                        <span class="tooltip-trigger">ROI</span>
+                        <span class="tooltip-content">💡 Return on Investment - 投資収益率</span>
+                    </span>
+                    見積もり 1
+                </p>
+                <p style="color: #6b7280; margin-top: 10px;">
+                    ※ 黄色いマーカーの上にマウスを置くとツールチップが表示されます
+                </p>
+            </div>
+
+            <div class="demo-item">
+                <h3>複数のツールチップ例</h3>
+                <p>
+                    <span class="tooltip-wrapper">
+                        <span class="tooltip-trigger">Investment</span>
+                        <span class="tooltip-content">💡 投資収益率 - ビジネスへの投資に対する収益を測定する指標</span>
+                    </span>
+                    - 投資収益率
+                </p>
+                <p>
+                    <span class="tooltip-wrapper">
+                        <span class="tooltip-trigger">SaaS</span>
+                        <span class="tooltip-content">💡 Software as a Service - クラウド経由で提供されるソフトウェア</span>
+                    </span>
+                    プラットフォーム構築
+                </p>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>🔧 技術的な変更内容</h2>
+            
+            <div class="code-block">
+<span class="highlight">// マーカーの背景色を黄色に変更</span>
+background: linear-gradient(180deg, transparent 60%, <span class="highlight">#fef3c7</span> 60%);
+
+<span class="highlight">// ツールチップに💡アイコンを追加</span>
+&lt;span class="tooltip-content"&gt;<span class="highlight">💡 </span>${tooltip}&lt;/span&gt;
+
+<span class="highlight">// 位置調整で見切れを防止</span>
+left: <span class="highlight">0</span>;
+transform: <span class="highlight">none</span>;
+max-width: <span class="highlight">90vw</span>;
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2>✨ 改善のポイント</h2>
+            <ul>
+                <li>黄色いマーカーで視認性が向上</li>
+                <li>💡アイコンで説明であることが直感的に分かる</li>
+                <li>画面端でも見切れない安定した表示</li>
+                <li>レスポンシブ対応でモバイルでも最適表示</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

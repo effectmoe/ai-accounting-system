@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>営業担当者表示テスト</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test-section {
+            margin: 30px 0;
+            padding: 20px;
+            background: #f5f5f5;
+            border-radius: 8px;
+        }
+        .test-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        .test-item {
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 4px;
+        }
+        .label {
+            font-weight: bold;
+            color: #666;
+            margin-right: 10px;
+        }
+        .value {
+            color: #333;
+        }
+        .success {
+            color: #10b981;
+            font-weight: bold;
+        }
+        .error {
+            color: #ef4444;
+            font-weight: bold;
+        }
+        .info {
+            color: #3b82f6;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <h1>営業担当者表示修正確認</h1>
+    
+    <div class="test-section">
+        <div class="test-title">🔧 修正内容</div>
+        <div class="test-item">
+            <span class="label">問題:</span>
+            <span class="value">送信設定タブで営業担当者名を入力しても、プレビューに反映されない</span>
+        </div>
+        <div class="test-item">
+            <span class="label">原因:</span>
+            <span class="value">staffNameの変更がeditedQuote.assigneeに同期されていなかった</span>
+        </div>
+        <div class="test-item">
+            <span class="label">修正:</span>
+            <span class="value success">送信設定タブのonChangeイベントでeditedQuote.assigneeも更新するように変更</span>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <div class="test-title">✅ 修正後の動作</div>
+        <div class="test-item">
+            <span class="label">基本情報タブ:</span>
+            <span class="value">担当者名を変更 → staffNameとeditedQuote.assigneeが両方更新</span>
+        </div>
+        <div class="test-item">
+            <span class="label">送信設定タブ:</span>
+            <span class="value success">送信者名を変更 → staffNameとeditedQuote.assigneeが両方更新（修正済み）</span>
+        </div>
+        <div class="test-item">
+            <span class="label">プレビュー生成:</span>
+            <span class="value">assignee: staffName || editedQuote.assignee || companyInfo?.representativeName</span>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <div class="test-title">📝 テスト手順</div>
+        <ol>
+            <li>HTML見積書エディタを開く</li>
+            <li>送信設定タブに移動</li>
+            <li>「送信者名（担当者）」フィールドに営業担当者名を入力</li>
+            <li>プレビュータブに移動</li>
+            <li>Web最適化レイアウトを選択</li>
+            <li>プレビューに営業担当者名が表示されることを確認</li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <div class="test-title">🎯 確認ポイント</div>
+        <div class="test-item">
+            <span class="success">✓</span> 
+            <span class="value">送信設定タブでの入力が即座にeditedQuote.assigneeに反映される</span>
+        </div>
+        <div class="test-item">
+            <span class="success">✓</span> 
+            <span class="value">プレビューの「見積元」セクションに担当者名が表示される</span>
+        </div>
+        <div class="test-item">
+            <span class="success">✓</span> 
+            <span class="value">基本情報タブと送信設定タブの担当者名が同期している</span>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <div class="test-title">📍 修正箇所</div>
+        <div class="test-item">
+            <span class="label">ファイル:</span>
+            <span class="value info">/components/html-quote-editor.tsx</span>
+        </div>
+        <div class="test-item">
+            <span class="label">行番号:</span>
+            <span class="value info">931-933行目</span>
+        </div>
+        <div class="test-item">
+            <span class="label">コード:</span>
+            <pre style="background: #f9f9f9; padding: 10px; border-radius: 4px; overflow-x: auto;">
+onChange={(e) => {
+  setStaffName(e.target.value);
+  setEditedQuote({...editedQuote, assignee: e.target.value});
+}}</pre>
+        </div>
+    </div>
+</body>
+</html>

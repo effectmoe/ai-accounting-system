@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>営業担当者デバッグガイド</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 20px;
+            max-width: 1000px;
+            margin: 0 auto;
+            background: #f5f5f5;
+        }
+        .debug-section {
+            margin: 20px 0;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .debug-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+            border-bottom: 2px solid #3b82f6;
+            padding-bottom: 5px;
+        }
+        .debug-step {
+            margin: 15px 0;
+            padding: 15px;
+            background: #f9fafb;
+            border-left: 4px solid #3b82f6;
+            border-radius: 4px;
+        }
+        .code-block {
+            background: #1f2937;
+            color: #f3f4f6;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+        .highlight {
+            background: #fbbf24;
+            color: #1f2937;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+        .success {
+            color: #10b981;
+            font-weight: bold;
+        }
+        .warning {
+            color: #f59e0b;
+            font-weight: bold;
+        }
+        .error {
+            color: #ef4444;
+            font-weight: bold;
+        }
+        .check-item {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f3f4f6;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .check-icon {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 営業担当者表示デバッグガイド</h1>
+    
+    <div class="debug-section">
+        <div class="debug-title">📌 現在の問題</div>
+        <div class="check-item">
+            <span class="error">❌</span>
+            <span>送信設定タブで営業担当者名を入力してもプレビューに反映されない</span>
+        </div>
+        <div class="check-item">
+            <span class="warning">⚠️</span>
+            <span>ブラウザのキャッシュが原因でコードの修正が反映されていない可能性</span>
+        </div>
+    </div>
+
+    <div class="debug-section">
+        <div class="debug-title">🛠️ 実装済みの修正内容</div>
+        
+        <div class="debug-step">
+            <strong>1. 送信設定タブの同期処理（行931-934）</strong>
+            <div class="code-block">
+onChange={(e) => {
+  setStaffName(e.target.value);
+  <span class="highlight">setEditedQuote({...editedQuote, assignee: e.target.value});</span>
+}}
+            </div>
+            <p>✅ staffNameとeditedQuote.assigneeの両方を更新</p>
+        </div>
+
+        <div class="debug-step">
+            <strong>2. プレビュー生成時の優先順位（行118）</strong>
+            <div class="code-block">
+assignee: <span class="highlight">staffName</span> || editedQuote.assignee || companyInfo?.representativeName
+            </div>
+            <p>✅ staffNameを最優先で使用</p>
+        </div>
+
+        <div class="debug-step">
+            <strong>3. デバッグログの追加（行123-128）</strong>
+            <div class="code-block">
+console.log('=== Preview Generation Debug ===');
+console.log('staffName:', staffName);
+console.log('editedQuote.assignee:', editedQuote.assignee);
+console.log('Final assignee:', previewQuote.assignee);
+            </div>
+            <p>✅ コンソールでデータの流れを確認可能</p>
+        </div>
+    </div>
+
+    <div class="debug-section">
+        <div class="debug-title">🔧 トラブルシューティング手順</div>
+        
+        <div class="debug-step">
+            <strong>Step 1: ブラウザのキャッシュをクリア</strong>
+            <ol>
+                <li>開発者ツールを開く（F12 または右クリック→検証）</li>
+                <li>Networkタブに移動</li>
+                <li>「Disable cache」にチェック</li>
+                <li><span class="highlight">Cmd + Shift + R</span>（Mac）または<span class="highlight">Ctrl + Shift + R</span>（Windows）でハードリロード</li>
+            </ol>
+        </div>
+
+        <div class="debug-step">
+            <strong>Step 2: コンソールログを確認</strong>
+            <ol>
+                <li>開発者ツールのConsoleタブを開く</li>
+                <li>HTML見積書エディタを開く</li>
+                <li>送信設定タブで営業担当者名を入力</li>
+                <li>プレビュータブに切り替え</li>
+                <li>以下のログを確認：
+                    <div class="code-block">
+=== Preview Generation Debug ===
+staffName: [入力した値]
+editedQuote.assignee: [入力した値]
+Final assignee: [入力した値]
+                    </div>
+                </li>
+            </ol>
+        </div>
+
+        <div class="debug-step">
+            <strong>Step 3: 開発サーバーの再起動</strong>
+            <div class="code-block">
+# ターミナルで実行
+Ctrl + C  # サーバー停止
+rm -rf .next  # キャッシュクリア
+npm run dev  # サーバー再起動
+            </div>
+        </div>
+
+        <div class="debug-step">
+            <strong>Step 4: プライベートブラウジングで確認</strong>
+            <ol>
+                <li>プライベート/シークレットウィンドウを開く</li>
+                <li>http://localhost:3000 にアクセス</li>
+                <li>HTML見積書エディタで動作確認</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="debug-section">
+        <div class="debug-title">✅ 確認ポイント</div>
+        
+        <div class="check-item">
+            <span class="check-icon">☐</span>
+            <span>基本情報タブの「担当者名」フィールドに入力 → プレビューに反映される</span>
+        </div>
+        <div class="check-item">
+            <span class="check-icon">☐</span>
+            <span>送信設定タブの「送信者名（担当者）」フィールドに入力 → プレビューに反映される</span>
+        </div>
+        <div class="check-item">
+            <span class="check-icon">☐</span>
+            <span>プレビューの「見積元」セクションに「担当者: [名前]」が表示される</span>
+        </div>
+        <div class="check-item">
+            <span class="check-icon">☐</span>
+            <span>Web最適化レイアウトで正しく表示される</span>
+        </div>
+    </div>
+
+    <div class="debug-section">
+        <div class="debug-title">📊 期待される動作</div>
+        <div style="padding: 15px; background: #ecfdf5; border: 1px solid #10b981; border-radius: 6px;">
+            <p><strong>正常動作時のフロー：</strong></p>
+            <ol style="margin: 10px 0;">
+                <li>送信設定タブで「田中太郎」と入力</li>
+                <li>自動的に<code>staffName</code>と<code>editedQuote.assignee</code>が「田中太郎」に更新</li>
+                <li>プレビュータブに切り替え</li>
+                <li>プレビューの見積元セクションに「担当者: 田中太郎」と表示</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="debug-section">
+        <div class="debug-title">🚨 それでも動作しない場合</div>
+        <div style="padding: 15px; background: #fef2f2; border: 1px solid #ef4444; border-radius: 6px;">
+            <p>以下の情報を確認してください：</p>
+            <ul>
+                <li>ブラウザのコンソールにエラーが表示されていないか</li>
+                <li>ネットワークタブで404エラーが発生していないか</li>
+                <li>正しいポート（3000または3002）でアクセスしているか</li>
+                <li>package.jsonのバージョンが最新か</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
