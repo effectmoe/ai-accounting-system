@@ -1066,7 +1066,7 @@ export default function HtmlQuoteEditor({
                     </>
                   )}
                 </Button>
-                {onSend && (
+                {typeof onSend === 'function' && (
                   <Button
                     onClick={handleSend}
                     disabled={isSending || !recipientEmail}
@@ -1119,7 +1119,7 @@ export default function HtmlQuoteEditor({
                 </>
               )}
             </Button>
-            {onSend && (
+            {typeof onSend === 'function' && (
               <Button
                 onClick={handleSend}
                 disabled={isSending || !recipientEmail}
