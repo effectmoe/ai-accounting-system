@@ -73,22 +73,22 @@ export default function QuoteHtmlTemplate({
     <Html>
       <Head />
       <Preview>
-        {quote.title || `お見積書 #${quote.quoteNumber}`} - {companyInfo.name}より
+        {quote.title || `お見積書 #${quote.quoteNumber}`} - {companyInfo.companyName || companyInfo.name || ''}より
       </Preview>
       <Body style={main}>
         <Container style={container}>
           {/* ヘッダー */}
           <Section style={header}>
-            {companyInfo.logo && (
+            {companyInfo.logoUrl && (
               <Img
-                src={companyInfo.logo}
+                src={companyInfo.logoUrl}
                 width="150"
                 height="50"
-                alt={companyInfo.name}
+                alt={companyInfo.companyName || companyInfo.name || ''}
                 style={logo}
               />
             )}
-            <Text style={headerText}>{companyInfo.name}</Text>
+            <Text style={headerText}>{companyInfo.companyName || companyInfo.name || ''}</Text>
           </Section>
 
           {/* オンライン表示リンク */}
@@ -135,7 +135,7 @@ export default function QuoteHtmlTemplate({
                 </Column>
                 <Column style={infoColumn}>
                   <Text style={infoLabel}>有効期限</Text>
-                  <Text style={infoValue}>{formatDate(quote.validUntil)}</Text>
+                  <Text style={infoValue}>{formatDate(quote.validityDate)}</Text>
                 </Column>
               </Row>
             </Section>
@@ -153,10 +153,10 @@ export default function QuoteHtmlTemplate({
                       <Text style={itemName}>
                         {item.productLink ? (
                           <Link href={item.productLink} style={productLink}>
-                            {item.description}
+                            {item.itemName || item.description || ''}
                           </Link>
                         ) : (
-                          item.description
+                          item.itemName || item.description || ''
                         )}
                       </Text>
                       {item.details && (
@@ -300,9 +300,13 @@ export default function QuoteHtmlTemplate({
               <Hr style={divider} />
               <Row>
                 <Column>
-                  <Text style={companyName}>{companyInfo.name}</Text>
+                  <Text style={companyName}>{companyInfo.companyName || companyInfo.name || ''}</Text>
                   <Text style={companyDetails}>
-                    {companyInfo.address && `〒${companyInfo.postalCode} ${companyInfo.address}`}
+                    {companyInfo.postalCode && `〒${companyInfo.postalCode}`}
+                    {companyInfo.prefecture && ` ${companyInfo.prefecture}`}
+                    {companyInfo.city && `${companyInfo.city}`}
+                    {companyInfo.address1 && `${companyInfo.address1}`}
+                    {companyInfo.address2 && ` ${companyInfo.address2}`}
                   </Text>
                   {companyInfo.phone && (
                     <Text style={companyDetails}>
@@ -327,7 +331,7 @@ export default function QuoteHtmlTemplate({
           {/* フッター */}
           <Section style={footer}>
             <Text style={footerText}>
-              このメールは {companyInfo.name} より送信されました。
+              このメールは {companyInfo.companyName || companyInfo.name || ''} より送信されました。
             </Text>
             <Text style={footerLinks}>
               <Link href={`${baseUrl}/privacy`} style={footerLink}>
