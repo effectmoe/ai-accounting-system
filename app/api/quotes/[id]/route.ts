@@ -123,6 +123,41 @@ export async function PUT(
   }
 }
 
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const { id } = params;
+    const body = await request.json();
+    logger.debug('[PATCH /api/quotes/[id]] Quote ID:', id);
+    logger.debug('[PATCH /api/quotes/[id]] Partial update data:', JSON.stringify(body, null, 2));
+    
+    const quoteService = new QuoteService();
+    
+    // HTMLコンテンツやカスタムメッセージなどの部分更新
+    const updatedQuote = await quoteService.updateQuote(id, body);
+    
+    if (!updatedQuote) {
+      return NextResponse.json(
+        { error: 'Quote not found' },
+        { status: 404 }
+      );
+    }
+    
+    return NextResponse.json(updatedQuote);
+  } catch (error) {
+    logger.error('Error patching quote:', error);
+    return NextResponse.json(
+      { 
+        error: 'Failed to patch quote',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    );
+  }
+}
+
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }

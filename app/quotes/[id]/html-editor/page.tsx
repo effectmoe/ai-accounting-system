@@ -42,17 +42,16 @@ export default function HtmlQuoteEditorPage() {
       if (!companyResponse.ok) {
         // 会社情報がない場合はデフォルト値を使用
         setCompanyInfo({
-          _id: 'default',
-          name: '株式会社サンプル',
+          companyName: '株式会社サンプル',
           email: 'info@example.com',
           phone: '03-1234-5678',
-          address: '東京都千代田区1-2-3',
+          postalCode: '100-0001',
+          prefecture: '東京都',
+          city: '千代田区',
+          address1: '1-2-3',
           website: 'https://example.com',
-          logo: '',
-          bankAccount: '',
-          taxNumber: '',
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
+          logoUrl: '',
+          registrationNumber: '',
         });
       } else {
         const companyData = await companyResponse.json();
