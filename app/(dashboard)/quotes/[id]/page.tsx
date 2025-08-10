@@ -572,9 +572,9 @@ export default function QuoteDetailPage({ params }: QuoteDetailPageProps) {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 gap-6">
-            {/* 見積先 */}
+            {/* 送信先 */}
             <div>
-              <h3 className="font-semibold mb-2">見積先</h3>
+              <h3 className="font-semibold mb-2">送信先</h3>
               <div className="space-y-1 text-sm">
                 <p className="font-medium">{quote.customer?.companyName || '顧客未設定'}</p>
                 {quote.customer?.contacts?.[0]?.name && (
@@ -598,9 +598,9 @@ export default function QuoteDetailPage({ params }: QuoteDetailPageProps) {
               </div>
             </div>
 
-            {/* 見積元（自社情報）*/}
+            {/* 発行元（自社情報）*/}
             <div>
-              <h3 className="font-semibold mb-2">見積元</h3>
+              <h3 className="font-semibold mb-2">発行元</h3>
               <div className="space-y-1 text-sm">
                 <p className="font-medium">{quote.companySnapshot?.companyName || '会社名未設定'}</p>
                 {quote.companySnapshot?.address && (

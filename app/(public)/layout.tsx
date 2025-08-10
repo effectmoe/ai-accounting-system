@@ -24,12 +24,12 @@ export default function PublicLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className={inter.className}>
+    <>
       {/* ナビゲーションなし、シンプルなレイアウト */}
       <main className="min-h-screen bg-white">
         {children}
       </main>
       <Toaster position="top-right" />
-    </div>
+    </>
   )
 }

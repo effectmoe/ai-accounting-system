@@ -122,14 +122,17 @@ function enhanceQuoteItems(
     return quote;
   }
 
+  console.log('Enhancing quote items with tooltips:', tooltips?.size || 0, 'tooltips available');
+
   return {
     ...quote,
-    items: quote.items.map((item) => {
+    items: quote.items.map((item, index) => {
       const enhanced: any = { ...item };
       
       // ツールチップを追加
       if (tooltips) {
         const tooltip = findTooltipForItem(item.itemName || item.description || '', tooltips);
+        console.log(`Item ${index + 1} (${item.itemName || item.description}): tooltip =`, tooltip ? 'found' : 'not found');
         if (tooltip) {
           enhanced.tooltip = tooltip;
         }
@@ -365,6 +368,18 @@ export function generateDefaultTooltips(): Map<string, string> {
   tooltips.set('ROI', 'Return on Investment - 投資収益率');
   tooltips.set('KPI', 'Key Performance Indicator - 重要業績評価指標');
   tooltips.set('リードタイム', '発注から納品までの期間');
+  
+  // より一般的な用語を追加
+  tooltips.set('システム', 'コンピュータとソフトウェアを組み合わせた仕組み');
+  tooltips.set('開発', 'ソフトウェアやシステムを設計・構築すること');
+  tooltips.set('構築', 'システムやWebサイトを作り上げること');
+  tooltips.set('設計', 'システムの設計図を作成すること');
+  tooltips.set('保守', 'システムの維持・管理・改善作業');
+  tooltips.set('運用', 'システムを日常的に運用・管理すること');
+  tooltips.set('メンテナンス', 'システムの保守点検・改良作業');
+  tooltips.set('アップデート', 'ソフトウェアやシステムの更新・改善');
+  tooltips.set('カスタマイズ', 'お客様のご要望に合わせた独自の調整・改修');
+  tooltips.set('サポート', '技術支援・問題解決・使い方指導');
   
   return tooltips;
 }
