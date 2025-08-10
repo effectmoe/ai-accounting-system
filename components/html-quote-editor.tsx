@@ -74,6 +74,7 @@ export default function HtmlQuoteEditor({
 }: HtmlQuoteEditorProps) {
   console.log('HtmlQuoteEditor mounted with:', { quote, companyInfo });
   console.log('Customer data:', quote.customer);
+  console.log('onSend function received:', !!onSend); // デバッグ用
   
   // 税率を正しい形式に変換（0.1 -> 10）
   const normalizedTaxRate = quote.taxRate < 1 ? quote.taxRate * 100 : quote.taxRate;
@@ -224,6 +225,7 @@ export default function HtmlQuoteEditor({
 
   // 提案オプションを追加
   const addSuggestedOption = () => {
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://accounting-automation.vercel.app';
     setSuggestedOptions([
       ...suggestedOptions,
       {
@@ -232,7 +234,7 @@ export default function HtmlQuoteEditor({
         price: '¥0',
         features: ['機能1'],
         ctaText: '詳細を見る',
-        ctaUrl: '#',
+        ctaUrl: `${baseUrl}/contact`, // デフォルトでお問い合わせページへのリンク
       },
     ]);
   };
@@ -889,7 +891,7 @@ export default function HtmlQuoteEditor({
                             <Input
                               value={option.ctaUrl}
                               onChange={(e) => updateSuggestedOption(index, 'ctaUrl', e.target.value)}
-                              placeholder="リンクURL"
+                              placeholder="https://example.com/details または /contact"
                             />
                           </div>
                         </Card>
@@ -1029,6 +1031,10 @@ export default function HtmlQuoteEditor({
 
             {/* プレビュータブ */}
             <TabsContent value="preview" className="space-y-4">
+              {/* デバッグ情報 */}
+              <div className="text-xs text-muted-foreground mb-2">
+                onSend available: {onSend ? 'Yes' : 'No'}
+              </div>
               {/* シンプル化されたアクションバー */}
               <div className="flex items-center justify-end gap-2">
                 <Button

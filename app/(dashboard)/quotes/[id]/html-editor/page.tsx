@@ -92,7 +92,28 @@ export default function HtmlQuoteEditorPage() {
     }
   };
 
-  // 送信機能は削除（プレビューページでのみ使用可能）
+  // 送信機能を追加
+  const handleSend = async (emailOptions: any) => {
+    try {
+      // 見積書の送信処理
+      const response = await fetch(`/api/quotes/${quoteId}/send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(emailOptions),
+      });
+
+      if (!response.ok) {
+        throw new Error('送信に失敗しました');
+      }
+
+      alert('見積書を送信しました');
+      // 送信後、見積書詳細ページに戻る
+      router.push(`/quotes/${quoteId}`);
+    } catch (error) {
+      logger.error('Error sending quote:', error);
+      alert('送信に失敗しました: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    }
+  };
 
   if (isLoading) {
     return (
@@ -140,7 +161,7 @@ export default function HtmlQuoteEditorPage() {
         quote={quote}
         companyInfo={companyInfo}
         onSave={handleSave}
-        // onSendは削除（送信機能はプレビューページでのみ使用可能）
+        onSend={handleSend}
       />
     </div>
   );
