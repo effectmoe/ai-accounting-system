@@ -114,6 +114,7 @@ export default function HtmlQuoteEditor({
   const [productLinks, setProductLinks] = useState(new Map<string, string>());
   const [includeTracking, setIncludeTracking] = useState(true);
   const [includeInteractiveElements, setIncludeInteractiveElements] = useState(true); // デフォルトはオン
+  const [useWebLayout, setUseWebLayout] = useState(false); // Web最適化レイアウトフラグ
   const [attachPdf, setAttachPdf] = useState(true);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isSending, setIsSending] = useState(false);
