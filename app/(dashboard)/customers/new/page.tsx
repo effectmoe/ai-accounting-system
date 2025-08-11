@@ -26,7 +26,7 @@ interface CustomerForm {
   paymentTerms: string;
   contacts: Contact[];
   // メール送信先設定
-  emailRecipientPreference: 'representative' | 'contact' | 'both';
+  emailRecipientPreference: 'representative' | 'contact' | 'both' | null;
   primaryContactIndex: number;
   tags: string;
   notes: string;
@@ -54,7 +54,7 @@ export default function NewCustomerPage() {
     website: '',
     paymentTerms: '',
     contacts: [],
-    emailRecipientPreference: 'representative', // デフォルトは代表者メール
+    emailRecipientPreference: null, // デフォルトはnull（メール送信しない）
     primaryContactIndex: 0,
     tags: '',
     notes: '',
@@ -83,17 +83,24 @@ export default function NewCustomerPage() {
       newErrors.paymentTerms = '支払いサイトは数値で入力してください';
     }
 
-    // メール送信先設定のバリデーション
-    if (formData.emailRecipientPreference === 'contact' || formData.emailRecipientPreference === 'both') {
-      const primaryContact = formData.contacts[formData.primaryContactIndex];
-      if (!primaryContact?.email) {
-        newErrors.emailRecipientPreference = '選択した担当者にメールアドレスが設定されていません';
+    // メール送信先設定のバリデーション（メールアドレスは任意）
+    // メールアドレスがない場合は、emailRecipientPreferenceをnullに設定
+    if (formData.emailRecipientPreference) {
+      if (formData.emailRecipientPreference === 'contact' || formData.emailRecipientPreference === 'both') {
+        const primaryContact = formData.contacts[formData.primaryContactIndex];
+        if (!primaryContact?.email) {
+          console.log('注意: 選択した担当者にメールアドレスが設定されていません');
+          // メールアドレスがない場合は設定をクリア
+          formData.emailRecipientPreference = null;
+        }
       }
-    }
-    
-    if (formData.emailRecipientPreference === 'representative' || formData.emailRecipientPreference === 'both') {
-      if (!formData.email) {
-        newErrors.emailRecipientPreference = '代表者メールアドレスが設定されていません';
+      
+      if (formData.emailRecipientPreference === 'representative' || formData.emailRecipientPreference === 'both') {
+        if (!formData.email) {
+          console.log('注意: 代表者メールアドレスが設定されていません');
+          // メールアドレスがない場合は設定をクリア
+          formData.emailRecipientPreference = null;
+        }
       }
     }
 
@@ -726,10 +733,27 @@ export default function NewCustomerPage() {
               
               <div className="space-y-4">
                 <p className="text-sm text-gray-600">
-                  請求書や見積書を送信する際のメールアドレスを選択してください。
+                  請求書や見積書を送信する際のメールアドレスを選択してください。<br />
+                  <span className="text-gray-500">※ メールアドレスが設定されていない場合は選択不要です</span>
                 </p>
                 
                 <div className="space-y-3">
+                  {/* なし（メール送信しない） */}
+                  <label className="flex items-start cursor-pointer">
+                    <input
+                      type="radio"
+                      name="emailRecipientPreference"
+                      value="none"
+                      checked={!formData.emailRecipientPreference}
+                      onChange={(e) => setFormData(prev => ({ ...prev, emailRecipientPreference: null }))}
+                      className="mt-1 mr-3"
+                    />
+                    <div>
+                      <span className="font-medium">メール送信しない</span>
+                      <p className="text-sm text-gray-600 mt-1">メールアドレスが設定されていない場合はこちらを選択してください</p>
+                    </div>
+                  </label>
+
                   {/* 代表者メールアドレスに送信 */}
                   <label className="flex items-start cursor-pointer">
                     <input
@@ -737,7 +761,7 @@ export default function NewCustomerPage() {
                       name="emailRecipientPreference"
                       value="representative"
                       checked={formData.emailRecipientPreference === 'representative'}
-                      onChange={(e) => setFormData(prev => ({ ...prev, emailRecipientPreference: e.target.value as 'representative' | 'contact' | 'both' }))}
+                      onChange={(e) => setFormData(prev => ({ ...prev, emailRecipientPreference: e.target.value as 'representative' | 'contact' | 'both' | null }))}
                       className="mt-1 mr-3"
                     />
                     <div>
@@ -758,7 +782,7 @@ export default function NewCustomerPage() {
                       name="emailRecipientPreference"
                       value="contact"
                       checked={formData.emailRecipientPreference === 'contact'}
-                      onChange={(e) => setFormData(prev => ({ ...prev, emailRecipientPreference: e.target.value as 'representative' | 'contact' | 'both' }))}
+                      onChange={(e) => setFormData(prev => ({ ...prev, emailRecipientPreference: e.target.value as 'representative' | 'contact' | 'both' | null }))}
                       className="mt-1 mr-3"
                     />
                     <div className="flex-1">
@@ -803,7 +827,7 @@ export default function NewCustomerPage() {
                       name="emailRecipientPreference"
                       value="both"
                       checked={formData.emailRecipientPreference === 'both'}
-                      onChange={(e) => setFormData(prev => ({ ...prev, emailRecipientPreference: e.target.value as 'representative' | 'contact' | 'both' }))}
+                      onChange={(e) => setFormData(prev => ({ ...prev, emailRecipientPreference: e.target.value as 'representative' | 'contact' | 'both' | null }))}
                       className="mt-1 mr-3"
                     />
                     <div>
