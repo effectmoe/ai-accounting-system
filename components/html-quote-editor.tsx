@@ -53,6 +53,7 @@ import {
   ChevronDown,
   Copy,
   Check,
+  HelpCircle,
 } from 'lucide-react';
 import { Quote, CompanyInfo } from '@/types/collections';
 import { generateDefaultSuggestedOptions, generateDefaultTooltips } from '@/lib/html-quote-generator';
@@ -512,11 +513,12 @@ export default function HtmlQuoteEditor({
   }, [previewWindow]);
 
   return (
-    <div className="space-y-6 pb-40">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-yellow-500" />
+    <TooltipProvider>
+      <div className="space-y-6 pb-40">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-yellow-500" />
             HTML見積書エディタ
           </CardTitle>
           <p className="text-sm text-muted-foreground mt-2">
@@ -666,7 +668,34 @@ export default function HtmlQuoteEditor({
                   <div className="space-y-3">
                     <div className="flex gap-2">
                       <div className="flex-1">
-                        <Label>項目名</Label>
+                        <Label className="flex items-center gap-2">
+                          項目名
+                          {/* ツールチップが存在する場合にアイコンを表示 */}
+                          {(() => {
+                            const itemText = item.itemName || item.description || '';
+                            const matchedTerms = Array.from(tooltips.keys()).filter(term => 
+                              itemText.includes(term)
+                            );
+                            if (matchedTerms.length > 0) {
+                              return (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" />
+                                  </TooltipTrigger>
+                                  <TooltipContent className="max-w-xs">
+                                    {matchedTerms.map((term, i) => (
+                                      <div key={term}>
+                                        {i > 0 && <hr className="my-1" />}
+                                        <strong>{term}:</strong> {tooltips.get(term)}
+                                      </div>
+                                    ))}
+                                  </TooltipContent>
+                                </Tooltip>
+                              );
+                            }
+                            return null;
+                          })()}
+                        </Label>
                         <Input
                           value={item.itemName || item.description || ''}
                           onChange={(e) => {
@@ -1208,7 +1237,8 @@ export default function HtmlQuoteEditor({
         onAdd={handleQuickOptionAdd}
         baseUrl={process.env.NEXT_PUBLIC_BASE_URL || 'https://accounting-automation.vercel.app'}
       />
-    </div>
+      </div>
+    </TooltipProvider>
   );
 }
 // Force reload: 2025-08-10T12:01
