@@ -97,8 +97,14 @@ export default function NewProductPage() {
     setError('');
 
     // 単価の検証
+    if (!formData.unitPrice || formData.unitPrice.trim() === '') {
+      setError('単価を入力してください');
+      setLoading(false);
+      return;
+    }
+    
     const unitPriceNum = parseFloat(formData.unitPrice);
-    if (!formData.unitPrice || isNaN(unitPriceNum) || unitPriceNum <= 0) {
+    if (isNaN(unitPriceNum) || unitPriceNum <= 0) {
       setError('単価は0より大きい値を入力してください');
       setLoading(false);
       return;
@@ -110,12 +116,36 @@ export default function NewProductPage() {
       productCode = generateProductCode(formData.productName, formData.category);
     }
 
+    // 必須フィールドのチェック
+    if (!formData.productName.trim()) {
+      setError('商品名を入力してください');
+      setLoading(false);
+      return;
+    }
+    
+    if (!formData.category.trim()) {
+      setError('カテゴリを入力してください');
+      setLoading(false);
+      return;
+    }
+    
+    if (!formData.unit.trim()) {
+      setError('単位を入力してください');
+      setLoading(false);
+      return;
+    }
+
     const submitData = {
       ...formData,
-      productCode,
+      productCode: productCode.trim(),
       unitPrice: unitPriceNum,
       stockQuantity: formData.stockQuantity ? parseFloat(formData.stockQuantity) || 0 : 0,
-      taxRate: formData.taxRate // 明示的にtaxRateを含める
+      taxRate: formData.taxRate, // 明示的にtaxRateを含める
+      productName: formData.productName.trim(),
+      category: formData.category.trim(),
+      unit: formData.unit.trim(),
+      description: formData.description.trim(),
+      notes: formData.notes.trim()
     };
 
     // デバッグ: 送信データを確認
@@ -135,7 +165,13 @@ export default function NewProductPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error || '商品の作成に失敗しました');
+        const errorMessage = errorData.error || `商品の作成に失敗しました (${response.status})`;
+        console.error('API Error:', {
+          status: response.status,
+          statusText: response.statusText,
+          errorData
+        });
+        throw new Error(errorMessage);
       }
 
       router.push('/products');
@@ -353,18 +389,17 @@ export default function NewProductPage() {
             {/* 在庫数 */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                在庫数 <span className="text-red-500">*</span>
+                在庫数
               </label>
               <input
                 type="text"
                 name="stockQuantity"
                 value={formData.stockQuantity}
                 onChange={handleChange}
-                required
                 pattern="[0-9]+(\.[0-9]+)?"
                 inputMode="numeric"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="数量を入力"
+                placeholder="数量を入力（空の場合は0として登録されます）"
               />
             </div>
 
