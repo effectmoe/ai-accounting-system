@@ -108,7 +108,27 @@ export const GET = withErrorHandler(async (request: NextRequest) => {
 export const POST = withErrorHandler(async (request: NextRequest) => {
     const body = await request.json();
     
-    // 必須フィールドの検証
+    // 詳細なリクエストログを追加
+    console.log('=== 商品作成API ===');
+    console.log('[API] Request method:', request.method);
+    console.log('[API] Request headers:', Object.fromEntries(request.headers.entries()));
+    console.log('[API] Raw body received:', JSON.stringify(body, null, 2));
+    console.log('[API] Body keys:', Object.keys(body));
+    
+    // 各フィールドの詳細確認
+    Object.keys(body).forEach(key => {
+        console.log(`[API] ${key}: ${JSON.stringify(body[key])} (type: ${typeof body[key]})`);
+    });
+    
+    // 必須フィールドの検証前に確認
+    const requiredFields = ['productName', 'productCode', 'category', 'unit'];
+    console.log('[API] Checking required fields:', requiredFields);
+    requiredFields.forEach(field => {
+        const value = body[field];
+        const exists = value !== undefined && value !== null && value !== '';
+        console.log(`[API] Required field "${field}": ${exists ? 'OK' : 'MISSING'} (value: ${JSON.stringify(value)})`);
+    });
+    
     validateRequired(body, ['productName', 'productCode', 'category', 'unit']);
 
     // 数値フィールドの検証
@@ -125,9 +145,18 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     body.unitPrice = unitPrice;
 
     // 税率の検証（-1は内税、0は非課税/税込価格、0.08は8%、0.10は10%）
-    if (typeof body.taxRate !== 'number' || (body.taxRate !== -1 && body.taxRate !== 0 && (body.taxRate < 0 || body.taxRate > 1))) {
-      console.error('[API] Invalid taxRate:', body.taxRate);
-      throw new ApiErrorResponse('税率は0から1の間の数値、または-1（内税）である必要があります', 400, 'INVALID_TAX_RATE');
+    console.log('[API] taxRate validation - value:', body.taxRate, 'type:', typeof body.taxRate);
+    
+    if (typeof body.taxRate !== 'number') {
+      console.error('[API] taxRate is not a number:', body.taxRate);
+      throw new ApiErrorResponse('税率は数値である必要があります', 400, 'INVALID_TAX_RATE_TYPE');
+    }
+    
+    // 許可される税率値: -1（内税）、0（非課税）、0.08（軽減税率）、0.10（標準税率）
+    const allowedTaxRates = [-1, 0, 0.08, 0.10];
+    if (!allowedTaxRates.includes(body.taxRate)) {
+      console.error('[API] Invalid taxRate value:', body.taxRate, 'allowed:', allowedTaxRates);
+      throw new ApiErrorResponse(`税率は次の値のいずれかである必要があります: ${allowedTaxRates.join(', ')}`, 400, 'INVALID_TAX_RATE_VALUE');
     }
 
     if (body.stockQuantity !== undefined) {
@@ -150,12 +179,21 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
       tags: body.tags || []
     };
 
+    console.log('[API] Final productData:', JSON.stringify(productData, null, 2));
+    
     try {
+      console.log('[API] Calling productService.createProduct...');
       const product = await productService.createProduct(productData);
+      console.log('[API] Product created successfully:', product);
       return NextResponse.json(product);
     } catch (error) {
-      if (error instanceof Error && error.message === '商品コードが重複しています') {
-        throw new ApiErrorResponse(error.message, 409, 'DUPLICATE_PRODUCT_CODE');
+      console.error('[API] Error in createProduct:', error);
+      if (error instanceof Error) {
+        console.error('[API] Error message:', error.message);
+        console.error('[API] Error stack:', error.stack);
+        if (error.message === '商品コードが重複しています') {
+          throw new ApiErrorResponse(error.message, 409, 'DUPLICATE_PRODUCT_CODE');
+        }
       }
       throw error;
     }
