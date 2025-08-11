@@ -71,6 +71,7 @@ export async function generateHtmlQuote(
     // URLs生成
     const viewOnlineUrl = `${baseUrl}/quotes/view/${quote._id}?t=${trackingId}`;
     const acceptUrl = `${baseUrl}/quotes/accept/${quote._id}?t=${trackingId}`;
+    const considerUrl = `${baseUrl}/quotes/consider/${quote._id}?t=${trackingId}`;
     const discussUrl = `${baseUrl}/quotes/discuss/${quote._id}?t=${trackingId}`;
     const trackingPixelUrl = includeTracking
       ? `${baseUrl}/api/tracking/open?id=${trackingId}&doc=quote&qid=${quote._id}`
@@ -86,6 +87,7 @@ export async function generateHtmlQuote(
         recipientName,
         viewOnlineUrl,
         acceptUrl,
+        considerUrl,
         discussUrl,
         trackingPixelUrl,
         customMessage,

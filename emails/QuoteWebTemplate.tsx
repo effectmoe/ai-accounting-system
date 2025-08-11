@@ -8,6 +8,7 @@ interface QuoteWebTemplateProps {
   recipientName?: string;
   viewOnlineUrl?: string;
   acceptUrl?: string;
+  considerUrl?: string;  // 検討するボタン用のURL
   discussUrl?: string;
   trackingPixelUrl?: string;
   customMessage?: string;
@@ -131,6 +132,7 @@ export default function QuoteWebTemplate({
   recipientName,
   viewOnlineUrl,
   acceptUrl,
+  considerUrl,
   discussUrl,
   trackingPixelUrl,
   customMessage,
@@ -705,6 +707,16 @@ export default function QuoteWebTemplate({
                 </p>
               </div>
             )}
+            {considerUrl && (
+              <div style={buttonWrapperStyle}>
+                <a href={considerUrl} style={considerButtonStyle} className="cta-button">
+                  検討する
+                </a>
+                <p style={buttonDescriptionStyle}>
+                  現在の見積書で社内検討
+                </p>
+              </div>
+            )}
             {discussUrl && (
               <div style={buttonWrapperStyle}>
                 <a href={discussUrl} style={secondaryButtonStyle} className="cta-button">
@@ -731,7 +743,7 @@ export default function QuoteWebTemplate({
       <footer style={footerStyle}>
         <div style={footerContentStyle}>
           <p style={footerTextStyle}>
-            このメールは {companyInfo?.companyName || companyInfo?.name || '株式会社'} より送信されました。
+            このメールは {companyInfo?.companyName || companyInfo?.name || '会社名未設定'} より送信されました。
           </p>
           <div style={footerLinksStyle}>
             <a href={`${baseUrl}/privacy`} style={footerLinkStyle}>プライバシーポリシー</a>
@@ -1094,6 +1106,23 @@ const ctaContainerStyle = {
 const primaryButtonStyle = {
   display: 'inline-block',
   backgroundColor: '#3B82F6',
+  color: '#ffffff',
+  padding: '0.875rem 2rem',
+  borderRadius: '0.375rem',
+  textDecoration: 'none',
+  fontSize: '1rem',
+  fontWeight: '500',
+  minWidth: '180px',
+  textAlign: 'center' as const,
+  boxSizing: 'border-box' as const,
+  transition: 'all 0.2s ease',
+  lineHeight: '1.5',
+  boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
+};
+
+const considerButtonStyle = {
+  display: 'inline-block',
+  backgroundColor: '#10b981',
   color: '#ffffff',
   padding: '0.875rem 2rem',
   borderRadius: '0.375rem',

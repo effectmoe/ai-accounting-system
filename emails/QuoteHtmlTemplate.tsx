@@ -24,6 +24,7 @@ interface QuoteHtmlTemplateProps {
   recipientName?: string;
   viewOnlineUrl?: string;
   acceptUrl?: string;
+  considerUrl?: string;
   discussUrl?: string;
   trackingPixelUrl?: string;
   customMessage?: string;
