@@ -5,7 +5,11 @@ import { CompanyInfoService } from '@/services/company-info.service';
 import { Resend } from 'resend';
 import { generateHtmlQuote } from '@/lib/html-quote-generator';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resendApiKey = process.env.RESEND_API_KEY;
+console.log('[Send Quote API] RESEND_API_KEY exists:', !!resendApiKey);
+console.log('[Send Quote API] RESEND_API_KEY prefix:', resendApiKey?.substring(0, 10) + '...');
+
+const resend = new Resend(resendApiKey);
 
 export async function POST(
   request: NextRequest,
@@ -60,24 +64,49 @@ export async function POST(
       useWebLayout: true,
     });
 
+    // Resend APIキーの確認
+    if (!resendApiKey) {
+      console.error('[Send Quote API] RESEND_API_KEY is not configured');
+      return NextResponse.json(
+        { error: 'Email service is not configured. Please contact administrator.' },
+        { status: 500 }
+      );
+    }
+
     // Resendでメール送信（generateHtmlQuoteが既にHTMLを生成済み）
     console.log('[Send Quote API] Sending email with Resend...');
+    
+    // Resendが推奨するfromアドレスフォーマット
+    const fromEmail = process.env.RESEND_FROM_EMAIL || 'accounting@effect.moe';
+    const fromName = companyInfo?.companyName || 'AAM Accounting';
+    const from = `${fromName} <${fromEmail}>`;
+    
     console.log('[Send Quote API] Email details:', {
-      from: `${companyInfo?.companyName || 'AAM Accounting'} <noreply@accounting-automation.vercel.app>`,
+      from,
       to: recipientEmail,
       subject: htmlContent.subject || `お見積書 - ${quote.quoteNumber}`,
     });
     
-    const emailResult = await resend.emails.send({
-      from: `${companyInfo?.companyName || 'AAM Accounting'} <noreply@accounting-automation.vercel.app>`,
-      to: recipientEmail,
-      subject: htmlContent.subject || `お見積書 - ${quote.quoteNumber}`,
-      html: htmlContent.html,
-      text: htmlContent.plainText,
-      attachments: [], // 必要に応じてPDF添付
-    });
-    
-    console.log('[Send Quote API] Email result:', emailResult);
+    try {
+      const emailResult = await resend.emails.send({
+        from,
+        to: recipientEmail,
+        subject: htmlContent.subject || `お見積書 - ${quote.quoteNumber}`,
+        html: htmlContent.html,
+        text: htmlContent.plainText,
+        attachments: [], // 必要に応じてPDF添付
+      });
+      
+      console.log('[Send Quote API] Email result:', emailResult);
+      
+      if (emailResult.error) {
+        console.error('[Send Quote API] Resend error:', emailResult.error);
+        throw new Error(emailResult.error.message || 'Failed to send email');
+      }
+    } catch (resendError) {
+      console.error('[Send Quote API] Resend send error:', resendError);
+      throw resendError;
+    }
 
     // 送信履歴を記録（サービスに移すべきですが、今は直接実装）
     // TODO: EmailEventService を作成して移動
