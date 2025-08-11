@@ -21,7 +21,9 @@ export async function POST(request: NextRequest) {
       hasQuote: !!quote,
       hasCompanyInfo: !!companyInfo,
       quoteNumber: quote?.quoteNumber,
-      companyName: companyInfo?.companyName,
+      companyName: companyInfo?.companyName || companyInfo?.name,
+      suggestedOptionsCount: suggestedOptions?.length || 0,
+      suggestedOptions: suggestedOptions,
     });
 
     // デバッグ用: シンプルなHTMLを返して確認

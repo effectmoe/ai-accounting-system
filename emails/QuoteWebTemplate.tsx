@@ -135,6 +135,16 @@ export default function QuoteWebTemplate({
   suggestedOptions = [],
 }: QuoteWebTemplateProps) {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://accounting-automation.vercel.app';
+  
+  // デバッグ用ログ
+  if (typeof console !== 'undefined') {
+    console.log('[QuoteWebTemplate] Rendering with:', {
+      companyName: companyInfo?.companyName || companyInfo?.name || '未設定',
+      suggestedOptionsCount: suggestedOptions?.length || 0,
+      hasQuoteItems: !!quote?.items,
+      itemsCount: quote?.items?.length || 0,
+    });
+  }
   const brandColor = '#3B82F6';
   const accentColor = '#10B981';
 

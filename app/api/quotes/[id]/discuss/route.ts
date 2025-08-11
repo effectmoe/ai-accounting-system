@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 import { logger } from '@/lib/logger';
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 
 export async function POST(
   request: NextRequest,
@@ -79,53 +79,22 @@ export async function POST(
       }
     });
 
-    // メール通知を送信（SMTP設定がある場合、またはデフォルトでinfo@effect.moeに送信）
-    const shouldSendEmail = true; // 常にメール送信を試みる
-    if (shouldSendEmail) {
-      try {
-        // 固定の受信先メールアドレス
-        const fixedToEmail = 'info@effect.moe';
-        
-        // nodemailerのトランスポート作成（設定がなければダミー）
-        const transporter = process.env.SMTP_USER && process.env.SMTP_PASS
-          ? nodemailer.createTransport({
-              host: process.env.SMTP_HOST || 'smtp.gmail.com',
-              port: parseInt(process.env.SMTP_PORT || '587'),
-              secure: false,
-              auth: {
-                user: process.env.SMTP_USER,
-                pass: process.env.SMTP_PASS,
-              },
-            })
-          : null;
+    // メール通知を送信
+    try {
+      // 固定の受信先メールアドレス
+      const toEmail = process.env.INTERNAL_NOTIFY_EMAIL || 'info@effect.moe';
       
       // 会社情報を取得
       const companyInfo = await db.collection('company_info').findOne({});
-      const toEmail = fixedToEmail; // 固定のメールアドレスを使用
       
-      // トランスポートが設定されている場合のみメール送信
-      if (transporter) {
-        // メール送信
-        await transporter.sendMail({
-        from: contactEmail || process.env.SMTP_FROM || 'noreply@example.com',
-        to: toEmail,
-        replyTo: contactEmail,
-        subject: `【ご質問】見積書 ${quote.quoteNumber} について`,
-        text: `
-見積書番号: ${quote.quoteNumber}
-お客様: ${quote.customer?.companyName || '未設定'}
-お問い合わせ者: ${contactName || ''}
-メールアドレス: ${contactEmail || ''}
-
-【ご質問内容】
-${message || 'ご質問内容が入力されていません'}
-
-見積金額: ¥${quote.totalAmount?.toLocaleString() || '0'}（税込）
-
----
-このメールは見積書システムから自動送信されています。
-        `,
-        html: `
+      // Resendが設定されているか確認
+      const resendApiKey = process.env.RESEND_API_KEY;
+      const isResendConfigured = resendApiKey && !resendApiKey.includes('dummy') && resendApiKey.startsWith('re_');
+      
+      if (isResendConfigured) {
+        const resend = new Resend(resendApiKey);
+        
+        const htmlContent = `
 <h3>見積書に関するご質問</h3>
 <table style="border-collapse: collapse; margin-bottom: 20px;">
   <tr>
@@ -157,20 +126,51 @@ ${message || 'ご質問内容が入力されていません'}
 
 <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
 <p style="color: #666; font-size: 12px;">このメールは見積書システムから自動送信されています。</p>
-        `,
-      });
+        `;
         
-        logger.info(`Discussion email sent for quote ${quote.quoteNumber} to ${toEmail}`);
+        const textContent = `
+見積書番号: ${quote.quoteNumber}
+お客様: ${quote.customer?.companyName || '未設定'}
+お問い合わせ者: ${contactName || ''}
+メールアドレス: ${contactEmail || ''}
+
+【ご質問内容】
+${message || 'ご質問内容が入力されていません'}
+
+見積金額: ¥${quote.totalAmount?.toLocaleString() || '0'}（税込）
+
+---
+このメールは見積書システムから自動送信されています。
+        `;
+        
+        // Resendでメール送信
+        const { data, error } = await resend.emails.send({
+          from: `${companyInfo?.companyName || companyInfo?.name || 'お問い合わせ'} <${process.env.RESEND_FROM_EMAIL || 'accounting@effect.moe'}>`,
+          to: toEmail,
+          replyTo: contactEmail,
+          subject: `【ご質問】見積書 ${quote.quoteNumber} について`,
+          text: textContent,
+          html: htmlContent,
+          tags: [
+            { name: 'type', value: 'quote_inquiry' },
+            { name: 'quote_number', value: quote.quoteNumber },
+          ],
+        });
+        
+        if (error) {
+          logger.error('Resend API error:', error);
+        } else {
+          logger.info(`Discussion email sent for quote ${quote.quoteNumber} to ${toEmail} via Resend`);
+        }
       } else {
-        // SMTP設定がない場合はログに記録
-        logger.warn(`SMTP not configured. Discussion inquiry for quote ${quote.quoteNumber} from ${contactEmail}:`);
+        // Resendが設定されていない場合はログに記録
+        logger.warn(`Resend not configured. Discussion inquiry for quote ${quote.quoteNumber} from ${contactEmail}:`);
         logger.warn(`Message: ${message}`);
         logger.warn(`Would have sent to: ${toEmail}`);
       }
-      } catch (emailError) {
-        logger.error('Error sending discussion email:', emailError);
-        // メール送信エラーは処理を失敗させない
-      }
+    } catch (emailError) {
+      logger.error('Error sending discussion email:', emailError);
+      // メール送信エラーは処理を失敗させない
     }
 
     logger.info(`Inquiry received for quote ${quote.quoteNumber} from ${contactEmail}`);

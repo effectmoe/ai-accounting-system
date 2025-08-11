@@ -370,11 +370,6 @@ export default function QuoteHtmlTemplate({
                       {companyInfo.website}
                     </Link>
                   )}
-                  {quote.assignee && (
-                    <Text style={companyDetails}>
-                      担当者: {quote.assignee}
-                    </Text>
-                  )}
                   <Hr style={signatureDivider} />
                   <Text style={signatureText}>
                     {companyInfo?.companyName || companyInfo?.name || '株式会社'}

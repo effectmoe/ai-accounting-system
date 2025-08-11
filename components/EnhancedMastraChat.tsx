@@ -289,14 +289,14 @@ ${context.availableActions.map(action => `• ${action}`).join('\n')}
         <button
           onClick={() => setIsOpen(true)}
           className="fixed right-6 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-full p-4 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 z-50"
-          style={{ bottom: '120px' }}
+          style={{ bottom: '24px' }}
           title={`${currentAgent.name} - ${currentAgent.specialty}`}
         >
           <currentAgent.icon size={24} />
         </button>
         
         {/* エージェント選択ボタン */}
-        <div className="fixed right-24" style={{ bottom: '120px' }}>
+        <div className="fixed right-24" style={{ bottom: '24px' }}>
           <button
             onClick={() => setShowAgentMenu(!showAgentMenu)}
             className="bg-gray-800 text-white rounded-full p-3 shadow-lg hover:bg-gray-700 transition-colors"
