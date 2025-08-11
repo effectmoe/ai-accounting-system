@@ -41,7 +41,7 @@ const renderDetailsWithTooltip = (details: string, tooltip: string) => {
       const markerHtml = `
         <span class="tooltip-wrapper" style="position: relative; display: inline-block;">
           <span style="
-            background: linear-gradient(180deg, transparent 60%, #e5e7eb 60%);
+            background: linear-gradient(180deg, transparent 60%, rgba(254, 240, 138, 0.5) 60%);
             cursor: help;
             border-radius: 2px;
             padding: 0 2px;
