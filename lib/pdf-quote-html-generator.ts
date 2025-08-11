@@ -1,3 +1,5 @@
+import { cleanDuplicateSignatures } from './utils/clean-duplicate-signatures';
+
 export function generateCompactQuoteHTML(quote: any, companyInfo: any): string {
   const customerName = quote.customer?.companyName || quote.customer?.name || quote.customerSnapshot?.companyName || '';
   const issueDate = new Date(quote.issueDate || new Date()).toISOString().split('T')[0];
@@ -393,7 +395,7 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any): string {
     ${quote.notes ? `
       <div class="notes-section">
         <h3 class="notes-title">備考</h3>
-        <div class="notes-content">${quote.notes}</div>
+        <div class="notes-content">${cleanDuplicateSignatures(quote.notes)}</div>
       </div>
     ` : ''}
   </div>
