@@ -324,10 +324,18 @@ export default function QuoteHtmlTemplate({
                       見積を承認する
                     </Button>
                   )}
+                  {considerUrl && (
+                    <Button
+                      href={considerUrl}
+                      style={secondaryButton}
+                    >
+                      検討する
+                    </Button>
+                  )}
                   {discussUrl && (
                     <Button
                       href={discussUrl}
-                      style={secondaryButton}
+                      style={tertiaryButton}
                     >
                       相談する
                     </Button>
@@ -775,6 +783,20 @@ const secondaryButton = {
   padding: '12px 32px',
   margin: '0 8px',
   border: '2px solid #3B82F6',
+};
+
+const tertiaryButton = {
+  backgroundColor: '#ffffff',
+  borderRadius: '8px',
+  color: '#6B7280',
+  fontSize: '16px',
+  fontWeight: 'bold',
+  textDecoration: 'none',
+  textAlign: 'center' as const,
+  display: 'inline-block',
+  padding: '12px 32px',
+  margin: '0 8px',
+  border: '2px solid #6B7280',
 };
 
 const notesSection = {
