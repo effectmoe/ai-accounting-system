@@ -13,9 +13,12 @@ export default function AcceptQuotePage() {
   const [loading, setLoading] = useState(true);
   const [accepting, setAccepting] = useState(false);
   const [accepted, setAccepted] = useState(false);
+  const [considering, setConsidering] = useState(false);
+  const [considered, setConsidered] = useState(false);
   const [quote, setQuote] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [alreadyAccepted, setAlreadyAccepted] = useState(false);
+  const [alreadyConsidering, setAlreadyConsidering] = useState(false);
 
   useEffect(() => {
     const loadQuote = async () => {
@@ -35,6 +38,11 @@ export default function AcceptQuotePage() {
           setAlreadyAccepted(true);
           setAccepted(true);
         }
+        // 既に検討中かチェック
+        if (quoteData.status === 'considering') {
+          setAlreadyConsidering(true);
+          setConsidered(true);
+        }
       } catch (err) {
         logger.error('Error loading quote:', err);
         setError(err instanceof Error ? err.message : '見積書の読み込みに失敗しました');
@@ -47,6 +55,10 @@ export default function AcceptQuotePage() {
   }, [params.id]);
 
   const handleAccept = async () => {
+    if (accepting || alreadyAccepted || alreadyConsidering) {
+      return; // 既に処理中または承認済み/検討中の場合は何もしない
+    }
+    
     setAccepting(true);
     try {
       // 承認処理を実装
@@ -62,26 +74,63 @@ export default function AcceptQuotePage() {
       });
       
       if (!response.ok) {
-        throw new Error('承認処理に失敗しました');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || '承認処理に失敗しました');
       }
       
-      // APIから更新されたデータを取得して状態を更新
-      const updatedQuoteRes = await fetch(`/api/quotes/${params.id}`);
-      if (updatedQuoteRes.ok) {
-        const updatedQuote = await updatedQuoteRes.json();
-        setQuote(updatedQuote);
-        if (updatedQuote.status === 'accepted') {
-          setAlreadyAccepted(true);
-        }
-      }
-      
+      // 承認成功を即座に反映
       setAccepted(true);
       setAlreadyAccepted(true);
+      
+      // 状態を更新して承認済み画面を表示
+      if (quote) {
+        setQuote({ ...quote, status: 'accepted' });
+      }
+      
     } catch (err) {
       logger.error('Error accepting quote:', err);
-      setError('承認処理に失敗しました');
-    } finally {
-      setAccepting(false);
+      setError(err instanceof Error ? err.message : '承認処理に失敗しました');
+      setAccepting(false); // エラー時のみacceptingをfalseに
+    }
+  };
+
+  const handleConsider = async () => {
+    if (considering || alreadyConsidering || alreadyAccepted) {
+      return; // 既に処理中または検討中/承認済みの場合は何もしない
+    }
+    
+    setConsidering(true);
+    try {
+      // 検討中処理を実装
+      const response = await fetch(`/api/quotes/${params.id}/consider`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          consideredAt: new Date().toISOString(),
+          consideredBy: quote?.customer?.email || quote?.customerEmail || 'customer@example.com',
+          ipAddress: window.location.hostname,
+          userAgent: navigator.userAgent
+        })
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || '検討中処理に失敗しました');
+      }
+      
+      // 検討中成功を即座に反映
+      setConsidered(true);
+      setAlreadyConsidering(true);
+      
+      // 状態を更新して検討中画面を表示
+      if (quote) {
+        setQuote({ ...quote, status: 'considering' });
+      }
+      
+    } catch (err) {
+      logger.error('Error marking quote as considering:', err);
+      setError(err instanceof Error ? err.message : '検討中処理に失敗しました');
+      setConsidering(false); // エラー時のみconsideringをfalseに
     }
   };
 
@@ -146,6 +195,43 @@ export default function AcceptQuotePage() {
     );
   }
 
+  if (considered) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-yellow-50">
+        <Card className="w-96">
+          <CardHeader>
+            <div className="flex justify-center mb-4">
+              <svg className="h-16 w-16 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <CardTitle className="text-center">検討中として記録しました</CardTitle>
+            <CardDescription className="text-center">
+              見積書を検討いただきありがとうございます
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-center text-muted-foreground mb-6">
+              検討中ステータスとして記録しました。
+              <br />
+              ご検討の結果、何かご不明な点がございましたら
+              <br />
+              お気軽にお問い合わせください。
+            </p>
+            <div className="flex flex-col gap-2">
+              <Button onClick={() => router.push(`/quotes/view/${params.id}`)}>
+                見積書を表示
+              </Button>
+              <Button variant="outline" onClick={() => window.close()}>
+                閉じる
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="flex items-center justify-center min-h-screen">
       <Card className="max-w-md">
@@ -176,27 +262,50 @@ export default function AcceptQuotePage() {
               </ul>
             </div>
 
-            <div className="flex gap-2">
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <Button 
+                  className="flex-1"
+                  onClick={handleAccept}
+                  disabled={accepting || alreadyAccepted || alreadyConsidering}
+                  variant={alreadyAccepted ? 'secondary' : 'default'}
+                >
+                  {accepting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      承認中...
+                    </>
+                  ) : alreadyAccepted ? (
+                    '承認済み'
+                  ) : alreadyConsidering ? (
+                    '承認不可（検討中）'
+                  ) : (
+                    '見積書を承認'
+                  )}
+                </Button>
+                <Button 
+                  variant="outline"
+                  className="flex-1"
+                  onClick={handleConsider}
+                  disabled={considering || alreadyConsidering || alreadyAccepted}
+                >
+                  {considering ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      処理中...
+                    </>
+                  ) : alreadyConsidering ? (
+                    '検討中'
+                  ) : alreadyAccepted ? (
+                    '検討不可（承認済み）'
+                  ) : (
+                    '検討する'
+                  )}
+                </Button>
+              </div>
               <Button 
-                className="flex-1"
-                onClick={handleAccept}
-                disabled={accepting || alreadyAccepted}
-                variant={alreadyAccepted ? 'secondary' : 'default'}
-              >
-                {accepting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    承認中...
-                  </>
-                ) : alreadyAccepted ? (
-                  '承認済み'
-                ) : (
-                  '見積書を承認'
-                )}
-              </Button>
-              <Button 
-                variant="outline"
-                className="flex-1"
+                variant="ghost"
+                className="w-full"
                 onClick={() => window.close()}
               >
                 閉じる
