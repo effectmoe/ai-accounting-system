@@ -126,22 +126,36 @@ export default function PremiumSupportPlanPage() {
             size="lg" 
             className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white px-8 py-6 text-lg"
             onClick={() => {
-              const subject = encodeURIComponent('プレミアムサポートプランのお申し込み');
-              const body = encodeURIComponent(
-                'プレミアムサポートプランにお申し込みをご希望です。\n\n' +
-                '【ご希望内容】\n' +
-                '- プラン名: プレミアムサポートプラン\n' +
-                '- 月額料金: ¥20,000（税別）\n\n' +
-                '【お客様情報】\n' +
-                'お名前:\n' +
-                '会社名:\n' +
-                '電話番号:\n' +
-                'ご質問等:'
-              );
-              window.location.href = `mailto:support@example.com?subject=${subject}&body=${body}`;
+              // 親ウィンドウにメッセージを送信してオプションを追加
+              if (window.opener) {
+                window.opener.postMessage({
+                  type: 'ADD_OPTION',
+                  option: {
+                    title: 'プレミアムサポートプラン',
+                    description: '優先サポートと拡張保証でビジネスを加速',
+                    price: 20000,
+                    features: [
+                      '24時間以内の優先対応',
+                      '専任サポート担当者',
+                      '月次レポート作成',
+                      '無償アップデート'
+                    ],
+                    ctaText: 'プレミアムサポートを申し込む',
+                    ctaUrl: '/plans/premium-support'
+                  }
+                }, '*');
+                
+                // メッセージ送信後、ウィンドウを閉じる
+                setTimeout(() => {
+                  window.close();
+                }, 100);
+              } else {
+                // 親ウィンドウがない場合は見積書ページにリダイレクト
+                window.location.href = '/quotes';
+              }
             }}
           >
-            今すぐ申し込む
+            見積書に追加する
           </Button>
           
           <p className="text-sm text-gray-600">
@@ -150,9 +164,9 @@ export default function PremiumSupportPlanPage() {
           
           <Button 
             variant="outline"
-            onClick={() => window.history.back()}
+            onClick={() => window.close()}
           >
-            戻る
+            閉じる
           </Button>
         </div>
       </div>

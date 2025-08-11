@@ -153,25 +153,36 @@ export default function DataAnalyticsPlanPage() {
             size="lg" 
             className="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white px-8 py-6 text-lg"
             onClick={() => {
-              const subject = encodeURIComponent('データ分析オプションのお申し込み');
-              const body = encodeURIComponent(
-                'データ分析オプションにお申し込みをご希望です。\n\n' +
-                '【ご希望内容】\n' +
-                '- オプション名: データ分析オプション\n' +
-                '- 料金: ¥50,000/回\n\n' +
-                '【分析希望内容】\n' +
-                '- 分析期間:\n' +
-                '- 重点分析項目:\n' +
-                '- その他ご要望:\n\n' +
-                '【お客様情報】\n' +
-                'お名前:\n' +
-                '会社名:\n' +
-                '電話番号:'
-              );
-              window.location.href = `mailto:support@example.com?subject=${subject}&body=${body}`;
+              // 親ウィンドウにメッセージを送信してオプションを追加
+              if (window.opener) {
+                window.opener.postMessage({
+                  type: 'ADD_OPTION',
+                  option: {
+                    title: 'データ分析オプション',
+                    description: 'AIを活用した高度なデータ分析で経営判断をサポート',
+                    price: 50000,
+                    features: [
+                      '売上データ分析',
+                      'KPI自動レポート',
+                      'トレンド予測',
+                      '改善提案レポート'
+                    ],
+                    ctaText: 'データ分析を申し込む',
+                    ctaUrl: '/plans/data-analytics'
+                  }
+                }, '*');
+                
+                // メッセージ送信後、ウィンドウを閉じる
+                setTimeout(() => {
+                  window.close();
+                }, 100);
+              } else {
+                // 親ウィンドウがない場合は見積書ページにリダイレクト
+                window.location.href = '/quotes';
+              }
             }}
           >
-            サンプルを見る・申し込む
+            見積書に追加する
           </Button>
           
           <p className="text-sm text-gray-600">
@@ -180,9 +191,9 @@ export default function DataAnalyticsPlanPage() {
           
           <Button 
             variant="outline"
-            onClick={() => window.history.back()}
+            onClick={() => window.close()}
           >
-            戻る
+            閉じる
           </Button>
         </div>
       </div>
