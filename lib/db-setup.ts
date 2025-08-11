@@ -277,21 +277,37 @@ export async function setupValidationRules() {
       validator: {
         $jsonSchema: {
           bsonType: 'object',
-          required: ['companyName', 'postalCode', 'prefecture', 'city', 'address1', 'phone', 'email', 'isActive'],
+          required: ['companyName', 'isActive'], // emailを必須から削除
           properties: {
             companyName: {
               bsonType: 'string',
               description: 'Company name is required'
             },
             email: {
-              bsonType: 'string',
+              bsonType: ['string', 'null'], // nullも許可
               pattern: '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$',
-              description: 'Valid email is required'
+              description: 'Valid email format if provided'
+            },
+            postalCode: {
+              bsonType: ['string', 'null'],
+              description: 'Postal code if provided'
+            },
+            prefecture: {
+              bsonType: ['string', 'null'],
+              description: 'Prefecture if provided'
+            },
+            city: {
+              bsonType: ['string', 'null'],
+              description: 'City if provided'
+            },
+            address1: {
+              bsonType: ['string', 'null'],
+              description: 'Address1 if provided'
             },
             phone: {
-              bsonType: 'string',
+              bsonType: ['string', 'null'],
               pattern: '^[0-9-]+$',
-              description: 'Phone number should only contain numbers and hyphens'
+              description: 'Phone number should only contain numbers and hyphens if provided'
             },
             isActive: {
               bsonType: 'bool',
