@@ -54,8 +54,9 @@ export async function PUT(
       if (typeof body.taxRate !== 'number' || (body.taxRate !== -1 && body.taxRate !== 0 && (body.taxRate < 0 || body.taxRate > 1))) {
         return NextResponse.json(
           { error: '税率は0から1の間の数値、または-1（内税）である必要があります' },
-        { status: 400 }
-      );
+          { status: 400 }
+        );
+      }
     }
 
     if (body.stockQuantity !== undefined) {
