@@ -94,18 +94,27 @@ export default function HtmlQuoteEditorPage() {
 
   // 送信機能を追加
   const handleSend = async (emailOptions: any) => {
+    console.log('[HTML Editor Page] handleSend called with:', emailOptions);
     try {
       // 見積書の送信処理
+      console.log('[HTML Editor Page] Sending to API:', `/api/quotes/${quoteId}/send`);
       const response = await fetch(`/api/quotes/${quoteId}/send`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(emailOptions),
       });
+      
+      console.log('[HTML Editor Page] Response status:', response.status);
+      console.log('[HTML Editor Page] Response headers:', Object.fromEntries(response.headers.entries()));
 
       if (!response.ok) {
-        throw new Error('送信に失敗しました');
+        const errorData = await response.json();
+        console.log('[HTML Editor Page] Error response:', errorData);
+        throw new Error(errorData.error || '送信に失敗しました');
       }
 
+      const result = await response.json();
+      console.log('[HTML Editor Page] Success response:', result);
       alert('見積書を送信しました');
       // 送信後、見積書詳細ページに戻る
       router.push(`/quotes/${quoteId}`);

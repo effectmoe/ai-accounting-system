@@ -12,7 +12,11 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    const { recipientEmail, recipientName, customMessage } = await request.json();
+    console.log('[Send Quote API] Request started for quoteId:', params.id);
+    const requestBody = await request.json();
+    console.log('[Send Quote API] Received data:', JSON.stringify(requestBody, null, 2));
+    
+    const { recipientEmail, recipientName, customMessage } = requestBody;
 
     if (!recipientEmail) {
       return NextResponse.json(
@@ -57,6 +61,13 @@ export async function POST(
     });
 
     // Resendでメール送信（generateHtmlQuoteが既にHTMLを生成済み）
+    console.log('[Send Quote API] Sending email with Resend...');
+    console.log('[Send Quote API] Email details:', {
+      from: `${companyInfo?.companyName || 'AAM Accounting'} <noreply@accounting-automation.vercel.app>`,
+      to: recipientEmail,
+      subject: htmlContent.subject || `お見積書 - ${quote.quoteNumber}`,
+    });
+    
     const emailResult = await resend.emails.send({
       from: `${companyInfo?.companyName || 'AAM Accounting'} <noreply@accounting-automation.vercel.app>`,
       to: recipientEmail,
@@ -65,6 +76,8 @@ export async function POST(
       text: htmlContent.plainText,
       attachments: [], // 必要に応じてPDF添付
     });
+    
+    console.log('[Send Quote API] Email result:', emailResult);
 
     // 送信履歴を記録（サービスに移すべきですが、今は直接実装）
     // TODO: EmailEventService を作成して移動
