@@ -113,7 +113,7 @@ export default function OptionQuickCreator({
           'マニュアル作成',
           'Q&Aセッション'
         ]);
-        setCtaText('トレーニングを申し込む';
+        setCtaText('トレーニングを申し込む');
         break;
     }
   };
