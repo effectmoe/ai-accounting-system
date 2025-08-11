@@ -676,7 +676,12 @@ export default function QuoteWebTemplate({
                       </li>
                     ))}
                   </ul>
-                  <a href={option.ctaUrl} style={suggestionButtonStyle}>
+                  <a 
+                    href={option.ctaUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    style={suggestionButtonStyle}
+                  >
                     {option.ctaText}
                   </a>
                 </div>
