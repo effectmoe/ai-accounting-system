@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     });
 
     // デバッグ用: シンプルなHTMLを返して確認
-    const debugMode = false; // 本番環境では false に設定
+    const debugMode = true; // デバッグ有効
     if (debugMode) {
       const simpleHtml = `
         <!DOCTYPE html>
@@ -35,12 +35,47 @@ export async function POST(request: NextRequest) {
         <head>
           <meta charset="UTF-8">
           <title>見積書プレビュー</title>
+          <style>
+            .tooltip-wrapper {
+              position: relative;
+              display: inline-block;
+              border-bottom: 1px dotted #333;
+              cursor: help;
+            }
+            .tooltip-content {
+              visibility: hidden;
+              background-color: rgba(254, 240, 138, 0.95);
+              color: #333;
+              text-align: center;
+              border-radius: 6px;
+              padding: 8px 12px;
+              position: absolute;
+              z-index: 1;
+              bottom: 125%;
+              left: 50%;
+              transform: translateX(-50%);
+              width: 200px;
+              font-size: 12px;
+              box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            }
+            .tooltip-wrapper:hover .tooltip-content {
+              visibility: visible;
+            }
+          </style>
         </head>
         <body style="font-family: sans-serif; padding: 20px;">
           <h1>見積書 #${quote?.quoteNumber || 'N/A'}</h1>
           <p>顧客名: ${quote?.customerName || 'N/A'}</p>
           <p>会社名: ${companyInfo?.companyName || companyInfo?.name || 'N/A'}</p>
           <p>合計金額: ¥${quote?.totalAmount?.toLocaleString() || 'N/A'}</p>
+          <p>
+            テストツールチップ: 
+            <span class="tooltip-wrapper">
+              ホバーしてください
+              <span class="tooltip-content">💡 ツールチップが表示されます！黄色背景です。</span>
+            </span>
+          </p>
+          <p>備考: ${quote?.notes || 'なし'}</p>
           <hr>
           <h2>見積項目</h2>
           <ul>
