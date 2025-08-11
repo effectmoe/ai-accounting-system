@@ -124,8 +124,10 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     }
     body.unitPrice = unitPrice;
 
-    if (typeof body.taxRate !== 'number' || body.taxRate < 0 || body.taxRate > 1) {
-      throw new ApiErrorResponse('税率は0から1の間の数値である必要があります（例: 0.10 = 10%）', 400, 'INVALID_TAX_RATE');
+    // 税率の検証（-1は内税、0は非課税/税込価格、0.08は8%、0.10は10%）
+    if (typeof body.taxRate !== 'number' || (body.taxRate !== -1 && body.taxRate !== 0 && (body.taxRate < 0 || body.taxRate > 1))) {
+      console.error('[API] Invalid taxRate:', body.taxRate);
+      throw new ApiErrorResponse('税率は0から1の間の数値、または-1（内税）である必要があります', 400, 'INVALID_TAX_RATE');
     }
 
     if (body.stockQuantity !== undefined) {
