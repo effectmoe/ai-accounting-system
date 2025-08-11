@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Plus, Edit, Trash2, Search, Filter, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, ChevronsUpDown, X, Columns, GripVertical } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Filter, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, ChevronsUpDown, X, Columns, GripVertical, Copy } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { Product, ProductSortableField, SortOrder, ProductFilterState } from '@/types/collections';
 import { logger } from '@/lib/logger';
@@ -707,6 +707,41 @@ function ProductsPageContent() {
       setSelectedProducts(new Set());
     } else {
       setSelectedProducts(new Set(products.map(product => product.id || product._id?.toString() || '')));
+    }
+  };
+
+  // 一括複製
+  const duplicateSelectedProducts = async () => {
+    if (selectedProducts.size === 0) return;
+    
+    if (!confirm(`選択した${selectedProducts.size}件の商品を複製しますか？`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/products/duplicate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          productIds: Array.from(selectedProducts)
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || '複製に失敗しました');
+      }
+
+      const result = await response.json();
+      toast.success(`${result.count}件の商品を複製しました`);
+      
+      setSelectedProducts(new Set());
+      fetchProducts();
+    } catch (error) {
+      logger.error('Error duplicating products:', error);
+      toast.error(error instanceof Error ? error.message : '複製に失敗しました');
     }
   };
 
@@ -1421,6 +1456,13 @@ function ProductsPageContent() {
                 className="text-gray-600 hover:text-gray-800 flex items-center gap-1 text-sm"
               >
                 一括非アクティブ化
+              </button>
+              <button
+                onClick={duplicateSelectedProducts}
+                className="text-blue-600 hover:text-blue-800 flex items-center gap-1 text-sm"
+              >
+                <Copy className="w-4 h-4" />
+                複製
               </button>
               <button
                 onClick={deleteSelectedProducts}
