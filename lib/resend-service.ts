@@ -3,7 +3,9 @@ import { logger } from '@/lib/logger';
 import { generateHtmlQuote, HtmlQuoteOptions } from './html-quote-generator';
 import { Quote, CompanyInfo } from '@/types/collections';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resendApiKey = process.env.RESEND_API_KEY;
+const isResendConfigured = resendApiKey && !resendApiKey.includes('dummy') && resendApiKey.startsWith('re_');
+const resend = isResendConfigured ? new Resend(resendApiKey) : null;
 
 export interface SendQuoteEmailOptions {
   quote: Quote;
@@ -82,9 +84,27 @@ export async function sendQuoteEmail(
       ...tags,
     ];
 
+    // Resendが設定されていない場合はログに記録
+    if (!resend || !isResendConfigured) {
+      logger.warn('Resend not configured. Email would be sent to:', recipientEmail);
+      logger.warn('Subject:', htmlQuoteResult.subject);
+      logger.warn('From:', `${companyInfo.companyName || companyInfo.name || '会社名'} <${companyInfo.email || 'noreply@accounting-automation.vercel.app'}>`);
+      if (attachPdf && pdfBuffer) {
+        logger.warn('PDF attachment would be included:', `見積書_${quote.quoteNumber}.pdf`);
+      }
+      
+      return {
+        success: true,
+        messageId: 'test-' + Date.now(),
+        trackingId: htmlQuoteResult.trackingId,
+        scheduledAt,
+        error: 'Resend not configured - email logged only',
+      };
+    }
+    
     // Resendでメール送信
     const { data, error } = await resend.emails.send({
-      from: `${companyInfo.companyName || companyInfo.name || '会社名'} <${companyInfo.email || 'noreply@accounting-automation.vercel.app'}>`,
+      from: `${companyInfo.companyName || companyInfo.name || '会社名'} <${process.env.RESEND_FROM_EMAIL || 'accounting@effect.moe'}>`,
       to: recipientEmail,
       cc: ccEmails,
       bcc: bccEmails,

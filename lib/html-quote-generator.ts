@@ -54,6 +54,14 @@ export async function generateHtmlQuote(
       useWebLayout = false, // デフォルトは従来のメールテンプレート
     } = options;
 
+    // デバッグログ
+    logger.debug('[html-quote-generator] Generating HTML with:', {
+      companyName: companyInfo?.companyName || companyInfo?.name,
+      suggestedOptionsCount: suggestedOptions?.length || 0,
+      useWebLayout,
+      includeInteractiveElements,
+    });
+
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://accounting-automation.vercel.app';
     const trackingId = includeTracking ? generateTrackingId() : undefined;
 
@@ -119,6 +127,11 @@ function enhanceQuoteItems(
   productLinks?: Map<string, string>
 ): Quote {
   if (!tooltips && !productLinks) {
+    return quote;
+  }
+
+  // itemsが存在しない場合はそのまま返す
+  if (!quote.items || !Array.isArray(quote.items)) {
     return quote;
   }
 

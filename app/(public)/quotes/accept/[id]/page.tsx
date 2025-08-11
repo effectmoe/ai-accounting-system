@@ -15,6 +15,7 @@ export default function AcceptQuotePage() {
   const [accepted, setAccepted] = useState(false);
   const [quote, setQuote] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
+  const [alreadyAccepted, setAlreadyAccepted] = useState(false);
 
   useEffect(() => {
     const loadQuote = async () => {
@@ -28,6 +29,12 @@ export default function AcceptQuotePage() {
         }
         const quoteData = await quoteRes.json();
         setQuote(quoteData);
+        
+        // 既に承認済みかチェック
+        if (quoteData.status === 'accepted') {
+          setAlreadyAccepted(true);
+          setAccepted(true);
+        }
       } catch (err) {
         logger.error('Error loading quote:', err);
         setError(err instanceof Error ? err.message : '見積書の読み込みに失敗しました');
@@ -58,12 +65,11 @@ export default function AcceptQuotePage() {
         throw new Error('承認処理に失敗しました');
       }
       
-      // PDF生成をトリガー
-      await fetch(`/api/quotes/${params.id}/generate-pdf`, {
-        method: 'POST'
-      });
+      // PDF生成はaccept APIで行われるのでここでは不要
+      // （accept API内でPDF生成とメール送信が実行される）
       
       setAccepted(true);
+      setAlreadyAccepted(true);
     } catch (err) {
       logger.error('Error accepting quote:', err);
       setError('承認処理に失敗しました');
@@ -167,13 +173,16 @@ export default function AcceptQuotePage() {
               <Button 
                 className="flex-1"
                 onClick={handleAccept}
-                disabled={accepting}
+                disabled={accepting || alreadyAccepted}
+                variant={alreadyAccepted ? 'secondary' : 'default'}
               >
                 {accepting ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     承認中...
                   </>
+                ) : alreadyAccepted ? (
+                  '承認済み'
                 ) : (
                   '見積書を承認'
                 )}

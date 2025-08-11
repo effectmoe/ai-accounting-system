@@ -58,6 +58,7 @@ import { Quote, CompanyInfo } from '@/types/collections';
 import { generateDefaultSuggestedOptions, generateDefaultTooltips } from '@/lib/html-quote-generator';
 import { logger } from '@/lib/logger';
 import { EmailTemplate } from '@/components/email-template-manager';
+import OptionQuickCreator, { QuickOption } from '@/components/option-quick-creator';
 
 interface HtmlQuoteEditorProps {
   quote: Quote;
@@ -72,6 +73,9 @@ export default function HtmlQuoteEditor({
   onSave,
   onSend,
 }: HtmlQuoteEditorProps) {
+  // デバッグ用ログ
+  console.log('[HtmlQuoteEditor] onSend type:', typeof onSend);
+  console.log('[HtmlQuoteEditor] onSend value:', onSend);
   console.log('HtmlQuoteEditor mounted with:', { quote, companyInfo });
   console.log('Customer data:', quote.customer);
   console.log('onSend function received:', !!onSend); // デバッグ用
@@ -125,6 +129,7 @@ export default function HtmlQuoteEditor({
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState('basic'); // アクティブなタブを追跡
   const [previewWindow, setPreviewWindow] = useState<Window | null>(null); // プレビューウィンドウの参照
+  const [showQuickCreator, setShowQuickCreator] = useState(false); // クイックオプション作成ダイアログの表示状態
 
   // staffNameが変更されたときにeditedQuote.assigneeも同期する
   useEffect(() => {
@@ -165,10 +170,11 @@ export default function HtmlQuoteEditor({
       console.log('=== Preview Generation Debug ===');
       console.log('1. staffName:', staffName);
       console.log('2. editedQuote.assignee:', editedQuote.assignee);
-      console.log('3. companyInfo?.representative:', companyInfo?.representative || companyInfo?.representativeName);
+      console.log('3. companyInfo:', companyInfo);
       console.log('4. Final assignee (calculated):', previewQuote.assignee);
-      console.log('5. Full previewQuote:', JSON.stringify(previewQuote, null, 2));
-      console.log('6. Company Info being sent:', JSON.stringify(companyInfo, null, 2));
+      console.log('5. suggestedOptions enabled:', enableOptions);
+      console.log('6. suggestedOptions count:', suggestedOptions.length);
+      console.log('7. suggestedOptions data:', suggestedOptions);
       console.log('=== End Debug ===');
       
       console.log('Generating preview with data:', {
@@ -235,6 +241,22 @@ export default function HtmlQuoteEditor({
         features: ['機能1'],
         ctaText: '詳細を見る',
         ctaUrl: `${baseUrl}/contact`, // デフォルトでお問い合わせページへのリンク
+      },
+    ]);
+  };
+
+  // クイックオプションを追加
+  const handleQuickOptionAdd = (quickOption: QuickOption) => {
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://accounting-automation.vercel.app';
+    setSuggestedOptions([
+      ...suggestedOptions,
+      {
+        title: quickOption.title,
+        description: quickOption.description,
+        price: quickOption.price,
+        features: quickOption.features,
+        ctaText: quickOption.ctaText,
+        ctaUrl: quickOption.ctaUrl || `${baseUrl}/contact`,
       },
     ]);
   };
@@ -896,14 +918,24 @@ export default function HtmlQuoteEditor({
                           </div>
                         </Card>
                       ))}
-                      <Button
-                        variant="outline"
-                        onClick={addSuggestedOption}
-                        className="w-full"
-                      >
-                        <Plus className="h-4 w-4 mr-1" />
-                        オプションを追加
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          onClick={addSuggestedOption}
+                          className="flex-1"
+                        >
+                          <Plus className="h-4 w-4 mr-1" />
+                          手動で追加
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => setShowQuickCreator(true)}
+                          className="flex-1"
+                        >
+                          <Sparkles className="h-4 w-4 mr-1" />
+                          簡単作成
+                        </Button>
+                      </div>
                     </CardContent>
                   </Card>
                 </>
@@ -1142,6 +1174,14 @@ export default function HtmlQuoteEditor({
       </Card>
 
       {/* 全画面プレビューダイアログは削除（別ウィンドウ方式に変更） */}
+      
+      {/* クイックオプション作成ダイアログ */}
+      <OptionQuickCreator
+        isOpen={showQuickCreator}
+        onClose={() => setShowQuickCreator(false)}
+        onAdd={handleQuickOptionAdd}
+        baseUrl={process.env.NEXT_PUBLIC_BASE_URL || 'https://accounting-automation.vercel.app'}
+      />
     </div>
   );
 }

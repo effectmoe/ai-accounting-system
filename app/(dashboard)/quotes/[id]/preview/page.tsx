@@ -118,6 +118,7 @@ export default function QuotePreviewPage() {
         quote={quote}
         companyInfo={companyInfo}
         onSave={handleSave}
+        onSend={undefined}  // 明示的にundefinedを渡す
       />
     </div>
   );

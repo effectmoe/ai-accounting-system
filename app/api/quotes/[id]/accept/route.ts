@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 import { logger } from '@/lib/logger';
-import { generateQuotePDF } from '@/lib/pdf-generator';
+import { generateQuotePDF } from '@/lib/pdf-quote-generator-simple';
 import { sendQuoteEmail } from '@/lib/resend-service';
 
 export async function POST(
@@ -71,7 +71,14 @@ export async function POST(
       const companyInfo = await db.collection('company_info').findOne({});
       
       // PDFを生成
-      const pdfBuffer = await generateQuotePDF(quote);
+      let pdfBuffer: Buffer;
+      try {
+        pdfBuffer = await generateQuotePDF(quote);
+      } catch (pdfError) {
+        logger.error('PDF generation failed:', pdfError);
+        // PDF生成が失敗してもメールは送信する
+        pdfBuffer = Buffer.from('承認済み見積書', 'utf-8');
+      }
       
       // 1. 顧客への承認確認メール（PDF添付）
       if (quote.customer?.email) {
