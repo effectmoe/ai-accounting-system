@@ -8,6 +8,11 @@ const nextConfig = {
   // Optimize output for production
   output: 'standalone',
   
+  // Generate unique build ID to force cache invalidation
+  generateBuildId: async () => {
+    return `build-v1.0.3-${Date.now()}`;
+  },
+  
   webpack: (config, { isServer, webpack }) => {
     // Configure fallbacks for Node.js modules
     if (!isServer) {
