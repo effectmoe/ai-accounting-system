@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数値入力テスト</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        .output {
+            background-color: #f0f0f0;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+        .test-result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+    <h1>数値入力フィールドの動作テスト</h1>
+    
+    <div class="form-group">
+        <label for="test1">テスト1: 初期値0の場合（問題のあるパターン）</label>
+        <input type="number" id="test1" value="0" step="0.01" min="0">
+        <div class="output">値: <span id="output1">0</span></div>
+    </div>
+
+    <div class="form-group">
+        <label for="test2">テスト2: 初期値が空の場合（修正後のパターン）</label>
+        <input type="number" id="test2" value="" step="0.01" min="0" placeholder="価格を入力">
+        <div class="output">値: <span id="output2">（空）</span></div>
+    </div>
+
+    <div class="form-group">
+        <label for="test3">テスト3: React風の実装（文字列/数値の混在処理）</label>
+        <input type="number" id="test3" step="0.01" min="0" placeholder="価格を入力">
+        <div class="output">
+            値: <span id="output3">（空）</span><br>
+            型: <span id="type3">undefined</span>
+        </div>
+    </div>
+
+    <div class="test-result" id="testResult">
+        <h3>テスト結果</h3>
+        <div id="resultContent"></div>
+    </div>
+
+    <script>
+        // 問題のある実装の再現
+        function problematicHandler(value) {
+            return parseFloat(value) || 0;
+        }
+
+        // 修正後の実装
+        function fixedHandler(value) {
+            return value === '' ? '' : parseFloat(value);
+        }
+
+        // テスト実行
+        document.getElementById('test1').addEventListener('input', (e) => {
+            const value = problematicHandler(e.target.value);
+            document.getElementById('output1').textContent = value;
+            
+            // 問題: 空にしようとしても0になる
+            if (e.target.value === '' && value === 0) {
+                showError('テスト1: 空文字列が0に変換されています（問題あり）');
+            }
+        });
+
+        document.getElementById('test2').addEventListener('input', (e) => {
+            const value = fixedHandler(e.target.value);
+            document.getElementById('output2').textContent = value === '' ? '（空）' : value;
+            
+            // 修正版: 空の場合は空のまま
+            if (e.target.value === '' && value === '') {
+                showSuccess('テスト2: 空文字列が正しく処理されています（OK）');
+            }
+        });
+
+        // React風の状態管理シミュレーション
+        let state = {
+            value: ''
+        };
+
+        document.getElementById('test3').addEventListener('input', (e) => {
+            const rawValue = e.target.value;
+            
+            // 修正後の実装をシミュレート
+            if (e.target.type === 'number') {
+                const numValue = rawValue === '' ? '' : parseFloat(rawValue);
+                state.value = numValue;
+            }
+            
+            document.getElementById('output3').textContent = 
+                state.value === '' ? '（空）' : state.value;
+            document.getElementById('type3').textContent = typeof state.value;
+            
+            // 型チェック
+            if (rawValue === '') {
+                if (state.value === '') {
+                    showSuccess('テスト3: 空文字列の処理OK - 型: ' + typeof state.value);
+                } else {
+                    showError('テスト3: 空文字列の処理に問題があります');
+                }
+            } else if (rawValue !== '' && !isNaN(parseFloat(rawValue))) {
+                if (typeof state.value === 'number') {
+                    showSuccess('テスト3: 数値の処理OK - 値: ' + state.value);
+                }
+            }
+        });
+
+        function showSuccess(message) {
+            const resultDiv = document.getElementById('resultContent');
+            resultDiv.innerHTML = `<div class="success">${message}</div>`;
+        }
+
+        function showError(message) {
+            const resultDiv = document.getElementById('resultContent');
+            resultDiv.innerHTML = `<div class="error">${message}</div>`;
+        }
+
+        // 初期表示
+        document.addEventListener('DOMContentLoaded', () => {
+            const resultDiv = document.getElementById('resultContent');
+            resultDiv.innerHTML = `
+                <p>各入力フィールドをテストしてください：</p>
+                <ol>
+                    <li>数値を入力してから削除してみる</li>
+                    <li>0を入力してみる</li>
+                    <li>100などの数値を入力してみる</li>
+                    <li>先頭に0を付けて入力してみる（例: 0100）</li>
+                </ol>
+            `;
+        });
+    </script>
+</body>
+</html>

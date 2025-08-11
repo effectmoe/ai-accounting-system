@@ -16,6 +16,10 @@ export async function POST(request: NextRequest) {
       includeTracking,
       useWebLayout = true, // プレビューではデフォルトでWeb最適化レイアウトを使用
     } = body;
+    
+    // プレビュー用のベースURLを取得
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 
+                    (request.headers.get('host') ? `https://${request.headers.get('host')}` : 'http://localhost:3000');
 
     logger.debug('Preview request received:', {
       hasQuote: !!quote,
@@ -98,6 +102,14 @@ export async function POST(request: NextRequest) {
     // Map配列をMapオブジェクトに変換
     const tooltipsMap = new Map(tooltips || []);
     const productLinksMap = new Map(productLinks || []);
+    
+    // プレビュー用のURLを生成（実際の送信時とは異なるダミーURLを使用）
+    const trackingId = 'preview-tracking-id';
+    const quoteId = quote._id || 'preview-quote-id';
+    
+    const acceptUrl = `${baseUrl}/quotes/accept/${quoteId}?t=${trackingId}`;
+    const considerUrl = `${baseUrl}/quotes/consider/${quoteId}?t=${trackingId}`;
+    const discussUrl = `${baseUrl}/quotes/discuss/${quoteId}?t=${trackingId}`;
 
     // HTML生成 - Web最適化レイアウト使用
     const result = await generateHtmlQuote({
@@ -111,6 +123,9 @@ export async function POST(request: NextRequest) {
       tooltips: tooltipsMap,
       productLinks: productLinksMap,
       useWebLayout, // Web最適化レイアウトフラグを渡す
+      acceptUrl,     // プレビュー用URL
+      considerUrl,   // プレビュー用URL
+      discussUrl,    // プレビュー用URL
     });
 
     logger.debug('HTML generated successfully, length:', result.html?.length);

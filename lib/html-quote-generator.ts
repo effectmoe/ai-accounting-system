@@ -15,6 +15,9 @@ export interface HtmlQuoteOptions {
   tooltips?: Map<string, string>;
   productLinks?: Map<string, string>;
   useWebLayout?: boolean; // Web最適化レイアウト使用フラグ
+  acceptUrl?: string;     // カスタムAccept URL（プレビュー用）
+  considerUrl?: string;   // カスタムConsider URL（プレビュー用）
+  discussUrl?: string;    // カスタムDiscuss URL（プレビュー用）
 }
 
 export interface SuggestedOption {
@@ -52,6 +55,9 @@ export async function generateHtmlQuote(
       tooltips,
       productLinks,
       useWebLayout = false, // デフォルトは従来のメールテンプレート
+      acceptUrl: customAcceptUrl,
+      considerUrl: customConsiderUrl,
+      discussUrl: customDiscussUrl,
     } = options;
 
     // デバッグログ
@@ -68,11 +74,11 @@ export async function generateHtmlQuote(
     // 見積項目にインタラクティブ要素を追加
     const enhancedQuote = enhanceQuoteItems(quote, tooltips, productLinks);
 
-    // URLs生成
+    // URLs生成（カスタムURLが提供されていればそれを使用）
     const viewOnlineUrl = `${baseUrl}/quotes/view/${quote._id}?t=${trackingId}`;
-    const acceptUrl = `${baseUrl}/quotes/accept/${quote._id}?t=${trackingId}`;
-    const considerUrl = `${baseUrl}/quotes/consider/${quote._id}?t=${trackingId}`;
-    const discussUrl = `${baseUrl}/quotes/discuss/${quote._id}?t=${trackingId}`;
+    const acceptUrl = customAcceptUrl || `${baseUrl}/quotes/accept/${quote._id}?t=${trackingId}`;
+    const considerUrl = customConsiderUrl || `${baseUrl}/quotes/consider/${quote._id}?t=${trackingId}`;
+    const discussUrl = customDiscussUrl || `${baseUrl}/quotes/discuss/${quote._id}?t=${trackingId}`;
     const trackingPixelUrl = includeTracking
       ? `${baseUrl}/api/tracking/open?id=${trackingId}&doc=quote&qid=${quote._id}`
       : undefined;

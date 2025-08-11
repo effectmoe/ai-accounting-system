@@ -11,18 +11,30 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string>('');
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    productName: string;
+    productCode: string;
+    description: string;
+    unitPrice: string;
+    taxRate: number;
+    category: string;
+    stockQuantity: string;
+    unit: string;
+    isActive: boolean;
+    notes: string;
+    tags: string[];
+  }>({
     productName: '',
     productCode: '',
     description: '',
-    unitPrice: 0,
+    unitPrice: '',
     taxRate: 0.10,
     category: '',
-    stockQuantity: 0,
+    stockQuantity: '',
     unit: '',
     isActive: true,
     notes: '',
-    tags: [] as string[]
+    tags: []
   });
 
   // 商品データを取得
@@ -38,10 +50,10 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
         productName: product.productName,
         productCode: product.productCode,
         description: product.description || '',
-        unitPrice: product.unitPrice,
+        unitPrice: String(product.unitPrice),
         taxRate: product.taxRate,
         category: product.category,
-        stockQuantity: product.stockQuantity,
+        stockQuantity: String(product.stockQuantity),
         unit: product.unit,
         isActive: product.isActive,
         notes: product.notes || '',
@@ -74,13 +86,20 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
     setSaving(true);
     setError('');
 
+    // 数値フィールドを適切に変換
+    const submitData = {
+      ...formData,
+      unitPrice: parseFloat(formData.unitPrice) || 0,
+      stockQuantity: parseFloat(formData.stockQuantity) || 0
+    };
+
     try {
       const response = await fetch(`/api/products/${params.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(submitData)
       });
 
       if (!response.ok) {
@@ -107,10 +126,24 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
         ...prev,
         [name]: checked
       }));
-    } else if (type === 'number') {
+    } else if (name === 'unitPrice' || name === 'stockQuantity') {
+      // 数値フィールドの処理（text型でも数値として扱う）
+      // 数字と小数点のみ許可
+      const cleanedValue = value.replace(/[^0-9.]/g, '');
+      
+      // 複数の小数点を防ぐ
+      const parts = cleanedValue.split('.');
+      const finalValue = parts.length > 2 ? parts[0] + '.' + parts.slice(1).join('') : cleanedValue;
+      
+      // 先頭の0を削除（ただし0.xxxの場合は除く）
+      let normalizedValue = finalValue;
+      if (finalValue.length > 1 && finalValue[0] === '0' && finalValue[1] !== '.') {
+        normalizedValue = finalValue.replace(/^0+/, '');
+      }
+      
       setFormData(prev => ({
         ...prev,
-        [name]: parseFloat(value) || 0
+        [name]: normalizedValue
       }));
     } else {
       setFormData(prev => ({
@@ -217,13 +250,13 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
                 単価 <span className="text-red-500">*</span>
               </label>
               <input
-                type="number"
+                type="text"
                 name="unitPrice"
                 value={formData.unitPrice}
                 onChange={handleChange}
                 required
-                min="0"
-                step="0.01"
+                pattern="[0-9]+(\.[0-9]+)?"
+                inputMode="decimal"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="0"
               />
@@ -253,12 +286,13 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
                 在庫数 <span className="text-red-500">*</span>
               </label>
               <input
-                type="number"
+                type="text"
                 name="stockQuantity"
                 value={formData.stockQuantity}
                 onChange={handleChange}
                 required
-                min="0"
+                pattern="[0-9]+(\.[0-9]+)?"
+                inputMode="numeric"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="0"
               />
