@@ -153,6 +153,8 @@ export default function NewProductPage() {
     console.log('formData.unitPrice:', formData.unitPrice, 'type:', typeof formData.unitPrice);
     console.log('unitPriceNum:', unitPriceNum, 'type:', typeof unitPriceNum);
     console.log('formData.stockQuantity:', formData.stockQuantity, 'type:', typeof formData.stockQuantity);
+    console.log('formData.taxRate:', formData.taxRate, 'type:', typeof formData.taxRate);
+    console.log('submitData.taxRate:', submitData.taxRate, 'type:', typeof submitData.taxRate);
 
     try {
       const response = await fetch('/api/products', {
@@ -211,6 +213,14 @@ export default function NewProductPage() {
       setFormData(prev => ({
         ...prev,
         [name]: normalizedValue
+      }));
+    } else if (name === 'taxRate') {
+      // 税率フィールドの処理（数値として保持）
+      const numericValue = parseFloat(value);
+      console.log('taxRate selected:', value, '-> parsed:', numericValue);
+      setFormData(prev => ({
+        ...prev,
+        [name]: numericValue
       }));
     } else {
       setFormData(prev => {
