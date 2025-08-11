@@ -84,6 +84,15 @@ export async function sendQuoteEmail(
       ...tags,
     ];
 
+    // Resend設定のログ
+    logger.info('Resend configuration:', {
+      isConfigured: isResendConfigured,
+      hasApiKey: !!resendApiKey,
+      apiKeyPrefix: resendApiKey?.substring(0, 10) + '...',
+      recipientEmail,
+      subject: htmlQuoteResult.subject
+    });
+
     // Resendが設定されていない場合はログに記録
     if (!resend || !isResendConfigured) {
       logger.warn('Resend not configured. Email would be sent to:', recipientEmail);

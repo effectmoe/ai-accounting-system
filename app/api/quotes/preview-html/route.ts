@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     });
 
     // デバッグ用: シンプルなHTMLを返して確認
-    const debugMode = true; // デバッグ有効
+    const debugMode = false; // 本番環境では false に設定
     if (debugMode) {
       const simpleHtml = `
         <!DOCTYPE html>
