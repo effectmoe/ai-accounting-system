@@ -48,6 +48,7 @@ import {
   Smartphone,
   Monitor,
   ExternalLink,
+  HelpCircle,
   X,
   ChevronUp,
   ChevronDown,
