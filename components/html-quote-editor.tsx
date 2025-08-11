@@ -116,6 +116,9 @@ export default function HtmlQuoteEditor({
   console.log('initialQuote.assignee:', initialQuote.assignee);
   console.log('staffName initial value:', initialQuote.assignee);
   console.log('companyInfo?.representative:', companyInfo?.representative || companyInfo?.representativeName);
+  console.log('recipientEmail initial value:', recipientEmail);
+  console.log('initialQuote.customer:', initialQuote.customer);
+  console.log('initialQuote.customerEmail:', initialQuote.customerEmail);
   console.log('=== End Initial Debug ===');
   const [suggestedOptions, setSuggestedOptions] = useState(generateDefaultSuggestedOptions(quote));
   const [tooltips, setTooltips] = useState(generateDefaultTooltips());
@@ -294,9 +297,19 @@ export default function HtmlQuoteEditor({
 
   // メール送信
   const handleSend = async () => {
+    console.log('[HtmlQuoteEditor] handleSend called');
+    console.log('[HtmlQuoteEditor] recipientEmail:', recipientEmail);
+    console.log('[HtmlQuoteEditor] isSending:', isSending);
+    
     if (!recipientEmail) {
-      alert('送信先メールアドレスを入力してください');
-      return;
+      console.log('[HtmlQuoteEditor] recipientEmail is empty, prompting user');
+      const email = prompt('送信先メールアドレスを入力してください:');
+      if (!email) {
+        console.log('[HtmlQuoteEditor] User cancelled email input');
+        return;
+      }
+      setRecipientEmail(email);
+      console.log('[HtmlQuoteEditor] Set recipient email to:', email);
     }
 
     // onSendプロップの存在確認（親コンポーネントの送信機能を優先）
@@ -1170,8 +1183,8 @@ export default function HtmlQuoteEditor({
                 </Button>
                 <Button
                   onClick={handleSend}
-                  disabled={isSending || !recipientEmail}
-                  title={!recipientEmail ? '送信先のメールアドレスが設定されていません' : isSending ? '送信中です' : '見積書を送信します'}
+                  disabled={isSending}
+                  title={isSending ? '送信中です' : '見積書を送信します'}
                 >
                   {isSending ? (
                     <>
@@ -1225,7 +1238,7 @@ export default function HtmlQuoteEditor({
             {typeof onSend === 'function' && (
               <Button
                 onClick={handleSend}
-                disabled={isSending || !recipientEmail}
+                disabled={isSending}
               >
                 {isSending ? (
                   <>
