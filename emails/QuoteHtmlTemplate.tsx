@@ -98,6 +98,7 @@ export default function QuoteHtmlTemplate({
   recipientName,
   viewOnlineUrl,
   acceptUrl,
+  considerUrl,
   discussUrl,
   trackingPixelUrl,
   customMessage,
