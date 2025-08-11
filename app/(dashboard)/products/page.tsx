@@ -289,7 +289,7 @@ function ProductsPageContent() {
     {
       key: 'tags',
       label: 'タグ',
-      sortable: false,
+      sortable: true,
       render: (product) => product.tags?.length ? (
         <div className="flex gap-1 flex-wrap">
           {product.tags.map((tag, index) => (

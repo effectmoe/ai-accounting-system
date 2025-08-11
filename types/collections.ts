@@ -497,7 +497,7 @@ export interface Account {
 
 // ソート関連の型定義
 export type SortableField = 'customerId' | 'companyName' | 'companyNameKana' | 'department' | 'prefecture' | 'city' | 'email' | 'paymentTerms' | 'createdAt' | 'primaryContactName' | 'primaryContactNameKana';
-export type ProductSortableField = 'productCode' | 'productName' | 'category' | 'unitPrice' | 'stockQuantity' | 'taxRate' | 'createdAt';
+export type ProductSortableField = 'productCode' | 'productName' | 'category' | 'unitPrice' | 'stockQuantity' | 'taxRate' | 'tags' | 'createdAt';
 export type SortOrder = 'asc' | 'desc';
 
 // フィルター関連の型定義
