@@ -112,10 +112,13 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     validateRequired(body, ['productName', 'productCode', 'category', 'unit']);
 
     // 数値フィールドの検証
+    if (!body.unitPrice || body.unitPrice <= 0) {
+      throw new ApiErrorResponse('単価は0より大きい値を入力してください', 400, 'INVALID_UNIT_PRICE');
+    }
     body.unitPrice = validateAmount(body.unitPrice);
 
     if (typeof body.taxRate !== 'number' || body.taxRate < 0 || body.taxRate > 1) {
-      throw new ApiErrorResponse('税率は0から1の間の数値である必要があります', 400, 'INVALID_TAX_RATE');
+      throw new ApiErrorResponse('税率は0から1の間の数値である必要があります（例: 0.10 = 10%）', 400, 'INVALID_TAX_RATE');
     }
 
     if (body.stockQuantity !== undefined) {

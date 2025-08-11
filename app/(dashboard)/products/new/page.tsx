@@ -10,19 +10,72 @@ export default function NewProductPage() {
   const [categories, setCategories] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
-  const [formData, setFormData] = useState({
+  const [autoGenerateCode, setAutoGenerateCode] = useState(true);
+  const [formData, setFormData] = useState<{
+    productName: string;
+    productCode: string;
+    description: string;
+    unitPrice: string;
+    taxRate: number;
+    category: string;
+    stockQuantity: string;
+    unit: string;
+    isActive: boolean;
+    notes: string;
+    tags: string[];
+  }>({
     productName: '',
     productCode: '',
     description: '',
-    unitPrice: 0,
+    unitPrice: '',  // 空文字列で初期化
     taxRate: 0.10,
     category: '',
-    stockQuantity: 0,
+    stockQuantity: '',  // 空文字列で初期化
     unit: '',
     isActive: true,
     notes: '',
-    tags: [] as string[]
+    tags: []
   });
+
+  // 商品コードを自動生成する関数
+  const generateProductCode = (productName: string, category: string) => {
+    if (!productName || !category) return '';
+    
+    // カテゴリの頭文字を取得（最大3文字）
+    const categoryPrefix = category
+      .replace(/[^\w\u3040-\u309f\u30a0-\u30ff\u4e00-\u9faf]/gi, '') // 日本語と英数字を許可
+      .substring(0, 3)
+      .toUpperCase() || 'CAT';
+    
+    // 商品名から識別子を作成
+    const nameWords = productName.replace(/[^\w\u3040-\u309f\u30a0-\u30ff\u4e00-\u9faf\s]/gi, '').split(/\s+/);
+    let namePrefix = '';
+    
+    // 商品名が英語の場合は最初の3文字、日本語の場合は頭文字を使用
+    if (/^[A-Za-z]/.test(productName)) {
+      namePrefix = nameWords[0].substring(0, 4).toUpperCase();
+    } else {
+      // 日本語の場合、単語の頭文字を組み合わせるか、最初の2文字を使用
+      namePrefix = nameWords
+        .map(word => word.charAt(0))
+        .join('')
+        .substring(0, 3)
+        .toUpperCase() || 'PRD';
+    }
+    
+    // 現在時刻をベースにした一意な識別子（YYMMDDHHmmss形式の下6桁）
+    const now = new Date();
+    const timeCode = 
+      now.getFullYear().toString().slice(-2) +
+      (now.getMonth() + 1).toString().padStart(2, '0') +
+      now.getDate().toString().padStart(2, '0');
+    
+    // ランダムな3文字を追加（より確実な一意性のため）
+    const randomChars = Math.random().toString(36).substring(2, 5).toUpperCase();
+    
+    // フォーマット: カテゴリ-名前-日付-ランダム
+    return `${categoryPrefix}${namePrefix === 'PRD' ? '' : '-' + namePrefix}-${timeCode}${randomChars}`;
+  };
 
   // カテゴリ一覧を取得
   const fetchCategories = async () => {
@@ -43,13 +96,34 @@ export default function NewProductPage() {
     setLoading(true);
     setError('');
 
+    // 単価の検証
+    const unitPriceNum = parseFloat(formData.unitPrice);
+    if (!formData.unitPrice || isNaN(unitPriceNum) || unitPriceNum <= 0) {
+      setError('単価は0より大きい値を入力してください');
+      setLoading(false);
+      return;
+    }
+
+    // 自動生成が有効で商品コードが空の場合、自動生成
+    let productCode = formData.productCode;
+    if (autoGenerateCode && !productCode) {
+      productCode = generateProductCode(formData.productName, formData.category);
+    }
+
+    const submitData = {
+      ...formData,
+      productCode,
+      unitPrice: unitPriceNum,
+      stockQuantity: formData.stockQuantity ? parseFloat(formData.stockQuantity) || 0 : 0
+    };
+
     try {
       const response = await fetch('/api/products', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(submitData)
       });
 
       if (!response.ok) {
@@ -76,16 +150,43 @@ export default function NewProductPage() {
         ...prev,
         [name]: checked
       }));
-    } else if (type === 'number') {
+    } else if (name === 'unitPrice' || name === 'stockQuantity') {
+      // 数値フィールドの処理（text型でも数値として扱う）
+      // 数字と小数点のみ許可
+      const cleanedValue = value.replace(/[^0-9.]/g, '');
+      
+      // 複数の小数点を防ぐ
+      const parts = cleanedValue.split('.');
+      const finalValue = parts.length > 2 ? parts[0] + '.' + parts.slice(1).join('') : cleanedValue;
+      
+      // 先頭の0を削除（ただし0.xxxの場合は除く）
+      let normalizedValue = finalValue;
+      if (finalValue.length > 1 && finalValue[0] === '0' && finalValue[1] !== '.') {
+        normalizedValue = finalValue.replace(/^0+/, '');
+      }
+      
       setFormData(prev => ({
         ...prev,
-        [name]: parseFloat(value) || 0
+        [name]: normalizedValue
       }));
     } else {
-      setFormData(prev => ({
-        ...prev,
-        [name]: value
-      }));
+      setFormData(prev => {
+        const newData = {
+          ...prev,
+          [name]: value
+        };
+        
+        // 自動生成が有効で、商品名またはカテゴリが変更された場合、商品コードを自動更新
+        if (autoGenerateCode && (name === 'productName' || name === 'category')) {
+          const productName = name === 'productName' ? value : prev.productName;
+          const category = name === 'category' ? value : prev.category;
+          if (productName && category) {
+            newData.productCode = generateProductCode(productName, category);
+          }
+        }
+        
+        return newData;
+      });
     }
   };
 
@@ -135,18 +236,49 @@ export default function NewProductPage() {
 
             {/* 商品コード */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                商品コード <span className="text-red-500">*</span>
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-sm font-medium text-gray-700">
+                  商品コード <span className="text-red-500">*</span>
+                </label>
+                <label className="flex items-center text-sm">
+                  <input
+                    type="checkbox"
+                    checked={autoGenerateCode}
+                    onChange={(e) => {
+                      setAutoGenerateCode(e.target.checked);
+                      if (e.target.checked && formData.productName && formData.category) {
+                        setFormData(prev => ({
+                          ...prev,
+                          productCode: generateProductCode(formData.productName, formData.category)
+                        }));
+                      }
+                    }}
+                    className="mr-1"
+                  />
+                  <span className="text-gray-600">自動生成</span>
+                </label>
+              </div>
               <input
                 type="text"
                 name="productCode"
                 value={formData.productCode}
-                onChange={handleChange}
+                onChange={(e) => {
+                  // 手動で入力した場合は自動生成を無効化
+                  if (autoGenerateCode) {
+                    setAutoGenerateCode(false);
+                  }
+                  handleChange(e);
+                }}
                 required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="一意の商品コードを入力"
+                disabled={autoGenerateCode && (!formData.productName || !formData.category)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                placeholder={autoGenerateCode ? "商品名とカテゴリを入力すると自動生成されます" : "商品コードを入力"}
               />
+              {autoGenerateCode && formData.productCode && (
+                <p className="mt-1 text-xs text-gray-500">
+                  自動生成されたコード: {formData.productCode}
+                </p>
+              )}
             </div>
 
             {/* カテゴリ */}
@@ -177,15 +309,15 @@ export default function NewProductPage() {
                 単価 <span className="text-red-500">*</span>
               </label>
               <input
-                type="number"
+                type="text"
                 name="unitPrice"
                 value={formData.unitPrice}
                 onChange={handleChange}
                 required
-                min="0"
-                step="0.01"
+                pattern="[0-9]+(\.[0-9]+)?"
+                inputMode="decimal"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="0"
+                placeholder="価格を入力"
               />
             </div>
 
@@ -213,14 +345,15 @@ export default function NewProductPage() {
                 在庫数 <span className="text-red-500">*</span>
               </label>
               <input
-                type="number"
+                type="text"
                 name="stockQuantity"
                 value={formData.stockQuantity}
                 onChange={handleChange}
                 required
-                min="0"
+                pattern="[0-9]+(\.[0-9]+)?"
+                inputMode="numeric"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="0"
+                placeholder="数量を入力"
               />
             </div>
 
