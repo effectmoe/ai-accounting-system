@@ -38,25 +38,35 @@ export async function PUT(
     const body = await request.json();
     
     // 数値フィールドの検証
-    if (body.unitPrice !== undefined && (typeof body.unitPrice !== 'number' || body.unitPrice < 0)) {
-      return NextResponse.json(
-        { error: '単価は0以上の数値である必要があります' },
+    if (body.unitPrice !== undefined) {
+      const unitPrice = typeof body.unitPrice === 'string' ? parseFloat(body.unitPrice) : body.unitPrice;
+      if (isNaN(unitPrice) || unitPrice < 0) {
+        return NextResponse.json(
+          { error: '単価は0以上の数値である必要があります' },
+          { status: 400 }
+        );
+      }
+      body.unitPrice = unitPrice;
+    }
+
+    // 税率の検証（-1は内税、0は非課税/税込価格、0.08は8%、0.10は10%）
+    if (body.taxRate !== undefined) {
+      if (typeof body.taxRate !== 'number' || (body.taxRate !== -1 && body.taxRate !== 0 && (body.taxRate < 0 || body.taxRate > 1))) {
+        return NextResponse.json(
+          { error: '税率は0から1の間の数値、または-1（内税）である必要があります' },
         { status: 400 }
       );
     }
 
-    if (body.taxRate !== undefined && (typeof body.taxRate !== 'number' || body.taxRate < 0 || body.taxRate > 1)) {
-      return NextResponse.json(
-        { error: '税率は0から1の間の数値である必要があります' },
-        { status: 400 }
-      );
-    }
-
-    if (body.stockQuantity !== undefined && (typeof body.stockQuantity !== 'number' || body.stockQuantity < 0)) {
-      return NextResponse.json(
-        { error: '在庫数は0以上の数値である必要があります' },
-        { status: 400 }
-      );
+    if (body.stockQuantity !== undefined) {
+      const stockQuantity = typeof body.stockQuantity === 'string' ? parseFloat(body.stockQuantity) : body.stockQuantity;
+      if (isNaN(stockQuantity) || stockQuantity < 0) {
+        return NextResponse.json(
+          { error: '在庫数は0以上の数値である必要があります' },
+          { status: 400 }
+        );
+      }
+      body.stockQuantity = stockQuantity;
     }
 
     const updateData: any = {};

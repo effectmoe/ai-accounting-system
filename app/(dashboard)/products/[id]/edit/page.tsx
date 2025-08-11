@@ -274,10 +274,14 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
                 required
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value={0.08}>8%</option>
-                <option value={0.10}>10%</option>
-                <option value={0.00}>0%（非課税）</option>
+                <option value={0.10}>10%（標準税率）</option>
+                <option value={0.08}>8%（軽減税率）</option>
+                <option value={0.00}>0%（非課税・税込価格）</option>
+                <option value={-1}>内税（税込価格から逆算）</option>
               </select>
+              <p className="mt-1 text-xs text-gray-500">
+                ※税込価格の商品は「0%（非課税・税込価格）」を選択してください
+              </p>
             </div>
 
             {/* 在庫数 */}
