@@ -95,6 +95,15 @@ export default function NewProductPage() {
     e.preventDefault();
     setLoading(true);
     setError('');
+    
+    // 詳細なデバッグ情報を出力
+    console.log('=== 商品登録開始 ===');
+    console.log('Current formData:', formData);
+    console.log('formData keys:', Object.keys(formData));
+    Object.keys(formData).forEach(key => {
+      const value = (formData as any)[key];
+      console.log(`formData.${key}:`, value, 'type:', typeof value, 'empty?', !value);
+    });
 
     // 単価の検証
     if (!formData.unitPrice || formData.unitPrice.trim() === '') {
@@ -117,23 +126,31 @@ export default function NewProductPage() {
     }
 
     // 必須フィールドのチェック
+    console.log('=== 必須フィールドチェック開始 ===');
+    console.log('productName check:', formData.productName, 'trimmed:', formData.productName.trim(), 'valid:', !!formData.productName.trim());
     if (!formData.productName.trim()) {
+      console.error('商品名が空です');
       setError('商品名を入力してください');
       setLoading(false);
       return;
     }
     
+    console.log('category check:', formData.category, 'trimmed:', formData.category.trim(), 'valid:', !!formData.category.trim());
     if (!formData.category.trim()) {
+      console.error('カテゴリが空です');
       setError('カテゴリを入力してください');
       setLoading(false);
       return;
     }
     
+    console.log('unit check:', formData.unit, 'trimmed:', formData.unit.trim(), 'valid:', !!formData.unit.trim());
     if (!formData.unit.trim()) {
+      console.error('単位が空です');
       setError('単位を入力してください');
       setLoading(false);
       return;
     }
+    console.log('=== 必須フィールドチェック完了 ===');
 
     const submitData = {
       ...formData,
@@ -155,8 +172,13 @@ export default function NewProductPage() {
     console.log('formData.stockQuantity:', formData.stockQuantity, 'type:', typeof formData.stockQuantity);
     console.log('formData.taxRate:', formData.taxRate, 'type:', typeof formData.taxRate);
     console.log('submitData.taxRate:', submitData.taxRate, 'type:', typeof submitData.taxRate);
+    
+    console.log('=== API送信直前 ===');
+    console.log('Final submitData:', JSON.stringify(submitData, null, 2));
+    console.log('submitData size:', JSON.stringify(submitData).length, 'characters');
 
     try {
+      console.log('=== API送信開始 ===');
       const response = await fetch('/api/products', {
         method: 'POST',
         headers: {
@@ -164,6 +186,11 @@ export default function NewProductPage() {
         },
         body: JSON.stringify(submitData)
       });
+      
+      console.log('=== API応答受信 ===');
+      console.log('Response status:', response.status);
+      console.log('Response statusText:', response.statusText);
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
 
       if (!response.ok) {
         const errorData = await response.json();
