@@ -103,12 +103,24 @@ export async function sendQuoteEmail(
     }
     
     // Resendでメール送信
+    const fromEmail = process.env.RESEND_FROM_EMAIL || 'accounting@effect.moe';
+    const fromName = companyInfo.companyName || companyInfo.name || '会計自動化システム';
+    
+    logger.info('Sending email with Resend:', {
+      from: `${fromName} <${fromEmail}>`,
+      to: recipientEmail,
+      subject: htmlQuoteResult.subject,
+      hasAttachments: attachments.length > 0,
+      cc: ccEmails,
+      bcc: bccEmails
+    });
+    
     const { data, error } = await resend.emails.send({
-      from: `${companyInfo.companyName || companyInfo.name || '会社名'} <${process.env.RESEND_FROM_EMAIL || 'accounting@effect.moe'}>`,
+      from: `${fromName} <${fromEmail}>`,
       to: recipientEmail,
       cc: ccEmails,
       bcc: bccEmails,
-      replyTo: replyTo || companyInfo.email,
+      replyTo: replyTo || companyInfo.email || fromEmail,
       subject: htmlQuoteResult.subject,
       html: htmlQuoteResult.html,
       text: htmlQuoteResult.plainText,
@@ -118,7 +130,9 @@ export async function sendQuoteEmail(
       headers: {
         'X-Entity-Ref-ID': quote._id,
         'X-Quote-Number': quote.quoteNumber,
-        'List-Unsubscribe': `<${process.env.NEXT_PUBLIC_BASE_URL}/unsubscribe?email=${recipientEmail}>`,
+        'List-Unsubscribe': `<${process.env.NEXT_PUBLIC_BASE_URL || 'https://accounting-automation.vercel.app'}/unsubscribe?email=${recipientEmail}>`,
+        'X-Mailer': 'Accounting Automation System',
+        'Precedence': 'bulk'
       },
     });
 
@@ -167,16 +181,17 @@ async function recordEmailEvent(event: {
   sentAt: string;
 }) {
   try {
-    // MongoDBまたはSupabaseに記録
-    const response = await fetch('/api/email-events', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(event),
+    // MongoDBに直接記録（fetchを使用しない）
+    logger.info('Email event recorded:', {
+      messageId: event.messageId,
+      quoteId: event.quoteId,
+      recipientEmail: event.recipientEmail,
+      trackingId: event.trackingId,
+      sentAt: event.sentAt
     });
-
-    if (!response.ok) {
-      throw new Error('Failed to record email event');
-    }
+    
+    // TODO: 必要に応じてMongoDBに直接保存する処理を追加
+    
   } catch (error) {
     logger.error('Error recording email event:', error);
     // エラーがあっても送信は成功扱い

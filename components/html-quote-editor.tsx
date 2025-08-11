@@ -89,7 +89,8 @@ export default function HtmlQuoteEditor({
     taxRate: normalizedTaxRate,
     customerName: quote.customerName || quote.customer?.companyName || quote.customer?.name || '',
     customerEmail: quote.customerEmail || quote.customer?.email || '',
-    assignee: quote.assignee || companyInfo?.representative || companyInfo?.representativeName || ''
+    // assigneeは元の値のみを使用（初期値での連結を避ける）
+    assignee: quote.assignee || ''
   };
   
   const [editedQuote, setEditedQuote] = useState(initialQuote);
@@ -162,7 +163,8 @@ export default function HtmlQuoteEditor({
         ...editedQuote,
         customerName: editedQuote.customerName || recipientName || quote.customer?.name || quote.customer?.customerName,
         customerEmail: editedQuote.customerEmail || recipientEmail || quote.customer?.email,
-        assignee: staffName || editedQuote.assignee || companyInfo?.representative || companyInfo?.representativeName,
+        // assigneeは最初に見つかった値のみを使用（重複を避ける）
+        assignee: staffName || editedQuote.assignee || companyInfo?.representative || companyInfo?.representativeName || '',
         customer: quote.customer // 元の顧客情報も含める
       };
       
@@ -388,10 +390,8 @@ export default function HtmlQuoteEditor({
       previewWindow.close();
     }
     
-    // htmlPreviewが空の場合は生成
-    if (!htmlPreview) {
-      await generatePreview();
-    }
+    // 常に最新のプレビューを生成（オプションを含む）
+    await generatePreview();
     
     // 新しいウィンドウを開く
     const newWindow = window.open('', 'quote-preview', 'width=1200,height=800,menubar=no,toolbar=no,location=no,status=no');
