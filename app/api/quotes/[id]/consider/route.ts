@@ -83,7 +83,7 @@ export async function POST(
       }
       
       // 1. 顧客への検討中通知メール（PDF添付）
-      if (quote.customer?.email) {
+      if (quote.customer?.email && quote.customer.email.trim() !== '') {
         const customMessage = `
 お世話になっております。
 
@@ -121,6 +121,8 @@ export async function POST(
         } else {
           logger.error(`Failed to send consideration email: ${emailResult.error}`);
         }
+      } else {
+        logger.warn(`Customer email not set for quote ${quote.quoteNumber}. Skipping customer notification.`);
       }
       
       // 2. 社内担当者への検討中通知メール
@@ -132,6 +134,7 @@ export async function POST(
 
 見積書番号: ${quote.quoteNumber}
 顧客名: ${quote.customer?.companyName || '未設定'}
+顧客メール: ${quote.customer?.email && quote.customer.email.trim() !== '' ? quote.customer.email : '未設定（要注意）'}
 見積金額: ¥${quote.totalAmount.toLocaleString()}（税込）
 検討開始日時: ${new Date(consideredAt).toLocaleString('ja-JP')}
 検討者: ${consideredBy || '未設定'}
@@ -140,10 +143,14 @@ export async function POST(
 IPアドレス: ${ipAddress || '不明'}
 ブラウザ: ${userAgent || '不明'}
 
+【顧客通知メール】
+${quote.customer?.email && quote.customer.email.trim() !== '' ? '✓ 顧客に検討中通知メールを送信しました' : '⚠ 顧客メールアドレスが未設定のため、顧客への通知をスキップしました'}
+
 【推奨アクション】
 1. 1週間後にフォローアップ
 2. 追加提案の準備
 3. 価格調整の検討（必要に応じて）
+${quote.customer?.email && quote.customer.email.trim() !== '' ? '' : '4. 顧客メールアドレスの設定'}
 
 詳細は管理画面でご確認ください。
         `;

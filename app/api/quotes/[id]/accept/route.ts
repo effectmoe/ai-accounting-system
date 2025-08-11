@@ -81,7 +81,7 @@ export async function POST(
       }
       
       // 1. 顧客への承認確認メール（PDF添付）
-      if (quote.customer?.email) {
+      if (quote.customer?.email && quote.customer.email.trim() !== '') {
         const customMessage = `
 お世話になっております。
 
@@ -114,6 +114,8 @@ export async function POST(
         } else {
           logger.error(`Failed to send acceptance email: ${emailResult.error}`);
         }
+      } else {
+        logger.warn(`Customer email not set for quote ${quote.quoteNumber}. Skipping customer notification.`);
       }
       
       // 2. 社内担当者への承認通知メール
@@ -125,6 +127,7 @@ export async function POST(
 
 見積書番号: ${quote.quoteNumber}
 顧客名: ${quote.customer?.companyName || '未設定'}
+顧客メール: ${quote.customer?.email && quote.customer.email.trim() !== '' ? quote.customer.email : '未設定（要注意）'}
 見積金額: ¥${quote.totalAmount.toLocaleString()}（税込）
 承認日時: ${new Date(acceptedAt).toLocaleString('ja-JP')}
 承認者: ${acceptedBy || '未設定'}
@@ -133,10 +136,13 @@ export async function POST(
 IPアドレス: ${ipAddress || '不明'}
 ブラウザ: ${userAgent || '不明'}
 
+【顧客通知メール】
+${quote.customer?.email && quote.customer.email.trim() !== '' ? '✓ 顧客に承認確認メールを送信しました' : '⚠ 顧客メールアドレスが未設定のため、顧客への通知をスキップしました'}
+
 【次のアクション】
 1. 請求書の発行準備
 2. 納品・作業スケジュールの確認
-3. 顧客への追加連絡（必要に応じて）
+3. 顧客への追加連絡（${quote.customer?.email && quote.customer.email.trim() !== '' ? '必要に応じて' : '顧客メール設定後、手動で通知'}）
 
 詳細は管理画面でご確認ください。
         `;
