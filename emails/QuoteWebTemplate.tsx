@@ -22,7 +22,8 @@ interface SuggestedOption {
   ctaUrl: string;
 }
 
-// ツールチップ用語を検出してライトグレーマーカーを付ける関数
+// ツールチップ用語を検出して黄色マーカーを付ける関数
+// Updated: 2025-08-11
 const renderDetailsWithTooltip = (details: string, tooltip: string) => {
   // ツールチップ内の主要な用語を抽出（ROI、KPI、CRMなどの英語略語を優先）
   const englishKeywords = tooltip.match(/\b[A-Z]{2,}\b/g) || [];

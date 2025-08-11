@@ -1,3 +1,5 @@
+// 検討中ステータスAPIエンドポイント
+// Created: 2025-08-11
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
