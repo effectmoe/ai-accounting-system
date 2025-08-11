@@ -1118,10 +1118,6 @@ export default function HtmlQuoteEditor({
 
             {/* プレビュータブ */}
             <TabsContent value="preview" className="space-y-4">
-              {/* デバッグ情報 */}
-              <div className="text-xs text-muted-foreground mb-2">
-                onSend available: {onSend ? 'Yes' : 'No'}
-              </div>
               {/* シンプル化されたアクションバー */}
               <div className="flex items-center justify-end gap-2">
                 <Button
@@ -1153,24 +1149,23 @@ export default function HtmlQuoteEditor({
                     </>
                   )}
                 </Button>
-                {typeof onSend === 'function' && (
-                  <Button
-                    onClick={handleSend}
-                    disabled={isSending || !recipientEmail}
-                  >
-                    {isSending ? (
-                      <>
-                        <Send className="h-4 w-4 mr-2 animate-spin" />
-                        送信中...
-                      </>
-                    ) : (
-                      <>
-                        <Send className="h-4 w-4 mr-2" />
-                        送信
-                      </>
-                    )}
-                  </Button>
-                )}
+                <Button
+                  onClick={handleSend}
+                  disabled={isSending || !recipientEmail || !onSend}
+                  title={!recipientEmail ? '送信先のメールアドレスが設定されていません' : !onSend ? '送信機能が利用できません' : ''}
+                >
+                  {isSending ? (
+                    <>
+                      <Send className="h-4 w-4 mr-2 animate-spin" />
+                      送信中...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-4 w-4 mr-2" />
+                      送信
+                    </>
+                  )}
+                </Button>
               </div>
 
               {/* プレビューエリア（レスポンシブ対応） */}
