@@ -115,12 +115,19 @@ export default function HtmlQuoteEditorPage() {
 
       const result = await response.json();
       console.log('[HTML Editor Page] Success response:', result);
+      
+      // 成功時のアラートを1回だけ表示
       alert('見積書を送信しました');
+      
       // 送信後、見積書詳細ページに戻る
-      router.push(`/quotes/${quoteId}`);
+      setTimeout(() => {
+        router.push(`/quotes/${quoteId}`);
+      }, 500); // アラート表示後、少し待ってから遷移
     } catch (error) {
       logger.error('Error sending quote:', error);
+      // エラー時のアラートを1回だけ表示
       alert('送信に失敗しました: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      // エラーを再スローしない（子コンポーネントでのエラー処理と重複を防ぐ）
     }
   };
 

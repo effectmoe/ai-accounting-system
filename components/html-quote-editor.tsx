@@ -301,13 +301,16 @@ export default function HtmlQuoteEditor({
     console.log('[HtmlQuoteEditor] recipientEmail:', recipientEmail);
     console.log('[HtmlQuoteEditor] isSending:', isSending);
     
-    if (!recipientEmail) {
+    // 送信先メールアドレスの確認
+    let emailToSend = recipientEmail;
+    if (!emailToSend) {
       console.log('[HtmlQuoteEditor] recipientEmail is empty, prompting user');
       const email = prompt('送信先メールアドレスを入力してください:');
       if (!email) {
         console.log('[HtmlQuoteEditor] User cancelled email input');
         return;
       }
+      emailToSend = email;
       setRecipientEmail(email);
       console.log('[HtmlQuoteEditor] Set recipient email to:', email);
     }
@@ -320,16 +323,18 @@ export default function HtmlQuoteEditor({
         await onSend({
           quote: editedQuote,
           companyInfo,
-          recipientEmail,
+          recipientEmail: emailToSend, // 更新されたemailToSendを使用
           recipientName,
           customMessage,
           attachPdf,
           suggestedOptions: includeInteractiveElements ? suggestedOptions : [],
         });
-        alert('見積書を送信しました');
+        // アラートは親コンポーネントで表示されるので、ここでは表示しない
+        console.log('[HtmlQuoteEditor] Parent onSend completed successfully');
       } catch (error) {
         logger.error('Error sending quote via parent onSend:', error);
-        alert('送信に失敗しました: ' + (error instanceof Error ? error.message : 'Unknown error'));
+        // エラー時のアラートは親コンポーネントで表示されるので、ここでは表示しない
+        throw error; // エラーを再スローして親に伝播
       } finally {
         setIsSending(false);
       }
@@ -357,7 +362,7 @@ export default function HtmlQuoteEditor({
         body: JSON.stringify({
           quote: editedQuote,
           companyInfo,
-          recipientEmail,
+          recipientEmail: emailToSend, // 更新されたemailToSendを使用
           recipientName,
           customMessage,
           attachPdf,
