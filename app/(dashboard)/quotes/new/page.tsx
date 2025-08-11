@@ -48,6 +48,7 @@ interface Product {
 }
 
 function NewQuoteContent() {
+  console.log('[NewQuoteContent] Component mounting...');
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
@@ -287,18 +288,25 @@ function NewQuoteContent() {
   };
 
   const handleSubmit = async (status: 'draft' | 'sent' = 'draft') => {
+    console.log('[handleSubmit] Called with status:', status);
+    console.log('[handleSubmit] selectedCustomerId:', selectedCustomerId);
+    console.log('[handleSubmit] items:', items);
+    
     if (!selectedCustomerId) {
+      console.error('[handleSubmit] No customer selected');
       setError('顧客を選択してください');
       return;
     }
 
     if (items.length === 0 || !items[0].description) {
+      console.error('[handleSubmit] No items or empty description');
       setError('最低1つの項目を入力してください');
       return;
     }
 
     setIsLoading(true);
     setError(null);
+    console.log('[handleSubmit] Validation passed, starting submission...');
 
     const totals = getTotalAmount();
 
@@ -340,6 +348,7 @@ function NewQuoteContent() {
     logger.debug('isGeneratedByAI value:', aiDataApplied);
 
     try {
+      console.log('[handleSubmit] Sending request to /api/quotes with data:', quoteData);
       const response = await fetch('/api/quotes', {
         method: 'POST',
         headers: {
@@ -348,11 +357,15 @@ function NewQuoteContent() {
         body: JSON.stringify(quoteData),
       });
 
+      console.log('[handleSubmit] Response status:', response.status);
       const data = await response.json();
+      console.log('[handleSubmit] Response data:', data);
 
       if (response.ok) {
+        console.log('[handleSubmit] Quote created successfully, ID:', data._id);
         // 仕入先見積書を更新して関連を作成
         if (sourceSupplierQuoteId) {
+          console.log('[handleSubmit] Updating supplier quote relation...');
           await fetch(`/api/supplier-quotes/${sourceSupplierQuoteId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
@@ -364,15 +377,19 @@ function NewQuoteContent() {
         
         setSuccessMessage('見積書が正常に作成されました！');
         setTimeout(() => {
+          console.log('[handleSubmit] Redirecting to:', `/quotes/${data._id}`);
           router.push(`/quotes/${data._id}`);
         }, 1500);
       } else {
+        console.error('[handleSubmit] Server returned error:', data);
         throw new Error(data.details || data.error || '見積書の作成に失敗しました');
       }
     } catch (error) {
+      console.error('[handleSubmit] Error occurred:', error);
       logger.error('Error creating quote:', error);
       setError(error instanceof Error ? error.message : '見積書の作成に失敗しました');
     } finally {
+      console.log('[handleSubmit] Finished, setting isLoading to false');
       setIsLoading(false);
     }
   };
@@ -780,8 +797,17 @@ function NewQuoteContent() {
       <div className="flex gap-4 justify-end">
         <Button
           variant="outline"
-          onClick={() => handleSubmit('draft')}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('[Button] Draft save button clicked');
+            console.log('[Button] Current state - isLoading:', isLoading);
+            console.log('[Button] Current state - selectedCustomerId:', selectedCustomerId);
+            console.log('[Button] Current state - items:', items);
+            handleSubmit('draft');
+          }}
           disabled={isLoading}
+          type="button"
         >
           {isLoading ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -791,8 +817,17 @@ function NewQuoteContent() {
           下書き保存
         </Button>
         <Button
-          onClick={() => handleSubmit('sent')}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('[Button] Create quote button clicked');
+            console.log('[Button] Current state - isLoading:', isLoading);
+            console.log('[Button] Current state - selectedCustomerId:', selectedCustomerId);
+            console.log('[Button] Current state - items:', items);
+            handleSubmit('sent');
+          }}
           disabled={isLoading}
+          type="button"
         >
           {isLoading ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
