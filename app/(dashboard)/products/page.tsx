@@ -53,7 +53,7 @@ interface ColumnVisibilityStorageData {
 
 // カラム設定のLocalStorageキー
 const COLUMN_VISIBILITY_STORAGE_KEY = 'products-column-visibility';
-const STORAGE_VERSION = 1;
+const STORAGE_VERSION = 2;
 
 // デフォルトのカラム表示設定（順序付き）
 const DEFAULT_COLUMN_CONFIGS: ColumnConfig[] = [
@@ -65,7 +65,7 @@ const DEFAULT_COLUMN_CONFIGS: ColumnConfig[] = [
   { key: 'unit', visible: true, order: 5 },
   { key: 'taxRate', visible: true, order: 6 },
   { key: 'description', visible: false, order: 7 },
-  { key: 'tags', visible: false, order: 8 },
+  { key: 'tags', visible: true, order: 8 },
   { key: 'createdAt', visible: true, order: 9 },
   { key: 'updatedAt', visible: false, order: 10 },
 ];
