@@ -16,6 +16,7 @@ import {
   Text,
 } from '@react-email/components';
 import { Quote, CompanyInfo } from '@/types/collections';
+import { cleanDuplicateSignatures } from '@/lib/utils/clean-duplicate-signatures';
 
 interface QuoteHtmlTemplateProps {
   quote: Quote;
@@ -338,7 +339,7 @@ export default function QuoteHtmlTemplate({
             {quote.notes && (
               <Section style={notesSection}>
                 <Heading as="h3" style={h3}>備考</Heading>
-                <Text style={notesText}>{quote.notes}</Text>
+                <Text style={notesText}>{cleanDuplicateSignatures(quote.notes)}</Text>
               </Section>
             )}
 

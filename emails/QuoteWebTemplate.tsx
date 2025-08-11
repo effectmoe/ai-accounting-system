@@ -1,5 +1,6 @@
 import React from 'react';
 import { Quote, CompanyInfo } from '@/types/collections';
+import { cleanDuplicateSignatures } from '@/lib/utils/clean-duplicate-signatures';
 
 interface QuoteWebTemplateProps {
   quote: Quote;
@@ -721,7 +722,7 @@ export default function QuoteWebTemplate({
         {quote.notes && (
           <section style={notesSectionStyle}>
             <h3 style={h3Style}>備考</h3>
-            <div style={notesTextStyle}>{quote.notes}</div>
+            <div style={notesTextStyle}>{cleanDuplicateSignatures(quote.notes)}</div>
           </section>
         )}
       </main>
