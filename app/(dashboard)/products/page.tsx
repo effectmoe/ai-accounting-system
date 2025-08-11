@@ -268,7 +268,11 @@ function ProductsPageContent() {
       label: '税率',
       sortable: true,
       render: (product) => {
-        const rate = (product.taxRate || 0) * 100;
+        const taxRate = product.taxRate || 0;
+        if (taxRate === -1) {
+          return '内税';
+        }
+        const rate = taxRate * 100;
         return `${rate.toFixed(0)}%`;
       },
     },
