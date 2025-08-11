@@ -114,8 +114,15 @@ export default function NewProductPage() {
       ...formData,
       productCode,
       unitPrice: unitPriceNum,
-      stockQuantity: formData.stockQuantity ? parseFloat(formData.stockQuantity) || 0 : 0
+      stockQuantity: formData.stockQuantity ? parseFloat(formData.stockQuantity) || 0 : 0,
+      taxRate: formData.taxRate // 明示的にtaxRateを含める
     };
+
+    // デバッグ: 送信データを確認
+    console.log('送信データ:', submitData);
+    console.log('formData.unitPrice:', formData.unitPrice, 'type:', typeof formData.unitPrice);
+    console.log('unitPriceNum:', unitPriceNum, 'type:', typeof unitPriceNum);
+    console.log('formData.stockQuantity:', formData.stockQuantity, 'type:', typeof formData.stockQuantity);
 
     try {
       const response = await fetch('/api/products', {
