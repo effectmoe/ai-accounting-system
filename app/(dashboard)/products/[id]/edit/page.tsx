@@ -16,7 +16,7 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
     productCode: string;
     description: string;
     unitPrice: string;
-    taxRate: number;
+    taxRate: string;
     category: string;
     stockQuantity: string;
     unit: string;
@@ -28,7 +28,7 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
     productCode: '',
     description: '',
     unitPrice: '',
-    taxRate: 0.10,
+    taxRate: '0.10',
     category: '',
     stockQuantity: '',
     unit: '',
@@ -51,7 +51,7 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
         productCode: product.productCode,
         description: product.description || '',
         unitPrice: String(product.unitPrice),
-        taxRate: product.taxRate,
+        taxRate: String(product.taxRate),
         category: product.category,
         stockQuantity: String(product.stockQuantity),
         unit: product.unit,
@@ -90,7 +90,8 @@ export default function EditProductPage({ params }: { params: { id: string } }) 
     const submitData = {
       ...formData,
       unitPrice: parseFloat(formData.unitPrice) || 0,
-      stockQuantity: parseFloat(formData.stockQuantity) || 0
+      stockQuantity: parseFloat(formData.stockQuantity) || 0,
+      taxRate: parseFloat(formData.taxRate)
     };
 
     try {
