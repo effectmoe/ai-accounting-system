@@ -476,6 +476,32 @@ export default function HtmlQuoteEditor({
     }
   };
 
+  // メッセージリスナーを追加してオプションページからのメッセージを受信
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data && event.data.type === 'ADD_OPTION') {
+        const option = event.data.option;
+        setSuggestedOptions(prev => [...prev, {
+          title: option.title,
+          description: option.description,
+          price: option.price,
+          features: option.features,
+          ctaText: option.ctaText,
+          ctaUrl: option.ctaUrl
+        }]);
+        
+        // オプションが追加されたことをユーザーに通知
+        alert(`「${option.title}」が見積書に追加されました。`);
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    
+    return () => {
+      window.removeEventListener('message', handleMessage);
+    };
+  }, []);
+  
   // コンポーネントのクリーンアップ時にウィンドウを閉じる
   useEffect(() => {
     return () => {

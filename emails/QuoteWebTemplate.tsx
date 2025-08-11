@@ -1129,12 +1129,12 @@ const buttonWrapperStyle = {
 
 const buttonDescriptionStyle = {
   fontSize: '0.75rem',
-  color: '#9ca3af',
+  color: '#4B5563', // 濃いグレーで読みやすく
   lineHeight: '1.4',
   textAlign: 'center' as const,
   margin: '0',
   width: '100%',
-  fontWeight: '400',
+  fontWeight: '500', // やや太く
 };
 
 const notesSectionStyle = {

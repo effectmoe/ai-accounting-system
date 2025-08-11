@@ -55,7 +55,7 @@ export default function AcceptQuotePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           acceptedAt: new Date().toISOString(),
-          acceptedBy: quote?.customerEmail || 'customer@example.com',
+          acceptedBy: quote?.customer?.email || quote?.customerEmail || 'customer@example.com',
           ipAddress: window.location.hostname,
           userAgent: navigator.userAgent
         })
@@ -65,8 +65,15 @@ export default function AcceptQuotePage() {
         throw new Error('承認処理に失敗しました');
       }
       
-      // PDF生成はaccept APIで行われるのでここでは不要
-      // （accept API内でPDF生成とメール送信が実行される）
+      // APIから更新されたデータを取得して状態を更新
+      const updatedQuoteRes = await fetch(`/api/quotes/${params.id}`);
+      if (updatedQuoteRes.ok) {
+        const updatedQuote = await updatedQuoteRes.json();
+        setQuote(updatedQuote);
+        if (updatedQuote.status === 'accepted') {
+          setAlreadyAccepted(true);
+        }
+      }
       
       setAccepted(true);
       setAlreadyAccepted(true);
@@ -190,9 +197,9 @@ export default function AcceptQuotePage() {
               <Button 
                 variant="outline"
                 className="flex-1"
-                onClick={() => router.push(`/quotes/discuss/${params.id}`)}
+                onClick={() => window.close()}
               >
-                相談する
+                閉じる
               </Button>
             </div>
           </div>
