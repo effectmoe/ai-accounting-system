@@ -82,32 +82,16 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     }
 });
 
-// 一意な商品コードを生成する関数
+// 一意な商品コードを生成する関数（英数字のみ使用）
 async function generateUniqueProductCode(originalCode: string): Promise<string> {
     const productService = new ProductService();
-    
-    // 元のコードから英数字部分のみ抽出し、最大10文字に制限
-    const cleanCode = originalCode
-        .replace(/[^\w]/g, '') // 英数字とアンダースコア以外を削除
-        .substring(0, 10)       // 最大10文字
-        .toUpperCase();         // 大文字に統一
-    
-    // 日時ベースの一意識別子を生成
-    const now = new Date();
-    const timeCode = 
-        now.getFullYear().toString().slice(-2) +
-        (now.getMonth() + 1).toString().padStart(2, '0') +
-        now.getDate().toString().padStart(2, '0') +
-        now.getHours().toString().padStart(2, '0') +
-        now.getMinutes().toString().padStart(2, '0');
-    
-    // ランダムな2文字を追加
-    const randomChars = Math.random().toString(36).substring(2, 4).toUpperCase();
-    
     let attempt = 1;
-    let newCode = `${cleanCode || 'COPY'}-${timeCode}${randomChars}`;
     
-    while (attempt <= 5) {
+    // 元のコードから英数字のみ抽出
+    const cleanOriginalCode = originalCode.replace(/[^A-Za-z0-9-]/gi, '') || 'PROD';
+    let newCode = `${cleanOriginalCode}-COPY`;
+    
+    while (attempt <= 10) {
         // 商品コードが既に存在するかチェック
         const existing = await productService.getProductByCode(newCode);
         if (!existing) {
@@ -115,14 +99,14 @@ async function generateUniqueProductCode(originalCode: string): Promise<string> 
             return newCode;
         }
         
-        // 既に存在する場合は最後に数字を追加
+        // 既に存在する場合は番号を増やして再試行
         attempt++;
-        newCode = `${cleanCode || 'COPY'}-${timeCode}${randomChars}${attempt}`;
+        newCode = `${cleanOriginalCode}-COPY${attempt}`;
     }
     
-    // 最後の手段として完全にランダムなコード
-    const fullRandom = Math.random().toString(36).substring(2, 8).toUpperCase();
-    newCode = `COPY-${fullRandom}`;
-    console.log(`[DUPLICATE API] Generated fallback unique code: ${newCode}`);
+    // 最後の手段として現在時刻を追加（英数字のみ）
+    const timestamp = Date.now().toString().slice(-6);
+    newCode = `${cleanOriginalCode}-COPY-${timestamp}`;
+    console.log(`[DUPLICATE API] Generated timestamped unique code: ${newCode}`);
     return newCode;
 }

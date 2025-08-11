@@ -37,44 +37,44 @@ export default function NewProductPage() {
     tags: []
   });
 
-  // 商品コードを自動生成する関数
+  // 商品コードを自動生成する関数（英数字のみ使用）
   const generateProductCode = (productName: string, category: string) => {
     if (!productName || !category) return '';
     
-    // カテゴリの頭文字を取得（最大3文字）
+    // カテゴリから英数字のみ抽出（最大3文字）
     const categoryPrefix = category
-      .replace(/[^\w\u3040-\u309f\u30a0-\u30ff\u4e00-\u9faf]/gi, '') // 日本語と英数字を許可
+      .replace(/[^A-Za-z0-9]/gi, '') // 英数字のみ許可
       .substring(0, 3)
       .toUpperCase() || 'CAT';
     
-    // 商品名から識別子を作成
-    const nameWords = productName.replace(/[^\w\u3040-\u309f\u30a0-\u30ff\u4e00-\u9faf\s]/gi, '').split(/\s+/);
+    // 商品名から英数字のみ抽出
+    const nameAlphanumeric = productName.replace(/[^A-Za-z0-9\s]/gi, '');
+    const nameWords = nameAlphanumeric.split(/\s+/).filter(word => word);
+    
     let namePrefix = '';
     
-    // 商品名が英語の場合は最初の3文字、日本語の場合は頭文字を使用
-    if (/^[A-Za-z]/.test(productName)) {
+    if (nameWords.length > 0 && nameWords[0]) {
+      // 英数字が含まれる場合は最初の単語から4文字まで使用
       namePrefix = nameWords[0].substring(0, 4).toUpperCase();
-    } else {
-      // 日本語の場合、単語の頭文字を組み合わせるか、最初の2文字を使用
-      namePrefix = nameWords
-        .map(word => word.charAt(0))
-        .join('')
-        .substring(0, 3)
-        .toUpperCase() || 'PRD';
     }
     
-    // 現在時刻をベースにした一意な識別子（YYMMDDHHmmss形式の下6桁）
+    // 英数字がない場合は「PRD」を使用
+    if (!namePrefix) {
+      namePrefix = 'PRD';
+    }
+    
+    // 現在時刻をベースにした一意な識別子（YYMMDD形式）
     const now = new Date();
     const timeCode = 
       now.getFullYear().toString().slice(-2) +
       (now.getMonth() + 1).toString().padStart(2, '0') +
       now.getDate().toString().padStart(2, '0');
     
-    // ランダムな3文字を追加（より確実な一意性のため）
+    // ランダムな3文字を追加（英数字のみ）
     const randomChars = Math.random().toString(36).substring(2, 5).toUpperCase();
     
     // フォーマット: カテゴリ-名前-日付-ランダム
-    return `${categoryPrefix}${namePrefix === 'PRD' ? '' : '-' + namePrefix}-${timeCode}${randomChars}`;
+    return `${categoryPrefix}-${namePrefix}-${timeCode}-${randomChars}`;
   };
 
   // カテゴリ一覧を取得
