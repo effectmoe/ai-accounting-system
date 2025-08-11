@@ -1,6 +1,6 @@
 {
   "name": "mastra-accounting-automation",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "AI-driven accounting automation system for Japanese tax compliance using Mastra framework",
   "main": "index.js",
   "private": true,
