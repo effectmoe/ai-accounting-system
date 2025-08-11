@@ -95,4 +95,4 @@ mcp-chrome-server/
 add-env-vars.sh
 
 # backup files
-*.tar.gz
+*.tar.gz.env

@@ -54,7 +54,6 @@ import {
   ChevronDown,
   Copy,
   Check,
-  HelpCircle,
 } from 'lucide-react';
 import { Quote, CompanyInfo } from '@/types/collections';
 import { generateDefaultSuggestedOptions, generateDefaultTooltips } from '@/lib/html-quote-generator';
