@@ -299,6 +299,31 @@ export default function HtmlQuoteEditor({
       return;
     }
 
+    // onSendプロップの存在確認（親コンポーネントの送信機能を優先）
+    if (typeof onSend === 'function') {
+      console.log('[HtmlQuoteEditor] Using parent onSend function');
+      setIsSending(true);
+      try {
+        await onSend({
+          quote: editedQuote,
+          companyInfo,
+          recipientEmail,
+          recipientName,
+          customMessage,
+          attachPdf,
+          suggestedOptions: includeInteractiveElements ? suggestedOptions : [],
+        });
+        alert('見積書を送信しました');
+      } catch (error) {
+        logger.error('Error sending quote via parent onSend:', error);
+        alert('送信に失敗しました: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      } finally {
+        setIsSending(false);
+      }
+      return;
+    }
+
+    console.log('[HtmlQuoteEditor] Using direct API call');
     setIsSending(true);
     try {
       // PDF生成
@@ -332,14 +357,8 @@ export default function HtmlQuoteEditor({
 
       if (result.success) {
         alert('見積書を送信しました');
-        if (onSend) {
-          await onSend({
-            recipientEmail,
-            recipientName,
-            customMessage,
-            trackingId: result.trackingId,
-          });
-        }
+        // 成功時のトラッキング情報をログに記録
+        console.log('[HtmlQuoteEditor] Email sent successfully, trackingId:', result.trackingId);
       } else {
         throw new Error(result.error || 'Send failed');
       }
@@ -1151,8 +1170,8 @@ export default function HtmlQuoteEditor({
                 </Button>
                 <Button
                   onClick={handleSend}
-                  disabled={isSending || !recipientEmail || !onSend}
-                  title={!recipientEmail ? '送信先のメールアドレスが設定されていません' : !onSend ? '送信機能が利用できません' : ''}
+                  disabled={isSending || !recipientEmail}
+                  title={!recipientEmail ? '送信先のメールアドレスが設定されていません' : isSending ? '送信中です' : '見積書を送信します'}
                 >
                   {isSending ? (
                     <>
