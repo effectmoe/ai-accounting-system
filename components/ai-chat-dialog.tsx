@@ -158,7 +158,7 @@ export default function AIChatDialog({
           if (items.length > 0) {
             content += '\n現在の明細：\n';
             items.forEach((item: any, index: number) => {
-              content += `${index + 1}. ${item.description || item.itemName}: ¥${((item.amount || 0) + (item.taxAmount || 0)).toLocaleString()}\n`;
+              content += `${index + 1}. ${item.itemName || item.description}: ¥${((item.amount || 0) + (item.taxAmount || 0)).toLocaleString()}\n`;
             });
             content += '\n合計金額: ¥' + totalAmount.toLocaleString() + '（税込）\n';
             content += '\nどの部分を変更しますか？（明細の追加、金額の変更、項目の削除など）';

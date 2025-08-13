@@ -65,7 +65,7 @@ export async function POST(
 
     // 請求書の項目を納品書項目に変換
     const deliveryNoteItems = invoiceData.items.map((item: any) => ({
-      itemName: item.itemName || item.description,
+      itemName: item.itemName || '',
       description: item.description,
       quantity: item.quantity,
       unitPrice: item.unitPrice,

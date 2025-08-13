@@ -196,7 +196,8 @@ export default function DeliveryNoteDetailPage({ params }: { params: { id: strin
         customer: deliveryNote.customer,
         customerSnapshot: deliveryNote.customerSnapshot,
         items: deliveryNote.items.map((item: any) => ({
-          description: item.itemName || item.description,
+          itemName: item.itemName || '',
+          description: item.description || '',
           quantity: item.quantity,
           unitPrice: item.unitPrice,
           amount: item.amount,
@@ -258,7 +259,8 @@ export default function DeliveryNoteDetailPage({ params }: { params: { id: strin
         customer: deliveryNote.customer,
         customerSnapshot: deliveryNote.customerSnapshot,
         items: deliveryNote.items.map((item: any) => ({
-          description: item.itemName || item.description,
+          itemName: item.itemName || '',
+          description: item.description || '',
           quantity: item.quantity,
           unitPrice: item.unitPrice,
           amount: item.amount,

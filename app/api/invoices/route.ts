@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
     // データの前処理：フロントエンドのdescriptionをitemNameに変換
     const processedItems = body.items.map((item: any) => ({
       ...item,
-      itemName: item.description || item.itemName || '',
+      itemName: item.itemName || '',
       description: item.description || '',
       totalAmount: item.amount + item.taxAmount,
       sortOrder: 0
@@ -114,7 +114,8 @@ export async function POST(request: NextRequest) {
         {
           customer_name: invoiceData.customer?.companyName || invoiceData.customerName || '',
           items: invoiceData.items.map((item: any) => ({
-            description: item.itemName || item.description,
+            itemName: item.itemName || '',
+            description: item.description || '',
             quantity: item.quantity,
             unit_price: item.unitPrice
           })),

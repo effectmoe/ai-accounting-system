@@ -431,7 +431,8 @@ export async function POST(request: NextRequest) {
           `${document.customer.postalCode ? `〒${document.customer.postalCode} ` : ''}${document.customer.prefecture || ''}${document.customer.city || ''}${document.customer.address1 || ''}${document.customer.address2 || ''}` :
           document.customerSnapshot?.address || '',
         items: document.items.map((item: any) => ({
-          description: item.itemName || item.description,
+          itemName: item.itemName || '',
+          description: item.description || '',
           quantity: item.quantity,
           unitPrice: item.unitPrice,
           amount: item.amount,

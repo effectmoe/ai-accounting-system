@@ -208,7 +208,8 @@ export async function PUT(
       // itemsの処理：descriptionをitemNameにマッピング
       updateData.items = body.items.map((item: any) => ({
         ...item,
-        itemName: item.description || item.itemName,
+        itemName: item.itemName || '',
+        description: item.description || '',
         totalAmount: item.amount + item.taxAmount
       }));
     }

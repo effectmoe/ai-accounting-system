@@ -223,7 +223,7 @@ export async function POST(request: NextRequest) {
         // 編集モードの場合、既存データを詳細に含める
         const items = currentInvoiceData.items || [];
         const currentDetails = items.map((item, index) => 
-          `${index + 1}. ${item.description || item.itemName}: ¥${((item.amount || 0) + (item.taxAmount || 0)).toLocaleString()}`
+          `${index + 1}. ${item.itemName || item.description}: ¥${((item.amount || 0) + (item.taxAmount || 0)).toLocaleString()}`
         ).join('\n');
         
         systemPrompt = `あなたは請求書編集を支援するAIアシスタントです。
