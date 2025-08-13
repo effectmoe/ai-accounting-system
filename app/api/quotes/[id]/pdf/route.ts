@@ -38,7 +38,8 @@ export async function GET(
     
     // HTMLを生成（コンパクト版を使用）
     logger.debug('Generating compact quote HTML for:', quote.quoteNumber);
-    const htmlContent = generateCompactQuoteHTML(quote, companyInfo);
+    logger.debug('Show descriptions:', showDescriptions);
+    const htmlContent = generateCompactQuoteHTML(quote, companyInfo, showDescriptions);
     
     // 新しい命名規則でファイル名を生成: 発行日_帳表名_顧客名
     const filename = generateQuoteFilename(quote);
@@ -50,6 +51,7 @@ export async function GET(
     const url = new URL(request.url);
     const isDownload = url.searchParams.get('download') === 'true';
     const isPrintMode = url.searchParams.get('print') === 'true';
+    const showDescriptions = url.searchParams.get('showDescriptions') !== 'false'; // デフォルトは表示
     
     // 日本語ファイル名をRFC 5987準拠でエンコード
     const encodedFilename = encodeURIComponent(filename);

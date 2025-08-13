@@ -357,7 +357,7 @@ export default function QuoteDetailPage({ params }: QuoteDetailPageProps) {
               size="sm"
               onClick={() => {
                 // 新しいウィンドウを開いて印刷ダイアログを表示
-                const printWindow = window.open(`/api/quotes/${quote._id}/pdf?print=true`, '_blank', 'width=800,height=600');
+                const printWindow = window.open(`/api/quotes/${quote._id}/pdf?print=true&showDescriptions=${showItemDescriptions}`, '_blank', 'width=800,height=600');
                 if (printWindow) {
                   printWindow.focus();
                 }
@@ -830,7 +830,7 @@ export default function QuoteDetailPage({ params }: QuoteDetailPageProps) {
             </div>
             <div className="flex-1 overflow-hidden">
               <iframe
-                src={`/api/quotes/${quote._id}/pdf`}
+                src={`/api/quotes/${quote._id}/pdf?showDescriptions=${showItemDescriptions}`}
                 className="w-full h-full"
                 title="見積書PDFプレビュー"
               />
@@ -844,7 +844,7 @@ export default function QuoteDetailPage({ params }: QuoteDetailPageProps) {
               </Button>
               <Button
                 onClick={() => {
-                  window.open(`/api/quotes/${quote._id}/pdf?download=true`, '_blank');
+                  window.open(`/api/quotes/${quote._id}/pdf?download=true&showDescriptions=${showItemDescriptions}`, '_blank');
                   setShowPdfPreview(false);
                 }}
               >
