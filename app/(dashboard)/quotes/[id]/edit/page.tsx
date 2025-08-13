@@ -584,7 +584,7 @@ function QuoteEditPageContent({ params }: QuoteEditPageProps) {
                       value={String(item.taxRate || 10)}
                       onChange={(e) => updateItem(index, 'taxRate', parseFloat(e.target.value))}
                       className="w-full px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                      disabled={!!item.productId}
+                      disabled={false}
                     >
                       <option value="10">10%（標準税率）</option>
                       <option value="8">8%（軽減税率）</option>

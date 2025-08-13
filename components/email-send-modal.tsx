@@ -329,7 +329,8 @@ ${deliveryDate ? `納品日：${deliveryDate}` : ''}
             customer: docData.customer, // 顧客情報全体を渡す
             customerSnapshot: docData.customerSnapshot, // スナップショットも渡す
             items: docData.items.map((item: any) => ({
-              description: item.itemName || item.description,
+              itemName: item.itemName || '',
+              description: item.description || '',
               quantity: item.quantity,
               unitPrice: item.unitPrice,
               amount: item.amount,
