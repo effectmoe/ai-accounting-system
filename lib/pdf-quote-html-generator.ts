@@ -1,6 +1,103 @@
 import { cleanDuplicateSignatures } from './utils/clean-duplicate-signatures';
 
+// 住所情報を組み立てるヘルパー関数
+function buildCustomerAddress(quote: any): string {
+  const customer = quote.customer || {};
+  const customerSnapshot = quote.customerSnapshot || {};
+  
+  let fullAddress = '';
+  
+  // パターン1: customer.address (単一フィールド)
+  if (customer.address) {
+    fullAddress = customer.address;
+  }
+  // パターン2: customerSnapshot.address (単一フィールド)
+  else if (customerSnapshot.address) {
+    fullAddress = customerSnapshot.address;
+  }
+  // パターン3: 分割フィールドから組み立て (customer)
+  else if (customer.postalCode || customer.prefecture || customer.city || customer.address1 || customer.address2) {
+    fullAddress = [
+      customer.postalCode,
+      customer.prefecture,
+      customer.city,
+      customer.address1,
+      customer.address2
+    ].filter(Boolean).join(' ');
+  }
+  // パターン4: 分割フィールドから組み立て (customerSnapshot)
+  else if (customerSnapshot.postalCode || customerSnapshot.prefecture || customerSnapshot.city || customerSnapshot.address1 || customerSnapshot.address2) {
+    fullAddress = [
+      customerSnapshot.postalCode,
+      customerSnapshot.prefecture, 
+      customerSnapshot.city,
+      customerSnapshot.address1,
+      customerSnapshot.address2
+    ].filter(Boolean).join(' ');
+  }
+  
+  return fullAddress;
+}
+
+// 担当者情報を取得するヘルパー関数
+function getContactPerson(quote: any): string {
+  const customer = quote.customer || {};
+  const customerSnapshot = quote.customerSnapshot || {};
+  
+  let contactPerson = '';
+  
+  // パターン1: customer.contactPerson
+  if (customer.contactPerson) {
+    contactPerson = customer.contactPerson;
+  }
+  // パターン2: customerSnapshot.contactPerson
+  else if (customerSnapshot.contactPerson) {
+    contactPerson = customerSnapshot.contactPerson;
+  }
+  // パターン3: customer.contacts配列から主担当者を取得
+  else if (customer.contacts && customer.contacts.length > 0) {
+    const primaryContact = customer.contacts.find((c: any) => c.isPrimary) || customer.contacts[0];
+    if (primaryContact && primaryContact.name) {
+      contactPerson = primaryContact.name;
+    }
+  }
+  // パターン4: assigneeフィールド
+  else if (quote.assignee) {
+    contactPerson = quote.assignee;
+  }
+  
+  return contactPerson;
+}
+
+// 商品説明を取得するヘルパー関数
+function getItemDescription(item: any): string {
+  if (item.description && item.description.toString().trim() !== '') {
+    return item.description;
+  } else if (item.productDescription && item.productDescription.toString().trim() !== '') {
+    return item.productDescription;
+  } else if (item.itemDescription && item.itemDescription.toString().trim() !== '') {
+    return item.itemDescription;
+  } else if (item.details && item.details.toString().trim() !== '') {
+    return item.details;
+  } else if (item.product && item.product.description && item.product.description.toString().trim() !== '') {
+    return item.product.description;
+  }
+  return '';
+}
 export function generateCompactQuoteHTML(quote: any, companyInfo: any): string {
+  // 完全なデータ構造をログ出力（一時的）
+  console.log('=== FULL QUOTE DATA FOR PDF GENERATION ===');
+  console.log('Quote Number:', quote.quoteNumber);
+  console.log('Customer Data:', JSON.stringify(quote.customer, null, 2));
+  console.log('Customer Snapshot:', JSON.stringify(quote.customerSnapshot, null, 2));
+  console.log('Items Data:', JSON.stringify(quote.items?.map((item: any, index: number) => ({
+    index,
+    itemName: item.itemName,
+    description: item.description,
+    notes: item.notes,
+    allKeys: Object.keys(item)
+  })), null, 2));
+  console.log('=======================================');
   const customerName = quote.customer?.companyName || quote.customer?.name || quote.customerSnapshot?.companyName || '';
   const issueDate = new Date(quote.issueDate || new Date()).toISOString().split('T')[0];
   const validityDate = new Date(quote.validityDate || new Date()).toISOString().split('T')[0];
@@ -8,6 +105,16 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any): string {
   const subtotal = quote.subtotal || 0;
   const taxAmount = quote.taxAmount || 0;
   const totalAmount = quote.totalAmount || 0;
+
+  // 住所情報を事前に組み立て
+  const customerAddress = buildCustomerAddress(quote);
+  
+  // 担当者情報を事前に取得
+  const contactPerson = getContactPerson(quote);
+  
+  // 顧客の電話・メール情報
+  const customerPhone = quote.customer?.phone || quote.customerSnapshot?.phone || '';
+  const customerEmail = quote.customer?.email || quote.customerSnapshot?.email || '';
 
   const htmlContent = `
 <!DOCTYPE html>
@@ -150,6 +257,28 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any): string {
     .quote-table td {
       padding: 12px;
       border-bottom: 1px solid #ddd;
+    }
+    
+    /* 商品明細のスタイル */
+    .item-name {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    
+    .item-description {
+      font-size: 11px;
+      color: #666;
+      margin-bottom: 4px;
+      line-height: 1.4;
+      white-space: pre-wrap;
+    }
+    
+    .item-notes {
+      font-size: 10px;
+      color: #888;
+      font-style: italic;
+      margin-top: 4px;
+      padding-left: 10px;
     }
     
     /* 合計セクション */
@@ -319,9 +448,10 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any): string {
     <div class="quote-info">
       <div class="customer-info">
         <h2 class="customer-name">${customerName} 御中</h2>
-        ${quote.customer?.address ? `<p>${quote.customer.address}</p>` : ''}
-        ${quote.customer?.phone ? `<p>TEL: ${quote.customer.phone}</p>` : ''}
-        ${quote.customer?.email ? `<p>Email: ${quote.customer.email}</p>` : ''}
+        ${customerAddress ? `<p>${customerAddress}</p>` : ''}
+        ${contactPerson ? `<p>ご担当者: ${contactPerson} 様</p>` : ''}
+        ${customerPhone ? `<p>TEL: ${customerPhone}</p>` : ''}
+        ${customerEmail ? `<p>Email: ${customerEmail}</p>` : ''}
       </div>
       
       <div class="company-info">
@@ -356,14 +486,40 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any): string {
         </tr>
       </thead>
       <tbody>
-        ${quote.items.map((item: any) => `
-          <tr>
-            <td>${item.description || item.itemName || ''}</td>
-            <td>${item.quantity || 0}</td>
-            <td>¥${(item.unitPrice || 0).toLocaleString()}</td>
-            <td>¥${(item.amount || 0).toLocaleString()}</td>
-          </tr>
-        `).join('')}
+        ${quote.items.map((item: any, index: number) => {
+          // コンソールログで各商品の詳細を確認（一時的）
+          console.log(`Item ${index}:`, {
+            itemName: item.itemName,
+            description: item.description,
+            notes: item.notes,
+            allFields: Object.keys(item).join(', '),
+            descriptionType: typeof item.description,
+            descriptionValue: JSON.stringify(item.description),
+            notesType: typeof item.notes,
+            notesValue: JSON.stringify(item.notes)
+          });
+          
+          const description = getItemDescription(item);
+          const hasDescription = description && description.toString().trim() !== '';
+          const hasNotes = item.notes && item.notes.toString().trim() !== '';
+          
+          return `
+            <tr>
+              <td>
+                <div class="item-name">${item.itemName || ''}</div>
+                ${hasDescription ? `
+                  <div class="item-description">${description}</div>
+                ` : ''}
+                ${hasNotes ? `
+                  <div class="item-notes">※ ${item.notes}</div>
+                ` : ''}
+              </td>
+              <td>${item.quantity || 0}${item.unit || ''}</td>
+              <td>¥${(item.unitPrice || 0).toLocaleString()}</td>
+              <td>¥${(item.amount || 0).toLocaleString()}</td>
+            </tr>
+          `;
+        }).join('')}
       </tbody>
     </table>
     
