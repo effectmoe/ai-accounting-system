@@ -87,7 +87,7 @@ function QuoteEditPageContent({ params }: QuoteEditPageProps) {
           quantity: item.quantity || 1,
           unitPrice: item.unitPrice || 0,
           amount: item.amount || 0,
-          taxRate: item.taxRate || 0.1,
+          taxRate: item.taxRate || 10,
           taxAmount: item.taxAmount || 0,
           itemName: item.itemName || '',
           description: item.description || '',
@@ -133,7 +133,7 @@ function QuoteEditPageContent({ params }: QuoteEditPageProps) {
 
   const calculateItemAmount = (item: QuoteItem) => {
     const amount = item.quantity * item.unitPrice;
-    const taxAmount = amount * item.taxRate;
+    const taxAmount = amount * (item.taxRate / 100);
     return {
       amount,
       taxAmount,
@@ -150,7 +150,7 @@ function QuoteEditPageContent({ params }: QuoteEditPageProps) {
       if (product) {
         newItems[index].itemName = product.productName;
         newItems[index].unitPrice = product.unitPrice;
-        newItems[index].taxRate = product.taxRate || 0.1;
+        newItems[index].taxRate = product.taxRate || 10;
       }
     }
     
@@ -169,7 +169,7 @@ function QuoteEditPageContent({ params }: QuoteEditPageProps) {
       quantity: 1,
       unitPrice: 0,
       amount: 0,
-      taxRate: 0.1,
+      taxRate: 10,
       taxAmount: 0,
       sortOrder: items.length,
     }]);
@@ -219,7 +219,7 @@ function QuoteEditPageContent({ params }: QuoteEditPageProps) {
         quantity: item.quantity || 1,
         unitPrice: item.unitPrice || 0,
         amount: item.amount || 0,
-        taxRate: item.taxRate || 0.1,
+        taxRate: item.taxRate || 10,
         taxAmount: item.taxAmount || 0,
         itemName: item.itemName || item.description || '',
         description: item.description || item.itemName || '',
@@ -278,7 +278,7 @@ function QuoteEditPageContent({ params }: QuoteEditPageProps) {
       items,
       subtotal: totals.subtotal,
       taxAmount: totals.totalTax,
-      taxRate: 0.1,
+      taxRate: 10,
       totalAmount: totals.total,
       notes,
     };
@@ -546,14 +546,14 @@ function QuoteEditPageContent({ params }: QuoteEditPageProps) {
                   <div>
                     <Label>税率</Label>
                     <select
-                      value={item.taxRate}
+                      value={item.taxRate || 10}
                       onChange={(e) => updateItem(index, 'taxRate', parseFloat(e.target.value))}
                       className="w-full px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                       disabled={!!item.productId}
                     >
                       <option value="0">0%（非課税）</option>
-                      <option value="0.08">8%（軽減税率）</option>
-                      <option value="0.1">10%（標準税率）</option>
+                      <option value="8">8%（軽減税率）</option>
+                      <option value="10">10%（標準税率）</option>
                     </select>
                   </div>
                   <div>
