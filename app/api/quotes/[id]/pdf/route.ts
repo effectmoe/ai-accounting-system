@@ -21,6 +21,21 @@ export async function GET(
     const companyInfoService = new CompanyInfoService();
     const companyInfo = await companyInfoService.getCompanyInfo();
 
+    // HTMLを生成前の詳細ログ追加
+    logger.debug('=== PDF生成時データ構造調査 ===');
+    logger.debug('Quote Number:', quote.quoteNumber);
+    logger.debug('Quote Customer Data:', JSON.stringify({
+      customer: quote.customer,
+      customerSnapshot: quote.customerSnapshot
+    }, null, 2));
+    logger.debug('Quote Items Data:', JSON.stringify(quote.items?.map((item: any, index: number) => ({
+      index,
+      itemName: item.itemName,
+      description: item.description,
+      notes: item.notes,
+      allKeys: Object.keys(item)
+    })), null, 2));
+    
     // HTMLを生成（コンパクト版を使用）
     logger.debug('Generating compact quote HTML for:', quote.quoteNumber);
     const htmlContent = generateCompactQuoteHTML(quote, companyInfo);
