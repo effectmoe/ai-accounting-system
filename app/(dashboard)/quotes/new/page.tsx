@@ -196,7 +196,8 @@ function NewQuoteContent() {
       // 明細項目を変換（金額は手動で調整可能）
       if (supplierQuote.items && supplierQuote.items.length > 0) {
         const convertedItems = supplierQuote.items.map((item: any) => ({
-          description: item.itemName,
+          itemName: item.itemName,
+          description: item.description || '',
           quantity: item.quantity,
           unitPrice: item.unitPrice * 1.3, // デフォルトで30%のマージンを追加
           amount: item.quantity * (item.unitPrice * 1.3),
@@ -431,7 +432,8 @@ function NewQuoteContent() {
     
     if (data.items && Array.isArray(data.items)) {
       setItems(data.items.map((item: any) => ({
-        description: item.description || item.itemName || '',
+        itemName: item.itemName || '',
+        description: item.description || '',
         quantity: item.quantity || 1,
         unitPrice: item.unitPrice || 0,
         amount: item.amount || (item.quantity || 1) * (item.unitPrice || 0),
