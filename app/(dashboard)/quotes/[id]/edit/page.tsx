@@ -236,8 +236,8 @@ function QuoteEditPageContent({ params }: QuoteEditPageProps) {
         amount: item.amount || 0,
         taxRate: item.taxRate || 10,
         taxAmount: item.taxAmount || 0,
-        itemName: item.itemName || item.description || '',
-        description: item.description || item.itemName || '',
+        itemName: item.itemName || '',
+        description: item.description || '',
       })));
     }
     

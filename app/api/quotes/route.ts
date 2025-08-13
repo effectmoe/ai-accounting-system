@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     // データの前処理：フロントエンドのdescriptionをitemNameに変換
     const processedItems = body.items.map((item: any) => ({
       ...item,
-      itemName: item.description || item.itemName || '',
+      itemName: item.itemName || '',
       description: item.description || '',
       totalAmount: item.amount + item.taxAmount,
       sortOrder: 0
