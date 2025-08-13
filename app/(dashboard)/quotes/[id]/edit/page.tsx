@@ -132,12 +132,24 @@ function QuoteEditPageContent({ params }: QuoteEditPageProps) {
   };
 
   const calculateItemAmount = (item: QuoteItem) => {
-    const amount = item.quantity * item.unitPrice;
-    const taxAmount = amount * (item.taxRate / 100);
-    return {
-      amount,
-      taxAmount,
-    };
+    if (item.taxRate === -1) {
+      // 内税の場合：税込価格から税額を逆算
+      const taxIncludedAmount = item.quantity * item.unitPrice;
+      const taxAmount = taxIncludedAmount - (taxIncludedAmount / 1.1); // デフォルト10%で計算
+      const amount = taxIncludedAmount - taxAmount;
+      return {
+        amount,
+        taxAmount,
+      };
+    } else {
+      // 通常の外税計算
+      const amount = item.quantity * item.unitPrice;
+      const taxAmount = amount * (item.taxRate / 100);
+      return {
+        amount,
+        taxAmount,
+      };
+    }
   };
 
   const updateItem = (index: number, field: keyof QuoteItem, value: any) => {
@@ -547,13 +559,27 @@ function QuoteEditPageContent({ params }: QuoteEditPageProps) {
                     <Label>税率</Label>
                     <select
                       value={item.taxRate || 10}
-                      onChange={(e) => updateItem(index, 'taxRate', parseFloat(e.target.value))}
+                      onChange={(e) => {
+                        const value = parseFloat(e.target.value);
+                        updateItem(index, 'taxRate', value);
+                        // 内税の場合は特別な処理
+                        if (value === -1) {
+                          // 税込価格から逆算する処理は calculateItemAmount 内で実行される
+                          const newItems = [...items];
+                          newItems[index].taxRate = -1;
+                          const calculated = calculateItemAmount(newItems[index]);
+                          newItems[index].amount = calculated.amount;
+                          newItems[index].taxAmount = calculated.taxAmount;
+                          setItems(newItems);
+                        }
+                      }}
                       className="w-full px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                       disabled={!!item.productId}
                     >
-                      <option value="0">0%（非課税）</option>
-                      <option value="8">8%（軽減税率）</option>
                       <option value="10">10%（標準税率）</option>
+                      <option value="8">8%（軽減税率）</option>
+                      <option value="0">0%（非課税）</option>
+                      <option value="-1">内税（税込価格から逆算）</option>
                     </select>
                   </div>
                   <div>
