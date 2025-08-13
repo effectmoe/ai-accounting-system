@@ -639,32 +639,40 @@ export default function QuoteDetailPage({ params }: QuoteDetailPageProps) {
           <div>
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">見積明細</h3>
-              {/* デバッグ用：必ず表示されるテキスト */}
-              <div className="flex items-center gap-2">
-                <span className="text-red-500 text-sm">ボタン位置→</span>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    console.log('商品説明ボタンがクリックされました！現在の状態:', showItemDescriptions);
-                    setShowItemDescriptions(!showItemDescriptions);
-                  }}
-                  className="text-xs bg-blue-500 text-white hover:bg-blue-600 border-2 border-blue-700"
-                  style={{ display: 'inline-flex', visibility: 'visible', minWidth: '150px' }}
-                >
-                  {showItemDescriptions ? (
-                    <>
-                      <EyeOff className="mr-1 h-3 w-3" />
-                      商品説明を非表示
-                    </>
-                  ) : (
-                    <>
-                      <Eye className="mr-1 h-3 w-3" />
-                      商品説明を表示
-                    </>
-                  )}
-                </Button>
-              </div>
+              <button
+                type="button"
+                onClick={() => setShowItemDescriptions(!showItemDescriptions)}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  padding: '6px 12px',
+                  fontSize: '14px',
+                  backgroundColor: '#3b82f6',
+                  color: 'white',
+                  border: '1px solid #2563eb',
+                  borderRadius: '6px',
+                  cursor: 'pointer',
+                  gap: '4px'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#2563eb';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#3b82f6';
+                }}
+              >
+                {showItemDescriptions ? (
+                  <>
+                    <EyeOff style={{ width: '16px', height: '16px' }} />
+                    商品説明を非表示
+                  </>
+                ) : (
+                  <>
+                    <Eye style={{ width: '16px', height: '16px' }} />
+                    商品説明を表示
+                  </>
+                )}
+              </button>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full border-collapse">
