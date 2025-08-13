@@ -308,11 +308,11 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
 
     // 金額と税額を自動計算
     if (field === 'quantity' || field === 'unitPrice' || field === 'taxRate') {
-      const quantity = field === 'quantity' ? value : newItems[index].quantity;
-      const unitPrice = field === 'unitPrice' ? value : newItems[index].unitPrice;
-      const taxRate = field === 'taxRate' ? value : newItems[index].taxRate;
+      const quantity = field === 'quantity' ? Number(value) || 0 : newItems[index].quantity || 0;
+      const unitPrice = field === 'unitPrice' ? Number(value) || 0 : newItems[index].unitPrice || 0;
+      const taxRate = field === 'taxRate' ? Number(value) || 0 : newItems[index].taxRate || 0;
       
-      const amount = quantity * unitPrice;
+      const amount = Math.floor(quantity * unitPrice);
       const taxAmount = Math.floor(amount * taxRate);
       
       newItems[index].amount = amount;
@@ -339,7 +339,7 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
     if (selectedProduct) {
       const newItems = [...items];
       const quantity = newItems[index].quantity || 1;
-      const amount = quantity * selectedProduct.unitPrice;
+      const amount = Math.floor(quantity * selectedProduct.unitPrice);
       const taxAmount = Math.floor(amount * selectedProduct.taxRate);
       
       newItems[index] = {
