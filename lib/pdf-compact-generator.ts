@@ -352,7 +352,7 @@ export function generateCompactInvoiceHTML(invoice: any, companyInfo: any): stri
       <tbody>
         ${invoice.items.map((item: any) => `
           <tr>
-            <td>${item.description || item.itemName || ''}</td>
+            <td>${item.description || ''}</td>
             <td>${item.quantity}</td>
             <td>¥${(item.unitPrice || 0).toLocaleString()}</td>
             <td>¥${(item.amount || 0).toLocaleString()}</td>

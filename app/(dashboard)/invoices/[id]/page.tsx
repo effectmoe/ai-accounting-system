@@ -122,6 +122,7 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
   const [showPdfPreview, setShowPdfPreview] = useState(false);
   const [showAIChat, setShowAIChat] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
+  const [showDescriptions, setShowDescriptions] = useState(true);
 
   useEffect(() => {
     fetchInvoice();
@@ -526,12 +527,23 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
 
           {/* 明細 */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">請求明細</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold">請求明細</h3>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowDescriptions(!showDescriptions)}
+                className="flex items-center gap-2"
+              >
+                <Eye className="h-4 w-4" />
+                {showDescriptions ? '商品説明を隠す' : '商品説明を表示'}
+              </Button>
+            </div>
             <div className="overflow-x-auto">
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="bg-gray-100">
-                    <th className="text-left py-3 px-4 font-medium text-gray-700 border border-gray-200">品目</th>
+                    {showDescriptions && <th className="text-left py-3 px-4 font-medium text-gray-700 border border-gray-200">品目</th>}
                     <th className="text-center py-3 px-4 font-medium text-gray-700 border border-gray-200 w-24">数量</th>
                     <th className="text-right py-3 px-4 font-medium text-gray-700 border border-gray-200 w-32">単価</th>
                     <th className="text-right py-3 px-4 font-medium text-gray-700 border border-gray-200 w-32">小計</th>
@@ -542,7 +554,7 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
                 <tbody>
                   {invoice.items.map((item, index) => (
                     <tr key={index} className="hover:bg-gray-50">
-                      <td className="py-3 px-4 border border-gray-200">{item.description}</td>
+                      {showDescriptions && <td className="py-3 px-4 border border-gray-200">{item.description}</td>}
                       <td className="text-center py-3 px-4 border border-gray-200">{item.quantity}</td>
                       <td className="text-right py-3 px-4 border border-gray-200 font-mono">¥{(item.unitPrice || 0).toLocaleString()}</td>
                       <td className="text-right py-3 px-4 border border-gray-200 font-mono">¥{(item.amount || 0).toLocaleString()}</td>
