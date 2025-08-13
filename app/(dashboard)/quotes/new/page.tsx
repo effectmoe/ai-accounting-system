@@ -734,14 +734,16 @@ function NewQuoteContent() {
                   </div>
                   <div>
                     <Label>税率</Label>
-                    <Input
-                      type="number"
-                      min="0"
-                      max="1"
-                      step="0.01"
+                    <select
                       value={item.taxRate}
-                      onChange={(e) => updateItem(index, 'taxRate', parseFloat(e.target.value) || 0)}
-                    />
+                      onChange={(e) => updateItem(index, 'taxRate', parseFloat(e.target.value))}
+                      className="w-full px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      disabled={!!item.productId}
+                    >
+                      <option value="0">0%（非課税）</option>
+                      <option value="0.08">8%（軽減税率）</option>
+                      <option value="0.1">10%（標準税率）</option>
+                    </select>
                   </div>
                   <div>
                     <Label>税額</Label>
