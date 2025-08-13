@@ -87,7 +87,7 @@ function NewQuoteContent() {
     quantity: 1,
     unitPrice: 0,
     amount: 0,
-    taxRate: 0.1,
+    taxRate: 10,
     taxAmount: 0,
     unit: '',
     productId: '',
@@ -197,8 +197,8 @@ function NewQuoteContent() {
           quantity: item.quantity,
           unitPrice: item.unitPrice * 1.3, // デフォルトで30%のマージンを追加
           amount: item.quantity * (item.unitPrice * 1.3),
-          taxRate: item.taxRate || 0.1,
-          taxAmount: Math.floor(item.quantity * (item.unitPrice * 1.3) * (item.taxRate || 0.1)),
+          taxRate: item.taxRate || 10,
+          taxAmount: Math.floor(item.quantity * (item.unitPrice * 1.3) * ((item.taxRate || 10) / 100)),
           unit: item.unit || '',
           productId: item.productId || '',
         }));
@@ -214,7 +214,7 @@ function NewQuoteContent() {
 
   const calculateItemAmount = (item: QuoteItem) => {
     const amount = item.quantity * item.unitPrice;
-    const taxAmount = amount * item.taxRate;
+    const taxAmount = amount * (item.taxRate / 100);
     return {
       amount,
       taxAmount,
@@ -231,7 +231,7 @@ function NewQuoteContent() {
       if (product) {
         newItems[index].description = product.productName;
         newItems[index].unitPrice = product.unitPrice;
-        newItems[index].taxRate = product.taxRate || 0.1;
+        newItems[index].taxRate = product.taxRate || 10;
         newItems[index].unit = product.unit;
       }
     }
@@ -250,7 +250,7 @@ function NewQuoteContent() {
       quantity: 1,
       unitPrice: 0,
       amount: 0,
-      taxRate: 0.1,
+      taxRate: 10,
       taxAmount: 0,
       unit: '',
       productId: '',
@@ -330,7 +330,7 @@ function NewQuoteContent() {
       items,
       subtotal: totals.subtotal,
       taxAmount: totals.totalTax,
-      taxRate: 0.1,
+      taxRate: 10,
       totalAmount: totals.total,
       notes,
       paymentMethod,
@@ -420,8 +420,8 @@ function NewQuoteContent() {
         quantity: item.quantity || 1,
         unitPrice: item.unitPrice || 0,
         amount: item.amount || (item.quantity || 1) * (item.unitPrice || 0),
-        taxRate: item.taxRate || 0.1,
-        taxAmount: item.taxAmount || ((item.amount || (item.quantity || 1) * (item.unitPrice || 0)) * (item.taxRate || 0.1)),
+        taxRate: item.taxRate || 10,
+        taxAmount: item.taxAmount || ((item.amount || (item.quantity || 1) * (item.unitPrice || 0)) * ((item.taxRate || 10) / 100)),
         unit: item.unit || '',
         productId: item.productId || '',
       })));
@@ -735,14 +735,14 @@ function NewQuoteContent() {
                   <div>
                     <Label>税率</Label>
                     <select
-                      value={item.taxRate}
+                      value={item.taxRate || 10}
                       onChange={(e) => updateItem(index, 'taxRate', parseFloat(e.target.value))}
                       className="w-full px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                       disabled={!!item.productId}
                     >
                       <option value="0">0%（非課税）</option>
-                      <option value="0.08">8%（軽減税率）</option>
-                      <option value="0.1">10%（標準税率）</option>
+                      <option value="8">8%（軽減税率）</option>
+                      <option value="10">10%（標準税率）</option>
                     </select>
                   </div>
                   <div>
