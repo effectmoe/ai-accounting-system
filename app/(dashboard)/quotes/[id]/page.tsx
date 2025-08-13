@@ -23,6 +23,7 @@ import {
   Loader2,
   AlertCircle,
   Eye,
+  EyeOff,
   X,
   MessageSquare,
   Send,
@@ -34,6 +35,8 @@ import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { Quote, QuoteStatus } from '@/types/collections';
 import { safeFormatDate } from '@/lib/date-utils';
+import { getItemDescription, getItemNotes } from '@/lib/item-utils';
+import { cleanDuplicateSignatures } from '@/lib/utils/clean-duplicate-signatures';
 import EmailSendModal from '@/components/email-send-modal';
 import SimpleQuoteOcrFiles from '@/components/simple-quote-ocr-files';
 
@@ -70,6 +73,7 @@ export default function QuoteDetailPage({ params }: QuoteDetailPageProps) {
   const [isConverting, setIsConverting] = useState(false);
   const [showPdfPreview, setShowPdfPreview] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
+  const [showItemDescriptions, setShowItemDescriptions] = useState(true);
 
   useEffect(() => {
     fetchQuote();
@@ -633,7 +637,27 @@ export default function QuoteDetailPage({ params }: QuoteDetailPageProps) {
 
           {/* 明細 */}
           <div>
-            <h3 className="text-lg font-semibold mb-4">見積明細</h3>
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">見積明細</h3>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowItemDescriptions(!showItemDescriptions)}
+                className="text-xs"
+              >
+                {showItemDescriptions ? (
+                  <>
+                    <EyeOff className="mr-1 h-3 w-3" />
+                    商品説明を非表示
+                  </>
+                ) : (
+                  <>
+                    <Eye className="mr-1 h-3 w-3" />
+                    商品説明を表示
+                  </>
+                )}
+              </Button>
+            </div>
             <div className="overflow-x-auto">
               <table className="w-full border-collapse">
                 <thead>
@@ -652,9 +676,20 @@ export default function QuoteDetailPage({ params }: QuoteDetailPageProps) {
                       <td className="py-3 px-4 border border-gray-200">
                         <div>
                           <div className="font-medium">{item.itemName}</div>
-                          {item.description && (
-                            <div className="text-sm text-gray-600">{item.description}</div>
-                          )}
+                          {showItemDescriptions && (() => {
+                            const description = getItemDescription(item);
+                            const itemNotes = getItemNotes(item);
+                            return (
+                              <>
+                                {description && (
+                                  <div className="text-sm text-gray-600 mt-1">{description}</div>
+                                )}
+                                {itemNotes && (
+                                  <div className="text-xs text-gray-500 mt-1 italic">※ {itemNotes}</div>
+                                )}
+                              </>
+                            );
+                          })()}
                         </div>
                       </td>
                       <td className="text-center py-3 px-4 border border-gray-200">{item.quantity}</td>
@@ -713,7 +748,7 @@ export default function QuoteDetailPage({ params }: QuoteDetailPageProps) {
             {quote.notes && (
               <div>
                 <h3 className="font-semibold mb-2">備考</h3>
-                <p className="text-sm whitespace-pre-wrap">{quote.notes}</p>
+                <p className="text-sm whitespace-pre-wrap">{cleanDuplicateSignatures(quote.notes)}</p>
               </div>
             )}
             <div>

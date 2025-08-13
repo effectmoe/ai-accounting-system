@@ -1,4 +1,5 @@
 import { cleanDuplicateSignatures } from './utils/clean-duplicate-signatures';
+import { getItemDescription } from './item-utils';
 
 // 住所情報を組み立てるヘルパー関数
 function buildCustomerAddress(quote: any): string {
@@ -69,21 +70,7 @@ function getContactPerson(quote: any): string {
   return contactPerson;
 }
 
-// 商品説明を取得するヘルパー関数
-function getItemDescription(item: any): string {
-  if (item.description && item.description.toString().trim() !== '') {
-    return item.description;
-  } else if (item.productDescription && item.productDescription.toString().trim() !== '') {
-    return item.productDescription;
-  } else if (item.itemDescription && item.itemDescription.toString().trim() !== '') {
-    return item.itemDescription;
-  } else if (item.details && item.details.toString().trim() !== '') {
-    return item.details;
-  } else if (item.product && item.product.description && item.product.description.toString().trim() !== '') {
-    return item.product.description;
-  }
-  return '';
-}
+// getItemDescriptionは/lib/item-utils.tsから共通インポート済み
 export function generateCompactQuoteHTML(quote: any, companyInfo: any): string {
   // 完全なデータ構造をログ出力（一時的）
   console.log('=== FULL QUOTE DATA FOR PDF GENERATION ===');
