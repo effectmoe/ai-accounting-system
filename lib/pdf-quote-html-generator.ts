@@ -71,7 +71,7 @@ function getContactPerson(quote: any): string {
 }
 
 // getItemDescriptionは/lib/item-utils.tsから共通インポート済み
-export function generateCompactQuoteHTML(quote: any, companyInfo: any): string {
+export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescriptions: boolean = true): string {
   // 完全なデータ構造をログ出力（一時的）
   console.log('=== FULL QUOTE DATA FOR PDF GENERATION ===');
   console.log('Quote Number:', quote.quoteNumber);
@@ -494,10 +494,10 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any): string {
             <tr>
               <td>
                 <div class="item-name">${item.itemName || ''}</div>
-                ${hasDescription ? `
+                ${showDescriptions && hasDescription ? `
                   <div class="item-description">${description}</div>
                 ` : ''}
-                ${hasNotes ? `
+                ${showDescriptions && hasNotes ? `
                   <div class="item-notes">※ ${item.notes}</div>
                 ` : ''}
               </td>
