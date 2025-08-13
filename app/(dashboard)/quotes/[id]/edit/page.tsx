@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Plus, Trash2, ArrowLeft, Save, CheckCircle, MessageSquare, History } from 'lucide-react';
+import { Loader2, Plus, Trash2, ArrowLeft, Save, CheckCircle, MessageSquare, History, Eye, EyeOff } from 'lucide-react';
 import { format } from 'date-fns';
 import { Quote, QuoteItem, Customer } from '@/types/collections';
 import AIChatDialog from '@/components/ai-chat-dialog';
@@ -55,6 +55,9 @@ function QuoteEditPageContent({ params }: QuoteEditPageProps) {
   const [showAIChat, setShowAIChat] = useState(false);
   const [showAIHistory, setShowAIHistory] = useState(false);
   const [aiDataApplied, setAiDataApplied] = useState(false);
+  
+  // 商品説明表示/非表示
+  const [showItemDescriptions, setShowItemDescriptions] = useState(true);
 
   useEffect(() => {
     fetchQuote();
@@ -474,13 +477,33 @@ function QuoteEditPageContent({ params }: QuoteEditPageProps) {
       {/* Items */}
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle className="flex justify-between items-center">
-            見積項目
-            <Button onClick={addItem} size="sm">
-              <Plus className="h-4 w-4 mr-2" />
-              項目を追加
-            </Button>
-          </CardTitle>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-semibold">見積明細</h3>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setShowItemDescriptions(!showItemDescriptions)}
+              >
+                {showItemDescriptions ? (
+                  <>
+                    <EyeOff className="mr-1 h-3 w-3" />
+                    備考欄を非表示
+                  </>
+                ) : (
+                  <>
+                    <Eye className="mr-1 h-3 w-3" />
+                    備考欄を表示
+                  </>
+                )}
+              </Button>
+              <Button onClick={addItem} size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                項目を追加
+              </Button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -558,21 +581,8 @@ function QuoteEditPageContent({ params }: QuoteEditPageProps) {
                   <div>
                     <Label>税率</Label>
                     <select
-                      value={item.taxRate || 10}
-                      onChange={(e) => {
-                        const value = parseFloat(e.target.value);
-                        updateItem(index, 'taxRate', value);
-                        // 内税の場合は特別な処理
-                        if (value === -1) {
-                          // 税込価格から逆算する処理は calculateItemAmount 内で実行される
-                          const newItems = [...items];
-                          newItems[index].taxRate = -1;
-                          const calculated = calculateItemAmount(newItems[index]);
-                          newItems[index].amount = calculated.amount;
-                          newItems[index].taxAmount = calculated.taxAmount;
-                          setItems(newItems);
-                        }
-                      }}
+                      value={String(item.taxRate || 10)}
+                      onChange={(e) => updateItem(index, 'taxRate', parseFloat(e.target.value))}
                       className="w-full px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                       disabled={!!item.productId}
                     >
@@ -591,6 +601,17 @@ function QuoteEditPageContent({ params }: QuoteEditPageProps) {
                     />
                   </div>
                 </div>
+
+                {showItemDescriptions && (
+                  <div className="col-span-2">
+                    <Label>備考</Label>
+                    <Input
+                      placeholder="商品の詳細説明や備考を入力"
+                      value={item.description || ''}
+                      onChange={(e) => updateItem(index, 'description', e.target.value)}
+                    />
+                  </div>
+                )}
               </div>
             ))}
           </div>
