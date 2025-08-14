@@ -287,7 +287,7 @@ export class DocumentGenerator {
     
     const taxItems = items.map(item => ({
       amount: item.amount,
-      taxRate: item.taxRate || 0.10,
+      taxRate: item.taxRate !== undefined ? item.taxRate : 0.10,
       isTaxIncluded: false // 単価は税抜きとして扱う
     }));
     
