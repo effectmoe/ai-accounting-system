@@ -218,7 +218,7 @@ export async function generateQuotePDF(quote: Quote, companyInfo: CompanyInfo): 
       doc.text(formatCurrency(quote.subtotal || 0), totalSection + 50, yPosition);
       yPosition += 8;
       
-      doc.text(`Tax (${(quote.taxRate || 0.1) * 100}%):`, totalSection, yPosition);
+      doc.text(`Tax (${((quote.taxRate !== undefined ? quote.taxRate : 0.1) * 100)}%):`, totalSection, yPosition);
       doc.text(formatCurrency(quote.taxAmount || 0), totalSection + 50, yPosition);
       yPosition += 8;
       

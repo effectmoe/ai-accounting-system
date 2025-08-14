@@ -90,7 +90,7 @@ function QuoteEditPageContent({ params }: QuoteEditPageProps) {
           quantity: item.quantity || 1,
           unitPrice: item.unitPrice || 0,
           amount: item.amount || 0,
-          taxRate: item.taxRate || 10,
+          taxRate: item.taxRate !== undefined ? item.taxRate : 10,
           taxAmount: item.taxAmount || 0,
           itemName: item.itemName || '',
           description: item.description || '',
@@ -147,7 +147,8 @@ function QuoteEditPageContent({ params }: QuoteEditPageProps) {
     } else {
       // 通常の外税計算
       const amount = item.quantity * item.unitPrice;
-      const taxAmount = amount * (item.taxRate / 100);
+      const taxRate = item.taxRate !== undefined ? item.taxRate : 10;
+      const taxAmount = amount * (taxRate / 100);
       return {
         amount,
         taxAmount,
@@ -165,7 +166,7 @@ function QuoteEditPageContent({ params }: QuoteEditPageProps) {
       if (product) {
         newItems[index].itemName = product.productName;
         newItems[index].unitPrice = product.unitPrice;
-        newItems[index].taxRate = product.taxRate || 10;
+        newItems[index].taxRate = product.taxRate !== undefined ? product.taxRate : 10;
       }
     }
     
@@ -581,7 +582,7 @@ function QuoteEditPageContent({ params }: QuoteEditPageProps) {
                   <div>
                     <Label>税率</Label>
                     <select
-                      value={String(item.taxRate || 10)}
+                      value={String(item.taxRate !== undefined ? item.taxRate : 10)}
                       onChange={(e) => updateItem(index, 'taxRate', parseFloat(e.target.value))}
                       className="w-full px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                       disabled={false}

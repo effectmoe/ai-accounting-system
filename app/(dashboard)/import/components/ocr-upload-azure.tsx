@@ -41,7 +41,7 @@ export default function OCRUploadAzure() {
           quantity: item.quantity || 1,
           unitPrice: item.unitPrice || 0,
           amount: item.amount || 0,
-          taxRate: item.taxRate || 10,
+          taxRate: item.taxRate !== undefined ? item.taxRate : 10,
           taxAmount: item.taxAmount || 0,
           remarks: item.remarks || ''
         })) || [],
@@ -127,7 +127,7 @@ export default function OCRUploadAzure() {
           quantity: item.quantity || 1,
           unitPrice: item.unitPrice || 0,
           amount: item.amount || 0,
-          taxRate: item.taxRate || 10,
+          taxRate: item.taxRate !== undefined ? item.taxRate : 10,
           taxAmount: item.taxAmount || 0,
           remarks: item.remarks || ''
         })) || [],

@@ -405,7 +405,7 @@ async function testCompleteWorkflow(orchestrator: MastraOrchestrator) {
       if (result.results.tax) {
         logSuccess('✓ Tax calculation completed');
         logInfo(`  Consumption Tax: ¥${result.results.tax.consumptionTax || 0}`);
-        logInfo(`  Tax Rate: ${result.results.tax.taxRate || 0}%`);
+        logInfo(`  Tax Rate: ${result.results.tax.taxRate !== undefined ? result.results.tax.taxRate : 0}%`);
       }
       
       // Validate database save
