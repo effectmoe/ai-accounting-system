@@ -21,6 +21,12 @@ export async function GET(
     const companyInfoService = new CompanyInfoService();
     const companyInfo = await companyInfoService.getCompanyInfo();
 
+    // URLクエリパラメータでダウンロードモードを判定
+    const url = new URL(request.url);
+    const isDownload = url.searchParams.get('download') === 'true';
+    const isPrintMode = url.searchParams.get('print') === 'true';
+    const showDescriptions = url.searchParams.get('showDescriptions') !== 'false'; // デフォルトは表示
+
     // HTMLを生成前の詳細ログ追加
     logger.debug('=== PDF生成時データ構造調査 ===');
     logger.debug('Quote Number:', quote.quoteNumber);
@@ -46,12 +52,6 @@ export async function GET(
     const safeFilename = generateSafeQuoteFilename(quote);
     logger.debug('Generated filename:', filename);
     logger.debug('Safe filename for header:', safeFilename);
-    
-    // URLクエリパラメータでダウンロードモードを判定
-    const url = new URL(request.url);
-    const isDownload = url.searchParams.get('download') === 'true';
-    const isPrintMode = url.searchParams.get('print') === 'true';
-    const showDescriptions = url.searchParams.get('showDescriptions') !== 'false'; // デフォルトは表示
     
     // 日本語ファイル名をRFC 5987準拠でエンコード
     const encodedFilename = encodeURIComponent(filename);
