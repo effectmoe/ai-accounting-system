@@ -3,6 +3,7 @@ import QuoteHtmlTemplate from '@/emails/QuoteHtmlTemplate';
 import QuoteWebTemplate from '@/emails/QuoteWebTemplate';
 import { Quote, CompanyInfo } from '@/types/collections';
 import { logger } from '@/lib/logger';
+import { cleanDuplicateSignatures } from '@/lib/utils/clean-duplicate-signatures';
 
 export interface HtmlQuoteOptions {
   quote: Quote;
@@ -404,4 +405,241 @@ export function generateDefaultTooltips(): Map<string, string> {
   tooltips.set('サポート', '技術支援・問題解決・使い方指導');
   
   return tooltips;
+}
+
+/**
+ * メール送信用の純粋なHTML文字列を生成（Gmail対応）
+ */
+export async function generateSimpleHtmlQuote({
+  quote,
+  companyInfo,
+  recipientName,
+  customMessage,
+}: {
+  quote: any;
+  companyInfo: any;
+  recipientName?: string;
+  customMessage?: string;
+}): Promise<{ html: string; plainText: string; subject: string }> {
+  const customerName = recipientName || quote.customer?.name || quote.customer?.companyName || 'お客様';
+  const issueDate = new Date(quote.issueDate || new Date()).toLocaleDateString('ja-JP');
+  const validityDate = new Date(quote.validityDate || new Date()).toLocaleDateString('ja-JP');
+  
+  const subtotal = quote.subtotal || 0;
+  const taxAmount = quote.taxAmount || 0;
+  const totalAmount = quote.totalAmount || 0;
+
+  // 会社情報の取得（スナップショットを優先）
+  const companyName = quote.companySnapshot?.companyName || companyInfo?.companyName || companyInfo?.name || '会社名未設定';
+  const companyAddress = quote.companySnapshot?.address || 
+    [companyInfo?.postalCode && `〒${companyInfo.postalCode}`,
+     companyInfo?.prefecture,
+     companyInfo?.city,
+     companyInfo?.address1,
+     companyInfo?.address2].filter(Boolean).join(' ') || '';
+  const companyPhone = quote.companySnapshot?.phone || companyInfo?.phone || '';
+  const companyEmail = quote.companySnapshot?.email || companyInfo?.email || '';
+  const companyWebsite = companyInfo?.website || '';
+
+  // HTMLメール用のテンプレート（インラインCSS、Gmail対応）
+  const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>お見積書 - ${quote.quoteNumber}</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Meiryo', 'MS PGothic', sans-serif; background-color: #f5f5f5;">
+  <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: #f5f5f5; padding: 20px 0;">
+    <tr>
+      <td align="center">
+        <table cellpadding="0" cellspacing="0" border="0" width="600" style="background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+          <!-- ヘッダー -->
+          <tr>
+            <td style="padding: 40px 40px 30px 40px;">
+              <h1 style="margin: 0; text-align: center; color: #333333; font-size: 28px; font-weight: bold;">お見積書</h1>
+            </td>
+          </tr>
+          
+          <!-- 顧客情報 -->
+          <tr>
+            <td style="padding: 0 40px 30px 40px;">
+              <p style="margin: 0 0 10px 0; font-size: 18px; font-weight: bold; color: #333333;">${customerName} 様</p>
+              <p style="margin: 0 0 5px 0; font-size: 14px; color: #666666; line-height: 1.6;">平素より格別のご高配を賜り、厚く御礼申し上げます。</p>
+              <p style="margin: 0; font-size: 14px; color: #666666; line-height: 1.6;">ご依頼いただきました件について、下記の通りお見積りさせていただきます。</p>
+            </td>
+          </tr>
+
+          ${customMessage ? `
+          <!-- カスタムメッセージ -->
+          <tr>
+            <td style="padding: 0 40px 30px 40px;">
+              <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: #e3f2fd; border-radius: 6px;">
+                <tr>
+                  <td style="padding: 15px;">
+                    <p style="margin: 0; font-size: 14px; color: #1976d2; line-height: 1.6;">${customMessage}</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          ` : ''}
+
+          <!-- 見積情報 -->
+          <tr>
+            <td style="padding: 0 40px 30px 40px;">
+              <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                <tr>
+                  <td width="33%" style="padding: 5px 0;">
+                    <span style="font-size: 12px; color: #999999;">見積書番号</span><br>
+                    <span style="font-size: 14px; color: #333333; font-weight: bold;">${quote.quoteNumber}</span>
+                  </td>
+                  <td width="33%" style="padding: 5px 0;">
+                    <span style="font-size: 12px; color: #999999;">発行日</span><br>
+                    <span style="font-size: 14px; color: #333333; font-weight: bold;">${issueDate}</span>
+                  </td>
+                  <td width="34%" style="padding: 5px 0;">
+                    <span style="font-size: 12px; color: #999999;">有効期限</span><br>
+                    <span style="font-size: 14px; color: #333333; font-weight: bold;">${validityDate}</span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- 見積内容 -->
+          <tr>
+            <td style="padding: 0 40px 30px 40px;">
+              <h2 style="margin: 0 0 15px 0; font-size: 18px; color: #333333; border-bottom: 2px solid #333333; padding-bottom: 8px;">見積内容</h2>
+              <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse;">
+                <thead>
+                  <tr style="background-color: #f8f8f8;">
+                    <th style="border: 1px solid #dddddd; padding: 10px; text-align: left; font-size: 13px; color: #333333; font-weight: bold;">品目</th>
+                    <th style="border: 1px solid #dddddd; padding: 10px; text-align: center; font-size: 13px; color: #333333; font-weight: bold; width: 60px;">数量</th>
+                    <th style="border: 1px solid #dddddd; padding: 10px; text-align: right; font-size: 13px; color: #333333; font-weight: bold; width: 100px;">単価</th>
+                    <th style="border: 1px solid #dddddd; padding: 10px; text-align: right; font-size: 13px; color: #333333; font-weight: bold; width: 100px;">金額</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${quote.items.map((item: any) => `
+                  <tr>
+                    <td style="border: 1px solid #dddddd; padding: 10px; vertical-align: top;">
+                      <div style="font-size: 14px; color: #333333; font-weight: bold; margin: 0 0 4px 0;">${item.itemName || ''}</div>
+                      ${item.description ? `<div style="font-size: 12px; color: #666666; line-height: 1.4;">${item.description}</div>` : ''}
+                    </td>
+                    <td style="border: 1px solid #dddddd; padding: 10px; text-align: center; font-size: 14px; color: #333333;">${item.quantity || 0}${item.unit || ''}</td>
+                    <td style="border: 1px solid #dddddd; padding: 10px; text-align: right; font-size: 14px; color: #333333;">¥${(item.unitPrice || 0).toLocaleString()}</td>
+                    <td style="border: 1px solid #dddddd; padding: 10px; text-align: right; font-size: 14px; color: #333333; font-weight: bold;">¥${(item.amount || 0).toLocaleString()}</td>
+                  </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </td>
+          </tr>
+
+          <!-- 合計 -->
+          <tr>
+            <td style="padding: 0 40px 30px 40px;">
+              <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                <tr>
+                  <td width="60%"></td>
+                  <td width="40%">
+                    <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                      <tr>
+                        <td style="padding: 5px 10px; text-align: right; font-size: 14px; color: #666666;">小計:</td>
+                        <td style="padding: 5px 0; text-align: right; font-size: 14px; color: #333333; width: 120px;">¥${subtotal.toLocaleString()}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 5px 10px; text-align: right; font-size: 14px; color: #666666;">消費税(10%):</td>
+                        <td style="padding: 5px 0; text-align: right; font-size: 14px; color: #333333;">¥${taxAmount.toLocaleString()}</td>
+                      </tr>
+                      <tr>
+                        <td colspan="2" style="border-top: 2px solid #333333; padding-top: 8px;">
+                          <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                            <tr>
+                              <td style="padding: 5px 10px; text-align: right; font-size: 16px; color: #333333; font-weight: bold;">合計金額:</td>
+                              <td style="padding: 5px 0; text-align: right; font-size: 18px; color: #1976d2; font-weight: bold; width: 120px;">¥${totalAmount.toLocaleString()}</td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          ${quote.notes ? `
+          <!-- 備考 -->
+          <tr>
+            <td style="padding: 0 40px 30px 40px;">
+              <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: #f9f9f9; border-radius: 6px;">
+                <tr>
+                  <td style="padding: 15px;">
+                    <h3 style="margin: 0 0 10px 0; font-size: 14px; color: #333333; font-weight: bold;">備考</h3>
+                    <p style="margin: 0; font-size: 13px; color: #666666; line-height: 1.6; white-space: pre-wrap;">${cleanDuplicateSignatures(quote.notes)}</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          ` : ''}
+
+          <!-- 会社情報フッター -->
+          <tr>
+            <td style="padding: 20px 40px 40px 40px; border-top: 1px solid #dddddd;">
+              <p style="margin: 0 0 5px 0; font-size: 14px; color: #333333; font-weight: bold;">${companyName}</p>
+              ${companyAddress ? `<p style="margin: 0 0 3px 0; font-size: 12px; color: #666666;">${companyAddress}</p>` : ''}
+              ${companyPhone ? `<p style="margin: 0 0 3px 0; font-size: 12px; color: #666666;">TEL: ${companyPhone}</p>` : ''}
+              ${companyEmail ? `<p style="margin: 0 0 3px 0; font-size: 12px; color: #666666;">Email: ${companyEmail}</p>` : ''}
+              ${companyWebsite ? `<p style="margin: 0; font-size: 12px;"><a href="${companyWebsite}" style="color: #1976d2; text-decoration: none;">${companyWebsite}</a></p>` : ''}
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `.trim();
+
+  // プレーンテキスト版
+  const plainText = `
+お見積書
+
+${customerName} 様
+
+平素より格別のご高配を賜り、厚く御礼申し上げます。
+ご依頼いただきました件について、下記の通りお見積りさせていただきます。
+
+${customMessage ? customMessage + '\n\n' : ''}
+見積書番号: ${quote.quoteNumber}
+発行日: ${issueDate}
+有効期限: ${validityDate}
+
+【見積内容】
+${quote.items.map((item: any) => `
+・${item.itemName || ''}
+  ${item.description ? item.description + '\n  ' : ''}数量: ${item.quantity || 0}${item.unit || ''}
+  単価: ¥${(item.unitPrice || 0).toLocaleString()}
+  金額: ¥${(item.amount || 0).toLocaleString()}
+`).join('')}
+
+小計: ¥${subtotal.toLocaleString()}
+消費税: ¥${taxAmount.toLocaleString()}
+合計金額: ¥${totalAmount.toLocaleString()}
+
+${quote.notes ? '【備考】\n' + cleanDuplicateSignatures(quote.notes) + '\n\n' : ''}
+${companyName}
+${companyAddress}
+${companyPhone ? 'TEL: ' + companyPhone : ''}
+${companyEmail ? 'Email: ' + companyEmail : ''}
+${companyWebsite || ''}
+  `.trim();
+
+  const subject = `お見積書 ${quote.quoteNumber} - ${companyName}`;
+
+  return { html, plainText, subject };
 }

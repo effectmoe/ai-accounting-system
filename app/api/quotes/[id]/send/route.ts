@@ -3,7 +3,7 @@ import { logger } from '@/lib/logger';
 import { QuoteService } from '@/services/quote.service';
 import { CompanyInfoService } from '@/services/company-info.service';
 import { Resend } from 'resend';
-import { generateHtmlQuote } from '@/lib/html-quote-generator';
+import { generateSimpleHtmlQuote } from '@/lib/html-quote-generator';
 
 const resendApiKey = process.env.RESEND_API_KEY;
 console.log('[Send Quote API] RESEND_API_KEY exists:', !!resendApiKey);
@@ -50,8 +50,8 @@ export async function POST(
     const companyInfoService = new CompanyInfoService();
     const companyInfo = await companyInfoService.getCompanyInfo();
 
-    // HTMLコンテンツ生成
-    const htmlContent = await generateHtmlQuote({
+    // HTMLコンテンツ生成（シンプルなHTML文字列）
+    const htmlContent = await generateSimpleHtmlQuote({
       quote,
       companyInfo: companyInfo || {
         companyName: '株式会社サンプル',
@@ -67,7 +67,6 @@ export async function POST(
       },
       recipientName,
       customMessage,
-      useWebLayout: true,
     });
 
     // Resend APIキーの確認
