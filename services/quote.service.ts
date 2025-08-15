@@ -176,6 +176,22 @@ export class QuoteService {
         }
       }
 
+      // 会社情報のスナップショットを作成
+      const companyInfoService = new CompanyInfoService();
+      const companyInfo = await companyInfoService.getCompanyInfo();
+      let companySnapshot;
+      
+      if (companyInfo) {
+        companySnapshot = {
+          companyName: companyInfo.companyName,
+          address: companyInfo.address1 || `${companyInfo.prefecture || ''} ${companyInfo.city || ''} ${companyInfo.address1 || ''}`.trim() || '',
+          phone: companyInfo.phone || undefined,
+          email: companyInfo.email || undefined,
+          invoiceRegistrationNumber: companyInfo.registrationNumber || undefined,
+          stampImage: companyInfo.stampImage || undefined,
+        };
+      }
+
       // 日付をDateオブジェクトに変換
       const quote: Omit<Quote, '_id' | 'createdAt' | 'updatedAt'> = {
         ...quoteData,
@@ -185,6 +201,7 @@ export class QuoteService {
         rejectedDate: quoteData.rejectedDate ? new Date(quoteData.rejectedDate) : undefined,
         expiredDate: quoteData.expiredDate ? new Date(quoteData.expiredDate) : undefined,
         convertedToInvoiceDate: quoteData.convertedToInvoiceDate ? new Date(quoteData.convertedToInvoiceDate) : undefined,
+        companySnapshot, // 会社情報のスナップショットを追加
       };
 
       // 見積書を作成

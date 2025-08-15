@@ -569,22 +569,34 @@ export default function QuoteWebTemplate({
             <div style={partyCardStyle} className="party-card">
               <h3 style={partyTitleStyle}>発行元</h3>
               <div style={partyDetailsStyle} className="party-details">
-                <div style={partyCompanyStyle}>{companyInfo?.companyName || companyInfo?.name || '会社名未設定'}</div>
-                {/* 住所の組み立て */}
-                {(companyInfo?.postalCode || companyInfo?.prefecture || companyInfo?.city || companyInfo?.address1 || companyInfo?.address2 || companyInfo?.address) && (
-                  <div>
-                    {companyInfo?.postalCode && `〒${companyInfo.postalCode} `}
-                    {companyInfo?.prefecture}
-                    {companyInfo?.city}
-                    {companyInfo?.address1}
-                    {companyInfo?.address2}
-                    {!companyInfo?.postalCode && !companyInfo?.prefecture && !companyInfo?.city && !companyInfo?.address1 && !companyInfo?.address2 && companyInfo?.address}
-                  </div>
+                <div style={partyCompanyStyle}>
+                  {quote.companySnapshot?.companyName || companyInfo?.companyName || companyInfo?.name || '会社名未設定'}
+                </div>
+                {/* 住所の組み立て - スナップショットを優先、次に現在の会社情報 */}
+                {(() => {
+                  const snapshotAddress = quote.companySnapshot?.address;
+                  const currentAddress = (companyInfo?.postalCode || companyInfo?.prefecture || companyInfo?.city || companyInfo?.address1 || companyInfo?.address2 || companyInfo?.address) && 
+                    [
+                      companyInfo?.postalCode && `〒${companyInfo.postalCode}`,
+                      companyInfo?.prefecture,
+                      companyInfo?.city,
+                      companyInfo?.address1,
+                      companyInfo?.address2,
+                      !companyInfo?.postalCode && !companyInfo?.prefecture && !companyInfo?.city && !companyInfo?.address1 && !companyInfo?.address2 && companyInfo?.address
+                    ].filter(Boolean).join(' ');
+                  
+                  return (snapshotAddress || currentAddress) && (
+                    <div>{snapshotAddress || currentAddress}</div>
+                  );
+                })()}
+                {(quote.companySnapshot?.phone || companyInfo?.phone) && (
+                  <div>TEL: {quote.companySnapshot?.phone || companyInfo?.phone}</div>
                 )}
-                {companyInfo?.phone && <div>TEL: {companyInfo.phone}</div>}
-                {companyInfo?.email && <div>Email: {companyInfo.email}</div>}
-                {companyInfo?.invoiceRegistrationNumber && (
-                  <div>登録番号: {companyInfo.invoiceRegistrationNumber}</div>
+                {(quote.companySnapshot?.email || companyInfo?.email) && (
+                  <div>Email: {quote.companySnapshot?.email || companyInfo?.email}</div>
+                )}
+                {(quote.companySnapshot?.invoiceRegistrationNumber || companyInfo?.invoiceRegistrationNumber || companyInfo?.registrationNumber) && (
+                  <div>登録番号: {quote.companySnapshot?.invoiceRegistrationNumber || companyInfo?.invoiceRegistrationNumber || companyInfo?.registrationNumber}</div>
                 )}
                 {quote.assignee && <div>担当者: {quote.assignee}</div>}
               </div>
@@ -743,7 +755,7 @@ export default function QuoteWebTemplate({
       <footer style={footerStyle}>
         <div style={footerContentStyle}>
           <p style={footerTextStyle}>
-            このメールは {companyInfo?.companyName || companyInfo?.name || '会社名未設定'} より送信されました。
+            このメールは {quote.companySnapshot?.companyName || companyInfo?.companyName || companyInfo?.name || '会社名未設定'} より送信されました。
           </p>
           <div style={footerLinksStyle}>
             <a href={`${baseUrl}/privacy`} style={footerLinkStyle}>プライバシーポリシー</a>
