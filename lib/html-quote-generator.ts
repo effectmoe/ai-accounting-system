@@ -441,7 +441,21 @@ export async function generateSimpleHtmlQuote({
   const companyEmail = quote.companySnapshot?.email || companyInfo?.email || '';
   const companyWebsite = companyInfo?.website || '';
 
-  // HTMLメール用のテンプレート（インラインCSS、Gmail対応）
+  // ツールチップ辞書を生成
+  const tooltips = generateDefaultTooltips();
+  
+  // ベースURL
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://accounting-automation.vercel.app';
+  
+  // トラッキングID生成
+  const trackingId = `qt_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+  
+  // CTA URLs
+  const viewOnlineUrl = `${baseUrl}/quotes/view/${quote._id}?t=${trackingId}`;
+  const acceptUrl = `${baseUrl}/quotes/accept/${quote._id}?t=${trackingId}`;
+  const discussUrl = `${baseUrl}/quotes/discuss/${quote._id}?t=${trackingId}`;
+
+  // HTMLメール用のテンプレート（インラインCSS、Gmail対応、機能的要素付き）
   const html = `
 <!DOCTYPE html>
 <html>
@@ -451,7 +465,16 @@ export async function generateSimpleHtmlQuote({
   <title>お見積書 - ${quote.quoteNumber}</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Meiryo', 'MS PGothic', sans-serif; background-color: #f5f5f5;">
-  <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: #f5f5f5; padding: 20px 0;">
+  <!-- オンライン版を見るリンク -->
+  <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: #f5f5f5;">
+    <tr>
+      <td align="center" style="padding: 10px 0;">
+        <a href="${viewOnlineUrl}" style="font-size: 12px; color: #1976d2; text-decoration: underline;">ウェブブラウザで見積書を表示する</a>
+      </td>
+    </tr>
+  </table>
+  
+  <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: #f5f5f5; padding: 10px 0 20px 0;">
     <tr>
       <td align="center">
         <table cellpadding="0" cellspacing="0" border="0" width="600" style="background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
@@ -522,17 +545,38 @@ export async function generateSimpleHtmlQuote({
                   </tr>
                 </thead>
                 <tbody>
-                  ${quote.items.map((item: any) => `
+                  ${quote.items.map((item: any) => {
+                    // ツールチップを検索
+                    let tooltipText = '';
+                    const itemText = (item.itemName || '') + ' ' + (item.description || '');
+                    for (const [term, explanation] of tooltips.entries()) {
+                      if (itemText.includes(term)) {
+                        tooltipText = explanation;
+                        break;
+                      }
+                    }
+                    
+                    return `
                   <tr>
                     <td style="border: 1px solid #dddddd; padding: 10px; vertical-align: top;">
-                      <div style="font-size: 14px; color: #333333; font-weight: bold; margin: 0 0 4px 0;">${item.itemName || ''}</div>
+                      <div style="font-size: 14px; color: #333333; font-weight: bold; margin: 0 0 4px 0;">
+                        ${item.itemName || ''}
+                        ${tooltipText ? `<span style="font-size: 11px; color: #1976d2; font-weight: normal; margin-left: 5px;">[※]</span>` : ''}
+                      </div>
                       ${item.description ? `<div style="font-size: 12px; color: #666666; line-height: 1.4;">${item.description}</div>` : ''}
+                      ${tooltipText ? `
+                      <div style="margin-top: 5px; padding: 8px; background-color: #e3f2fd; border-left: 3px solid #1976d2; border-radius: 3px;">
+                        <span style="font-size: 11px; color: #1565c0; font-weight: bold;">💡 用語解説:</span>
+                        <span style="font-size: 11px; color: #424242; line-height: 1.4; display: block; margin-top: 3px;">${tooltipText}</span>
+                      </div>
+                      ` : ''}
                     </td>
                     <td style="border: 1px solid #dddddd; padding: 10px; text-align: center; font-size: 14px; color: #333333;">${item.quantity || 0}${item.unit || ''}</td>
                     <td style="border: 1px solid #dddddd; padding: 10px; text-align: right; font-size: 14px; color: #333333;">¥${(item.unitPrice || 0).toLocaleString()}</td>
                     <td style="border: 1px solid #dddddd; padding: 10px; text-align: right; font-size: 14px; color: #333333; font-weight: bold;">¥${(item.amount || 0).toLocaleString()}</td>
                   </tr>
-                  `).join('')}
+                  `;
+                  }).join('')}
                 </tbody>
               </table>
             </td>
@@ -571,6 +615,62 @@ export async function generateSimpleHtmlQuote({
             </td>
           </tr>
 
+          <!-- CTA ボタンセクション -->
+          <tr>
+            <td style="padding: 0 40px 40px 40px;">
+              <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                <tr>
+                  <td align="center">
+                    <h3 style="margin: 0 0 20px 0; font-size: 16px; color: #333333; font-weight: bold;">📋 次のステップ</h3>
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center">
+                    <table cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <!-- 承認ボタン -->
+                        <td style="padding: 0 10px;">
+                          <a href="${acceptUrl}" style="display: inline-block; padding: 12px 30px; background-color: #4caf50; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: bold; border-radius: 25px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">✓ 見積を承認する</a>
+                        </td>
+                        <!-- 相談ボタン -->
+                        <td style="padding: 0 10px;">
+                          <a href="${discussUrl}" style="display: inline-block; padding: 12px 30px; background-color: #2196f3; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: bold; border-radius: 25px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">💬 相談する</a>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- 追加提案セクション -->
+          <tr>
+            <td style="padding: 0 40px 30px 40px;">
+              <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border: 2px dashed #ffc107; border-radius: 8px; padding: 20px; background-color: #fffbf0;">
+                <tr>
+                  <td>
+                    <h3 style="margin: 0 0 15px 0; font-size: 16px; color: #f57c00; font-weight: bold;">🎯 おすすめオプション</h3>
+                    
+                    <!-- プレミアムサポート -->
+                    <div style="margin-bottom: 15px; padding: 12px; background-color: #ffffff; border-radius: 6px; border-left: 4px solid #4caf50;">
+                      <h4 style="margin: 0 0 5px 0; font-size: 14px; color: #333333;">🚀 プレミアムサポートプラン</h4>
+                      <p style="margin: 0 0 8px 0; font-size: 12px; color: #666666; line-height: 1.4;">24時間以内の優先対応、専任サポート担当者、月次レポート作成</p>
+                      <span style="font-size: 13px; color: #4caf50; font-weight: bold;">月額 ¥20,000</span>
+                    </div>
+                    
+                    <!-- 年間契約割引 -->
+                    <div style="padding: 12px; background-color: #ffffff; border-radius: 6px; border-left: 4px solid #2196f3;">
+                      <h4 style="margin: 0 0 5px 0; font-size: 14px; color: #333333;">💰 年間契約割引</h4>
+                      <p style="margin: 0 0 8px 0; font-size: 12px; color: #666666; line-height: 1.4;">年間契約で15%割引＋請求書発行簡素化＋優先アップデート</p>
+                      <span style="font-size: 13px; color: #2196f3; font-weight: bold;">15%割引適用</span>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
           ${quote.notes ? `
           <!-- 備考 -->
           <tr>
@@ -590,17 +690,30 @@ export async function generateSimpleHtmlQuote({
           <!-- 会社情報フッター -->
           <tr>
             <td style="padding: 20px 40px 40px 40px; border-top: 1px solid #dddddd;">
-              <p style="margin: 0 0 5px 0; font-size: 14px; color: #333333; font-weight: bold;">${companyName}</p>
-              ${companyAddress ? `<p style="margin: 0 0 3px 0; font-size: 12px; color: #666666;">${companyAddress}</p>` : ''}
-              ${companyPhone ? `<p style="margin: 0 0 3px 0; font-size: 12px; color: #666666;">TEL: ${companyPhone}</p>` : ''}
-              ${companyEmail ? `<p style="margin: 0 0 3px 0; font-size: 12px; color: #666666;">Email: ${companyEmail}</p>` : ''}
-              ${companyWebsite ? `<p style="margin: 0; font-size: 12px;"><a href="${companyWebsite}" style="color: #1976d2; text-decoration: none;">${companyWebsite}</a></p>` : ''}
+              <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                <tr>
+                  <td width="50%">
+                    <p style="margin: 0 0 5px 0; font-size: 14px; color: #333333; font-weight: bold;">${companyName}</p>
+                    ${companyAddress ? `<p style="margin: 0 0 3px 0; font-size: 12px; color: #666666;">${companyAddress}</p>` : ''}
+                    ${companyPhone ? `<p style="margin: 0 0 3px 0; font-size: 12px; color: #666666;">TEL: ${companyPhone}</p>` : ''}
+                    ${companyEmail ? `<p style="margin: 0 0 3px 0; font-size: 12px; color: #666666;">Email: ${companyEmail}</p>` : ''}
+                    ${companyWebsite ? `<p style="margin: 0; font-size: 12px;"><a href="${companyWebsite}" style="color: #1976d2; text-decoration: none;">${companyWebsite}</a></p>` : ''}
+                  </td>
+                  <td width="50%" align="right" valign="bottom">
+                    <p style="margin: 0; font-size: 11px; color: #999999;">お問い合わせ</p>
+                    <a href="mailto:${companyEmail}?subject=見積書${quote.quoteNumber}について" style="display: inline-block; margin-top: 5px; padding: 8px 20px; background-color: #f5f5f5; color: #333333; text-decoration: none; font-size: 12px; border-radius: 4px; border: 1px solid #dddddd;">📧 メールで問い合わせ</a>
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
         </table>
       </td>
     </tr>
   </table>
+  
+  <!-- トラッキングピクセル -->
+  <img src="${baseUrl}/api/tracking/open?id=${trackingId}&doc=quote&qid=${quote._id}" width="1" height="1" style="display: none;" alt="" />
 </body>
 </html>
   `.trim();
