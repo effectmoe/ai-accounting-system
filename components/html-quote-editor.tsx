@@ -1155,63 +1155,91 @@ export default function HtmlQuoteEditor({
 
             {/* プレビュータブ */}
             <TabsContent value="preview" className="space-y-4">
-              {/* シンプル化されたアクションバー */}
-              <div className="flex items-center justify-end gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    const url = `/quotes/${quote._id}/preview`;
-                    // 新しいウィンドウを大きめのサイズで開く
-                    const width = Math.min(window.screen.width * 0.9, 1400);
-                    const height = Math.min(window.screen.height * 0.9, 900);
-                    const left = (window.screen.width - width) / 2;
-                    const top = (window.screen.height - height) / 2;
-                    window.open(
-                      url, 
-                      'quotePreview',
-                      `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no,scrollbars=yes,resizable=yes`
-                    );
-                  }}
-                >
-                  <ExternalLink className="h-4 w-4 mr-2" />
-                  ブラウザで表示
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleSave}
-                  disabled={isSaving}
-                >
-                  {isSaving ? (
-                    <>
-                      <Save className="h-4 w-4 mr-2 animate-spin" />
-                      保存中...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="h-4 w-4 mr-2" />
-                      保存
-                    </>
-                  )}
-                </Button>
-                <Button
-                  onClick={handleSend}
-                  disabled={isSending}
-                  title={isSending ? '送信中です' : '見積書を送信します'}
-                >
-                  {isSending ? (
-                    <>
-                      <Send className="h-4 w-4 mr-2 animate-spin" />
-                      送信中...
-                    </>
-                  ) : (
-                    <>
-                      <Send className="h-4 w-4 mr-2" />
-                      送信
-                    </>
-                  )}
-                </Button>
+              {/* アクションバー with レイアウト切り替え */}
+              <div className="flex items-center justify-between">
+                {/* 左側: レイアウト切り替えボタン */}
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">レイアウト:</span>
+                  <div className="flex gap-1 border rounded-lg p-1">
+                    <Button
+                      variant={useWebLayout ? "default" : "ghost"}
+                      size="sm"
+                      onClick={() => setUseWebLayout(true)}
+                      className="h-7 px-3"
+                    >
+                      <Globe className="h-3 w-3 mr-1" />
+                      ウェブ版
+                    </Button>
+                    <Button
+                      variant={!useWebLayout ? "default" : "ghost"}
+                      size="sm"
+                      onClick={() => setUseWebLayout(false)}
+                      className="h-7 px-3"
+                    >
+                      <Mail className="h-3 w-3 mr-1" />
+                      メール版
+                    </Button>
+                  </div>
+                </div>
+                
+                {/* 右側: アクションボタン */}
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const url = `/quotes/${quote._id}/preview`;
+                      // 新しいウィンドウを大きめのサイズで開く
+                      const width = Math.min(window.screen.width * 0.9, 1400);
+                      const height = Math.min(window.screen.height * 0.9, 900);
+                      const left = (window.screen.width - width) / 2;
+                      const top = (window.screen.height - height) / 2;
+                      window.open(
+                        url, 
+                        'quotePreview',
+                        `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no,scrollbars=yes,resizable=yes`
+                      );
+                    }}
+                  >
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    ブラウザで表示
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSave}
+                    disabled={isSaving}
+                  >
+                    {isSaving ? (
+                      <>
+                        <Save className="h-4 w-4 mr-2 animate-spin" />
+                        保存中...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4 mr-2" />
+                        保存
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    onClick={handleSend}
+                    disabled={isSending}
+                    title={isSending ? '送信中です' : '見積書を送信します'}
+                  >
+                    {isSending ? (
+                      <>
+                        <Send className="h-4 w-4 mr-2 animate-spin" />
+                        送信中...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="h-4 w-4 mr-2" />
+                        送信
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
 
               {/* プレビューエリア（レスポンシブ対応） */}
