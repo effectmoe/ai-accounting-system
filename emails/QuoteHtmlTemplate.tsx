@@ -128,7 +128,7 @@ export default function QuoteHtmlTemplate({
     <Html>
       <Head />
       <Preview>
-        {quote.title || `お見積書 #${quote.quoteNumber}`} - {companyInfo?.companyName || companyInfo?.name || '株式会社'}より
+        {quote.title || `お見積書 #${quote.quoteNumber}`} - {quote.companySnapshot?.companyName || companyInfo?.companyName || companyInfo?.name || '会社名未設定'}より
       </Preview>
       <Body style={main}>
         <Container style={container}>
@@ -143,7 +143,7 @@ export default function QuoteHtmlTemplate({
                 style={logo}
               />
             )}
-            <Text style={headerText}>{companyInfo?.companyName || companyInfo?.name || '会社名'}</Text>
+            <Text style={headerText}>{quote.companySnapshot?.companyName || companyInfo?.companyName || companyInfo?.name || '会社名未設定'}</Text>
           </Section>
 
 
@@ -358,22 +358,32 @@ export default function QuoteHtmlTemplate({
               <Hr style={divider} />
               <Row>
                 <Column>
-                  <Text style={companyName}>{companyInfo?.companyName || companyInfo?.name || '株式会社'}</Text>
-                  <Text style={companyDetails}>
-                    {companyInfo?.postalCode && `〒${companyInfo.postalCode}`}
-                    {companyInfo?.prefecture && ` ${companyInfo.prefecture}`}
-                    {companyInfo?.city && `${companyInfo.city}`}
-                    {companyInfo?.address1 && `${companyInfo.address1}`}
-                    {companyInfo?.address2 && ` ${companyInfo.address2}`}
+                  <Text style={companyName}>
+                    {quote.companySnapshot?.companyName || companyInfo?.companyName || companyInfo?.name || '会社名未設定'}
                   </Text>
-                  {companyInfo?.phone && (
+                  <Text style={companyDetails}>
+                    {(() => {
+                      // スナップショットを優先、次に現在の会社情報
+                      if (quote.companySnapshot?.address) {
+                        return quote.companySnapshot.address;
+                      }
+                      return [
+                        companyInfo?.postalCode && `〒${companyInfo.postalCode}`,
+                        companyInfo?.prefecture,
+                        companyInfo?.city,
+                        companyInfo?.address1,
+                        companyInfo?.address2
+                      ].filter(Boolean).join(' ');
+                    })()}
+                  </Text>
+                  {(quote.companySnapshot?.phone || companyInfo?.phone) && (
                     <Text style={companyDetails}>
-                      TEL: {companyInfo.phone}
+                      TEL: {quote.companySnapshot?.phone || companyInfo?.phone}
                     </Text>
                   )}
-                  {companyInfo?.email && (
+                  {(quote.companySnapshot?.email || companyInfo?.email) && (
                     <Text style={companyDetails}>
-                      Email: {companyInfo.email}
+                      Email: {quote.companySnapshot?.email || companyInfo?.email}
                     </Text>
                   )}
                   {companyInfo?.website && (
@@ -383,7 +393,7 @@ export default function QuoteHtmlTemplate({
                   )}
                   <Hr style={signatureDivider} />
                   <Text style={signatureText}>
-                    {companyInfo?.companyName || companyInfo?.name || '株式会社'}
+                    {quote.companySnapshot?.companyName || companyInfo?.companyName || companyInfo?.name || '会社名未設定'}
                   </Text>
                   {companyInfo?.representativeName && (
                     <Text style={signatureName}>
@@ -403,7 +413,7 @@ export default function QuoteHtmlTemplate({
           {/* フッター */}
           <Section style={footer}>
             <Text style={footerText}>
-              このメールは {companyInfo?.companyName || companyInfo?.name || '株式会社'} より送信されました。
+              このメールは {quote.companySnapshot?.companyName || companyInfo?.companyName || companyInfo?.name || '会社名未設定'} より送信されました。
             </Text>
             <Text style={footerLinks}>
               <Link href={`${baseUrl}/privacy`} style={footerLink}>

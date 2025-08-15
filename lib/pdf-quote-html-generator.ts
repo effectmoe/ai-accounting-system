@@ -448,10 +448,28 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
           <p>見積書番号: ${quote.quoteNumber}</p>
         </div>
         <div style="margin-top: 20px;">
-          <h3 class="company-name">${companyInfo?.companyName || ''}</h3>
-          ${companyInfo?.address ? `<p>${companyInfo.address}</p>` : ''}
-          ${companyInfo?.phone ? `<p>TEL: ${companyInfo.phone}</p>` : ''}
-          ${companyInfo?.email ? `<p>${companyInfo.email}</p>` : ''}
+          <h3 class="company-name">${(() => {
+            if (quote.companySnapshot?.companyName) return quote.companySnapshot.companyName;
+            if (companyInfo?.companyName) return companyInfo.companyName;
+            if (companyInfo?.name) return companyInfo.name;
+            return '会社名未設定';
+          })()}</h3>
+          ${(() => {
+            const address = quote.companySnapshot?.address || 
+                          companyInfo?.address1 || 
+                          (companyInfo?.address && companyInfo.address) ||
+                          [companyInfo?.prefecture, companyInfo?.city, companyInfo?.address1]
+                            .filter(Boolean).join(' ');
+            return address ? `<p>${address}</p>` : '';
+          })()}
+          ${(() => {
+            const phone = quote.companySnapshot?.phone || companyInfo?.phone;
+            return phone ? `<p>TEL: ${phone}</p>` : '';
+          })()}
+          ${(() => {
+            const email = quote.companySnapshot?.email || companyInfo?.email;
+            return email ? `<p>${email}</p>` : '';
+          })()}
         </div>
       </div>
     </div>

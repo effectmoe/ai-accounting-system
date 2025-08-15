@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { QuoteService } from '@/services/quote.service';
 import { InvoiceService } from '@/services/invoice.service';
+import { CompanyInfoService } from '@/services/company-info.service';
 import { generatePDFBase64 } from '@/lib/pdf-export';
 import { DocumentData } from '@/lib/document-generator';
 import { db } from '@/lib/mongodb-client';
@@ -347,6 +348,24 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: '見積書が見つかりません' }, { status: 404 });
       }
       
+      // 現在の会社情報を取得（companySnapshotのフォールバック用）
+      const companyInfoService = new CompanyInfoService();
+      const currentCompanyInfo = await companyInfoService.getCompanyInfo();
+      
+      // companySnapshotが不完全な場合に現在の会社情報をフォールバックとして使用
+      const effectiveCompanyInfo = {
+        name: document.companySnapshot?.companyName || currentCompanyInfo?.companyName || '会社名未設定',
+        address: document.companySnapshot?.address || 
+                currentCompanyInfo?.address1 || 
+                `${currentCompanyInfo?.prefecture || ''} ${currentCompanyInfo?.city || ''} ${currentCompanyInfo?.address1 || ''}`.trim() ||
+                '住所未設定',
+        phone: document.companySnapshot?.phone || currentCompanyInfo?.phone,
+        email: document.companySnapshot?.email || currentCompanyInfo?.email,
+        registrationNumber: document.companySnapshot?.invoiceRegistrationNumber || currentCompanyInfo?.registrationNumber,
+      };
+      
+      logger.debug('Effective company info for email:', effectiveCompanyInfo);
+      
       // DocumentData形式に変換
       documentData = {
         documentType: 'quote',
@@ -365,13 +384,7 @@ export async function POST(request: NextRequest) {
         tax: document.taxAmount,
         total: document.totalAmount,
         notes: document.notes,
-        companyInfo: {
-          name: document.companySnapshot?.companyName || '',
-          address: document.companySnapshot?.address || '',
-          phone: document.companySnapshot?.phone,
-          email: document.companySnapshot?.email,
-          registrationNumber: document.companySnapshot?.invoiceRegistrationNumber,
-        },
+        companyInfo: effectiveCompanyInfo,
       };
     } else if (documentType === 'invoice') {
       const invoiceService = new InvoiceService();
@@ -380,6 +393,24 @@ export async function POST(request: NextRequest) {
       if (!document) {
         return NextResponse.json({ error: '請求書が見つかりません' }, { status: 404 });
       }
+      
+      // 現在の会社情報を取得（companySnapshotのフォールバック用）
+      const companyInfoService = new CompanyInfoService();
+      const currentCompanyInfo = await companyInfoService.getCompanyInfo();
+      
+      // companySnapshotが不完全な場合に現在の会社情報をフォールバックとして使用
+      const effectiveCompanyInfo = {
+        name: document.companySnapshot?.companyName || currentCompanyInfo?.companyName || '会社名未設定',
+        address: document.companySnapshot?.address || 
+                currentCompanyInfo?.address1 || 
+                `${currentCompanyInfo?.prefecture || ''} ${currentCompanyInfo?.city || ''} ${currentCompanyInfo?.address1 || ''}`.trim() ||
+                '住所未設定',
+        phone: document.companySnapshot?.phone || currentCompanyInfo?.phone,
+        email: document.companySnapshot?.email || currentCompanyInfo?.email,
+        registrationNumber: document.companySnapshot?.invoiceRegistrationNumber || currentCompanyInfo?.registrationNumber,
+      };
+      
+      logger.debug('Effective company info for invoice email:', effectiveCompanyInfo);
       
       // DocumentData形式に変換
       documentData = {
@@ -399,13 +430,7 @@ export async function POST(request: NextRequest) {
         tax: document.taxAmount,
         total: document.totalAmount,
         notes: document.notes,
-        companyInfo: {
-          name: document.companySnapshot?.companyName || '',
-          address: document.companySnapshot?.address || '',
-          phone: document.companySnapshot?.phone,
-          email: document.companySnapshot?.email,
-          registrationNumber: document.companySnapshot?.invoiceRegistrationNumber,
-        },
+        companyInfo: effectiveCompanyInfo,
         bankAccount: document.companySnapshot?.bankAccount,
       };
     } else {
