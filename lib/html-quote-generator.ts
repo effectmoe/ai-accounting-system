@@ -379,6 +379,7 @@ export function generateDefaultTooltips(): Map<string, string> {
   const tooltips = new Map<string, string>();
 
   // IT関連用語
+  tooltips.set('LLMO', 'Large Language Model Optimization - 大規模言語モデル最適化技術');
   tooltips.set('SaaS', 'Software as a Service - クラウド経由で提供されるソフトウェア');
   tooltips.set('API', 'Application Programming Interface - システム間の連携インターフェース');
   tooltips.set('UI/UX', 'ユーザーインターフェース/ユーザー体験 - 使いやすさとデザイン');

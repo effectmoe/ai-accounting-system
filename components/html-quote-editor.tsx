@@ -1161,8 +1161,17 @@ export default function HtmlQuoteEditor({
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    const url = `/quotes/view/${quote._id}`;
-                    window.open(url, '_blank');
+                    const url = `/quotes/${quote._id}/preview`;
+                    // 新しいウィンドウを大きめのサイズで開く
+                    const width = Math.min(window.screen.width * 0.9, 1400);
+                    const height = Math.min(window.screen.height * 0.9, 900);
+                    const left = (window.screen.width - width) / 2;
+                    const top = (window.screen.height - height) / 2;
+                    window.open(
+                      url, 
+                      'quotePreview',
+                      `width=${width},height=${height},left=${left},top=${top},toolbar=no,menubar=no,scrollbars=yes,resizable=yes`
+                    );
                   }}
                 >
                   <ExternalLink className="h-4 w-4 mr-2" />
