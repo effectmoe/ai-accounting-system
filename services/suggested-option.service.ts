@@ -258,8 +258,8 @@ export class SuggestedOptionService {
         description: data.description,
         price: data.price,
         features: data.features,
-        ctaText: data.ctaText,
-        ctaUrl: data.ctaUrl,
+        ...(data.ctaText && { ctaText: data.ctaText }),
+        ...(data.ctaUrl && { ctaUrl: data.ctaUrl }),
         isActive: data.isActive !== false, // デフォルトはtrue
         displayOrder,
         minAmount: data.minAmount,
