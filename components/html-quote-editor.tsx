@@ -135,6 +135,7 @@ export default function HtmlQuoteEditor({
   const [activeTab, setActiveTab] = useState('basic'); // アクティブなタブを追跡
   const [previewWindow, setPreviewWindow] = useState<Window | null>(null); // プレビューウィンドウの参照
   const [showQuickCreator, setShowQuickCreator] = useState(false); // クイックオプション作成ダイアログの表示状態
+  const [isLoadingSuggestedOptions, setIsLoadingSuggestedOptions] = useState(false); // おすすめオプション読み込み状態
 
   // staffNameが変更されたときにeditedQuote.assigneeも同期する
   useEffect(() => {
@@ -234,6 +235,49 @@ export default function HtmlQuoteEditor({
       generatePreview();
     }
   }, [activeTab, isPreviewOpen, generatePreview]);
+
+  // APIからおすすめオプションを取得する関数
+  const fetchSuggestedOptionsFromAPI = useCallback(async (amount: number) => {
+    try {
+      setIsLoadingSuggestedOptions(true);
+      console.log('Fetching suggested options for amount:', amount);
+      
+      const response = await fetch(`/api/suggested-options/for-quote?amount=${amount}&limit=10`);
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('Received suggested options from API:', data);
+      
+      if (data.suggestedOptions && data.suggestedOptions.length > 0) {
+        // DBから取得したオプションを設定
+        setSuggestedOptions(data.suggestedOptions);
+        console.log(`Updated suggested options with ${data.suggestedOptions.length} items from DB`);
+      } else {
+        // DBにオプションがない場合はデフォルトを使用
+        const defaultOptions = generateDefaultSuggestedOptions(editedQuote);
+        setSuggestedOptions(defaultOptions);
+        console.log('No options found in DB, using default options');
+      }
+    } catch (error) {
+      console.error('Error fetching suggested options:', error);
+      // エラーの場合はデフォルトオプションを使用
+      const defaultOptions = generateDefaultSuggestedOptions(editedQuote);
+      setSuggestedOptions(defaultOptions);
+    } finally {
+      setIsLoadingSuggestedOptions(false);
+    }
+  }, [editedQuote]);
+
+  // 見積書の合計金額が変更されたときにおすすめオプションを更新
+  useEffect(() => {
+    if (editedQuote.totalAmount > 0) {
+      console.log('Total amount changed:', editedQuote.totalAmount);
+      fetchSuggestedOptionsFromAPI(editedQuote.totalAmount);
+    }
+  }, [editedQuote.totalAmount, fetchSuggestedOptionsFromAPI]);
 
   // 提案オプションを追加
   const addSuggestedOption = () => {
@@ -963,7 +1007,18 @@ export default function HtmlQuoteEditor({
                   {/* 追加提案オプション設定 */}
                   <Card>
                     <CardHeader>
-                      <CardTitle className="text-base">追加提案オプション</CardTitle>
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-base">追加提案オプション</CardTitle>
+                        {isLoadingSuggestedOptions && (
+                          <div className="flex items-center space-x-2 text-sm text-gray-600">
+                            <div className="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+                            <span>読み込み中...</span>
+                          </div>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-600">
+                        見積金額に応じてDBから自動取得されるおすすめオプション（現在の金額: ¥{editedQuote.totalAmount?.toLocaleString() || '0'}）
+                      </p>
                     </CardHeader>
                     <CardContent className="space-y-3">
                       {suggestedOptions.map((option, index) => (
@@ -1011,6 +1066,15 @@ export default function HtmlQuoteEditor({
                         </Card>
                       ))}
                       <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          onClick={() => fetchSuggestedOptionsFromAPI(editedQuote.totalAmount || 0)}
+                          disabled={isLoadingSuggestedOptions}
+                          className="flex-1"
+                        >
+                          <Sparkles className="h-4 w-4 mr-1" />
+                          DBから再取得
+                        </Button>
                         <Button
                           variant="outline"
                           onClick={addSuggestedOption}
