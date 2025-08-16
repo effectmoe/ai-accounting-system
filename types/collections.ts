@@ -281,6 +281,9 @@ export interface Quote {
   profitAmount?: number; // 利益額（見積額 - 原価）
   profitMargin?: number; // 利益率（利益額 / 見積額 * 100）
   
+  // おすすめオプション選択
+  selectedSuggestedOptionIds?: string[]; // 選択されたおすすめオプションのID配列
+  
   createdAt?: Date;
   updatedAt?: Date;
 }

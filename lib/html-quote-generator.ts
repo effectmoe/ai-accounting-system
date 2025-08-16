@@ -313,39 +313,30 @@ function formatCurrency(amount: number): string {
 }
 
 /**
- * DBから見積金額に応じたおすすめオプションを取得
+ * 見積書に選択されたおすすめオプションを取得
  */
 export async function getSuggestedOptionsForQuote(
   quote: Quote
 ): Promise<SuggestedOption[]> {
-  // デフォルトオプションを返す（DB連携は一時的に無効化）
+  // 見積書に選択されたオプションIDがある場合はそれを使用
+  if (quote.selectedSuggestedOptionIds && quote.selectedSuggestedOptionIds.length > 0) {
+    try {
+      // サーバーサイドでのみDB連携を実行
+      if (typeof window === 'undefined') {
+        const { SuggestedOptionService } = await import('@/services/suggested-option.service');
+        const suggestedOptionService = new SuggestedOptionService();
+        
+        // 選択されたオプションIDから実際のオプションデータを取得
+        const selectedOptions = await suggestedOptionService.getSuggestedOptionsByIds(quote.selectedSuggestedOptionIds);
+        return selectedOptions;
+      }
+    } catch (error) {
+      console.error('Error fetching selected suggested options:', error);
+    }
+  }
+  
+  // フォールバック: デフォルトオプションを返す
   return generateDefaultSuggestedOptions(quote);
-  
-  // TODO: ビルドエラー解決後に以下のDB連携を有効化
-  /*
-  // サーバーサイドでのみ実行
-  if (typeof window !== 'undefined') {
-    // クライアントサイドではデフォルトオプションを返す
-    return generateDefaultSuggestedOptions(quote);
-  }
-  
-  try {
-    const { SuggestedOptionService } = await import('@/services/suggested-option.service');
-    const suggestedOptionService = new SuggestedOptionService();
-    
-    const options = await suggestedOptionService.getSuggestedOptionsForQuote({
-      amount: quote.totalAmount,
-      isActive: true,
-      limit: 10 // 最大10件まで
-    });
-    
-    return options;
-  } catch (error) {
-    console.error('Error fetching suggested options:', error);
-    // エラーの場合は従来のデフォルトオプションを返す
-    return generateDefaultSuggestedOptions(quote);
-  }
-  */
 }
 
 /**

@@ -127,7 +127,18 @@ export class SuggestedOptionService {
 
       logger.debug(`[SuggestedOptionService] Found ${suggestedOptions.length} options for quote amount ${filter.amount}`);
 
-      return suggestedOptions;
+      // price フィールドが数値の場合、日本円表記に変換
+      const formattedOptions = suggestedOptions.map(option => {
+        if (typeof option.price === 'number') {
+          return {
+            ...option,
+            price: `¥${option.price.toLocaleString('ja-JP')}`
+          };
+        }
+        return option;
+      });
+
+      return formattedOptions;
     } catch (error) {
       logger.error('[SuggestedOptionService] Error getting suggested options for quote:', error);
       throw error;
@@ -160,6 +171,55 @@ export class SuggestedOptionService {
       return suggestedOption;
     } catch (error) {
       logger.error(`[SuggestedOptionService] Error getting suggested option by ID ${id}:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * 複数のIDからおすすめオプション取得
+   */
+  async getSuggestedOptionsByIds(ids: string[]): Promise<SuggestedOption[]> {
+    try {
+      logger.debug(`[SuggestedOptionService] Getting suggested options by IDs:`, ids);
+
+      if (!ids || ids.length === 0) {
+        return [];
+      }
+
+      // 有効なObjectIdのみをフィルタ
+      const validIds = ids.filter(id => ObjectId.isValid(id));
+      if (validIds.length === 0) {
+        logger.warn('[SuggestedOptionService] No valid ObjectIds provided');
+        return [];
+      }
+
+      const objectIds = validIds.map(id => new ObjectId(id));
+      
+      const suggestedOptions = await this.db.find<SuggestedOption>(
+        Collections.SUGGESTED_OPTIONS,
+        { 
+          _id: { $in: objectIds },
+          isActive: true // アクティブなもののみ
+        },
+        { sort: { displayOrder: 1, createdAt: 1 } }
+      );
+
+      logger.debug(`[SuggestedOptionService] Found ${suggestedOptions.length} suggested options for ${ids.length} IDs`);
+
+      // price フィールドが数値の場合、日本円表記に変換
+      const formattedOptions = suggestedOptions.map(option => {
+        if (typeof option.price === 'number') {
+          return {
+            ...option,
+            price: `¥${option.price.toLocaleString('ja-JP')}`
+          };
+        }
+        return option;
+      });
+
+      return formattedOptions;
+    } catch (error) {
+      logger.error(`[SuggestedOptionService] Error getting suggested options by IDs:`, error);
       throw error;
     }
   }
