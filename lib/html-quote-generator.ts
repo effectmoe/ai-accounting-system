@@ -419,6 +419,13 @@ export function generateDefaultTooltips(): Map<string, string> {
   tooltips.set('KPI', 'Key Performance Indicator - 重要業績評価指標');
   tooltips.set('リードタイム', '発注から納品までの期間');
   
+  // LLMOモニタリング関連
+  tooltips.set('LLMOモニタリング', 'Large Language Model Optimization - AIを活用したWebサイトの最適化とモニタリングサービス');
+  tooltips.set('LLMO', 'Large Language Model Optimization - 大規模言語モデルによる最適化技術');
+  tooltips.set('モニタリング', 'サイトのパフォーマンスや検索順位を継続的に監視・分析するサービス');
+  tooltips.set('最適化', 'システムやプロセスをより効率的に改善すること');
+  tooltips.set('パフォーマンス', 'システムの処理能力や応答速度の性能');
+  
   // より一般的な用語を追加
   tooltips.set('システム', 'コンピュータとソフトウェアを組み合わせた仕組み');
   tooltips.set('開発', 'ソフトウェアやシステムを設計・構築すること');

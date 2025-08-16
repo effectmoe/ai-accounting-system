@@ -103,6 +103,11 @@ export async function POST(request: NextRequest) {
     const tooltipsMap = new Map(tooltips || []);
     const productLinksMap = new Map(productLinks || []);
     
+    // デバッグログを追加
+    logger.debug('Tooltips received:', tooltips);
+    logger.debug('Tooltips map size:', tooltipsMap.size);
+    logger.debug('Tooltips entries:', Array.from(tooltipsMap.entries()));
+    
     // プレビュー用のURLを生成（実際の送信時とは異なるダミーURLを使用）
     const trackingId = 'preview-tracking-id';
     const quoteId = quote._id || 'preview-quote-id';
