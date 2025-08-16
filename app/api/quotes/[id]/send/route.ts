@@ -4,6 +4,7 @@ import { QuoteService } from '@/services/quote.service';
 import { CompanyInfoService } from '@/services/company-info.service';
 import { Resend } from 'resend';
 import { generateSimpleHtmlQuote } from '@/lib/html-quote-generator';
+import { getSuggestedOptionsFromDB, generateServerHtmlQuote } from '@/lib/html-quote-generator-server';
 
 const resendApiKey = process.env.RESEND_API_KEY;
 console.log('[Send Quote API] RESEND_API_KEY exists:', !!resendApiKey);
@@ -50,8 +51,8 @@ export async function POST(
     const companyInfoService = new CompanyInfoService();
     const companyInfo = await companyInfoService.getCompanyInfo();
 
-    // HTMLコンテンツ生成（シンプルなHTML文字列）
-    const htmlContent = await generateSimpleHtmlQuote({
+    // HTMLコンテンツ生成（DBからおすすめオプションを取得するサーバーサイド関数を使用）
+    const htmlContent = await generateServerHtmlQuote({
       quote,
       companyInfo: companyInfo || {
         companyName: '株式会社サンプル',
