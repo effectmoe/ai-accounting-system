@@ -127,3 +127,27 @@ export function formatPostalCode(postalCode: string | null | undefined): string 
   
   return postalCode;
 }
+
+/**
+ * 価格をフォーマット（文字列と数値の両方に対応）
+ * @param price 価格（文字列または数値）
+ * @returns フォーマットされた価格文字列（¥1,234）
+ */
+export function formatPrice(price: string | number | null | undefined): string {
+  if (price == null || price === '') return '¥0';
+  
+  // 既に¥記号が含まれている場合はそのまま返す
+  if (typeof price === 'string' && price.includes('¥')) {
+    return price;
+  }
+  
+  // 数値に変換
+  const priceValue = typeof price === 'string' ? parseFloat(price.replace(/[^\d.-]/g, '')) : price;
+  
+  // 有効な数値でない場合は元の値を返す
+  if (isNaN(priceValue)) {
+    return typeof price === 'string' ? price : '¥0';
+  }
+  
+  return formatCurrency(priceValue);
+}

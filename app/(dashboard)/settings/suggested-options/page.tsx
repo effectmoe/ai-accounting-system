@@ -16,6 +16,7 @@ import {
   DollarSign
 } from 'lucide-react';
 import { logger } from '@/lib/logger';
+import { formatPrice } from '@/components/common/format-utils';
 import {
   SuggestedOption,
   CreateSuggestedOptionRequest,
@@ -357,7 +358,7 @@ export default function SuggestedOptionsPage() {
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
                         <h3 className="text-lg font-semibold">{option.title}</h3>
-                        <span className="text-lg font-bold text-blue-600">{option.price}</span>
+                        <span className="text-lg font-bold text-blue-600">{formatPrice(option.price)}</span>
                         {!option.isActive && (
                           <span className="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded">
                             無効
