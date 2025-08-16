@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Plus, Trash2, ArrowLeft, Save, CheckCircle, MessageSquare, History, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Plus, Trash2, ArrowLeft, Save, CheckCircle, MessageSquare, History, Eye, EyeOff, Sparkles } from 'lucide-react';
 import { format } from 'date-fns';
 import { Quote, QuoteItem, Customer } from '@/types/collections';
 import AIChatDialog from '@/components/ai-chat-dialog';
@@ -58,6 +58,11 @@ function QuoteEditPageContent({ params }: QuoteEditPageProps) {
   
   // 商品説明表示/非表示
   const [showItemDescriptions, setShowItemDescriptions] = useState(true);
+  
+  // おすすめオプション選択
+  const [suggestedOptions, setSuggestedOptions] = useState<any[]>([]);
+  const [selectedSuggestedOptionIds, setSelectedSuggestedOptionIds] = useState<string[]>([]);
+  const [loadingSuggestedOptions, setLoadingSuggestedOptions] = useState(false);
 
   useEffect(() => {
     fetchQuote();
@@ -69,6 +74,39 @@ function QuoteEditPageContent({ params }: QuoteEditPageProps) {
       setShowAIChat(true);
     }
   }, [params.id, searchParams]);
+
+  // 金額変更時におすすめオプションを更新
+  useEffect(() => {
+    const total = getTotalAmount().total;
+    if (total > 0) {
+      fetchSuggestedOptions(total);
+    }
+  }, [items]);
+
+  const fetchSuggestedOptions = async (amount: number) => {
+    try {
+      setLoadingSuggestedOptions(true);
+      const response = await fetch(`/api/suggested-options/for-quote?amount=${amount}`);
+      if (response.ok) {
+        const data = await response.json();
+        setSuggestedOptions(data.suggestedOptions || []);
+      }
+    } catch (error) {
+      logger.error('Error fetching suggested options:', error);
+    } finally {
+      setLoadingSuggestedOptions(false);
+    }
+  };
+
+  const handleSuggestedOptionToggle = (optionId: string) => {
+    setSelectedSuggestedOptionIds(prev => {
+      if (prev.includes(optionId)) {
+        return prev.filter(id => id !== optionId);
+      } else {
+        return [...prev, optionId];
+      }
+    });
+  };
 
   const fetchQuote = async () => {
     try {
@@ -98,6 +136,11 @@ function QuoteEditPageContent({ params }: QuoteEditPageProps) {
         setItems(safeItems);
         
         setNotes(quoteData.notes || '');
+        
+        // 選択されたおすすめオプションを設定
+        if (quoteData.selectedSuggestedOptionIds) {
+          setSelectedSuggestedOptionIds(quoteData.selectedSuggestedOptionIds);
+        }
       } else {
         setError('見積書が見つかりません');
         router.push('/quotes');
@@ -297,6 +340,7 @@ function QuoteEditPageContent({ params }: QuoteEditPageProps) {
       taxRate: 10,
       totalAmount: totals.total,
       notes,
+      selectedSuggestedOptionIds,
     };
 
     try {
@@ -676,6 +720,86 @@ function QuoteEditPageContent({ params }: QuoteEditPageProps) {
           </div>
         </CardContent>
       </Card>
+
+      {/* Suggested Options */}
+      {suggestedOptions.length > 0 && (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-yellow-500" />
+              おすすめオプション選択
+            </CardTitle>
+            <p className="text-sm text-gray-600">
+              見積書メールに追加表示するおすすめオプションを選択してください（見積金額: ¥{getTotalAmount().total.toLocaleString()}）
+            </p>
+          </CardHeader>
+          <CardContent>
+            {loadingSuggestedOptions ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
+                <span className="ml-2 text-gray-600">おすすめオプションを読み込み中...</span>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {suggestedOptions.map((option) => (
+                  <div key={option._id} className="border rounded-lg p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="flex items-center h-5">
+                        <input
+                          id={`suggested-option-${option._id}`}
+                          type="checkbox"
+                          checked={selectedSuggestedOptionIds.includes(option._id.toString())}
+                          onChange={() => handleSuggestedOptionToggle(option._id.toString())}
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <label 
+                          htmlFor={`suggested-option-${option._id}`}
+                          className="cursor-pointer"
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <h4 className="text-lg font-semibold text-gray-900">{option.title}</h4>
+                            <span className="text-lg font-bold text-blue-600">{option.price}</span>
+                          </div>
+                          <p className="text-gray-600 mb-2">{option.description}</p>
+                          {option.features && option.features.length > 0 && (
+                            <div className="mb-2">
+                              <span className="text-sm font-medium text-gray-700">特徴:</span>
+                              <ul className="text-sm text-gray-600 mt-1 space-y-1">
+                                {option.features.map((feature: string, index: number) => (
+                                  <li key={index} className="flex items-start gap-2">
+                                    <span className="text-blue-600 mt-1">•</span>
+                                    <span>{feature}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                          <div className="flex items-center justify-between text-sm text-gray-500">
+                            <span>
+                              表示条件: {option.minAmount ? `¥${option.minAmount.toLocaleString()}以上` : '制限なし'}
+                              {option.maxAmount ? ` - ¥${option.maxAmount.toLocaleString()}以下` : ''}
+                            </span>
+                            <span className="text-blue-600 hover:text-blue-800 font-medium">
+                              {option.ctaText}
+                            </span>
+                          </div>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                  <p className="text-sm text-blue-800">
+                    ✓ 選択したオプション ({selectedSuggestedOptionIds.length}件) が見積書メールに自動で追加されます
+                  </p>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Submit Button */}
       <div className="flex gap-4 justify-end">

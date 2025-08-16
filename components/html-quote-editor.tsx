@@ -1315,7 +1315,7 @@ export default function HtmlQuoteEditor({
                   srcDoc={htmlPreview}
                   className="w-full h-full"
                   title="HTML Quote Preview"
-                  sandbox="allow-scripts"
+                  sandbox="allow-scripts allow-popups"
                   style={{ border: 'none' }}
                 />
               </div>
