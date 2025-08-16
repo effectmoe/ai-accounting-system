@@ -24,9 +24,16 @@ interface SuggestedOption {
   ctaUrl: string;
 }
 
-// ツールチップ用語を検出して黄色マーカーを付ける関数
-// Updated: 2025-08-11
+// ツールチップレンダリング関数の改善
+// Updated: 2025-08-16
 const renderDetailsWithTooltip = (details: string, tooltip: string) => {
+  if (!tooltip || tooltip.trim() === '') {
+    return <span>{details}</span>;
+  }
+  
+  // HTMLエスケープ処理
+  const escapedTooltip = tooltip.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  
   // ツールチップ内の主要な用語を抽出（ROI、KPI、CRMなどの英語略語を優先）
   const englishKeywords = tooltip.match(/\b[A-Z]{2,}\b/g) || [];
   // カタカナのキーワードも抽出
@@ -37,44 +44,23 @@ const renderDetailsWithTooltip = (details: string, tooltip: string) => {
   const allKeywords = [...englishKeywords, ...katakanaKeywords, ...kanjiKeywords];
   let processedDetails = details;
   
-  // 各キーワードをライトグレーマーカー付きスパンに変換（CSSホバー効果を使用）
+  // 各キーワードをツールチップ付きスパンに変換
   allKeywords.forEach(keyword => {
     if (details.includes(keyword)) {
-      const tooltipId = `tooltip-${Math.random().toString(36).substr(2, 9)}`;
       const markerHtml = `
-        <span class="tooltip-wrapper" style="position: relative; display: inline-block;">
+        <span class="tooltip-wrapper">
           <span style="
             background: linear-gradient(180deg, transparent 60%, rgba(254, 240, 138, 0.5) 60%);
             cursor: help;
             border-radius: 2px;
             padding: 0 2px;
-            position: relative;
+            border-bottom: 1px dotted #333;
           ">${keyword}</span>
-          <span class="tooltip-content" style="
-            visibility: hidden;
-            opacity: 0;
-            position: absolute;
-            bottom: 100%;
-            left: 0;
-            transform: none;
-            background-color: #1f2937;
-            color: white;
-            padding: 10px 14px;
-            border-radius: 6px;
-            font-size: 13px;
-            white-space: normal;
-            width: 280px;
-            max-width: 90vw;
-            z-index: 1000;
-            margin-bottom: 8px;
-            transition: opacity 0.2s, visibility 0.2s;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            line-height: 1.4;
-          ">💡 ${tooltip}</span>
+          <span class="tooltip-content">💡 ${escapedTooltip}</span>
         </span>
       `;
       processedDetails = processedDetails.replace(
-        new RegExp(`(${keyword})`, 'g'),
+        new RegExp(`\\b${keyword}\\b`, 'g'),
         markerHtml
       );
     }
@@ -86,37 +72,16 @@ const renderDetailsWithTooltip = (details: string, tooltip: string) => {
     const firstWord = details.match(/^[A-Za-z0-9]+|^[ァ-ヶー]{2,}|^[一-龯]{2,}/);
     if (firstWord && firstWord[0]) {
       const word = firstWord[0];
-      const tooltipId = `tooltip-${Math.random().toString(36).substr(2, 9)}`;
       const markerHtml = `
-        <span class="tooltip-wrapper" style="position: relative; display: inline-block;">
+        <span class="tooltip-wrapper">
           <span style="
             background: linear-gradient(180deg, transparent 60%, #fef3c7 60%);
             cursor: help;
             border-radius: 2px;
             padding: 0 2px;
-            position: relative;
+            border-bottom: 1px dotted #333;
           ">${word}</span>
-          <span class="tooltip-content" style="
-            visibility: hidden;
-            opacity: 0;
-            position: absolute;
-            bottom: 100%;
-            left: 0;
-            transform: none;
-            background-color: #1f2937;
-            color: white;
-            padding: 10px 14px;
-            border-radius: 6px;
-            font-size: 13px;
-            white-space: normal;
-            width: 280px;
-            max-width: 90vw;
-            z-index: 1000;
-            margin-bottom: 8px;
-            transition: opacity 0.2s, visibility 0.2s;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            line-height: 1.4;
-          ">💡 ${tooltip}</span>
+          <span class="tooltip-content">💡 ${escapedTooltip}</span>
         </span>
       `;
       processedDetails = details.replace(word, markerHtml);
@@ -219,6 +184,36 @@ export default function QuoteWebTemplate({
           .tooltip-wrapper {
             position: relative;
             display: inline-block;
+            border-bottom: 1px dotted #333;
+            cursor: help;
+          }
+          
+          .tooltip-content {
+            visibility: hidden;
+            opacity: 0;
+            background-color: rgba(254, 240, 138, 0.95);
+            color: #333;
+            text-align: left;
+            border-radius: 6px;
+            padding: 8px 12px;
+            position: absolute;
+            z-index: 9999; /* より高いz-indexに変更 */
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 250px;
+            font-size: 13px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transition: opacity 0.3s, visibility 0.3s;
+            pointer-events: none; /* マウスイベントを無視 */
+            white-space: normal;
+            line-height: 1.4;
+          }
+          
+          /* ホバー時の表示を確実にする */
+          .tooltip-wrapper:hover .tooltip-content {
+            visibility: visible !important;
+            opacity: 1 !important;
           }
           
           /* デスクトップ: ホバーで表示 */
@@ -235,36 +230,15 @@ export default function QuoteWebTemplate({
             opacity: 1 !important;
           }
           
-          .tooltip-content {
-            visibility: hidden;
-            opacity: 0;
-            position: absolute;
-            bottom: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: #1f2937;
-            color: white;
-            padding: 10px 14px;
-            border-radius: 6px;
-            font-size: 13px;
-            white-space: normal;
-            width: 280px;
-            z-index: 1000;
-            margin-bottom: 8px;
-            transition: opacity 0.2s, visibility 0.2s;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            line-height: 1.4;
-          }
-          
           .tooltip-content::after {
             content: "";
             position: absolute;
             top: 100%;
-            left: 20px;
-            transform: none;
+            left: 50%;
+            transform: translateX(-50%);
             border-width: 5px;
             border-style: solid;
-            border-color: #1f2937 transparent transparent transparent;
+            border-color: rgba(254, 240, 138, 0.95) transparent transparent transparent;
           }
           
           /* デスクトップファースト → モバイルファーストアプローチに変更 */

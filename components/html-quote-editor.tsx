@@ -179,9 +179,11 @@ export default function HtmlQuoteEditor({
       console.log('2. editedQuote.assignee:', editedQuote.assignee);
       console.log('3. companyInfo:', companyInfo);
       console.log('4. Final assignee (calculated):', previewQuote.assignee);
-      console.log('5. suggestedOptions enabled:', enableOptions);
-      console.log('6. suggestedOptions count:', suggestedOptions.length);
-      console.log('7. suggestedOptions data:', suggestedOptions);
+      console.log('5. suggestedOptions count:', suggestedOptions.length);
+      console.log('6. suggestedOptions data:', suggestedOptions);
+      console.log('7. tooltips size:', tooltips.size);
+      console.log('8. tooltips entries:', Array.from(tooltips.entries()));
+      console.log('9. includeInteractiveElements:', includeInteractiveElements);
       console.log('=== End Debug ===');
       
       console.log('Generating preview with data:', {
