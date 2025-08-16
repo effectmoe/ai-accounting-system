@@ -180,7 +180,6 @@ function enhanceQuoteItems(
       }
 
       // 詳細説明を追加
-      const itemText = item.itemName || item.description || '';
       if (itemText.length > 50) {
         enhanced.details = itemText;
         enhanced.itemName = itemText.substring(0, 50) + '...';
