@@ -127,13 +127,17 @@ export class SuggestedOptionService {
 
       logger.debug(`[SuggestedOptionService] Found ${suggestedOptions.length} options for quote amount ${filter.amount}`);
 
-      // price フィールドが数値の場合、日本円表記に変換
+      // price フィールドを日本円表記に変換（数値と文字列の両方に対応）
       const formattedOptions = suggestedOptions.map(option => {
-        if (typeof option.price === 'number') {
-          return {
-            ...option,
-            price: `¥${option.price.toLocaleString('ja-JP')}`
-          };
+        if (option.price !== undefined && option.price !== null) {
+          // 数値または数値文字列を処理
+          const priceValue = typeof option.price === 'string' ? parseFloat(option.price) : option.price;
+          if (!isNaN(priceValue)) {
+            return {
+              ...option,
+              price: `¥${priceValue.toLocaleString('ja-JP')}`
+            };
+          }
         }
         return option;
       });
@@ -206,13 +210,17 @@ export class SuggestedOptionService {
 
       logger.debug(`[SuggestedOptionService] Found ${suggestedOptions.length} suggested options for ${ids.length} IDs`);
 
-      // price フィールドが数値の場合、日本円表記に変換
+      // price フィールドを日本円表記に変換（数値と文字列の両方に対応）
       const formattedOptions = suggestedOptions.map(option => {
-        if (typeof option.price === 'number') {
-          return {
-            ...option,
-            price: `¥${option.price.toLocaleString('ja-JP')}`
-          };
+        if (option.price !== undefined && option.price !== null) {
+          // 数値または数値文字列を処理
+          const priceValue = typeof option.price === 'string' ? parseFloat(option.price) : option.price;
+          if (!isNaN(priceValue)) {
+            return {
+              ...option,
+              price: `¥${priceValue.toLocaleString('ja-JP')}`
+            };
+          }
         }
         return option;
       });
