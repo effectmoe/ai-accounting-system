@@ -72,8 +72,12 @@ export async function generateHtmlQuote(
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://accounting-automation.vercel.app';
     const trackingId = includeTracking ? generateTrackingId() : undefined;
 
+    // ツールチップが提供されていない場合はデフォルトを生成
+    const effectiveTooltips = tooltips && tooltips.size > 0 ? tooltips : generateDefaultTooltips();
+    console.log('🎯 Using tooltips in generateHtmlQuote:', effectiveTooltips.size, 'entries');
+    
     // 見積項目にインタラクティブ要素を追加
-    const enhancedQuote = enhanceQuoteItems(quote, tooltips, productLinks);
+    const enhancedQuote = enhanceQuoteItems(quote, effectiveTooltips, productLinks);
 
     // URLs生成（カスタムURLが提供されていればそれを使用）
     const viewOnlineUrl = `${baseUrl}/quotes/view/${quote._id}?t=${trackingId}`;
@@ -144,19 +148,26 @@ function enhanceQuoteItems(
     return quote;
   }
 
-  console.log('Enhancing quote items with tooltips:', tooltips?.size || 0, 'tooltips available');
+  console.log('🔧 Enhancing quote items with tooltips:', tooltips?.size || 0, 'tooltips available');
+  console.log('📦 Quote items to process:', quote.items?.length || 0);
 
   return {
     ...quote,
     items: quote.items.map((item, index) => {
       const enhanced: any = { ...item };
+      const itemText = item.itemName || item.description || '';
+      
+      console.log(`📄 Processing item ${index + 1}:`, itemText);
       
       // ツールチップを追加
       if (tooltips) {
-        const tooltip = findTooltipForItem(item.itemName || item.description || '', tooltips);
-        console.log(`Item ${index + 1} (${item.itemName || item.description}): tooltip =`, tooltip ? 'found' : 'not found');
+        const tooltip = findTooltipForItem(itemText, tooltips);
+        console.log(`🎯 Item ${index + 1} (${itemText}): tooltip =`, tooltip ? `found: "${tooltip.substring(0, 50)}..."` : 'not found');
         if (tooltip) {
           enhanced.tooltip = tooltip;
+          console.log(`✅ Tooltip added to item ${index + 1}`);
+        } else {
+          console.log(`❌ No tooltip found for item ${index + 1}: "${itemText}"`);
         }
       }
 
@@ -182,18 +193,52 @@ function enhanceQuoteItems(
 
 /**
  * アイテムに対応するツールチップを検索
+ * 完全一致→部分一致→キーワード一致の順で検索
  */
 function findTooltipForItem(
   description: string,
   tooltips: Map<string, string>
 ): string | undefined {
-  // 専門用語を検出してツールチップを返す
+  console.log('🔍 Searching tooltip for:', description);
+  console.log('🗂️ Available tooltips:', Array.from(tooltips.keys()));
+  
+  // 1. 完全一致を最初に試す
+  if (tooltips.has(description)) {
+    console.log('✅ Exact match found for:', description);
+    return tooltips.get(description);
+  }
+  
+  // 2. 項目名にキーワードが含まれているかチェック（大文字小文字を無視）
   const terms = Array.from(tooltips.keys());
+  const descriptionLower = description.toLowerCase();
+  
   for (const term of terms) {
-    if (description.includes(term)) {
+    const termLower = term.toLowerCase();
+    if (descriptionLower.includes(termLower)) {
+      console.log(`✅ Partial match found: "${term}" in "${description}"`);
       return tooltips.get(term);
     }
   }
+  
+  // 3. 逆方向の検索（ツールチップキーが項目名の一部として含まれているか）
+  for (const term of terms) {
+    const termLower = term.toLowerCase();
+    if (termLower.includes(descriptionLower) && descriptionLower.length >= 2) {
+      console.log(`✅ Reverse match found: "${description}" in "${term}"`);
+      return tooltips.get(term);
+    }
+  }
+  
+  // 4. 特別な処理: "LLMO"を含む場合は確実にマッチ
+  if (descriptionLower.includes('llmo')) {
+    const llmoTooltip = tooltips.get('LLMO') || tooltips.get('LLMOモニタリング');
+    if (llmoTooltip) {
+      console.log(`✅ LLMO special match found for: "${description}"`);
+      return llmoTooltip;
+    }
+  }
+  
+  console.log(`❌ No tooltip found for: "${description}"`);
   return undefined;
 }
 
@@ -404,6 +449,7 @@ export function generateDefaultSuggestedOptions(
  * 専門用語の辞書を生成
  */
 export function generateDefaultTooltips(): Map<string, string> {
+  console.log('📚 Generating default tooltips dictionary...');
   const tooltips = new Map<string, string>();
 
   // IT関連用語
@@ -419,9 +465,8 @@ export function generateDefaultTooltips(): Map<string, string> {
   tooltips.set('KPI', 'Key Performance Indicator - 重要業績評価指標');
   tooltips.set('リードタイム', '発注から納品までの期間');
   
-  // LLMOモニタリング関連
-  tooltips.set('LLMOモニタリング', 'Large Language Model Optimization - AIを活用したWebサイトの最適化とモニタリングサービス');
-  tooltips.set('LLMO', 'Large Language Model Optimization - 大規模言語モデルによる最適化技術');
+  // LLMOモニタリング関連 - 重複を解決し、確実にマッチするようにする
+  tooltips.set('LLMOモニタリング', 'Large Language Model Optimization Monitoring - AIを活用したWebサイトの最適化とモニタリングサービス。サイトのパフォーマンス、検索順位、ユーザー行動を継続的に分析し、改善提案を行います');
   tooltips.set('モニタリング', 'サイトのパフォーマンスや検索順位を継続的に監視・分析するサービス');
   tooltips.set('最適化', 'システムやプロセスをより効率的に改善すること');
   tooltips.set('パフォーマンス', 'システムの処理能力や応答速度の性能');
@@ -438,6 +483,7 @@ export function generateDefaultTooltips(): Map<string, string> {
   tooltips.set('カスタマイズ', 'お客様のご要望に合わせた独自の調整・改修');
   tooltips.set('サポート', '技術支援・問題解決・使い方指導');
   
+  console.log(`📖 Created ${tooltips.size} tooltip entries:`, Array.from(tooltips.keys()));
   return tooltips;
 }
 

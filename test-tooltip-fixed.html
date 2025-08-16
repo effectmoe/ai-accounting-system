@@ -1,317 +1,256 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ツールチップ機能テスト - 修正版</title>
-  <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 2rem;
-      line-height: 1.6;
-    }
-    
-    .test-section {
-      margin: 2rem 0;
-      padding: 1.5rem;
-      border: 1px solid #e5e7eb;
-      border-radius: 8px;
-      background: #f9fafb;
-    }
-    
-    .test-title {
-      font-size: 1.25rem;
-      font-weight: bold;
-      margin-bottom: 1rem;
-      color: #1f2937;
-    }
-    
-    /* ツールチップのスタイル（修正版） */
-    .tooltip-wrapper {
-      position: relative;
-      display: inline-block;
-      border-bottom: 1px dotted #333;
-      cursor: help;
-    }
-    
-    .tooltip-content {
-      visibility: hidden;
-      opacity: 0;
-      background-color: rgba(254, 240, 138, 0.95);
-      color: #333;
-      text-align: left;
-      border-radius: 6px;
-      padding: 8px 12px;
-      position: absolute;
-      z-index: 9999;
-      bottom: 125%;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 250px;
-      font-size: 13px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-      transition: opacity 0.3s, visibility 0.3s;
-      pointer-events: none;
-      white-space: normal;
-      line-height: 1.4;
-    }
-    
-    /* ホバー時の表示を確実にする */
-    .tooltip-wrapper:hover .tooltip-content {
-      visibility: visible !important;
-      opacity: 1 !important;
-    }
-    
-    .tooltip-content::after {
-      content: "";
-      position: absolute;
-      top: 100%;
-      left: 50%;
-      transform: translateX(-50%);
-      border-width: 5px;
-      border-style: solid;
-      border-color: rgba(254, 240, 138, 0.95) transparent transparent transparent;
-    }
-    
-    /* マーカー付きキーワード */
-    .keyword-highlight {
-      background: linear-gradient(180deg, transparent 60%, rgba(254, 240, 138, 0.5) 60%);
-      cursor: help;
-      border-radius: 2px;
-      padding: 0 2px;
-      border-bottom: 1px dotted #333;
-    }
-    
-    /* テスト結果表示 */
-    .test-result {
-      margin-top: 1rem;
-      padding: 0.75rem;
-      border-radius: 4px;
-      font-weight: bold;
-    }
-    
-    .success {
-      background-color: #d1fae5;
-      color: #065f46;
-      border: 1px solid #34d399;
-    }
-    
-    .error {
-      background-color: #fee2e2;
-      color: #991b1b;
-      border: 1px solid #f87171;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ツールチップ修正テスト</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            line-height: 1.6;
+            margin: 40px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .quote-item {
+            background: #f9fafb;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 6px;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .item-name {
+            font-size: 1.125rem;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+        
+        .item-amount {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: #3B82F6;
+            float: right;
+        }
+        
+        /* ツールチップのスタイル - 修正版 */
+        .tooltip-wrapper {
+            position: relative;
+            display: inline-block;
+            border-bottom: 2px dotted #f59e0b;
+            cursor: help;
+            background: linear-gradient(180deg, transparent 60%, rgba(254, 240, 138, 0.7) 60%);
+            border-radius: 3px;
+            padding: 1px 4px;
+            font-weight: 500;
+        }
+        
+        .tooltip-content {
+            /* 初期状態で非表示 */
+            visibility: hidden;
+            opacity: 0;
+            /* スタイル */
+            background-color: #fef3c7;
+            color: #1f2937;
+            text-align: left;
+            border-radius: 6px;
+            padding: 12px 16px;
+            /* 位置設定 */
+            position: absolute;
+            z-index: 999999;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 280px;
+            min-width: 200px;
+            max-width: 90vw;
+            /* フォント設定 */
+            font-size: 14px;
+            font-weight: 500;
+            /* シャドウとボーダー */
+            box-shadow: 0 8px 25px rgba(0,0,0,0.25);
+            border: 2px solid #f59e0b;
+            /* アニメーション */
+            transition: all 0.2s ease-in-out;
+            /* テキスト設定 */
+            white-space: normal;
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+        
+        /* ホバー時の表示 */
+        .tooltip-wrapper:hover .tooltip-content,
+        .tooltip-wrapper:focus .tooltip-content,
+        .tooltip-wrapper.active .tooltip-content {
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+        
+        .tooltip-content::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 5px;
+            border-style: solid;
+            border-color: #fef3c7 transparent transparent transparent;
+        }
+        
+        .test-section {
+            margin: 30px 0;
+            padding: 20px;
+            background: #e3f2fd;
+            border-radius: 6px;
+        }
+        
+        .debug-info {
+            background: #f3e5f5;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+    </style>
 </head>
 <body>
-  <h1>HTML見積書ツールチップ機能テスト</h1>
-  <p>このページは、HTML見積書のツールチップ機能をテストするためのものです。</p>
-  
-  <!-- テスト1: LLMOモニタリング -->
-  <div class="test-section">
-    <div class="test-title">テスト1: LLMOモニタリング関連のツールチップ</div>
-    <p>
-      見積項目: 
-      <span class="tooltip-wrapper">
-        <span class="keyword-highlight">LLMOモニタリング</span>
-        <span class="tooltip-content">💡 Large Language Model Optimization - AIを活用したWebサイトの最適化とモニタリングサービス</span>
-      </span>
-      サービス
-    </p>
-    <p>
-      追加項目: 
-      <span class="tooltip-wrapper">
-        <span class="keyword-highlight">パフォーマンス</span>
-        <span class="tooltip-content">💡 システムの処理能力や応答速度の性能</span>
-      </span>
-      最適化
-    </p>
-  </div>
-  
-  <!-- テスト2: 一般的な用語 -->
-  <div class="test-section">
-    <div class="test-title">テスト2: 一般的なIT用語のツールチップ</div>
-    <p>
-      システム
-      <span class="tooltip-wrapper">
-        <span class="keyword-highlight">開発</span>
-        <span class="tooltip-content">💡 ソフトウェアやシステムを設計・構築すること</span>
-      </span>
-      プロジェクト
-    </p>
-    <p>
-      <span class="tooltip-wrapper">
-        <span class="keyword-highlight">API</span>
-        <span class="tooltip-content">💡 Application Programming Interface - システム間の連携インターフェース</span>
-      </span>
-      連携機能の実装
-    </p>
-  </div>
-  
-  <!-- テスト3: ビジネス用語 -->
-  <div class="test-section">
-    <div class="test-title">テスト3: ビジネス用語のツールチップ</div>
-    <p>
-      <span class="tooltip-wrapper">
-        <span class="keyword-highlight">ROI</span>
-        <span class="tooltip-content">💡 Return on Investment - 投資収益率</span>
-      </span>
-      分析レポート作成
-    </p>
-    <p>
-      <span class="tooltip-wrapper">
-        <span class="keyword-highlight">KPI</span>
-        <span class="tooltip-content">💡 Key Performance Indicator - 重要業績評価指標</span>
-      </span>
-      ダッシュボード構築
-    </p>
-  </div>
-  
-  <!-- テスト4: 長いツールチップ -->
-  <div class="test-section">
-    <div class="test-title">テスト4: 長い説明のツールチップ</div>
-    <p>
-      <span class="tooltip-wrapper">
-        <span class="keyword-highlight">SaaS</span>
-        <span class="tooltip-content">💡 Software as a Service - クラウド経由で提供されるソフトウェア。従来のパッケージソフトとは異なり、インターネット経由でアクセスして利用する形態のソフトウェアサービスです。</span>
-      </span>
-      プラットフォーム開発
-    </p>
-  </div>
-  
-  <!-- JavaScriptテスト -->
-  <div class="test-section">
-    <div class="test-title">JavaScript動作テスト</div>
-    <button onclick="testTooltipFunction()">ツールチップ機能テスト実行</button>
-    <div id="test-results"></div>
-  </div>
-  
-  <script>
-    function testTooltipFunction() {
-      const results = document.getElementById('test-results');
-      let testsPassed = 0;
-      let totalTests = 0;
-      
-      // テスト1: ツールチップ要素の存在確認
-      totalTests++;
-      const tooltipWrappers = document.querySelectorAll('.tooltip-wrapper');
-      if (tooltipWrappers.length > 0) {
-        testsPassed++;
-        console.log('✓ ツールチップ要素が見つかりました:', tooltipWrappers.length, '個');
-      } else {
-        console.log('✗ ツールチップ要素が見つかりません');
-      }
-      
-      // テスト2: CSS適用確認
-      totalTests++;
-      const firstTooltip = tooltipWrappers[0];
-      if (firstTooltip) {
-        const computedStyle = window.getComputedStyle(firstTooltip);
-        if (computedStyle.position === 'relative') {
-          testsPassed++;
-          console.log('✓ CSS positioning が正しく適用されています');
-        } else {
-          console.log('✗ CSS positioning が正しく適用されていません');
-        }
-      }
-      
-      // テスト3: ホバーイベント確認
-      totalTests++;
-      const tooltipContent = document.querySelector('.tooltip-content');
-      if (tooltipContent) {
-        const contentStyle = window.getComputedStyle(tooltipContent);
-        if (contentStyle.visibility === 'hidden') {
-          testsPassed++;
-          console.log('✓ ツールチップが初期状態で非表示になっています');
-        } else {
-          console.log('✗ ツールチップの初期状態が正しくありません');
-        }
-      }
-      
-      // 結果表示
-      const successRate = (testsPassed / totalTests) * 100;
-      const resultClass = successRate === 100 ? 'success' : 'error';
-      
-      results.innerHTML = `
-        <div class="test-result ${resultClass}">
-          テスト結果: ${testsPassed}/${totalTests} 成功 (${successRate.toFixed(1)}%)
-          <br>
-          ${successRate === 100 ? 
-            'すべてのテストが成功しました！ツールチップ機能は正常に動作しています。' : 
-            'いくつかのテストが失敗しました。開発者ツールのコンソールで詳細を確認してください。'
-          }
+    <div class="container">
+        <h1>ツールチップ修正テスト</h1>
+        <p>修正後のツールチップが正常に動作するかテストしています。</p>
+        
+        <div class="test-section">
+            <h2>🧪 基本ツールチップテスト</h2>
+            <p>
+                この文章には
+                <span class="tooltip-wrapper">
+                    <span>LLMO</span>
+                    <span class="tooltip-content">💡 Large Language Model Optimization - 大規模言語モデル最適化技術</span>
+                </span>
+                という用語が含まれています。
+            </p>
         </div>
-      `;
-    }
-    
-    // ページ読み込み時に自動テスト実行
-    document.addEventListener('DOMContentLoaded', function() {
-      console.log('ツールチップテストページが読み込まれました');
-      
-      // モバイル対応のタッチイベント
-      if ('ontouchstart' in window || navigator.maxTouchPoints > 0) {
-        console.log('タッチデバイスを検出しました');
         
-        const tooltipWrappers = document.querySelectorAll('.tooltip-wrapper');
-        tooltipWrappers.forEach(wrapper => {
-          wrapper.addEventListener('touchstart', function(e) {
-            e.stopPropagation();
+        <div class="test-section">
+            <h2>📋 見積書項目テスト</h2>
             
-            // 他のアクティブなツールチップを閉じる
-            document.querySelectorAll('.tooltip-wrapper.active').forEach(w => {
-              if (w !== wrapper) w.classList.remove('active');
+            <div class="quote-item">
+                <div class="item-name">
+                    <span class="tooltip-wrapper">
+                        <span>LLMOモニタリング</span>
+                        <span class="tooltip-content">💡 Large Language Model Optimization Monitoring - AIを活用したWebサイトの最適化とモニタリングサービス。サイトのパフォーマンス、検索順位、ユーザー行動を継続的に分析し、改善提案を行います</span>
+                    </span>
+                </div>
+                <div class="item-amount">¥50,000</div>
+                <div style="clear: both;"></div>
+                <div style="font-size: 0.875rem; color: #666; margin-top: 8px;">
+                    数量: 1回 × ¥50,000
+                </div>
+            </div>
+            
+            <div class="quote-item">
+                <div class="item-name">
+                    <span class="tooltip-wrapper">
+                        <span>システム</span>
+                        <span class="tooltip-content">💡 コンピュータとソフトウェアを組み合わせた仕組み</span>
+                    </span>
+                    開発・構築
+                </div>
+                <div class="item-amount">¥300,000</div>
+                <div style="clear: both;"></div>
+                <div style="font-size: 0.875rem; color: #666; margin-top: 8px;">
+                    数量: 1式 × ¥300,000
+                </div>
+            </div>
+            
+            <div class="quote-item">
+                <div class="item-name">
+                    <span class="tooltip-wrapper">
+                        <span>API</span>
+                        <span class="tooltip-content">💡 Application Programming Interface - システム間の連携インターフェース</span>
+                    </span>
+                    連携機能
+                </div>
+                <div class="item-amount">¥100,000</div>
+                <div style="clear: both;"></div>
+                <div style="font-size: 0.875rem; color: #666; margin-top: 8px;">
+                    数量: 5個 × ¥20,000
+                </div>
+            </div>
+        </div>
+        
+        <div class="debug-info">
+            <h3>🔧 修正内容</h3>
+            <ul>
+                <li>✅ findTooltipForItem関数で部分一致検索を追加</li>
+                <li>✅ renderDetailsWithTooltip関数で確実にツールチップHTMLを生成</li>
+                <li>✅ デフォルトツールチップ辞書を確実に適用</li>
+                <li>✅ LLMOキーワードの特別処理を追加</li>
+                <li>✅ デバッグログでデータフローを監視</li>
+            </ul>
+        </div>
+        
+        <div class="debug-info">
+            <h3>📊 ブラウザコンソールログ</h3>
+            <p>ブラウザの開発者ツール（F12）でコンソールを確認してください：</p>
+            <ul>
+                <li>📚 Generating default tooltips dictionary...</li>
+                <li>🔧 Enhancing quote items with tooltips...</li>
+                <li>🎯 Found tooltip wrappers: X個</li>
+                <li>✅ Tooltip added to item X</li>
+            </ul>
+        </div>
+    </div>
+    
+    <script>
+        console.log('🔧 Tooltip test page loaded');
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const tooltipWrappers = document.querySelectorAll('.tooltip-wrapper');
+            console.log('🎯 Found tooltip wrappers:', tooltipWrappers.length);
+            
+            // モバイル用のタッチイベントを追加
+            tooltipWrappers.forEach((wrapper, index) => {
+                console.log(`🔧 Setting up tooltip ${index + 1}`);
+                
+                wrapper.addEventListener('touchstart', function(e) {
+                    console.log(`👆 Touch start on tooltip ${index + 1}`);
+                    e.stopPropagation();
+                    
+                    // 他のアクティブなツールチップを閉じる
+                    document.querySelectorAll('.tooltip-wrapper.active').forEach(w => {
+                        if (w !== wrapper) w.classList.remove('active');
+                    });
+                    
+                    // 現在のツールチップをトグル
+                    wrapper.classList.toggle('active');
+                });
+                
+                wrapper.addEventListener('mouseenter', function() {
+                    console.log(`🖱️ Mouse enter on tooltip ${index + 1}`);
+                });
             });
             
-            // 現在のツールチップをトグル
-            wrapper.classList.toggle('active');
-          });
-        });
-        
-        // 画面の他の場所をタップしたらツールチップを閉じる
-        document.addEventListener('touchstart', function(e) {
-          if (!e.target.closest('.tooltip-wrapper')) {
-            document.querySelectorAll('.tooltip-wrapper.active').forEach(w => {
-              w.classList.remove('active');
+            // 画面の他の場所をタップしたらツールチップを閉じる
+            document.addEventListener('touchstart', function(e) {
+                if (!e.target.closest('.tooltip-wrapper')) {
+                    document.querySelectorAll('.tooltip-wrapper.active').forEach(w => {
+                        w.classList.remove('active');
+                    });
+                }
             });
-          }
+            
+            console.log('✅ Tooltip setup completed');
         });
-      }
-    });
-  </script>
-  
-  <style>
-    /* モバイル: タップで表示 */
-    .tooltip-wrapper.active .tooltip-content {
-      visibility: visible !important;
-      opacity: 1 !important;
-    }
-    
-    /* モバイル対応の追加スタイル */
-    @media screen and (max-width: 768px) {
-      .tooltip-content {
-        white-space: normal;
-        width: calc(100vw - 3rem);
-        max-width: 300px;
-        left: 50%;
-        transform: translateX(-50%);
-        font-size: 0.875rem;
-        padding: 0.875rem;
-      }
-      
-      /* ツールチップが画面外に出ないように調整 */
-      .tooltip-wrapper:first-child .tooltip-content {
-        left: 0;
-        transform: none;
-      }
-      
-      .tooltip-wrapper:last-child .tooltip-content {
-        left: auto;
-        right: 0;
-        transform: none;
-      }
-    }
-  </style>
+    </script>
 </body>
 </html>

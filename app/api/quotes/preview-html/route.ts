@@ -103,7 +103,24 @@ export async function POST(request: NextRequest) {
     const tooltipsMap = new Map(tooltips || []);
     const productLinksMap = new Map(productLinks || []);
     
+    // ツールチップが空の場合は、デフォルトのツールチップを生成
+    if (tooltipsMap.size === 0) {
+      console.log('🔧 No tooltips provided, generating defaults...');
+      const { generateDefaultTooltips } = await import('@/lib/html-quote-generator');
+      const defaultTooltips = generateDefaultTooltips();
+      console.log('📚 Generated default tooltips:', defaultTooltips.size, 'entries');
+      // デフォルトのツールチップをtooltipsMapに追加
+      for (const [key, value] of defaultTooltips.entries()) {
+        tooltipsMap.set(key, value);
+      }
+    }
+    
     // デバッグログを追加
+    console.log('🔍 Preview API Debug - Tooltips received:', tooltips);
+    console.log('🗺️ Preview API Debug - Tooltips map size:', tooltipsMap.size);
+    console.log('📋 Preview API Debug - Tooltips entries:', Array.from(tooltipsMap.entries()));
+    console.log('📊 Preview API Debug - Quote items:', quote?.items?.map(item => item.itemName || item.description));
+    
     logger.debug('Tooltips received:', tooltips);
     logger.debug('Tooltips map size:', tooltipsMap.size);
     logger.debug('Tooltips entries:', Array.from(tooltipsMap.entries()));
