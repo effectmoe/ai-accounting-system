@@ -759,11 +759,16 @@ export default function HtmlQuoteEditor({
                             );
                             if (matchedTerms.length > 0) {
                               return (
-                                <Tooltip>
+                                <Tooltip delayDuration={300}>
                                   <TooltipTrigger asChild>
                                     <HelpCircle className="h-3 w-3 text-muted-foreground cursor-help" />
                                   </TooltipTrigger>
-                                  <TooltipContent className="max-w-xs">
+                                  <TooltipContent 
+                                    side="top" 
+                                    align="center" 
+                                    className="max-w-xs z-[100] bg-background border shadow-lg"
+                                    sideOffset={8}
+                                  >
                                     {matchedTerms.map((term, i) => (
                                       <div key={term}>
                                         {i > 0 && <hr className="my-1" />}
