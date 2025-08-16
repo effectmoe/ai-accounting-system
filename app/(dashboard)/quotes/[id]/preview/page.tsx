@@ -104,9 +104,10 @@ export default function QuotePreviewPage() {
     );
   }
 
-  // HTML見積書をフルサイズで表示（iframe使用）
+  // HTML見積書をフルサイズで表示（iframe使用 + フォールバック）
   return (
     <div style={{ width: '100vw', height: '100vh', margin: 0, padding: 0, overflow: 'hidden' }}>
+      {/* iframe + 直接HTML表示のフォールバック */}
       <iframe
         srcDoc={htmlContent}
         style={{
@@ -117,7 +118,48 @@ export default function QuotePreviewPage() {
           padding: 0,
         }}
         title="見積書プレビュー"
+        onError={(e) => {
+          console.error('iframe loading error:', e);
+          // iframeエラー時のフォールバック処理
+        }}
       />
+      
+      {/* デバッグ用: HTMLを直接表示（開発環境でのみ） */}
+      {process.env.NODE_ENV === 'development' && (
+        <div 
+          style={{ 
+            position: 'absolute', 
+            top: '10px', 
+            right: '10px', 
+            zIndex: 10000,
+            backgroundColor: 'rgba(0,0,0,0.8)',
+            color: 'white',
+            padding: '10px',
+            borderRadius: '5px',
+            fontSize: '12px'
+          }}
+        >
+          <button 
+            onClick={() => {
+              const newWindow = window.open('', '_blank');
+              if (newWindow) {
+                newWindow.document.write(htmlContent);
+                newWindow.document.close();
+              }
+            }}
+            style={{
+              backgroundColor: '#3B82F6',
+              color: 'white',
+              border: 'none',
+              padding: '5px 10px',
+              borderRadius: '3px',
+              cursor: 'pointer'
+            }}
+          >
+            新しいウィンドウで開く
+          </button>
+        </div>
+      )}
     </div>
   );
 }
