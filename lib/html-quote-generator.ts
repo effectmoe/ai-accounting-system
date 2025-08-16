@@ -465,11 +465,13 @@ export async function generateSimpleHtmlQuote({
   <title>お見積書 - ${quote.quoteNumber}</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Meiryo', 'MS PGothic', sans-serif; background-color: #f5f5f5;">
-  <!-- オンライン版を見るリンク -->
+  <!-- オンライン版を見るリンク（ボタン化） -->
   <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: #f5f5f5;">
     <tr>
-      <td align="center" style="padding: 10px 0;">
-        <a href="${viewOnlineUrl}" style="font-size: 12px; color: #1976d2; text-decoration: underline;">ウェブブラウザで見積書を表示する</a>
+      <td align="center" style="padding: 15px 0;">
+        <a href="${viewOnlineUrl}" target="_blank" rel="noopener noreferrer" style="display: inline-block; padding: 10px 24px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; text-decoration: none; font-size: 14px; font-weight: bold; border-radius: 25px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: all 0.3s;">
+          🌐 ウェブブラウザで見積書を表示する
+        </a>
       </td>
     </tr>
   </table>
@@ -630,11 +632,11 @@ export async function generateSimpleHtmlQuote({
                       <tr>
                         <!-- 承認ボタン -->
                         <td style="padding: 0 10px;">
-                          <a href="${acceptUrl}" style="display: inline-block; padding: 12px 30px; background-color: #4caf50; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: bold; border-radius: 25px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">✓ 見積を承認する</a>
+                          <a href="${acceptUrl}" target="_blank" rel="noopener noreferrer" style="display: inline-block; padding: 12px 30px; background-color: #4caf50; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: bold; border-radius: 25px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">✓ 見積を承認する</a>
                         </td>
                         <!-- 相談ボタン -->
                         <td style="padding: 0 10px;">
-                          <a href="${discussUrl}" style="display: inline-block; padding: 12px 30px; background-color: #2196f3; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: bold; border-radius: 25px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">💬 相談する</a>
+                          <a href="${discussUrl}" target="_blank" rel="noopener noreferrer" style="display: inline-block; padding: 12px 30px; background-color: #2196f3; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: bold; border-radius: 25px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">💬 相談する</a>
                         </td>
                       </tr>
                     </table>
