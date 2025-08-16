@@ -4,16 +4,19 @@ import { DatabaseError } from '@/lib/standardized-error-handler';
 
 const uri = process.env.MONGODB_URI;
 
-// ビルド時にはスキップ
-if (!uri && process.env.NODE_ENV !== 'production') {
-  throw new Error('Please add your MongoDB URI to .env.local');
+// ビルド時または本番環境でのURI不足時はスキップ
+if (!uri && typeof window === 'undefined' && !process.env.NEXT_PHASE) {
+  // 開発環境でのみエラーを投げる
+  if (process.env.NODE_ENV === 'development') {
+    throw new Error('Please add your MongoDB URI to .env.local');
+  }
 }
 
 let client: MongoClient | null = null;
 let clientPromise: Promise<MongoClient> | null = null;
 
 // ビルド時用のダミープロミス
-if (!uri && process.env.NODE_ENV === 'production') {
+if (!uri) {
   clientPromise = Promise.reject(new DatabaseError('Database connection skipped during build', 'BUILD_SKIP', 503));
 }
 
