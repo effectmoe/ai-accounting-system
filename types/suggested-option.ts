@@ -9,8 +9,8 @@ export interface SuggestedOption {
   description: string;    // 説明文
   price: string;          // 価格表示（フォーマット済み文字列）
   features: string[];     // 特徴・機能リスト
-  ctaText: string;        // CTAボタンのテキスト
-  ctaUrl: string;         // CTAリンクURL
+  ctaText?: string;       // CTAボタンのテキスト（オプショナル）
+  ctaUrl?: string;        // CTAリンクURL（オプショナル）
   
   // 表示制御
   isActive: boolean;      // 有効/無効フラグ
@@ -35,8 +35,8 @@ export interface CreateSuggestedOptionRequest {
   description: string;
   price: string;
   features: string[];
-  ctaText: string;
-  ctaUrl: string;
+  ctaText?: string;
+  ctaUrl?: string;
   isActive?: boolean;
   displayOrder?: number;
   minAmount?: number;

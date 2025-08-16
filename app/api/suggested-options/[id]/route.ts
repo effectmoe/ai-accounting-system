@@ -42,8 +42,8 @@ export const PUT = withErrorHandler(async (request: NextRequest, { params }: Rou
     throw new ApiErrorResponse('features must be an array', 400, 'INVALID_FEATURES');
   }
   
-  // URLの簡単な検証（提供された場合）
-  if (body.ctaUrl && !body.ctaUrl.startsWith('http')) {
+  // URLの簡単な検証（提供されていて、空でない場合）
+  if (body.ctaUrl && body.ctaUrl.trim() && !body.ctaUrl.startsWith('http')) {
     throw new ApiErrorResponse('ctaUrl must be a valid URL starting with http', 400, 'INVALID_URL');
   }
   
@@ -60,8 +60,8 @@ export const PUT = withErrorHandler(async (request: NextRequest, { params }: Rou
   if (body.description !== undefined) updateData.description = body.description.trim();
   if (body.price !== undefined) updateData.price = body.price.trim();
   if (body.features !== undefined) updateData.features = body.features.map((f: string) => f.trim());
-  if (body.ctaText !== undefined) updateData.ctaText = body.ctaText.trim();
-  if (body.ctaUrl !== undefined) updateData.ctaUrl = body.ctaUrl.trim();
+  if (body.ctaText !== undefined) updateData.ctaText = body.ctaText.trim() || undefined;
+  if (body.ctaUrl !== undefined) updateData.ctaUrl = body.ctaUrl.trim() || undefined;
   if (body.isActive !== undefined) updateData.isActive = body.isActive;
   if (body.displayOrder !== undefined) updateData.displayOrder = body.displayOrder;
   if (body.minAmount !== undefined) updateData.minAmount = body.minAmount;

@@ -103,13 +103,19 @@ export default function SuggestedOptionsPage() {
       newErrors.price = '価格は必須です';
     }
     
-    if (!formData.ctaText.trim()) {
-      newErrors.ctaText = 'CTAテキストは必須です';
+    // CTAフィールドはオプショナルだが、一方が入力されている場合は両方必要
+    const hasCtaText = formData.ctaText.trim() !== '';
+    const hasCtaUrl = formData.ctaUrl.trim() !== '';
+    
+    if (hasCtaText && !hasCtaUrl) {
+      newErrors.ctaUrl = 'CTAテキストが入力されている場合、CTAリンクも必要です';
     }
     
-    if (!formData.ctaUrl.trim()) {
-      newErrors.ctaUrl = 'CTAリンクは必須です';
-    } else if (!formData.ctaUrl.startsWith('http')) {
+    if (hasCtaUrl && !hasCtaText) {
+      newErrors.ctaText = 'CTAリンクが入力されている場合、CTAテキストも必要です';
+    }
+    
+    if (hasCtaUrl && !formData.ctaUrl.startsWith('http')) {
       newErrors.ctaUrl = 'CTAリンクは http:// または https:// で始まる必要があります';
     }
 
@@ -141,8 +147,8 @@ export default function SuggestedOptionsPage() {
         description: option.description,
         price: option.price,
         features: option.features.length > 0 ? option.features : [''],
-        ctaText: option.ctaText,
-        ctaUrl: option.ctaUrl,
+        ctaText: option.ctaText || '',
+        ctaUrl: option.ctaUrl || '',
         isActive: option.isActive,
         minAmount: option.minAmount?.toString() || '',
         maxAmount: option.maxAmount?.toString() || ''
@@ -186,8 +192,8 @@ export default function SuggestedOptionsPage() {
         description: formData.description.trim(),
         price: formData.price.trim(),
         features: formData.features.filter(f => f.trim() !== ''),
-        ctaText: formData.ctaText.trim(),
-        ctaUrl: formData.ctaUrl.trim(),
+        ...(formData.ctaText.trim() && { ctaText: formData.ctaText.trim() }),
+        ...(formData.ctaUrl.trim() && { ctaUrl: formData.ctaUrl.trim() }),
         isActive: formData.isActive,
         ...(formData.minAmount && { minAmount: parseInt(formData.minAmount) }),
         ...(formData.maxAmount && { maxAmount: parseInt(formData.maxAmount) })
@@ -383,7 +389,7 @@ export default function SuggestedOptionsPage() {
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                         <div>
                           <span className="text-gray-600">CTAテキスト:</span>
-                          <span className="ml-2">{option.ctaText}</span>
+                          <span className="ml-2">{option.ctaText || '未設定'}</span>
                         </div>
                         <div>
                           <span className="text-gray-600">最小金額:</span>
@@ -560,7 +566,7 @@ export default function SuggestedOptionsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label htmlFor="ctaText" className="block text-sm font-medium text-gray-700 mb-1">
-                      CTAテキスト <span className="text-red-500">*</span>
+                      CTAテキスト
                     </label>
                     <input
                       type="text"
@@ -576,11 +582,14 @@ export default function SuggestedOptionsPage() {
                     {errors.ctaText && (
                       <p className="mt-1 text-sm text-red-500">{errors.ctaText}</p>
                     )}
+                    <p className="mt-1 text-xs text-gray-500">
+                      オプショナル：入力する場合はCTAリンクも必要です
+                    </p>
                   </div>
 
                   <div>
                     <label htmlFor="ctaUrl" className="block text-sm font-medium text-gray-700 mb-1">
-                      CTAリンク <span className="text-red-500">*</span>
+                      CTAリンク
                     </label>
                     <input
                       type="url"
@@ -596,6 +605,9 @@ export default function SuggestedOptionsPage() {
                     {errors.ctaUrl && (
                       <p className="mt-1 text-sm text-red-500">{errors.ctaUrl}</p>
                     )}
+                    <p className="mt-1 text-xs text-gray-500">
+                      オプショナル：入力する場合はCTAテキストも必要です
+                    </p>
                   </div>
                 </div>
 

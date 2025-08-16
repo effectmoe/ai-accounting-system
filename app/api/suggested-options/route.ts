@@ -55,7 +55,7 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
   logger.debug('[API] Request body:', body);
   
   // 必須フィールドの検証
-  const requiredFields = ['title', 'description', 'price', 'features', 'ctaText', 'ctaUrl'];
+  const requiredFields = ['title', 'description', 'price', 'features'];
   validateRequired(body, requiredFields);
   
   // featuresが配列であることを確認
@@ -63,8 +63,8 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     throw new ApiErrorResponse('features must be an array', 400, 'INVALID_FEATURES');
   }
   
-  // URLの簡単な検証
-  if (body.ctaUrl && !body.ctaUrl.startsWith('http')) {
+  // URLの簡単な検証（ctaUrlが提供されている場合のみ）
+  if (body.ctaUrl && body.ctaUrl.trim() && !body.ctaUrl.startsWith('http')) {
     throw new ApiErrorResponse('ctaUrl must be a valid URL starting with http', 400, 'INVALID_URL');
   }
   
@@ -80,8 +80,8 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
     description: body.description.trim(),
     price: body.price.trim(),
     features: body.features.map((f: string) => f.trim()),
-    ctaText: body.ctaText.trim(),
-    ctaUrl: body.ctaUrl.trim(),
+    ctaText: body.ctaText ? body.ctaText.trim() : undefined,
+    ctaUrl: body.ctaUrl ? body.ctaUrl.trim() : undefined,
     isActive: body.isActive,
     displayOrder: body.displayOrder,
     minAmount: body.minAmount,
