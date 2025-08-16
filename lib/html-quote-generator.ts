@@ -318,6 +318,11 @@ function formatCurrency(amount: number): string {
 export async function getSuggestedOptionsForQuote(
   quote: Quote
 ): Promise<SuggestedOption[]> {
+  // デフォルトオプションを返す（DB連携は一時的に無効化）
+  return generateDefaultSuggestedOptions(quote);
+  
+  // TODO: ビルドエラー解決後に以下のDB連携を有効化
+  /*
   // サーバーサイドでのみ実行
   if (typeof window !== 'undefined') {
     // クライアントサイドではデフォルトオプションを返す
@@ -340,6 +345,7 @@ export async function getSuggestedOptionsForQuote(
     // エラーの場合は従来のデフォルトオプションを返す
     return generateDefaultSuggestedOptions(quote);
   }
+  */
 }
 
 /**
