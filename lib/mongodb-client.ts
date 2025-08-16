@@ -688,6 +688,7 @@ export const Collections = {
   SUPPLIERS: 'suppliers',
   SUPPLIER_QUOTES: 'supplierQuotes',
   PURCHASE_ORDERS: 'purchaseOrders',
+  SUGGESTED_OPTIONS: 'suggestedOptions',
 } as const;
 
 // データベースサービスのシングルトンインスタンス
