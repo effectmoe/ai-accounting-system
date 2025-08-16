@@ -25,70 +25,36 @@ interface SuggestedOption {
 }
 
 // ツールチップレンダリング関数の改善
-// Updated: 2025-08-16
+// Updated: 2025-08-16 - 修正版: 確実にツールチップを表示
 const renderDetailsWithTooltip = (details: string, tooltip: string) => {
+  console.log('🎨 renderDetailsWithTooltip called:', { details, hasTooltip: !!tooltip });
+  
   if (!tooltip || tooltip.trim() === '') {
+    console.log('❌ No tooltip provided for:', details);
     return <span>{details}</span>;
   }
+  
+  console.log('✅ Creating tooltip for:', details, 'with tooltip:', tooltip);
   
   // HTMLエスケープ処理
   const escapedTooltip = tooltip.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   
-  // ツールチップ内の主要な用語を抽出（ROI、KPI、CRMなどの英語略語を優先）
-  const englishKeywords = tooltip.match(/\b[A-Z]{2,}\b/g) || [];
-  // カタカナのキーワードも抽出
-  const katakanaKeywords = tooltip.match(/[ァ-ヶー]{3,}/g) || [];
-  // 専門用語的な漢字のキーワードも抽出
-  const kanjiKeywords = tooltip.match(/[一-龯]{2,4}(?:率|額|費|価|値|量|数)/g) || [];
+  // より確実な方法: 項目名全体をツールチップ付きにする
+  const markerHtml = `
+    <span class="tooltip-wrapper" data-tooltip="${escapedTooltip}">
+      <span style="
+        background: linear-gradient(180deg, transparent 60%, rgba(254, 240, 138, 0.7) 60%);
+        cursor: help;
+        border-radius: 3px;
+        padding: 1px 4px;
+        border-bottom: 2px dotted #f59e0b;
+        font-weight: 500;
+      ">${details}</span>
+      <span class="tooltip-content">💡 ${escapedTooltip}</span>
+    </span>
+  `;
   
-  const allKeywords = [...englishKeywords, ...katakanaKeywords, ...kanjiKeywords];
-  let processedDetails = details;
-  
-  // 各キーワードをツールチップ付きスパンに変換
-  allKeywords.forEach(keyword => {
-    if (details.includes(keyword)) {
-      const markerHtml = `
-        <span class="tooltip-wrapper">
-          <span style="
-            background: linear-gradient(180deg, transparent 60%, rgba(254, 240, 138, 0.5) 60%);
-            cursor: help;
-            border-radius: 2px;
-            padding: 0 2px;
-            border-bottom: 1px dotted #333;
-          ">${keyword}</span>
-          <span class="tooltip-content">💡 ${escapedTooltip}</span>
-        </span>
-      `;
-      processedDetails = processedDetails.replace(
-        new RegExp(`\\b${keyword}\\b`, 'g'),
-        markerHtml
-      );
-    }
-  });
-  
-  // キーワードが見つからない場合は、文頭の重要そうな語句にマーカーを付ける
-  if (processedDetails === details && details.length > 0) {
-    // 最初の単語（英数字または3文字以上の語句）を対象にする
-    const firstWord = details.match(/^[A-Za-z0-9]+|^[ァ-ヶー]{2,}|^[一-龯]{2,}/);
-    if (firstWord && firstWord[0]) {
-      const word = firstWord[0];
-      const markerHtml = `
-        <span class="tooltip-wrapper">
-          <span style="
-            background: linear-gradient(180deg, transparent 60%, #fef3c7 60%);
-            cursor: help;
-            border-radius: 2px;
-            padding: 0 2px;
-            border-bottom: 1px dotted #333;
-          ">${word}</span>
-          <span class="tooltip-content">💡 ${escapedTooltip}</span>
-        </span>
-      `;
-      processedDetails = details.replace(word, markerHtml);
-    }
-  }
-  
-  return <span dangerouslySetInnerHTML={{ __html: processedDetails }} />;
+  return <span dangerouslySetInnerHTML={{ __html: markerHtml }} />;
 };
 
 export default function QuoteWebTemplate({
