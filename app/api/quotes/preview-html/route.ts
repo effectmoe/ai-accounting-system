@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     });
 
     // デバッグ用: シンプルなHTMLを返して確認
-    const debugMode = true; // ツールチップ問題を特定するため一時的に有効化
+    const debugMode = false; // ツールチップ問題を特定するため一時的に有効化
     if (debugMode) {
       const simpleHtml = `
         <!DOCTYPE html>
