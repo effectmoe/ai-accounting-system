@@ -313,7 +313,31 @@ function formatCurrency(amount: number): string {
 }
 
 /**
- * デフォルトの提案オプションを生成
+ * DBから見積金額に応じたおすすめオプションを取得
+ */
+export async function getSuggestedOptionsForQuote(
+  quote: Quote
+): Promise<SuggestedOption[]> {
+  try {
+    const { SuggestedOptionService } = await import('@/services/suggested-option.service');
+    const suggestedOptionService = new SuggestedOptionService();
+    
+    const options = await suggestedOptionService.getSuggestedOptionsForQuote({
+      amount: quote.totalAmount,
+      isActive: true,
+      limit: 10 // 最大10件まで
+    });
+    
+    return options;
+  } catch (error) {
+    console.error('Error fetching suggested options:', error);
+    // エラーの場合は従来のデフォルトオプションを返す
+    return generateDefaultSuggestedOptions(quote);
+  }
+}
+
+/**
+ * デフォルトの提案オプションを生成（フォールバック用）
  */
 export function generateDefaultSuggestedOptions(
   quote: Quote
@@ -454,6 +478,9 @@ export async function generateSimpleHtmlQuote({
   const viewOnlineUrl = `${baseUrl}/quotes/view/${quote._id}?t=${trackingId}`;
   const acceptUrl = `${baseUrl}/quotes/accept/${quote._id}?t=${trackingId}`;
   const discussUrl = `${baseUrl}/quotes/discuss/${quote._id}?t=${trackingId}`;
+  
+  // おすすめオプションをDBから取得
+  const suggestedOptions = await getSuggestedOptionsForQuote(quote);
 
   // HTMLメール用のテンプレート（インラインCSS、Gmail対応、機能的要素付き）
   const html = `
@@ -646,6 +673,7 @@ export async function generateSimpleHtmlQuote({
             </td>
           </tr>
 
+          ${suggestedOptions.length > 0 ? `
           <!-- 追加提案セクション -->
           <tr>
             <td style="padding: 0 40px 30px 40px;">
@@ -654,24 +682,36 @@ export async function generateSimpleHtmlQuote({
                   <td>
                     <h3 style="margin: 0 0 15px 0; font-size: 16px; color: #f57c00; font-weight: bold;">🎯 おすすめオプション</h3>
                     
-                    <!-- プレミアムサポート -->
-                    <div style="margin-bottom: 15px; padding: 12px; background-color: #ffffff; border-radius: 6px; border-left: 4px solid #4caf50;">
-                      <h4 style="margin: 0 0 5px 0; font-size: 14px; color: #333333;">🚀 プレミアムサポートプラン</h4>
-                      <p style="margin: 0 0 8px 0; font-size: 12px; color: #666666; line-height: 1.4;">24時間以内の優先対応、専任サポート担当者、月次レポート作成</p>
-                      <span style="font-size: 13px; color: #4caf50; font-weight: bold;">月額 ¥20,000</span>
-                    </div>
-                    
-                    <!-- 年間契約割引 -->
-                    <div style="padding: 12px; background-color: #ffffff; border-radius: 6px; border-left: 4px solid #2196f3;">
-                      <h4 style="margin: 0 0 5px 0; font-size: 14px; color: #333333;">💰 年間契約割引</h4>
-                      <p style="margin: 0 0 8px 0; font-size: 12px; color: #666666; line-height: 1.4;">年間契約で15%割引＋請求書発行簡素化＋優先アップデート</p>
-                      <span style="font-size: 13px; color: #2196f3; font-weight: bold;">15%割引適用</span>
-                    </div>
+                    ${suggestedOptions.map((option, index) => {
+                      const borderColors = ['#4caf50', '#2196f3', '#ff9800', '#9c27b0', '#e91e63'];
+                      const borderColor = borderColors[index % borderColors.length];
+                      
+                      return `
+                      <div style="${index > 0 ? 'margin-top: 15px; ' : ''}padding: 12px; background-color: #ffffff; border-radius: 6px; border-left: 4px solid ${borderColor};">
+                        <h4 style="margin: 0 0 5px 0; font-size: 14px; color: #333333;">${option.title}</h4>
+                        <p style="margin: 0 0 8px 0; font-size: 12px; color: #666666; line-height: 1.4;">${option.description}</p>
+                        ${option.features.length > 0 ? `
+                        <p style="margin: 0 0 8px 0; font-size: 11px; color: #888888; line-height: 1.3;">
+                          ${option.features.join('・')}
+                        </p>
+                        ` : ''}
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
+                          <span style="font-size: 13px; color: ${borderColor}; font-weight: bold;">${option.price}</span>
+                          ${option.ctaUrl ? `
+                          <a href="${option.ctaUrl}" target="_blank" rel="noopener noreferrer" style="display: inline-block; padding: 4px 12px; background-color: ${borderColor}; color: #ffffff; text-decoration: none; font-size: 11px; border-radius: 12px; font-weight: bold;">
+                            ${option.ctaText}
+                          </a>
+                          ` : ''}
+                        </div>
+                      </div>
+                      `;
+                    }).join('')}
                   </td>
                 </tr>
               </table>
             </td>
           </tr>
+          ` : ''}
 
           ${quote.notes ? `
           <!-- 備考 -->
