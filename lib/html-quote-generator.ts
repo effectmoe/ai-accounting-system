@@ -318,6 +318,12 @@ function formatCurrency(amount: number): string {
 export async function getSuggestedOptionsForQuote(
   quote: Quote
 ): Promise<SuggestedOption[]> {
+  // サーバーサイドでのみ実行
+  if (typeof window !== 'undefined') {
+    // クライアントサイドではデフォルトオプションを返す
+    return generateDefaultSuggestedOptions(quote);
+  }
+  
   try {
     const { SuggestedOptionService } = await import('@/services/suggested-option.service');
     const suggestedOptionService = new SuggestedOptionService();
