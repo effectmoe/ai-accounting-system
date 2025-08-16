@@ -290,22 +290,28 @@ export default function QuoteHtmlTemplate({
                         <Text style={suggestionDescription}>
                           {option.description}
                         </Text>
-                        <Text style={suggestionPrice}>
-                          追加料金: {option.price}
-                        </Text>
-                        <ul style={featureList}>
-                          {option.features.map((feature, fIndex) => (
-                            <li key={fIndex} style={featureItem}>
-                              <Text style={featureText}>{feature}</Text>
-                            </li>
-                          ))}
-                        </ul>
-                        <Button
-                          href={option.ctaUrl}
-                          style={suggestionButton}
-                        >
-                          {option.ctaText}
-                        </Button>
+                        {option.price && (
+                          <Text style={suggestionPrice}>
+                            追加料金: {option.price}
+                          </Text>
+                        )}
+                        {option.features && option.features.length > 0 && (
+                          <ul style={featureList}>
+                            {option.features.map((feature, fIndex) => (
+                              <li key={fIndex} style={featureItem}>
+                                <Text style={featureText}>{feature}</Text>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                        {option.ctaUrl && option.ctaText && (
+                          <Button
+                            href={option.ctaUrl}
+                            style={suggestionButton}
+                          >
+                            {option.ctaText}
+                          </Button>
+                        )}
                       </Column>
                     </Row>
                   </Section>
