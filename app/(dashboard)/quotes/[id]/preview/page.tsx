@@ -47,6 +47,17 @@ export default function QuotePreviewPage() {
             customMessage: quote.htmlSettings?.customMessage || '',
           }),
         });
+        
+        // デバッグログ: 送信したデータをログ出力
+        console.log('📄 Preview data sent:', {
+          quoteId: quote._id,
+          hasNotes: !!quote.notes,
+          notesLength: quote.notes?.length || 0,
+          notesPreview: quote.notes?.substring(0, 100) || 'なし',
+          tooltipsCount: quote.htmlSettings?.tooltips ? Object.keys(quote.htmlSettings.tooltips).length : 0,
+          hasCustomMessage: !!quote.htmlSettings?.customMessage,
+          customMessage: quote.htmlSettings?.customMessage || 'なし'
+        });
 
         if (!previewRes.ok) {
           throw new Error('プレビューの生成に失敗しました');

@@ -197,11 +197,17 @@ export default function QuoteHtmlTemplate({
             <Section style={itemsSection}>
               <Heading as="h2" style={h2}>見積内容</Heading>
               
-              {quote.items.map((item, index) => (
+              {quote.items.map((item, index) => {
+                // 値引き判定
+                const isDiscount = (item.amount < 0) || 
+                  (item.itemName && (item.itemName.includes('値引き') || item.itemName.includes('割引') || item.itemName.includes('ディスカウント')));
+                const discountStyle = isDiscount ? { color: '#dc2626', fontWeight: 'bold' } : {};
+                
+                return (
                 <Section key={index} style={itemRow}>
                   <Row>
                     <Column style={itemNameColumn}>
-                      <Text style={itemName}>
+                      <Text style={{...itemName, ...discountStyle}}>
                         {item.productLink ? (
                           <Link href={item.productLink} style={productLink}>
                             {item.tooltip ? 
@@ -216,7 +222,7 @@ export default function QuoteHtmlTemplate({
                         )}
                       </Text>
                       {item.details && (
-                        <Text style={item.tooltip ? itemDetailsWithTooltip : itemDetails}>
+                        <Text style={{...(item.tooltip ? itemDetailsWithTooltip : itemDetails), ...discountStyle}}>
                           {item.tooltip ? 
                             renderDetailsWithTooltip(item.details, item.tooltip) :
                             item.details
@@ -225,23 +231,24 @@ export default function QuoteHtmlTemplate({
                       )}
                     </Column>
                     <Column style={itemQuantityColumn}>
-                      <Text style={itemQuantity}>
+                      <Text style={{...itemQuantity, ...discountStyle}}>
                         {item.quantity} {item.unit || '個'}
                       </Text>
                     </Column>
                     <Column style={itemPriceColumn}>
-                      <Text style={itemPrice}>
+                      <Text style={{...itemPrice, ...discountStyle}}>
                         {formatCurrency(item.unitPrice)}
                       </Text>
                     </Column>
                     <Column style={itemTotalColumn}>
-                      <Text style={itemTotal}>
+                      <Text style={{...itemTotal, ...discountStyle}}>
                         {formatCurrency(item.amount)}
                       </Text>
                     </Column>
                   </Row>
                 </Section>
-              ))}
+                );
+              })
             </Section>
 
             <Hr style={divider} />
@@ -447,8 +454,7 @@ export default function QuoteHtmlTemplate({
             </Text>
             <Hr style={systemSignatureDivider} />
             <Text style={systemSignatureText}>
-              このシステムはAI駆動によるAAM-Accountingシステムです powered by{' '}
-              <Link 
+              このシステムはAI駆動によるAAM-Accountingシステムです powered by <Link 
                 href="https://notion.effect.moe/"
                 target="_blank"
                 rel="noopener noreferrer"
