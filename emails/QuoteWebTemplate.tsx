@@ -564,7 +564,11 @@ export default function QuoteWebTemplate({
             <div style={partyCardStyle} className="party-card">
               <h3 style={partyTitleStyle}>送信先</h3>
               <div style={partyDetailsStyle} className="party-details">
-                <div style={partyCompanyStyle}>{quote.customer?.companyName || '顧客未設定'}</div>
+                <div style={partyCompanyStyle}>
+                  {quote.customer?.storeName 
+                    ? `${quote.customer.storeName}（${quote.customer.companyName}）`
+                    : quote.customer?.companyName || '顧客未設定'}
+                </div>
                 {quote.customer?.contacts?.[0]?.name && (
                   <div>{quote.customer.contacts[0].name} 様</div>
                 )}
@@ -675,11 +679,11 @@ export default function QuoteWebTemplate({
           <div style={totalContainerStyle} className="quote-summary">
             <div style={totalRowStyle}>
               <span>小計</span>
-              <span>{formatCurrency(quote.subtotal)}</span>
+              <span>{formatCurrency(Math.round(quote.subtotal))}</span>
             </div>
             <div style={totalRowStyle}>
               <span>消費税（{quote.taxRate}%）</span>
-              <span>{formatCurrency(quote.taxAmount)}</span>
+              <span>{formatCurrency(Math.round(quote.taxAmount))}</span>
             </div>
             <div style={grandTotalRowStyle}>
               <span>合計金額</span>

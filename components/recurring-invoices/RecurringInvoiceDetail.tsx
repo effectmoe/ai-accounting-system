@@ -308,8 +308,8 @@ const RecurringInvoiceDetail: React.FC<RecurringInvoiceDetailProps> = ({ invoice
               </TableContainer>
 
               <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-                <Typography>小計: {formatCurrency(invoice.subtotal)}</Typography>
-                <Typography>税額: {formatCurrency(invoice.taxAmount)}</Typography>
+                <Typography>小計: {formatCurrency(Math.round(invoice.subtotal))}</Typography>
+                <Typography>税額: {formatCurrency(Math.round(invoice.taxAmount))}</Typography>
                 <Typography variant="h6">合計: {formatCurrency(invoice.totalAmount)}</Typography>
               </Box>
             </CardContent>

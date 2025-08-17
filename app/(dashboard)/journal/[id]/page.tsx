@@ -287,7 +287,7 @@ export default function JournalDetailPage() {
                     <td className="px-4 py-4 whitespace-nowrap text-right">
                       {line.debitAmount > 0 ? (
                         <span className="text-blue-600 font-medium">
-                          {formatCurrency(line.debitAmount)}
+                          {formatCurrency(Math.round(line.debitAmount))}
                         </span>
                       ) : (
                         <span className="text-gray-400">-</span>
@@ -296,7 +296,7 @@ export default function JournalDetailPage() {
                     <td className="px-4 py-4 whitespace-nowrap text-right">
                       {line.creditAmount > 0 ? (
                         <span className="text-red-600 font-medium">
-                          {formatCurrency(line.creditAmount)}
+                          {formatCurrency(Math.round(line.creditAmount))}
                         </span>
                       ) : (
                         <span className="text-gray-400">-</span>
@@ -317,7 +317,7 @@ export default function JournalDetailPage() {
                     <td className="px-4 py-4 whitespace-nowrap text-right text-sm">
                       {line.taxAmount ? (
                         <span className="text-gray-700">
-                          {formatCurrency(line.taxAmount)}
+                          {formatCurrency(Math.round(line.taxAmount))}
                         </span>
                       ) : (
                         <span className="text-gray-400">-</span>
@@ -333,12 +333,12 @@ export default function JournalDetailPage() {
                   </td>
                   <td className="px-4 py-3 text-right">
                     <span className="text-blue-600 font-bold">
-                      {formatCurrency(debitTotal)}
+                      {formatCurrency(Math.round(debitTotal))}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right">
                     <span className="text-red-600 font-bold">
-                      {formatCurrency(creditTotal)}
+                      {formatCurrency(Math.round(creditTotal))}
                     </span>
                   </td>
                   <td colSpan={2}></td>
