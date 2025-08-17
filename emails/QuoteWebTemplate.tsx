@@ -700,6 +700,15 @@ export default function QuoteWebTemplate({
                     const subtotalAmount = (item.quantity || 1) * (item.unitPrice || 0);
                     const taxAmount = subtotalAmount * (quote.taxRate || 0.1);
                     
+                    // デバッグログ: 項目データを確認
+                    console.log(`🎯 QuoteWebTemplate item ${index + 1}:`, {
+                      itemName: item.itemName,
+                      description: item.description,
+                      hasTooltip: !!item.tooltip,
+                      tooltip: item.tooltip ? item.tooltip.substring(0, 50) + '...' : 'なし',
+                      productLink: item.productLink || 'なし'
+                    });
+                    
                     return (
                       <tr key={index} style={tableBodyRowStyle}>
                         <td style={{...tableBodyCellStyle, color: itemColor}}>
