@@ -252,9 +252,11 @@ export async function generateServerHtmlQuote({
                           <p style="margin: 0; font-size: 18px; font-weight: bold; color: #e91e63;">${option.price}</p>
                         </td>
                         <td style="width: 50%; text-align: right;">
+                          ${option.ctaUrl && option.ctaUrl.trim() !== '' ? `
                           <a href="${option.ctaUrl}" target="_blank" rel="noopener noreferrer" style="display: inline-block; padding: 8px 16px; background-color: #2196f3; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: bold; border-radius: 4px;">
                             ${option.ctaText}
                           </a>
+                          ` : ''}
                         </td>
                       </tr>
                     </table>
@@ -353,8 +355,8 @@ ${suggestedOptions && suggestedOptions.length > 0 ? `
 【おすすめオプション】
 ${suggestedOptions.map((option: SuggestedOption) => `
 ・${option.title} - ${option.price}
-  ${option.description}
-  詳細: ${option.ctaUrl}
+  ${option.description}${option.ctaUrl && option.ctaUrl.trim() !== '' ? `
+  詳細: ${option.ctaUrl}` : ''}
 `).join('')}
 ` : ''}
 
