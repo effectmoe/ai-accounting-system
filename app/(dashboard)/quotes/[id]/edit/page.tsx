@@ -221,16 +221,18 @@ function QuoteEditPageContent({ params }: QuoteEditPageProps) {
     setItems(newItems);
   };
 
-  const addItem = () => {
+  const addItem = (itemType: 'product' | 'discount' = 'product') => {
     setItems([...items, {
-      itemName: '',
+      itemName: itemType === 'discount' ? '値引き' : '',
       description: '',
+      itemType: itemType,
       quantity: 1,
       unitPrice: 0,
       amount: 0,
       taxRate: 10,
       taxAmount: 0,
       sortOrder: items.length,
+      discountReason: itemType === 'discount' ? '' : undefined,
     }]);
   };
 
@@ -543,9 +545,13 @@ function QuoteEditPageContent({ params }: QuoteEditPageProps) {
                   </>
                 )}
               </Button>
-              <Button onClick={addItem} size="sm">
+              <Button onClick={() => addItem('product')} size="sm">
                 <Plus className="h-4 w-4 mr-2" />
                 項目を追加
+              </Button>
+              <Button onClick={() => addItem('discount')} size="sm" variant="outline">
+                <Plus className="h-4 w-4 mr-2" />
+                値引きを追加
               </Button>
             </div>
           </div>

@@ -688,10 +688,13 @@ export default function QuoteDetailPage({ params }: QuoteDetailPageProps) {
                 </thead>
                 <tbody>
                   {quote.items.map((item, index) => (
-                    <tr key={index} className="hover:bg-gray-50">
+                    <tr key={index} className={`hover:bg-gray-50 ${item.itemType === 'discount' ? 'bg-red-50' : ''}`}>
                       <td className="py-3 px-4 border border-gray-200">
                         <div>
-                          <div className="font-medium">{item.itemName}</div>
+                          <div className={`font-medium ${item.itemType === 'discount' ? 'text-red-600' : ''}`}>
+                            {item.itemType === 'discount' && '【値引き】'}
+                            {item.itemName}
+                          </div>
                           {showItemDescriptions && (() => {
                             const description = getItemDescription(item);
                             const itemNotes = getItemNotes(item);
@@ -709,10 +712,18 @@ export default function QuoteDetailPage({ params }: QuoteDetailPageProps) {
                         </div>
                       </td>
                       <td className="text-center py-3 px-4 border border-gray-200">{item.quantity}</td>
-                      <td className="text-right py-3 px-4 border border-gray-200 font-mono">¥{(item.unitPrice || 0).toLocaleString()}</td>
-                      <td className="text-right py-3 px-4 border border-gray-200 font-mono">¥{(item.amount || 0).toLocaleString()}</td>
-                      <td className="text-right py-3 px-4 border border-gray-200 font-mono text-sm text-gray-600">¥{(item.taxAmount || 0).toLocaleString()}</td>
-                      <td className="text-right py-3 px-4 border border-gray-200 font-medium">¥{((item.amount || 0) + (item.taxAmount || 0)).toLocaleString()}</td>
+                      <td className={`text-right py-3 px-4 border border-gray-200 font-mono ${item.itemType === 'discount' ? 'text-red-600' : ''}`}>
+                        {item.itemType === 'discount' ? '-' : ''}¥{Math.abs(item.unitPrice || 0).toLocaleString()}
+                      </td>
+                      <td className={`text-right py-3 px-4 border border-gray-200 font-mono ${item.itemType === 'discount' ? 'text-red-600' : ''}`}>
+                        {item.itemType === 'discount' ? '-' : ''}¥{Math.abs(item.amount || 0).toLocaleString()}
+                      </td>
+                      <td className={`text-right py-3 px-4 border border-gray-200 font-mono text-sm ${item.itemType === 'discount' ? 'text-red-600' : 'text-gray-600'}`}>
+                        {item.itemType === 'discount' ? '-' : ''}¥{Math.abs(item.taxAmount || 0).toLocaleString()}
+                      </td>
+                      <td className={`text-right py-3 px-4 border border-gray-200 font-medium ${item.itemType === 'discount' ? 'text-red-600' : ''}`}>
+                        {item.itemType === 'discount' ? '-' : ''}¥{Math.abs((item.amount || 0) + (item.taxAmount || 0)).toLocaleString()}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
