@@ -187,9 +187,55 @@ export async function generateServerHtmlQuote({
                     const subtotalAmount = (item.quantity || 1) * (item.unitPrice || 0);
                     const taxAmount = subtotalAmount * (quote.taxRate || 0.1);
                     
+                    // ツールチップ付きの項目名を生成
+                    const renderItemWithTooltip = (itemName: string, tooltip: string) => {
+                      if (!tooltip || tooltip.trim() === '') {
+                        return itemName;
+                      }
+                      
+                      // HTMLエスケープ処理
+                      const escapedName = itemName
+                        .replace(/&/g, '&amp;')
+                        .replace(/"/g, '&quot;')
+                        .replace(/'/g, '&#39;')
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;');
+                      const escapedTooltip = tooltip
+                        .replace(/&/g, '&amp;')
+                        .replace(/"/g, '&quot;')
+                        .replace(/'/g, '&#39;')
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;');
+                      
+                      return `
+                        <span title="${escapedTooltip}" style="
+                          background: linear-gradient(180deg, transparent 50%, rgba(254, 240, 138, 0.7) 50%);
+                          border-bottom: 2px dotted #f59e0b;
+                          padding: 1px 3px;
+                          border-radius: 2px;
+                          font-weight: 600;
+                          cursor: help;
+                        ">${escapedName}</span>
+                        <div style="
+                          font-size: 12px;
+                          color: #1565c0;
+                          background-color: #e3f2fd;
+                          border-left: 3px solid #1976d2;
+                          padding: 6px 10px;
+                          margin: 4px 0;
+                          border-radius: 3px;
+                          line-height: 1.4;
+                        ">💡 用語解説: ${escapedTooltip}</div>
+                      `;
+                    };
+                    
+                    const itemDisplayName = item.tooltip ? 
+                      renderItemWithTooltip(item.itemName || `項目${index + 1}`, item.tooltip) :
+                      (item.itemName || `項目${index + 1}`);
+                    
                     return `
                   <tr>
-                    <td style="padding: 12px; border: 1px solid #e0e0e0; font-size: 14px; color: ${itemColor};">${item.itemName || `項目${index + 1}`}</td>
+                    <td style="padding: 12px; border: 1px solid #e0e0e0; font-size: 14px; color: ${itemColor};">${itemDisplayName}</td>
                     <td style="padding: 12px; text-align: center; border: 1px solid #e0e0e0; font-size: 14px; color: ${itemColor};">${item.quantity || 1}</td>
                     <td style="padding: 12px; text-align: right; border: 1px solid #e0e0e0; font-size: 14px; color: ${itemColor};">¥${(item.unitPrice || 0).toLocaleString()}</td>
                     <td style="padding: 12px; text-align: right; border: 1px solid #e0e0e0; font-size: 14px; color: ${itemColor};">¥${subtotalAmount.toLocaleString()}</td>
@@ -230,7 +276,25 @@ export async function generateServerHtmlQuote({
             </td>
           </tr>
 
-          ${quote.notes ? `
+          ${(() => {
+            // 備考欄の表示判定を改善（より寛容なチェック）
+            const originalNotes = quote.notes || '';
+            const normalizedNotes = originalNotes.toString().trim();
+            const hasNotes = normalizedNotes && normalizedNotes.length > 0;
+            
+            // デバッグ情報（開発環境のみログ出力される）
+            console.log('📝 Server HTML Generator notes check:', {
+              originalNotes: originalNotes,
+              normalizedNotes: normalizedNotes,
+              hasNotes: hasNotes,
+              notesLength: normalizedNotes.length,
+              notesType: typeof quote.notes,
+              willShow: hasNotes || originalNotes.length > 0
+            });
+            
+            // 備考が存在する場合は必ず表示
+            if (hasNotes || originalNotes.length > 0) {
+              return `
           <!-- 備考欄 -->
           <tr>
             <td style="padding: 30px 40px;">
@@ -238,13 +302,17 @@ export async function generateServerHtmlQuote({
               <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: #f9f9f9; border-radius: 6px;">
                 <tr>
                   <td style="padding: 15px;">
-                    <p style="margin: 0; font-size: 14px; color: #666666; line-height: 1.6; white-space: pre-wrap;">${quote.notes}</p>
+                    <p style="margin: 0; font-size: 14px; color: #666666; line-height: 1.6; white-space: pre-wrap;">${hasNotes ? normalizedNotes : '（備考が設定されていません）'}</p>
                   </td>
                 </tr>
               </table>
             </td>
           </tr>
-          ` : ''}
+              `;
+            }
+            
+            return '';
+          })()}
 
           <!-- おすすめオプション（DBから取得） -->
           ${suggestedOptions && suggestedOptions.length > 0 ? `
@@ -368,7 +436,7 @@ ${(quote.items || []).map((item: any, index: number) => {
     (item.itemName && (item.itemName.includes('値引き') || item.itemName.includes('割引')));
   const prefix = isDiscount ? '[値引き] ' : '';
   
-  return `${index + 1}. ${prefix}${item.itemName || `項目${index + 1}`}
+  return `${index + 1}. ${prefix}${item.itemName || `項目${index + 1}`}${item.tooltip ? `\n   💡 用語解説: ${item.tooltip}` : ''}
    数量: ${item.quantity || 1} × 単価: ¥${(item.unitPrice || 0).toLocaleString()}
    小計: ¥${subtotalAmount.toLocaleString()} + 消費税: ¥${Math.round(taxAmount).toLocaleString()}
    金額: ¥${(item.amount || 0).toLocaleString()}`;
@@ -379,9 +447,19 @@ ${(quote.items || []).map((item: any, index: number) => {
 消費税：¥${taxAmount.toLocaleString()}
 合計：¥${totalAmount.toLocaleString()}
 
-${quote.notes ? `【備考】
-${quote.notes}
-` : ''}
+${(() => {
+  // プレーンテキスト版でも同様の備考チェック
+  const originalNotes = quote.notes || '';
+  const normalizedNotes = originalNotes.toString().trim();
+  const hasNotes = normalizedNotes && normalizedNotes.length > 0;
+  
+  if (hasNotes || originalNotes.length > 0) {
+    return `【備考】
+${hasNotes ? normalizedNotes : '（備考が設定されていません）'}
+`;
+  }
+  return '';
+})()}
 
 ${suggestedOptions && suggestedOptions.length > 0 ? `
 【おすすめオプション】
