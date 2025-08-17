@@ -406,4 +406,44 @@ export class SuggestedOptionService {
       throw error;
     }
   }
+
+  /**
+   * 表示順更新
+   */
+  async updateDisplayOrder(
+    id: string,
+    displayOrder: number,
+    updatedBy?: string
+  ): Promise<SuggestedOption | null> {
+    try {
+      logger.debug(`[SuggestedOptionService] Updating display order for ${id} to ${displayOrder}`);
+
+      if (!ObjectId.isValid(id)) {
+        logger.error(`[SuggestedOptionService] Invalid ObjectId: ${id}`);
+        return null;
+      }
+
+      const updateData = {
+        displayOrder,
+        updatedBy,
+      };
+
+      const suggestedOption = await this.db.update<SuggestedOption>(
+        Collections.SUGGESTED_OPTIONS,
+        id,
+        updateData
+      );
+
+      if (suggestedOption) {
+        logger.debug(`[SuggestedOptionService] Updated display order for: ${suggestedOption.title}`);
+      } else {
+        logger.debug(`[SuggestedOptionService] Suggested option not found for order update: ${id}`);
+      }
+
+      return suggestedOption;
+    } catch (error) {
+      logger.error(`[SuggestedOptionService] Error updating display order ${id}:`, error);
+      throw error;
+    }
+  }
 }
