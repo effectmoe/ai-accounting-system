@@ -75,13 +75,15 @@ export default function HtmlQuoteEditor({
   onSave,
   onSend,
 }: HtmlQuoteEditorProps) {
-  // デバッグ用ログ
-  console.log('[HtmlQuoteEditor] onSend type:', typeof onSend);
-  console.log('[HtmlQuoteEditor] onSend value:', onSend);
-  console.log('HtmlQuoteEditor mounted with:', { quote, companyInfo });
-  console.log('Customer data:', quote.customer);
-  console.log('Quote htmlSettings:', quote.htmlSettings);
-  console.log('onSend function received:', !!onSend); // デバッグ用
+  // デバッグ用ログ（開発環境のみ）
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[HtmlQuoteEditor] onSend type:', typeof onSend);
+    console.log('[HtmlQuoteEditor] onSend value:', onSend);
+    console.log('HtmlQuoteEditor mounted with:', { quote, companyInfo });
+    console.log('Customer data:', quote.customer);
+    console.log('Quote htmlSettings:', quote.htmlSettings);
+    console.log('onSend function received:', !!onSend);
+  }
   
   // 税率を正しい形式に変換（0.1 -> 10）
   const normalizedTaxRate = quote.taxRate < 1 ? quote.taxRate * 100 : quote.taxRate;
@@ -97,9 +99,11 @@ export default function HtmlQuoteEditor({
   };
   
   const [editedQuote, setEditedQuote] = useState(initialQuote);
-  // HTMLSettingsからの初期値設定（デバッグログ付き）
-  console.log('[HtmlQuoteEditor] Initial htmlSettings:', quote.htmlSettings);
-  console.log('[HtmlQuoteEditor] Initial customMessage from htmlSettings:', quote.htmlSettings?.customMessage);
+  // HTMLSettingsからの初期値設定（デバッグログは開発環境のみ）
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[HtmlQuoteEditor] Initial htmlSettings:', quote.htmlSettings);
+    console.log('[HtmlQuoteEditor] Initial customMessage from htmlSettings:', quote.htmlSettings?.customMessage);
+  }
   
   const [customMessage, setCustomMessage] = useState(
     quote.htmlSettings?.customMessage || 
