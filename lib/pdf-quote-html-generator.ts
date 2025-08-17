@@ -533,11 +533,11 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
       <div class="summary-table">
         <div class="summary-row">
           <div>小計:</div>
-          <div>¥${subtotal.toLocaleString()}</div>
+          <div>¥${Math.round(subtotal).toLocaleString()}</div>
         </div>
         <div class="summary-row">
           <div>消費税 (10%):</div>
-          <div>¥${taxAmount.toLocaleString()}</div>
+          <div>¥${Math.round(taxAmount).toLocaleString()}</div>
         </div>
         <div class="summary-row total">
           <div>合計金額:</div>

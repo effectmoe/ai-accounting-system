@@ -31,7 +31,7 @@ export default function NewProductPage() {
     taxRate: 0.10,
     category: '',
     stockQuantity: '',  // 空文字列で初期化
-    unit: '',
+    unit: '個',  // デフォルト単位を設定
     isActive: true,
     notes: '',
     tags: []
@@ -39,13 +39,16 @@ export default function NewProductPage() {
 
   // 商品コードを自動生成する関数（英数字のみ使用）
   const generateProductCode = (productName: string, category: string) => {
-    if (!productName || !category) return '';
+    if (!productName) return '';
     
     // カテゴリから英数字のみ抽出（最大3文字）
-    const categoryPrefix = category
-      .replace(/[^A-Za-z0-9]/gi, '') // 英数字のみ許可
-      .substring(0, 3)
-      .toUpperCase() || 'CAT';
+    let categoryPrefix = 'GEN'; // デフォルトカテゴリ
+    if (category) {
+      const extracted = category.replace(/[^A-Za-z0-9]/gi, '').substring(0, 3).toUpperCase();
+      if (extracted) {
+        categoryPrefix = extracted;
+      }
+    }
     
     // 商品名から英数字のみ抽出
     const nameAlphanumeric = productName.replace(/[^A-Za-z0-9\s]/gi, '');
@@ -260,7 +263,7 @@ export default function NewProductPage() {
         if (autoGenerateCode && (name === 'productName' || name === 'category')) {
           const productName = name === 'productName' ? value : prev.productName;
           const category = name === 'category' ? value : prev.category;
-          if (productName && category) {
+          if (productName) {  // 商品名だけでも生成する
             newData.productCode = generateProductCode(productName, category);
           }
         }
@@ -326,7 +329,7 @@ export default function NewProductPage() {
                     checked={autoGenerateCode}
                     onChange={(e) => {
                       setAutoGenerateCode(e.target.checked);
-                      if (e.target.checked && formData.productName && formData.category) {
+                      if (e.target.checked && formData.productName) {  // 商品名があれば生成
                         setFormData(prev => ({
                           ...prev,
                           productCode: generateProductCode(formData.productName, formData.category)

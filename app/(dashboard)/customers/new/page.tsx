@@ -13,6 +13,8 @@ interface CustomerForm {
   customerId: string;
   companyName: string;
   companyNameKana: string;
+  storeName: string;
+  storeNameKana: string;
   department: string;
   postalCode: string;
   prefecture: string;
@@ -42,6 +44,8 @@ export default function NewCustomerPage() {
     customerId: '',
     companyName: '',
     companyNameKana: '',
+    storeName: '',
+    storeNameKana: '',
     department: '',
     postalCode: '',
     prefecture: '',
@@ -548,6 +552,39 @@ export default function NewCustomerPage() {
                     onChange={handleChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="営業部"
+                  />
+                </div>
+              </div>
+
+              {/* 屋号・店舗名 */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label htmlFor="storeName" className="block text-sm font-medium text-gray-700 mb-1">
+                    屋号・店舗名
+                  </label>
+                  <input
+                    type="text"
+                    id="storeName"
+                    name="storeName"
+                    value={formData.storeName}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="○○ストア"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="storeNameKana" className="block text-sm font-medium text-gray-700 mb-1">
+                    屋号・店舗名カナ
+                  </label>
+                  <input
+                    type="text"
+                    id="storeNameKana"
+                    name="storeNameKana"
+                    value={formData.storeNameKana}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="○○ストア"
                   />
                 </div>
               </div>

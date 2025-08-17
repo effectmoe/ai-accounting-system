@@ -470,7 +470,9 @@ function QuoteEditPageContent({ params }: QuoteEditPageProps) {
                 <option value="">顧客を選択してください</option>
                 {customers.map((customer) => (
                   <option key={customer._id} value={customer._id}>
-                    {customer.companyName || customer.name || '名前未設定'}
+                    {customer.storeName 
+                      ? `${customer.storeName}（${customer.companyName}）`
+                      : customer.companyName || customer.name || '名前未設定'}
                   </option>
                 ))}
               </select>
@@ -613,7 +615,7 @@ function QuoteEditPageContent({ params }: QuoteEditPageProps) {
                       type="number"
                       min="0"
                       step="0.01"
-                      value={item.quantity}
+                      value={item.quantity.toString()}
                       onChange={(e) => updateItem(index, 'quantity', parseFloat(e.target.value) || 0)}
                     />
                   </div>

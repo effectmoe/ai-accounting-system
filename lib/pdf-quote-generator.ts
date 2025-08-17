@@ -114,7 +114,7 @@ export async function generateQuotePDF(quote: Quote, companyInfo: CompanyInfo): 
       doc.setFont('helvetica', 'normal');
       if (quote.customer) {
         const customerLines = [
-          quote.customer.companyName || '',
+          quote.customer.storeName ? `${quote.customer.storeName}（${quote.customer.companyName}）` : quote.customer.companyName || '',
           quote.customer.department || '',
           `${quote.customer.postalCode || ''} ${quote.customer.prefecture || ''} ${quote.customer.city || ''}`,
           quote.customer.address1 || '',

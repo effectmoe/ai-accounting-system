@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { Textarea } from '@/components/ui/textarea'
+import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
@@ -917,16 +918,15 @@ export default function HtmlQuoteEditor({
             <TabsContent value="message" className="space-y-4">
               <div>
                 <Label htmlFor="custom-message">カスタムメッセージ</Label>
-                <Textarea
-                  id="custom-message"
-                  value={customMessage}
-                  onChange={(e) => setCustomMessage(e.target.value)}
-                  placeholder="お客様へのメッセージを入力"
-                  rows={6}
-                  className="mt-1"
-                />
+                <div className="mt-1">
+                  <RichTextEditor
+                    content={customMessage}
+                    onChange={setCustomMessage}
+                    placeholder="お客様へのメッセージを入力（太字、リンク、色などの装飾が可能です）"
+                  />
+                </div>
                 <p className="text-sm text-muted-foreground mt-1">
-                  見積書の冒頭に表示されるメッセージです
+                  見積書の冒頭に表示されるメッセージです。太字、リンク、文字色などの装飾が可能です。
                 </p>
               </div>
 
