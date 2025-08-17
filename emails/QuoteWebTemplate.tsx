@@ -25,7 +25,7 @@ interface SuggestedOption {
 }
 
 // ツールチップレンダリング関数の改善
-// Updated: 2025-08-16 - 修正版: 確実にツールチップを表示
+// Updated: 2025-08-17 - 修正版: 確実にツールチップを表示
 const renderDetailsWithTooltip = (details: string, tooltip: string) => {
   console.log('🎨 renderDetailsWithTooltip called:', { details, hasTooltip: !!tooltip });
   
@@ -34,14 +34,15 @@ const renderDetailsWithTooltip = (details: string, tooltip: string) => {
     return <span>{details}</span>;
   }
   
-  console.log('✅ Creating tooltip for:', details, 'with tooltip:', tooltip);
+  console.log('✅ Creating tooltip for:', details, 'with tooltip:', tooltip.substring(0, 50) + '...');
   
   // HTMLエスケープ処理
+  const escapedDetails = details.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   const escapedTooltip = tooltip.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   
   // より確実な方法: 項目名全体をツールチップ付きにする
   const markerHtml = `
-    <span class="tooltip-wrapper" data-tooltip="${escapedTooltip}">
+    <span class="tooltip-wrapper" data-tooltip="${escapedTooltip}" title="${escapedTooltip}">
       <span style="
         background: linear-gradient(180deg, transparent 60%, rgba(254, 240, 138, 0.7) 60%);
         cursor: help;
@@ -49,8 +50,35 @@ const renderDetailsWithTooltip = (details: string, tooltip: string) => {
         padding: 1px 4px;
         border-bottom: 2px dotted #f59e0b;
         font-weight: 500;
-      ">${details}</span>
-      <span class="tooltip-content">💡 ${escapedTooltip}</span>
+        position: relative;
+        display: inline-block;
+      ">${escapedDetails}</span>
+      <span class="tooltip-content" style="
+        visibility: hidden;
+        opacity: 0;
+        background-color: #fef3c7;
+        color: #1f2937;
+        text-align: left;
+        border-radius: 6px;
+        padding: 12px 16px;
+        position: absolute;
+        z-index: 999999;
+        bottom: 125%;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 280px;
+        min-width: 200px;
+        max-width: 90vw;
+        font-size: 14px;
+        font-weight: 500;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.25);
+        border: 2px solid #f59e0b;
+        transition: all 0.2s ease-in-out;
+        pointer-events: none;
+        white-space: normal;
+        line-height: 1.5;
+        word-wrap: break-word;
+      ">💡 ${escapedTooltip}</span>
     </span>
   `;
   
@@ -656,7 +684,7 @@ export default function QuoteWebTemplate({
                 <tbody>
                   {quote.items.map((item, index) => {
                     const isDiscount = (item.amount < 0) || 
-                      (item.itemName && (item.itemName.includes('値引き') || item.itemName.includes('割引')));
+                      (item.itemName && (item.itemName.includes('値引き') || item.itemName.includes('割引') || item.itemName.includes('ディスカウント')));
                     const itemColor = isDiscount ? '#dc2626' : '#1f2937';
                     const subtotalAmount = (item.quantity || 1) * (item.unitPrice || 0);
                     const taxAmount = subtotalAmount * (quote.taxRate || 0.1);
@@ -711,7 +739,7 @@ export default function QuoteWebTemplate({
             <div style={mobileCardsStyle} className="mobile-cards">
               {quote.items.map((item, index) => {
                 const isDiscount = (item.amount < 0) || 
-                  (item.itemName && (item.itemName.includes('値引き') || item.itemName.includes('割引')));
+                  (item.itemName && (item.itemName.includes('値引き') || item.itemName.includes('割引') || item.itemName.includes('ディスカウント')));
                 const itemColor = isDiscount ? '#dc2626' : '#1f2937';
                 const subtotalAmount = (item.quantity || 1) * (item.unitPrice || 0);
                 const taxAmount = subtotalAmount * (quote.taxRate || 0.1);
