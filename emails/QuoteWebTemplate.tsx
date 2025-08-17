@@ -27,14 +27,9 @@ interface SuggestedOption {
 // ツールチップレンダリング関数の改善
 // Updated: 2025-08-17 - さらに強化版: 確実にツールチップを表示
 const renderDetailsWithTooltip = (details: string, tooltip: string) => {
-  console.log('🎨 renderDetailsWithTooltip called:', { details, hasTooltip: !!tooltip });
-  
   if (!tooltip || tooltip.trim() === '') {
-    console.log('❌ No tooltip provided for:', details);
     return <span>{details}</span>;
   }
-  
-  console.log('✅ Creating tooltip for:', details, 'with tooltip:', tooltip.substring(0, 50) + '...');
   
   // HTMLエスケープ処理を強化
   const escapedDetails = details
@@ -484,47 +479,51 @@ export default function QuoteWebTemplate({
       {/* JavaScriptでタッチイベントとデバッグ情報を処理 */}
       <script dangerouslySetInnerHTML={{
         __html: `
-          console.log('🔧 QuoteWebTemplate JavaScript loaded');
+          // 開発環境でのみデバッグログを表示
+          const isDev = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname.includes('preview'));
           
-          // ツールチップのデバッグ情報を表示
+          // ページ読み込み時にデバッグ情報を表示
+          if (isDev) {
+            console.log('🔍 QuoteWebTemplate JavaScript loaded');
+            
+            // DOMContentLoadedイベントで最終チェック
+            document.addEventListener('DOMContentLoaded', function() {
+              console.log('🔍 DOM loaded - Final debug check:', {
+                tooltipWrappers: document.querySelectorAll('.tooltip-wrapper').length,
+                tooltipContents: document.querySelectorAll('.tooltip-content').length,
+                notesSection: !!document.querySelector('section h3:contains("備考")'),
+                notesSectionExists: !!document.querySelector('section h3'),
+                allH3Texts: Array.from(document.querySelectorAll('h3')).map(h3 => h3.textContent)
+              });
+            });
+          }
+          
+          // ツールチップのデバッグ情報を表示（開発環境のみ）
           function debugTooltips() {
             const tooltipWrappers = document.querySelectorAll('.tooltip-wrapper');
             const tooltipContents = document.querySelectorAll('.tooltip-content');
-            console.log('📊 Tooltip Debug Info:', {
-              wrappers: tooltipWrappers.length,
-              contents: tooltipContents.length,
-              wrapperList: Array.from(tooltipWrappers).map(w => ({
-                text: w.textContent?.substring(0, 50) + '...',
-                hasContent: w.querySelector('.tooltip-content') !== null
-              }))
-            });
             
-            // 強制的にツールチップを表示してテスト
-            if (tooltipContents.length > 0) {
-              console.log('🧪 Testing tooltip visibility...');
-              const firstTooltip = tooltipContents[0];
-              firstTooltip.classList.add('force-show');
-              setTimeout(() => {
-                firstTooltip.classList.remove('force-show');
-                console.log('✅ Tooltip test completed');
-              }, 3000);
+            if (isDev) {
+              console.log('Tooltip Debug Info:', {
+                wrappers: tooltipWrappers.length,
+                contents: tooltipContents.length
+              });
             }
           }
           
           // ページ読み込み完了後にデバッグ実行
           document.addEventListener('DOMContentLoaded', function() {
-            console.log('📄 DOM Content Loaded');
+            if (isDev) {
+              console.log('DOM Content Loaded');
+            }
+            
             setTimeout(debugTooltips, 500);
             
             const tooltipWrappers = document.querySelectorAll('.tooltip-wrapper');
-            console.log('🎯 Found tooltip wrappers:', tooltipWrappers.length);
             
             // マウスホバーイベントを強化
             tooltipWrappers.forEach((wrapper, index) => {
-              console.log(\`🔧 Setting up tooltip \${index + 1}\`);
-              
               wrapper.addEventListener('mouseenter', function(e) {
-                console.log(\`🖱️ Mouse enter on tooltip \${index + 1}\`);
                 const content = this.querySelector('.tooltip-content');
                 if (content) {
                   content.classList.add('force-show');
@@ -532,7 +531,6 @@ export default function QuoteWebTemplate({
               });
               
               wrapper.addEventListener('mouseleave', function(e) {
-                console.log(\`🖱️ Mouse leave on tooltip \${index + 1}\`);
                 const content = this.querySelector('.tooltip-content');
                 if (content) {
                   content.classList.remove('force-show');
@@ -541,7 +539,6 @@ export default function QuoteWebTemplate({
               
               // タッチイベント
               wrapper.addEventListener('touchstart', function(e) {
-                console.log(\`👆 Touch start on tooltip \${index + 1}\`);
                 e.stopPropagation();
                 
                 // 他のアクティブなツールチップを閉じる
@@ -911,21 +908,49 @@ export default function QuoteWebTemplate({
           </div>
         </section>
 
-        {/* 備考 */}
+        {/* 備考 - 強化版 */}
         {(() => {
           const hasNotes = quote.notes && quote.notes.trim();
-          console.log('📝 QuoteWebTemplate notes check:', {
-            hasNotes: !!hasNotes,
-            notesLength: quote.notes?.length || 0,
-            notesPreview: quote.notes?.substring(0, 100) || 'なし'
-          });
           
-          return hasNotes ? (
-            <section style={notesSectionStyle}>
-              <h3 style={h3Style}>備考</h3>
-              <div style={notesTextStyle}>{cleanDuplicateSignatures(quote.notes)}</div>
-            </section>
-          ) : null;
+          // 開発環境でのみデバッグログを出力
+          if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname.includes('preview'))) {
+            console.log('📝 QuoteWebTemplate notes check:', {
+              hasNotes: !!hasNotes,
+              notesLength: quote.notes?.length || 0,
+              notesPreview: quote.notes?.substring(0, 100) || 'なし',
+              notesType: typeof quote.notes,
+              notesValue: quote.notes
+            });
+          }
+          
+          // 備考が存在する場合は必ず表示
+          if (hasNotes) {
+            return (
+              <section style={notesSectionStyle}>
+                <h3 style={h3Style}>備考</h3>
+                <div style={notesTextStyle}>{cleanDuplicateSignatures(quote.notes)}</div>
+              </section>
+            );
+          }
+          
+          // デバッグ用: 備考が空の場合でも表示するオプション
+          const showDebugNotes = typeof window !== 'undefined' && 
+                                 window.location.search.includes('debug=true');
+          
+          if (showDebugNotes) {
+            return (
+              <section style={{...notesSectionStyle, backgroundColor: '#fef2f2', borderLeft: '4px solid #ef4444'}}>
+                <h3 style={{...h3Style, color: '#dc2626'}}>デバッグ: 備考情報</h3>
+                <div style={notesTextStyle}>
+                  備考: {quote.notes ? `"${quote.notes}"` : '空文字列または存在しません'}<br/>
+                  タイプ: {typeof quote.notes}<br/>
+                  長さ: {quote.notes?.length || 0}
+                </div>
+              </section>
+            );
+          }
+          
+          return null;
         })()}
       </main>
 

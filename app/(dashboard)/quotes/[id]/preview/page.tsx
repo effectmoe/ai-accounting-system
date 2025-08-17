@@ -41,8 +41,8 @@ export default function QuotePreviewPage() {
             useWebLayout: true,
             includeTracking: false,
             // HTML見積書エディタから保存されたツールチップとリンクを取得
-            tooltips: quote.htmlSettings?.tooltips ? Array.from(new Map(quote.htmlSettings.tooltips).entries()) : [],
-            productLinks: quote.htmlSettings?.productLinks ? Array.from(new Map(quote.htmlSettings.productLinks).entries()) : [],
+            tooltips: quote.htmlSettings?.tooltips || [],
+            productLinks: quote.htmlSettings?.productLinks || [],
             suggestedOptions: quote.htmlSettings?.suggestedOptions || [],
             customMessage: quote.htmlSettings?.customMessage || '',
           }),
@@ -54,7 +54,10 @@ export default function QuotePreviewPage() {
           hasNotes: !!quote.notes,
           notesLength: quote.notes?.length || 0,
           notesPreview: quote.notes?.substring(0, 100) || 'なし',
-          tooltipsCount: quote.htmlSettings?.tooltips ? Object.keys(quote.htmlSettings.tooltips).length : 0,
+          tooltipsCount: quote.htmlSettings?.tooltips ? quote.htmlSettings.tooltips.length : 0,
+          tooltipsData: quote.htmlSettings?.tooltips || [],
+          productLinksCount: quote.htmlSettings?.productLinks ? quote.htmlSettings.productLinks.length : 0,
+          productLinksData: quote.htmlSettings?.productLinks || [],
           hasCustomMessage: !!quote.htmlSettings?.customMessage,
           customMessage: quote.htmlSettings?.customMessage || 'なし'
         });
