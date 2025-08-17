@@ -445,6 +445,19 @@ export default function QuoteHtmlTemplate({
                 お問い合わせ
               </Link>
             </Text>
+            <Hr style={systemSignatureDivider} />
+            <Text style={systemSignatureText}>
+              このシステムは
+              <Link 
+                href="https://notion.effect.moe/"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={systemSignatureLink}
+              >
+                株式会社EFFECT
+              </Link>
+              のAAM-Accountingシステムです
+            </Text>
           </Section>
 
           {/* トラッキングピクセル */}
@@ -913,4 +926,21 @@ const signatureAssignee = {
   fontSize: '13px',
   color: '#6b7280',
   margin: '5px 0',
+};
+
+const systemSignatureDivider = {
+  borderColor: '#e5e7eb',
+  margin: '20px 0 10px 0',
+};
+
+const systemSignatureText = {
+  fontSize: '12px',
+  color: '#6b7280',
+  textAlign: 'center' as const,
+  margin: '10px 0',
+};
+
+const systemSignatureLink = {
+  color: '#3b82f6',
+  textDecoration: 'none',
 };
