@@ -35,6 +35,9 @@ export default function HtmlQuoteEditorPage() {
         throw new Error('見積書の取得に失敗しました');
       }
       const quoteData = await quoteResponse.json();
+      console.log('[HtmlEditorPage.fetchData] Fetched quote data:', quoteData);
+      console.log('[HtmlEditorPage.fetchData] htmlSettings:', quoteData.htmlSettings);
+      console.log('[HtmlEditorPage.fetchData] customMessage:', quoteData.htmlSettings?.customMessage);
       setQuote(quoteData);
 
       // 会社情報を取得
@@ -74,6 +77,10 @@ export default function HtmlQuoteEditorPage() {
 
   const handleSave = async (updatedQuote: any) => {
     try {
+      console.log('[HtmlEditorPage.handleSave] Received data:', updatedQuote);
+      console.log('[HtmlEditorPage.handleSave] htmlSettings:', updatedQuote.htmlSettings);
+      console.log('[HtmlEditorPage.handleSave] customMessage:', updatedQuote.htmlSettings?.customMessage);
+      
       const response = await fetch(`/api/quotes/${quoteId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -81,8 +88,14 @@ export default function HtmlQuoteEditorPage() {
       });
 
       if (!response.ok) {
+        const errorData = await response.text();
+        console.error('[HtmlEditorPage.handleSave] API Error:', errorData);
         throw new Error('保存に失敗しました');
       }
+
+      const savedData = await response.json();
+      console.log('[HtmlEditorPage.handleSave] API Response:', savedData);
+      console.log('[HtmlEditorPage.handleSave] Saved htmlSettings:', savedData.htmlSettings);
 
       // 見積書データを再取得
       await fetchData();

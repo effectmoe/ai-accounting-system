@@ -80,6 +80,7 @@ export default function HtmlQuoteEditor({
   console.log('[HtmlQuoteEditor] onSend value:', onSend);
   console.log('HtmlQuoteEditor mounted with:', { quote, companyInfo });
   console.log('Customer data:', quote.customer);
+  console.log('Quote htmlSettings:', quote.htmlSettings);
   console.log('onSend function received:', !!onSend); // デバッグ用
   
   // 税率を正しい形式に変換（0.1 -> 10）
@@ -96,7 +97,21 @@ export default function HtmlQuoteEditor({
   };
   
   const [editedQuote, setEditedQuote] = useState(initialQuote);
-  const [customMessage, setCustomMessage] = useState('いつもお世話になっております。\nご依頼いただいた内容について、お見積りをお送りいたします。\nご不明な点がございましたら、お気軽にお問い合わせください。');
+  // HTMLSettingsからの初期値設定（デバッグログ付き）
+  console.log('[HtmlQuoteEditor] Initial htmlSettings:', quote.htmlSettings);
+  console.log('[HtmlQuoteEditor] Initial customMessage from htmlSettings:', quote.htmlSettings?.customMessage);
+  
+  const [customMessage, setCustomMessage] = useState(
+    quote.htmlSettings?.customMessage || 
+    'いつもお世話になっております。\nご依頼いただいた内容について、お見積りをお送りいたします。\nご不明な点がございましたら、お気軽にお問い合わせください。'
+  );
+  
+  // customMessageの変更を追跡
+  const handleCustomMessageChange = (newContent: string) => {
+    console.log('[HtmlQuoteEditor] customMessage changing from:', customMessage);
+    console.log('[HtmlQuoteEditor] customMessage changing to:', newContent);
+    setCustomMessage(newContent);
+  };
   
   // 送信先情報の初期化（顧客の担当者情報を優先）
   const [recipientEmail, setRecipientEmail] = useState(
@@ -121,12 +136,30 @@ export default function HtmlQuoteEditor({
   console.log('initialQuote.customer:', initialQuote.customer);
   console.log('initialQuote.customerEmail:', initialQuote.customerEmail);
   console.log('=== End Initial Debug ===');
-  const [suggestedOptions, setSuggestedOptions] = useState(generateDefaultSuggestedOptions(quote));
-  const [tooltips, setTooltips] = useState(generateDefaultTooltips());
-  const [productLinks, setProductLinks] = useState(new Map<string, string>());
-  const [includeTracking, setIncludeTracking] = useState(true);
-  const [includeInteractiveElements, setIncludeInteractiveElements] = useState(true); // デフォルトはオン
-  const [useWebLayout, setUseWebLayout] = useState(false); // Web最適化レイアウトフラグ
+  const [suggestedOptions, setSuggestedOptions] = useState(
+    quote.htmlSettings?.suggestedOptions || generateDefaultSuggestedOptions(quote)
+  );
+  const [tooltips, setTooltips] = useState(() => {
+    if (quote.htmlSettings?.tooltips) {
+      return new Map(quote.htmlSettings.tooltips);
+    }
+    return generateDefaultTooltips();
+  });
+  const [productLinks, setProductLinks] = useState(() => {
+    if (quote.htmlSettings?.productLinks) {
+      return new Map(quote.htmlSettings.productLinks);
+    }
+    return new Map<string, string>();
+  });
+  const [includeTracking, setIncludeTracking] = useState(
+    quote.htmlSettings?.includeTracking ?? true
+  );
+  const [includeInteractiveElements, setIncludeInteractiveElements] = useState(
+    quote.htmlSettings?.includeInteractiveElements ?? true
+  ); // デフォルトはオン
+  const [useWebLayout, setUseWebLayout] = useState(
+    quote.htmlSettings?.useWebLayout ?? false
+  ); // Web最適化レイアウトフラグ
   const [attachPdf, setAttachPdf] = useState(true);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isSending, setIsSending] = useState(false);
@@ -138,6 +171,48 @@ export default function HtmlQuoteEditor({
   const [showQuickCreator, setShowQuickCreator] = useState(false); // クイックオプション作成ダイアログの表示状態
   const [isLoadingSuggestedOptions, setIsLoadingSuggestedOptions] = useState(false); // おすすめオプション読み込み状態
 
+  // quoteが更新された場合に設定を復元する
+  useEffect(() => {
+    console.log('[HtmlQuoteEditor.useEffect] Quote changed, htmlSettings:', quote.htmlSettings);
+    if (quote.htmlSettings) {
+      console.log('[HtmlQuoteEditor.useEffect] Restoring HTML settings from quote:', quote.htmlSettings);
+      
+      // カスタムメッセージを復元
+      if (quote.htmlSettings.customMessage !== undefined && quote.htmlSettings.customMessage !== customMessage) {
+        console.log('[HtmlQuoteEditor.useEffect] Updating customMessage from:', customMessage, 'to:', quote.htmlSettings.customMessage);
+        setCustomMessage(quote.htmlSettings.customMessage);
+      }
+      
+      // 提案オプションを復元
+      if (quote.htmlSettings.suggestedOptions) {
+        setSuggestedOptions(quote.htmlSettings.suggestedOptions);
+      }
+      
+      // ツールチップを復元
+      if (quote.htmlSettings.tooltips) {
+        setTooltips(new Map(quote.htmlSettings.tooltips));
+      }
+      
+      // 商品リンクを復元
+      if (quote.htmlSettings.productLinks) {
+        setProductLinks(new Map(quote.htmlSettings.productLinks));
+      }
+      
+      // フラグ設定を復元
+      if (quote.htmlSettings.includeTracking !== undefined) {
+        setIncludeTracking(quote.htmlSettings.includeTracking);
+      }
+      
+      if (quote.htmlSettings.includeInteractiveElements !== undefined) {
+        setIncludeInteractiveElements(quote.htmlSettings.includeInteractiveElements);
+      }
+      
+      if (quote.htmlSettings.useWebLayout !== undefined) {
+        setUseWebLayout(quote.htmlSettings.useWebLayout);
+      }
+    }
+  }, [quote]); // quoteが変更されたときに実行
+  
   // staffNameが変更されたときにeditedQuote.assigneeも同期する
   useEffect(() => {
     console.log('=== staffName Changed Effect ===');
@@ -440,7 +515,11 @@ export default function HtmlQuoteEditor({
     setIsSaving(true);
     try {
       if (onSave) {
-        await onSave({
+        // デバッグ用ログ
+        console.log('[HtmlQuoteEditor.handleSave] Current customMessage:', customMessage);
+        console.log('[HtmlQuoteEditor.handleSave] HTML content length:', customMessage.length);
+        
+        const dataToSave = {
           ...editedQuote,
           htmlSettings: {
             customMessage,
@@ -450,11 +529,18 @@ export default function HtmlQuoteEditor({
             includeTracking,
             includeInteractiveElements,
           },
-        });
+        };
+        
+        console.log('[HtmlQuoteEditor.handleSave] Data being saved:', dataToSave);
+        console.log('[HtmlQuoteEditor.handleSave] htmlSettings.customMessage:', dataToSave.htmlSettings.customMessage);
+        
+        await onSave(dataToSave);
+        console.log('[HtmlQuoteEditor.handleSave] Save completed successfully');
         alert('保存しました');
       }
     } catch (error) {
       logger.error('Error saving:', error);
+      console.error('[HtmlQuoteEditor.handleSave] Error:', error);
       alert('保存に失敗しました');
     } finally {
       setIsSaving(false);
@@ -921,7 +1007,7 @@ export default function HtmlQuoteEditor({
                 <div className="mt-1">
                   <RichTextEditor
                     content={customMessage}
-                    onChange={setCustomMessage}
+                    onChange={handleCustomMessageChange}
                     placeholder="お客様へのメッセージを入力（太字、リンク、色などの装飾が可能です）"
                   />
                 </div>
