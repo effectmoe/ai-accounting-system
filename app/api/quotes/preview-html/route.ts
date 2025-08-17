@@ -159,16 +159,45 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    // デバッグログを追加
-    console.log('🔍 Preview API Debug - Tooltips received:', tooltips);
-    console.log('🗺️ Preview API Debug - Tooltips map size:', tooltipsMap.size);
-    console.log('📋 Preview API Debug - Tooltips entries:', Array.from(tooltipsMap.entries()));
-    console.log('📊 Preview API Debug - Quote items:', quote?.items?.map(item => item.itemName || item.description));
-    console.log('📝 Preview API Debug - Quote notes:', {
+    // デバッグログを追加（強化版）
+    console.log('🔍 Preview API Debug - Enhanced version:');
+    console.log('  - Tooltips received (type):', typeof tooltips, 'length:', tooltips?.length);
+    console.log('  - Tooltips received (data):', tooltips);
+    console.log('  - Tooltips map size:', tooltipsMap.size);
+    console.log('  - Tooltips entries:', Array.from(tooltipsMap.entries()));
+    console.log('  - Quote items (with details):', quote?.items?.map((item, index) => ({
+      index,
+      itemName: item.itemName,
+      description: item.description,
+      combined: (item.itemName || '') + ' ' + (item.description || ''),
+      hasTooltip: false // これは後で設定される
+    })));
+    console.log('  - Quote notes (detailed):', {
       hasNotes: !!quote?.notes,
       notesValue: quote?.notes,
-      notesLength: quote?.notes?.length
+      notesLength: quote?.notes?.length,
+      notesType: typeof quote?.notes,
+      notesPreview: quote?.notes?.substring(0, 100) || 'なし'
     });
+    
+    // 項目ごとのツールチップマッチングをテスト
+    if (quote?.items && Array.isArray(quote.items)) {
+      console.log('🎯 Testing tooltip matching for each item:');
+      quote.items.forEach((item, index) => {
+        const itemText = item.itemName || item.description || '';
+        let matchedTooltip = null;
+        
+        // 簡単なマッチングテスト
+        for (const [key, value] of tooltipsMap.entries()) {
+          if (itemText.toLowerCase().includes(key.toLowerCase()) || key.toLowerCase().includes(itemText.toLowerCase())) {
+            matchedTooltip = { key, value: value.substring(0, 50) + '...' };
+            break;
+          }
+        }
+        
+        console.log(`  Item ${index + 1}: "${itemText}" -> ${matchedTooltip ? `Matched: ${matchedTooltip.key}` : 'No match'}`);
+      });
+    }
     
     logger.debug('Tooltips received:', tooltips);
     logger.debug('Tooltips map size:', tooltipsMap.size);
