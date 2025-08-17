@@ -586,29 +586,38 @@ export default function QuoteHtmlTemplate({
               )}
             </div>
 
-            {/* 備考 */}
+            {/* 備考 - 修正版（確実に表示） */}
             {(() => {
               // より寛容な備考チェック（空白文字を除いて何か内容があるか）
-              const normalizedNotes = quote.notes ? quote.notes.trim() : '';
+              const originalNotes = quote.notes || '';
+              const normalizedNotes = originalNotes.trim();
               const hasNotes = normalizedNotes && normalizedNotes.length > 0;
               
-              // 開発環境でのみデバッグログを出力
-              if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname.includes('preview'))) {
-                console.log('📝 QuoteHtmlTemplate notes check (enhanced):', {
-                  originalNotes: quote.notes,
-                  normalizedNotes: normalizedNotes,
-                  hasNotes: hasNotes,
-                  notesLength: normalizedNotes.length,
-                  notesPreview: normalizedNotes.substring(0, 100) || 'なし'
-                });
+              // デバッグログを常に出力
+              console.log('📝 QuoteHtmlTemplate notes check (fixed version):', {
+                originalNotes: originalNotes,
+                normalizedNotes: normalizedNotes,
+                hasNotes: hasNotes,
+                notesLength: normalizedNotes.length,
+                notesPreview: normalizedNotes.substring(0, 100) || 'なし',
+                notesType: typeof quote.notes,
+                isEmpty: !hasNotes,
+                willShow: hasNotes || originalNotes.length > 0
+              });
+              
+              // 備考が存在する場合は必ず表示（確実な条件チェック）
+              if (hasNotes || originalNotes.length > 0) {
+                return (
+                  <div className="notes-section">
+                    <div className="notes-title">備考</div>
+                    <div className="notes-text">
+                      {hasNotes ? cleanDuplicateSignatures(normalizedNotes) : '（備考が設定されていません）'}
+                    </div>
+                  </div>
+                );
               }
               
-              return hasNotes ? (
-                <div className="notes-section">
-                  <div className="notes-title">備考</div>
-                  <div className="notes-text">{cleanDuplicateSignatures(normalizedNotes)}</div>
-                </div>
-              ) : null;
+              return null;
             })()}
 
             {/* 会社情報 */}

@@ -960,39 +960,43 @@ export default function QuoteWebTemplate({
           </div>
         </section>
 
-        {/* 備考 - 強化版 */}
+        {/* 備考 - 修正版（確実に表示） */}
         {(() => {
           // より寛容な備考チェック（空白文字を除いて何か内容があるか）
-          const normalizedNotes = quote.notes ? quote.notes.trim() : '';
+          const originalNotes = quote.notes || '';
+          const normalizedNotes = originalNotes.trim();
           const hasNotes = normalizedNotes && normalizedNotes.length > 0;
           
           // デバッグ用ログ（開発環境でのみ）
-          if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname.includes('preview'))) {
-            console.log('📝 QuoteWebTemplate notes check (enhanced):', {
-              originalNotes: quote.notes,
-              normalizedNotes: normalizedNotes,
-              hasNotes: hasNotes,
-              notesLength: normalizedNotes.length,
-              notesPreview: normalizedNotes.substring(0, 100) || 'なし',
-              notesType: typeof quote.notes,
-              isEmpty: !hasNotes
-            });
-          }
+          console.log('📝 QuoteWebTemplate notes check (fixed version):', {
+            originalNotes: originalNotes,
+            normalizedNotes: normalizedNotes,
+            hasNotes: hasNotes,
+            notesLength: normalizedNotes.length,
+            notesPreview: normalizedNotes.substring(0, 100) || 'なし',
+            notesType: typeof quote.notes,
+            isEmpty: !hasNotes,
+            willShow: hasNotes
+          });
           
-          // 備考が存在する場合は必ず表示
-          if (hasNotes) {
+          // 備考が存在する場合は必ず表示（確実な条件チェック）
+          if (hasNotes || originalNotes.length > 0) {
             return (
               <section style={notesSectionStyle}>
                 <h3 style={h3Style}>備考</h3>
-                <div style={notesTextStyle}>{cleanDuplicateSignatures(normalizedNotes)}</div>
+                <div style={notesTextStyle}>
+                  {hasNotes ? cleanDuplicateSignatures(normalizedNotes) : '（備考が設定されていません）'}
+                </div>
               </section>
             );
           }
           
-          // デバッグ用: 備考が空の場合でも表示するオプション
+          // デバッグ用: 備考が空の場合でも表示するオプション（常に有効）
           const showDebugNotes = typeof window !== 'undefined' && 
                                  (window.location.search.includes('debug=true') || 
-                                  window.location.search.includes('show-empty-notes=true'));
+                                  window.location.search.includes('show-empty-notes=true') ||
+                                  window.location.hostname.includes('localhost') ||
+                                  window.location.hostname.includes('preview'));
           
           if (showDebugNotes) {
             return (
@@ -1003,7 +1007,8 @@ export default function QuoteWebTemplate({
                   正規化後: {normalizedNotes ? `"${normalizedNotes}"` : '空'}<br/>
                   タイプ: {typeof quote.notes}<br/>
                   長さ: {normalizedNotes.length}<br/>
-                  表示判定: {hasNotes ? '表示する' : '非表示'}
+                  表示判定: {hasNotes ? '表示する' : '非表示'}<br/>
+                  実際の動作: この情報が表示されています
                 </div>
               </section>
             );

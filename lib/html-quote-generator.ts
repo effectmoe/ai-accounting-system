@@ -192,6 +192,7 @@ function enhanceQuoteItems(
 /**
  * アイテムに対応するツールチップを検索
  * 完全一致→部分一致→キーワード一致→類似語検索の順で検索
+ * 修正: より積極的にマッチングするよう改善
  */
 function findTooltipForItem(
   description: string,
@@ -204,31 +205,53 @@ function findTooltipForItem(
   const terms = Array.from(tooltips.keys());
   const descriptionLower = description.toLowerCase().trim();
   
+  // デバッグログ（開発環境のみ）
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`🔍 Finding tooltip for: "${description}" (normalized: "${descriptionLower}")`);
+    console.log(`🗂️ Available tooltips: ${terms.join(', ')}`);
+  }
+  
   // 1. 完全一致を最初に試す
   if (tooltips.has(description)) {
-    return tooltips.get(description);
+    const result = tooltips.get(description);
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`✅ Exact match found: "${description}" -> "${result?.substring(0, 50)}..."`);
+    }
+    return result;
   }
   
   // 大文字小文字を無視した完全一致
   for (const term of terms) {
     if (term.toLowerCase() === descriptionLower) {
-      return tooltips.get(term);
+      const result = tooltips.get(term);
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`✅ Case-insensitive exact match: "${term}" -> "${result?.substring(0, 50)}..."`);
+      }
+      return result;
     }
   }
   
-  // 2. 項目名にキーワードが含まれているかチェック（大文字小文字を無視）
+  // 2. 項目名にキーワードが含まれているかチェック（大文字小文字を無視、最小長を1文字に短縮）
   for (const term of terms) {
     const termLower = term.toLowerCase();
-    if (descriptionLower.includes(termLower) && termLower.length >= 2) {
-      return tooltips.get(term);
+    if (descriptionLower.includes(termLower) && termLower.length >= 1) {
+      const result = tooltips.get(term);
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`✅ Partial match found: "${termLower}" in "${descriptionLower}" -> "${result?.substring(0, 50)}..."`);
+      }
+      return result;
     }
   }
   
   // 3. 逆方向の検索（ツールチップキーが項目名の一部として含まれているか）
   for (const term of terms) {
     const termLower = term.toLowerCase();
-    if (termLower.includes(descriptionLower) && descriptionLower.length >= 2) {
-      return tooltips.get(term);
+    if (termLower.includes(descriptionLower) && descriptionLower.length >= 1) {
+      const result = tooltips.get(term);
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`✅ Reverse match found: "${descriptionLower}" in "${termLower}" -> "${result?.substring(0, 50)}..."`);
+      }
+      return result;
     }
   }
   
@@ -256,6 +279,10 @@ function findTooltipForItem(
     'analysis': ['モニタリング', 'LLMO'],
     'optimization': ['最適化', 'LLMO'],
     'performance': ['パフォーマンス', 'モニタリング'],
+    'test': ['テスト項目'], // デバッグ用のテスト項目追加
+    'テスト': ['テスト項目'],
+    'sample': ['サンプル'],
+    'サンプル': ['サンプル'],
   };
   
   for (const [keyword, candidates] of Object.entries(specialMatches)) {
@@ -263,40 +290,59 @@ function findTooltipForItem(
       for (const candidate of candidates) {
         const tooltip = tooltips.get(candidate);
         if (tooltip) {
+          if (process.env.NODE_ENV === 'development') {
+            console.log(`✅ Special keyword match: "${keyword}" -> "${candidate}" -> "${tooltip.substring(0, 50)}..."`);
+          }
           return tooltip;
         }
       }
     }
   }
   
-  // 5. 単語レベルでの部分マッチング（より柔軟に）
-  const descriptionWords = descriptionLower.split(/[\s、。，．・_\-]+/).filter(word => word.length >= 2);
+  // 5. 単語レベルでの部分マッチング（より柔軟に、最小長を1文字に短縮）
+  const descriptionWords = descriptionLower.split(/[\s、。，．・_\-]+/).filter(word => word.length >= 1);
   
   for (const word of descriptionWords) {
     for (const term of terms) {
       const termLower = term.toLowerCase();
-      const termWords = termLower.split(/[\s、。，．・_\-]+/).filter(w => w.length >= 2);
+      const termWords = termLower.split(/[\s、。，．・_\-]+/).filter(w => w.length >= 1);
       
       // 単語が含まれるかチェック
       if (termLower.includes(word) || word.includes(termLower)) {
-        return tooltips.get(term);
+        const result = tooltips.get(term);
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`✅ Word-level match: "${word}" <-> "${termLower}" -> "${result?.substring(0, 50)}..."`);
+        }
+        return result;
       }
       
       // 単語同士のマッチング
       for (const termWord of termWords) {
-        if (word === termWord || (word.length >= 3 && termWord.length >= 3 && (word.includes(termWord) || termWord.includes(word)))) {
-          return tooltips.get(term);
+        if (word === termWord || (word.length >= 2 && termWord.length >= 2 && (word.includes(termWord) || termWord.includes(word)))) {
+          const result = tooltips.get(term);
+          if (process.env.NODE_ENV === 'development') {
+            console.log(`✅ Word-to-word match: "${word}" <-> "${termWord}" -> "${result?.substring(0, 50)}..."`);
+          }
+          return result;
         }
       }
     }
   }
   
-  // 6. 最後の手段: 曖昧マッチング（文字の一致率をチェック）
+  // 6. 最後の手段: 曖昧マッチング（文字の一致率をチェック、閾値を50%に下げる）
   for (const term of terms) {
     const similarity = calculateSimilarity(descriptionLower, term.toLowerCase());
-    if (similarity > 0.6) { // 60%以上の類似度
-      return tooltips.get(term);
+    if (similarity > 0.5) { // 50%以上の類似度（より寛容に）
+      const result = tooltips.get(term);
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`✅ Similarity match: "${descriptionLower}" <-> "${term.toLowerCase()}" (${Math.round(similarity * 100)}%) -> "${result?.substring(0, 50)}..."`);
+      }
+      return result;
     }
+  }
+  
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`❌ No tooltip found for: "${description}"`);
   }
   
   return undefined;
