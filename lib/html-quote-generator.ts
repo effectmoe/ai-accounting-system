@@ -192,7 +192,7 @@ function enhanceQuoteItems(
 
 /**
  * アイテムに対応するツールチップを検索
- * 完全一致→部分一致→キーワード一致の順で検索
+ * 完全一致→部分一致→キーワード一致→類似語検索の順で検索
  */
 function findTooltipForItem(
   description: string,
@@ -201,19 +201,32 @@ function findTooltipForItem(
   console.log('🔍 Searching tooltip for:', description);
   console.log('🗂️ Available tooltips:', Array.from(tooltips.keys()));
   
+  if (!description || description.trim() === '') {
+    console.log('❌ Empty description provided');
+    return undefined;
+  }
+  
+  const terms = Array.from(tooltips.keys());
+  const descriptionLower = description.toLowerCase().trim();
+  
   // 1. 完全一致を最初に試す
   if (tooltips.has(description)) {
     console.log('✅ Exact match found for:', description);
     return tooltips.get(description);
   }
   
-  // 2. 項目名にキーワードが含まれているかチェック（大文字小文字を無視）
-  const terms = Array.from(tooltips.keys());
-  const descriptionLower = description.toLowerCase();
+  // 大文字小文字を無視した完全一致
+  for (const term of terms) {
+    if (term.toLowerCase() === descriptionLower) {
+      console.log(`✅ Case-insensitive exact match found: "${term}" for "${description}"`);
+      return tooltips.get(term);
+    }
+  }
   
+  // 2. 項目名にキーワードが含まれているかチェック（大文字小文字を無視）
   for (const term of terms) {
     const termLower = term.toLowerCase();
-    if (descriptionLower.includes(termLower)) {
+    if (descriptionLower.includes(termLower) && termLower.length >= 2) {
       console.log(`✅ Partial match found: "${term}" in "${description}"`);
       return tooltips.get(term);
     }
@@ -228,12 +241,44 @@ function findTooltipForItem(
     }
   }
   
-  // 4. 特別な処理: "LLMO"を含む場合は確実にマッチ
-  if (descriptionLower.includes('llmo')) {
-    const llmoTooltip = tooltips.get('LLMO') || tooltips.get('LLMOモニタリング');
-    if (llmoTooltip) {
-      console.log(`✅ LLMO special match found for: "${description}"`);
-      return llmoTooltip;
+  // 4. 特別な処理: 特定の略語や専門用語のマッチング
+  const specialMatches = {
+    'llmo': ['LLMO', 'LLMOモニタリング'],
+    'saas': ['SaaS'],
+    'api': ['API'],
+    'roi': ['ROI'],
+    'kpi': ['KPI'],
+    'seo': ['SEO'],
+    'ui': ['UI/UX'],
+    'ux': ['UI/UX'],
+    'システム': ['システム', '開発', '構築'],
+    'モニタリング': ['モニタリング', 'LLMOモニタリング'],
+    '最適化': ['最適化', 'LLMO'],
+    '開発': ['開発', 'システム'],
+    '構築': ['構築', 'システム'],
+  };
+  
+  for (const [keyword, candidates] of Object.entries(specialMatches)) {
+    if (descriptionLower.includes(keyword)) {
+      for (const candidate of candidates) {
+        const tooltip = tooltips.get(candidate);
+        if (tooltip) {
+          console.log(`✅ Special keyword match found: "${keyword}" -> "${candidate}" for "${description}"`);
+          return tooltip;
+        }
+      }
+    }
+  }
+  
+  // 5. 単語レベルでの部分マッチング
+  const descriptionWords = descriptionLower.split(/[\s、。，．・]+/).filter(word => word.length >= 2);
+  for (const word of descriptionWords) {
+    for (const term of terms) {
+      const termLower = term.toLowerCase();
+      if (termLower.includes(word) || word.includes(termLower)) {
+        console.log(`✅ Word-level match found: "${word}" <-> "${term}" for "${description}"`);
+        return tooltips.get(term);
+      }
     }
   }
   
