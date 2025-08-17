@@ -325,9 +325,8 @@ export async function generateServerHtmlQuote({
                 <tr>
                   <td align="center">
                     <p style="margin: 0; font-size: 12px; color: #6b7280; text-align: center;">
-                      このシステムは
-                      <a href="https://notion.effect.moe/" target="_blank" rel="noopener noreferrer" style="color: #3b82f6; text-decoration: none;">株式会社EFFECT</a>
-                      によるAI駆動のAAM-Accountingシステムで構成されています
+                      このシステムはAI駆動によるAAM-Accountingシステムです powered by 
+                      <a href="https://notion.effect.moe/" target="_blank" rel="noopener noreferrer" style="color: #3b82f6; text-decoration: none;">EFFECT Inc.</a>
                     </p>
                   </td>
                 </tr>
