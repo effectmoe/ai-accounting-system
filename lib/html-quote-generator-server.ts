@@ -171,21 +171,33 @@ export async function generateServerHtmlQuote({
               <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse: collapse;">
                 <thead>
                   <tr style="background-color: #f8f9fa;">
-                    <th style="padding: 12px; text-align: left; border: 1px solid #e0e0e0; font-size: 14px; color: #333333; font-weight: bold;">項目</th>
-                    <th style="padding: 12px; text-align: center; border: 1px solid #e0e0e0; font-size: 14px; color: #333333; font-weight: bold; width: 80px;">数量</th>
-                    <th style="padding: 12px; text-align: right; border: 1px solid #e0e0e0; font-size: 14px; color: #333333; font-weight: bold; width: 100px;">単価</th>
-                    <th style="padding: 12px; text-align: right; border: 1px solid #e0e0e0; font-size: 14px; color: #333333; font-weight: bold; width: 120px;">金額</th>
+                    <th style="padding: 12px; text-align: left; border: 1px solid #e0e0e0; font-size: 14px; color: #333333; font-weight: bold;">品目</th>
+                    <th style="padding: 12px; text-align: center; border: 1px solid #e0e0e0; font-size: 14px; color: #333333; font-weight: bold; width: 60px;">数量</th>
+                    <th style="padding: 12px; text-align: right; border: 1px solid #e0e0e0; font-size: 14px; color: #333333; font-weight: bold; width: 80px;">単価</th>
+                    <th style="padding: 12px; text-align: right; border: 1px solid #e0e0e0; font-size: 14px; color: #333333; font-weight: bold; width: 90px;">小計</th>
+                    <th style="padding: 12px; text-align: right; border: 1px solid #e0e0e0; font-size: 14px; color: #333333; font-weight: bold; width: 80px;">消費税</th>
+                    <th style="padding: 12px; text-align: right; border: 1px solid #e0e0e0; font-size: 14px; color: #333333; font-weight: bold; width: 100px;">金額</th>
                   </tr>
                 </thead>
                 <tbody>
-                  ${(quote.items || []).map((item: any, index: number) => `
+                  ${(quote.items || []).map((item: any, index: number) => {
+                    const isDiscount = (item.amount < 0) || 
+                      (item.itemName && (item.itemName.includes('値引き') || item.itemName.includes('割引')));
+                    const itemColor = isDiscount ? '#dc2626' : '#333333';
+                    const subtotalAmount = (item.quantity || 1) * (item.unitPrice || 0);
+                    const taxAmount = subtotalAmount * (quote.taxRate || 0.1);
+                    
+                    return `
                   <tr>
-                    <td style="padding: 12px; border: 1px solid #e0e0e0; font-size: 14px; color: #333333;">${item.itemName || `項目${index + 1}`}</td>
-                    <td style="padding: 12px; text-align: center; border: 1px solid #e0e0e0; font-size: 14px; color: #333333;">${item.quantity || 1}</td>
-                    <td style="padding: 12px; text-align: right; border: 1px solid #e0e0e0; font-size: 14px; color: #333333;">¥${(item.unitPrice || 0).toLocaleString()}</td>
-                    <td style="padding: 12px; text-align: right; border: 1px solid #e0e0e0; font-size: 14px; color: #333333;">¥${(item.amount || 0).toLocaleString()}</td>
+                    <td style="padding: 12px; border: 1px solid #e0e0e0; font-size: 14px; color: ${itemColor};">${item.itemName || `項目${index + 1}`}</td>
+                    <td style="padding: 12px; text-align: center; border: 1px solid #e0e0e0; font-size: 14px; color: ${itemColor};">${item.quantity || 1}</td>
+                    <td style="padding: 12px; text-align: right; border: 1px solid #e0e0e0; font-size: 14px; color: ${itemColor};">¥${(item.unitPrice || 0).toLocaleString()}</td>
+                    <td style="padding: 12px; text-align: right; border: 1px solid #e0e0e0; font-size: 14px; color: ${itemColor};">¥${subtotalAmount.toLocaleString()}</td>
+                    <td style="padding: 12px; text-align: right; border: 1px solid #e0e0e0; font-size: 14px; color: ${itemColor};">¥${Math.round(taxAmount).toLocaleString()}</td>
+                    <td style="padding: 12px; text-align: right; border: 1px solid #e0e0e0; font-size: 14px; color: ${itemColor}; font-weight: bold;">¥${(item.amount || 0).toLocaleString()}</td>
                   </tr>
-                  `).join('')}
+                  `;
+                  }).join('')}
                 </tbody>
               </table>
             </td>
@@ -319,9 +331,18 @@ ${customMessage ? `【メッセージ】\n${customMessage}\n\n` : ''}
 有効期限：${validityDate}
 
 【見積項目】
-${(quote.items || []).map((item: any, index: number) => 
-  `${index + 1}. ${item.itemName || `項目${index + 1}`} × ${item.quantity || 1} - ¥${(item.amount || 0).toLocaleString()}`
-).join('\n')}
+${(quote.items || []).map((item: any, index: number) => {
+  const subtotalAmount = (item.quantity || 1) * (item.unitPrice || 0);
+  const taxAmount = subtotalAmount * (quote.taxRate || 0.1);
+  const isDiscount = (item.amount < 0) || 
+    (item.itemName && (item.itemName.includes('値引き') || item.itemName.includes('割引')));
+  const prefix = isDiscount ? '[値引き] ' : '';
+  
+  return `${index + 1}. ${prefix}${item.itemName || `項目${index + 1}`}
+   数量: ${item.quantity || 1} × 単価: ¥${(item.unitPrice || 0).toLocaleString()}
+   小計: ¥${subtotalAmount.toLocaleString()} + 消費税: ¥${Math.round(taxAmount).toLocaleString()}
+   金額: ¥${(item.amount || 0).toLocaleString()}`;
+}).join('\n\n')}
 
 【金額】
 小計：¥${subtotal.toLocaleString()}
