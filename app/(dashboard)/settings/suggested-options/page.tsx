@@ -22,6 +22,25 @@ import {
   CreateSuggestedOptionRequest,
   UpdateSuggestedOptionRequest
 } from '@/types/suggested-option';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import {
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface SuggestedOptionFormData {
   title: string;
@@ -46,6 +65,128 @@ interface FormErrors {
   maxAmount?: string;
 }
 
+// ソート可能なアイテムコンポーネント
+interface SortableItemProps {
+  option: SuggestedOption;
+  index: number;
+  onToggleActive: (id: string) => void;
+  onEdit: (option: SuggestedOption) => void;
+  onDelete: (id: string) => void;
+}
+
+function SortableItem({ option, index, onToggleActive, onEdit, onDelete }: SortableItemProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: option._id?.toString() || '' });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`bg-white rounded-lg shadow p-6 ${
+        !option.isActive ? 'opacity-60' : ''
+      } ${isDragging ? 'z-50' : ''}`}
+    >
+      <div className="flex items-start justify-between">
+        <div className="flex items-start gap-4 flex-1">
+          <div 
+            className="flex items-center gap-2 text-sm text-gray-500 cursor-move"
+            {...attributes}
+            {...listeners}
+          >
+            <GripVertical className="w-4 h-4" />
+            #{index + 1}
+          </div>
+          
+          <div className="flex-1">
+            <div className="flex items-center gap-3 mb-2">
+              <h3 className="text-lg font-semibold">{option.title}</h3>
+              <span className="text-lg font-bold text-blue-600">{formatPrice(option.price)}</span>
+              {!option.isActive && (
+                <span className="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded">
+                  無効
+                </span>
+              )}
+            </div>
+            
+            <p className="text-gray-600 mb-3 whitespace-pre-wrap">{option.description}</p>
+            
+            <div className="mb-3">
+              <h4 className="text-sm font-medium text-gray-700 mb-1">特徴:</h4>
+              <ul className="text-sm text-gray-600 space-y-1">
+                {option.features.map((feature, idx) => (
+                  <li key={idx} className="flex items-start gap-2">
+                    <span className="text-blue-600 mt-1">•</span>
+                    <span>{feature}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+              <div>
+                <span className="text-gray-600">CTAテキスト:</span>
+                <span className="ml-2">{option.ctaText || '未設定'}</span>
+              </div>
+              <div>
+                <span className="text-gray-600">最小金額:</span>
+                <span className="ml-2">
+                  {option.minAmount ? `¥${option.minAmount.toLocaleString()}` : '制限なし'}
+                </span>
+              </div>
+              <div>
+                <span className="text-gray-600">最大金額:</span>
+                <span className="ml-2">
+                  {option.maxAmount ? `¥${option.maxAmount.toLocaleString()}` : '制限なし'}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div className="flex gap-2 ml-4">
+          <button
+            onClick={() => onToggleActive(option._id!.toString())}
+            className={`p-2 ${
+              option.isActive 
+                ? 'text-green-600 hover:text-green-800' 
+                : 'text-gray-400 hover:text-gray-600'
+            }`}
+            title={option.isActive ? '無効にする' : '有効にする'}
+          >
+            {option.isActive ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+          </button>
+          <button
+            onClick={() => onEdit(option)}
+            className="text-gray-600 hover:text-gray-800 p-2"
+            title="編集"
+          >
+            <Edit2 className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => onDelete(option._id!.toString())}
+            className="text-red-600 hover:text-red-800 p-2"
+            title="削除"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function SuggestedOptionsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -53,6 +194,7 @@ export default function SuggestedOptionsPage() {
   const [showModal, setShowModal] = useState(false);
   const [editingOption, setEditingOption] = useState<SuggestedOption | null>(null);
   const [errors, setErrors] = useState<FormErrors>({});
+  const [isReordering, setIsReordering] = useState(false);
   
   const [formData, setFormData] = useState<SuggestedOptionFormData>({
     title: '',
@@ -65,6 +207,18 @@ export default function SuggestedOptionsPage() {
     minAmount: '',
     maxAmount: ''
   });
+
+  // ドラッグ&ドロップ用のセンサー設定
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   // 初期データ取得
   useEffect(() => {
@@ -95,9 +249,10 @@ export default function SuggestedOptionsPage() {
       newErrors.title = 'タイトルは必須です';
     }
     
-    if (!formData.description.trim()) {
-      newErrors.description = '説明は必須です';
-    }
+    // 説明はオプショナルに変更
+    // if (!formData.description.trim()) {
+    //   newErrors.description = '説明は必須です';
+    // }
     
     if (!formData.price.trim()) {
       newErrors.price = '価格は必須です';
@@ -119,11 +274,11 @@ export default function SuggestedOptionsPage() {
       newErrors.ctaUrl = 'CTAリンクは http:// または https:// で始まる必要があります';
     }
 
-    // 特徴リストの検証
-    const validFeatures = formData.features.filter(f => f.trim() !== '');
-    if (validFeatures.length === 0) {
-      newErrors.features = '特徴は最低1つ入力してください';
-    }
+    // 特徴はオプショナルに変更
+    // const validFeatures = formData.features.filter(f => f.trim() !== '');
+    // if (validFeatures.length === 0) {
+    //   newErrors.features = '特徴は最低1つ入力してください';
+    // }
 
     // 金額範囲の検証
     if (formData.minAmount && formData.maxAmount) {
@@ -264,6 +419,43 @@ export default function SuggestedOptionsPage() {
     }
   };
 
+  // ドラッグ終了時の処理
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    
+    if (over && active.id !== over.id) {
+      const oldIndex = suggestedOptions.findIndex(option => option._id?.toString() === active.id);
+      const newIndex = suggestedOptions.findIndex(option => option._id?.toString() === over.id);
+      
+      if (oldIndex !== -1 && newIndex !== -1) {
+        // UIを即座に更新
+        const newOptions = arrayMove(suggestedOptions, oldIndex, newIndex);
+        setSuggestedOptions(newOptions);
+        
+        try {
+          // 新しい順序をAPIに送信
+          const updatePromises = newOptions.map((option, index) => 
+            fetch(`/api/suggested-options/${option._id}/order`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ displayOrder: index }),
+            })
+          );
+          
+          await Promise.all(updatePromises);
+          toast.success('並び順を更新しました');
+        } catch (error) {
+          logger.error('Error updating display order:', error);
+          toast.error('並び順の更新に失敗しました');
+          // エラー時は元の順序に戻す
+          fetchSuggestedOptions();
+        }
+      }
+    }
+    
+    setIsReordering(false);
+  };
+
   // フォーム入力値更新
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
@@ -347,96 +539,28 @@ export default function SuggestedOptionsPage() {
               おすすめオプションが登録されていません
             </div>
           ) : (
-            suggestedOptions.map((option, index) => (
-              <div
-                key={option._id?.toString()}
-                className={`bg-white rounded-lg shadow p-6 ${
-                  !option.isActive ? 'opacity-60' : ''
-                }`}
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragStart={() => setIsReordering(true)}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={suggestedOptions.map(option => option._id?.toString() || '')}
+                strategy={verticalListSortingStrategy}
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start gap-4 flex-1">
-                    <div className="flex items-center gap-2 text-sm text-gray-500">
-                      <GripVertical className="w-4 h-4" />
-                      #{index + 1}
-                    </div>
-                    
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-lg font-semibold">{option.title}</h3>
-                        <span className="text-lg font-bold text-blue-600">{formatPrice(option.price)}</span>
-                        {!option.isActive && (
-                          <span className="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded">
-                            無効
-                          </span>
-                        )}
-                      </div>
-                      
-                      <p className="text-gray-600 mb-3">{option.description}</p>
-                      
-                      <div className="mb-3">
-                        <h4 className="text-sm font-medium text-gray-700 mb-1">特徴:</h4>
-                        <ul className="text-sm text-gray-600 space-y-1">
-                          {option.features.map((feature, idx) => (
-                            <li key={idx} className="flex items-start gap-2">
-                              <span className="text-blue-600 mt-1">•</span>
-                              <span>{feature}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                        <div>
-                          <span className="text-gray-600">CTAテキスト:</span>
-                          <span className="ml-2">{option.ctaText || '未設定'}</span>
-                        </div>
-                        <div>
-                          <span className="text-gray-600">最小金額:</span>
-                          <span className="ml-2">
-                            {option.minAmount ? `¥${option.minAmount.toLocaleString()}` : '制限なし'}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-gray-600">最大金額:</span>
-                          <span className="ml-2">
-                            {option.maxAmount ? `¥${option.maxAmount.toLocaleString()}` : '制限なし'}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex gap-2 ml-4">
-                    <button
-                      onClick={() => handleToggleActive(option._id!.toString())}
-                      className={`p-2 ${
-                        option.isActive 
-                          ? 'text-green-600 hover:text-green-800' 
-                          : 'text-gray-400 hover:text-gray-600'
-                      }`}
-                      title={option.isActive ? '無効にする' : '有効にする'}
-                    >
-                      {option.isActive ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                    </button>
-                    <button
-                      onClick={() => openModal(option)}
-                      className="text-gray-600 hover:text-gray-800 p-2"
-                      title="編集"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => handleDelete(option._id!.toString())}
-                      className="text-red-600 hover:text-red-800 p-2"
-                      title="削除"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))
+                {suggestedOptions.map((option, index) => (
+                  <SortableItem
+                    key={option._id?.toString()}
+                    option={option}
+                    index={index}
+                    onToggleActive={handleToggleActive}
+                    onEdit={openModal}
+                    onDelete={handleDelete}
+                  />
+                ))}
+              </SortableContext>
+            </DndContext>
           )}
         </div>
       </div>
@@ -483,7 +607,7 @@ export default function SuggestedOptionsPage() {
                 {/* 説明 */}
                 <div>
                   <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-                    説明 <span className="text-red-500">*</span>
+                    説明
                   </label>
                   <textarea
                     id="description"
@@ -525,7 +649,7 @@ export default function SuggestedOptionsPage() {
                 {/* 特徴リスト */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    特徴 <span className="text-red-500">*</span>
+                    特徴
                   </label>
                   <div className="space-y-2">
                     {formData.features.map((feature, index) => (

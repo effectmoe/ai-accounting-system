@@ -228,7 +228,7 @@ export async function generateServerHtmlQuote({
                 <tr>
                   <td style="padding: 20px;">
                     <h4 style="margin: 0 0 10px 0; font-size: 16px; color: #2196f3; font-weight: bold;">${option.title}</h4>
-                    <p style="margin: 0 0 10px 0; font-size: 14px; color: #666666; line-height: 1.6;">${option.description}</p>
+                    <p style="margin: 0 0 10px 0; font-size: 14px; color: #666666; line-height: 1.6; white-space: pre-wrap;">${option.description}</p>
                     ${option.features && option.features.length > 0 ? `
                     <ul style="margin: 10px 0; padding-left: 20px; font-size: 14px; color: #666666;">
                       ${option.features.map((feature: string) => `<li style="margin-bottom: 4px;">${feature}</li>`).join('')}

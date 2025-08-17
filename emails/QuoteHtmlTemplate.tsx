@@ -152,7 +152,10 @@ export default function QuoteHtmlTemplate({
             <Heading style={h1}>お見積書</Heading>
             
             <Text style={greeting}>
-              {recipientName || quote.customerName || quote.customer?.name || 'お客様'} 様
+              {recipientName || 
+               (quote.customer?.storeName 
+                 ? `${quote.customer.storeName}（${quote.customer?.companyName}）`
+                 : quote.customerName || quote.customer?.companyName || quote.customer?.name || 'お客様')} 様
             </Text>
 
             <Text style={message}>
@@ -248,7 +251,7 @@ export default function QuoteHtmlTemplate({
                 </Column>
                 <Column style={totalValueColumn}>
                   <Text style={totalValue}>
-                    {formatCurrency(quote.subtotal)}
+                    {formatCurrency(Math.round(quote.subtotal))}
                   </Text>
                 </Column>
               </Row>
@@ -258,7 +261,7 @@ export default function QuoteHtmlTemplate({
                 </Column>
                 <Column style={totalValueColumn}>
                   <Text style={totalValue}>
-                    {formatCurrency(quote.taxAmount)}
+                    {formatCurrency(Math.round(quote.taxAmount))}
                   </Text>
                 </Column>
               </Row>
@@ -288,7 +291,12 @@ export default function QuoteHtmlTemplate({
                       <Column>
                         <Text style={suggestionTitle}>{option.title}</Text>
                         <Text style={suggestionDescription}>
-                          {option.description}
+                          {option.description.split('\n').map((line, index) => (
+                            <span key={index}>
+                              {line}
+                              {index < option.description.split('\n').length - 1 && <br />}
+                            </span>
+                          ))}
                         </Text>
                         {option.price && (
                           <Text style={suggestionPrice}>
@@ -732,6 +740,7 @@ const suggestionDescription = {
   color: '#4b5563',
   lineHeight: '22px',
   margin: '8px 0',
+  whiteSpace: 'pre-wrap' as const,
 };
 
 const suggestionPrice = {
