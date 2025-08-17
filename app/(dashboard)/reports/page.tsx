@@ -85,7 +85,7 @@ export default function ReportsPage() {
               <div>
                 <p className="text-sm font-medium text-gray-600">総売上</p>
                 <p className="text-3xl font-bold text-gray-900">
-                  {formatCurrency(salesReport.summary.totalSales)}
+                  {formatCurrency(Math.round(salesReport.summary.totalSales))}
                 </p>
               </div>
               <TrendingUp className="h-8 w-8 text-green-600" />
@@ -97,7 +97,7 @@ export default function ReportsPage() {
               <div>
                 <p className="text-sm font-medium text-gray-600">消費税</p>
                 <p className="text-3xl font-bold text-gray-900">
-                  {formatCurrency(salesReport.summary.totalTax)}
+                  {formatCurrency(Math.round(salesReport.summary.totalTax))}
                 </p>
               </div>
               <Calculator className="h-8 w-8 text-blue-600" />
@@ -130,13 +130,13 @@ export default function ReportsPage() {
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="value"
-                  label={({ name, value }) => `${name}: ${formatCurrency(Number(value))}`}
+                  label={({ name, value }) => `${name}: ${formatCurrency(Math.round(Number(value)))}`}
                 >
                   {typeData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                <Tooltip formatter={(value) => formatCurrency(Math.round(Number(value)))} />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -149,7 +149,7 @@ export default function ReportsPage() {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" />
                 <YAxis tickFormatter={(value) => `¥${(value / 1000).toFixed(0)}K`} />
-                <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                <Tooltip formatter={(value) => formatCurrency(Math.round(Number(value)))} />
                 <Bar dataKey="amount" fill="#8884d8" />
               </BarChart>
             </ResponsiveContainer>
@@ -178,7 +178,7 @@ export default function ReportsPage() {
                       {partner.count}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatCurrency(partner.amount)}
+                      {formatCurrency(Math.round(partner.amount))}
                     </td>
                   </tr>
                 ))}
@@ -207,14 +207,14 @@ export default function ReportsPage() {
           <div className="bg-white p-6 rounded-lg shadow">
             <p className="text-sm font-medium text-gray-600">借方合計</p>
             <p className="text-3xl font-bold text-gray-900">
-              {formatCurrency(journalReport.summary.totalDebit)}
+              {formatCurrency(Math.round(journalReport.summary.totalDebit))}
             </p>
           </div>
           
           <div className="bg-white p-6 rounded-lg shadow">
             <p className="text-sm font-medium text-gray-600">貸方合計</p>
             <p className="text-3xl font-bold text-gray-900">
-              {formatCurrency(journalReport.summary.totalCredit)}
+              {formatCurrency(Math.round(journalReport.summary.totalCredit))}
             </p>
           </div>
         </div>
@@ -243,15 +243,15 @@ export default function ReportsPage() {
                       {account.accountName}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                      {formatCurrency(account.debitAmount)}
+                      {formatCurrency(Math.round(account.debitAmount))}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
-                      {formatCurrency(account.creditAmount)}
+                      {formatCurrency(Math.round(account.creditAmount))}
                     </td>
                     <td className={`px-6 py-4 whitespace-nowrap text-sm text-right font-medium ${
                       account.balance >= 0 ? 'text-green-600' : 'text-red-600'
                     }`}>
-                      {formatCurrency(Math.abs(account.balance))}
+                      {formatCurrency(Math.round(Math.abs(account.balance)))}
                     </td>
                   </tr>
                 ))}
@@ -280,29 +280,29 @@ export default function ReportsPage() {
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-600">標準税率（10%）</span>
                   <span className="text-sm">
-                    {formatCurrency(taxReport.consumption_tax.sales.standard_rate.subtotal)} 
-                    （税額: {formatCurrency(taxReport.consumption_tax.sales.standard_rate.tax)}）
+                    {formatCurrency(Math.round(taxReport.consumption_tax.sales.standard_rate.subtotal))} 
+                    （税額: {formatCurrency(Math.round(taxReport.consumption_tax.sales.standard_rate.tax))}）
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-600">軽減税率（8%）</span>
                   <span className="text-sm">
-                    {formatCurrency(taxReport.consumption_tax.sales.reduced_rate.subtotal)}
-                    （税額: {formatCurrency(taxReport.consumption_tax.sales.reduced_rate.tax)}）
+                    {formatCurrency(Math.round(taxReport.consumption_tax.sales.reduced_rate.subtotal))}
+                    （税額: {formatCurrency(Math.round(taxReport.consumption_tax.sales.reduced_rate.tax))}）
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-600">輸出免税</span>
                   <span className="text-sm">
-                    {formatCurrency(taxReport.consumption_tax.sales.export.subtotal)}
-                    （税額: {formatCurrency(taxReport.consumption_tax.sales.export.tax)}）
+                    {formatCurrency(Math.round(taxReport.consumption_tax.sales.export.subtotal))}
+                    （税額: {formatCurrency(Math.round(taxReport.consumption_tax.sales.export.tax))}）
                   </span>
                 </div>
                 <div className="flex justify-between font-medium border-t pt-2">
                   <span>合計</span>
                   <span>
-                    {formatCurrency(taxReport.consumption_tax.sales.total.subtotal)}
-                    （税額: {formatCurrency(taxReport.consumption_tax.sales.total.tax)}）
+                    {formatCurrency(Math.round(taxReport.consumption_tax.sales.total.subtotal))}
+                    （税額: {formatCurrency(Math.round(taxReport.consumption_tax.sales.total.tax))}）
                   </span>
                 </div>
               </div>
@@ -315,22 +315,22 @@ export default function ReportsPage() {
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-600">標準税率（10%）</span>
                   <span className="text-sm">
-                    {formatCurrency(taxReport.consumption_tax.purchases.standard_rate.subtotal)}
-                    （税額: {formatCurrency(taxReport.consumption_tax.purchases.standard_rate.tax)}）
+                    {formatCurrency(Math.round(taxReport.consumption_tax.purchases.standard_rate.subtotal))}
+                    （税額: {formatCurrency(Math.round(taxReport.consumption_tax.purchases.standard_rate.tax))}）
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-600">軽減税率（8%）</span>
                   <span className="text-sm">
-                    {formatCurrency(taxReport.consumption_tax.purchases.reduced_rate.subtotal)}
-                    （税額: {formatCurrency(taxReport.consumption_tax.purchases.reduced_rate.tax)}）
+                    {formatCurrency(Math.round(taxReport.consumption_tax.purchases.reduced_rate.subtotal))}
+                    （税額: {formatCurrency(Math.round(taxReport.consumption_tax.purchases.reduced_rate.tax))}）
                   </span>
                 </div>
                 <div className="flex justify-between font-medium border-t pt-2">
                   <span>合計</span>
                   <span>
-                    {formatCurrency(taxReport.consumption_tax.purchases.total.subtotal)}
-                    （税額: {formatCurrency(taxReport.consumption_tax.purchases.total.tax)}）
+                    {formatCurrency(Math.round(taxReport.consumption_tax.purchases.total.subtotal))}
+                    （税額: {formatCurrency(Math.round(taxReport.consumption_tax.purchases.total.tax))}）
                   </span>
                 </div>
               </div>
@@ -346,7 +346,7 @@ export default function ReportsPage() {
               <span className={`text-xl font-bold ${
                 taxReport.consumption_tax.payable_refundable >= 0 ? 'text-red-600' : 'text-green-600'
               }`}>
-                {formatCurrency(Math.abs(taxReport.consumption_tax.payable_refundable))}
+                {formatCurrency(Math.round(Math.abs(taxReport.consumption_tax.payable_refundable)))}
               </span>
             </div>
           </div>
