@@ -892,12 +892,21 @@ export default function QuoteWebTemplate({
         </section>
 
         {/* 備考 */}
-        {quote.notes && (
-          <section style={notesSectionStyle}>
-            <h3 style={h3Style}>備考</h3>
-            <div style={notesTextStyle}>{cleanDuplicateSignatures(quote.notes)}</div>
-          </section>
-        )}
+        {(() => {
+          const hasNotes = quote.notes && quote.notes.trim();
+          console.log('📝 QuoteWebTemplate notes check:', {
+            hasNotes: !!hasNotes,
+            notesLength: quote.notes?.length || 0,
+            notesPreview: quote.notes?.substring(0, 100) || 'なし'
+          });
+          
+          return hasNotes ? (
+            <section style={notesSectionStyle}>
+              <h3 style={h3Style}>備考</h3>
+              <div style={notesTextStyle}>{cleanDuplicateSignatures(quote.notes)}</div>
+            </section>
+          ) : null;
+        })()}
       </main>
 
       {/* フッター */}

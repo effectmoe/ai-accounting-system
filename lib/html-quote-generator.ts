@@ -531,6 +531,14 @@ export async function generateSimpleHtmlQuote({
     quoteTotalAmount: quote.totalAmount,
     itemsCount: quote.items?.length || 0
   });
+  
+  // 備考が空の場合のデフォルト処理
+  const notesContent = quote.notes && quote.notes.trim() ? quote.notes.trim() : null;
+  console.log('📝 Notes processing:', {
+    originalNotes: quote.notes,
+    processedNotes: notesContent,
+    willShowNotes: !!notesContent
+  });
 
   // ツールチップ辞書を生成
   const tooltips = generateDefaultTooltips();
@@ -645,7 +653,7 @@ export async function generateSimpleHtmlQuote({
                     // 値引き判定
                     const isDiscount = (item.amount < 0) || 
                       (item.itemName && (item.itemName.includes('値引き') || item.itemName.includes('割引') || item.itemName.includes('ディスカウント')));
-                    const itemColor = isDiscount ? '#dc2626' : '#333333';
+                    const itemColor = isDiscount ? '#dc2626 !important' : '#333333';
                     
                     // ツールチップを検索
                     let tooltipText = '';
@@ -660,11 +668,11 @@ export async function generateSimpleHtmlQuote({
                     return `
                   <tr>
                     <td style="border: 1px solid #dddddd; padding: 10px; vertical-align: top;">
-                      <div style="font-size: 14px; color: ${itemColor} !important; font-weight: bold; margin: 0 0 4px 0;">
-                        ${item.itemName || ''}
+                      <div style="font-size: 14px; color: ${itemColor}; font-weight: bold; margin: 0 0 4px 0;">
+                        <span style="color: ${itemColor};">${item.itemName || ''}</span>
                         ${tooltipText ? `<span style="font-size: 11px; color: #1976d2; font-weight: normal; margin-left: 5px;">[※]</span>` : ''}
                       </div>
-                      ${item.description ? `<div style="font-size: 12px; color: ${isDiscount ? '#dc2626 !important' : '#666666'}; line-height: 1.4;">${item.description}</div>` : ''}
+                      ${item.description ? `<div style="font-size: 12px; color: ${isDiscount ? '#dc2626 !important' : '#666666'}; line-height: 1.4;"><span style="color: ${isDiscount ? '#dc2626 !important' : '#666666'};">${item.description}</span></div>` : ''}
                       ${tooltipText ? `
                       <div style="margin-top: 5px; padding: 8px; background-color: #e3f2fd; border-left: 3px solid #1976d2; border-radius: 3px;">
                         <span style="font-size: 11px; color: #1565c0; font-weight: bold;">💡 用語解説:</span>
@@ -672,9 +680,9 @@ export async function generateSimpleHtmlQuote({
                       </div>
                       ` : ''}
                     </td>
-                    <td style="border: 1px solid #dddddd; padding: 10px; text-align: center; font-size: 14px; color: ${itemColor} !important;">${item.quantity || 0}${item.unit || ''}</td>
-                    <td style="border: 1px solid #dddddd; padding: 10px; text-align: right; font-size: 14px; color: ${itemColor} !important;">¥${(item.unitPrice || 0).toLocaleString()}</td>
-                    <td style="border: 1px solid #dddddd; padding: 10px; text-align: right; font-size: 14px; color: ${itemColor} !important; font-weight: bold;">¥${(item.amount || 0).toLocaleString()}</td>
+                    <td style="border: 1px solid #dddddd; padding: 10px; text-align: center; font-size: 14px; color: ${itemColor};"><span style="color: ${itemColor};">${item.quantity || 0}${item.unit || ''}</span></td>
+                    <td style="border: 1px solid #dddddd; padding: 10px; text-align: right; font-size: 14px; color: ${itemColor};"><span style="color: ${itemColor};">¥${(item.unitPrice || 0).toLocaleString()}</span></td>
+                    <td style="border: 1px solid #dddddd; padding: 10px; text-align: right; font-size: 14px; color: ${itemColor}; font-weight: bold;"><span style="color: ${itemColor}; font-weight: bold;">¥${(item.amount || 0).toLocaleString()}</span></td>
                   </tr>
                   `;
                   }).join('')}
@@ -785,7 +793,7 @@ export async function generateSimpleHtmlQuote({
           </tr>
           ` : ''}
 
-          ${quote.notes ? `
+          ${notesContent ? `
           <!-- 備考 -->
           <tr>
             <td style="padding: 0 40px 30px 40px;">
@@ -793,7 +801,7 @@ export async function generateSimpleHtmlQuote({
                 <tr>
                   <td style="padding: 15px;">
                     <h3 style="margin: 0 0 10px 0; font-size: 14px; color: #333333; font-weight: bold;">備考</h3>
-                    <p style="margin: 0; font-size: 13px; color: #666666; line-height: 1.6; white-space: pre-wrap;">${cleanDuplicateSignatures(quote.notes)}</p>
+                    <p style="margin: 0; font-size: 13px; color: #666666; line-height: 1.6; white-space: pre-wrap;">${cleanDuplicateSignatures(notesContent)}</p>
                   </td>
                 </tr>
               </table>
@@ -825,8 +833,7 @@ export async function generateSimpleHtmlQuote({
                 <tr>
                   <td align="center">
                     <p style="margin: 0; font-size: 12px; color: #6b7280; text-align: center;">
-                      このシステムはAI駆動によるAAM-Accountingシステムです powered by 
-                      <a href="https://notion.effect.moe/" target="_blank" rel="noopener noreferrer" style="color: #3b82f6; text-decoration: none;">EFFECT Inc.</a>
+                      このシステムはAI駆動によるAAM-Accountingシステムです powered by <a href="https://notion.effect.moe/" target="_blank" rel="noopener noreferrer" style="color: #3b82f6; text-decoration: none;">EFFECT Inc.</a>
                     </p>
                   </td>
                 </tr>
@@ -876,7 +883,7 @@ ${quote.items.map((item: any) => {
 消費税: ¥${taxAmount.toLocaleString()}
 合計金額: ¥${totalAmount.toLocaleString()}
 
-${quote.notes ? '【備考】\n' + cleanDuplicateSignatures(quote.notes) + '\n\n' : ''}
+${notesContent ? '【備考】\n' + cleanDuplicateSignatures(notesContent) + '\n\n' : ''}
 ${companyName}
 ${companyAddress}
 ${companyPhone ? 'TEL: ' + companyPhone : ''}
