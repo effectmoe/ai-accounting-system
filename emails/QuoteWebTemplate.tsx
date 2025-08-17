@@ -25,11 +25,23 @@ interface SuggestedOption {
 }
 
 // ツールチップレンダリング関数の改善
-// Updated: 2025-08-17 - さらに強化版: 確実にツールチップを表示
+// Updated: 2025-08-17 - 修正版: デバッグを追加して確実にツールチップを表示
 const renderDetailsWithTooltip = (details: string, tooltip: string) => {
+  // デバッグ用ログ（開発環境でのみ）
+  if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname.includes('preview'))) {
+    console.log('🎯 QuoteWebTemplate renderDetailsWithTooltip called:', {
+      details: details?.substring(0, 50) + '...',
+      hasTooltip: !!tooltip,
+      tooltipPreview: tooltip?.substring(0, 50) + '...'
+    });
+  }
+  
   if (!tooltip || tooltip.trim() === '') {
+    console.log('❌ No tooltip provided for:', details);
     return <span>{details}</span>;
   }
+  
+  console.log('✅ Creating tooltip for:', details?.substring(0, 30), 'with tooltip:', tooltip?.substring(0, 30));
   
   // HTMLエスケープ処理を強化
   const escapedDetails = details
@@ -45,19 +57,20 @@ const renderDetailsWithTooltip = (details: string, tooltip: string) => {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
   
-  // より目立つスタイルで確実にツールチップを表示
+  // より目立つスタイルで確実にツールチップを表示（強化版）
   const markerHtml = `
-    <span class="tooltip-wrapper" data-tooltip="${escapedTooltip}" title="${escapedTooltip}">
+    <span class="tooltip-wrapper tooltip-debug" data-tooltip="${escapedTooltip}" title="${escapedTooltip}">
       <span style="
-        background: linear-gradient(180deg, transparent 50%, rgba(254, 240, 138, 0.8) 50%);
+        background: linear-gradient(180deg, transparent 40%, rgba(254, 240, 138, 0.9) 40%);
         cursor: help;
         border-radius: 3px;
-        padding: 2px 5px;
+        padding: 2px 6px;
         border-bottom: 2px dotted #f59e0b;
         font-weight: 600;
         position: relative;
         display: inline-block;
         text-decoration: none;
+        box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.3);
       ">${escapedDetails}</span>
       <span class="tooltip-content" style="
         visibility: hidden;
@@ -105,13 +118,16 @@ export default function QuoteWebTemplate({
 }: QuoteWebTemplateProps) {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://accounting-automation.vercel.app';
   
-  // デバッグ用ログ
-  if (typeof console !== 'undefined') {
+  // デバッグ用ログ（開発環境でのみ）
+  if (typeof console !== 'undefined' && typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname.includes('preview'))) {
     console.log('[QuoteWebTemplate] Rendering with:', {
       companyName: companyInfo?.companyName || companyInfo?.name || '未設定',
       suggestedOptionsCount: suggestedOptions?.length || 0,
       hasQuoteItems: !!quote?.items,
       itemsCount: quote?.items?.length || 0,
+      hasNotes: !!quote?.notes,
+      notesLength: quote?.notes?.length || 0,
+      notesPreview: quote?.notes?.substring(0, 50) || 'なし'
     });
   }
   const brandColor = '#3B82F6';
@@ -180,14 +196,19 @@ export default function QuoteWebTemplate({
             }
           }
           
-          /* ツールチップのホバー効果とタッチ対応 - 修正版 */
+          /* ツールチップのホバー効果とタッチ対応 - 強化版 */
           .tooltip-wrapper {
             position: relative;
             display: inline-block;
             border-bottom: 1px dotted #333;
             cursor: help;
+          }
+          
+          /* デバッグ用のスタイル（開発環境での確認用） */
+          .tooltip-debug {
             /* デバッグ用の背景色を追加 */
             background: rgba(255, 255, 0, 0.1);
+            outline: 1px dashed rgba(255, 0, 0, 0.3);
           }
           
           .tooltip-content {
@@ -488,13 +509,42 @@ export default function QuoteWebTemplate({
             
             // DOMContentLoadedイベントで最終チェック
             document.addEventListener('DOMContentLoaded', function() {
-              console.log('🔍 DOM loaded - Final debug check:', {
-                tooltipWrappers: document.querySelectorAll('.tooltip-wrapper').length,
-                tooltipContents: document.querySelectorAll('.tooltip-content').length,
-                notesSection: !!document.querySelector('section h3:contains("備考")'),
-                notesSectionExists: !!document.querySelector('section h3'),
-                allH3Texts: Array.from(document.querySelectorAll('h3')).map(h3 => h3.textContent)
-              });
+              // 少し遅延して確実にチェック
+              setTimeout(() => {
+                const tooltipWrappers = document.querySelectorAll('.tooltip-wrapper');
+                const tooltipContents = document.querySelectorAll('.tooltip-content');
+                const debugWrappers = document.querySelectorAll('.tooltip-debug');
+                const h3Elements = document.querySelectorAll('h3');
+                const notesH3 = Array.from(h3Elements).find(h3 => h3.textContent?.includes('備考'));
+                
+                console.log('🔍 DOM loaded - Final debug check:', {
+                  tooltipWrappers: tooltipWrappers.length,
+                  tooltipContents: tooltipContents.length,
+                  debugWrappers: debugWrappers.length,
+                  notesH3Found: !!notesH3,
+                  notesH3Text: notesH3?.textContent,
+                  allH3Texts: Array.from(h3Elements).map(h3 => h3.textContent),
+                  tooltipWrappersDetails: Array.from(tooltipWrappers).map(w => ({
+                    text: w.textContent?.substring(0, 30),
+                    tooltip: w.getAttribute('data-tooltip')?.substring(0, 30)
+                  }))
+                });
+                
+                // 強制的にツールチップを1つ表示してテスト（開発環境のみ）
+                if (tooltipWrappers.length > 0 && isDev) {
+                  const firstWrapper = tooltipWrappers[0];
+                  const firstContent = firstWrapper.querySelector('.tooltip-content');
+                  if (firstContent) {
+                    firstContent.style.visibility = 'visible';
+                    firstContent.style.opacity = '1';
+                    console.log('🧪 Test: Force showing first tooltip for 3 seconds');
+                    setTimeout(() => {
+                      firstContent.style.visibility = 'hidden';
+                      firstContent.style.opacity = '0';
+                    }, 3000);
+                  }
+                }
+              }, 1000);
             });
           }
           
@@ -697,14 +747,16 @@ export default function QuoteWebTemplate({
                     const subtotalAmount = (item.quantity || 1) * (item.unitPrice || 0);
                     const taxAmount = subtotalAmount * (quote.taxRate || 0.1);
                     
-                    // デバッグログ: 項目データを確認
-                    console.log(`🎯 QuoteWebTemplate item ${index + 1}:`, {
-                      itemName: item.itemName,
-                      description: item.description,
-                      hasTooltip: !!item.tooltip,
-                      tooltip: item.tooltip ? item.tooltip.substring(0, 50) + '...' : 'なし',
-                      productLink: item.productLink || 'なし'
-                    });
+                    // デバッグログ: 項目データを確認（開発環境のみ）
+                    if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname.includes('preview'))) {
+                      console.log(`🎯 QuoteWebTemplate item ${index + 1}:`, {
+                        itemName: item.itemName,
+                        description: item.description,
+                        hasTooltip: !!item.tooltip,
+                        tooltip: item.tooltip ? item.tooltip.substring(0, 50) + '...' : 'なし',
+                        productLink: item.productLink || 'なし'
+                      });
+                    }
                     
                     return (
                       <tr key={index} style={tableBodyRowStyle}>
@@ -910,16 +962,20 @@ export default function QuoteWebTemplate({
 
         {/* 備考 - 強化版 */}
         {(() => {
-          const hasNotes = quote.notes && quote.notes.trim();
+          // より寛容な備考チェック（空白文字を除いて何か内容があるか）
+          const normalizedNotes = quote.notes ? quote.notes.trim() : '';
+          const hasNotes = normalizedNotes && normalizedNotes.length > 0;
           
-          // 開発環境でのみデバッグログを出力
+          // デバッグ用ログ（開発環境でのみ）
           if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname.includes('preview'))) {
-            console.log('📝 QuoteWebTemplate notes check:', {
-              hasNotes: !!hasNotes,
-              notesLength: quote.notes?.length || 0,
-              notesPreview: quote.notes?.substring(0, 100) || 'なし',
+            console.log('📝 QuoteWebTemplate notes check (enhanced):', {
+              originalNotes: quote.notes,
+              normalizedNotes: normalizedNotes,
+              hasNotes: hasNotes,
+              notesLength: normalizedNotes.length,
+              notesPreview: normalizedNotes.substring(0, 100) || 'なし',
               notesType: typeof quote.notes,
-              notesValue: quote.notes
+              isEmpty: !hasNotes
             });
           }
           
@@ -928,23 +984,26 @@ export default function QuoteWebTemplate({
             return (
               <section style={notesSectionStyle}>
                 <h3 style={h3Style}>備考</h3>
-                <div style={notesTextStyle}>{cleanDuplicateSignatures(quote.notes)}</div>
+                <div style={notesTextStyle}>{cleanDuplicateSignatures(normalizedNotes)}</div>
               </section>
             );
           }
           
           // デバッグ用: 備考が空の場合でも表示するオプション
           const showDebugNotes = typeof window !== 'undefined' && 
-                                 window.location.search.includes('debug=true');
+                                 (window.location.search.includes('debug=true') || 
+                                  window.location.search.includes('show-empty-notes=true'));
           
           if (showDebugNotes) {
             return (
               <section style={{...notesSectionStyle, backgroundColor: '#fef2f2', borderLeft: '4px solid #ef4444'}}>
                 <h3 style={{...h3Style, color: '#dc2626'}}>デバッグ: 備考情報</h3>
                 <div style={notesTextStyle}>
-                  備考: {quote.notes ? `"${quote.notes}"` : '空文字列または存在しません'}<br/>
+                  備考（元）: {quote.notes ? `"${quote.notes}"` : '空文字列または存在しません'}<br/>
+                  正規化後: {normalizedNotes ? `"${normalizedNotes}"` : '空'}<br/>
                   タイプ: {typeof quote.notes}<br/>
-                  長さ: {quote.notes?.length || 0}
+                  長さ: {normalizedNotes.length}<br/>
+                  表示判定: {hasNotes ? '表示する' : '非表示'}
                 </div>
               </section>
             );

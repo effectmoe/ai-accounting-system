@@ -26,14 +26,21 @@ interface SuggestedOption {
 
 // メール版ツールチップレンダリング関数を改善
 const renderDetailsWithTooltip = (details: string, tooltip: string) => {
-  console.log('📧 QuoteHtmlTemplate: renderDetailsWithTooltip called:', { details, hasTooltip: !!tooltip });
+  // 開発環境でのみデバッグログを出力
+  if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname.includes('preview'))) {
+    console.log('📧 QuoteHtmlTemplate: renderDetailsWithTooltip called:', { details, hasTooltip: !!tooltip });
+  }
   
   if (!tooltip || tooltip.trim() === '') {
-    console.log('❌ No tooltip provided for:', details);
+    if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname.includes('preview'))) {
+      console.log('❌ No tooltip provided for:', details);
+    }
     return <span>{details}</span>;
   }
   
-  console.log('✅ Creating tooltip for:', details, 'with tooltip:', tooltip.substring(0, 50) + '...');
+  if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname.includes('preview'))) {
+    console.log('✅ Creating tooltip for:', details, 'with tooltip:', tooltip.substring(0, 50) + '...');
+  }
   
   // HTMLエスケープ処理
   const escapedDetails = details
@@ -581,17 +588,25 @@ export default function QuoteHtmlTemplate({
 
             {/* 備考 */}
             {(() => {
-              const hasNotes = quote.notes && quote.notes.trim();
-              console.log('📝 QuoteHtmlTemplate notes check:', {
-                hasNotes: !!hasNotes,
-                notesLength: quote.notes?.length || 0,
-                notesPreview: quote.notes?.substring(0, 100) || 'なし'
-              });
+              // より寛容な備考チェック（空白文字を除いて何か内容があるか）
+              const normalizedNotes = quote.notes ? quote.notes.trim() : '';
+              const hasNotes = normalizedNotes && normalizedNotes.length > 0;
+              
+              // 開発環境でのみデバッグログを出力
+              if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname.includes('preview'))) {
+                console.log('📝 QuoteHtmlTemplate notes check (enhanced):', {
+                  originalNotes: quote.notes,
+                  normalizedNotes: normalizedNotes,
+                  hasNotes: hasNotes,
+                  notesLength: normalizedNotes.length,
+                  notesPreview: normalizedNotes.substring(0, 100) || 'なし'
+                });
+              }
               
               return hasNotes ? (
                 <div className="notes-section">
                   <div className="notes-title">備考</div>
-                  <div className="notes-text">{cleanDuplicateSignatures(quote.notes)}</div>
+                  <div className="notes-text">{cleanDuplicateSignatures(normalizedNotes)}</div>
                 </div>
               ) : null;
             })()}
