@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>値引き項目の入力テスト</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .test-section h2 {
+            color: #007bff;
+            margin-top: 0;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        input[type="number"], input[type="text"] {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        input[type="number"]:focus, input[type="text"]:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 2px rgba(0,123,255,0.1);
+        }
+        .discount-input {
+            background-color: #fee;
+            border-color: #fcc;
+            color: #dc3545;
+        }
+        .output {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            font-family: monospace;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .test-result {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 値引き項目の入力テスト</h1>
+        
+        <div class="test-section">
+            <h2>1. 問題のある実装（min="undefined"）</h2>
+            <p>min属性にundefinedを設定した場合の動作確認</p>
+            <div class="grid">
+                <div class="form-group">
+                    <label>数量（問題のあるmin設定）</label>
+                    <input type="number" id="bad-quantity" min="undefined" step="0.01" value="1">
+                    <div class="output">値: <span id="bad-quantity-output">1</span></div>
+                </div>
+                <div class="form-group">
+                    <label>値引き額（問題のあるmin設定）</label>
+                    <input type="number" id="bad-discount" min="undefined" step="0.01" value="0" class="discount-input">
+                    <div class="output">値: <span id="bad-discount-output">0</span></div>
+                </div>
+            </div>
+            <div id="problem-result" class="error" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>2. 修正後の実装（条件付きmin属性）</h2>
+            <p>値引き項目ではmin属性を設定しない正しい実装</p>
+            <div class="grid">
+                <div class="form-group">
+                    <label>数量（正常）</label>
+                    <input type="number" id="good-quantity" min="0" step="0.01" value="1">
+                    <div class="output">値: <span id="good-quantity-output">1</span></div>
+                </div>
+                <div class="form-group">
+                    <label>値引き額（min属性なし）</label>
+                    <input type="number" id="good-discount" step="0.01" value="0" class="discount-input">
+                    <div class="output">値: <span id="good-discount-output">0</span></div>
+                </div>
+            </div>
+            <div id="fix-result" class="success" style="display: none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>3. React実装のシミュレーション</h2>
+            <p>実際のReactコンポーネントの動作をシミュレート</p>
+            <div class="grid">
+                <div class="form-group">
+                    <label>通常項目の単価</label>
+                    <input type="number" id="react-normal" min="0" step="0.01" value="1000">
+                    <div class="output">
+                        実際の値: <span id="react-normal-value">1000</span><br>
+                        DB保存値: <span id="react-normal-db">1000</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>値引き項目の金額</label>
+                    <input type="number" id="react-discount" step="0.01" value="500" class="discount-input">
+                    <div class="output">
+                        表示値: <span id="react-discount-value">500</span><br>
+                        DB保存値: <span id="react-discount-db">-500</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-result">
+            <h3>テスト結果</h3>
+            <div id="test-summary"></div>
+            <button onclick="runAllTests()">全テスト実行</button>
+        </div>
+    </div>
+
+    <script>
+        // 問題のある実装のテスト
+        document.getElementById('bad-quantity').addEventListener('input', (e) => {
+            const value = e.target.value;
+            document.getElementById('bad-quantity-output').textContent = value;
+            
+            // 入力できない場合のチェック
+            if (e.target.validity.badInput) {
+                document.getElementById('problem-result').style.display = 'block';
+                document.getElementById('problem-result').textContent = '⚠️ 入力エラー: min="undefined"により正常に入力できません';
+            }
+        });
+
+        document.getElementById('bad-discount').addEventListener('input', (e) => {
+            const value = e.target.value;
+            document.getElementById('bad-discount-output').textContent = value;
+            
+            if (e.target.validity.badInput) {
+                document.getElementById('problem-result').style.display = 'block';
+                document.getElementById('problem-result').textContent = '⚠️ 入力エラー: min="undefined"により正常に入力できません';
+            }
+        });
+
+        // 修正後の実装のテスト
+        document.getElementById('good-quantity').addEventListener('input', (e) => {
+            const value = e.target.value;
+            document.getElementById('good-quantity-output').textContent = value;
+            document.getElementById('fix-result').style.display = 'block';
+            document.getElementById('fix-result').textContent = '✅ 正常に入力できています';
+        });
+
+        document.getElementById('good-discount').addEventListener('input', (e) => {
+            const value = e.target.value;
+            document.getElementById('good-discount-output').textContent = value;
+            document.getElementById('fix-result').style.display = 'block';
+            document.getElementById('fix-result').textContent = '✅ 値引き額も正常に入力できています（負の値も入力可能）';
+        });
+
+        // React実装のシミュレーション
+        function updateReactNormal(e) {
+            const value = parseFloat(e.target.value) || 0;
+            document.getElementById('react-normal-value').textContent = value;
+            document.getElementById('react-normal-db').textContent = value;
+        }
+
+        function updateReactDiscount(e) {
+            const inputValue = parseFloat(e.target.value) || 0;
+            const displayValue = Math.abs(inputValue);
+            const dbValue = -Math.abs(inputValue);
+            
+            document.getElementById('react-discount-value').textContent = displayValue;
+            document.getElementById('react-discount-db').textContent = dbValue;
+            
+            // React風の値更新
+            e.target.value = displayValue;
+        }
+
+        document.getElementById('react-normal').addEventListener('input', updateReactNormal);
+        document.getElementById('react-discount').addEventListener('input', updateReactDiscount);
+
+        // 全テスト実行
+        function runAllTests() {
+            const results = [];
+            
+            // テスト1: min="undefined"の検証
+            const badQuantity = document.getElementById('bad-quantity');
+            const badDiscount = document.getElementById('bad-discount');
+            
+            try {
+                badQuantity.value = '123';
+                badDiscount.value = '456';
+                results.push('❌ min="undefined"のフィールド: 入力に問題がある可能性があります');
+            } catch (e) {
+                results.push('❌ min="undefined"のフィールド: エラー発生');
+            }
+            
+            // テスト2: 修正後の実装
+            const goodQuantity = document.getElementById('good-quantity');
+            const goodDiscount = document.getElementById('good-discount');
+            
+            try {
+                goodQuantity.value = '123';
+                goodDiscount.value = '456';
+                goodDiscount.value = '-100'; // 負の値のテスト
+                results.push('✅ 修正後のフィールド: 正常に動作');
+            } catch (e) {
+                results.push('❌ 修正後のフィールド: エラー発生');
+            }
+            
+            // テスト3: React実装
+            const reactNormal = document.getElementById('react-normal');
+            const reactDiscount = document.getElementById('react-discount');
+            
+            try {
+                reactNormal.value = '2000';
+                reactNormal.dispatchEvent(new Event('input'));
+                
+                reactDiscount.value = '300';
+                reactDiscount.dispatchEvent(new Event('input'));
+                
+                const dbValue = document.getElementById('react-discount-db').textContent;
+                if (dbValue === '-300') {
+                    results.push('✅ React実装: 値引き額が正しく負の値に変換される');
+                } else {
+                    results.push('❌ React実装: 値引き額の変換に問題あり');
+                }
+            } catch (e) {
+                results.push('❌ React実装: エラー発生');
+            }
+            
+            // 結果表示
+            document.getElementById('test-summary').innerHTML = results.map(r => `<div>${r}</div>`).join('');
+        }
+
+        // ページ読み込み時に自動テスト
+        window.addEventListener('load', () => {
+            setTimeout(runAllTests, 500);
+        });
+    </script>
+</body>
+</html>

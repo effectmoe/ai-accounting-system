@@ -559,9 +559,15 @@ function QuoteEditPageContent({ params }: QuoteEditPageProps) {
         <CardContent>
           <div className="space-y-4">
             {items.map((item, index) => (
-              <div key={index} className="border rounded-lg p-4 space-y-4">
+              <div key={index} className={`border rounded-lg p-4 space-y-4 ${item.itemType === 'discount' ? 'bg-red-50 border-red-200' : ''}`}>
                 <div className="flex justify-between items-center">
-                  <h4 className="font-medium">項目 {index + 1}</h4>
+                  <h4 className="font-medium">
+                    {item.itemType === 'discount' ? (
+                      <span className="text-red-600">値引き {index + 1}</span>
+                    ) : (
+                      `項目 ${index + 1}`
+                    )}
+                  </h4>
                   {items.length > 1 && (
                     <Button
                       variant="ghost"
@@ -612,21 +618,25 @@ function QuoteEditPageContent({ params }: QuoteEditPageProps) {
                     />
                   </div>
                   <div>
-                    <Label>単価</Label>
+                    <Label>{item.itemType === 'discount' ? '値引き額' : '単価'}</Label>
                     <Input
                       type="number"
-                      min="0"
+                      {...(item.itemType === 'discount' ? {} : { min: "0" })}
                       step="0.01"
-                      value={item.unitPrice}
-                      onChange={(e) => updateItem(index, 'unitPrice', parseFloat(e.target.value) || 0)}
+                      value={item.itemType === 'discount' ? Math.abs(item.unitPrice) : item.unitPrice}
+                      onChange={(e) => {
+                        const value = parseFloat(e.target.value) || 0;
+                        updateItem(index, 'unitPrice', item.itemType === 'discount' ? -Math.abs(value) : value);
+                      }}
+                      className={item.itemType === 'discount' ? 'text-red-600' : ''}
                     />
                   </div>
                   <div>
                     <Label>小計</Label>
                     <Input
-                      value={`¥${(item.amount || 0).toLocaleString()}`}
+                      value={item.itemType === 'discount' ? `-¥${Math.abs(item.amount || 0).toLocaleString()}` : `¥${(item.amount || 0).toLocaleString()}`}
                       readOnly
-                      className="bg-gray-50"
+                      className={`bg-gray-50 ${item.itemType === 'discount' ? 'text-red-600' : ''}`}
                     />
                   </div>
                   <div>
@@ -652,6 +662,17 @@ function QuoteEditPageContent({ params }: QuoteEditPageProps) {
                     />
                   </div>
                 </div>
+                
+                {item.itemType === 'discount' && (
+                  <div>
+                    <Label>値引き理由（任意）</Label>
+                    <Input
+                      placeholder="値引き理由を入力（例：キャンペーン割引）"
+                      value={item.discountReason || ''}
+                      onChange={(e) => updateItem(index, 'discountReason', e.target.value)}
+                    />
+                  </div>
+                )}
 
                 {showItemDescriptions && (
                   <div className="col-span-2">
