@@ -136,7 +136,7 @@ export async function generateServerHtmlQuote({
               <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: #e3f2fd; border-radius: 6px;">
                 <tr>
                   <td style="padding: 15px;">
-                    <p style="margin: 0; font-size: 14px; color: #1976d2; line-height: 1.6;">${customMessage}</p>
+                    <div style="margin: 0; font-size: 14px; color: #1976d2; line-height: 1.6;">${customMessage}</div>
                   </td>
                 </tr>
               </table>

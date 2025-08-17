@@ -166,7 +166,10 @@ export default function QuoteHtmlTemplate({
 
             {customMessage && (
               <Section style={customMessageSection}>
-                <Text style={customMessageText}>{customMessage}</Text>
+                <div 
+                  dangerouslySetInnerHTML={{ __html: customMessage }}
+                  style={customMessageText}
+                />
               </Section>
             )}
 

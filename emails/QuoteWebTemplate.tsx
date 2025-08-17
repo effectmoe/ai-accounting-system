@@ -529,11 +529,10 @@ export default function QuoteWebTemplate({
         {/* カスタムメッセージ */}
         {customMessage && (
           <section style={customMessageSectionStyle}>
-            <div style={customMessageContentStyle}>
-              {customMessage.split('\n').map((line, index) => (
-                <p key={index} style={{ margin: '0.5rem 0' }}>{line}</p>
-              ))}
-            </div>
+            <div 
+              style={customMessageContentStyle}
+              dangerouslySetInnerHTML={{ __html: customMessage }}
+            />
           </section>
         )}
 

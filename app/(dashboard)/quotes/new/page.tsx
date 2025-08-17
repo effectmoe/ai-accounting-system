@@ -655,7 +655,9 @@ function NewQuoteContent() {
                 onChange={handleCustomerChange}
                 options={customers.map((customer) => ({
                   value: customer._id,
-                  label: customer.companyName || customer.name || customer.company || '名前未設定'
+                  label: customer.storeName 
+                    ? `${customer.storeName}（${customer.companyName}）`
+                    : customer.companyName || customer.name || customer.company || '名前未設定'
                 }))}
                 placeholder="顧客を検索または選択"
                 required
@@ -812,7 +814,7 @@ function NewQuoteContent() {
                       type="number"
                       min="0"
                       step="0.01"
-                      value={item.quantity}
+                      value={item.quantity.toString()}
                       onChange={(e) => updateItem(index, 'quantity', parseFloat(e.target.value) || 0)}
                     />
                   </div>
