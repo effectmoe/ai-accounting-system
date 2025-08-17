@@ -182,7 +182,7 @@ export async function generateServerHtmlQuote({
                 <tbody>
                   ${(quote.items || []).map((item: any, index: number) => {
                     const isDiscount = (item.amount < 0) || 
-                      (item.itemName && (item.itemName.includes('値引き') || item.itemName.includes('割引')));
+                      (item.itemName && (item.itemName.includes('値引き') || item.itemName.includes('割引') || item.itemName.includes('ディスカウント')));
                     const itemColor = isDiscount ? '#dc2626' : '#333333';
                     const subtotalAmount = (item.quantity || 1) * (item.unitPrice || 0);
                     const taxAmount = subtotalAmount * (quote.taxRate || 0.1);
@@ -229,6 +229,22 @@ export async function generateServerHtmlQuote({
               </table>
             </td>
           </tr>
+
+          ${quote.notes ? `
+          <!-- 備考欄 -->
+          <tr>
+            <td style="padding: 30px 40px;">
+              <h3 style="margin: 0 0 15px 0; font-size: 18px; color: #333333; border-bottom: 2px solid #e0e0e0; padding-bottom: 8px;">備考</h3>
+              <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: #f9f9f9; border-radius: 6px;">
+                <tr>
+                  <td style="padding: 15px;">
+                    <p style="margin: 0; font-size: 14px; color: #666666; line-height: 1.6; white-space: pre-wrap;">${quote.notes}</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          ` : ''}
 
           <!-- おすすめオプション（DBから取得） -->
           ${suggestedOptions && suggestedOptions.length > 0 ? `
@@ -350,6 +366,10 @@ ${(quote.items || []).map((item: any, index: number) => {
 小計：¥${subtotal.toLocaleString()}
 消費税：¥${taxAmount.toLocaleString()}
 合計：¥${totalAmount.toLocaleString()}
+
+${quote.notes ? `【備考】
+${quote.notes}
+` : ''}
 
 ${suggestedOptions && suggestedOptions.length > 0 ? `
 【おすすめオプション】

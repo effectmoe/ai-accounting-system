@@ -630,6 +630,11 @@ export async function generateSimpleHtmlQuote({
                 </thead>
                 <tbody>
                   ${quote.items.map((item: any) => {
+                    // 値引き判定
+                    const isDiscount = (item.amount < 0) || 
+                      (item.itemName && (item.itemName.includes('値引き') || item.itemName.includes('割引') || item.itemName.includes('ディスカウント')));
+                    const itemColor = isDiscount ? '#dc2626' : '#333333';
+                    
                     // ツールチップを検索
                     let tooltipText = '';
                     const itemText = (item.itemName || '') + ' ' + (item.description || '');
@@ -643,11 +648,11 @@ export async function generateSimpleHtmlQuote({
                     return `
                   <tr>
                     <td style="border: 1px solid #dddddd; padding: 10px; vertical-align: top;">
-                      <div style="font-size: 14px; color: #333333; font-weight: bold; margin: 0 0 4px 0;">
+                      <div style="font-size: 14px; color: ${itemColor}; font-weight: bold; margin: 0 0 4px 0;">
                         ${item.itemName || ''}
                         ${tooltipText ? `<span style="font-size: 11px; color: #1976d2; font-weight: normal; margin-left: 5px;">[※]</span>` : ''}
                       </div>
-                      ${item.description ? `<div style="font-size: 12px; color: #666666; line-height: 1.4;">${item.description}</div>` : ''}
+                      ${item.description ? `<div style="font-size: 12px; color: ${isDiscount ? '#dc2626' : '#666666'}; line-height: 1.4;">${item.description}</div>` : ''}
                       ${tooltipText ? `
                       <div style="margin-top: 5px; padding: 8px; background-color: #e3f2fd; border-left: 3px solid #1976d2; border-radius: 3px;">
                         <span style="font-size: 11px; color: #1565c0; font-weight: bold;">💡 用語解説:</span>
@@ -655,9 +660,9 @@ export async function generateSimpleHtmlQuote({
                       </div>
                       ` : ''}
                     </td>
-                    <td style="border: 1px solid #dddddd; padding: 10px; text-align: center; font-size: 14px; color: #333333;">${item.quantity || 0}${item.unit || ''}</td>
-                    <td style="border: 1px solid #dddddd; padding: 10px; text-align: right; font-size: 14px; color: #333333;">¥${(item.unitPrice || 0).toLocaleString()}</td>
-                    <td style="border: 1px solid #dddddd; padding: 10px; text-align: right; font-size: 14px; color: #333333; font-weight: bold;">¥${(item.amount || 0).toLocaleString()}</td>
+                    <td style="border: 1px solid #dddddd; padding: 10px; text-align: center; font-size: 14px; color: ${itemColor};">${item.quantity || 0}${item.unit || ''}</td>
+                    <td style="border: 1px solid #dddddd; padding: 10px; text-align: right; font-size: 14px; color: ${itemColor};">¥${(item.unitPrice || 0).toLocaleString()}</td>
+                    <td style="border: 1px solid #dddddd; padding: 10px; text-align: right; font-size: 14px; color: ${itemColor}; font-weight: bold;">¥${(item.amount || 0).toLocaleString()}</td>
                   </tr>
                   `;
                   }).join('')}
@@ -830,12 +835,18 @@ ${customMessage ? customMessage + '\n\n' : ''}
 有効期限: ${validityDate}
 
 【見積内容】
-${quote.items.map((item: any) => `
-・${item.itemName || ''}
+${quote.items.map((item: any) => {
+  const isDiscount = (item.amount < 0) || 
+    (item.itemName && (item.itemName.includes('値引き') || item.itemName.includes('割引') || item.itemName.includes('ディスカウント')));
+  const prefix = isDiscount ? '[値引き] ' : '';
+  
+  return `
+・${prefix}${item.itemName || ''}
   ${item.description ? item.description + '\n  ' : ''}数量: ${item.quantity || 0}${item.unit || ''}
   単価: ¥${(item.unitPrice || 0).toLocaleString()}
   金額: ¥${(item.amount || 0).toLocaleString()}
-`).join('')}
+`;
+}).join('')}
 
 小計: ¥${subtotal.toLocaleString()}
 消費税: ¥${taxAmount.toLocaleString()}
