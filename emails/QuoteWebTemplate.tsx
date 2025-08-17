@@ -349,6 +349,10 @@ export default function QuoteWebTemplate({
               padding: 0.875rem;
             }
             
+            /* モバイルではテーブルを非表示、カードを表示 */
+            .desktop-table { display: none !important; }
+            .mobile-cards { display: block !important; }
+            
             /* ツールチップが画面外に出ないように調整 */
             .tooltip-wrapper:first-child .tooltip-content {
               left: 0;
@@ -415,6 +419,10 @@ export default function QuoteWebTemplate({
               flex-direction: row !important;
               justify-content: center !important;
             }
+            
+            /* デスクトップではテーブルを表示、カードを非表示 */
+            .desktop-table { display: block !important; }
+            .mobile-cards { display: none !important; }
           }
         `
       }} />
@@ -630,44 +638,135 @@ export default function QuoteWebTemplate({
         <section style={itemsSectionStyle}>
           <h2 style={h2Style}>見積内容</h2>
           
-          {/* モバイル対応の項目リスト */}
-          <div style={itemsContainerStyle}>
-            {quote.items.map((item, index) => (
-              <div key={index} style={itemCardStyle} className="item-card">
-                <div style={itemHeaderStyle}>
-                  <div style={itemNameStyle} className="item-name">
-                    {item.productLink ? (
-                      <a href={item.productLink} style={productLinkStyle}>
+          {/* デスクトップ：テーブル表示、モバイル：カード表示 */}
+          <div style={{display: 'block'}}>
+            {/* デスクトップ用テーブル */}
+            <div style={desktopTableStyle} className="desktop-table">
+              <table style={tableStyle}>
+                <thead>
+                  <tr style={tableHeaderRowStyle}>
+                    <th style={{...tableHeaderCellStyle, textAlign: 'left'}}>品目</th>
+                    <th style={{...tableHeaderCellStyle, width: '80px'}}>数量</th>
+                    <th style={{...tableHeaderCellStyle, width: '100px'}}>単価</th>
+                    <th style={{...tableHeaderCellStyle, width: '100px'}}>小計</th>
+                    <th style={{...tableHeaderCellStyle, width: '100px'}}>消費税</th>
+                    <th style={{...tableHeaderCellStyle, width: '120px'}}>金額</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {quote.items.map((item, index) => {
+                    const isDiscount = (item.amount < 0) || 
+                      (item.itemName && (item.itemName.includes('値引き') || item.itemName.includes('割引')));
+                    const itemColor = isDiscount ? '#dc2626' : '#1f2937';
+                    const subtotalAmount = (item.quantity || 1) * (item.unitPrice || 0);
+                    const taxAmount = subtotalAmount * (quote.taxRate || 0.1);
+                    
+                    return (
+                      <tr key={index} style={tableBodyRowStyle}>
+                        <td style={{...tableBodyCellStyle, color: itemColor}}>
+                          {item.productLink ? (
+                            <a href={item.productLink} style={{...productLinkStyle, color: isDiscount ? '#dc2626' : '#3B82F6'}}>
+                              {item.tooltip ? 
+                                renderDetailsWithTooltip(item.itemName || item.description || '', item.tooltip) :
+                                (item.itemName || item.description || '')
+                              }
+                            </a>
+                          ) : (
+                            item.tooltip ? 
+                              renderDetailsWithTooltip(item.itemName || item.description || '', item.tooltip) :
+                              (item.itemName || item.description || '')
+                          )}
+                          {item.details && (
+                            <div style={{fontSize: '0.875rem', color: '#6b7280', marginTop: '0.25rem'}}>
+                              {item.tooltip ? 
+                                renderDetailsWithTooltip(item.details, item.tooltip) :
+                                item.details
+                              }
+                            </div>
+                          )}
+                        </td>
+                        <td style={{...tableBodyCellStyle, textAlign: 'center', color: itemColor}}>
+                          {item.quantity || 1}{item.unit ? ` ${item.unit}` : ''}
+                        </td>
+                        <td style={{...tableBodyCellStyle, textAlign: 'right', color: itemColor}}>
+                          {formatCurrency(item.unitPrice || 0)}
+                        </td>
+                        <td style={{...tableBodyCellStyle, textAlign: 'right', color: itemColor}}>
+                          {formatCurrency(subtotalAmount)}
+                        </td>
+                        <td style={{...tableBodyCellStyle, textAlign: 'right', color: itemColor}}>
+                          {formatCurrency(Math.round(taxAmount))}
+                        </td>
+                        <td style={{...tableBodyCellStyle, textAlign: 'right', color: itemColor, fontWeight: 'bold'}}>
+                          {formatCurrency(item.amount || 0)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            
+            {/* モバイル用カード表示 */}
+            <div style={mobileCardsStyle} className="mobile-cards">
+              {quote.items.map((item, index) => {
+                const isDiscount = (item.amount < 0) || 
+                  (item.itemName && (item.itemName.includes('値引き') || item.itemName.includes('割引')));
+                const itemColor = isDiscount ? '#dc2626' : '#1f2937';
+                const subtotalAmount = (item.quantity || 1) * (item.unitPrice || 0);
+                const taxAmount = subtotalAmount * (quote.taxRate || 0.1);
+                
+                return (
+                  <div key={index} style={{...itemCardStyle, borderLeft: isDiscount ? '4px solid #dc2626' : '4px solid #3B82F6'}} className="item-card">
+                    <div style={itemHeaderStyle}>
+                      <div style={{...itemNameStyle, color: itemColor}} className="item-name">
+                        {item.productLink ? (
+                          <a href={item.productLink} style={{...productLinkStyle, color: isDiscount ? '#dc2626' : '#3B82F6'}}>
+                            {item.tooltip ? 
+                              renderDetailsWithTooltip(item.itemName || item.description || '', item.tooltip) :
+                              (item.itemName || item.description || '')
+                            }
+                          </a>
+                        ) : (
+                          item.tooltip ? 
+                            renderDetailsWithTooltip(item.itemName || item.description || '', item.tooltip) :
+                            (item.itemName || item.description || '')
+                        )}
+                      </div>
+                      <div style={{...itemAmountStyle, color: itemColor}} className="item-amount">
+                        {formatCurrency(item.amount)}
+                      </div>
+                    </div>
+                    {item.details && (
+                      <div style={itemDetailsStyle} className="item-details">
                         {item.tooltip ? 
-                          renderDetailsWithTooltip(item.itemName || item.description || '', item.tooltip) :
-                          (item.itemName || item.description || '')
+                          renderDetailsWithTooltip(item.details, item.tooltip) :
+                          item.details
                         }
-                      </a>
-                    ) : (
-                      item.tooltip ? 
-                        renderDetailsWithTooltip(item.itemName || item.description || '', item.tooltip) :
-                        (item.itemName || item.description || '')
+                      </div>
                     )}
+                    <div style={itemBreakdownStyle} className="item-breakdown">
+                      <div style={breakdownRowStyle}>
+                        <span>数量:</span>
+                        <span style={{color: itemColor}}>{item.quantity || 1} {item.unit || '個'}</span>
+                      </div>
+                      <div style={breakdownRowStyle}>
+                        <span>単価:</span>
+                        <span style={{color: itemColor}}>{formatCurrency(item.unitPrice || 0)}</span>
+                      </div>
+                      <div style={breakdownRowStyle}>
+                        <span>小計:</span>
+                        <span style={{color: itemColor}}>{formatCurrency(subtotalAmount)}</span>
+                      </div>
+                      <div style={breakdownRowStyle}>
+                        <span>消費税:</span>
+                        <span style={{color: itemColor}}>{formatCurrency(Math.round(taxAmount))}</span>
+                      </div>
+                    </div>
                   </div>
-                  <div style={itemAmountStyle} className="item-amount">
-                    {formatCurrency(item.amount)}
-                  </div>
-                </div>
-                {item.details && (
-                  <div style={itemDetailsStyle} className="item-details">
-                    {item.tooltip ? 
-                      renderDetailsWithTooltip(item.details, item.tooltip) :
-                      item.details
-                    }
-                  </div>
-                )}
-                <div style={itemMetaStyle} className="item-meta">
-                  <span>{item.quantity} {item.unit || '個'}</span>
-                  <span>×</span>
-                  <span>{formatCurrency(item.unitPrice)}</span>
-                </div>
-              </div>
-            ))}
+                );
+              })}
+            </div>
           </div>
         </section>
 
@@ -1256,4 +1355,68 @@ const footerLinksStyle = {
 const footerLinkStyle = {
   color: '#3B82F6',
   textDecoration: 'none',
+};
+
+// 新しいテーブル関連スタイル
+const desktopTableStyle = {
+  display: 'block',
+  width: '100%',
+  overflowX: 'auto' as const,
+  marginBottom: '1rem',
+};
+
+const mobileCardsStyle = {
+  display: 'none',
+};
+
+const tableStyle = {
+  width: '100%',
+  borderCollapse: 'collapse' as const,
+  backgroundColor: '#ffffff',
+  borderRadius: '0.5rem',
+  overflow: 'hidden',
+  boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
+};
+
+const tableHeaderRowStyle = {
+  backgroundColor: '#f8fafc',
+  borderBottom: '2px solid #e5e7eb',
+};
+
+const tableHeaderCellStyle = {
+  padding: '1rem 0.75rem',
+  textAlign: 'center' as const,
+  fontSize: '0.875rem',
+  fontWeight: 'bold',
+  color: '#374151',
+  borderRight: '1px solid #e5e7eb',
+};
+
+const tableBodyRowStyle = {
+  borderBottom: '1px solid #f3f4f6',
+};
+
+const tableBodyCellStyle = {
+  padding: '1rem 0.75rem',
+  fontSize: '0.875rem',
+  borderRight: '1px solid #f3f4f6',
+  verticalAlign: 'top' as const,
+};
+
+// モバイルカード用の新しいスタイル
+const itemBreakdownStyle = {
+  marginTop: '1rem',
+  padding: '0.75rem',
+  backgroundColor: '#f8fafc',
+  borderRadius: '0.375rem',
+  fontSize: '0.875rem',
+};
+
+const breakdownRowStyle = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  paddingBottom: '0.25rem',
+  marginBottom: '0.25rem',
+  borderBottom: '1px solid #e5e7eb',
 };
