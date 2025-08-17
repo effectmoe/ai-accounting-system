@@ -631,10 +631,6 @@ export default function QuoteHtmlTemplate({
                   {companyInfo.website}
                 </a>
               )}
-              <hr className="divider" />
-              <div style={{fontSize: '14px', fontWeight: 'bold', color: '#1f2937', margin: '10px 0 5px'}}>
-                {quote.companySnapshot?.companyName || companyInfo?.companyName || companyInfo?.name || '会社名未設定'}
-              </div>
               {companyInfo?.representativeName && (
                 <div style={{fontSize: '16px', fontWeight: 'bold', color: '#1f2937', margin: '5px 0'}}>
                   代表取締役 {companyInfo.representativeName}
