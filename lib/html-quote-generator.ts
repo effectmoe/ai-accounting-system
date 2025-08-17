@@ -139,50 +139,77 @@ function enhanceQuoteItems(
   tooltips?: Map<string, string>,
   productLinks?: Map<string, string>
 ): Quote {
-  if (!tooltips && !productLinks) {
-    return quote;
-  }
-
   // itemsが存在しない場合はそのまま返す
   if (!quote.items || !Array.isArray(quote.items)) {
+    console.log('❌ No items to enhance');
     return quote;
   }
 
   console.log('🔧 Enhancing quote items with tooltips:', tooltips?.size || 0, 'tooltips available');
   console.log('📦 Quote items to process:', quote.items?.length || 0);
+  console.log('🗂️ Available tooltip keys:', tooltips ? Array.from(tooltips.keys()) : []);
 
   return {
     ...quote,
     items: quote.items.map((item, index) => {
       const enhanced: any = { ...item };
-      const itemText = item.itemName || item.description || '';
       
-      console.log(`📄 Processing item ${index + 1}:`, itemText);
+      // itemNameとdescriptionの両方を使ってテキストを構築
+      const itemName = item.itemName || '';
+      const itemDescription = item.description || '';
+      const combinedText = (itemName + ' ' + itemDescription).trim();
       
-      // ツールチップを追加
-      if (tooltips) {
-        const tooltip = findTooltipForItem(itemText, tooltips);
-        console.log(`🎯 Item ${index + 1} (${itemText}): tooltip =`, tooltip ? `found: "${tooltip.substring(0, 50)}..."` : 'not found');
+      console.log(`📄 Processing item ${index + 1}:`, {
+        itemName,
+        itemDescription,
+        combinedText
+      });
+      
+      // ツールチップを追加（より強化されたマッチングロジック）
+      if (tooltips && tooltips.size > 0) {
+        // 複数のテキストソースでツールチップを検索
+        let tooltip = findTooltipForItem(itemName, tooltips) || 
+                     findTooltipForItem(itemDescription, tooltips) || 
+                     findTooltipForItem(combinedText, tooltips);
+        
+        console.log(`🎯 Item ${index + 1} tooltip search:`, {
+          itemName,
+          itemDescription,
+          combinedText,
+          tooltipFound: !!tooltip,
+          tooltipPreview: tooltip ? tooltip.substring(0, 50) + '...' : 'not found'
+        });
+        
         if (tooltip) {
           enhanced.tooltip = tooltip;
-          console.log(`✅ Tooltip added to item ${index + 1}`);
+          console.log(`✅ Tooltip added to item ${index + 1}: "${tooltip.substring(0, 100)}..."`);
         } else {
-          console.log(`❌ No tooltip found for item ${index + 1}: "${itemText}"`);
+          console.log(`❌ No tooltip found for item ${index + 1}: "${combinedText}"`);
+          
+          // デバッグ: すべてのツールチップキーとの比較を表示
+          if (tooltips.size > 0) {
+            console.log('🔍 Available tooltips for debugging:');
+            Array.from(tooltips.entries()).forEach(([key, value]) => {
+              console.log(`  - "${key}": "${value.substring(0, 50)}..."`);
+            });
+          }
         }
       }
 
       // 商品リンクを追加
-      if (productLinks) {
-        const link = productLinks.get(item.productId || item.itemName || item.description || '');
+      if (productLinks && productLinks.size > 0) {
+        const link = productLinks.get(item.productId || itemName || itemDescription || '');
         if (link) {
           enhanced.productLink = link;
+          console.log(`🔗 Product link added to item ${index + 1}: ${link}`);
         }
       }
 
-      // 詳細説明を追加
-      if (itemText.length > 50) {
-        enhanced.details = itemText;
-        enhanced.itemName = itemText.substring(0, 50) + '...';
+      // 詳細説明を追加（長い項目名を省略表示用）
+      if (combinedText.length > 50) {
+        enhanced.details = combinedText;
+        enhanced.itemName = combinedText.substring(0, 50) + '...';
+        console.log(`📝 Details added to item ${index + 1}`);
       }
 
       return enhanced;
@@ -199,7 +226,6 @@ function findTooltipForItem(
   tooltips: Map<string, string>
 ): string | undefined {
   console.log('🔍 Searching tooltip for:', description);
-  console.log('🗂️ Available tooltips:', Array.from(tooltips.keys()));
   
   if (!description || description.trim() === '') {
     console.log('❌ Empty description provided');
@@ -208,6 +234,9 @@ function findTooltipForItem(
   
   const terms = Array.from(tooltips.keys());
   const descriptionLower = description.toLowerCase().trim();
+  
+  console.log(`🔍 Searching for "${description}" (normalized: "${descriptionLower}")`);
+  console.log('📝 Available terms:', terms);
   
   // 1. 完全一致を最初に試す
   if (tooltips.has(description)) {
@@ -241,9 +270,9 @@ function findTooltipForItem(
     }
   }
   
-  // 4. 特別な処理: 特定の略語や専門用語のマッチング
+  // 4. 特別な処理: 特定の略語や専門用語のマッチング（拡張版）
   const specialMatches = {
-    'llmo': ['LLMO', 'LLMOモニタリング'],
+    'llmo': ['LLMO', 'LLMOモニタリング', 'モニタリング'],
     'saas': ['SaaS'],
     'api': ['API'],
     'roi': ['ROI'],
@@ -252,14 +281,24 @@ function findTooltipForItem(
     'ui': ['UI/UX'],
     'ux': ['UI/UX'],
     'システム': ['システム', '開発', '構築'],
-    'モニタリング': ['モニタリング', 'LLMOモニタリング'],
-    '最適化': ['最適化', 'LLMO'],
-    '開発': ['開発', 'システム'],
-    '構築': ['構築', 'システム'],
+    'モニタリング': ['モニタリング', 'LLMOモニタリング', 'LLMO'],
+    '最適化': ['最適化', 'LLMO', 'LLMOモニタリング'],
+    '開発': ['開発', 'システム', '構築'],
+    '構築': ['構築', 'システム', '開発'],
+    'web': ['システム', '開発', '構築'],
+    'ウェブ': ['システム', '開発', '構築'],
+    'サイト': ['システム', '開発', '構築'],
+    'ホームページ': ['システム', '開発', '構築'],
+    'webサイト': ['システム', '開発', '構築'],
+    'webシステム': ['システム', '開発', '構築'],
+    'analysis': ['モニタリング', 'LLMO'],
+    'optimization': ['最適化', 'LLMO'],
+    'performance': ['パフォーマンス', 'モニタリング'],
   };
   
   for (const [keyword, candidates] of Object.entries(specialMatches)) {
     if (descriptionLower.includes(keyword)) {
+      console.log(`🎯 Special keyword "${keyword}" found in "${description}"`);
       for (const candidate of candidates) {
         const tooltip = tooltips.get(candidate);
         if (tooltip) {
@@ -270,20 +309,86 @@ function findTooltipForItem(
     }
   }
   
-  // 5. 単語レベルでの部分マッチング
-  const descriptionWords = descriptionLower.split(/[\s、。，．・]+/).filter(word => word.length >= 2);
+  // 5. 単語レベルでの部分マッチング（より柔軟に）
+  const descriptionWords = descriptionLower.split(/[\s、。，．・_\-]+/).filter(word => word.length >= 2);
+  console.log('🔍 Description words:', descriptionWords);
+  
   for (const word of descriptionWords) {
     for (const term of terms) {
       const termLower = term.toLowerCase();
+      const termWords = termLower.split(/[\s、。，．・_\-]+/).filter(w => w.length >= 2);
+      
+      // 単語が含まれるかチェック
       if (termLower.includes(word) || word.includes(termLower)) {
         console.log(`✅ Word-level match found: "${word}" <-> "${term}" for "${description}"`);
         return tooltips.get(term);
       }
+      
+      // 単語同士のマッチング
+      for (const termWord of termWords) {
+        if (word === termWord || (word.length >= 3 && termWord.length >= 3 && (word.includes(termWord) || termWord.includes(word)))) {
+          console.log(`✅ Word-to-word match found: "${word}" <-> "${termWord}" (from "${term}") for "${description}"`);
+          return tooltips.get(term);
+        }
+      }
+    }
+  }
+  
+  // 6. 最後の手段: 曖昧マッチング（文字の一致率をチェック）
+  for (const term of terms) {
+    const similarity = calculateSimilarity(descriptionLower, term.toLowerCase());
+    if (similarity > 0.6) { // 60%以上の類似度
+      console.log(`✅ Similarity match found: "${term}" (${Math.round(similarity * 100)}% similar) for "${description}"`);
+      return tooltips.get(term);
     }
   }
   
   console.log(`❌ No tooltip found for: "${description}"`);
   return undefined;
+}
+
+/**
+ * 文字列の類似度を計算（簡易版）
+ */
+function calculateSimilarity(str1: string, str2: string): number {
+  const longer = str1.length > str2.length ? str1 : str2;
+  const shorter = str1.length > str2.length ? str2 : str1;
+  
+  if (longer.length === 0) return 1.0;
+  
+  const editDistance = levenshteinDistance(longer, shorter);
+  return (longer.length - editDistance) / longer.length;
+}
+
+/**
+ * レーベンシュタイン距離を計算
+ */
+function levenshteinDistance(str1: string, str2: string): number {
+  const matrix = [];
+  
+  for (let i = 0; i <= str2.length; i++) {
+    matrix[i] = [i];
+  }
+  
+  for (let j = 0; j <= str1.length; j++) {
+    matrix[0][j] = j;
+  }
+  
+  for (let i = 1; i <= str2.length; i++) {
+    for (let j = 1; j <= str1.length; j++) {
+      if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1,
+          matrix[i][j - 1] + 1,
+          matrix[i - 1][j] + 1
+        );
+      }
+    }
+  }
+  
+  return matrix[str2.length][str1.length];
 }
 
 /**
@@ -526,6 +631,30 @@ export function generateDefaultTooltips(): Map<string, string> {
   tooltips.set('アップデート', 'ソフトウェアやシステムの更新・改善');
   tooltips.set('カスタマイズ', 'お客様のご要望に合わせた独自の調整・改修');
   tooltips.set('サポート', '技術支援・問題解決・使い方指導');
+  
+  // Web関連の具体的な用語を追加
+  tooltips.set('Webサイト', 'インターネット上で公開されるウェブページの集合');
+  tooltips.set('ウェブサイト', 'インターネット上で公開されるウェブページの集合');
+  tooltips.set('ホームページ', '企業や個人のWebサイトのトップページ');
+  tooltips.set('Webシステム', 'ブラウザ経由で利用できるシステム');
+  tooltips.set('ウェブシステム', 'ブラウザ経由で利用できるシステム');
+  tooltips.set('アプリケーション', '特定の目的のために作られたソフトウェア');
+  tooltips.set('データベース', '大量のデータを効率的に管理・検索できるシステム');
+  tooltips.set('サーバー', 'インターネット上でサービスを提供するコンピュータ');
+  tooltips.set('クラウド', 'インターネット経由でITサービスを利用する仕組み');
+  tooltips.set('セキュリティ', 'システムやデータを不正アクセスから守る仕組み');
+  
+  // コンサルティング・分析関連
+  tooltips.set('分析', 'データや情報を詳しく調べて問題点や改善点を見つけること');
+  tooltips.set('解析', 'データを詳細に分析して有用な情報を抽出すること');
+  tooltips.set('診断', 'システムの状態を調べて問題点を特定すること');
+  tooltips.set('コンサルティング', '専門知識を活用した経営やシステムの改善提案');
+  tooltips.set('プランニング', '目標達成のための計画立案');
+  tooltips.set('戦略', '目標達成のための長期的な計画');
+  
+  // デバッグ用: テスト項目の追加
+  tooltips.set('テスト項目', 'これはツールチップのテスト用項目です。正しく表示されれば機能は正常です。');
+  tooltips.set('サンプル', 'ツールチップ機能をテストするためのサンプル項目です。');
   
   console.log(`📖 Created ${tooltips.size} tooltip entries:`, Array.from(tooltips.keys()));
   return tooltips;
