@@ -102,16 +102,15 @@ export default function DiscussQuotePage() {
         <footer className="border-t border-gray-200 py-4">
           <div className="max-w-md mx-auto text-center">
             <p className="text-xs text-gray-500">
-              このシステムは
+              このシステムはAI駆動によるAAM-Accountingシステムです powered by{' '}
               <a 
                 href="https://notion.effect.moe/" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="text-blue-600 hover:underline"
               >
-                株式会社EFFECT
+                EFFECT Inc.
               </a>
-              によるAI駆動のAAM-Accountingシステムで構成されています
             </p>
           </div>
         </footer>
@@ -137,16 +136,15 @@ export default function DiscussQuotePage() {
         <footer className="border-t border-gray-200 py-4">
           <div className="max-w-md mx-auto text-center">
             <p className="text-xs text-gray-500">
-              このシステムは
+              このシステムはAI駆動によるAAM-Accountingシステムです powered by{' '}
               <a 
                 href="https://notion.effect.moe/" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="text-blue-600 hover:underline"
               >
-                株式会社EFFECT
+                EFFECT Inc.
               </a>
-              によるAI駆動のAAM-Accountingシステムで構成されています
             </p>
           </div>
         </footer>
@@ -192,16 +190,15 @@ export default function DiscussQuotePage() {
         <footer className="border-t border-gray-200 py-4 bg-white">
           <div className="max-w-md mx-auto text-center">
             <p className="text-xs text-gray-500">
-              このシステムは
+              このシステムはAI駆動によるAAM-Accountingシステムです powered by{' '}
               <a 
                 href="https://notion.effect.moe/" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="text-blue-600 hover:underline"
               >
-                株式会社EFFECT
+                EFFECT Inc.
               </a>
-              によるAI駆動のAAM-Accountingシステムで構成されています
             </p>
           </div>
         </footer>
@@ -301,16 +298,15 @@ export default function DiscussQuotePage() {
       <footer className="border-t border-gray-200 py-4">
         <div className="max-w-md mx-auto text-center">
           <p className="text-xs text-gray-500">
-            このシステムは
+            このシステムはAI駆動によるAAM-Accountingシステムです powered by{' '}
             <a 
               href="https://notion.effect.moe/" 
               target="_blank" 
               rel="noopener noreferrer"
               className="text-blue-600 hover:underline"
             >
-              株式会社EFFECT
+              EFFECT Inc.
             </a>
-            によるAI駆動のAAM-Accountingシステムで構成されています
           </p>
         </div>
       </footer>

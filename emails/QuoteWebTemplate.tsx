@@ -915,16 +915,15 @@ export default function QuoteWebTemplate({
           </div>
           <hr style={systemSignatureDividerStyle} />
           <p style={systemSignatureTextStyle}>
-            このシステムは
+            このシステムはAI駆動によるAAM-Accountingシステムです powered by{' '}
             <a 
               href="https://notion.effect.moe/"
               target="_blank"
               rel="noopener noreferrer"
               style={systemSignatureLinkStyle}
             >
-              株式会社EFFECT
+              EFFECT Inc.
             </a>
-            によるAI駆動のAAM-Accountingシステムで構成されています
           </p>
         </div>
       </footer>
