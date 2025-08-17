@@ -716,13 +716,13 @@ export default function QuoteDetailPage({ params }: QuoteDetailPageProps) {
                         {item.itemType === 'discount' ? '-' : ''}¥{Math.abs(item.unitPrice || 0).toLocaleString()}
                       </td>
                       <td className={`text-right py-3 px-4 border border-gray-200 font-mono ${item.itemType === 'discount' ? 'text-red-600' : ''}`}>
-                        {item.itemType === 'discount' ? '-' : ''}¥{Math.abs(item.amount || 0).toLocaleString()}
+                        {item.itemType === 'discount' ? '-' : ''}¥{Math.round(Math.abs(item.amount || 0)).toLocaleString()}
                       </td>
                       <td className={`text-right py-3 px-4 border border-gray-200 font-mono text-sm ${item.itemType === 'discount' ? 'text-red-600' : 'text-gray-600'}`}>
-                        {item.itemType === 'discount' ? '-' : ''}¥{Math.abs(item.taxAmount || 0).toLocaleString()}
+                        {item.itemType === 'discount' ? '-' : ''}¥{Math.round(Math.abs(item.taxAmount || 0)).toLocaleString()}
                       </td>
                       <td className={`text-right py-3 px-4 border border-gray-200 font-medium ${item.itemType === 'discount' ? 'text-red-600' : ''}`}>
-                        {item.itemType === 'discount' ? '-' : ''}¥{Math.abs((item.amount || 0) + (item.taxAmount || 0)).toLocaleString()}
+                        {item.itemType === 'discount' ? '-' : ''}¥{Math.round(Math.abs((item.amount || 0) + (item.taxAmount || 0))).toLocaleString()}
                       </td>
                     </tr>
                   ))}
@@ -739,11 +739,11 @@ export default function QuoteDetailPage({ params }: QuoteDetailPageProps) {
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-gray-700">小計:</span>
-                  <span className="text-lg font-mono">¥{(quote.subtotal || 0).toLocaleString()}</span>
+                  <span className="text-lg font-mono">¥{Math.round(quote.subtotal || 0).toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-700">消費税:</span>
-                  <span className="text-lg font-mono">¥{(quote.taxAmount || 0).toLocaleString()}</span>
+                  <span className="text-lg font-mono">¥{Math.round(quote.taxAmount || 0).toLocaleString()}</span>
                 </div>
                 <div className="border-t border-gray-300 pt-3">
                   <div className="flex justify-between items-center">
