@@ -820,7 +820,7 @@ function NewQuoteContent() {
                     <Label>{item.itemType === 'discount' ? '値引き額' : '単価'}</Label>
                     <Input
                       type="number"
-                      min={item.itemType === 'discount' ? undefined : "0"}
+                      {...(item.itemType === 'discount' ? {} : { min: "0" })}
                       step="0.01"
                       value={item.itemType === 'discount' ? Math.abs(item.unitPrice) : item.unitPrice}
                       onChange={(e) => {
