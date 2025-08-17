@@ -32,7 +32,21 @@ export async function POST(request: NextRequest) {
       notesLength: quote?.notes?.length || 0,
       notesPreview: quote?.notes?.substring(0, 100) || 'なし',
       tooltipsReceived: tooltips?.length || 0,
+      tooltipsData: tooltips,
       productLinksReceived: productLinks?.length || 0,
+      productLinksData: productLinks,
+    });
+    
+    // コンソールログでもデバッグ情報を出力
+    console.log('🔍 API Debug - Received data:', {
+      notes: quote?.notes,
+      notesType: typeof quote?.notes,
+      tooltips: tooltips,
+      tooltipsType: typeof tooltips,
+      tooltipsLength: tooltips?.length,
+      productLinks: productLinks,
+      productLinksType: typeof productLinks,
+      productLinksLength: productLinks?.length
     });
 
     // デバッグ用: シンプルなHTMLを返して確認
@@ -104,9 +118,33 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Map配列をMapオブジェクトに変換
-    const tooltipsMap = new Map(tooltips || []);
-    const productLinksMap = new Map(productLinks || []);
+    // データ型を確認してMapオブジェクトに変換
+    let tooltipsMap: Map<string, string>;
+    let productLinksMap: Map<string, string>;
+    
+    try {
+      // tooltipsが配列かどうか確認
+      if (Array.isArray(tooltips)) {
+        tooltipsMap = new Map(tooltips);
+        console.log('🗺️ Tooltips processed as array:', tooltips.length, 'entries');
+      } else {
+        tooltipsMap = new Map();
+        console.log('⚠️ Tooltips is not an array:', typeof tooltips, tooltips);
+      }
+      
+      // productLinksが配列かどうか確認
+      if (Array.isArray(productLinks)) {
+        productLinksMap = new Map(productLinks);
+        console.log('🗺️ ProductLinks processed as array:', productLinks.length, 'entries');
+      } else {
+        productLinksMap = new Map();
+        console.log('⚠️ ProductLinks is not an array:', typeof productLinks, productLinks);
+      }
+    } catch (error) {
+      console.error('❌ Error processing tooltips/productLinks:', error);
+      tooltipsMap = new Map();
+      productLinksMap = new Map();
+    }
     
     // ツールチップが空の場合は、デフォルトのツールチップを生成
     if (tooltipsMap.size === 0) {
@@ -114,6 +152,7 @@ export async function POST(request: NextRequest) {
       const { generateDefaultTooltips } = await import('@/lib/html-quote-generator');
       const defaultTooltips = generateDefaultTooltips();
       console.log('📚 Generated default tooltips:', defaultTooltips.size, 'entries');
+      console.log('📚 Default tooltips data:', Array.from(defaultTooltips.entries()));
       // デフォルトのツールチップをtooltipsMapに追加
       for (const [key, value] of defaultTooltips.entries()) {
         tooltipsMap.set(key, value);
@@ -125,10 +164,20 @@ export async function POST(request: NextRequest) {
     console.log('🗺️ Preview API Debug - Tooltips map size:', tooltipsMap.size);
     console.log('📋 Preview API Debug - Tooltips entries:', Array.from(tooltipsMap.entries()));
     console.log('📊 Preview API Debug - Quote items:', quote?.items?.map(item => item.itemName || item.description));
+    console.log('📝 Preview API Debug - Quote notes:', {
+      hasNotes: !!quote?.notes,
+      notesValue: quote?.notes,
+      notesLength: quote?.notes?.length
+    });
     
     logger.debug('Tooltips received:', tooltips);
     logger.debug('Tooltips map size:', tooltipsMap.size);
     logger.debug('Tooltips entries:', Array.from(tooltipsMap.entries()));
+    logger.debug('Quote notes debug:', {
+      hasNotes: !!quote?.notes,
+      notesValue: quote?.notes,
+      notesType: typeof quote?.notes
+    });
     
     // プレビュー用のURLを生成（実際の送信時とは異なるダミーURLを使用）
     const trackingId = 'preview-tracking-id';
