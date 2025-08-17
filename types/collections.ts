@@ -190,12 +190,14 @@ export interface Invoice {
 export interface InvoiceItem {
   itemName: string;
   description?: string;
+  itemType?: 'product' | 'discount'; // 項目タイプ（商品または値引き）
   quantity: number;
   unitPrice: number;
   amount: number;
   taxRate?: number;
   taxAmount?: number;
   notes?: string;
+  discountReason?: string; // 値引き理由（値引きの場合のみ）
 }
 
 // 入金記録インターフェース
@@ -292,6 +294,7 @@ export interface Quote {
 export interface QuoteItem {
   itemName: string;
   description?: string;
+  itemType?: 'product' | 'discount'; // 項目タイプ（商品または値引き）
   quantity: number;
   unit?: string; // 単位（個、時間、回など）
   unitPrice: number;
@@ -299,6 +302,7 @@ export interface QuoteItem {
   taxRate?: number;
   taxAmount?: number;
   notes?: string;
+  discountReason?: string; // 値引き理由（値引きの場合のみ）
   // HTML見積書用の拡張フィールド
   productId?: string; // 商品ID
   productLink?: string; // 商品詳細ページへのリンク

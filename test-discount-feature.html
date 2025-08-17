@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>見積書値引き機能テスト</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .test-section h2 {
+            color: #007bff;
+            margin-top: 0;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .discount-button {
+            background-color: #dc3545;
+        }
+        .discount-button:hover {
+            background-color: #c82333;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .item-display {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .discount-item {
+            background-color: #fee;
+            border-color: #fcc;
+        }
+        .discount-text {
+            color: #dc3545;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 見積書値引き機能テスト</h1>
+        
+        <div class="test-section">
+            <h2>1. 値引き項目の追加テスト</h2>
+            <p>通常の商品項目と値引き項目を含む見積書を作成します。</p>
+            <button onclick="testCreateQuoteWithDiscount()">見積書作成テスト</button>
+            <div id="create-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>2. 値引き項目の表示テスト</h2>
+            <p>作成した見積書を取得して、値引き項目が正しく表示されるか確認します。</p>
+            <input type="text" id="quote-id" placeholder="見積書IDを入力" style="padding: 8px; width: 300px;">
+            <button onclick="testDisplayQuote()">見積書表示テスト</button>
+            <div id="display-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>3. 合計金額計算テスト</h2>
+            <p>値引きを含む合計金額が正しく計算されるか確認します。</p>
+            <button onclick="testCalculation()">計算テスト</button>
+            <div id="calc-result" class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:3000/api'; // ローカルテスト用
+        // const API_BASE_URL = 'https://accounting-automation.vercel.app/api'; // 本番環境用
+
+        async function testCreateQuoteWithDiscount() {
+            const resultDiv = document.getElementById('create-result');
+            resultDiv.textContent = 'テスト実行中...';
+            
+            try {
+                // テスト用の見積書データ
+                const quoteData = {
+                    customerId: '66859daa37ad93b1be973d6f', // テスト用顧客ID（実際のIDに変更してください）
+                    title: '値引きテスト見積書',
+                    quoteDate: new Date().toISOString(),
+                    validityDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30日後
+                    items: [
+                        {
+                            itemName: 'ウェブサイト制作',
+                            description: '企業サイト制作一式',
+                            itemType: 'product',
+                            quantity: 1,
+                            unitPrice: 500000,
+                            amount: 500000,
+                            taxRate: 10,
+                            taxAmount: 50000
+                        },
+                        {
+                            itemName: '保守サポート（年間）',
+                            description: '年間保守サポート契約',
+                            itemType: 'product',
+                            quantity: 1,
+                            unitPrice: 120000,
+                            amount: 120000,
+                            taxRate: 10,
+                            taxAmount: 12000
+                        },
+                        {
+                            itemName: '新規顧客割引',
+                            description: '初回限定特別割引',
+                            itemType: 'discount',
+                            discountReason: '新規顧客キャンペーン',
+                            quantity: 1,
+                            unitPrice: -50000,
+                            amount: -50000,
+                            taxRate: 10,
+                            taxAmount: -5000
+                        }
+                    ],
+                    notes: 'この見積書は値引き機能のテスト用です。'
+                };
+
+                const response = await fetch(`${API_BASE_URL}/quotes`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(quoteData)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                
+                resultDiv.className = 'result success';
+                resultDiv.innerHTML = `✅ 見積書作成成功！\n\n` +
+                    `見積書ID: ${result._id}\n` +
+                    `見積書番号: ${result.quoteNumber}\n` +
+                    `小計: ¥${result.subtotal?.toLocaleString()}\n` +
+                    `税額: ¥${result.taxAmount?.toLocaleString()}\n` +
+                    `合計: ¥${result.totalAmount?.toLocaleString()}\n\n` +
+                    `詳細:\n${JSON.stringify(result, null, 2)}`;
+                
+                // IDを表示フィールドに自動入力
+                document.getElementById('quote-id').value = result._id;
+                
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ エラー: ${error.message}`;
+            }
+        }
+
+        async function testDisplayQuote() {
+            const resultDiv = document.getElementById('display-result');
+            const quoteId = document.getElementById('quote-id').value;
+            
+            if (!quoteId) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = '❌ 見積書IDを入力してください';
+                return;
+            }
+            
+            resultDiv.textContent = 'テスト実行中...';
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/quotes/${quoteId}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const quote = await response.json();
+                
+                let itemsHtml = '';
+                quote.items.forEach((item, index) => {
+                    const isDiscount = item.itemType === 'discount';
+                    itemsHtml += `
+                        <div class="item-display ${isDiscount ? 'discount-item' : ''}">
+                            <strong>${index + 1}. ${isDiscount ? '【値引き】' : ''}${item.itemName}</strong>
+                            ${item.description ? `<br>説明: ${item.description}` : ''}
+                            ${item.discountReason ? `<br>理由: ${item.discountReason}` : ''}
+                            <br>数量: ${item.quantity}
+                            <br>単価: <span class="${isDiscount ? 'discount-text' : ''}">¥${item.unitPrice?.toLocaleString()}</span>
+                            <br>小計: <span class="${isDiscount ? 'discount-text' : ''}">¥${item.amount?.toLocaleString()}</span>
+                            <br>税額: <span class="${isDiscount ? 'discount-text' : ''}">¥${item.taxAmount?.toLocaleString()}</span>
+                        </div>
+                    `;
+                });
+                
+                resultDiv.className = 'result success';
+                resultDiv.innerHTML = `✅ 見積書取得成功！\n\n` +
+                    `<strong>見積書番号:</strong> ${quote.quoteNumber}\n` +
+                    `<strong>タイトル:</strong> ${quote.title || '無題'}\n\n` +
+                    `<strong>項目一覧:</strong>\n${itemsHtml}\n` +
+                    `<strong>合計:</strong>\n` +
+                    `小計: ¥${quote.subtotal?.toLocaleString()}\n` +
+                    `税額: ¥${quote.taxAmount?.toLocaleString()}\n` +
+                    `総計: ¥${quote.totalAmount?.toLocaleString()}`;
+                    
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ エラー: ${error.message}`;
+            }
+        }
+
+        function testCalculation() {
+            const resultDiv = document.getElementById('calc-result');
+            
+            // テスト用の計算
+            const items = [
+                { name: '商品A', amount: 100000, tax: 10000 },
+                { name: '商品B', amount: 50000, tax: 5000 },
+                { name: '値引き', amount: -20000, tax: -2000, isDiscount: true }
+            ];
+            
+            let subtotal = 0;
+            let taxTotal = 0;
+            let detailText = '';
+            
+            items.forEach(item => {
+                subtotal += item.amount;
+                taxTotal += item.tax;
+                detailText += `${item.name}: ¥${item.amount.toLocaleString()} (税: ¥${item.tax.toLocaleString()})\n`;
+            });
+            
+            const total = subtotal + taxTotal;
+            
+            resultDiv.className = 'result success';
+            resultDiv.innerHTML = `✅ 計算テスト結果\n\n` +
+                `<strong>明細:</strong>\n${detailText}\n` +
+                `<strong>計算結果:</strong>\n` +
+                `小計: ¥${subtotal.toLocaleString()}\n` +
+                `税額: ¥${taxTotal.toLocaleString()}\n` +
+                `合計: ¥${total.toLocaleString()}\n\n` +
+                `<strong>検証:</strong>\n` +
+                `100,000 + 50,000 - 20,000 = ${subtotal.toLocaleString()} ✓\n` +
+                `10,000 + 5,000 - 2,000 = ${taxTotal.toLocaleString()} ✓\n` +
+                `${subtotal.toLocaleString()} + ${taxTotal.toLocaleString()} = ${total.toLocaleString()} ✓`;
+        }
+    </script>
+</body>
+</html>
