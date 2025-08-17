@@ -24,56 +24,59 @@ interface SuggestedOption {
   ctaUrl: string;
 }
 
-// ツールチップ用語を検出してライトグレーマーカーを付ける関数
+// メール版ツールチップレンダリング関数を改善
 const renderDetailsWithTooltip = (details: string, tooltip: string) => {
-  // ツールチップ内の主要な用語を抽出（ROI、KPI、CRMなどの英語略語を優先）
-  const englishKeywords = tooltip.match(/\b[A-Z]{2,}\b/g) || [];
-  // カタカナのキーワードも抽出
-  const katakanaKeywords = tooltip.match(/[ァ-ヶー]{3,}/g) || [];
-  // 専門用語的な漢字のキーワードも抽出
-  const kanjiKeywords = tooltip.match(/[一-龯]{2,4}(?:率|額|費|価|値|量|数)/g) || [];
+  console.log('📧 QuoteHtmlTemplate: renderDetailsWithTooltip called:', { details, hasTooltip: !!tooltip });
   
-  const allKeywords = [...englishKeywords, ...katakanaKeywords, ...kanjiKeywords];
-  let processedDetails = details;
-  
-  // 各キーワードをライトグレーマーカー付きスパンに変換
-  allKeywords.forEach(keyword => {
-    if (details.includes(keyword)) {
-      const markerStyle = `
-        background: linear-gradient(180deg, transparent 60%, #e5e7eb 60%);
-        cursor: help;
-        position: relative;
-        border-radius: 2px;
-        padding: 0 1px;
-      `;
-      processedDetails = processedDetails.replace(
-        new RegExp(`(${keyword})`, 'g'),
-        `<span style="${markerStyle}" title="${tooltip}">$1</span>`
-      );
-    }
-  });
-  
-  // キーワードが見つからない場合は、文頭の重要そうな語句にマーカーを付ける
-  if (processedDetails === details && details.length > 0) {
-    // 最初の単語（英数字または3文字以上の語句）を対象にする
-    const firstWord = details.match(/^[A-Za-z0-9]+|^[ァ-ヶー]{2,}|^[一-龯]{2,}/);
-    if (firstWord && firstWord[0]) {
-      const word = firstWord[0];
-      const markerStyle = `
-        background: linear-gradient(180deg, transparent 60%, #e5e7eb 60%);
-        cursor: help;
-        position: relative;
-        border-radius: 2px;
-        padding: 0 1px;
-      `;
-      processedDetails = details.replace(
-        word,
-        `<span style="${markerStyle}" title="${tooltip}">${word}</span>`
-      );
-    }
+  if (!tooltip || tooltip.trim() === '') {
+    console.log('❌ No tooltip provided for:', details);
+    return <span>{details}</span>;
   }
   
-  return <span dangerouslySetInnerHTML={{ __html: processedDetails }} />;
+  console.log('✅ Creating tooltip for:', details, 'with tooltip:', tooltip.substring(0, 50) + '...');
+  
+  // HTMLエスケープ処理
+  const escapedDetails = details
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+  const escapedTooltip = tooltip
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+  
+  // メール版では項目名全体をマーキングして、説明文として表示
+  const markerHtml = `
+    <span title="${escapedTooltip}">
+      <span style="
+        background: linear-gradient(180deg, transparent 50%, rgba(254, 240, 138, 0.7) 50%);
+        border-bottom: 2px dotted #f59e0b;
+        padding: 1px 3px;
+        border-radius: 2px;
+        font-weight: 600;
+        position: relative;
+        display: inline-block;
+      ">${escapedDetails}</span>
+    </span>
+    <div style="
+      font-size: 12px;
+      color: #1565c0;
+      background-color: #e3f2fd;
+      border-left: 3px solid #1976d2;
+      padding: 6px 10px;
+      margin: 4px 0;
+      border-radius: 3px;
+      line-height: 1.4;
+    ">
+      💡 用語解説: ${escapedTooltip}
+    </div>
+  `;
+  
+  return <span dangerouslySetInnerHTML={{ __html: markerHtml }} />;
 };
 
 export default function QuoteHtmlTemplate({
@@ -577,12 +580,21 @@ export default function QuoteHtmlTemplate({
             </div>
 
             {/* 備考 */}
-            {quote.notes && (
-              <div className="notes-section">
-                <div className="notes-title">備考</div>
-                <div className="notes-text">{cleanDuplicateSignatures(quote.notes)}</div>
-              </div>
-            )}
+            {(() => {
+              const hasNotes = quote.notes && quote.notes.trim();
+              console.log('📝 QuoteHtmlTemplate notes check:', {
+                hasNotes: !!hasNotes,
+                notesLength: quote.notes?.length || 0,
+                notesPreview: quote.notes?.substring(0, 100) || 'なし'
+              });
+              
+              return hasNotes ? (
+                <div className="notes-section">
+                  <div className="notes-title">備考</div>
+                  <div className="notes-text">{cleanDuplicateSignatures(quote.notes)}</div>
+                </div>
+              ) : null;
+            })()}
 
             {/* 会社情報 */}
             <div className="company-section">

@@ -25,7 +25,7 @@ interface SuggestedOption {
 }
 
 // ツールチップレンダリング関数の改善
-// Updated: 2025-08-17 - 修正版: 確実にツールチップを表示
+// Updated: 2025-08-17 - さらに強化版: 確実にツールチップを表示
 const renderDetailsWithTooltip = (details: string, tooltip: string) => {
   console.log('🎨 renderDetailsWithTooltip called:', { details, hasTooltip: !!tooltip });
   
@@ -36,22 +36,33 @@ const renderDetailsWithTooltip = (details: string, tooltip: string) => {
   
   console.log('✅ Creating tooltip for:', details, 'with tooltip:', tooltip.substring(0, 50) + '...');
   
-  // HTMLエスケープ処理
-  const escapedDetails = details.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-  const escapedTooltip = tooltip.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  // HTMLエスケープ処理を強化
+  const escapedDetails = details
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+  const escapedTooltip = tooltip
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
   
-  // より確実な方法: 項目名全体をツールチップ付きにする
+  // より目立つスタイルで確実にツールチップを表示
   const markerHtml = `
     <span class="tooltip-wrapper" data-tooltip="${escapedTooltip}" title="${escapedTooltip}">
       <span style="
-        background: linear-gradient(180deg, transparent 60%, rgba(254, 240, 138, 0.7) 60%);
+        background: linear-gradient(180deg, transparent 50%, rgba(254, 240, 138, 0.8) 50%);
         cursor: help;
         border-radius: 3px;
-        padding: 1px 4px;
+        padding: 2px 5px;
         border-bottom: 2px dotted #f59e0b;
-        font-weight: 500;
+        font-weight: 600;
         position: relative;
         display: inline-block;
+        text-decoration: none;
       ">${escapedDetails}</span>
       <span class="tooltip-content" style="
         visibility: hidden;
@@ -59,21 +70,21 @@ const renderDetailsWithTooltip = (details: string, tooltip: string) => {
         background-color: #fef3c7;
         color: #1f2937;
         text-align: left;
-        border-radius: 6px;
-        padding: 12px 16px;
+        border-radius: 8px;
+        padding: 14px 18px;
         position: absolute;
         z-index: 999999;
-        bottom: 125%;
+        bottom: 130%;
         left: 50%;
         transform: translateX(-50%);
-        width: 280px;
-        min-width: 200px;
-        max-width: 90vw;
+        width: 300px;
+        min-width: 220px;
+        max-width: 95vw;
         font-size: 14px;
         font-weight: 500;
-        box-shadow: 0 8px 25px rgba(0,0,0,0.25);
-        border: 2px solid #f59e0b;
-        transition: all 0.2s ease-in-out;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3), 0 4px 8px rgba(0,0,0,0.1);
+        border: 3px solid #f59e0b;
+        transition: all 0.3s ease-in-out;
         pointer-events: none;
         white-space: normal;
         line-height: 1.5;
