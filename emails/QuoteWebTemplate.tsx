@@ -913,6 +913,19 @@ export default function QuoteWebTemplate({
             {' | '}
             <a href={`${baseUrl}/contact`} style={footerLinkStyle}>お問い合わせ</a>
           </div>
+          <hr style={systemSignatureDividerStyle} />
+          <p style={systemSignatureTextStyle}>
+            このシステムは
+            <a 
+              href="https://notion.effect.moe/"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={systemSignatureLinkStyle}
+            >
+              株式会社EFFECT
+            </a>
+            のAAM-Accountingシステムです
+          </p>
         </div>
       </footer>
 
@@ -1449,4 +1462,22 @@ const breakdownRowStyle = {
   paddingBottom: '0.25rem',
   marginBottom: '0.25rem',
   borderBottom: '1px solid #e5e7eb',
+};
+
+const systemSignatureDividerStyle = {
+  border: 'none',
+  borderTop: '1px solid #e5e7eb',
+  margin: '1.5rem 0 1rem 0',
+};
+
+const systemSignatureTextStyle = {
+  fontSize: '0.75rem',
+  color: '#6b7280',
+  margin: '0.5rem 0 0 0',
+  textAlign: 'center' as const,
+};
+
+const systemSignatureLinkStyle = {
+  color: '#3b82f6',
+  textDecoration: 'none',
 };

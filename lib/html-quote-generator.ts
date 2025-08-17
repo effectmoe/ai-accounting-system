@@ -819,6 +819,19 @@ export async function generateSimpleHtmlQuote({
                   </td>
                 </tr>
               </table>
+              
+              <!-- AAM-Accountingシステム署名 -->
+              <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-top: 20px; border-top: 1px solid #e5e7eb; padding-top: 15px;">
+                <tr>
+                  <td align="center">
+                    <p style="margin: 0; font-size: 12px; color: #6b7280; text-align: center;">
+                      このシステムは
+                      <a href="https://notion.effect.moe/" target="_blank" rel="noopener noreferrer" style="color: #3b82f6; text-decoration: none;">株式会社EFFECT</a>
+                      のAAM-Accountingシステムです
+                    </p>
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
         </table>

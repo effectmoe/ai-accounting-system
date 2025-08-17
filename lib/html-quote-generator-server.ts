@@ -319,6 +319,19 @@ export async function generateServerHtmlQuote({
               ${companyPhone ? `<p style="margin: 0 0 5px 0; font-size: 14px; color: #666666;">TEL: ${companyPhone}</p>` : ''}
               ${companyEmail ? `<p style="margin: 0 0 5px 0; font-size: 14px; color: #666666;">Email: <a href="mailto:${companyEmail}" style="color: #2196f3; text-decoration: none;">${companyEmail}</a></p>` : ''}
               ${companyWebsite ? `<p style="margin: 0; font-size: 14px; color: #666666;">Web: <a href="${companyWebsite}" target="_blank" rel="noopener noreferrer" style="color: #2196f3; text-decoration: none;">${companyWebsite}</a></p>` : ''}
+              
+              <!-- AAM-Accountingシステム署名 -->
+              <table cellpadding="0" cellspacing="0" border="0" width="100%" style="margin-top: 20px; border-top: 1px solid #e0e0e0; padding-top: 15px;">
+                <tr>
+                  <td align="center">
+                    <p style="margin: 0; font-size: 12px; color: #6b7280; text-align: center;">
+                      このシステムは
+                      <a href="https://notion.effect.moe/" target="_blank" rel="noopener noreferrer" style="color: #3b82f6; text-decoration: none;">株式会社EFFECT</a>
+                      のAAM-Accountingシステムです
+                    </p>
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
         </table>
