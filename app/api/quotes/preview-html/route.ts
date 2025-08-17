@@ -28,6 +28,11 @@ export async function POST(request: NextRequest) {
       companyName: companyInfo?.companyName || companyInfo?.name,
       suggestedOptionsCount: suggestedOptions?.length || 0,
       suggestedOptions: suggestedOptions,
+      hasNotes: !!quote?.notes,
+      notesLength: quote?.notes?.length || 0,
+      notesPreview: quote?.notes?.substring(0, 100) || 'なし',
+      tooltipsReceived: tooltips?.length || 0,
+      productLinksReceived: productLinks?.length || 0,
     });
 
     // デバッグ用: シンプルなHTMLを返して確認

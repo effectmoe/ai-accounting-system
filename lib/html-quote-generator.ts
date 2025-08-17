@@ -520,6 +520,18 @@ export async function generateSimpleHtmlQuote({
   const companyEmail = quote.companySnapshot?.email || companyInfo?.email || '';
   const companyWebsite = companyInfo?.website || '';
 
+  // デバッグログ: 備考欄とデータフローを確認
+  console.log('🔍 [generateSimpleHtmlQuote] Debug Info:', {
+    quoteId: quote._id,
+    hasNotes: !!quote.notes,
+    notesLength: quote.notes?.length || 0,
+    notesPreview: quote.notes?.substring(0, 100) || 'なし',
+    companyName,
+    companySnapshot: quote.companySnapshot,
+    quoteTotalAmount: quote.totalAmount,
+    itemsCount: quote.items?.length || 0
+  });
+
   // ツールチップ辞書を生成
   const tooltips = generateDefaultTooltips();
   
@@ -648,11 +660,11 @@ export async function generateSimpleHtmlQuote({
                     return `
                   <tr>
                     <td style="border: 1px solid #dddddd; padding: 10px; vertical-align: top;">
-                      <div style="font-size: 14px; color: ${itemColor}; font-weight: bold; margin: 0 0 4px 0;">
+                      <div style="font-size: 14px; color: ${itemColor} !important; font-weight: bold; margin: 0 0 4px 0;">
                         ${item.itemName || ''}
                         ${tooltipText ? `<span style="font-size: 11px; color: #1976d2; font-weight: normal; margin-left: 5px;">[※]</span>` : ''}
                       </div>
-                      ${item.description ? `<div style="font-size: 12px; color: ${isDiscount ? '#dc2626' : '#666666'}; line-height: 1.4;">${item.description}</div>` : ''}
+                      ${item.description ? `<div style="font-size: 12px; color: ${isDiscount ? '#dc2626 !important' : '#666666'}; line-height: 1.4;">${item.description}</div>` : ''}
                       ${tooltipText ? `
                       <div style="margin-top: 5px; padding: 8px; background-color: #e3f2fd; border-left: 3px solid #1976d2; border-radius: 3px;">
                         <span style="font-size: 11px; color: #1565c0; font-weight: bold;">💡 用語解説:</span>
@@ -660,9 +672,9 @@ export async function generateSimpleHtmlQuote({
                       </div>
                       ` : ''}
                     </td>
-                    <td style="border: 1px solid #dddddd; padding: 10px; text-align: center; font-size: 14px; color: ${itemColor};">${item.quantity || 0}${item.unit || ''}</td>
-                    <td style="border: 1px solid #dddddd; padding: 10px; text-align: right; font-size: 14px; color: ${itemColor};">¥${(item.unitPrice || 0).toLocaleString()}</td>
-                    <td style="border: 1px solid #dddddd; padding: 10px; text-align: right; font-size: 14px; color: ${itemColor}; font-weight: bold;">¥${(item.amount || 0).toLocaleString()}</td>
+                    <td style="border: 1px solid #dddddd; padding: 10px; text-align: center; font-size: 14px; color: ${itemColor} !important;">${item.quantity || 0}${item.unit || ''}</td>
+                    <td style="border: 1px solid #dddddd; padding: 10px; text-align: right; font-size: 14px; color: ${itemColor} !important;">¥${(item.unitPrice || 0).toLocaleString()}</td>
+                    <td style="border: 1px solid #dddddd; padding: 10px; text-align: right; font-size: 14px; color: ${itemColor} !important; font-weight: bold;">¥${(item.amount || 0).toLocaleString()}</td>
                   </tr>
                   `;
                   }).join('')}

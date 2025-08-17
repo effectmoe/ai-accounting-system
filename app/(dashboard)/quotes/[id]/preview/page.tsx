@@ -40,6 +40,11 @@ export default function QuotePreviewPage() {
             companyInfo,
             useWebLayout: true,
             includeTracking: false,
+            // HTML見積書エディタから保存されたツールチップとリンクを取得
+            tooltips: quote.htmlSettings?.tooltips ? Array.from(new Map(quote.htmlSettings.tooltips).entries()) : [],
+            productLinks: quote.htmlSettings?.productLinks ? Array.from(new Map(quote.htmlSettings.productLinks).entries()) : [],
+            suggestedOptions: quote.htmlSettings?.suggestedOptions || [],
+            customMessage: quote.htmlSettings?.customMessage || '',
           }),
         });
 
