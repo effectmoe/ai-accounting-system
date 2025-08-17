@@ -456,7 +456,7 @@ export default function QuoteHtmlTemplate({
               >
                 株式会社EFFECT
               </Link>
-              のAAM-Accountingシステムです
+              によるAI駆動のAAM-Accountingシステムで構成されています
             </Text>
           </Section>
 
