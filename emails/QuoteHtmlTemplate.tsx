@@ -1,20 +1,4 @@
 import React from 'react';
-import {
-  Body,
-  Button,
-  Container,
-  Column,
-  Head,
-  Heading,
-  Hr,
-  Html,
-  Img,
-  Link,
-  Preview,
-  Row,
-  Section,
-  Text,
-} from '@react-email/components';
 import { Quote, CompanyInfo } from '@/types/collections';
 import { cleanDuplicateSignatures } from '@/lib/utils/clean-duplicate-signatures';
 
@@ -125,349 +109,562 @@ export default function QuoteHtmlTemplate({
   };
 
   return (
-    <Html>
-      <Head />
-      <Preview>
-        {quote.title || `お見積書 #${quote.quoteNumber}`} - {quote.companySnapshot?.companyName || companyInfo?.companyName || companyInfo?.name || '会社名未設定'}より
-      </Preview>
-      <Body style={main}>
-        <Container style={container}>
+    <html>
+      <head>
+        <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>{quote.title || `お見積書 #${quote.quoteNumber}`}</title>
+        <style dangerouslySetInnerHTML={{
+          __html: `
+            * {
+              margin: 0;
+              padding: 0;
+              box-sizing: border-box;
+            }
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Ubuntu, sans-serif;
+              background-color: #f6f9fc;
+              color: #1f2937;
+              line-height: 1.5;
+            }
+            .container {
+              max-width: 600px;
+              margin: 0 auto;
+              background-color: #ffffff;
+              padding: 20px;
+            }
+            .header {
+              text-align: center;
+              padding: 24px 20px;
+              background-color: #f8fafc;
+              margin-bottom: 20px;
+            }
+            .logo {
+              max-width: 150px;
+              height: auto;
+            }
+            .company-name {
+              font-size: 24px;
+              font-weight: bold;
+              color: #1f2937;
+              margin-top: 16px;
+            }
+            .main-title {
+              font-size: 32px;
+              font-weight: bold;
+              text-align: center;
+              color: #1f2937;
+              margin: 30px 0;
+            }
+            .greeting {
+              font-size: 18px;
+              font-weight: bold;
+              color: #1f2937;
+              margin: 20px 0;
+            }
+            .message {
+              font-size: 16px;
+              color: #4b5563;
+              line-height: 1.75;
+              margin: 16px 0;
+            }
+            .custom-message {
+              background-color: #eff6ff;
+              border-radius: 8px;
+              padding: 16px;
+              margin: 20px 0;
+            }
+            .quote-info {
+              display: flex;
+              gap: 20px;
+              margin: 30px 0;
+              flex-wrap: wrap;
+            }
+            .info-item {
+              flex: 1;
+              min-width: 150px;
+            }
+            .info-label {
+              font-size: 14px;
+              color: #6b7280;
+              margin-bottom: 4px;
+            }
+            .info-value {
+              font-size: 16px;
+              font-weight: bold;
+              color: #1f2937;
+            }
+            .divider {
+              border: none;
+              border-top: 1px solid #e5e7eb;
+              margin: 30px 0;
+            }
+            .section-title {
+              font-size: 24px;
+              font-weight: bold;
+              color: #1f2937;
+              margin: 30px 0 20px;
+            }
+            .item-row {
+              border-bottom: 1px solid #f3f4f6;
+              padding: 16px 0;
+              display: grid;
+              grid-template-columns: 1fr auto auto auto;
+              gap: 20px;
+              align-items: start;
+            }
+            .item-name {
+              font-size: 15px;
+              font-weight: 500;
+              color: #1f2937;
+              margin-bottom: 4px;
+            }
+            .item-details {
+              font-size: 13px;
+              color: #6b7280;
+              line-height: 1.5;
+            }
+            .item-quantity,
+            .item-price,
+            .item-total {
+              text-align: right;
+              font-size: 15px;
+              color: #4b5563;
+            }
+            .item-total {
+              font-weight: bold;
+              color: #1f2937;
+            }
+            .discount {
+              color: #dc2626 !important;
+              font-weight: bold;
+            }
+            .total-section {
+              margin: 30px 0;
+            }
+            .total-row {
+              display: grid;
+              grid-template-columns: 1fr auto;
+              gap: 20px;
+              padding: 8px 0;
+            }
+            .total-label {
+              text-align: right;
+              font-size: 16px;
+              color: #4b5563;
+            }
+            .total-value {
+              text-align: right;
+              font-size: 16px;
+              color: #1f2937;
+            }
+            .grand-total {
+              border-top: 2px solid #1f2937;
+              padding-top: 12px;
+              margin-top: 12px;
+            }
+            .grand-total .total-label {
+              font-size: 18px;
+              font-weight: bold;
+            }
+            .grand-total .total-value {
+              font-size: 24px;
+              font-weight: bold;
+              color: #3B82F6;
+            }
+            .cta-section {
+              text-align: center;
+              margin: 40px 0;
+            }
+            .btn {
+              display: inline-block;
+              padding: 12px 32px;
+              margin: 0 8px 8px;
+              border-radius: 8px;
+              text-decoration: none;
+              font-size: 16px;
+              font-weight: bold;
+              text-align: center;
+            }
+            .btn-primary {
+              background-color: #3B82F6;
+              color: #ffffff;
+            }
+            .btn-secondary {
+              background-color: #ffffff;
+              color: #3B82F6;
+              border: 2px solid #3B82F6;
+            }
+            .btn-tertiary {
+              background-color: #ffffff;
+              color: #6B7280;
+              border: 2px solid #6B7280;
+            }
+            .notes-section {
+              background-color: #f9fafb;
+              border-radius: 8px;
+              padding: 20px;
+              margin: 30px 0;
+            }
+            .notes-title {
+              font-size: 18px;
+              font-weight: bold;
+              color: #1f2937;
+              margin-bottom: 10px;
+            }
+            .notes-text {
+              font-size: 14px;
+              color: #4b5563;
+              line-height: 1.6;
+            }
+            .company-section {
+              margin: 40px 0;
+              padding-top: 30px;
+              border-top: 1px solid #e5e7eb;
+            }
+            .company-details {
+              font-size: 14px;
+              color: #4b5563;
+              margin: 4px 0;
+            }
+            .footer {
+              text-align: center;
+              padding: 24px 20px;
+              background-color: #f8fafc;
+              margin-top: 40px;
+              border-top: 1px solid #e5e7eb;
+            }
+            .footer-text {
+              font-size: 12px;
+              color: #6b7280;
+              margin: 8px 0;
+            }
+            .footer-link {
+              color: #3B82F6;
+              text-decoration: none;
+            }
+            .suggestions-section {
+              margin: 40px 0;
+            }
+            .suggestion-card {
+              background-color: #f9fafb;
+              border: 1px solid #e5e7eb;
+              border-radius: 8px;
+              padding: 20px;
+              margin: 16px 0;
+            }
+            .suggestion-title {
+              font-size: 18px;
+              font-weight: bold;
+              color: #1f2937;
+              margin-bottom: 8px;
+            }
+            .suggestion-description {
+              font-size: 14px;
+              color: #4b5563;
+              line-height: 1.6;
+              margin: 8px 0;
+              white-space: pre-wrap;
+            }
+            .suggestion-price {
+              font-size: 16px;
+              font-weight: bold;
+              color: #10B981;
+              margin: 12px 0;
+            }
+            .feature-list {
+              margin: 12px 0;
+              padding-left: 20px;
+            }
+            .feature-item {
+              font-size: 14px;
+              color: #4b5563;
+              margin: 4px 0;
+            }
+            .suggestion-button {
+              background-color: #10B981;
+              color: #ffffff;
+              padding: 10px 20px;
+              border-radius: 6px;
+              text-decoration: none;
+              font-size: 14px;
+              font-weight: bold;
+              display: inline-block;
+              margin-top: 16px;
+            }
+          `
+        }} />
+      </head>
+      <body>
+        <div className="container">
           {/* ヘッダー */}
-          <Section style={header}>
+          <div className="header">
             {companyInfo?.logoUrl && (
-              <Img
+              <img
                 src={companyInfo.logoUrl}
-                width="150"
-                height="50"
                 alt={companyInfo?.companyName || companyInfo?.name || ''}
-                style={logo}
+                className="logo"
               />
             )}
-            <Text style={headerText}>{quote.companySnapshot?.companyName || companyInfo?.companyName || companyInfo?.name || '会社名未設定'}</Text>
-          </Section>
-
+            <div className="company-name">
+              {quote.companySnapshot?.companyName || companyInfo?.companyName || companyInfo?.name || '会社名未設定'}
+            </div>
+          </div>
 
           {/* メインコンテンツ */}
-          <Section style={mainContent}>
-            <Heading style={h1}>お見積書</Heading>
+          <div>
+            <h1 className="main-title">お見積書</h1>
             
-            <Text style={greeting}>
+            <div className="greeting">
               {recipientName || 
                (quote.customer?.storeName 
                  ? `${quote.customer.storeName}（${quote.customer?.companyName}）`
                  : quote.customerName || quote.customer?.companyName || quote.customer?.name || 'お客様')} 様
-            </Text>
+            </div>
 
-            <Text style={message}>
-              平素より格別のご高配を賜り、厚く御礼申し上げます。
-              <br />
+            <div className="message">
+              平素より格別のご高配を賜り、厚く御礼申し上げます。<br />
               ご依頼いただきました件について、下記の通りお見積りさせていただきます。
-            </Text>
+            </div>
 
             {customMessage && (
-              <Section style={customMessageSection}>
-                <div 
-                  dangerouslySetInnerHTML={{ __html: customMessage }}
-                  style={customMessageText}
-                />
-              </Section>
+              <div className="custom-message">
+                <div dangerouslySetInnerHTML={{ __html: customMessage }} />
+              </div>
             )}
 
             {/* 見積書情報 */}
-            <Section style={quoteInfo}>
-              <Row>
-                <Column style={infoColumn}>
-                  <Text style={infoLabel}>見積書番号</Text>
-                  <Text style={infoValue}>{quote.quoteNumber}</Text>
-                </Column>
-                <Column style={infoColumn}>
-                  <Text style={infoLabel}>発行日</Text>
-                  <Text style={infoValue}>{formatDate(quote.issueDate)}</Text>
-                </Column>
-                <Column style={infoColumn}>
-                  <Text style={infoLabel}>有効期限</Text>
-                  <Text style={infoValue}>{formatDate(quote.validityDate)}</Text>
-                </Column>
-              </Row>
-            </Section>
+            <div className="quote-info">
+              <div className="info-item">
+                <div className="info-label">見積書番号</div>
+                <div className="info-value">{quote.quoteNumber}</div>
+              </div>
+              <div className="info-item">
+                <div className="info-label">発行日</div>
+                <div className="info-value">{formatDate(quote.issueDate)}</div>
+              </div>
+              <div className="info-item">
+                <div className="info-label">有効期限</div>
+                <div className="info-value">{formatDate(quote.validityDate)}</div>
+              </div>
+            </div>
 
-            <Hr style={divider} />
+            <hr className="divider" />
 
             {/* 見積項目 */}
-            <Section style={itemsSection}>
-              <Heading as="h2" style={h2}>見積内容</Heading>
+            <div>
+              <h2 className="section-title">見積内容</h2>
               
               {quote.items.map((item, index) => {
                 // 値引き判定
                 const isDiscount = (item.amount < 0) || 
                   (item.itemName && (item.itemName.includes('値引き') || item.itemName.includes('割引') || item.itemName.includes('ディスカウント')));
-                const discountStyle = isDiscount ? { color: '#dc2626', fontWeight: 'bold' } : {};
                 
                 return (
-                <Section key={index} style={itemRow}>
-                  <Row>
-                    <Column style={itemNameColumn}>
-                      <Text style={{...itemName, ...discountStyle}}>
+                  <div key={index} className="item-row">
+                    <div>
+                      <div className={`item-name ${isDiscount ? 'discount' : ''}`}>
                         {item.productLink ? (
-                          <Link href={item.productLink} style={productLink}>
+                          <a href={item.productLink} style={{color: '#3B82F6', textDecoration: 'none'}}>
                             {item.tooltip ? 
                               renderDetailsWithTooltip(item.itemName || item.description || '', item.tooltip) :
                               (item.itemName || item.description || '')
                             }
-                          </Link>
+                          </a>
                         ) : (
                           item.tooltip ? 
                             renderDetailsWithTooltip(item.itemName || item.description || '', item.tooltip) :
                             (item.itemName || item.description || '')
                         )}
-                      </Text>
+                      </div>
                       {item.details && (
-                        <Text style={{...(item.tooltip ? itemDetailsWithTooltip : itemDetails), ...discountStyle}}>
+                        <div className={`item-details ${isDiscount ? 'discount' : ''}`}>
                           {item.tooltip ? 
                             renderDetailsWithTooltip(item.details, item.tooltip) :
                             item.details
                           }
-                        </Text>
+                        </div>
                       )}
-                    </Column>
-                    <Column style={itemQuantityColumn}>
-                      <Text style={{...itemQuantity, ...discountStyle}}>
-                        {item.quantity} {item.unit || '個'}
-                      </Text>
-                    </Column>
-                    <Column style={itemPriceColumn}>
-                      <Text style={{...itemPrice, ...discountStyle}}>
-                        {formatCurrency(item.unitPrice)}
-                      </Text>
-                    </Column>
-                    <Column style={itemTotalColumn}>
-                      <Text style={{...itemTotal, ...discountStyle}}>
-                        {formatCurrency(item.amount)}
-                      </Text>
-                    </Column>
-                  </Row>
-                </Section>
+                    </div>
+                    <div className={`item-quantity ${isDiscount ? 'discount' : ''}`}>
+                      {item.quantity} {item.unit || '個'}
+                    </div>
+                    <div className={`item-price ${isDiscount ? 'discount' : ''}`}>
+                      {formatCurrency(item.unitPrice)}
+                    </div>
+                    <div className={`item-total ${isDiscount ? 'discount' : ''}`}>
+                      {formatCurrency(item.amount)}
+                    </div>
+                  </div>
                 );
-              })
-            </Section>
+              })}
+            </div>
 
-            <Hr style={divider} />
+            <hr className="divider" />
 
             {/* 合計金額 */}
-            <Section style={totalSection}>
-              <Row>
-                <Column style={totalLabelColumn}>
-                  <Text style={totalLabel}>小計</Text>
-                </Column>
-                <Column style={totalValueColumn}>
-                  <Text style={totalValue}>
-                    {formatCurrency(Math.round(quote.subtotal))}
-                  </Text>
-                </Column>
-              </Row>
-              <Row>
-                <Column style={totalLabelColumn}>
-                  <Text style={totalLabel}>消費税（{quote.taxRate}%）</Text>
-                </Column>
-                <Column style={totalValueColumn}>
-                  <Text style={totalValue}>
-                    {formatCurrency(Math.round(quote.taxAmount))}
-                  </Text>
-                </Column>
-              </Row>
-              <Row>
-                <Column style={grandTotalColumn}>
-                  <Text style={grandTotalLabel}>合計金額</Text>
-                </Column>
-                <Column style={grandTotalValueColumn}>
-                  <Text style={grandTotalValue}>
-                    {formatCurrency(quote.totalAmount)}
-                  </Text>
-                </Column>
-              </Row>
-            </Section>
+            <div className="total-section">
+              <div className="total-row">
+                <div className="total-label">小計</div>
+                <div className="total-value">{formatCurrency(Math.round(quote.subtotal))}</div>
+              </div>
+              <div className="total-row">
+                <div className="total-label">消費税（{quote.taxRate}%）</div>
+                <div className="total-value">{formatCurrency(Math.round(quote.taxAmount))}</div>
+              </div>
+              <div className="total-row grand-total">
+                <div className="total-label">合計金額</div>
+                <div className="total-value">{formatCurrency(quote.totalAmount)}</div>
+              </div>
+            </div>
 
             {/* 追加提案オプション */}
             {suggestedOptions.length > 0 && (
-              <Section style={suggestionsSection}>
-                <Hr style={divider} />
-                <Heading as="h2" style={h2}>
-                  🎯 お客様におすすめのオプション
-                </Heading>
+              <div className="suggestions-section">
+                <hr className="divider" />
+                <h2 className="section-title">🎯 お客様におすすめのオプション</h2>
                 
                 {suggestedOptions.map((option, index) => (
-                  <Section key={index} style={suggestionCard}>
-                    <Row>
-                      <Column>
-                        <Text style={suggestionTitle}>{option.title}</Text>
-                        <Text style={suggestionDescription}>
-                          {option.description.split('\n').map((line, index) => (
-                            <span key={index}>
-                              {line}
-                              {index < option.description.split('\n').length - 1 && <br />}
-                            </span>
-                          ))}
-                        </Text>
-                        {option.price && (
-                          <Text style={suggestionPrice}>
-                            追加料金: {option.price}
-                          </Text>
-                        )}
-                        {option.features && option.features.length > 0 && (
-                          <ul style={featureList}>
-                            {option.features.map((feature, fIndex) => (
-                              <li key={fIndex} style={featureItem}>
-                                <Text style={featureText}>{feature}</Text>
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                        {option.ctaUrl && option.ctaText && (
-                          <Button
-                            href={option.ctaUrl}
-                            style={suggestionButton}
-                          >
-                            {option.ctaText}
-                          </Button>
-                        )}
-                      </Column>
-                    </Row>
-                  </Section>
+                  <div key={index} className="suggestion-card">
+                    <div className="suggestion-title">{option.title}</div>
+                    <div className="suggestion-description">
+                      {option.description.split('\n').map((line, index) => (
+                        <span key={index}>
+                          {line}
+                          {index < option.description.split('\n').length - 1 && <br />}
+                        </span>
+                      ))}
+                    </div>
+                    {option.price && (
+                      <div className="suggestion-price">
+                        追加料金: {option.price}
+                      </div>
+                    )}
+                    {option.features && option.features.length > 0 && (
+                      <ul className="feature-list">
+                        {option.features.map((feature, fIndex) => (
+                          <li key={fIndex} className="feature-item">{feature}</li>
+                        ))}
+                      </ul>
+                    )}
+                    {option.ctaUrl && option.ctaText && (
+                      <a href={option.ctaUrl} className="suggestion-button">
+                        {option.ctaText}
+                      </a>
+                    )}
+                  </div>
                 ))}
-              </Section>
+              </div>
             )}
 
             {/* CTA ボタン */}
-            <Section style={ctaSection}>
-              <Row>
-                <Column align="center">
-                  {acceptUrl && (
-                    <Button
-                      href={acceptUrl}
-                      style={primaryButton}
-                    >
-                      見積を承認する
-                    </Button>
-                  )}
-                  {considerUrl && (
-                    <Button
-                      href={considerUrl}
-                      style={secondaryButton}
-                    >
-                      検討する
-                    </Button>
-                  )}
-                  {discussUrl && (
-                    <Button
-                      href={discussUrl}
-                      style={tertiaryButton}
-                    >
-                      相談する
-                    </Button>
-                  )}
-                </Column>
-              </Row>
-            </Section>
+            <div className="cta-section">
+              {acceptUrl && (
+                <a href={acceptUrl} className="btn btn-primary">
+                  見積を承認する
+                </a>
+              )}
+              {considerUrl && (
+                <a href={considerUrl} className="btn btn-secondary">
+                  検討する
+                </a>
+              )}
+              {discussUrl && (
+                <a href={discussUrl} className="btn btn-tertiary">
+                  相談する
+                </a>
+              )}
+            </div>
 
             {/* 備考 */}
             {quote.notes && (
-              <Section style={notesSection}>
-                <Heading as="h3" style={h3}>備考</Heading>
-                <Text style={notesText}>{cleanDuplicateSignatures(quote.notes)}</Text>
-              </Section>
+              <div className="notes-section">
+                <div className="notes-title">備考</div>
+                <div className="notes-text">{cleanDuplicateSignatures(quote.notes)}</div>
+              </div>
             )}
 
             {/* 会社情報 */}
-            <Section style={companySection}>
-              <Hr style={divider} />
-              <Row>
-                <Column>
-                  <Text style={companyName}>
-                    {quote.companySnapshot?.companyName || companyInfo?.companyName || companyInfo?.name || '会社名未設定'}
-                  </Text>
-                  <Text style={companyDetails}>
-                    {(() => {
-                      // スナップショットを優先、次に現在の会社情報
-                      if (quote.companySnapshot?.address) {
-                        return quote.companySnapshot.address;
-                      }
-                      return [
-                        companyInfo?.postalCode && `〒${companyInfo.postalCode}`,
-                        companyInfo?.prefecture,
-                        companyInfo?.city,
-                        companyInfo?.address1,
-                        companyInfo?.address2
-                      ].filter(Boolean).join(' ');
-                    })()}
-                  </Text>
-                  {(quote.companySnapshot?.phone || companyInfo?.phone) && (
-                    <Text style={companyDetails}>
-                      TEL: {quote.companySnapshot?.phone || companyInfo?.phone}
-                    </Text>
-                  )}
-                  {(quote.companySnapshot?.email || companyInfo?.email) && (
-                    <Text style={companyDetails}>
-                      Email: {quote.companySnapshot?.email || companyInfo?.email}
-                    </Text>
-                  )}
-                  {companyInfo?.website && (
-                    <Link href={companyInfo.website} style={companyWebsite}>
-                      {companyInfo.website}
-                    </Link>
-                  )}
-                  <Hr style={signatureDivider} />
-                  <Text style={signatureText}>
-                    {quote.companySnapshot?.companyName || companyInfo?.companyName || companyInfo?.name || '会社名未設定'}
-                  </Text>
-                  {companyInfo?.representativeName && (
-                    <Text style={signatureName}>
-                      代表取締役 {companyInfo.representativeName}
-                    </Text>
-                  )}
-                  {quote.assignee && (
-                    <Text style={signatureAssignee}>
-                      担当: {quote.assignee}
-                    </Text>
-                  )}
-                </Column>
-              </Row>
-            </Section>
-          </Section>
+            <div className="company-section">
+              <div className="company-name">
+                {quote.companySnapshot?.companyName || companyInfo?.companyName || companyInfo?.name || '会社名未設定'}
+              </div>
+              <div className="company-details">
+                {(() => {
+                  // スナップショットを優先、次に現在の会社情報
+                  if (quote.companySnapshot?.address) {
+                    return quote.companySnapshot.address;
+                  }
+                  return [
+                    companyInfo?.postalCode && `〒${companyInfo.postalCode}`,
+                    companyInfo?.prefecture,
+                    companyInfo?.city,
+                    companyInfo?.address1,
+                    companyInfo?.address2
+                  ].filter(Boolean).join(' ');
+                })()}
+              </div>
+              {(quote.companySnapshot?.phone || companyInfo?.phone) && (
+                <div className="company-details">
+                  TEL: {quote.companySnapshot?.phone || companyInfo?.phone}
+                </div>
+              )}
+              {(quote.companySnapshot?.email || companyInfo?.email) && (
+                <div className="company-details">
+                  Email: {quote.companySnapshot?.email || companyInfo?.email}
+                </div>
+              )}
+              {companyInfo?.website && (
+                <a href={companyInfo.website} className="footer-link" style={{display: 'inline-block', margin: '4px 0'}}>
+                  {companyInfo.website}
+                </a>
+              )}
+              <hr className="divider" />
+              <div style={{fontSize: '14px', fontWeight: 'bold', color: '#1f2937', margin: '10px 0 5px'}}>
+                {quote.companySnapshot?.companyName || companyInfo?.companyName || companyInfo?.name || '会社名未設定'}
+              </div>
+              {companyInfo?.representativeName && (
+                <div style={{fontSize: '16px', fontWeight: 'bold', color: '#1f2937', margin: '5px 0'}}>
+                  代表取締役 {companyInfo.representativeName}
+                </div>
+              )}
+              {quote.assignee && (
+                <div style={{fontSize: '13px', color: '#6b7280', margin: '5px 0'}}>
+                  担当: {quote.assignee}
+                </div>
+              )}
+            </div>
+          </div>
 
           {/* フッター */}
-          <Section style={footer}>
-            <Text style={footerText}>
+          <div className="footer">
+            <div className="footer-text">
               このメールは {quote.companySnapshot?.companyName || companyInfo?.companyName || companyInfo?.name || '会社名未設定'} より送信されました。
-            </Text>
-            <Text style={footerLinks}>
-              <Link href={`${baseUrl}/privacy`} style={footerLink}>
-                プライバシーポリシー
-              </Link>
+            </div>
+            <div className="footer-text">
+              <a href={`${baseUrl}/privacy`} className="footer-link">プライバシーポリシー</a>
               {' | '}
-              <Link href={`${baseUrl}/terms`} style={footerLink}>
-                利用規約
-              </Link>
+              <a href={`${baseUrl}/terms`} className="footer-link">利用規約</a>
               {' | '}
-              <Link href={`${baseUrl}/contact`} style={footerLink}>
-                お問い合わせ
-              </Link>
-            </Text>
-            <Hr style={systemSignatureDivider} />
-            <Text style={systemSignatureText}>
-              このシステムはAI駆動によるAAM-Accountingシステムです powered by <Link 
+              <a href={`${baseUrl}/contact`} className="footer-link">お問い合わせ</a>
+            </div>
+            <hr style={{borderColor: '#e5e7eb', margin: '20px 0 10px'}} />
+            <div className="footer-text">
+              このシステムはAI駆動によるAAM-Accountingシステムです powered by{' '}
+              <a 
                 href="https://notion.effect.moe/"
                 target="_blank"
                 rel="noopener noreferrer"
-                style={systemSignatureLink}
+                className="footer-link"
               >
                 EFFECT Inc.
-              </Link>
-            </Text>
-          </Section>
+              </a>
+            </div>
+          </div>
 
           {/* トラッキングピクセル */}
           {trackingPixelUrl && (
-            <Img
+            <img
               src={trackingPixelUrl}
               width="1"
               height="1"
@@ -475,477 +672,8 @@ export default function QuoteHtmlTemplate({
               style={{ display: 'none' }}
             />
           )}
-        </Container>
-      </Body>
-    </Html>
+        </div>
+      </body>
+    </html>
   );
 }
-
-// スタイル定義
-const main = {
-  backgroundColor: '#f6f9fc',
-  fontFamily:
-    '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif',
-  width: '100%',
-};
-
-const container = {
-  backgroundColor: '#ffffff',
-  margin: '0 auto',
-  padding: '20px 10px',
-  width: '100%',
-  maxWidth: '600px',
-};
-
-const header = {
-  padding: '24px 20px',
-  textAlign: 'center' as const,
-  backgroundColor: '#f8fafc',
-};
-
-const logo = {
-  margin: '0 auto',
-};
-
-const headerText = {
-  fontSize: '24px',
-  fontWeight: 'bold',
-  color: '#1f2937',
-  margin: '16px 0 0 0',
-};
-
-const viewOnlineSection = {
-  padding: '12px 20px',
-  textAlign: 'right' as const,
-};
-
-const viewOnlineLink = {
-  color: '#3B82F6',
-  fontSize: '14px',
-  textDecoration: 'underline',
-};
-
-const mainContent = {
-  padding: '0 20px',
-};
-
-const h1 = {
-  color: '#1f2937',
-  fontSize: '32px',
-  fontWeight: 'bold',
-  textAlign: 'center' as const,
-  margin: '30px 0',
-};
-
-const h2 = {
-  color: '#1f2937',
-  fontSize: '24px',
-  fontWeight: 'bold',
-  margin: '30px 0 20px',
-};
-
-const h3 = {
-  color: '#1f2937',
-  fontSize: '18px',
-  fontWeight: 'bold',
-  margin: '20px 0 10px',
-};
-
-const greeting = {
-  fontSize: '18px',
-  color: '#1f2937',
-  margin: '20px 0',
-  fontWeight: 'bold',
-};
-
-const message = {
-  fontSize: '16px',
-  color: '#4b5563',
-  lineHeight: '28px',
-  margin: '16px 0',
-};
-
-const customMessageSection = {
-  backgroundColor: '#eff6ff',
-  borderRadius: '8px',
-  padding: '16px',
-  margin: '20px 0',
-};
-
-const customMessageText = {
-  fontSize: '15px',
-  color: '#1e40af',
-  lineHeight: '24px',
-  margin: 0,
-};
-
-const quoteInfo = {
-  margin: '30px 0',
-};
-
-const infoColumn = {
-  paddingRight: '20px',
-};
-
-const infoLabel = {
-  fontSize: '14px',
-  color: '#6b7280',
-  margin: '0 0 4px 0',
-};
-
-const infoValue = {
-  fontSize: '16px',
-  color: '#1f2937',
-  fontWeight: 'bold',
-  margin: 0,
-};
-
-const divider = {
-  borderColor: '#e5e7eb',
-  margin: '30px 0',
-};
-
-const itemsSection = {
-  margin: '30px 0',
-};
-
-const itemRow = {
-  borderBottom: '1px solid #f3f4f6',
-  paddingBottom: '16px',
-  marginBottom: '16px',
-};
-
-const itemNameColumn = {
-  width: '50%',
-};
-
-const itemName = {
-  fontSize: '15px',
-  color: '#1f2937',
-  fontWeight: '500',
-  margin: '0 0 4px 0',
-};
-
-const productLink = {
-  color: '#3B82F6',
-  textDecoration: 'none',
-};
-
-const itemDetails = {
-  fontSize: '13px',
-  color: '#6b7280',
-  margin: '4px 0',
-  lineHeight: '20px',
-};
-
-const itemDetailsWithTooltip = {
-  fontSize: '13px',
-  color: '#6b7280',
-  margin: '4px 0',
-  lineHeight: '20px',
-};
-
-// tooltipHintとtooltipMarkerは削除（新しいマーカー方式を使用）
-
-const itemQuantityColumn = {
-  width: '15%',
-  textAlign: 'right' as const,
-};
-
-const itemQuantity = {
-  fontSize: '15px',
-  color: '#4b5563',
-  margin: 0,
-};
-
-const itemPriceColumn = {
-  width: '17.5%',
-  textAlign: 'right' as const,
-};
-
-const itemPrice = {
-  fontSize: '15px',
-  color: '#4b5563',
-  margin: 0,
-};
-
-const itemTotalColumn = {
-  width: '17.5%',
-  textAlign: 'right' as const,
-};
-
-const itemTotal = {
-  fontSize: '15px',
-  color: '#1f2937',
-  fontWeight: 'bold',
-  margin: 0,
-};
-
-const totalSection = {
-  margin: '30px 0',
-};
-
-const totalLabelColumn = {
-  textAlign: 'right' as const,
-  paddingRight: '20px',
-  width: '70%',
-};
-
-const totalLabel = {
-  fontSize: '16px',
-  color: '#4b5563',
-  margin: '8px 0',
-};
-
-const totalValueColumn = {
-  textAlign: 'right' as const,
-  width: '30%',
-};
-
-const totalValue = {
-  fontSize: '16px',
-  color: '#1f2937',
-  margin: '8px 0',
-};
-
-const grandTotalColumn = {
-  textAlign: 'right' as const,
-  paddingRight: '20px',
-  width: '70%',
-  borderTop: '2px solid #1f2937',
-  paddingTop: '12px',
-};
-
-const grandTotalLabel = {
-  fontSize: '18px',
-  color: '#1f2937',
-  fontWeight: 'bold',
-  margin: '8px 0',
-};
-
-const grandTotalValueColumn = {
-  textAlign: 'right' as const,
-  width: '30%',
-  borderTop: '2px solid #1f2937',
-  paddingTop: '12px',
-};
-
-const grandTotalValue = {
-  fontSize: '24px',
-  color: '#3B82F6',
-  fontWeight: 'bold',
-  margin: '8px 0',
-};
-
-const suggestionsSection = {
-  margin: '40px 0',
-};
-
-const suggestionCard = {
-  backgroundColor: '#f9fafb',
-  borderRadius: '8px',
-  padding: '20px',
-  margin: '16px 0',
-  border: '1px solid #e5e7eb',
-};
-
-const suggestionTitle = {
-  fontSize: '18px',
-  color: '#1f2937',
-  fontWeight: 'bold',
-  margin: '0 0 8px 0',
-};
-
-const suggestionDescription = {
-  fontSize: '14px',
-  color: '#4b5563',
-  lineHeight: '22px',
-  margin: '8px 0',
-  whiteSpace: 'pre-wrap' as const,
-};
-
-const suggestionPrice = {
-  fontSize: '16px',
-  color: '#10B981',
-  fontWeight: 'bold',
-  margin: '12px 0',
-};
-
-const featureList = {
-  margin: '12px 0',
-  paddingLeft: '20px',
-};
-
-const featureItem = {
-  margin: '4px 0',
-};
-
-const featureText = {
-  fontSize: '14px',
-  color: '#4b5563',
-  margin: 0,
-};
-
-const suggestionButton = {
-  backgroundColor: '#10B981',
-  borderRadius: '6px',
-  color: '#ffffff',
-  fontSize: '14px',
-  fontWeight: 'bold',
-  textDecoration: 'none',
-  textAlign: 'center' as const,
-  display: 'block',
-  width: '160px',
-  padding: '10px',
-  marginTop: '16px',
-};
-
-const ctaSection = {
-  margin: '40px 0',
-  textAlign: 'center' as const,
-};
-
-const primaryButton = {
-  backgroundColor: '#3B82F6',
-  borderRadius: '8px',
-  color: '#ffffff',
-  fontSize: '16px',
-  fontWeight: 'bold',
-  textDecoration: 'none',
-  textAlign: 'center' as const,
-  display: 'inline-block',
-  padding: '12px 32px',
-  margin: '0 8px',
-};
-
-const secondaryButton = {
-  backgroundColor: '#ffffff',
-  borderRadius: '8px',
-  color: '#3B82F6',
-  fontSize: '16px',
-  fontWeight: 'bold',
-  textDecoration: 'none',
-  textAlign: 'center' as const,
-  display: 'inline-block',
-  padding: '12px 32px',
-  margin: '0 8px',
-  border: '2px solid #3B82F6',
-};
-
-const tertiaryButton = {
-  backgroundColor: '#ffffff',
-  borderRadius: '8px',
-  color: '#6B7280',
-  fontSize: '16px',
-  fontWeight: 'bold',
-  textDecoration: 'none',
-  textAlign: 'center' as const,
-  display: 'inline-block',
-  padding: '12px 32px',
-  margin: '0 8px',
-  border: '2px solid #6B7280',
-};
-
-const notesSection = {
-  backgroundColor: '#f9fafb',
-  borderRadius: '8px',
-  padding: '20px',
-  margin: '30px 0',
-};
-
-const notesText = {
-  fontSize: '14px',
-  color: '#4b5563',
-  lineHeight: '22px',
-  margin: 0,
-};
-
-const companySection = {
-  margin: '40px 0',
-};
-
-const companyName = {
-  fontSize: '16px',
-  color: '#1f2937',
-  fontWeight: 'bold',
-  margin: '0 0 8px 0',
-};
-
-const companyDetails = {
-  fontSize: '14px',
-  color: '#4b5563',
-  margin: '4px 0',
-};
-
-const companyWebsite = {
-  fontSize: '14px',
-  color: '#3B82F6',
-  textDecoration: 'none',
-  margin: '4px 0',
-  display: 'inline-block',
-};
-
-const footer = {
-  padding: '24px 20px',
-  textAlign: 'center' as const,
-  backgroundColor: '#f8fafc',
-};
-
-const footerText = {
-  fontSize: '12px',
-  color: '#6b7280',
-  margin: '0 0 8px 0',
-};
-
-const footerLinks = {
-  fontSize: '12px',
-  color: '#6b7280',
-  margin: 0,
-};
-
-const footerLink = {
-  color: '#3B82F6',
-  textDecoration: 'none',
-};
-
-const signatureDivider = {
-  borderColor: '#e5e7eb',
-  margin: '20px 0 10px 0',
-};
-
-const signatureText = {
-  fontSize: '14px',
-  color: '#1f2937',
-  fontWeight: 'bold',
-  margin: '10px 0 5px 0',
-};
-
-const signatureName = {
-  fontSize: '16px',
-  color: '#1f2937',
-  fontWeight: 'bold',
-  margin: '5px 0',
-};
-
-const signatureAssignee = {
-  fontSize: '13px',
-  color: '#6b7280',
-  margin: '5px 0',
-};
-
-const systemSignatureDivider = {
-  borderColor: '#e5e7eb',
-  margin: '20px 0 10px 0',
-};
-
-const systemSignatureText = {
-  fontSize: '12px',
-  color: '#6b7280',
-  textAlign: 'center' as const,
-  margin: '10px 0',
-};
-
-const systemSignatureLink = {
-  color: '#3b82f6',
-  textDecoration: 'none',
-};
