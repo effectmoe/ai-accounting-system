@@ -288,6 +288,24 @@ export interface Quote {
   // おすすめオプション選択
   selectedSuggestedOptionIds?: string[]; // 選択されたおすすめオプションのID配列
   
+  // HTML見積書設定
+  htmlSettings?: {
+    customMessage?: string; // カスタムメッセージ
+    suggestedOptions?: Array<{
+      title: string;
+      description: string;
+      price: string;
+      features: string[];
+      ctaText: string;
+      ctaUrl: string;
+    }>; // 追加提案オプション
+    tooltips?: Array<[string, string]>; // ツールチップ設定 [用語, 説明]
+    productLinks?: Array<[string, string]>; // 商品リンク [商品名, URL]
+    includeTracking?: boolean; // 開封・クリック追跡
+    includeInteractiveElements?: boolean; // インタラクティブ要素を含める
+    useWebLayout?: boolean; // Web最適化レイアウト
+  };
+  
   createdAt?: Date;
   updatedAt?: Date;
 }

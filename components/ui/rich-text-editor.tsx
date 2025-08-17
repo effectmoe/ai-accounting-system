@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Link from '@tiptap/extension-link'
@@ -35,12 +35,16 @@ export function RichTextEditor({
   placeholder = 'テキストを入力してください...',
   className 
 }: RichTextEditorProps) {
+  console.log('[RichTextEditor] Initial content prop:', content);
+  
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
         heading: {
           levels: [1, 2, 3]
-        }
+        },
+        // StarterKitに含まれる機能を明示的に無効化（必要に応じて）
+        // LinkとUnderlineは含まれていないので問題なし
       }),
       Link.configure({
         openOnClick: false,
@@ -54,14 +58,45 @@ export function RichTextEditor({
     ],
     content,
     onUpdate: ({ editor }) => {
-      onChange(editor.getHTML())
+      const html = editor.getHTML();
+      console.log('[RichTextEditor] Content updated:', html);
+      onChange(html);
     },
     editorProps: {
       attributes: {
-        class: 'prose prose-sm max-w-none px-3 py-2 min-h-[150px] focus:outline-none'
+        class: 'prose prose-sm max-w-none px-3 py-2 min-h-[150px] focus:outline-none',
+        // ブラウザ拡張機能との競合を避けるため、データ属性を追加
+        'data-editor': 'rich-text',
+      }
+    },
+    // エディターを即座に作成
+    immediatelyRender: false
+  })
+
+  // contentプロパティが変更された時にエディターの内容を更新
+  // 初回レンダリング時のみcontentを設定
+  useEffect(() => {
+    if (editor && !editor.isDestroyed) {
+      // エディターの内容が空で、contentが提供されている場合のみ設定
+      const currentContent = editor.getHTML()
+      console.log('[RichTextEditor.useEffect] Current editor content:', currentContent);
+      console.log('[RichTextEditor.useEffect] Content prop:', content);
+      
+      if (currentContent === '<p></p>' && content && content !== '<p></p>') {
+        console.log('[RichTextEditor.useEffect] Setting content to editor:', content);
+        editor.commands.setContent(content)
       }
     }
-  })
+  }, [editor]) // contentを依存配列から除外して、初回のみ実行
+
+  // エディターのクリーンアップ
+  useEffect(() => {
+    return () => {
+      if (editor && !editor.isDestroyed) {
+        editor.destroy()
+      }
+    }
+  }, [editor])
 
   if (!editor) {
     return null
