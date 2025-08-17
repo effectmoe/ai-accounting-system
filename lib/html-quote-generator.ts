@@ -74,7 +74,6 @@ export async function generateHtmlQuote(
 
     // ツールチップが提供されていない場合はデフォルトを生成
     const effectiveTooltips = tooltips && tooltips.size > 0 ? tooltips : generateDefaultTooltips();
-    console.log('🎯 Using tooltips in generateHtmlQuote:', effectiveTooltips.size, 'entries');
     
     // 見積項目にインタラクティブ要素を追加
     const enhancedQuote = enhanceQuoteItems(quote, effectiveTooltips, productLinks);
@@ -141,13 +140,8 @@ function enhanceQuoteItems(
 ): Quote {
   // itemsが存在しない場合はそのまま返す
   if (!quote.items || !Array.isArray(quote.items)) {
-    console.log('❌ No items to enhance');
     return quote;
   }
-
-  console.log('🔧 Enhancing quote items with tooltips:', tooltips?.size || 0, 'tooltips available');
-  console.log('📦 Quote items to process:', quote.items?.length || 0);
-  console.log('🗂️ Available tooltip keys:', tooltips ? Array.from(tooltips.keys()) : []);
 
   return {
     ...quote,
@@ -159,11 +153,10 @@ function enhanceQuoteItems(
       const itemDescription = item.description || '';
       const combinedText = (itemName + ' ' + itemDescription).trim();
       
-      console.log(`📄 Processing item ${index + 1}:`, {
-        itemName,
-        itemDescription,
-        combinedText
-      });
+      // アイテム処理のログは開発環境でのみ
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`Processing item ${index + 1}: ${itemName}`);
+      }
       
       // ツールチップを追加（より強化されたマッチングロジック）
       if (tooltips && tooltips.size > 0) {
@@ -172,27 +165,8 @@ function enhanceQuoteItems(
                      findTooltipForItem(itemDescription, tooltips) || 
                      findTooltipForItem(combinedText, tooltips);
         
-        console.log(`🎯 Item ${index + 1} tooltip search:`, {
-          itemName,
-          itemDescription,
-          combinedText,
-          tooltipFound: !!tooltip,
-          tooltipPreview: tooltip ? tooltip.substring(0, 50) + '...' : 'not found'
-        });
-        
         if (tooltip) {
           enhanced.tooltip = tooltip;
-          console.log(`✅ Tooltip added to item ${index + 1}: "${tooltip.substring(0, 100)}..."`);
-        } else {
-          console.log(`❌ No tooltip found for item ${index + 1}: "${combinedText}"`);
-          
-          // デバッグ: すべてのツールチップキーとの比較を表示
-          if (tooltips.size > 0) {
-            console.log('🔍 Available tooltips for debugging:');
-            Array.from(tooltips.entries()).forEach(([key, value]) => {
-              console.log(`  - "${key}": "${value.substring(0, 50)}..."`);
-            });
-          }
         }
       }
 
@@ -201,7 +175,6 @@ function enhanceQuoteItems(
         const link = productLinks.get(item.productId || itemName || itemDescription || '');
         if (link) {
           enhanced.productLink = link;
-          console.log(`🔗 Product link added to item ${index + 1}: ${link}`);
         }
       }
 
@@ -209,7 +182,6 @@ function enhanceQuoteItems(
       if (combinedText.length > 50) {
         enhanced.details = combinedText;
         enhanced.itemName = combinedText.substring(0, 50) + '...';
-        console.log(`📝 Details added to item ${index + 1}`);
       }
 
       return enhanced;
@@ -225,29 +197,21 @@ function findTooltipForItem(
   description: string,
   tooltips: Map<string, string>
 ): string | undefined {
-  console.log('🔍 Searching tooltip for:', description);
-  
   if (!description || description.trim() === '') {
-    console.log('❌ Empty description provided');
     return undefined;
   }
   
   const terms = Array.from(tooltips.keys());
   const descriptionLower = description.toLowerCase().trim();
   
-  console.log(`🔍 Searching for "${description}" (normalized: "${descriptionLower}")`);
-  console.log('📝 Available terms:', terms);
-  
   // 1. 完全一致を最初に試す
   if (tooltips.has(description)) {
-    console.log('✅ Exact match found for:', description);
     return tooltips.get(description);
   }
   
   // 大文字小文字を無視した完全一致
   for (const term of terms) {
     if (term.toLowerCase() === descriptionLower) {
-      console.log(`✅ Case-insensitive exact match found: "${term}" for "${description}"`);
       return tooltips.get(term);
     }
   }
@@ -256,7 +220,6 @@ function findTooltipForItem(
   for (const term of terms) {
     const termLower = term.toLowerCase();
     if (descriptionLower.includes(termLower) && termLower.length >= 2) {
-      console.log(`✅ Partial match found: "${term}" in "${description}"`);
       return tooltips.get(term);
     }
   }
@@ -265,7 +228,6 @@ function findTooltipForItem(
   for (const term of terms) {
     const termLower = term.toLowerCase();
     if (termLower.includes(descriptionLower) && descriptionLower.length >= 2) {
-      console.log(`✅ Reverse match found: "${description}" in "${term}"`);
       return tooltips.get(term);
     }
   }
@@ -298,11 +260,9 @@ function findTooltipForItem(
   
   for (const [keyword, candidates] of Object.entries(specialMatches)) {
     if (descriptionLower.includes(keyword)) {
-      console.log(`🎯 Special keyword "${keyword}" found in "${description}"`);
       for (const candidate of candidates) {
         const tooltip = tooltips.get(candidate);
         if (tooltip) {
-          console.log(`✅ Special keyword match found: "${keyword}" -> "${candidate}" for "${description}"`);
           return tooltip;
         }
       }
@@ -311,7 +271,6 @@ function findTooltipForItem(
   
   // 5. 単語レベルでの部分マッチング（より柔軟に）
   const descriptionWords = descriptionLower.split(/[\s、。，．・_\-]+/).filter(word => word.length >= 2);
-  console.log('🔍 Description words:', descriptionWords);
   
   for (const word of descriptionWords) {
     for (const term of terms) {
@@ -320,14 +279,12 @@ function findTooltipForItem(
       
       // 単語が含まれるかチェック
       if (termLower.includes(word) || word.includes(termLower)) {
-        console.log(`✅ Word-level match found: "${word}" <-> "${term}" for "${description}"`);
         return tooltips.get(term);
       }
       
       // 単語同士のマッチング
       for (const termWord of termWords) {
         if (word === termWord || (word.length >= 3 && termWord.length >= 3 && (word.includes(termWord) || termWord.includes(word)))) {
-          console.log(`✅ Word-to-word match found: "${word}" <-> "${termWord}" (from "${term}") for "${description}"`);
           return tooltips.get(term);
         }
       }
@@ -338,12 +295,10 @@ function findTooltipForItem(
   for (const term of terms) {
     const similarity = calculateSimilarity(descriptionLower, term.toLowerCase());
     if (similarity > 0.6) { // 60%以上の類似度
-      console.log(`✅ Similarity match found: "${term}" (${Math.round(similarity * 100)}% similar) for "${description}"`);
       return tooltips.get(term);
     }
   }
   
-  console.log(`❌ No tooltip found for: "${description}"`);
   return undefined;
 }
 
