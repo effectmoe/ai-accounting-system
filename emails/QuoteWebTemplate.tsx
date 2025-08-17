@@ -924,7 +924,7 @@ export default function QuoteWebTemplate({
             >
               株式会社EFFECT
             </a>
-            のAAM-Accountingシステムです
+            によるAI駆動のAAM-Accountingシステムで構成されています
           </p>
         </div>
       </footer>
