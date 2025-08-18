@@ -12,6 +12,7 @@ interface QuoteHtmlTemplateProps {
   discussUrl?: string;
   trackingPixelUrl?: string;
   customMessage?: string;
+  greetingMessage?: string;
   suggestedOptions?: SuggestedOption[];
 }
 
@@ -88,6 +89,7 @@ export default function QuoteHtmlTemplate({
   discussUrl,
   trackingPixelUrl,
   customMessage,
+  greetingMessage,
   suggestedOptions = [],
 }: QuoteHtmlTemplateProps) {
   // デバッグログ
@@ -511,8 +513,14 @@ export default function QuoteHtmlTemplate({
 
             {/* 挨拶文 */}
             <div className="message">
-              平素より格別のご高配を賜り、厚く御礼申し上げます。<br />
-              ご依頼いただきました件について、下記の通りお見積りさせていただきます。
+              {greetingMessage ? (
+                <div dangerouslySetInnerHTML={{ __html: greetingMessage }} />
+              ) : (
+                <>
+                  平素より格別のご高配を賜り、厚く御礼申し上げます。<br />
+                  ご依頼いただきました件について、下記の通りお見積りさせていただきます。
+                </>
+              )}
             </div>
 
             {customMessage && (
