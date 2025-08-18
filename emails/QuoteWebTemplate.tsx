@@ -63,7 +63,7 @@ const renderDetailsWithTooltip = (details: string, tooltip: string) => {
   
   // より確実な方法: 項目名全体をツールチップ付きにする
   const markerHtml = `
-    <span class="tooltip-wrapper" data-tooltip="${escapedTooltip}">
+    <span class="tooltip-wrapper" data-tooltip="${escapedTooltip}" tabindex="0">
       <span style="
         background: linear-gradient(180deg, transparent 60%, rgba(254, 240, 138, 0.7) 60%);
         cursor: help;
@@ -192,10 +192,10 @@ export default function QuoteWebTemplate({
           }
           
           /* ツールチップのホバー効果とタッチ対応 - 画面端対応強化版 */
-          /* ツールチップは項目行（.item-row, .mobile-card）内のみで有効 */
+          /* ツールチップは項目行内のみで有効（備考欄を除外） */
           .item-row .tooltip-wrapper,
           .mobile-card .tooltip-wrapper,
-          .desktop-table .tooltip-wrapper {
+          .desktop-table .item-row .tooltip-wrapper {
             position: relative;
             display: inline-block;
             border-bottom: 1px dotted #333;
@@ -287,13 +287,13 @@ export default function QuoteWebTemplate({
           /* 項目行内のツールチップのみ有効 */
           .item-row .tooltip-wrapper:hover .tooltip-content,
           .mobile-card .tooltip-wrapper:hover .tooltip-content,
-          .desktop-table .tooltip-wrapper:hover .tooltip-content,
+          .desktop-table .item-row .tooltip-wrapper:hover .tooltip-content,
           .item-row .tooltip-wrapper:focus .tooltip-content,
           .mobile-card .tooltip-wrapper:focus .tooltip-content,
-          .desktop-table .tooltip-wrapper:focus .tooltip-content,
+          .desktop-table .item-row .tooltip-wrapper:focus .tooltip-content,
           .item-row .tooltip-wrapper:active .tooltip-content,
           .mobile-card .tooltip-wrapper:active .tooltip-content,
-          .desktop-table .tooltip-wrapper:active .tooltip-content {
+          .desktop-table .item-row .tooltip-wrapper:active .tooltip-content {
             visibility: visible !important;
             opacity: 1 !important;
             display: block !important;
@@ -312,10 +312,10 @@ export default function QuoteWebTemplate({
           @media (hover: hover) and (pointer: fine) {
             .item-row .tooltip-wrapper:hover .tooltip-content,
             .mobile-card .tooltip-wrapper:hover .tooltip-content,
-            .desktop-table .tooltip-wrapper:hover .tooltip-content,
+            .desktop-table .item-row .tooltip-wrapper:hover .tooltip-content,
             .item-row .tooltip-wrapper:focus .tooltip-content,
             .mobile-card .tooltip-wrapper:focus .tooltip-content,
-            .desktop-table .tooltip-wrapper:focus .tooltip-content {
+            .desktop-table .item-row .tooltip-wrapper:focus .tooltip-content {
               visibility: visible !important;
               opacity: 1 !important;
               display: block !important;
@@ -327,12 +327,21 @@ export default function QuoteWebTemplate({
             visibility: visible !important;
             opacity: 1 !important;
             display: block !important;
+            transform: translateX(-50%) scale(1) !important;
+            z-index: 9999999 !important;
+          }
+          
+          /* より確実なホバー表示のためのフォールバックルール */
+          .tooltip-wrapper:hover .tooltip-content {
+            visibility: visible !important;
+            opacity: 1 !important;
+            display: block !important;
           }
           
           /* モバイル: タップで表示（項目行内のみ） */
           .item-row .tooltip-wrapper.active .tooltip-content,
           .mobile-card .tooltip-wrapper.active .tooltip-content,
-          .desktop-table .tooltip-wrapper.active .tooltip-content {
+          .desktop-table .item-row .tooltip-wrapper.active .tooltip-content {
             visibility: visible !important;
             opacity: 1 !important;
           }
@@ -613,16 +622,23 @@ export default function QuoteWebTemplate({
             console.log('🔍 [WEB-TEMPLATE-JS:DEBUG-TOOLTIPS] Starting tooltip debug...');
             
             // 項目行内のツールチップのみを対象（備考欄を除外）
-            const tooltipWrappers = document.querySelectorAll('.item-row .tooltip-wrapper, .mobile-card .tooltip-wrapper, .desktop-table .tooltip-wrapper');
-            const tooltipContents = document.querySelectorAll('.item-row .tooltip-content, .mobile-card .tooltip-content, .desktop-table .tooltip-content');
+            const tooltipWrappers = document.querySelectorAll('.item-row .tooltip-wrapper, .mobile-card .tooltip-wrapper, .desktop-table .item-row .tooltip-wrapper');
+            const tooltipContents = document.querySelectorAll('.item-row .tooltip-content, .mobile-card .tooltip-content, .desktop-table .item-row .tooltip-content');
             const notesSection = document.querySelector('.notes-section');
             const customMessage = document.querySelector('.custom-message');
             const notesSectionTooltips = document.querySelectorAll('.notes-section .tooltip-wrapper');
+            
+            // 追加のセレクタをテスト
+            const allTooltipWrappers = document.querySelectorAll('.tooltip-wrapper');
+            const itemRows = document.querySelectorAll('.item-row');
+            const mobileCards = document.querySelectorAll('.mobile-card');
+            const desktopTable = document.querySelector('.desktop-table');
             
             console.log('📊 [WEB-TEMPLATE-JS:DEBUG-TOOLTIPS] Complete page analysis:', JSON.stringify({
               tooltips: {
                 validWrappers: tooltipWrappers.length,
                 validContents: tooltipContents.length,
+                allWrappers: allTooltipWrappers.length,
                 excludedNotesSectionTooltips: notesSectionTooltips.length,
                 wrapperList: Array.from(tooltipWrappers).map((w, index) => ({
                   index,
@@ -630,16 +646,25 @@ export default function QuoteWebTemplate({
                   hasContent: w.querySelector('.tooltip-content') !== null,
                   hasDataTooltip: w.hasAttribute('data-tooltip'),
                   dataTooltipValue: w.getAttribute('data-tooltip')?.substring(0, 30) + '...',
-                  parentElement: w.closest('.item-row, .mobile-card, .desktop-table') ? 'item-area' : 'other'
+                  parentElement: w.closest('.item-row, .mobile-card, .desktop-table') ? 'item-area' : 'other',
+                  cssClasses: w.className,
+                  parentClasses: w.parentElement?.className || 'no-parent'
                 }))
               },
               pageElements: {
                 hasNotesSection: !!notesSection,
                 notesContent: notesSection?.textContent?.substring(0, 100) + '...',
                 hasCustomMessage: !!customMessage,
-                customMessageContent: customMessage?.textContent?.substring(0, 100) + '...'
+                customMessageContent: customMessage?.textContent?.substring(0, 100) + '...',
+                itemRows: itemRows.length,
+                mobileCards: mobileCards.length,
+                hasDesktopTable: !!desktopTable
               },
-              itemRows: document.querySelectorAll('.item-row, .mobile-card').length,
+              selectors: {
+                itemRows: document.querySelectorAll('.item-row, .mobile-card').length,
+                allTooltipWrappersOnPage: allTooltipWrappers.length,
+                filteredTooltipWrappers: tooltipWrappers.length
+              },
               timestamp: new Date().toISOString()
             }, null, 2));
             
@@ -647,11 +672,23 @@ export default function QuoteWebTemplate({
             if (tooltipContents.length > 0) {
               console.log('🧪 Testing tooltip visibility...');
               const firstTooltip = tooltipContents[0];
-              firstTooltip.classList.add('force-show');
-              setTimeout(() => {
-                firstTooltip.classList.remove('force-show');
-                console.log('✅ Tooltip test completed');
-              }, 3000);
+              const firstWrapper = firstTooltip?.closest('.tooltip-wrapper');
+              
+              if (firstTooltip && firstWrapper) {
+                console.log('🧪 Force showing first tooltip for 3 seconds...');
+                firstTooltip.classList.add('force-show');
+                firstWrapper.style.border = '2px solid red'; // デバッグ用の視覚的インジケータ
+                
+                setTimeout(() => {
+                  firstTooltip.classList.remove('force-show');
+                  firstWrapper.style.border = ''; // インジケータを削除
+                  console.log('✅ Tooltip test completed');
+                }, 3000);
+              } else {
+                console.log('❌ Could not find tooltip elements for testing');
+              }
+            } else {
+              console.log('❌ No tooltip contents found on page');
             }
           }
           
@@ -667,8 +704,17 @@ export default function QuoteWebTemplate({
             }, 500);
             
             // ツールチップは項目行内のもののみ対象にする（備考欄を除外）
-            const tooltipWrappers = document.querySelectorAll('.item-row .tooltip-wrapper, .mobile-card .tooltip-wrapper, .desktop-table .tooltip-wrapper');
+            const tooltipWrappers = document.querySelectorAll('.item-row .tooltip-wrapper, .mobile-card .tooltip-wrapper, .desktop-table .item-row .tooltip-wrapper');
             console.log('🎯 [WEB-TEMPLATE-JS:DOM-LOADED] Found tooltip wrappers (excluding notes section):', tooltipWrappers.length);
+            
+            // さらに詳細なログを追加
+            console.log('🔧 [WEB-TEMPLATE-JS:DOM-LOADED] Tooltip wrapper details:', {
+              itemRowWrappers: document.querySelectorAll('.item-row .tooltip-wrapper').length,
+              mobileCardWrappers: document.querySelectorAll('.mobile-card .tooltip-wrapper').length,
+              desktopTableWrappers: document.querySelectorAll('.desktop-table .item-row .tooltip-wrapper').length,
+              allWrappers: document.querySelectorAll('.tooltip-wrapper').length,
+              timestamp: new Date().toISOString()
+            });
             
             // ツールチップ位置計算関数 - 画面端対応強化版
             function adjustTooltipPosition(wrapper, content) {
@@ -733,7 +779,17 @@ export default function QuoteWebTemplate({
             
             // マウスホバーイベントを強化
             tooltipWrappers.forEach((wrapper, index) => {
-              console.log(\`🔧 Setting up tooltip \${index + 1}\`);
+              console.log(\`🔧 Setting up tooltip \${index + 1}\`, {
+                element: wrapper,
+                hasContent: !!wrapper.querySelector('.tooltip-content'),
+                text: wrapper.textContent?.substring(0, 30),
+                classes: wrapper.className
+              });
+              
+              // フォーカス可能にする
+              if (!wrapper.hasAttribute('tabindex')) {
+                wrapper.setAttribute('tabindex', '0');
+              }
               
               wrapper.addEventListener('mouseenter', function(e) {
                 console.log(\`🖱️ Mouse enter on tooltip \${index + 1}\`);
@@ -741,11 +797,33 @@ export default function QuoteWebTemplate({
                 if (content) {
                   adjustTooltipPosition(wrapper, content);
                   content.classList.add('force-show');
+                  console.log('✅ Tooltip shown on mouseenter');
+                } else {
+                  console.log('❌ No tooltip content found in wrapper');
                 }
               });
               
               wrapper.addEventListener('mouseleave', function(e) {
                 console.log(\`🖱️ Mouse leave on tooltip \${index + 1}\`);
+                const content = this.querySelector('.tooltip-content');
+                if (content) {
+                  content.classList.remove('force-show');
+                  console.log('✅ Tooltip hidden on mouseleave');
+                }
+              });
+              
+              // フォーカスイベントも追加
+              wrapper.addEventListener('focus', function(e) {
+                console.log(\`🎯 Focus on tooltip \${index + 1}\`);
+                const content = this.querySelector('.tooltip-content');
+                if (content) {
+                  adjustTooltipPosition(wrapper, content);
+                  content.classList.add('force-show');
+                }
+              });
+              
+              wrapper.addEventListener('blur', function(e) {
+                console.log(\`🎯 Blur on tooltip \${index + 1}\`);
                 const content = this.querySelector('.tooltip-content');
                 if (content) {
                   content.classList.remove('force-show');
