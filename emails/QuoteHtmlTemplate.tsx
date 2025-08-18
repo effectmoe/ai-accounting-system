@@ -699,13 +699,6 @@ export default function QuoteHtmlTemplate({
             <div className="footer-text">
               このメールは {quote.companySnapshot?.companyName || companyInfo?.companyName || companyInfo?.name || '会社名未設定'} より送信されました。
             </div>
-            <div className="footer-text">
-              <a href={`${baseUrl}/privacy`} className="footer-link">プライバシーポリシー</a>
-              {' | '}
-              <a href={`${baseUrl}/terms`} className="footer-link">利用規約</a>
-              {' | '}
-              <a href={`${baseUrl}/contact`} className="footer-link">お問い合わせ</a>
-            </div>
             <hr style={{borderColor: '#e5e7eb', margin: '20px 0 10px'}} />
             <div className="footer-text">
               このシステムはAI駆動によるAAM-Accountingシステムです powered by{' '}

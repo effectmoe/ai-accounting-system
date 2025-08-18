@@ -62,8 +62,9 @@ const renderDetailsWithTooltip = (details: string, tooltip: string) => {
     .replace(/>/g, '&gt;');
   
   // より目立つスタイルで確実にツールチップを表示（強化版）
+  // 問題: ツールチップの説明文が表示されない → インライン指定を追加
   const markerHtml = `
-    <span class="tooltip-wrapper show-tooltip" data-tooltip="${escapedTooltip}" title="${escapedTooltip}" tabindex="0">
+    <span class="tooltip-wrapper show-tooltip" data-tooltip="${escapedTooltip}" title="${escapedTooltip}" tabindex="0" style="position: relative; display: inline-block;">
       <span style="
         background: linear-gradient(180deg, transparent 40%, rgba(254, 240, 138, 0.9) 40%);
         cursor: help;
@@ -78,6 +79,7 @@ const renderDetailsWithTooltip = (details: string, tooltip: string) => {
         color: #1f2937;
       ">${escapedDetails}</span>
       <span class="tooltip-content" style="
+        visibility: hidden;
         opacity: 0;
         pointer-events: none;
         background-color: #fef3c7;
@@ -97,7 +99,7 @@ const renderDetailsWithTooltip = (details: string, tooltip: string) => {
         font-weight: 500;
         box-shadow: 0 10px 30px rgba(0,0,0,0.3), 0 4px 8px rgba(0,0,0,0.1);
         border: 3px solid #f59e0b;
-        transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+        transition: visibility 0s, opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
         white-space: normal;
         line-height: 1.5;
         word-wrap: break-word;
@@ -241,25 +243,31 @@ export default function QuoteWebTemplate({
             word-wrap: break-word;
           }
           
-          /* ホバー時の表示 - シンプルで確実 */
+          /* ホバー時の表示 - 修正版: visibilityとopacityを両方使用 */
           .tooltip-wrapper:hover .tooltip-content {
+            visibility: visible;
             opacity: 1;
             pointer-events: auto;
             transform: translateX(-50%) scale(1);
+            transition-delay: 0.2s;
           }
           
           /* フォーカス時の表示 */
           .tooltip-wrapper:focus .tooltip-content {
+            visibility: visible;
             opacity: 1;
             pointer-events: auto;
             transform: translateX(-50%) scale(1);
+            transition-delay: 0.2s;
           }
           
           /* アクティブ状態での表示（タッチデバイス用） */
           .tooltip-wrapper.active .tooltip-content {
+            visibility: visible;
             opacity: 1;
             pointer-events: auto;
             transform: translateX(-50%) scale(1);
+            transition-delay: 0.2s;
           }
           
           .tooltip-content::after {
@@ -960,13 +968,6 @@ export default function QuoteWebTemplate({
           <p style={footerTextStyle}>
             このメールは {quote.companySnapshot?.companyName || companyInfo?.companyName || companyInfo?.name || '会社名未設定'} より送信されました。
           </p>
-          <div style={footerLinksStyle}>
-            <a href={`${baseUrl}/privacy`} style={footerLinkStyle}>プライバシーポリシー</a>
-            {' | '}
-            <a href={`${baseUrl}/terms`} style={footerLinkStyle}>利用規約</a>
-            {' | '}
-            <a href={`${baseUrl}/contact`} style={footerLinkStyle}>お問い合わせ</a>
-          </div>
           <hr style={systemSignatureDividerStyle} />
           <p style={systemSignatureTextStyle}>
             このシステムはAI駆動によるAAM-Accountingシステムです powered by{' '}
@@ -1443,15 +1444,7 @@ const footerTextStyle = {
   marginBottom: '0.5rem',
 };
 
-const footerLinksStyle = {
-  fontSize: '0.75rem',
-  color: '#6b7280',
-};
 
-const footerLinkStyle = {
-  color: '#3B82F6',
-  textDecoration: 'none',
-};
 
 // 新しいテーブル関連スタイル
 const desktopTableStyle = {
