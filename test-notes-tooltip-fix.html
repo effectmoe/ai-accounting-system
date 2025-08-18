@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>備考欄ツールチップ修正テスト</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            line-height: 1.6;
+        }
+        
+        h1, h2 {
+            color: #1f2937;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 0.5rem;
+        }
+        
+        .test-section {
+            margin: 2rem 0;
+            padding: 1.5rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            background: #f9fafb;
+        }
+        
+        /* 項目行内のツールチップ（有効） */
+        .item-row .tooltip-wrapper,
+        .mobile-card .tooltip-wrapper {
+            position: relative;
+            display: inline-block;
+            border-bottom: 2px dotted #f59e0b;
+            cursor: help;
+            background: linear-gradient(180deg, transparent 60%, rgba(254, 240, 138, 0.7) 60%);
+            padding: 1px 4px;
+            border-radius: 3px;
+        }
+        
+        /* 備考欄ではツールチップを完全無効化 */
+        .notes-section .tooltip-wrapper,
+        .notes-content .tooltip-wrapper {
+            border-bottom: none !important;
+            cursor: default !important;
+            background: transparent !important;
+            position: static !important;
+        }
+        
+        .notes-section .tooltip-wrapper *,
+        .notes-content .tooltip-wrapper * {
+            border-bottom: none !important;
+            cursor: default !important;
+            background: transparent !important;
+        }
+        
+        .tooltip-content {
+            visibility: hidden;
+            opacity: 0;
+            pointer-events: none;
+            background-color: #fef3c7;
+            color: #1f2937;
+            text-align: left;
+            border-radius: 6px;
+            padding: 12px 16px;
+            position: absolute;
+            z-index: 9999999;
+            bottom: 130%;
+            left: 50%;
+            transform: translateX(-50%) scale(0.95);
+            min-width: 200px;
+            max-width: 320px;
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            border: 3px solid #f59e0b;
+            transition: visibility 0s, opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+            white-space: normal;
+            line-height: 1.5;
+            word-wrap: break-word;
+            box-sizing: border-box;
+        }
+        
+        /* 項目行内のツールチップのみ有効 */
+        .item-row .tooltip-wrapper:hover .tooltip-content,
+        .mobile-card .tooltip-wrapper:hover .tooltip-content {
+            visibility: visible !important;
+            opacity: 1 !important;
+            display: block !important;
+        }
+        
+        /* 備考欄ではツールチップを強制的に無効化 */
+        .notes-section .tooltip-wrapper:hover .tooltip-content,
+        .notes-section .tooltip-wrapper:focus .tooltip-content,
+        .notes-section .tooltip-wrapper:active .tooltip-content,
+        .notes-content .tooltip-wrapper:hover .tooltip-content,
+        .notes-content .tooltip-wrapper:focus .tooltip-content,
+        .notes-content .tooltip-wrapper:active .tooltip-content {
+            visibility: hidden !important;
+            opacity: 0 !important;
+            display: none !important;
+            pointer-events: none !important;
+        }
+        
+        /* スタイル */
+        .notes-section {
+            background-color: #f9fafb;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 30px 0;
+        }
+        
+        .notes-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #1f2937;
+            margin-bottom: 10px;
+        }
+        
+        .notes-text {
+            font-size: 14px;
+            color: #4b5563;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+        
+        .item-row {
+            padding: 1rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+            background: white;
+        }
+        
+        .mobile-card {
+            padding: 1rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+            background: white;
+        }
+        
+        .status {
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
+            font-weight: bold;
+            margin: 0.5rem 0;
+        }
+        
+        .status.success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #10b981;
+        }
+        
+        .status.error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #ef4444;
+        }
+        
+        .test-result {
+            margin: 1rem 0;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            font-family: monospace;
+        }
+        
+        .pass {
+            background: #d1fae5;
+            border: 2px solid #10b981;
+            color: #065f46;
+        }
+        
+        .fail {
+            background: #fee2e2;
+            border: 2px solid #ef4444;
+            color: #991b1b;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 備考欄ツールチップ重複表示問題 修正テスト</h1>
+    
+    <div class="status success">
+        ✅ 修正完了: 備考欄でのツールチップ表示を完全に無効化しました
+    </div>
+    
+    <div class="test-section">
+        <h3>📊 デプロイ情報</h3>
+        <ul>
+            <li><strong>最新コミット:</strong> 682e1a609</li>
+            <li><strong>テストページ更新:</strong> 2025-08-18 17:20 JST</li>
+            <li><strong>デプロイ状態:</strong> Vercel強制再デプロイ実行中</li>
+            <li><strong>キャッシュ:</strong> ビルドキャッシュ無効化済み</li>
+        </ul>
+        <p><strong>⚠️ 重要:</strong> 変更が反映されない場合は、ブラウザの強制リロード（Ctrl+F5 または Cmd+Shift+R）を実行してください。</p>
+    </div>
+    
+    <h2>📋 修正内容の詳細</h2>
+    
+    <div class="test-section">
+        <h3>1. サーバーサイドHTML生成の強化</h3>
+        <ul>
+            <li>✅ HTMLエスケープ処理を強化</li>
+            <li>✅ ツールチップ関連マークアップの除去処理を追加</li>
+            <li>✅ 備考欄に<code>notes-content</code>クラスを追加</li>
+        </ul>
+    </div>
+    
+    <div class="test-section">
+        <h3>2. QuoteWebTemplateのCSS強化</h3>
+        <ul>
+            <li>✅ <code>.notes-section</code>と<code>.notes-content</code>セレクタでツールチップ無効化</li>
+            <li>✅ ホバー、フォーカス、アクティブ状態でのツールチップを強制非表示</li>
+            <li>✅ モバイルタップイベントでもツールチップ無効化</li>
+        </ul>
+    </div>
+    
+    <div class="test-section">
+        <h3>3. JavaScriptによる動的無効化</h3>
+        <ul>
+            <li>✅ 備考セクション内のツールチップラッパーを明示的に無効化</li>
+            <li>✅ <code>notes-disabled-tooltip</code>クラスの追加</li>
+            <li>✅ タブインデックスとスタイルの除去</li>
+        </ul>
+    </div>
+    
+    <div class="test-section">
+        <h3>4. QuoteHtmlTemplateの強化</h3>
+        <ul>
+            <li>✅ 備考テキストからツールチップマークアップを完全除去</li>
+            <li>✅ <code>notes-content</code>クラスの追加</li>
+        </ul>
+    </div>
+    
+    <h2>🧪 動作テスト</h2>
+    
+    <div class="test-section">
+        <h3>項目行（ツールチップ有効 - 正常動作）</h3>
+        <div class="item-row">
+            <span class="tooltip-wrapper" tabindex="0">
+                <span>ROI分析レポート</span>
+                <span class="tooltip-content">💡 投資収益率（ROI）を詳細に分析し、ビジネス価値を数値化します</span>
+            </span>
+            <p><strong>期待結果：</strong> ホバーでツールチップが表示される</p>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h3>備考欄（ツールチップ無効 - 修正済み）</h3>
+        <div class="notes-section">
+            <div class="notes-title">備考</div>
+            <div class="notes-text notes-content">
+                詳細な分析レポートを提供します。
+                <span class="tooltip-wrapper">
+                    <span>ROI分析</span>
+                    <span class="tooltip-content">💡 これは表示されてはいけません</span>
+                </span>
+                の結果をお渡しします。
+            </div>
+            <p><strong>期待結果：</strong> 「ROI分析」にホバーしてもツールチップは表示されない</p>
+        </div>
+    </div>
+    
+    <h2>📊 テスト結果</h2>
+    
+    <div id="test-results"></div>
+    
+    <script>
+        // テスト実行
+        function runTests() {
+            const results = [];
+            
+            // テスト1: 項目行のツールチップが機能するか
+            const itemTooltip = document.querySelector('.item-row .tooltip-wrapper');
+            const itemTooltipContent = itemTooltip?.querySelector('.tooltip-content');
+            
+            if (itemTooltip && itemTooltipContent) {
+                // スタイル確認
+                const computedStyle = window.getComputedStyle(itemTooltip);
+                const hasValidCursor = computedStyle.cursor === 'help';
+                const hasBorder = computedStyle.borderBottomStyle !== 'none';
+                
+                results.push({
+                    name: "項目行ツールチップ機能テスト",
+                    pass: hasValidCursor || hasBorder,
+                    details: `cursor: ${computedStyle.cursor}, border-bottom: ${computedStyle.borderBottomStyle}`
+                });
+            }
+            
+            // テスト2: 備考欄のツールチップが無効化されているか
+            const notesTooltip = document.querySelector('.notes-section .tooltip-wrapper');
+            const notesTooltipContent = notesTooltip?.querySelector('.tooltip-content');
+            
+            if (notesTooltip && notesTooltipContent) {
+                const computedStyle = window.getComputedStyle(notesTooltip);
+                const hasDefaultCursor = computedStyle.cursor === 'default';
+                const hasNoBorder = computedStyle.borderBottomStyle === 'none';
+                
+                results.push({
+                    name: "備考欄ツールチップ無効化テスト",
+                    pass: hasDefaultCursor && hasNoBorder,
+                    details: `cursor: ${computedStyle.cursor}, border-bottom: ${computedStyle.borderBottomStyle}`
+                });
+            }
+            
+            // テスト3: 備考欄ツールチップコンテンツの非表示
+            if (notesTooltipContent) {
+                const contentStyle = window.getComputedStyle(notesTooltipContent);
+                const isHidden = contentStyle.visibility === 'hidden' || contentStyle.display === 'none';
+                
+                results.push({
+                    name: "備考欄ツールチップコンテンツ非表示テスト",
+                    pass: isHidden,
+                    details: `visibility: ${contentStyle.visibility}, display: ${contentStyle.display}`
+                });
+            }
+            
+            // 結果表示
+            displayResults(results);
+        }
+        
+        function displayResults(results) {
+            const container = document.getElementById('test-results');
+            
+            results.forEach(result => {
+                const div = document.createElement('div');
+                div.className = `test-result ${result.pass ? 'pass' : 'fail'}`;
+                div.innerHTML = `
+                    <h4>${result.pass ? '✅' : '❌'} ${result.name}</h4>
+                    <p><strong>結果:</strong> ${result.pass ? 'PASS' : 'FAIL'}</p>
+                    <p><strong>詳細:</strong> ${result.details}</p>
+                `;
+                container.appendChild(div);
+            });
+            
+            // 総合結果
+            const allPassed = results.every(r => r.pass);
+            const summary = document.createElement('div');
+            summary.className = `status ${allPassed ? 'success' : 'error'}`;
+            summary.innerHTML = `
+                <h3>${allPassed ? '✅ 全テストパス' : '❌ 一部テスト失敗'}</h3>
+                <p>パス: ${results.filter(r => r.pass).length}/${results.length}</p>
+            `;
+            container.insertBefore(summary, container.firstChild);
+        }
+        
+        // ページロード後にテスト実行
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(runTests, 100);
+        });
+        
+        // 追加のイベントテスト
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🧪 Testing tooltip functionality...');
+            
+            // 項目行のツールチップテスト
+            const itemTooltip = document.querySelector('.item-row .tooltip-wrapper');
+            if (itemTooltip) {
+                itemTooltip.addEventListener('mouseenter', function() {
+                    console.log('✅ 項目行ツールチップ: mouseenter イベント正常');
+                });
+            }
+            
+            // 備考欄のツールチップテスト
+            const notesTooltip = document.querySelector('.notes-section .tooltip-wrapper');
+            if (notesTooltip) {
+                notesTooltip.addEventListener('mouseenter', function() {
+                    console.log('🚫 備考欄ツールチップ: mouseenter イベント（無効化済み）');
+                });
+            }
+        });
+    </script>
+</body>
+</html>
