@@ -907,17 +907,17 @@ export default function QuoteWebTemplate({
               }
               
               // 水平位置も設定（fixed positionでは必須）
-              const elementCenter = rect.left + window.scrollX + (rect.width / 2);
-              const tooltipWidth = 320;
-              const tooltipHalfWidth = tooltipWidth / 2;
+              const fixedElementCenter = rect.left + window.scrollX + (rect.width / 2);
+              const fixedTooltipWidth = 320;
+              const fixedTooltipHalfWidth = fixedTooltipWidth / 2;
               
-              let leftPosition = elementCenter - tooltipHalfWidth;
+              let leftPosition = fixedElementCenter - fixedTooltipHalfWidth;
               
               // 画面端での調整
               if (leftPosition < 10) {
                 leftPosition = 10;
-              } else if (leftPosition + tooltipWidth > window.innerWidth - 10) {
-                leftPosition = window.innerWidth - tooltipWidth - 10;
+              } else if (leftPosition + fixedTooltipWidth > window.innerWidth - 10) {
+                leftPosition = window.innerWidth - fixedTooltipWidth - 10;
               }
               
               content.style.left = leftPosition + 'px';
