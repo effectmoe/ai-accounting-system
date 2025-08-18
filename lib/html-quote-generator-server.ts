@@ -187,7 +187,7 @@ export async function generateServerHtmlQuote({
                     const subtotalAmount = (item.quantity || 1) * (item.unitPrice || 0);
                     const taxAmount = subtotalAmount * (quote.taxRate || 0.1);
                     
-                    // ツールチップ付きの項目名を生成
+                    // メール版ツールチップ付きの項目名を生成（インライン注釈方式）
                     const renderItemWithTooltip = (itemName: string, tooltip: string) => {
                       if (!tooltip || tooltip.trim() === '') {
                         return itemName;
@@ -207,18 +207,45 @@ export async function generateServerHtmlQuote({
                         .replace(/</g, '&lt;')
                         .replace(/>/g, '&gt;');
                       
-                      return `
-                        <span title="${escapedTooltip}" style="
-                          border-bottom: 1px dotted #666;
-                          cursor: help;
-                          text-decoration: none;
-                        ">${escapedName}</span>
-                      `;
+                      // 長い説明文は50文字で切って省略記号を付ける
+                      const trimmedTooltip = tooltip.length > 50 ? tooltip.substring(0, 50) + '...' : tooltip;
+                      const escapedTrimmedTooltip = trimmedTooltip
+                        .replace(/&/g, '&amp;')
+                        .replace(/"/g, '&quot;')
+                        .replace(/'/g, '&#39;')
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;');
+                      
+                      // メール版ライトグレーマーカースタイル
+                      const markerStyle = 'background: linear-gradient(180deg, transparent 60%, rgba(229, 231, 235, 0.8) 60%); padding: 1px 2px; border-radius: 2px; border-bottom: 1px dotted #6b7280;';
+                      
+                      // インライン注釈スタイル
+                      const annotationStyle = 'font-size: 0.75em; color: #6b7280; font-style: italic; margin-left: 4px; font-weight: normal;';
+                      
+                      return `<span style="${markerStyle}">${escapedName}</span><span style="${annotationStyle}">（※${escapedTrimmedTooltip}）</span>`;
                     };
                     
-                    const itemDisplayName = item.tooltip ? 
-                      renderItemWithTooltip(item.itemName || `項目${index + 1}`, item.tooltip) :
-                      (item.itemName || `項目${index + 1}`);
+                    // ツールチップを検索して項目名を拡張
+                    let finalItemName = item.itemName || `項目${index + 1}`;
+                    let itemTooltip = '';
+                    
+                    // item.tooltipが既に設定されている場合はそれを使用
+                    if (item.tooltip) {
+                      itemTooltip = item.tooltip;
+                    } else {
+                      // ツールチップ辞書からマッチするものを検索
+                      const itemText = (item.itemName || '') + ' ' + (item.description || '');
+                      for (const [term, explanation] of tooltips.entries()) {
+                        if (itemText.toLowerCase().includes(term.toLowerCase()) || term.toLowerCase().includes(itemText.toLowerCase())) {
+                          itemTooltip = explanation;
+                          break;
+                        }
+                      }
+                    }
+                    
+                    const itemDisplayName = itemTooltip ? 
+                      renderItemWithTooltip(finalItemName, itemTooltip) :
+                      finalItemName;
                     
                     return `
                   <tr>
@@ -264,24 +291,59 @@ export async function generateServerHtmlQuote({
           </tr>
 
           ${(() => {
-            // 備考欄の表示判定を改善（より寛容なチェック）
-            const originalNotes = quote.notes || '';
-            const normalizedNotes = originalNotes.toString().trim();
-            const hasNotes = normalizedNotes && normalizedNotes.length > 0;
+            // 備考の内容をチェック（型安全性とcleanDuplicateSignatures適用後の再チェック）
+            const originalNotes = quote.notes;
             
-            // デバッグ情報（開発環境のみログ出力される）
-            console.log('📝 Server HTML Generator notes check:', {
-              originalNotes: originalNotes,
-              normalizedNotes: normalizedNotes,
-              hasNotes: hasNotes,
-              notesLength: normalizedNotes.length,
-              notesType: typeof quote.notes,
-              willShow: hasNotes || originalNotes.length > 0
-            });
+            // デバッグログ（開発環境のみ）
+            if (process.env.NODE_ENV === 'development') {
+              console.log('📝 Server HTML Generator notes check (enhanced):', {
+                originalNotes: originalNotes,
+                originalNotesType: typeof originalNotes,
+                originalNotesLength: typeof originalNotes === 'string' ? originalNotes.length : 'N/A'
+              });
+            }
             
-            // 備考が存在する場合は必ず表示
-            if (hasNotes || originalNotes.length > 0) {
-              return `
+            // 型チェック: null, undefined, または文字列以外の場合は表示しない
+            if (!originalNotes || typeof originalNotes !== 'string') {
+              if (process.env.NODE_ENV === 'development') {
+                console.log('❌ Notes not displayed: invalid type or empty');
+              }
+              return '';
+            }
+            
+            // 空白文字のみをチェック
+            const trimmedNotes = originalNotes.trim();
+            if (trimmedNotes.length === 0) {
+              if (process.env.NODE_ENV === 'development') {
+                console.log('❌ Notes not displayed: empty after trim');
+              }
+              return '';
+            }
+            
+            // cleanDuplicateSignatures関数を適用
+            const { cleanDuplicateSignatures } = require('./utils/clean-duplicate-signatures');
+            const cleanedNotes = cleanDuplicateSignatures(trimmedNotes);
+            const finalNotes = cleanedNotes.trim();
+            
+            // 清拭後に内容がない場合は表示しない
+            if (finalNotes.length === 0) {
+              if (process.env.NODE_ENV === 'development') {
+                console.log('❌ Notes not displayed: empty after cleaning signatures');
+              }
+              return '';
+            }
+            
+            // デバッグログ（開発環境のみ）
+            if (process.env.NODE_ENV === 'development') {
+              console.log('✅ Notes will be displayed:', {
+                trimmedLength: trimmedNotes.length,
+                cleanedLength: cleanedNotes.length,
+                finalLength: finalNotes.length,
+                finalPreview: finalNotes.substring(0, 50) + (finalNotes.length > 50 ? '...' : '')
+              });
+            }
+            
+            return `
           <!-- 備考欄 -->
           <tr>
             <td style="padding: 30px 40px;">
@@ -289,16 +351,13 @@ export async function generateServerHtmlQuote({
               <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: #f9f9f9; border-radius: 6px;">
                 <tr>
                   <td style="padding: 15px;">
-                    <p style="margin: 0; font-size: 14px; color: #666666; line-height: 1.6; white-space: pre-wrap;">${hasNotes ? normalizedNotes : '（備考が設定されていません）'}</p>
+                    <p style="margin: 0; font-size: 14px; color: #666666; line-height: 1.6; white-space: pre-wrap;">${finalNotes}</p>
                   </td>
                 </tr>
               </table>
             </td>
           </tr>
-              `;
-            }
-            
-            return '';
+            `;
           })()}
 
           <!-- おすすめオプション（DBから取得） -->
@@ -435,17 +494,33 @@ ${(quote.items || []).map((item: any, index: number) => {
 合計：¥${totalAmount.toLocaleString()}
 
 ${(() => {
-  // プレーンテキスト版でも同様の備考チェック
-  const originalNotes = quote.notes || '';
-  const normalizedNotes = originalNotes.toString().trim();
-  const hasNotes = normalizedNotes && normalizedNotes.length > 0;
+  // プレーンテキスト版でも同様の備考チェック（型安全版）
+  const originalNotes = quote.notes;
   
-  if (hasNotes || originalNotes.length > 0) {
-    return `【備考】
-${hasNotes ? normalizedNotes : '（備考が設定されていません）'}
-`;
+  // 型チェック: null, undefined, または文字列以外の場合は表示しない
+  if (!originalNotes || typeof originalNotes !== 'string') {
+    return '';
   }
-  return '';
+  
+  // 空白文字のみをチェック
+  const trimmedNotes = originalNotes.trim();
+  if (trimmedNotes.length === 0) {
+    return '';
+  }
+  
+  // cleanDuplicateSignatures関数を適用
+  const { cleanDuplicateSignatures } = require('./utils/clean-duplicate-signatures');
+  const cleanedNotes = cleanDuplicateSignatures(trimmedNotes);
+  const finalNotes = cleanedNotes.trim();
+  
+  // 清拭後に内容がない場合は表示しない
+  if (finalNotes.length === 0) {
+    return '';
+  }
+  
+  return `【備考】
+${finalNotes}
+`;
 })()}
 
 ${suggestedOptions && suggestedOptions.length > 0 ? `
