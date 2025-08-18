@@ -578,7 +578,7 @@ export default function QuoteWebTemplate({
             const notesSection = document.querySelector('.notes-section');
             const customMessage = document.querySelector('.custom-message');
             
-            console.log('📊 [WEB-TEMPLATE-JS:DEBUG-TOOLTIPS] Complete page analysis:', {
+            console.log('📊 [WEB-TEMPLATE-JS:DEBUG-TOOLTIPS] Complete page analysis:', JSON.stringify({
               tooltips: {
                 wrappers: tooltipWrappers.length,
                 contents: tooltipContents.length,
@@ -598,7 +598,7 @@ export default function QuoteWebTemplate({
               },
               itemRows: document.querySelectorAll('.item-row, .mobile-card').length,
               timestamp: new Date().toISOString()
-            });
+            }, null, 2));
             
             // 強制的にツールチップを表示してテスト
             if (tooltipContents.length > 0) {
@@ -638,13 +638,13 @@ export default function QuoteWebTemplate({
               const tooltipWidth = Math.min(320, viewportWidth - 40);
               const tooltipHalfWidth = tooltipWidth / 2;
               
-              console.log('🔧 Adjusting tooltip position:', {
+              console.log('🔧 Adjusting tooltip position:', JSON.stringify({
                 wrapperLeft: rect.left,
                 wrapperRight: rect.right,
                 wrapperWidth: rect.width,
                 viewportWidth: viewportWidth,
                 tooltipWidth: tooltipWidth
-              });
+              }, null, 2));
               
               // 既存のクラスをリセット
               wrapper.classList.remove('edge-left', 'edge-right', 'edge-center');
@@ -678,12 +678,12 @@ export default function QuoteWebTemplate({
               // リアルタイムでの位置確認（デバッグ用）
               setTimeout(() => {
                 const tooltipRect = content.getBoundingClientRect();
-                console.log('✅ Tooltip positioned:', {
+                console.log('✅ Tooltip positioned:', JSON.stringify({
                   left: tooltipRect.left,
                   right: tooltipRect.right,
                   width: tooltipRect.width,
                   isVisible: tooltipRect.left >= 0 && tooltipRect.right <= viewportWidth
-                });
+                }, null, 2));
               }, 100);
             }
             
