@@ -26,19 +26,19 @@ interface SuggestedOption {
 
 // メール版ツールチップレンダリング関数を改善
 const renderDetailsWithTooltip = (details: string, tooltip: string) => {
-  // 開発環境でのみデバッグログを出力
-  if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname.includes('preview'))) {
+  // デバッグログは開発環境でのみ
+  if (process.env.NODE_ENV === 'development') {
     console.log('📧 QuoteHtmlTemplate: renderDetailsWithTooltip called:', { details, hasTooltip: !!tooltip });
   }
   
   if (!tooltip || tooltip.trim() === '') {
-    if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname.includes('preview'))) {
+    if (process.env.NODE_ENV === 'development') {
       console.log('❌ No tooltip provided for:', details);
     }
     return <span>{details}</span>;
   }
   
-  if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname.includes('preview'))) {
+  if (process.env.NODE_ENV === 'development') {
     console.log('✅ Creating tooltip for:', details, 'with tooltip:', tooltip.substring(0, 50) + '...');
   }
   
