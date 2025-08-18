@@ -229,7 +229,7 @@ export default function QuoteWebTemplate({
       <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
       
       {/* デプロイバージョン情報 - デバッグ用 */}
-      {/* Deploy Version: Debug-v3 | Build Date: 2025-08-18 18:00 JST | Enhanced CSS Debugging */}
+      {/* Deploy Version: Complete-No-iframe | Build Date: 2025-08-18 23:00 JST | iframe制約完全回避版 */}
       
       {/* レスポンシブ対応のCSS */}
       <style dangerouslySetInnerHTML={{
@@ -306,48 +306,40 @@ export default function QuoteWebTemplate({
             opacity: 0;
             pointer-events: none;
             /* スタイル */
-            background-color: #fef3c7; /* より確実な背景色 */
+            background-color: #fef3c7;
             color: #1f2937;
             text-align: left;
             border-radius: 6px;
             padding: 12px 16px;
-            /* 位置設定 - fixedに変更してiframe制約を回避 */
-            position: fixed !important;
-            z-index: 2147483647; /* 最大値に設定 */
-            /* 初期位置は動的に設定される */
+            /* 位置設定 - absoluteで親要素に対して相対位置 */
+            position: absolute !important;
+            z-index: 999999; 
+            /* 初期位置（親要素の上に表示） */
+            top: -70px;
+            left: 50%;
+            transform: translateX(-50%);
             min-width: 200px;
-            max-width: min(320px, calc(100vw - 40px)); /* ビューポート幅に応じて調整 */
+            max-width: 320px;
             /* フォント設定 */
             font-size: 14px;
             font-weight: 500;
             /* シャドウとボーダー */
             box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-            border: 3px solid #f59e0b;
+            border: 2px solid #f59e0b;
             /* アニメーション */
-            transition: all 0.3s ease-in-out;
+            transition: all 0.2s ease-in-out;
             /* テキスト設定 */
             white-space: normal;
             line-height: 1.5;
             word-wrap: break-word;
-            /* 画面端で見切れないように調整 */
             box-sizing: border-box;
-            /* iframe制約を確実に回避 */
-            margin: 0 !important;
-            border-collapse: separate !important;
-            clip: auto !important;
-            -webkit-clip-path: none !important;
-            clip-path: none !important;
-            overflow: visible !important;
           }
           
-          /* iframe環境での特別な調整 */
+          /* 汎用的な表示設定 */
           @media screen {
             .tooltip-content {
-              /* iframe内でのツールチップが境界を超えて表示されるよう調整 */
               clip-path: none !important;
               overflow: visible !important;
-              /* より高いz-indexでiframe境界を超えて表示 */
-              z-index: 999999999 !important;
             }
           }
           
@@ -363,22 +355,12 @@ export default function QuoteWebTemplate({
             border-color: #fef3c7 transparent transparent transparent;
           }
           
-          /* ホバー時の表示を確実にする - 強化版 */
-          /* 項目行内のツールチップのみ有効 */
-          .item-row .tooltip-wrapper:hover .tooltip-content,
-          .mobile-card .tooltip-wrapper:hover .tooltip-content,
-          .desktop-table .item-row .tooltip-wrapper:hover .tooltip-content,
-          .item-row .tooltip-wrapper:focus .tooltip-content,
-          .mobile-card .tooltip-wrapper:focus .tooltip-content,
-          .desktop-table .item-row .tooltip-wrapper:focus .tooltip-content,
-          .item-row .tooltip-wrapper:active .tooltip-content,
-          .mobile-card .tooltip-wrapper:active .tooltip-content,
-          .desktop-table .item-row .tooltip-wrapper:active .tooltip-content {
+          /* ホバー時の表示 */
+          .tooltip-wrapper:hover .tooltip-content,
+          .tooltip-wrapper:focus .tooltip-content {
             visibility: visible !important;
             opacity: 1 !important;
-            display: block !important;
-            position: fixed !important;
-            z-index: 2147483647 !important;
+            pointer-events: auto !important;
           }
           
           /* 備考欄ではツールチップを強制的に無効化 */
@@ -405,8 +387,8 @@ export default function QuoteWebTemplate({
               visibility: visible !important;
               opacity: 1 !important;
               display: block !important;
-              position: fixed !important;
-              z-index: 2147483647 !important;
+              position: absolute !important;
+              z-index: 999999 !important;
             }
           }
           
@@ -415,9 +397,8 @@ export default function QuoteWebTemplate({
             visibility: visible !important;
             opacity: 1 !important;
             display: block !important;
-            position: fixed !important;
-            transform: none !important;
-            z-index: 2147483647 !important;
+            position: absolute !important;
+            z-index: 999999 !important;
           }
           
           /* より確実なホバー表示のためのフォールバックルール */
@@ -425,8 +406,8 @@ export default function QuoteWebTemplate({
             visibility: visible !important;
             opacity: 1 !important;
             display: block !important;
-            position: fixed !important;
-            z-index: 2147483647 !important;
+            position: absolute !important;
+            z-index: 999999 !important;
           }
           
           /* モバイル: タップで表示（項目行内のみ） */
@@ -892,62 +873,32 @@ export default function QuoteWebTemplate({
                 console.log('📍 Applied precise center positioning at ' + offsetFromLeft + 'px');
               }
               
-              // iframe環境での上部スペース判定を調整（fixed position対応）
-              // iframe内では親フレームの高さ制約（1200px）を考慮
-              const isInIframe = window.self !== window.top;
-              const spaceThreshold = isInIframe ? 200 : 180;
+              // シンプルな上部スペース判定（iframe制約を完全に回避）
+              const spaceThreshold = 120;
               
-              // 強化されたデバッグログ
-              console.log('🔍 [IFRAME-DEBUG] Environment check:', {
-                isInIframe: isInIframe,
-                windowSelf: window.self === window,
-                windowTop: window.self === window.top,
+              // シンプルなデバッグログ
+              console.log('📍 Simple positioning check:', {
                 spaceThreshold: spaceThreshold,
                 actualTopSpace: rect.top,
-                viewportHeight: window.innerHeight,
-                parentHeight: isInIframe ? (window.parent ? window.parent.innerHeight : 'unknown') : 'N/A',
                 willShowBelow: rect.top < spaceThreshold
               });
               
-              // fixed positionに対応した絶対位置設定
+              // 親要素基準の相対位置設定（iframe制約を完全に回避）
               const contentHeight = 60; // ツールチップの想定高さ
               
               if (rect.top < spaceThreshold) {
-                // 下に表示（fixed positionで絶対座標を使用）
-                const topPosition = rect.bottom + window.scrollY + 10;
-                content.style.top = topPosition + 'px';
+                // 下に表示（親要素の下部に相対配置）
+                content.style.top = '100%';
                 content.style.bottom = 'auto';
-                console.log('📍 Not enough space above (top: ' + rect.top + 'px, threshold: ' + spaceThreshold + 'px) - show below at: ' + topPosition + 'px');
+                console.log('📍 Show below element (relative: top: 100%)');
               } else {
-                // 上に表示（fixed positionで絶対座標を使用）
-                const topPosition = rect.top + window.scrollY - contentHeight - 10;
-                content.style.top = topPosition + 'px';
+                // 上に表示（親要素の上部に相対配置）
+                content.style.top = '-' + (contentHeight + 10) + 'px';
                 content.style.bottom = 'auto';
-                console.log('📍 Enough space above (top: ' + rect.top + 'px) - show above at: ' + topPosition + 'px');
+                console.log('📍 Show above element (relative: top: -' + (contentHeight + 10) + 'px)');
               }
               
-              // 水平位置も設定（fixed positionでは必須）
-              const fixedElementCenter = rect.left + window.scrollX + (rect.width / 2);
-              const fixedTooltipWidth = 320;
-              const fixedTooltipHalfWidth = fixedTooltipWidth / 2;
-              
-              let leftPosition = fixedElementCenter - fixedTooltipHalfWidth;
-              
-              // 画面端での調整
-              if (leftPosition < 10) {
-                leftPosition = 10;
-              } else if (leftPosition + fixedTooltipWidth > window.innerWidth - 10) {
-                leftPosition = window.innerWidth - fixedTooltipWidth - 10;
-              }
-              
-              content.style.left = leftPosition + 'px';
-              content.style.transform = 'none'; // fixed positionでは相対変換を無効化
-              
-              console.log('📍 Fixed position set:', {
-                left: leftPosition + 'px',
-                top: content.style.top,
-                elementRect: { left: rect.left, top: rect.top, width: rect.width, height: rect.height }
-              });
+              console.log('📍 Relative positioning applied (no fixed position used)');
             }
             
             // マウスホバーイベントを強化
