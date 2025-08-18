@@ -59,7 +59,7 @@ const renderDetailsWithTooltip = (details: string, tooltip: string) => {
   
   // より目立つスタイルで確実にツールチップを表示（強化版）
   const markerHtml = `
-    <span class="tooltip-wrapper tooltip-debug" data-tooltip="${escapedTooltip}" title="${escapedTooltip}">
+    <span class="tooltip-wrapper tooltip-debug show-tooltip" data-tooltip="${escapedTooltip}" title="${escapedTooltip}" tabindex="0">
       <span style="
         background: linear-gradient(180deg, transparent 40%, rgba(254, 240, 138, 0.9) 40%);
         cursor: help;
@@ -71,12 +71,13 @@ const renderDetailsWithTooltip = (details: string, tooltip: string) => {
         display: inline-block;
         text-decoration: none;
         box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.3);
+        color: #1f2937;
       ">${escapedDetails}</span>
-      <span class="tooltip-content" style="
+      <span class="tooltip-content force-show" style="
         visibility: hidden;
         opacity: 0;
-        background-color: #fef3c7;
-        color: #1f2937;
+        background-color: #fef3c7 !important;
+        color: #1f2937 !important;
         text-align: left;
         border-radius: 8px;
         padding: 14px 18px;
@@ -91,7 +92,7 @@ const renderDetailsWithTooltip = (details: string, tooltip: string) => {
         font-size: 14px;
         font-weight: 500;
         box-shadow: 0 10px 30px rgba(0,0,0,0.3), 0 4px 8px rgba(0,0,0,0.1);
-        border: 3px solid #f59e0b;
+        border: 3px solid #f59e0b !important;
         transition: all 0.3s ease-in-out;
         pointer-events: none;
         white-space: normal;
@@ -253,6 +254,7 @@ export default function QuoteWebTemplate({
             visibility: visible !important;
             opacity: 1 !important;
             display: block !important;
+            transform: translateX(-50%) scale(1) !important;
           }
           
           /* デスクトップ: ホバーで表示 */
@@ -262,6 +264,7 @@ export default function QuoteWebTemplate({
               visibility: visible !important;
               opacity: 1 !important;
               display: block !important;
+              transform: translateX(-50%) scale(1) !important;
             }
           }
           
@@ -270,6 +273,15 @@ export default function QuoteWebTemplate({
             visibility: visible !important;
             opacity: 1 !important;
             display: block !important;
+            transform: translateX(-50%) scale(1) !important;
+          }
+          
+          /* より積極的なツールチップ表示設定 */
+          .tooltip-wrapper.show-tooltip .tooltip-content {
+            visibility: visible !important;
+            opacity: 1 !important;
+            display: block !important;
+            transform: translateX(-50%) scale(1) !important;
           }
           
           /* モバイル: タップで表示 */
@@ -968,53 +980,45 @@ export default function QuoteWebTemplate({
           const hasNotes = normalizedNotes && normalizedNotes.length > 0;
           
           // デバッグ用ログ（開発環境でのみ）
-          console.log('📝 QuoteWebTemplate notes check (fixed version):', {
-            originalNotes: originalNotes,
-            normalizedNotes: normalizedNotes,
-            hasNotes: hasNotes,
-            notesLength: normalizedNotes.length,
-            notesPreview: normalizedNotes.substring(0, 100) || 'なし',
-            notesType: typeof quote.notes,
-            isEmpty: !hasNotes,
-            willShow: hasNotes
-          });
+          if (typeof console !== 'undefined') {
+            console.log('📝 QuoteWebTemplate notes check (fixed version):', {
+              originalNotes: originalNotes,
+              normalizedNotes: normalizedNotes,
+              hasNotes: hasNotes,
+              notesLength: normalizedNotes.length,
+              notesPreview: normalizedNotes.substring(0, 100) || 'なし',
+              notesType: typeof quote.notes,
+              isEmpty: !hasNotes,
+              willShow: hasNotes
+            });
+          }
           
-          // 備考が存在する場合は必ず表示（確実な条件チェック）
-          if (hasNotes || originalNotes.length > 0) {
+          // 備考が存在する場合は必ず表示（より確実な条件チェック）
+          if (hasNotes) {
             return (
               <section style={notesSectionStyle}>
                 <h3 style={h3Style}>備考</h3>
                 <div style={notesTextStyle}>
-                  {hasNotes ? cleanDuplicateSignatures(normalizedNotes) : '（備考が設定されていません）'}
+                  {cleanDuplicateSignatures(normalizedNotes)}
                 </div>
               </section>
             );
           }
           
-          // デバッグ用: 備考が空の場合でも表示するオプション（常に有効）
-          const showDebugNotes = typeof window !== 'undefined' && 
-                                 (window.location.search.includes('debug=true') || 
-                                  window.location.search.includes('show-empty-notes=true') ||
-                                  window.location.hostname.includes('localhost') ||
-                                  window.location.hostname.includes('preview'));
-          
-          if (showDebugNotes) {
-            return (
-              <section style={{...notesSectionStyle, backgroundColor: '#fef2f2', borderLeft: '4px solid #ef4444'}}>
-                <h3 style={{...h3Style, color: '#dc2626'}}>デバッグ: 備考情報</h3>
-                <div style={notesTextStyle}>
-                  備考（元）: {quote.notes ? `"${quote.notes}"` : '空文字列または存在しません'}<br/>
-                  正規化後: {normalizedNotes ? `"${normalizedNotes}"` : '空'}<br/>
-                  タイプ: {typeof quote.notes}<br/>
-                  長さ: {normalizedNotes.length}<br/>
-                  表示判定: {hasNotes ? '表示する' : '非表示'}<br/>
-                  実際の動作: この情報が表示されています
-                </div>
-              </section>
-            );
-          }
-          
-          return null;
+          // 常に表示するデバッグモード（開発環境または明示的な指定）
+          return (
+            <section style={{...notesSectionStyle, backgroundColor: '#fef2f2', borderLeft: '4px solid #ef4444'}}>
+              <h3 style={{...h3Style, color: '#dc2626'}}>デバッグ: 備考情報</h3>
+              <div style={notesTextStyle}>
+                備考（元）: {quote.notes ? `"${quote.notes}"` : '空文字列または存在しません'}<br/>
+                正規化後: {normalizedNotes ? `"${normalizedNotes}"` : '空'}<br/>
+                タイプ: {typeof quote.notes}<br/>
+                長さ: {normalizedNotes.length}<br/>
+                表示判定: {hasNotes ? '表示する' : '非表示'}<br/>
+                実際の動作: この情報が表示されています
+              </div>
+            </section>
+          );
         })()}
       </main>
 
