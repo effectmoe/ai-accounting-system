@@ -51,45 +51,31 @@ const TOOLTIP_DICTIONARY = new Map<string, string>([
   ['サポート', '技術支援・問題解決・使い方指導']
 ]);
 
-// メール版ツールチップ用語を検出してインライン注釈を付ける関数（キーワード特定版）
-// Updated: 2025-08-18 - 特定のキーワードのみに注釈を適用する版
-const renderDetailsWithTooltip = (details: string, tooltip: string) => {
-  // ツールチップがない場合はそのまま返す
-  if (!tooltip || tooltip.trim().length === 0) {
-    return <span>{details}</span>;
-  }
-  
-  // ツールチップ辞書から該当するキーワードを検索
-  let matchedKeyword = '';
-  let matchedTooltip = '';
-  
-  // 長いキーワードから順に検索（例：「LLMOモニタリング」が「LLMO」より優先）
+// 用語説明を収集する関数
+const collectTermsFromItems = (items: any[]) => {
+  const terms = new Map<string, string>();
   const sortedKeywords = Array.from(TOOLTIP_DICTIONARY.keys()).sort((a, b) => b.length - a.length);
   
-  for (const keyword of sortedKeywords) {
-    if (details.includes(keyword)) {
-      matchedKeyword = keyword;
-      matchedTooltip = TOOLTIP_DICTIONARY.get(keyword) || '';
-      break;
+  items.forEach(item => {
+    const itemText = (item.itemName || '') + ' ' + (item.details || '') + ' ' + (item.description || '');
+    
+    // 各キーワードをチェック
+    for (const keyword of sortedKeywords) {
+      if (itemText.includes(keyword) && !terms.has(keyword)) {
+        const explanation = TOOLTIP_DICTIONARY.get(keyword) || '';
+        if (explanation) {
+          terms.set(keyword, explanation);
+        }
+      }
     }
-  }
+  });
   
-  // マッチしたキーワードがない場合は通常のテキストとして表示
-  if (!matchedKeyword || !matchedTooltip) {
-    return <span>{details}</span>;
-  }
-  
-  // 長い説明文は30文字で切って省略記号を付ける
-  const trimmedTooltip = matchedTooltip.length > 30 ? matchedTooltip.substring(0, 30) + '...' : matchedTooltip;
-  
-  // キーワード部分のみに注釈を適用（シンプルな強調表示）
-  const annotationStyle = 'color: #6b7280; font-size: 0.85em; margin-left: 6px; font-weight: normal;';
-  const highlightedDetails = details.replace(
-    new RegExp(matchedKeyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'),
-    `<span style="background: rgba(254, 240, 138, 0.3); padding: 1px 2px; border-radius: 2px; font-weight: 500;">${matchedKeyword}</span><span style="${annotationStyle}">（${trimmedTooltip}）</span>`
-  );
-  
-  return <span dangerouslySetInnerHTML={{ __html: highlightedDetails }} />;
+  return terms;
+};
+
+// メール版では通常のテキストのみを表示する関数（インライン注釈なし）
+const renderCleanText = (text: string) => {
+  return <span>{text}</span>;
 };
 
 export default function QuoteHtmlTemplate({
@@ -430,22 +416,28 @@ export default function QuoteHtmlTemplate({
               display: inline-block;
               margin-top: 16px;
             }
-            /* メール版インライン注釈スタイル（シンプル版） */
-            .item-annotation {
-              color: #6b7280;
-              font-size: 0.85em;
-              margin-left: 6px;
-              font-weight: normal;
-              line-height: 1.4;
+            /* 用語説明セクション */
+            .terms-section {
+              margin: 40px 0;
+            }
+            .terms-content {
+              background-color: #f9fafb;
+              padding: 20px;
+              border-radius: 8px;
+              border-left: 4px solid #3B82F6;
+            }
+            .term-item {
+              font-size: 14px;
+              color: #4b5563;
+              line-height: 1.6;
+              margin: 8px 0;
+            }
+            .term-item strong {
+              color: #1f2937;
+              font-weight: 600;
             }
             /* モバイルメールクライアント対応 */
             @media screen and (max-width: 600px) {
-              .item-annotation {
-                display: block;
-                margin-left: 0;
-                margin-top: 2px;
-                font-size: 0.75em;
-              }
               .item-row {
                 grid-template-columns: 1fr;
                 gap: 8px;
@@ -456,12 +448,12 @@ export default function QuoteHtmlTemplate({
                 text-align: left;
                 margin-top: 4px;
               }
-            }
-            /* 印刷時の調整 */
-            @media print {
-              .item-annotation {
-                color: #000000 !important;
-                font-size: 0.75em;
+              .terms-content {
+                padding: 15px;
+              }
+              .term-item {
+                font-size: 13px;
+                margin: 6px 0;
               }
             }
           `
@@ -538,23 +530,15 @@ export default function QuoteHtmlTemplate({
                       <div className={`item-name ${isDiscount ? 'discount' : ''}`}>
                         {item.productLink ? (
                           <a href={item.productLink} style={{color: '#3B82F6', textDecoration: 'none'}}>
-                            {item.tooltip ? 
-                              renderDetailsWithTooltip(item.itemName || item.description || '', item.tooltip) :
-                              (item.itemName || item.description || '')
-                            }
+                            {renderCleanText(item.itemName || item.description || '')}
                           </a>
                         ) : (
-                          item.tooltip ? 
-                            renderDetailsWithTooltip(item.itemName || item.description || '', item.tooltip) :
-                            (item.itemName || item.description || '')
+                          renderCleanText(item.itemName || item.description || '')
                         )}
                       </div>
                       {item.details && (
                         <div className={`item-details ${isDiscount ? 'discount' : ''}`}>
-                          {item.tooltip ? 
-                            renderDetailsWithTooltip(item.details, item.tooltip) :
-                            item.details
-                          }
+                          {renderCleanText(item.details)}
                         </div>
                       )}
                     </div>
@@ -589,6 +573,28 @@ export default function QuoteHtmlTemplate({
                 <div className="total-value">{formatCurrency(quote.totalAmount)}</div>
               </div>
             </div>
+
+            {/* 用語説明セクション */}
+            {(() => {
+              const collectedTerms = collectTermsFromItems(quote.items);
+              if (collectedTerms.size === 0) {
+                return null;
+              }
+              
+              return (
+                <div className="terms-section">
+                  <hr className="divider" />
+                  <h2 className="section-title">📖 用語説明</h2>
+                  <div className="terms-content">
+                    {Array.from(collectedTerms.entries()).map(([term, explanation], index) => (
+                      <div key={index} className="term-item">
+                        <strong>{term}</strong>: {explanation}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* 追加提案オプション */}
             {suggestedOptions.length > 0 && (

@@ -89,28 +89,6 @@ export async function generateServerHtmlQuote({
   // ツールチップ辞書を生成
   const tooltips = generateDefaultTooltips();
   
-  // 用語説明を収集する関数（メール版用）
-  const collectTermsForEmail = (items: any[], tooltipDict: Map<string, string>) => {
-    const terms = new Map<string, string>();
-    const sortedKeywords = Array.from(tooltipDict.keys()).sort((a, b) => b.length - a.length);
-    
-    items.forEach(item => {
-      const itemText = (item.itemName || '') + ' ' + (item.details || '') + ' ' + (item.description || '');
-      
-      // 各キーワードをチェック
-      for (const keyword of sortedKeywords) {
-        if (itemText.includes(keyword) && !terms.has(keyword)) {
-          const explanation = tooltipDict.get(keyword) || '';
-          if (explanation) {
-            terms.set(keyword, explanation);
-          }
-        }
-      }
-    });
-    
-    return terms;
-  };
-  
   // ベースURL
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://accounting-automation.vercel.app';
   
@@ -224,37 +202,97 @@ export async function generateServerHtmlQuote({
                     const subtotalAmount = (item.quantity || 1) * (item.unitPrice || 0);
                     const taxAmount = subtotalAmount * (quote.taxRate || 0.1);
                     
-                    // メール版ではシンプルなテキストのみ表示（インライン注釈なし）
-                    const renderCleanItemName = (itemName: string) => {
-                      return itemName
+                    // メール版ツールチップ付きの項目名を生成（キーワード特定版）
+                    // Updated: 2025-08-18 - 特定のキーワードのみに注釈を適用する版
+                    const renderItemWithTooltip = (itemName: string, tooltip: string) => {
+                      if (!tooltip || tooltip.trim() === '') {
+                        return itemName;
+                      }
+                      
+                      // ツールチップ辞書から該当するキーワードを検索
+                      let matchedKeyword = '';
+                      let matchedTooltip = '';
+                      
+                      // 長いキーワードから順に検索（例：「LLMOモニタリング」が「LLMO」より優先）
+                      const sortedKeywords = Array.from(tooltips.keys()).sort((a, b) => b.length - a.length);
+                      
+                      for (const keyword of sortedKeywords) {
+                        if (itemName.includes(keyword)) {
+                          matchedKeyword = keyword;
+                          matchedTooltip = tooltips.get(keyword) || '';
+                          break;
+                        }
+                      }
+                      
+                      // マッチしたキーワードがない場合は通常のテキストとして表示
+                      if (!matchedKeyword || !matchedTooltip) {
+                        return itemName;
+                      }
+                      
+                      // HTMLエスケープ処理
+                      const escapedName = itemName
                         .replace(/&/g, '&amp;')
                         .replace(/"/g, '&quot;')
                         .replace(/'/g, '&#39;')
                         .replace(/</g, '&lt;')
                         .replace(/>/g, '&gt;');
+                      
+                      const escapedKeyword = matchedKeyword
+                        .replace(/&/g, '&amp;')
+                        .replace(/"/g, '&quot;')
+                        .replace(/'/g, '&#39;')
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;');
+                      
+                      // 長い説明文は30文字で切って省略記号を付ける
+                      const trimmedTooltip = matchedTooltip.length > 30 ? matchedTooltip.substring(0, 30) + '...' : matchedTooltip;
+                      const escapedTooltip = trimmedTooltip
+                        .replace(/&/g, '&amp;')
+                        .replace(/"/g, '&quot;')
+                        .replace(/'/g, '&#39;')
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;');
+                      
+                      // キーワード部分のみに注釈を適用（シンプルな強調表示）
+                      const annotationStyle = 'color: #6b7280; font-size: 0.85em; margin-left: 6px; font-weight: normal;';
+                      const highlightedName = escapedName.replace(
+                        new RegExp(escapedKeyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'),
+                        `<span style="background: rgba(254, 240, 138, 0.3); padding: 1px 2px; border-radius: 2px; font-weight: 500;">${escapedKeyword}</span><span style="${annotationStyle}">（${escapedTooltip}）</span>`
+                      );
+                      
+                      return highlightedName;
                     };
                     
-                    // メール版では項目名をそのまま表示（インライン注釈なし）
+                    // ツールチップを検索して項目名を拡張
+                    let finalItemName = item.itemName || `項目${index + 1}`;
+                    let itemTooltip = '';
                     
-                    // メール版では項目名をそのまま表示（ツールチップ処理なし）
-                    const finalItemName = item.itemName || `項目${index + 1}`;
-                    const itemDisplayName = renderCleanItemName(finalItemName);
+                    // item.tooltipが既に設定されている場合はそれを使用
+                    if (item.tooltip) {
+                      itemTooltip = item.tooltip;
+                    } else {
+                      // ツールチップ辞書からマッチするものを検索
+                      const itemText = (item.itemName || '') + ' ' + (item.description || '');
+                      for (const [term, explanation] of tooltips.entries()) {
+                        if (itemText.toLowerCase().includes(term.toLowerCase()) || term.toLowerCase().includes(itemText.toLowerCase())) {
+                          itemTooltip = explanation;
+                          break;
+                        }
+                      }
+                    }
                     
-                    // 詳細説明があるかチェック
-                    const hasDetails = item.details && item.details.trim().length > 0;
-                    const cleanDetails = hasDetails ? renderCleanItemName(item.details) : '';
+                    const itemDisplayName = itemTooltip ? 
+                      renderItemWithTooltip(finalItemName, itemTooltip) :
+                      finalItemName;
                     
                     return `
                   <tr>
-                    <td style="padding: 12px; border: 1px solid #e0e0e0; font-size: 14px; color: ${itemColor};">
-                      <div style="font-weight: 500;">${itemDisplayName}</div>
-                      ${hasDetails ? `<div style="font-size: 12px; color: #6b7280; margin-top: 4px; line-height: 1.4;">${cleanDetails}</div>` : ''}
-                    </td>
-                    <td style="padding: 12px; text-align: center; border: 1px solid #e0e0e0; font-size: 14px; color: ${itemColor}; vertical-align: top;">${item.quantity || 1}</td>
-                    <td style="padding: 12px; text-align: right; border: 1px solid #e0e0e0; font-size: 14px; color: ${itemColor}; vertical-align: top;">¥${(item.unitPrice || 0).toLocaleString()}</td>
-                    <td style="padding: 12px; text-align: right; border: 1px solid #e0e0e0; font-size: 14px; color: ${itemColor}; vertical-align: top;">¥${subtotalAmount.toLocaleString()}</td>
-                    <td style="padding: 12px; text-align: right; border: 1px solid #e0e0e0; font-size: 14px; color: ${itemColor}; vertical-align: top;">¥${Math.round(taxAmount).toLocaleString()}</td>
-                    <td style="padding: 12px; text-align: right; border: 1px solid #e0e0e0; font-size: 14px; color: ${itemColor}; font-weight: bold; vertical-align: top;">¥${(item.amount || 0).toLocaleString()}</td>
+                    <td style="padding: 12px; border: 1px solid #e0e0e0; font-size: 14px; color: ${itemColor};">${itemDisplayName}</td>
+                    <td style="padding: 12px; text-align: center; border: 1px solid #e0e0e0; font-size: 14px; color: ${itemColor};">${item.quantity || 1}</td>
+                    <td style="padding: 12px; text-align: right; border: 1px solid #e0e0e0; font-size: 14px; color: ${itemColor};">¥${(item.unitPrice || 0).toLocaleString()}</td>
+                    <td style="padding: 12px; text-align: right; border: 1px solid #e0e0e0; font-size: 14px; color: ${itemColor};">¥${subtotalAmount.toLocaleString()}</td>
+                    <td style="padding: 12px; text-align: right; border: 1px solid #e0e0e0; font-size: 14px; color: ${itemColor};">¥${Math.round(taxAmount).toLocaleString()}</td>
+                    <td style="padding: 12px; text-align: right; border: 1px solid #e0e0e0; font-size: 14px; color: ${itemColor}; font-weight: bold;">¥${(item.amount || 0).toLocaleString()}</td>
                   </tr>
                   `;
                   }).join('')}
@@ -367,46 +405,6 @@ export async function generateServerHtmlQuote({
                 <tr>
                   <td style="padding: 15px;" class="notes-content">
                     <p style="margin: 0; font-size: 14px; color: #666666; line-height: 1.6; white-space: pre-wrap;">${escapedNotes}</p>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-            `;
-          })()}
-
-          <!-- 用語説明セクション -->
-          ${(() => {
-            const collectedTerms = collectTermsForEmail(quote.items || [], tooltips);
-            if (collectedTerms.size === 0) {
-              return '';
-            }
-            
-            const termsHtml = Array.from(collectedTerms.entries()).map(([term, explanation]) => {
-              const escapedTerm = term
-                .replace(/&/g, '&amp;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#39;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;');
-              const escapedExplanation = explanation
-                .replace(/&/g, '&amp;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#39;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;');
-              
-              return `<p style="margin: 8px 0; font-size: 14px; color: #4b5563; line-height: 1.6;"><strong style="color: #1f2937; font-weight: 600;">${escapedTerm}</strong>: ${escapedExplanation}</p>`;
-            }).join('');
-            
-            return `
-          <tr>
-            <td style="padding: 30px 40px;">
-              <h3 style="margin: 0 0 15px 0; font-size: 18px; color: #333333; border-bottom: 2px solid #e0e0e0; padding-bottom: 8px;">📖 用語説明</h3>
-              <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: #f9fafb; border-radius: 8px; border-left: 4px solid #3B82F6;">
-                <tr>
-                  <td style="padding: 20px;">
-                    ${termsHtml}
                   </td>
                 </tr>
               </table>
