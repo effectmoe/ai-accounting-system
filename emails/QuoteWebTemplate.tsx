@@ -78,11 +78,10 @@ const renderDetailsWithTooltip = (details: string, tooltip: string) => {
         color: #1f2937;
       ">${escapedDetails}</span>
       <span class="tooltip-content" style="
-        visibility: hidden !important;
-        opacity: 0 !important;
-        display: none !important;
-        background-color: #fef3c7 !important;
-        color: #1f2937 !important;
+        opacity: 0;
+        pointer-events: none;
+        background-color: #fef3c7;
+        color: #1f2937;
         text-align: left;
         border-radius: 8px;
         padding: 14px 18px;
@@ -90,16 +89,15 @@ const renderDetailsWithTooltip = (details: string, tooltip: string) => {
         z-index: 999999;
         bottom: 130%;
         left: 50%;
-        transform: translateX(-50%);
+        transform: translateX(-50%) scale(0.95);
         width: 300px;
         min-width: 220px;
         max-width: 95vw;
         font-size: 14px;
         font-weight: 500;
         box-shadow: 0 10px 30px rgba(0,0,0,0.3), 0 4px 8px rgba(0,0,0,0.1);
-        border: 3px solid #f59e0b !important;
-        transition: all 0.3s ease-in-out;
-        pointer-events: none;
+        border: 3px solid #f59e0b;
+        transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
         white-space: normal;
         line-height: 1.5;
         word-wrap: break-word;
@@ -211,22 +209,21 @@ export default function QuoteWebTemplate({
           }
           
           .tooltip-content {
-            /* 初期状態で確実に非表示 */
-            visibility: hidden !important;
-            opacity: 0 !important;
-            display: none !important;
+            /* 初期状態で非表示 - opacityのみ使用 */
+            opacity: 0;
+            pointer-events: none;
             /* スタイル */
-            background-color: #fef3c7; /* より確実な背景色 */
+            background-color: #fef3c7;
             color: #1f2937;
             text-align: left;
             border-radius: 6px;
             padding: 12px 16px;
             /* 位置設定 */
             position: absolute;
-            z-index: 999999; /* 非常に高いz-index */
+            z-index: 999999;
             bottom: 125%;
             left: 50%;
-            transform: translateX(-50%);
+            transform: translateX(-50%) scale(0.95);
             width: 280px;
             min-width: 200px;
             max-width: 90vw;
@@ -237,42 +234,32 @@ export default function QuoteWebTemplate({
             box-shadow: 0 8px 25px rgba(0,0,0,0.25);
             border: 2px solid #f59e0b;
             /* アニメーション */
-            transition: all 0.2s ease-in-out;
-            /* マウスイベント */
-            pointer-events: none;
+            transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
             /* テキスト設定 */
             white-space: normal;
             line-height: 1.5;
             word-wrap: break-word;
           }
           
-          /* ホバー時の表示を確実にする - 修正版 */
-          .tooltip-wrapper:hover .tooltip-content,
-          .tooltip-wrapper:focus .tooltip-content,
-          .tooltip-wrapper:active .tooltip-content {
-            visibility: visible !important;
-            opacity: 1 !important;
-            display: block !important;
-            transform: translateX(-50%) scale(1) !important;
+          /* ホバー時の表示 - シンプルで確実 */
+          .tooltip-wrapper:hover .tooltip-content {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateX(-50%) scale(1);
           }
           
-          /* デスクトップ: ホバーで表示 */
-          @media (hover: hover) and (pointer: fine) {
-            .tooltip-wrapper:hover .tooltip-content,
-            .tooltip-wrapper:focus .tooltip-content {
-              visibility: visible !important;
-              opacity: 1 !important;
-              display: block !important;
-              transform: translateX(-50%) scale(1) !important;
-            }
+          /* フォーカス時の表示 */
+          .tooltip-wrapper:focus .tooltip-content {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateX(-50%) scale(1);
           }
           
           /* アクティブ状態での表示（タッチデバイス用） */
           .tooltip-wrapper.active .tooltip-content {
-            visibility: visible !important;
-            opacity: 1 !important;
-            display: block !important;
-            transform: translateX(-50%) scale(1) !important;
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateX(-50%) scale(1);
           }
           
           .tooltip-content::after {
