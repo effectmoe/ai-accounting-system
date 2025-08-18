@@ -12,6 +12,7 @@ interface QuoteWebTemplateProps {
   discussUrl?: string;
   trackingPixelUrl?: string;
   customMessage?: string;
+  greetingMessage?: string;
   suggestedOptions?: SuggestedOption[];
 }
 
@@ -157,6 +158,7 @@ export default function QuoteWebTemplate({
   discussUrl,
   trackingPixelUrl,
   customMessage,
+  greetingMessage,
   suggestedOptions = [],
 }: QuoteWebTemplateProps) {
   // デバッグログ
@@ -300,9 +302,12 @@ export default function QuoteWebTemplate({
             text-align: left;
             border-radius: 6px;
             padding: 12px 16px;
-            /* 位置設定 - fixedに変更して親要素のoverflowの影響を受けないようにする */
-            position: fixed;
+            /* 位置設定 - absoluteに戻す */
+            position: absolute;
             z-index: 9999999; /* 最前面に表示 */
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
             min-width: 200px;
             max-width: min(320px, calc(100vw - 40px)); /* ビューポート幅に応じて調整 */
             /* フォント設定 */
@@ -312,7 +317,7 @@ export default function QuoteWebTemplate({
             box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
             border: 3px solid #f59e0b;
             /* アニメーション */
-            transition: visibility 0s, opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+            transition: all 0.3s ease-in-out;
             /* テキスト設定 */
             white-space: normal;
             line-height: 1.5;
@@ -785,66 +790,47 @@ export default function QuoteWebTemplate({
               timestamp: new Date().toISOString()
             });
             
-            // ツールチップ位置計算関数 - position: fixed対応版
+            // ツールチップ位置調整関数 - シンプル版
             function adjustTooltipPosition(wrapper, content) {
               if (!wrapper || !content) return;
               
               const rect = wrapper.getBoundingClientRect();
               const viewportWidth = window.innerWidth;
-              const viewportHeight = window.innerHeight;
               
-              // ツールチップの想定幅（max-widthから）
-              const tooltipWidth = Math.min(320, viewportWidth - 40);
-              const tooltipHalfWidth = tooltipWidth / 2;
+              // ビューポートの中心からの距離を計算
+              const elementCenter = rect.left + (rect.width / 2);
+              const viewportCenter = viewportWidth / 2;
               
-              console.log('🔧 Adjusting tooltip position:', JSON.stringify({
-                wrapperLeft: rect.left,
-                wrapperRight: rect.right,
-                wrapperWidth: rect.width,
-                viewportWidth: viewportWidth,
-                tooltipWidth: tooltipWidth
-              }, null, 2));
-              
-              // position: fixedの場合、getBoundingClientRectの値をそのまま使用
-              const wrapperCenter = rect.left + (rect.width / 2);
-              
-              // ツールチップの位置を計算
-              let tooltipLeft = wrapperCenter - tooltipHalfWidth;
-              let tooltipTop = rect.top - 150; // ツールチップの高さを考慮
-              
-              // 画面端での調整
-              if (tooltipLeft < 10) {
-                // 左端にはみ出す場合
-                tooltipLeft = 10;
-                console.log('📍 Adjusting tooltip - too far left');
-              } else if (tooltipLeft + tooltipWidth > viewportWidth - 10) {
-                // 右端にはみ出す場合
-                tooltipLeft = viewportWidth - tooltipWidth - 10;
-                console.log('📍 Adjusting tooltip - too far right');
+              // 要素が画面の左側、中央、右側のどこにあるか判定
+              if (elementCenter < viewportWidth * 0.25) {
+                // 左側: ツールチップを右寄せ
+                content.style.left = '0';
+                content.style.right = 'auto';
+                content.style.transform = 'translateX(0)';
+                console.log('📍 Element on left side - align tooltip to left');
+              } else if (elementCenter > viewportWidth * 0.75) {
+                // 右側: ツールチップを左寄せ
+                content.style.left = 'auto';
+                content.style.right = '0';
+                content.style.transform = 'translateX(0)';
+                console.log('📍 Element on right side - align tooltip to right');
+              } else {
+                // 中央: デフォルトの中央配置
+                content.style.left = '50%';
+                content.style.right = 'auto';
+                content.style.transform = 'translateX(-50%)';
+                console.log('📍 Element in center - center tooltip');
               }
               
               // 上部にスペースがない場合は下に表示
-              if (tooltipTop < 10) {
-                tooltipTop = rect.bottom + 10;
-                console.log('📍 Moving tooltip below element');
+              if (rect.top < 180) {
+                content.style.bottom = 'auto';
+                content.style.top = '125%';
+                console.log('📍 Not enough space above - show below');
+              } else {
+                content.style.bottom = '125%';
+                content.style.top = 'auto';
               }
-              
-              // スタイルを直接適用
-              content.style.left = tooltipLeft + 'px';
-              content.style.top = tooltipTop + 'px';
-              content.style.transform = 'none'; // transformをリセット
-              
-              // リアルタイムでの位置確認（デバッグ用）
-              setTimeout(() => {
-                const tooltipRect = content.getBoundingClientRect();
-                console.log('✅ Tooltip positioned:', JSON.stringify({
-                  left: tooltipRect.left,
-                  right: tooltipRect.right,
-                  top: tooltipRect.top,
-                  width: tooltipRect.width,
-                  isVisible: tooltipRect.left >= 0 && tooltipRect.right <= viewportWidth
-                }, null, 2));
-              }, 100);
             }
             
             // マウスホバーイベントを強化

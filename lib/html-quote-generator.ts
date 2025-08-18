@@ -10,6 +10,7 @@ export interface HtmlQuoteOptions {
   companyInfo: CompanyInfo;
   recipientName?: string;
   customMessage?: string;
+  greetingMessage?: string; // カスタム挨拶文（オプション）
   includeTracking?: boolean;
   includeInteractiveElements?: boolean;
   suggestedOptions?: SuggestedOption[];
@@ -52,6 +53,7 @@ export async function generateHtmlQuote(
       companyInfo,
       recipientName,
       customMessage,
+      greetingMessage,
       includeTracking = true,
       includeInteractiveElements = true,
       suggestedOptions = [],
@@ -152,6 +154,7 @@ export async function generateHtmlQuote(
         discussUrl,
         trackingPixelUrl,
         customMessage,
+        greetingMessage,
         suggestedOptions: includeInteractiveElements ? suggestedOptions : [],
       }),
       {
