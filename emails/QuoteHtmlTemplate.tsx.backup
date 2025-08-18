@@ -24,81 +24,72 @@ interface SuggestedOption {
   ctaUrl: string;
 }
 
-// メール版ツールチップレンダリング関数を改善
+// ツールチップ辞書を定義（QuoteHtmlTemplate用）
+const TOOLTIP_DICTIONARY = new Map<string, string>([
+  ['LLMO', '大規模言語モデル最適化技術'],
+  ['SaaS', 'Software as a Service - クラウド経由で提供されるソフトウェア'],
+  ['API', 'Application Programming Interface - システム間の連携インターフェース'],
+  ['UI/UX', 'ユーザーインターフェース/ユーザー体験 - 使いやすさとデザイン'],
+  ['レスポンシブ', 'PC・スマホ・タブレットなど、あらゆる画面サイズに対応'],
+  ['SEO', 'Search Engine Optimization - 検索エンジン最適化'],
+  ['ROI', 'Return on Investment - 投資収益率'],
+  ['KPI', 'Key Performance Indicator - 重要業績評価指標'],
+  ['リードタイム', '発注から納品までの期間'],
+  ['LLMOモニタリング', 'AIを活用したWebサイトの最適化とモニタリングサービス。サイトのパフォーマンス、検索順位、ユーザー行動を継続的に分析し、改善提案を行います'],
+  ['モニタリング', 'サイトのパフォーマンスや検索順位を継続的に監視・分析するサービス'],
+  ['最適化', 'システムやプロセスをより効率的に改善すること'],
+  ['パフォーマンス', 'システムの処理能力や応答速度の性能'],
+  ['システム', 'コンピュータとソフトウェアを組み合わせた仕組み'],
+  ['開発', 'ソフトウェアやシステムを設計・構築すること'],
+  ['構築', 'システムやWebサイトを作り上げること'],
+  ['設計', 'システムの設計図を作成すること'],
+  ['保守', 'システムの維持・管理・改善作業'],
+  ['運用', 'システムを日常的に運用・管理すること'],
+  ['メンテナンス', 'システムの保守点検・改良作業'],
+  ['アップデート', 'ソフトウェアやシステムの更新・改善'],
+  ['カスタマイズ', 'お客様のご要望に合わせた独自の調整・改修'],
+  ['サポート', '技術支援・問題解決・使い方指導']
+]);
+
+// メール版ツールチップ用語を検出してインライン注釈を付ける関数（キーワード特定版）
+// Updated: 2025-08-18 - 特定のキーワードのみに注釈を適用する版
 const renderDetailsWithTooltip = (details: string, tooltip: string) => {
-  // デバッグログは開発環境でのみ
-  if (process.env.NODE_ENV === 'development') {
-    console.log('📧 QuoteHtmlTemplate: renderDetailsWithTooltip called:', { details, hasTooltip: !!tooltip });
-  }
-  
-  if (!tooltip || tooltip.trim() === '') {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('❌ No tooltip provided for:', details);
-    }
+  // ツールチップがない場合はそのまま返す
+  if (!tooltip || tooltip.trim().length === 0) {
     return <span>{details}</span>;
   }
   
-  if (process.env.NODE_ENV === 'development') {
-    console.log('✅ Creating tooltip for:', details, 'with tooltip:', tooltip.substring(0, 50) + '...');
+  // ツールチップ辞書から該当するキーワードを検索
+  let matchedKeyword = '';
+  let matchedTooltip = '';
+  
+  // 長いキーワードから順に検索（例：「LLMOモニタリング」が「LLMO」より優先）
+  const sortedKeywords = Array.from(TOOLTIP_DICTIONARY.keys()).sort((a, b) => b.length - a.length);
+  
+  for (const keyword of sortedKeywords) {
+    if (details.includes(keyword)) {
+      matchedKeyword = keyword;
+      matchedTooltip = TOOLTIP_DICTIONARY.get(keyword) || '';
+      break;
+    }
   }
   
-  // HTMLエスケープ処理
-  const escapedDetails = details
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-  const escapedTooltip = tooltip
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+  // マッチしたキーワードがない場合は通常のテキストとして表示
+  if (!matchedKeyword || !matchedTooltip) {
+    return <span>{details}</span>;
+  }
   
-  // メール版でもCSSツールチップを実装（title属性と併用）
-  const markerHtml = `
-    <span class="tooltip-wrapper-email" title="${escapedTooltip}" style="
-      border-bottom: 2px dotted #f59e0b;
-      cursor: help;
-      text-decoration: none;
-      position: relative;
-      display: inline-block;
-      background: linear-gradient(180deg, transparent 40%, rgba(254, 240, 138, 0.9) 40%);
-      padding: 2px 4px;
-      border-radius: 3px;
-      font-weight: 600;
-    ">${escapedDetails}
-      <span class="tooltip-content-email" style="
-        visibility: hidden;
-        opacity: 0;
-        pointer-events: none;
-        background-color: #fef3c7;
-        color: #1f2937;
-        text-align: left;
-        border-radius: 8px;
-        padding: 14px 18px;
-        position: absolute;
-        z-index: 999999;
-        bottom: 130%;
-        left: 50%;
-        transform: translateX(-50%) scale(0.95);
-        width: 300px;
-        min-width: 220px;
-        max-width: 95vw;
-        font-size: 14px;
-        font-weight: 500;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.3), 0 4px 8px rgba(0,0,0,0.1);
-        border: 3px solid #f59e0b;
-        transition: visibility 0s, opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
-        white-space: normal;
-        line-height: 1.5;
-        word-wrap: break-word;
-      ">${escapedTooltip}</span>
-    </span>
-  `;
+  // 長い説明文は30文字で切って省略記号を付ける
+  const trimmedTooltip = matchedTooltip.length > 30 ? matchedTooltip.substring(0, 30) + '...' : matchedTooltip;
   
-  return <span dangerouslySetInnerHTML={{ __html: markerHtml }} />;
+  // キーワード部分のみに注釈を適用（シンプルな強調表示）
+  const annotationStyle = 'color: #6b7280; font-size: 0.85em; margin-left: 6px; font-weight: normal;';
+  const highlightedDetails = details.replace(
+    new RegExp(matchedKeyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'),
+    `<span style="background: rgba(254, 240, 138, 0.3); padding: 1px 2px; border-radius: 2px; font-weight: 500;">${matchedKeyword}</span><span style="${annotationStyle}">（${trimmedTooltip}）</span>`
+  );
+  
+  return <span dangerouslySetInnerHTML={{ __html: highlightedDetails }} />;
 };
 
 export default function QuoteHtmlTemplate({
@@ -113,6 +104,26 @@ export default function QuoteHtmlTemplate({
   customMessage,
   suggestedOptions = [],
 }: QuoteHtmlTemplateProps) {
+  // デバッグログ
+  console.log('📧 [QUOTE-HTML-TEMPLATE:START] QuoteHtmlTemplate rendering started at:', new Date().toISOString());
+  console.log('📧 [QUOTE-HTML-TEMPLATE:PROPS] Received props:', {
+    hasQuote: !!quote,
+    quoteId: quote?._id,
+    quoteNumber: quote?.quoteNumber,
+    hasNotes: !!quote?.notes,
+    notesValue: quote?.notes,
+    notesType: typeof quote?.notes,
+    notesLength: quote?.notes?.length || 0,
+    hasCompanyInfo: !!companyInfo,
+    recipientName,
+    hasCustomMessage: !!customMessage,
+    customMessage,
+    suggestedOptionsCount: suggestedOptions?.length || 0,
+    hasViewOnlineUrl: !!viewOnlineUrl,
+    hasAcceptUrl: !!acceptUrl,
+    timestamp: new Date().toISOString()
+  });
+  
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://accounting-automation.vercel.app';
   const brandColor = '#3B82F6';
   const accentColor = '#10B981';
@@ -139,6 +150,7 @@ export default function QuoteHtmlTemplate({
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>{quote.title || `お見積書 #${quote.quoteNumber}`}</title>
+        {/* Deploy Version: 644353e87 | Build Date: 2025-08-18 17:20 JST | Email Tooltip Fix Applied */}
         <style dangerouslySetInnerHTML={{
           __html: `
             * {
@@ -248,6 +260,7 @@ export default function QuoteHtmlTemplate({
               font-size: 13px;
               color: #6b7280;
               line-height: 1.5;
+              margin-top: 2px;
             }
             .item-quantity,
             .item-price,
@@ -417,33 +430,39 @@ export default function QuoteHtmlTemplate({
               display: inline-block;
               margin-top: 16px;
             }
-            /* ツールチップのスタイル（メール版） */
-            .tooltip-wrapper-email {
-              position: relative;
-              display: inline-block;
-              border-bottom: 1px dotted #333;
-              cursor: help;
+            /* メール版インライン注釈スタイル（シンプル版） */
+            .item-annotation {
+              color: #6b7280;
+              font-size: 0.85em;
+              margin-left: 6px;
+              font-weight: normal;
+              line-height: 1.4;
             }
-            .tooltip-wrapper-email:hover .tooltip-content-email {
-              visibility: visible;
-              opacity: 1;
-              pointer-events: auto;
-              transform: translateX(-50%) scale(1);
-              transition-delay: 0.2s;
+            /* モバイルメールクライアント対応 */
+            @media screen and (max-width: 600px) {
+              .item-annotation {
+                display: block;
+                margin-left: 0;
+                margin-top: 2px;
+                font-size: 0.75em;
+              }
+              .item-row {
+                grid-template-columns: 1fr;
+                gap: 8px;
+              }
+              .item-quantity,
+              .item-price,
+              .item-total {
+                text-align: left;
+                margin-top: 4px;
+              }
             }
-            .tooltip-wrapper-email:focus .tooltip-content-email {
-              visibility: visible;
-              opacity: 1;
-              pointer-events: auto;
-              transform: translateX(-50%) scale(1);
-              transition-delay: 0.2s;
-            }
-            .tooltip-wrapper-email.active .tooltip-content-email {
-              visibility: visible;
-              opacity: 1;
-              pointer-events: auto;
-              transform: translateX(-50%) scale(1);
-              transition-delay: 0.2s;
+            /* 印刷時の調整 */
+            @media print {
+              .item-annotation {
+                color: #000000 !important;
+                font-size: 0.75em;
+              }
             }
           `
         }} />
@@ -631,32 +650,72 @@ export default function QuoteHtmlTemplate({
 
             {/* 備考 - 備考がある場合のみ表示 */}
             {(() => {
-              // 備考の内容をチェック（空白文字を除いて内容があるか）
-              const originalNotes = quote.notes || '';
-              const normalizedNotes = originalNotes.trim();
-              const hasNotes = normalizedNotes && normalizedNotes.length > 0;
+              // 備考の内容をチェック（型安全性とcleanDuplicateSignatures適用後の再チェック）
+              const originalNotes = quote.notes;
               
               // デバッグログ（開発環境のみ）
               if (process.env.NODE_ENV === 'development') {
-                console.log('📝 QuoteHtmlTemplate notes check:', {
+                console.log('📝 QuoteHtmlTemplate notes check (enhanced):', {
                   originalNotes: originalNotes,
-                  normalizedNotes: normalizedNotes,
-                  hasNotes: hasNotes,
-                  notesLength: normalizedNotes.length,
-                  notesPreview: normalizedNotes.substring(0, 100) || 'なし'
+                  originalNotesType: typeof originalNotes,
+                  originalNotesLength: typeof originalNotes === 'string' ? originalNotes.length : 'N/A'
                 });
               }
               
-              // 備考がない場合は何も表示しない
-              if (!hasNotes) {
+              // 型チェック: null, undefined, または文字列以外の場合は表示しない
+              if (!originalNotes || typeof originalNotes !== 'string') {
+                if (process.env.NODE_ENV === 'development') {
+                  console.log('❌ Notes not displayed: invalid type or empty');
+                }
                 return null;
+              }
+              
+              // 空白文字のみをチェック
+              const trimmedNotes = originalNotes.trim();
+              if (trimmedNotes.length === 0) {
+                if (process.env.NODE_ENV === 'development') {
+                  console.log('❌ Notes not displayed: empty after trim');
+                }
+                return null;
+              }
+              
+              // cleanDuplicateSignatures関数を適用
+              const cleanedNotes = cleanDuplicateSignatures(trimmedNotes);
+              const finalNotes = cleanedNotes.trim();
+              
+              // 清拭後に内容がない場合は表示しない
+              if (finalNotes.length === 0) {
+                if (process.env.NODE_ENV === 'development') {
+                  console.log('❌ Notes not displayed: empty after cleaning signatures');
+                }
+                return null;
+              }
+              
+              // デバッグログ（開発環境のみ）
+              if (process.env.NODE_ENV === 'development') {
+                console.log('✅ Notes will be displayed:', {
+                  trimmedLength: trimmedNotes.length,
+                  cleanedLength: cleanedNotes.length,
+                  finalLength: finalNotes.length,
+                  finalPreview: finalNotes.substring(0, 50) + (finalNotes.length > 50 ? '...' : '')
+                });
               }
               
               return (
                 <div className="notes-section">
                   <div className="notes-title">備考</div>
-                  <div className="notes-text">
-                    {cleanDuplicateSignatures(normalizedNotes)}
+                  <div className="notes-text notes-content">
+                    {(() => {
+                      // 備考テキストからツールチップマークアップを完全除去
+                      const cleanNotes = finalNotes
+                        .replace(/data-tooltip="[^"]*"/gi, '')
+                        .replace(/tooltip-wrapper/gi, '')
+                        .replace(/tooltip-content/gi, '')
+                        .replace(/<span[^>]*class="[^"]*tooltip[^"]*"[^>]*>/gi, '')
+                        .replace(/<\/span>/gi, '');
+                      
+                      return cleanNotes;
+                    })()}
                   </div>
                 </div>
               );
