@@ -24,62 +24,19 @@ interface SuggestedOption {
   ctaUrl: string;
 }
 
-// メール版ツールチップ用語を検出してインライン注釈を付ける関数
+// メール版ツールチップ用語を検出してインライン注釈を付ける関数（シンプル版）
 const renderDetailsWithTooltip = (details: string, tooltip: string) => {
   // ツールチップがない場合はそのまま返す
   if (!tooltip || tooltip.trim().length === 0) {
     return <span>{details}</span>;
   }
   
-  // 長い説明文は50文字で切って省略記号を付ける
-  const trimmedTooltip = tooltip.length > 50 ? tooltip.substring(0, 50) + '...' : tooltip;
+  // 長い説明文は30文字で切って省略記号を付ける
+  const trimmedTooltip = tooltip.length > 30 ? tooltip.substring(0, 30) + '...' : tooltip;
   
-  // ツールチップ内の主要な用語を抽出（ROI、KPI、CRMなどの英語略語を優先）
-  const englishKeywords = tooltip.match(/\b[A-Z]{2,}\b/g) || [];
-  // カタカナのキーワードも抽出
-  const katakanaKeywords = tooltip.match(/[ァ-ヶー]{3,}/g) || [];
-  // 専門用語的な漢字のキーワードも抽出
-  const kanjiKeywords = tooltip.match(/[一-龯]{2,4}(?:率|額|費|価|値|量|数)/g) || [];
-  
-  const allKeywords = [...englishKeywords, ...katakanaKeywords, ...kanjiKeywords];
-  let processedDetails = details;
-  
-  // メール版ライトグレーマーカースタイル（ホバー効果なし）
-  const markerStyle = 'background: linear-gradient(180deg, transparent 60%, rgba(229, 231, 235, 0.8) 60%); padding: 1px 2px; border-radius: 2px; border-bottom: 1px dotted #6b7280;';
-  
-  // インライン注釈スタイル
-  const annotationStyle = 'font-size: 0.75em; color: #6b7280; font-style: italic; margin-left: 4px; font-weight: normal;';
-  
-  // 最初に見つかったキーワードにマーカーとインライン注釈を付ける
-  let annotationAdded = false;
-  
-  allKeywords.forEach(keyword => {
-    if (keyword && keyword.length > 1 && !annotationAdded) {
-      processedDetails = processedDetails.replace(
-        new RegExp(`(${keyword})`, ''),
-        `<span style="${markerStyle}">$1</span><span style="${annotationStyle}">（※${trimmedTooltip}）</span>`
-      );
-      annotationAdded = true;
-    }
-  });
-  
-  // キーワードが見つからない場合は、文頭の重要そうな語句にマーカーと注釈を付ける
-  if (!annotationAdded) {
-    const words = details.split(/[\s・]+/);
-    const firstWord = words[0];
-    if (firstWord && firstWord.length > 1) {
-      processedDetails = details.replace(
-        firstWord,
-        `<span style="${markerStyle}">${firstWord}</span><span style="${annotationStyle}">（※${trimmedTooltip}）</span>`
-      );
-      annotationAdded = true;
-    }
-  }
-  
-  // どのキーワードも見つからない場合は、最後に注釈を追加
-  if (!annotationAdded) {
-    processedDetails = `${details}<span style="${annotationStyle}">（※${trimmedTooltip}）</span>`;
-  }
+  // シンプルなインライン注釈を作成（マーカーなし、確実に表示される）
+  const annotationStyle = 'color: #6b7280; font-size: 0.85em; margin-left: 6px; font-weight: normal;';
+  const processedDetails = `${details}<span style="${annotationStyle}">（${trimmedTooltip}）</span>`;
   
   return <span dangerouslySetInnerHTML={{ __html: processedDetails }} />;
 };
@@ -421,20 +378,13 @@ export default function QuoteHtmlTemplate({
               display: inline-block;
               margin-top: 16px;
             }
-            /* メール版インライン注釈スタイル */
+            /* メール版インライン注釈スタイル（シンプル版） */
             .item-annotation {
-              font-size: 0.75em;
               color: #6b7280;
-              font-style: italic;
-              margin-left: 4px;
+              font-size: 0.85em;
+              margin-left: 6px;
               font-weight: normal;
               line-height: 1.4;
-            }
-            .item-marker {
-              background: linear-gradient(180deg, transparent 60%, rgba(229, 231, 235, 0.8) 60%);
-              padding: 1px 2px;
-              border-radius: 2px;
-              border-bottom: 1px dotted #6b7280;
             }
             /* モバイルメールクライアント対応 */
             @media screen and (max-width: 600px) {
@@ -442,7 +392,7 @@ export default function QuoteHtmlTemplate({
                 display: block;
                 margin-left: 0;
                 margin-top: 2px;
-                font-size: 0.7em;
+                font-size: 0.75em;
               }
               .item-row {
                 grid-template-columns: 1fr;
@@ -459,11 +409,7 @@ export default function QuoteHtmlTemplate({
             @media print {
               .item-annotation {
                 color: #000000 !important;
-                font-size: 0.7em;
-              }
-              .item-marker {
-                background: transparent !important;
-                border-bottom: 1px solid #000000 !important;
+                font-size: 0.75em;
               }
             }
           `
