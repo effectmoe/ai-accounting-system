@@ -831,22 +831,48 @@ export async function generateSimpleHtmlQuote({
                       (item.itemName && (item.itemName.includes('値引き') || item.itemName.includes('割引') || item.itemName.includes('ディスカウント')));
                     const itemColor = isDiscount ? '#dc2626 !important' : '#333333';
                     
-                    // ツールチップを検索
+                    // ツールチップを検索（強化版マッチング）
                     let tooltipText = '';
                     const itemText = (item.itemName || '') + ' ' + (item.description || '');
-                    for (const [term, explanation] of tooltips.entries()) {
-                      if (itemText.includes(term)) {
-                        tooltipText = explanation;
-                        break;
+                    
+                    // item.tooltipが既に設定されている場合はそれを使用
+                    if (item.tooltip) {
+                      tooltipText = item.tooltip;
+                    } else {
+                      // より柔軟なマッチング
+                      for (const [term, explanation] of tooltips.entries()) {
+                        if (itemText.toLowerCase().includes(term.toLowerCase()) || term.toLowerCase().includes(itemText.toLowerCase())) {
+                          tooltipText = explanation;
+                          break;
+                        }
                       }
                     }
+                    
+                    // メール版ツールチップ用のレンダリング関数
+                    const renderItemNameWithTooltip = (itemName: string, tooltip: string) => {
+                      if (!tooltip || tooltip.trim() === '') {
+                        return `<span style="color: ${itemColor};">${itemName}</span>`;
+                      }
+                      
+                      // 長い説明文は50文字で切って省略記号を付ける
+                      const trimmedTooltip = tooltip.length > 50 ? tooltip.substring(0, 50) + '...' : tooltip;
+                      
+                      // メール版ライトグレーマーカースタイル
+                      const markerStyle = 'background: linear-gradient(180deg, transparent 60%, rgba(229, 231, 235, 0.8) 60%); padding: 1px 2px; border-radius: 2px; border-bottom: 1px dotted #6b7280;';
+                      
+                      // インライン注釈スタイル
+                      const annotationStyle = 'font-size: 0.75em; color: #6b7280; font-style: italic; margin-left: 4px; font-weight: normal;';
+                      
+                      return `<span style="${markerStyle}; color: ${itemColor};">${itemName}</span><span style="${annotationStyle}">（※${trimmedTooltip}）</span>`;
+                    };
+                    
+                    const renderedItemName = renderItemNameWithTooltip(item.itemName || '', tooltipText);
                     
                     return `
                   <tr>
                     <td style="border: 1px solid #dddddd; padding: 10px; vertical-align: top;">
                       <div style="font-size: 14px; color: ${itemColor}; font-weight: bold; margin: 0 0 4px 0;">
-                        <span style="color: ${itemColor};">${item.itemName || ''}</span>
-                        ${tooltipText ? `<span style="font-size: 11px; color: #1976d2; font-weight: normal; margin-left: 5px;">[※]</span>` : ''}
+                        ${renderedItemName}
                       </div>
                       ${item.description ? `<div style="font-size: 12px; color: ${isDiscount ? '#dc2626 !important' : '#666666'}; line-height: 1.4;"><span style="color: ${isDiscount ? '#dc2626 !important' : '#666666'};">${item.description}</span></div>` : ''}
                     </td>
