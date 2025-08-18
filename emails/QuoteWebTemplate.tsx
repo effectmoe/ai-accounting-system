@@ -229,7 +229,7 @@ export default function QuoteWebTemplate({
       <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
       
       {/* デプロイバージョン情報 - デバッグ用 */}
-      {/* Deploy Version: 644353e87 | Build Date: 2025-08-18 17:20 JST | Tooltip Fix Applied */}
+      {/* Deploy Version: CSS-Fix-v2 | Build Date: 2025-08-18 17:45 JST | CSS Position Conflict Fixed */}
       
       {/* レスポンシブ対応のCSS */}
       <style dangerouslySetInnerHTML={{
@@ -377,8 +377,8 @@ export default function QuoteWebTemplate({
             visibility: visible !important;
             opacity: 1 !important;
             display: block !important;
-            position: absolute !important;
-            z-index: 9999999 !important;
+            position: fixed !important;
+            z-index: 2147483647 !important;
           }
           
           /* 備考欄ではツールチップを強制的に無効化 */
@@ -405,6 +405,8 @@ export default function QuoteWebTemplate({
               visibility: visible !important;
               opacity: 1 !important;
               display: block !important;
+              position: fixed !important;
+              z-index: 2147483647 !important;
             }
           }
           
@@ -413,8 +415,9 @@ export default function QuoteWebTemplate({
             visibility: visible !important;
             opacity: 1 !important;
             display: block !important;
-            transform: translateX(-50%) scale(1) !important;
-            z-index: 9999999 !important;
+            position: fixed !important;
+            transform: none !important;
+            z-index: 2147483647 !important;
           }
           
           /* より確実なホバー表示のためのフォールバックルール */
@@ -422,6 +425,8 @@ export default function QuoteWebTemplate({
             visibility: visible !important;
             opacity: 1 !important;
             display: block !important;
+            position: fixed !important;
+            z-index: 2147483647 !important;
           }
           
           /* モバイル: タップで表示（項目行内のみ） */
