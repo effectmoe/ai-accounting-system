@@ -61,49 +61,18 @@ const renderDetailsWithTooltip = (details: string, tooltip: string) => {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
   
-  // より目立つスタイルで確実にツールチップを表示（強化版）
-  // 問題: ツールチップの説明文が表示されない → インライン指定を追加
+  // より確実な方法: 項目名全体をツールチップ付きにする
   const markerHtml = `
-    <span class="tooltip-wrapper show-tooltip" data-tooltip="${escapedTooltip}" title="${escapedTooltip}" tabindex="0" style="position: relative; display: inline-block;">
+    <span class="tooltip-wrapper" data-tooltip="${escapedTooltip}">
       <span style="
-        background: linear-gradient(180deg, transparent 40%, rgba(254, 240, 138, 0.9) 40%);
+        background: linear-gradient(180deg, transparent 60%, rgba(254, 240, 138, 0.7) 60%);
         cursor: help;
         border-radius: 3px;
-        padding: 2px 6px;
+        padding: 1px 4px;
         border-bottom: 2px dotted #f59e0b;
-        font-weight: 600;
-        position: relative;
-        display: inline-block;
-        text-decoration: none;
-        box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.3);
-        color: #1f2937;
-      ">${escapedDetails}</span>
-      <span class="tooltip-content" style="
-        visibility: hidden;
-        opacity: 0;
-        pointer-events: none;
-        background-color: #fef3c7;
-        color: #1f2937;
-        text-align: left;
-        border-radius: 8px;
-        padding: 14px 18px;
-        position: absolute;
-        z-index: 999999;
-        bottom: 130%;
-        left: 50%;
-        transform: translateX(-50%) scale(0.95);
-        width: 300px;
-        min-width: 220px;
-        max-width: 95vw;
-        font-size: 14px;
         font-weight: 500;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.3), 0 4px 8px rgba(0,0,0,0.1);
-        border: 3px solid #f59e0b;
-        transition: visibility 0s, opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
-        white-space: normal;
-        line-height: 1.5;
-        word-wrap: break-word;
-      ">${escapedTooltip}</span>
+      ">${escapedDetails}</span>
+      <span class="tooltip-content">💡 ${escapedTooltip}</span>
     </span>
   `;
   
@@ -208,14 +177,17 @@ export default function QuoteWebTemplate({
             display: inline-block;
             border-bottom: 1px dotted #333;
             cursor: help;
+            /* デバッグ用の背景色を追加 */
+            background: rgba(255, 255, 0, 0.1);
           }
           
           .tooltip-content {
-            /* 初期状態で非表示 - opacityのみ使用 */
+            /* 初期状態で非表示 */
+            visibility: hidden;
             opacity: 0;
             pointer-events: none;
             /* スタイル */
-            background-color: #fef3c7;
+            background-color: #fef3c7; /* より確実な背景色 */
             color: #1f2937;
             text-align: left;
             border-radius: 6px;
@@ -223,51 +195,55 @@ export default function QuoteWebTemplate({
             /* 位置設定 */
             position: absolute;
             z-index: 999999;
-            bottom: 125%;
+            bottom: 120%;
             left: 50%;
             transform: translateX(-50%) scale(0.95);
-            width: 280px;
             min-width: 200px;
-            max-width: 90vw;
+            max-width: 320px;
             /* フォント設定 */
             font-size: 14px;
             font-weight: 500;
             /* シャドウとボーダー */
-            box-shadow: 0 8px 25px rgba(0,0,0,0.25);
-            border: 2px solid #f59e0b;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+            border: 3px solid #f59e0b;
             /* アニメーション */
-            transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
+            transition: visibility 0s, opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
             /* テキスト設定 */
             white-space: normal;
             line-height: 1.5;
             word-wrap: break-word;
           }
           
-          /* ホバー時の表示 - 修正版: visibilityとopacityを両方使用 */
-          .tooltip-wrapper:hover .tooltip-content {
-            visibility: visible;
-            opacity: 1;
-            pointer-events: auto;
-            transform: translateX(-50%) scale(1);
-            transition-delay: 0.2s;
+          /* ホバー時の表示を確実にする - 強化版 */
+          .tooltip-wrapper:hover .tooltip-content,
+          .tooltip-wrapper:focus .tooltip-content,
+          .tooltip-wrapper:active .tooltip-content {
+            visibility: visible !important;
+            opacity: 1 !important;
+            display: block !important;
           }
           
-          /* フォーカス時の表示 */
-          .tooltip-wrapper:focus .tooltip-content {
-            visibility: visible;
-            opacity: 1;
-            pointer-events: auto;
-            transform: translateX(-50%) scale(1);
-            transition-delay: 0.2s;
+          /* デスクトップ: ホバーで表示 */
+          @media (hover: hover) and (pointer: fine) {
+            .tooltip-wrapper:hover .tooltip-content,
+            .tooltip-wrapper:focus .tooltip-content {
+              visibility: visible !important;
+              opacity: 1 !important;
+              display: block !important;
+            }
           }
           
-          /* アクティブ状態での表示（タッチデバイス用） */
+          /* 強制表示テスト用クラス */
+          .tooltip-content.force-show {
+            visibility: visible !important;
+            opacity: 1 !important;
+            display: block !important;
+          }
+          
+          /* モバイル: タップで表示 */
           .tooltip-wrapper.active .tooltip-content {
-            visibility: visible;
-            opacity: 1;
-            pointer-events: auto;
-            transform: translateX(-50%) scale(1);
-            transition-delay: 0.2s;
+            visibility: visible !important;
+            opacity: 1 !important;
           }
           
           .tooltip-content::after {
@@ -489,85 +465,66 @@ export default function QuoteWebTemplate({
         </div>
       </header>
 
-      {/* JavaScriptでタッチイベントとデバッグ情報を処理 */}
       <script dangerouslySetInnerHTML={{
         __html: `
-          // 開発環境チェック
-          const isDev = ${process.env.NODE_ENV === 'development'};
+          console.log('🔧 QuoteWebTemplate JavaScript loaded');
           
-          // ページ読み込み時にデバッグ情報を表示
-          if (isDev) {
-            console.log('🔍 QuoteWebTemplate JavaScript loaded');
-            
-            // DOMContentLoadedイベントで最終チェック
-            document.addEventListener('DOMContentLoaded', function() {
-              // 少し遅延して確実にチェック
-              setTimeout(() => {
-                const tooltipWrappers = document.querySelectorAll('.tooltip-wrapper');
-                const tooltipContents = document.querySelectorAll('.tooltip-content');
-                const debugWrappers = document.querySelectorAll('.tooltip-debug');
-                const h3Elements = document.querySelectorAll('h3');
-                const notesH3 = Array.from(h3Elements).find(h3 => h3.textContent?.includes('備考'));
-                
-                console.log('🔍 DOM loaded - Final debug check:', {
-                  tooltipWrappers: tooltipWrappers.length,
-                  tooltipContents: tooltipContents.length,
-                  debugWrappers: debugWrappers.length,
-                  notesH3Found: !!notesH3,
-                  notesH3Text: notesH3?.textContent,
-                  allH3Texts: Array.from(h3Elements).map(h3 => h3.textContent),
-                  tooltipWrappersDetails: Array.from(tooltipWrappers).map(w => ({
-                    text: w.textContent?.substring(0, 30),
-                    tooltip: w.getAttribute('data-tooltip')?.substring(0, 30)
-                  }))
-                });
-                
-                // ツールチップのデバッグ情報のみ出力（強制表示はしない）
-                if (tooltipWrappers.length > 0 && isDev) {
-                  console.log('🧪 Debug: Found tooltip wrappers, ready for hover interaction');
-                }
-              }, 1000);
-            });
-          }
-          
-          // ツールチップのデバッグ情報を表示（開発環境のみ）
+          // ツールチップのデバッグ情報を表示
           function debugTooltips() {
             const tooltipWrappers = document.querySelectorAll('.tooltip-wrapper');
             const tooltipContents = document.querySelectorAll('.tooltip-content');
+            console.log('📊 Tooltip Debug Info:', {
+              wrappers: tooltipWrappers.length,
+              contents: tooltipContents.length,
+              wrapperList: Array.from(tooltipWrappers).map(w => ({
+                text: w.textContent?.substring(0, 50) + '...',
+                hasContent: w.querySelector('.tooltip-content') !== null
+              }))
+            });
             
-            if (isDev) {
-              console.log('Tooltip Debug Info:', {
-                wrappers: tooltipWrappers.length,
-                contents: tooltipContents.length
-              });
+            // 強制的にツールチップを表示してテスト
+            if (tooltipContents.length > 0) {
+              console.log('🧪 Testing tooltip visibility...');
+              const firstTooltip = tooltipContents[0];
+              firstTooltip.classList.add('force-show');
+              setTimeout(() => {
+                firstTooltip.classList.remove('force-show');
+                console.log('✅ Tooltip test completed');
+              }, 3000);
             }
           }
           
           // ページ読み込み完了後にデバッグ実行
           document.addEventListener('DOMContentLoaded', function() {
-            if (isDev) {
-              console.log('DOM Content Loaded');
-            }
-            
+            console.log('📄 DOM Content Loaded');
             setTimeout(debugTooltips, 500);
             
             const tooltipWrappers = document.querySelectorAll('.tooltip-wrapper');
+            console.log('🎯 Found tooltip wrappers:', tooltipWrappers.length);
             
-            // マウスホバーイベント（CSSで処理されるため、特別な処理は不要）
+            // マウスホバーイベントを強化
             tooltipWrappers.forEach((wrapper, index) => {
-              // デバッグ用のイベントリスナーのみ
-              if (isDev) {
-                wrapper.addEventListener('mouseenter', function(e) {
-                  console.log('🐭 Tooltip hover started:', this.textContent?.substring(0, 30));
-                });
-                
-                wrapper.addEventListener('mouseleave', function(e) {
-                  console.log('🐭 Tooltip hover ended');
-                });
-              }
+              console.log(\`🔧 Setting up tooltip \${index + 1}\`);
+              
+              wrapper.addEventListener('mouseenter', function(e) {
+                console.log(\`🖱️ Mouse enter on tooltip \${index + 1}\`);
+                const content = this.querySelector('.tooltip-content');
+                if (content) {
+                  content.classList.add('force-show');
+                }
+              });
+              
+              wrapper.addEventListener('mouseleave', function(e) {
+                console.log(\`🖱️ Mouse leave on tooltip \${index + 1}\`);
+                const content = this.querySelector('.tooltip-content');
+                if (content) {
+                  content.classList.remove('force-show');
+                }
+              });
               
               // タッチイベント
               wrapper.addEventListener('touchstart', function(e) {
+                console.log(\`👆 Touch start on tooltip \${index + 1}\`);
                 e.stopPropagation();
                 
                 // 他のアクティブなツールチップを閉じる

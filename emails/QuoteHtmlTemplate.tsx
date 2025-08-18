@@ -24,81 +24,44 @@ interface SuggestedOption {
   ctaUrl: string;
 }
 
-// メール版ツールチップレンダリング関数を改善
+// ツールチップ用語を検出してライトグレーマーカーを付ける関数
 const renderDetailsWithTooltip = (details: string, tooltip: string) => {
-  // デバッグログは開発環境でのみ
-  if (process.env.NODE_ENV === 'development') {
-    console.log('📧 QuoteHtmlTemplate: renderDetailsWithTooltip called:', { details, hasTooltip: !!tooltip });
-  }
+  // ツールチップ内の主要な用語を抽出（ROI、KPI、CRMなどの英語略語を優先）
+  const englishKeywords = tooltip.match(/\b[A-Z]{2,}\b/g) || [];
+  // カタカナのキーワードも抽出
+  const katakanaKeywords = tooltip.match(/[ァ-ヶー]{3,}/g) || [];
+  // 専門用語的な漢字のキーワードも抽出
+  const kanjiKeywords = tooltip.match(/[一-龯]{2,4}(?:率|額|費|価|値|量|数)/g) || [];
   
-  if (!tooltip || tooltip.trim() === '') {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('❌ No tooltip provided for:', details);
+  const allKeywords = [...englishKeywords, ...katakanaKeywords, ...kanjiKeywords];
+  let processedDetails = details;
+  
+  // ライトグレーのマーカースタイル
+  const markerStyle = 'background: linear-gradient(180deg, transparent 60%, rgba(229, 231, 235, 0.8) 60%); padding: 1px 2px; border-radius: 2px; border-bottom: 1px dotted #6b7280; cursor: help;';
+  
+  // 各キーワードをライトグレーマーカー付きスパンに変換
+  allKeywords.forEach(keyword => {
+    if (keyword && keyword.length > 1) {
+      processedDetails = processedDetails.replace(
+        new RegExp(`(${keyword})`, 'g'),
+        `<span style="${markerStyle}" title="${tooltip}">$1</span>`
+      );
     }
-    return <span>{details}</span>;
+  });
+  
+  // キーワードが見つからない場合は、文頭の重要そうな語句にマーカーを付ける
+  if (allKeywords.length === 0) {
+    const words = details.split(/[\s・]+/);
+    const firstWord = words[0];
+    if (firstWord && firstWord.length > 1) {
+      processedDetails = details.replace(
+        firstWord,
+        `<span style="${markerStyle}" title="${tooltip}">${firstWord}</span>`
+      );
+    }
   }
   
-  if (process.env.NODE_ENV === 'development') {
-    console.log('✅ Creating tooltip for:', details, 'with tooltip:', tooltip.substring(0, 50) + '...');
-  }
-  
-  // HTMLエスケープ処理
-  const escapedDetails = details
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-  const escapedTooltip = tooltip
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-  
-  // メール版でもCSSツールチップを実装（title属性と併用）
-  const markerHtml = `
-    <span class="tooltip-wrapper-email" title="${escapedTooltip}" style="
-      border-bottom: 2px dotted #f59e0b;
-      cursor: help;
-      text-decoration: none;
-      position: relative;
-      display: inline-block;
-      background: linear-gradient(180deg, transparent 40%, rgba(254, 240, 138, 0.9) 40%);
-      padding: 2px 4px;
-      border-radius: 3px;
-      font-weight: 600;
-    ">${escapedDetails}
-      <span class="tooltip-content-email" style="
-        visibility: hidden;
-        opacity: 0;
-        pointer-events: none;
-        background-color: #fef3c7;
-        color: #1f2937;
-        text-align: left;
-        border-radius: 8px;
-        padding: 14px 18px;
-        position: absolute;
-        z-index: 999999;
-        bottom: 130%;
-        left: 50%;
-        transform: translateX(-50%) scale(0.95);
-        width: 300px;
-        min-width: 220px;
-        max-width: 95vw;
-        font-size: 14px;
-        font-weight: 500;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.3), 0 4px 8px rgba(0,0,0,0.1);
-        border: 3px solid #f59e0b;
-        transition: visibility 0s, opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
-        white-space: normal;
-        line-height: 1.5;
-        word-wrap: break-word;
-      ">${escapedTooltip}</span>
-    </span>
-  `;
-  
-  return <span dangerouslySetInnerHTML={{ __html: markerHtml }} />;
+  return <span dangerouslySetInnerHTML={{ __html: processedDetails }} />;
 };
 
 export default function QuoteHtmlTemplate({
