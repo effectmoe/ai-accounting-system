@@ -24,8 +24,35 @@ interface SuggestedOption {
   ctaUrl: string;
 }
 
+// ツールチップ辞書を定義（QuoteWebTemplate用）
+const TOOLTIP_DICTIONARY = new Map<string, string>([
+  ['LLMO', '大規模言語モデル最適化技術'],
+  ['SaaS', 'Software as a Service - クラウド経由で提供されるソフトウェア'],
+  ['API', 'Application Programming Interface - システム間の連携インターフェース'],
+  ['UI/UX', 'ユーザーインターフェース/ユーザー体験 - 使いやすさとデザイン'],
+  ['レスポンシブ', 'PC・スマホ・タブレットなど、あらゆる画面サイズに対応'],
+  ['SEO', 'Search Engine Optimization - 検索エンジン最適化'],
+  ['ROI', 'Return on Investment - 投資収益率'],
+  ['KPI', 'Key Performance Indicator - 重要業績評価指標'],
+  ['リードタイム', '発注から納品までの期間'],
+  ['LLMOモニタリング', 'AIを活用したWebサイトの最適化とモニタリングサービス。サイトのパフォーマンス、検索順位、ユーザー行動を継続的に分析し、改善提案を行います'],
+  ['モニタリング', 'サイトのパフォーマンスや検索順位を継続的に監視・分析するサービス'],
+  ['最適化', 'システムやプロセスをより効率的に改善すること'],
+  ['パフォーマンス', 'システムの処理能力や応答速度の性能'],
+  ['システム', 'コンピュータとソフトウェアを組み合わせた仕組み'],
+  ['開発', 'ソフトウェアやシステムを設計・構築すること'],
+  ['構築', 'システムやWebサイトを作り上げること'],
+  ['設計', 'システムの設計図を作成すること'],
+  ['保守', 'システムの維持・管理・改善作業'],
+  ['運用', 'システムを日常的に運用・管理すること'],
+  ['メンテナンス', 'システムの保守点検・改良作業'],
+  ['アップデート', 'ソフトウェアやシステムの更新・改善'],
+  ['カスタマイズ', 'お客様のご要望に合わせた独自の調整・改修'],
+  ['サポート', '技術支援・問題解決・使い方指導']
+]);
+
 // ツールチップレンダリング関数の改善
-// Updated: 2025-08-17 - 修正版: デバッグを追加して確実にツールチップを表示
+// Updated: 2025-08-18 - 特定のキーワードのみにマーカーを適用する版
 const renderDetailsWithTooltip = (details: string, tooltip: string) => {
   // デバッグ用ログ（開発環境でのみ）
   if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
@@ -47,23 +74,56 @@ const renderDetailsWithTooltip = (details: string, tooltip: string) => {
     console.log('✅ Creating tooltip for:', details?.substring(0, 30), 'with tooltip:', tooltip?.substring(0, 30));
   }
   
-  // HTMLエスケープ処理を強化
-  const escapedDetails = details
-    .replace(/&/g, '&amp;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-  const escapedTooltip = tooltip
+  // ツールチップ辞書から該当するキーワードを検索
+  let matchedKeyword = '';
+  let matchedTooltip = '';
+  
+  // 長いキーワードから順に検索（例：「LLMOモニタリング」が「LLMO」より優先）
+  const sortedKeywords = Array.from(TOOLTIP_DICTIONARY.keys()).sort((a, b) => b.length - a.length);
+  
+  for (const keyword of sortedKeywords) {
+    if (details.includes(keyword)) {
+      matchedKeyword = keyword;
+      matchedTooltip = TOOLTIP_DICTIONARY.get(keyword) || '';
+      break;
+    }
+  }
+  
+  // マッチしたキーワードがない場合は通常のテキストとして表示
+  if (!matchedKeyword || !matchedTooltip) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('❌ No keyword match found in dictionary for:', details);
+    }
+    return <span>{details}</span>;
+  }
+  
+  // HTMLエスケープ処理
+  const escapedTooltip = matchedTooltip
     .replace(/&/g, '&amp;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
   
-  // より確実な方法: 項目名全体をツールチップ付きにする
-  const markerHtml = `
-    <span class="tooltip-wrapper" data-tooltip="${escapedTooltip}" tabindex="0">
+  // キーワード部分のみをマーカーで囲み、その他の部分は通常のテキストとして表示
+  const escapedKeyword = matchedKeyword
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+  
+  const escapedDetails = details
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+  
+  // キーワード部分だけをツールチップ付きのマーカーに置き換え
+  const highlightedDetails = escapedDetails.replace(
+    new RegExp(escapedKeyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'),
+    `<span class="tooltip-wrapper" data-tooltip="${escapedTooltip}" tabindex="0">
       <span style="
         background: linear-gradient(180deg, transparent 60%, rgba(254, 240, 138, 0.7) 60%);
         cursor: help;
@@ -71,12 +131,20 @@ const renderDetailsWithTooltip = (details: string, tooltip: string) => {
         padding: 1px 4px;
         border-bottom: 2px dotted #f59e0b;
         font-weight: 500;
-      ">${escapedDetails}</span>
+      ">${escapedKeyword}</span>
       <span class="tooltip-content">💡 ${escapedTooltip}</span>
-    </span>
-  `;
+    </span>`
+  );
   
-  return <span dangerouslySetInnerHTML={{ __html: markerHtml }} />;
+  if (process.env.NODE_ENV === 'development') {
+    console.log('✅ Keyword highlighted:', {
+      original: details,
+      keyword: matchedKeyword,
+      result: highlightedDetails.substring(0, 100) + '...'
+    });
+  }
+  
+  return <span dangerouslySetInnerHTML={{ __html: highlightedDetails }} />;
 };
 
 export default function QuoteWebTemplate({
