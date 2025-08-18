@@ -868,9 +868,9 @@ export default function QuoteWebTemplate({
               }
               
               // iframe環境での上部スペース判定を調整
-              // iframe内では親フレームの高さ制約（600px）を考慮
+              // iframe内では親フレームの高さ制約（1200px）を考慮
               const isInIframe = window.self !== window.top;
-              const spaceThreshold = isInIframe ? 120 : 180;
+              const spaceThreshold = isInIframe ? 200 : 180;
               
               if (rect.top < spaceThreshold) {
                 content.style.bottom = 'auto';
