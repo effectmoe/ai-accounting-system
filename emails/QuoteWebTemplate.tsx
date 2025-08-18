@@ -872,14 +872,37 @@ export default function QuoteWebTemplate({
               const isInIframe = window.self !== window.top;
               const spaceThreshold = isInIframe ? 200 : 180;
               
-              if (rect.top < spaceThreshold) {
+              // 強化されたデバッグログ
+              console.log('🔍 [IFRAME-DEBUG] Environment check:', {
+                isInIframe: isInIframe,
+                windowSelf: window.self === window,
+                windowTop: window.self === window.top,
+                spaceThreshold: spaceThreshold,
+                actualTopSpace: rect.top,
+                viewportHeight: window.innerHeight,
+                parentHeight: isInIframe ? (window.parent ? window.parent.innerHeight : 'unknown') : 'N/A',
+                willShowBelow: rect.top < spaceThreshold
+              });
+              
+              // iframe内でのスクロール位置を考慮した調整
+              const scrollTop = window.pageYOffset || document.documentElement.scrollTop || 0;
+              const effectiveTopSpace = rect.top + scrollTop;
+              
+              console.log('🔍 [SCROLL-DEBUG] Scroll adjustment:', {
+                scrollTop: scrollTop,
+                originalTop: rect.top,
+                effectiveTopSpace: effectiveTopSpace,
+                threshold: spaceThreshold
+              });
+              
+              if (effectiveTopSpace < spaceThreshold) {
                 content.style.bottom = 'auto';
                 content.style.top = '125%';
-                console.log('📍 Not enough space above (threshold: ' + spaceThreshold + 'px) - show below');
+                console.log('📍 Not enough space above (effective: ' + effectiveTopSpace + 'px, threshold: ' + spaceThreshold + 'px) - show below');
               } else {
                 content.style.bottom = '125%';
                 content.style.top = 'auto';
-                console.log('📍 Enough space above - show above');
+                console.log('📍 Enough space above (effective: ' + effectiveTopSpace + 'px) - show above');
               }
             }
             
