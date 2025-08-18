@@ -428,39 +428,17 @@ export default function QuoteWebTemplate({
             border-color: #f59e0b transparent transparent transparent;
           }
           
-          /* 左端配置時の調整 */
-          .tooltip-wrapper.edge-left .tooltip-content {
-            left: 0 !important;
-            right: auto !important;
-            transform: translateX(0) !important;
-            margin-left: 0 !important;
-          }
-          
+          /* JavaScript制御による精密位置調整を優先 */
           .tooltip-wrapper.edge-left .tooltip-content::after {
             left: 30px !important;
             right: auto !important;
             transform: translateX(0) !important;
           }
           
-          /* 右端配置時の調整 */
-          .tooltip-wrapper.edge-right .tooltip-content {
-            left: auto !important;
-            right: 0 !important;
-            transform: translateX(0) !important;
-            margin-right: 0 !important;
-          }
-          
           .tooltip-wrapper.edge-right .tooltip-content::after {
             left: auto !important;
             right: 30px !important;
             transform: translateX(0) !important;
-          }
-          
-          /* 中央配置時の調整 */
-          .tooltip-wrapper.edge-center .tooltip-content {
-            left: 50% !important;
-            right: auto !important;
-            transform: translateX(-50%) !important;
           }
           
           .tooltip-wrapper.edge-center .tooltip-content::after {
@@ -813,7 +791,7 @@ export default function QuoteWebTemplate({
               timestamp: new Date().toISOString()
             });
             
-            // ツールチップ位置調整関数 - 修正版
+            // ツールチップ位置調整関数 - 高精度版
             function adjustTooltipPosition(wrapper, content) {
               if (!wrapper || !content) return;
               
@@ -821,47 +799,52 @@ export default function QuoteWebTemplate({
               const viewportWidth = window.innerWidth;
               const tooltipWidth = 320; // ツールチップの想定幅
               
-              // ビューポートの中心からの距離を計算
+              // 要素の中心位置を計算
               const elementCenter = rect.left + (rect.width / 2);
+              const tooltipHalfWidth = tooltipWidth / 2;
               
-              // デバッグログ
-              console.log('📍 Adjusting tooltip position:', {
+              // より詳細なデバッグログ
+              console.log('📍 Detailed tooltip positioning:', {
                 elementLeft: rect.left,
+                elementRight: rect.right,
+                elementWidth: rect.width,
                 elementCenter: elementCenter,
                 viewportWidth: viewportWidth,
-                wouldOverflowLeft: (elementCenter - tooltipWidth/2) < 0,
-                wouldOverflowRight: (elementCenter + tooltipWidth/2) > viewportWidth
+                tooltipWidth: tooltipWidth,
+                wouldOverflowLeft: (elementCenter - tooltipHalfWidth) < 10,
+                wouldOverflowRight: (elementCenter + tooltipHalfWidth) > (viewportWidth - 10),
+                leftMargin: elementCenter - tooltipHalfWidth,
+                rightMargin: viewportWidth - (elementCenter + tooltipHalfWidth)
               });
               
               // まず位置クラスをリセット
               wrapper.classList.remove('edge-left', 'edge-right', 'edge-center');
               
-              // 要素が画面の左側にある場合
-              if (rect.left < 100) {
-                // 左端配置
+              // ツールチップが左端からはみ出る場合
+              if (elementCenter - tooltipHalfWidth < 10) {
                 wrapper.classList.add('edge-left');
-                content.style.left = '0';
+                content.style.left = '10px';
                 content.style.right = 'auto';
                 content.style.transform = 'translateX(0)';
-                console.log('📍 Applied edge-left positioning');
+                console.log('📍 Applied edge-left positioning (left overflow protection)');
               } 
-              // 要素が画面の右側にある場合
-              else if (rect.right > viewportWidth - 100) {
-                // 右端配置
+              // ツールチップが右端からはみ出る場合
+              else if (elementCenter + tooltipHalfWidth > viewportWidth - 10) {
                 wrapper.classList.add('edge-right');
                 content.style.left = 'auto';
-                content.style.right = '0';
+                content.style.right = '10px';
                 content.style.transform = 'translateX(0)';
-                console.log('📍 Applied edge-right positioning');
+                console.log('📍 Applied edge-right positioning (right overflow protection)');
               } 
-              // 中央の要素
+              // 中央の要素 - 高精度センタリング
               else {
-                // 中央配置（デフォルト）
                 wrapper.classList.add('edge-center');
-                content.style.left = '50%';
+                // 要素の中心にピッタリ合わせる
+                const offsetFromLeft = elementCenter - tooltipHalfWidth;
+                content.style.left = `${offsetFromLeft}px`;
                 content.style.right = 'auto';
-                content.style.transform = 'translateX(-50%)';
-                console.log('📍 Applied edge-center positioning');
+                content.style.transform = 'translateX(0)';
+                console.log(`📍 Applied precise center positioning at ${offsetFromLeft}px`);
               }
               
               // 上部にスペースがない場合は下に表示
@@ -893,14 +876,14 @@ export default function QuoteWebTemplate({
                 console.log(\`🖱️ Mouse enter on tooltip \${index + 1}\`);
                 const content = this.querySelector('.tooltip-content');
                 if (content) {
-                  // まずツールチップを表示
-                  content.classList.add('force-show');
-                  console.log('✅ Tooltip shown on mouseenter');
+                  // まず位置を事前計算してから表示
+                  adjustTooltipPosition(wrapper, content);
                   
-                  // 少し遅延を入れてから位置調整
-                  setTimeout(() => {
-                    adjustTooltipPosition(wrapper, content);
-                  }, 10);
+                  // 位置調整後にツールチップを表示
+                  requestAnimationFrame(() => {
+                    content.classList.add('force-show');
+                    console.log(\`✅ Tooltip \${index + 1} shown with pre-calculated position\`);
+                  });
                 } else {
                   console.log('❌ No tooltip content found in wrapper');
                 }
