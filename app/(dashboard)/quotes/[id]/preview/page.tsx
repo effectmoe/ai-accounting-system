@@ -9,6 +9,7 @@ export default function QuotePreviewPage() {
   const [htmlContent, setHtmlContent] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [useWebLayout, setUseWebLayout] = useState(true); // レイアウト切り替え状態
 
   useEffect(() => {
     const loadQuoteHtml = async () => {
@@ -38,7 +39,7 @@ export default function QuotePreviewPage() {
           body: JSON.stringify({
             quote,
             companyInfo,
-            useWebLayout: true,
+            useWebLayout: useWebLayout, // 動的なレイアウト切り替え
             includeTracking: false,
             // HTML見積書エディタから保存されたツールチップとリンクを取得
             tooltips: quote.htmlSettings?.tooltips || [],
@@ -77,7 +78,7 @@ export default function QuotePreviewPage() {
     };
 
     loadQuoteHtml();
-  }, [params.id]);
+  }, [params.id, useWebLayout]); // useWebLayoutの変更も監視
 
   if (loading) {
     return (
@@ -125,7 +126,53 @@ export default function QuotePreviewPage() {
 
   // HTML見積書をフルサイズで表示（iframe使用 + フォールバック）
   return (
-    <div style={{ width: '100vw', height: '100vh', margin: 0, padding: 0, overflow: 'hidden' }}>
+    <div style={{ width: '100vw', height: '100vh', margin: 0, padding: 0, overflow: 'hidden', position: 'relative' }}>
+      {/* レイアウト切り替えボタン */}
+      <div style={{
+        position: 'absolute',
+        top: '10px',
+        left: '10px',
+        zIndex: 10000,
+        display: 'flex',
+        gap: '4px',
+        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+        borderRadius: '6px',
+        padding: '4px',
+        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+        border: '1px solid #e5e7eb'
+      }}>
+        <button
+          onClick={() => setUseWebLayout(true)}
+          style={{
+            padding: '6px 12px',
+            fontSize: '12px',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            backgroundColor: useWebLayout ? '#3b82f6' : 'transparent',
+            color: useWebLayout ? 'white' : '#6b7280',
+            fontWeight: useWebLayout ? '500' : '400'
+          }}
+        >
+          🌐 Web版
+        </button>
+        <button
+          onClick={() => setUseWebLayout(false)}
+          style={{
+            padding: '6px 12px',
+            fontSize: '12px',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            backgroundColor: !useWebLayout ? '#3b82f6' : 'transparent',
+            color: !useWebLayout ? 'white' : '#6b7280',
+            fontWeight: !useWebLayout ? '500' : '400'
+          }}
+        >
+          📧 メール版
+        </button>
+      </div>
+      
       {/* iframe + 直接HTML表示のフォールバック */}
       <iframe
         srcDoc={htmlContent}
