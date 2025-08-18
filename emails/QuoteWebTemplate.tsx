@@ -103,7 +103,7 @@ const renderDetailsWithTooltip = (details: string, tooltip: string) => {
         white-space: normal;
         line-height: 1.5;
         word-wrap: break-word;
-      ">💡 ${escapedTooltip}</span>
+      ">${escapedTooltip}</span>
     </span>
   `;
   

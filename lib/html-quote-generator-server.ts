@@ -423,7 +423,7 @@ ${(quote.items || []).map((item: any, index: number) => {
     (item.itemName && (item.itemName.includes('値引き') || item.itemName.includes('割引')));
   const prefix = isDiscount ? '[値引き] ' : '';
   
-  return `${index + 1}. ${prefix}${item.itemName || `項目${index + 1}`}${item.tooltip ? `\n   💡 用語解説: ${item.tooltip}` : ''}
+  return `${index + 1}. ${prefix}${item.itemName || `項目${index + 1}`}
    数量: ${item.quantity || 1} × 単価: ¥${(item.unitPrice || 0).toLocaleString()}
    小計: ¥${subtotalAmount.toLocaleString()} + 消費税: ¥${Math.round(taxAmount).toLocaleString()}
    金額: ¥${(item.amount || 0).toLocaleString()}`;
