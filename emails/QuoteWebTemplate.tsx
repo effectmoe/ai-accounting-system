@@ -91,6 +91,26 @@ export default function QuoteWebTemplate({
   customMessage,
   suggestedOptions = [],
 }: QuoteWebTemplateProps) {
+  // デバッグログ
+  console.log('🌐 [QUOTE-WEB-TEMPLATE:START] QuoteWebTemplate rendering started at:', new Date().toISOString());
+  console.log('🌐 [QUOTE-WEB-TEMPLATE:PROPS] Received props:', {
+    hasQuote: !!quote,
+    quoteId: quote?._id,
+    quoteNumber: quote?.quoteNumber,
+    hasNotes: !!quote?.notes,
+    notesValue: quote?.notes,
+    notesType: typeof quote?.notes,
+    notesLength: quote?.notes?.length || 0,
+    hasCompanyInfo: !!companyInfo,
+    recipientName,
+    hasCustomMessage: !!customMessage,
+    customMessage,
+    suggestedOptionsCount: suggestedOptions?.length || 0,
+    hasViewOnlineUrl: !!viewOnlineUrl,
+    hasAcceptUrl: !!acceptUrl,
+    timestamp: new Date().toISOString()
+  });
+  
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://accounting-automation.vercel.app';
   
   // デバッグ用ログ（開発環境でのみ）
@@ -536,19 +556,48 @@ export default function QuoteWebTemplate({
 
       <script dangerouslySetInnerHTML={{
         __html: `
-          console.log('🔧 QuoteWebTemplate JavaScript loaded');
+          console.log('🌐 [WEB-TEMPLATE-JS:START] QuoteWebTemplate JavaScript loaded at:', new Date().toISOString());
+          
+          // 初期状態のデバッグ
+          console.log('🌐 [WEB-TEMPLATE-JS:INIT] Page initialization:', {
+            location: window.location.href,
+            userAgent: navigator.userAgent.substring(0, 100),
+            viewport: {
+              width: window.innerWidth,
+              height: window.innerHeight
+            },
+            timestamp: new Date().toISOString()
+          });
           
           // ツールチップのデバッグ情報を表示
           function debugTooltips() {
+            console.log('🔍 [WEB-TEMPLATE-JS:DEBUG-TOOLTIPS] Starting tooltip debug...');
+            
             const tooltipWrappers = document.querySelectorAll('.tooltip-wrapper');
             const tooltipContents = document.querySelectorAll('.tooltip-content');
-            console.log('📊 Tooltip Debug Info:', {
-              wrappers: tooltipWrappers.length,
-              contents: tooltipContents.length,
-              wrapperList: Array.from(tooltipWrappers).map(w => ({
-                text: w.textContent?.substring(0, 50) + '...',
-                hasContent: w.querySelector('.tooltip-content') !== null
-              }))
+            const notesSection = document.querySelector('.notes-section');
+            const customMessage = document.querySelector('.custom-message');
+            
+            console.log('📊 [WEB-TEMPLATE-JS:DEBUG-TOOLTIPS] Complete page analysis:', {
+              tooltips: {
+                wrappers: tooltipWrappers.length,
+                contents: tooltipContents.length,
+                wrapperList: Array.from(tooltipWrappers).map((w, index) => ({
+                  index,
+                  text: w.textContent?.substring(0, 50) + '...',
+                  hasContent: w.querySelector('.tooltip-content') !== null,
+                  hasDataTooltip: w.hasAttribute('data-tooltip'),
+                  dataTooltipValue: w.getAttribute('data-tooltip')?.substring(0, 30) + '...'
+                }))
+              },
+              pageElements: {
+                hasNotesSection: !!notesSection,
+                notesContent: notesSection?.textContent?.substring(0, 100) + '...',
+                hasCustomMessage: !!customMessage,
+                customMessageContent: customMessage?.textContent?.substring(0, 100) + '...'
+              },
+              itemRows: document.querySelectorAll('.item-row, .mobile-card').length,
+              timestamp: new Date().toISOString()
             });
             
             // 強制的にツールチップを表示してテスト
@@ -565,11 +614,17 @@ export default function QuoteWebTemplate({
           
           // ページ読み込み完了後にデバッグ実行
           document.addEventListener('DOMContentLoaded', function() {
-            console.log('📄 DOM Content Loaded');
-            setTimeout(debugTooltips, 500);
+            console.log('🌐 [WEB-TEMPLATE-JS:DOM-LOADED] DOM Content Loaded at:', new Date().toISOString());
+            
+            // 即座にチェックしてからタイムアウト後にも実行
+            debugTooltips();
+            setTimeout(() => {
+              console.log('🌐 [WEB-TEMPLATE-JS:DELAYED-CHECK] Running delayed tooltip check...');
+              debugTooltips();
+            }, 500);
             
             const tooltipWrappers = document.querySelectorAll('.tooltip-wrapper');
-            console.log('🎯 Found tooltip wrappers:', tooltipWrappers.length);
+            console.log('🎯 [WEB-TEMPLATE-JS:DOM-LOADED] Found tooltip wrappers:', tooltipWrappers.length);
             
             // ツールチップ位置計算関数 - 画面端対応強化版
             function adjustTooltipPosition(wrapper, content) {

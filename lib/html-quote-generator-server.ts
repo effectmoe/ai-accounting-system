@@ -51,6 +51,21 @@ export async function generateServerHtmlQuote({
   recipientName?: string;
   customMessage?: string;
 }): Promise<{ html: string; plainText: string; subject: string }> {
+  console.log('🏗️ [SERVER-HTML-GENERATOR:START] Starting generateServerHtmlQuote at:', new Date().toISOString());
+  console.log('🏗️ [SERVER-HTML-GENERATOR:PARAMS] Input parameters:', {
+    hasQuote: !!quote,
+    quoteId: quote?._id,
+    quoteNumber: quote?.quoteNumber,
+    hasNotes: !!quote?.notes,
+    notesValue: quote?.notes,
+    notesType: typeof quote?.notes,
+    notesLength: quote?.notes?.length || 0,
+    hasCompanyInfo: !!companyInfo,
+    recipientName,
+    hasCustomMessage: !!customMessage,
+    customMessage,
+    timestamp: new Date().toISOString()
+  });
   const customerName = recipientName || quote.customer?.name || quote.customer?.companyName || 'お客様';
   const issueDate = new Date(quote.issueDate || new Date()).toLocaleDateString('ja-JP');
   const validityDate = new Date(quote.validityDate || new Date()).toLocaleDateString('ja-JP');

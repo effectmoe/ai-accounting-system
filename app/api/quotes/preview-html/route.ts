@@ -4,7 +4,11 @@ import { logger } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('🔍 [PREVIEW-API:START] Processing preview request at:', new Date().toISOString());
+    
     const body = await request.json();
+    console.log('🔍 [PREVIEW-API:REQUEST-BODY] Raw body type:', typeof body, 'keys:', Object.keys(body));
+    
     const {
       quote,
       companyInfo,
@@ -16,6 +20,24 @@ export async function POST(request: NextRequest) {
       includeTracking,
       useWebLayout = true, // プレビューではデフォルトでWeb最適化レイアウトを使用
     } = body;
+    
+    console.log('🔍 [PREVIEW-API:DESTRUCTURED] Extracted parameters:', {
+      hasQuote: !!quote,
+      quoteType: typeof quote,
+      quoteKeys: quote ? Object.keys(quote) : [],
+      hasNotes: !!quote?.notes,
+      notesValue: quote?.notes,
+      notesType: typeof quote?.notes,
+      notesLength: quote?.notes?.length,
+      hasTooltips: !!tooltips,
+      tooltipsType: typeof tooltips,
+      tooltipsLength: Array.isArray(tooltips) ? tooltips.length : 'not-array',
+      hasProductLinks: !!productLinks,
+      productLinksType: typeof productLinks,
+      productLinksLength: Array.isArray(productLinks) ? productLinks.length : 'not-array',
+      useWebLayout,
+      timestamp: new Date().toISOString()
+    });
     
     // プレビュー用のベースURLを取得
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 
@@ -224,6 +246,19 @@ export async function POST(request: NextRequest) {
     const considerUrl = `${baseUrl}/quotes/consider/${quoteId}?t=${trackingId}`;
     const discussUrl = `${baseUrl}/quotes/discuss/${quoteId}?t=${trackingId}`;
 
+    // HTML生成前のログ
+    console.log('🎯 [PREVIEW-API:BEFORE-GENERATE] Calling generateHtmlQuote with parameters:', {
+      quoteId: quote._id,
+      hasNotes: !!quote?.notes,
+      notesPreview: quote?.notes?.substring(0, 100) || 'null',
+      tooltipsMapSize: tooltipsMap.size,
+      productLinksMapSize: productLinksMap.size,
+      useWebLayout,
+      includeInteractiveElements: true,
+      suggestedOptionsCount: suggestedOptions?.length || 0,
+      timestamp: new Date().toISOString()
+    });
+    
     // HTML生成 - Web最適化レイアウト使用
     const result = await generateHtmlQuote({
       quote,
@@ -241,6 +276,16 @@ export async function POST(request: NextRequest) {
       discussUrl,    // プレビュー用URL
     });
 
+    console.log('✅ [PREVIEW-API:AFTER-GENERATE] HTML generation completed:', {
+      htmlLength: result.html?.length,
+      hasHtml: !!result.html,
+      plainTextLength: result.plainText?.length,
+      hasPlainText: !!result.plainText,
+      subject: result.subject,
+      trackingId: result.trackingId,
+      timestamp: new Date().toISOString()
+    });
+    
     logger.debug('HTML generated successfully, length:', result.html?.length);
 
     return NextResponse.json({

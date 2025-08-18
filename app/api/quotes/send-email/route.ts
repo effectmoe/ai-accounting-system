@@ -4,7 +4,25 @@ import { logger } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('📧 [SEND-EMAIL-API:START] Processing email send request at:', new Date().toISOString());
+    
     const body = await request.json();
+    console.log('📧 [SEND-EMAIL-API:REQUEST-BODY] Raw body analysis:', {
+      bodyType: typeof body,
+      bodyKeys: Object.keys(body),
+      hasQuote: !!body.quote,
+      quoteType: typeof body.quote,
+      recipientEmail: body.recipientEmail,
+      hasNotes: !!body.quote?.notes,
+      notesValue: body.quote?.notes,
+      notesType: typeof body.quote?.notes,
+      notesLength: body.quote?.notes?.length,
+      hasTooltips: !!body.tooltips,
+      tooltipsType: typeof body.tooltips,
+      hasProductLinks: !!body.productLinks,
+      productLinksType: typeof body.productLinks,
+      timestamp: new Date().toISOString()
+    });
     
     logger.debug('[POST /api/quotes/send-email] Sending quote email:', {
       recipientEmail: body.recipientEmail,
@@ -17,10 +35,27 @@ export async function POST(request: NextRequest) {
       pdfBuffer = Buffer.from(body.pdfBuffer, 'base64');
     }
     
+    console.log('📧 [SEND-EMAIL-API:BEFORE-SEND] Calling sendQuoteEmail with:', {
+      recipientEmail: body.recipientEmail,
+      quoteNumber: body.quote?.quoteNumber,
+      hasPdfBuffer: !!pdfBuffer,
+      pdfBufferSize: pdfBuffer?.length,
+      bodyKeys: Object.keys(body),
+      timestamp: new Date().toISOString()
+    });
+    
     // メール送信
     const result = await sendQuoteEmail({
       ...body,
       pdfBuffer,
+    });
+    
+    console.log('📧 [SEND-EMAIL-API:AFTER-SEND] sendQuoteEmail result:', {
+      success: result.success,
+      messageId: result.messageId,
+      trackingId: result.trackingId,
+      error: result.error,
+      timestamp: new Date().toISOString()
     });
     
     if (result.success) {
