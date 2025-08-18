@@ -149,6 +149,9 @@ export default function QuoteWebTemplate({
       {/* ビューポート設定 */}
       <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
       
+      {/* デプロイバージョン情報 - デバッグ用 */}
+      {/* Deploy Version: 644353e87 | Build Date: 2025-08-18 17:20 JST | Tooltip Fix Applied */}
+      
       {/* レスポンシブ対応のCSS */}
       <style dangerouslySetInnerHTML={{
         __html: `
