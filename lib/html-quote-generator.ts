@@ -604,7 +604,7 @@ export function generateDefaultTooltips(): Map<string, string> {
   const tooltips = new Map<string, string>();
 
   // IT関連用語
-  tooltips.set('LLMO', 'Large Language Model Optimization - 大規模言語モデル最適化技術');
+  tooltips.set('LLMO', '大規模言語モデル最適化技術');
   tooltips.set('SaaS', 'Software as a Service - クラウド経由で提供されるソフトウェア');
   tooltips.set('API', 'Application Programming Interface - システム間の連携インターフェース');
   tooltips.set('UI/UX', 'ユーザーインターフェース/ユーザー体験 - 使いやすさとデザイン');
@@ -617,7 +617,7 @@ export function generateDefaultTooltips(): Map<string, string> {
   tooltips.set('リードタイム', '発注から納品までの期間');
   
   // LLMOモニタリング関連 - 重複を解決し、確実にマッチするようにする
-  tooltips.set('LLMOモニタリング', 'Large Language Model Optimization Monitoring - AIを活用したWebサイトの最適化とモニタリングサービス。サイトのパフォーマンス、検索順位、ユーザー行動を継続的に分析し、改善提案を行います');
+  tooltips.set('LLMOモニタリング', 'AIを活用したWebサイトの最適化とモニタリングサービス。サイトのパフォーマンス、検索順位、ユーザー行動を継続的に分析し、改善提案を行います');
   tooltips.set('モニタリング', 'サイトのパフォーマンスや検索順位を継続的に監視・分析するサービス');
   tooltips.set('最適化', 'システムやプロセスをより効率的に改善すること');
   tooltips.set('パフォーマンス', 'システムの処理能力や応答速度の性能');

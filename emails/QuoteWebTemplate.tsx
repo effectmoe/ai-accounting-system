@@ -944,24 +944,23 @@ export default function QuoteWebTemplate({
           </div>
         </section>
 
-        {/* 備考セクション */}
+        {/* 備考セクション - 備考がある場合のみ表示 */}
         {(() => {
           // 備考の内容をチェック（空白文字を除いて内容があるか）
           const originalNotes = quote.notes || '';
           const normalizedNotes = originalNotes.trim();
           const hasNotes = normalizedNotes && normalizedNotes.length > 0;
           
+          // 備考がない場合は何も表示しない
+          if (!hasNotes) {
+            return null;
+          }
+          
           return (
             <section style={notesSectionStyle}>
               <h3 style={h3Style}>備考</h3>
               <div style={notesTextStyle}>
-                {hasNotes ? (
-                  cleanDuplicateSignatures(normalizedNotes)
-                ) : (
-                  <span style={{color: '#9ca3af', fontStyle: 'italic'}}>
-                    特記事項はございません
-                  </span>
-                )}
+                {cleanDuplicateSignatures(normalizedNotes)}
               </div>
             </section>
           );
