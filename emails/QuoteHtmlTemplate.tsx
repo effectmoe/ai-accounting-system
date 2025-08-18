@@ -56,15 +56,41 @@ const renderDetailsWithTooltip = (details: string, tooltip: string) => {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
   
-  // メール版では項目名に点線の下線でツールチップがあることを示す（説明文は非表示）
+  // メール版でもCSSツールチップを実装（title属性と併用）
   const markerHtml = `
-    <span title="${escapedTooltip}" style="
+    <span class="tooltip-wrapper-email" title="${escapedTooltip}" style="
       border-bottom: 1px dotted #666;
       cursor: help;
       text-decoration: none;
       position: relative;
       display: inline-block;
-    ">${escapedDetails}</span>
+    ">${escapedDetails}
+      <span class="tooltip-content-email" style="
+        opacity: 0;
+        pointer-events: none;
+        background-color: #fef3c7;
+        color: #1f2937;
+        text-align: left;
+        border-radius: 6px;
+        padding: 12px 16px;
+        position: absolute;
+        z-index: 999999;
+        bottom: 125%;
+        left: 50%;
+        transform: translateX(-50%) scale(0.95);
+        width: 280px;
+        min-width: 200px;
+        max-width: 90vw;
+        font-size: 14px;
+        font-weight: 500;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.25);
+        border: 2px solid #f59e0b;
+        transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
+        white-space: normal;
+        line-height: 1.5;
+        word-wrap: break-word;
+      ">${escapedTooltip}</span>
+    </span>
   `;
   
   return <span dangerouslySetInnerHTML={{ __html: markerHtml }} />;
@@ -385,6 +411,23 @@ export default function QuoteHtmlTemplate({
               font-weight: bold;
               display: inline-block;
               margin-top: 16px;
+            }
+            /* ツールチップのスタイル（メール版） */
+            .tooltip-wrapper-email {
+              position: relative;
+              display: inline-block;
+              border-bottom: 1px dotted #333;
+              cursor: help;
+            }
+            .tooltip-wrapper-email:hover .tooltip-content-email {
+              opacity: 1;
+              pointer-events: auto;
+              transform: translateX(-50%) scale(1);
+            }
+            .tooltip-wrapper-email:focus .tooltip-content-email {
+              opacity: 1;
+              pointer-events: auto;
+              transform: translateX(-50%) scale(1);
             }
           `
         }} />

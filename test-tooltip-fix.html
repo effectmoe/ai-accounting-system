@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ツールチップテスト - 修正版</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            padding: 2rem;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #1f2937;
+            margin-bottom: 2rem;
+        }
+        .test-section {
+            background: #f9fafb;
+            padding: 2rem;
+            border-radius: 8px;
+            margin: 2rem 0;
+        }
+        
+        /* 修正されたツールチップCSS */
+        .tooltip-wrapper {
+            position: relative;
+            display: inline-block;
+            border-bottom: 1px dotted #333;
+            cursor: help;
+        }
+        
+        .tooltip-content {
+            /* 初期状態で非表示 - opacityのみ使用 */
+            opacity: 0;
+            pointer-events: none;
+            /* スタイル */
+            background-color: #fef3c7;
+            color: #1f2937;
+            text-align: left;
+            border-radius: 6px;
+            padding: 12px 16px;
+            /* 位置設定 */
+            position: absolute;
+            z-index: 999999;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%) scale(0.95);
+            width: 280px;
+            min-width: 200px;
+            max-width: 90vw;
+            /* フォント設定 */
+            font-size: 14px;
+            font-weight: 500;
+            /* シャドウとボーダー */
+            box-shadow: 0 8px 25px rgba(0,0,0,0.25);
+            border: 2px solid #f59e0b;
+            /* アニメーション */
+            transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
+            /* テキスト設定 */
+            white-space: normal;
+            line-height: 1.5;
+            word-wrap: break-word;
+        }
+        
+        /* ホバー時の表示 - シンプルで確実 */
+        .tooltip-wrapper:hover .tooltip-content {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateX(-50%) scale(1);
+        }
+        
+        /* フォーカス時の表示 */
+        .tooltip-wrapper:focus .tooltip-content {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateX(-50%) scale(1);
+        }
+        
+        /* アクティブ状態での表示（タッチデバイス用） */
+        .tooltip-wrapper.active .tooltip-content {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateX(-50%) scale(1);
+        }
+        
+        /* マーカーのスタイル */
+        .marker-style {
+            background: linear-gradient(180deg, transparent 40%, rgba(254, 240, 138, 0.9) 40%);
+            cursor: help;
+            border-radius: 3px;
+            padding: 2px 6px;
+            border-bottom: 2px dotted #f59e0b;
+            font-weight: 600;
+            position: relative;
+            display: inline-block;
+            text-decoration: none;
+            box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.3);
+            color: #1f2937;
+        }
+        
+        .status {
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 6px;
+        }
+        .success {
+            background: #dcfce7;
+            border: 1px solid #22c55e;
+            color: #166534;
+        }
+        .info {
+            background: #dbeafe;
+            border: 1px solid #3b82f6;
+            color: #1e40af;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 ツールチップ修正テスト</h1>
+        
+        <div class="status info">
+            <strong>テスト内容:</strong> ツールチップがマウスオーバーで正しく表示されるかを確認します。
+        </div>
+        
+        <div class="test-section">
+            <h2>テスト 1: 基本的なツールチップ</h2>
+            <p>
+                この<span class="tooltip-wrapper">
+                    <span class="marker-style">サンプルテキスト</span>
+                    <span class="tooltip-content">
+                        これはツールチップのテストです。マウスを乗せると表示されるはずです。
+                    </span>
+                </span>にマウスを乗せてください。
+            </p>
+        </div>
+        
+        <div class="test-section">
+            <h2>テスト 2: 複数のツールチップ</h2>
+            <p>
+                <span class="tooltip-wrapper">
+                    <span class="marker-style">項目A</span>
+                    <span class="tooltip-content">
+                        項目Aの詳細説明です。この項目には重要な情報が含まれています。
+                    </span>
+                </span>
+                と
+                <span class="tooltip-wrapper">
+                    <span class="marker-style">項目B</span>
+                    <span class="tooltip-content">
+                        項目Bの詳細説明です。別の重要な情報がここに表示されます。
+                    </span>
+                </span>
+                の両方をテストしてください。
+            </p>
+        </div>
+        
+        <div class="test-section">
+            <h2>テスト 3: 長いツールチップ</h2>
+            <p>
+                この<span class="tooltip-wrapper">
+                    <span class="marker-style">長いツールチップテスト</span>
+                    <span class="tooltip-content">
+                        これは長いツールチップのテストです。文字数が多い場合でも正しく表示されるかを確認します。複数行にわたる説明文がある場合に、ツールチップが適切に表示されることを確認してください。レイアウトが崩れないことも重要です。
+                    </span>
+                </span>をテストしてください。
+            </p>
+        </div>
+        
+        <div id="test-results" class="status success" style="display: none;">
+            <strong>✅ テスト完了!</strong> ツールチップが正しく動作しています。
+        </div>
+        
+        <div id="test-failure" class="status" style="display: none; background: #fef2f2; border: 1px solid #ef4444; color: #991b1b;">
+            <strong>❌ テスト失敗</strong> ツールチップが表示されていません。
+        </div>
+        
+        <div class="test-section">
+            <h2>🧪 デバッグ情報</h2>
+            <div id="debug-info">
+                <p>ページ読み込み中...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // デバッグ情報の表示
+        document.addEventListener('DOMContentLoaded', function() {
+            const tooltipWrappers = document.querySelectorAll('.tooltip-wrapper');
+            const tooltipContents = document.querySelectorAll('.tooltip-content');
+            
+            const debugInfo = document.getElementById('debug-info');
+            debugInfo.innerHTML = `
+                <p><strong>発見されたツールチップ:</strong></p>
+                <ul>
+                    <li>ツールチップラッパー: ${tooltipWrappers.length}個</li>
+                    <li>ツールチップコンテンツ: ${tooltipContents.length}個</li>
+                </ul>
+                <p><strong>CSS状態:</strong></p>
+                <ul>
+                    <li>初期opacity: ${tooltipContents[0] ? window.getComputedStyle(tooltipContents[0]).opacity : 'N/A'}</li>
+                    <li>初期pointer-events: ${tooltipContents[0] ? window.getComputedStyle(tooltipContents[0]).pointerEvents : 'N/A'}</li>
+                </ul>
+            `;
+            
+            // ホバーイベントのテスト
+            let testsPassed = 0;
+            let totalTests = tooltipWrappers.length;
+            
+            tooltipWrappers.forEach((wrapper, index) => {
+                wrapper.addEventListener('mouseenter', function() {
+                    const content = this.querySelector('.tooltip-content');
+                    if (content) {
+                        const opacity = window.getComputedStyle(content).opacity;
+                        console.log(`ツールチップ ${index + 1} ホバー開始 - opacity: ${opacity}`);
+                        if (parseFloat(opacity) > 0.5) {
+                            testsPassed++;
+                        }
+                    }
+                });
+                
+                wrapper.addEventListener('mouseleave', function() {
+                    const content = this.querySelector('.tooltip-content');
+                    if (content) {
+                        const opacity = window.getComputedStyle(content).opacity;
+                        console.log(`ツールチップ ${index + 1} ホバー終了 - opacity: ${opacity}`);
+                    }
+                });
+            });
+            
+            // 5秒後にテスト結果を確認
+            setTimeout(() => {
+                if (testsPassed > 0) {
+                    document.getElementById('test-results').style.display = 'block';
+                } else {
+                    document.getElementById('test-failure').style.display = 'block';
+                }
+            }, 5000);
+        });
+    </script>
+</body>
+</html>
