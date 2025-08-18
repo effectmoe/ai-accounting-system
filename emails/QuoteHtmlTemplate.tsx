@@ -24,8 +24,16 @@ interface SuggestedOption {
   ctaUrl: string;
 }
 
-// ツールチップ用語を検出してライトグレーマーカーを付ける関数
+// メール版ツールチップ用語を検出してインライン注釈を付ける関数
 const renderDetailsWithTooltip = (details: string, tooltip: string) => {
+  // ツールチップがない場合はそのまま返す
+  if (!tooltip || tooltip.trim().length === 0) {
+    return <span>{details}</span>;
+  }
+  
+  // 長い説明文は50文字で切って省略記号を付ける
+  const trimmedTooltip = tooltip.length > 50 ? tooltip.substring(0, 50) + '...' : tooltip;
+  
   // ツールチップ内の主要な用語を抽出（ROI、KPI、CRMなどの英語略語を優先）
   const englishKeywords = tooltip.match(/\b[A-Z]{2,}\b/g) || [];
   // カタカナのキーワードも抽出
@@ -36,29 +44,41 @@ const renderDetailsWithTooltip = (details: string, tooltip: string) => {
   const allKeywords = [...englishKeywords, ...katakanaKeywords, ...kanjiKeywords];
   let processedDetails = details;
   
-  // ライトグレーのマーカースタイル
-  const markerStyle = 'background: linear-gradient(180deg, transparent 60%, rgba(229, 231, 235, 0.8) 60%); padding: 1px 2px; border-radius: 2px; border-bottom: 1px dotted #6b7280; cursor: help;';
+  // メール版ライトグレーマーカースタイル（ホバー効果なし）
+  const markerStyle = 'background: linear-gradient(180deg, transparent 60%, rgba(229, 231, 235, 0.8) 60%); padding: 1px 2px; border-radius: 2px; border-bottom: 1px dotted #6b7280;';
   
-  // 各キーワードをライトグレーマーカー付きスパンに変換
+  // インライン注釈スタイル
+  const annotationStyle = 'font-size: 0.75em; color: #6b7280; font-style: italic; margin-left: 4px; font-weight: normal;';
+  
+  // 最初に見つかったキーワードにマーカーとインライン注釈を付ける
+  let annotationAdded = false;
+  
   allKeywords.forEach(keyword => {
-    if (keyword && keyword.length > 1) {
+    if (keyword && keyword.length > 1 && !annotationAdded) {
       processedDetails = processedDetails.replace(
-        new RegExp(`(${keyword})`, 'g'),
-        `<span style="${markerStyle}" title="${tooltip}">$1</span>`
+        new RegExp(`(${keyword})`, ''),
+        `<span style="${markerStyle}">$1</span><span style="${annotationStyle}">（※${trimmedTooltip}）</span>`
       );
+      annotationAdded = true;
     }
   });
   
-  // キーワードが見つからない場合は、文頭の重要そうな語句にマーカーを付ける
-  if (allKeywords.length === 0) {
+  // キーワードが見つからない場合は、文頭の重要そうな語句にマーカーと注釈を付ける
+  if (!annotationAdded) {
     const words = details.split(/[\s・]+/);
     const firstWord = words[0];
     if (firstWord && firstWord.length > 1) {
       processedDetails = details.replace(
         firstWord,
-        `<span style="${markerStyle}" title="${tooltip}">${firstWord}</span>`
+        `<span style="${markerStyle}">${firstWord}</span><span style="${annotationStyle}">（※${trimmedTooltip}）</span>`
       );
+      annotationAdded = true;
     }
+  }
+  
+  // どのキーワードも見つからない場合は、最後に注釈を追加
+  if (!annotationAdded) {
+    processedDetails = `${details}<span style="${annotationStyle}">（※${trimmedTooltip}）</span>`;
   }
   
   return <span dangerouslySetInnerHTML={{ __html: processedDetails }} />;
@@ -211,6 +231,7 @@ export default function QuoteHtmlTemplate({
               font-size: 13px;
               color: #6b7280;
               line-height: 1.5;
+              margin-top: 2px;
             }
             .item-quantity,
             .item-price,
@@ -380,33 +401,50 @@ export default function QuoteHtmlTemplate({
               display: inline-block;
               margin-top: 16px;
             }
-            /* ツールチップのスタイル（メール版） */
-            .tooltip-wrapper-email {
-              position: relative;
-              display: inline-block;
-              border-bottom: 1px dotted #333;
-              cursor: help;
+            /* メール版インライン注釈スタイル */
+            .item-annotation {
+              font-size: 0.75em;
+              color: #6b7280;
+              font-style: italic;
+              margin-left: 4px;
+              font-weight: normal;
+              line-height: 1.4;
             }
-            .tooltip-wrapper-email:hover .tooltip-content-email {
-              visibility: visible;
-              opacity: 1;
-              pointer-events: auto;
-              transform: translateX(-50%) scale(1);
-              transition-delay: 0.2s;
+            .item-marker {
+              background: linear-gradient(180deg, transparent 60%, rgba(229, 231, 235, 0.8) 60%);
+              padding: 1px 2px;
+              border-radius: 2px;
+              border-bottom: 1px dotted #6b7280;
             }
-            .tooltip-wrapper-email:focus .tooltip-content-email {
-              visibility: visible;
-              opacity: 1;
-              pointer-events: auto;
-              transform: translateX(-50%) scale(1);
-              transition-delay: 0.2s;
+            /* モバイルメールクライアント対応 */
+            @media screen and (max-width: 600px) {
+              .item-annotation {
+                display: block;
+                margin-left: 0;
+                margin-top: 2px;
+                font-size: 0.7em;
+              }
+              .item-row {
+                grid-template-columns: 1fr;
+                gap: 8px;
+              }
+              .item-quantity,
+              .item-price,
+              .item-total {
+                text-align: left;
+                margin-top: 4px;
+              }
             }
-            .tooltip-wrapper-email.active .tooltip-content-email {
-              visibility: visible;
-              opacity: 1;
-              pointer-events: auto;
-              transform: translateX(-50%) scale(1);
-              transition-delay: 0.2s;
+            /* 印刷時の調整 */
+            @media print {
+              .item-annotation {
+                color: #000000 !important;
+                font-size: 0.7em;
+              }
+              .item-marker {
+                background: transparent !important;
+                border-bottom: 1px solid #000000 !important;
+              }
             }
           `
         }} />
@@ -594,32 +632,62 @@ export default function QuoteHtmlTemplate({
 
             {/* 備考 - 備考がある場合のみ表示 */}
             {(() => {
-              // 備考の内容をチェック（空白文字を除いて内容があるか）
-              const originalNotes = quote.notes || '';
-              const normalizedNotes = originalNotes.trim();
-              const hasNotes = normalizedNotes && normalizedNotes.length > 0;
+              // 備考の内容をチェック（型安全性とcleanDuplicateSignatures適用後の再チェック）
+              const originalNotes = quote.notes;
               
               // デバッグログ（開発環境のみ）
               if (process.env.NODE_ENV === 'development') {
-                console.log('📝 QuoteHtmlTemplate notes check:', {
+                console.log('📝 QuoteHtmlTemplate notes check (enhanced):', {
                   originalNotes: originalNotes,
-                  normalizedNotes: normalizedNotes,
-                  hasNotes: hasNotes,
-                  notesLength: normalizedNotes.length,
-                  notesPreview: normalizedNotes.substring(0, 100) || 'なし'
+                  originalNotesType: typeof originalNotes,
+                  originalNotesLength: typeof originalNotes === 'string' ? originalNotes.length : 'N/A'
                 });
               }
               
-              // 備考がない場合は何も表示しない
-              if (!hasNotes) {
+              // 型チェック: null, undefined, または文字列以外の場合は表示しない
+              if (!originalNotes || typeof originalNotes !== 'string') {
+                if (process.env.NODE_ENV === 'development') {
+                  console.log('❌ Notes not displayed: invalid type or empty');
+                }
                 return null;
+              }
+              
+              // 空白文字のみをチェック
+              const trimmedNotes = originalNotes.trim();
+              if (trimmedNotes.length === 0) {
+                if (process.env.NODE_ENV === 'development') {
+                  console.log('❌ Notes not displayed: empty after trim');
+                }
+                return null;
+              }
+              
+              // cleanDuplicateSignatures関数を適用
+              const cleanedNotes = cleanDuplicateSignatures(trimmedNotes);
+              const finalNotes = cleanedNotes.trim();
+              
+              // 清拭後に内容がない場合は表示しない
+              if (finalNotes.length === 0) {
+                if (process.env.NODE_ENV === 'development') {
+                  console.log('❌ Notes not displayed: empty after cleaning signatures');
+                }
+                return null;
+              }
+              
+              // デバッグログ（開発環境のみ）
+              if (process.env.NODE_ENV === 'development') {
+                console.log('✅ Notes will be displayed:', {
+                  trimmedLength: trimmedNotes.length,
+                  cleanedLength: cleanedNotes.length,
+                  finalLength: finalNotes.length,
+                  finalPreview: finalNotes.substring(0, 50) + (finalNotes.length > 50 ? '...' : '')
+                });
               }
               
               return (
                 <div className="notes-section">
                   <div className="notes-title">備考</div>
                   <div className="notes-text">
-                    {cleanDuplicateSignatures(normalizedNotes)}
+                    {finalNotes}
                   </div>
                 </div>
               );

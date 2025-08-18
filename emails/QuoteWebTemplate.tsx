@@ -171,7 +171,7 @@ export default function QuoteWebTemplate({
             }
           }
           
-          /* ツールチップのホバー効果とタッチ対応 - 修正版 */
+          /* ツールチップのホバー効果とタッチ対応 - 画面端対応強化版 */
           .tooltip-wrapper {
             position: relative;
             display: inline-block;
@@ -192,7 +192,7 @@ export default function QuoteWebTemplate({
             text-align: left;
             border-radius: 6px;
             padding: 12px 16px;
-            /* 位置設定 - 画面端での見切れを防ぐ */
+            /* 位置設定 - デフォルトは中央 */
             position: absolute;
             z-index: 9999999; /* 最前面に表示 */
             bottom: 130%;
@@ -216,18 +216,29 @@ export default function QuoteWebTemplate({
             box-sizing: border-box;
           }
           
-          /* 画面端での位置調整 */
-          .tooltip-wrapper:first-child .tooltip-content,
+          /* 画面左端での位置調整 - 強化版 */
           .tooltip-wrapper.edge-left .tooltip-content {
-            left: 0;
-            transform: translateX(0) scale(0.95);
+            left: 0 !important;
+            right: auto !important;
+            transform: translateX(0) scale(0.95) !important;
+            margin-left: 10px !important;
           }
           
-          .tooltip-wrapper:last-child .tooltip-content,
+          /* 画面右端での位置調整 - 強化版 */
           .tooltip-wrapper.edge-right .tooltip-content {
-            left: auto;
-            right: 0;
-            transform: translateX(0) scale(0.95);
+            left: auto !important;
+            right: 0 !important;
+            transform: translateX(0) scale(0.95) !important;
+            margin-right: 10px !important;
+          }
+          
+          /* 中央表示（デフォルト） */
+          .tooltip-wrapper.edge-center .tooltip-content {
+            left: 50% !important;
+            right: auto !important;
+            transform: translateX(-50%) scale(0.95) !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
           }
           
           /* ツールチップが画面上部に出る場合は下に表示 */
@@ -274,6 +285,7 @@ export default function QuoteWebTemplate({
             opacity: 1 !important;
           }
           
+          /* ツールチップの矢印 - 位置に応じて調整 */
           .tooltip-content::after {
             content: "";
             position: absolute;
@@ -282,7 +294,27 @@ export default function QuoteWebTemplate({
             transform: translateX(-50%);
             border-width: 5px;
             border-style: solid;
-            border-color: rgba(254, 240, 138, 0.95) transparent transparent transparent;
+            border-color: #f59e0b transparent transparent transparent;
+          }
+          
+          /* 左端配置時の矢印位置調整 */
+          .tooltip-wrapper.edge-left .tooltip-content::after {
+            left: 30px !important;
+            transform: translateX(0) !important;
+          }
+          
+          /* 右端配置時の矢印位置調整 */
+          .tooltip-wrapper.edge-right .tooltip-content::after {
+            left: auto !important;
+            right: 30px !important;
+            transform: translateX(0) !important;
+          }
+          
+          /* 中央配置時の矢印位置調整 */
+          .tooltip-wrapper.edge-center .tooltip-content::after {
+            left: 50% !important;
+            right: auto !important;
+            transform: translateX(-50%) !important;
           }
           
           /* デスクトップファースト → モバイルファーストアプローチに変更 */
@@ -389,32 +421,41 @@ export default function QuoteWebTemplate({
               line-height: 1.75 !important;
             }
             
-            /* モバイルでのツールチップ調整 */
+            /* モバイルでのツールチップ調整 - 画面端対応強化版 */
             .tooltip-content {
               white-space: normal;
               width: calc(100vw - 3rem);
               max-width: 300px;
-              left: 50%;
-              transform: translateX(-50%);
               font-size: 0.875rem;
               padding: 0.875rem;
+            }
+            
+            /* モバイルでの画面端調整 - より厳密に */
+            .tooltip-wrapper.edge-left .tooltip-content {
+              left: 10px !important;
+              right: auto !important;
+              transform: translateX(0) !important;
+              width: calc(100vw - 40px) !important;
+              max-width: 280px !important;
+            }
+            
+            .tooltip-wrapper.edge-right .tooltip-content {
+              left: auto !important;
+              right: 10px !important;
+              transform: translateX(0) !important;
+              width: calc(100vw - 40px) !important;
+              max-width: 280px !important;
+            }
+            
+            .tooltip-wrapper.edge-center .tooltip-content {
+              left: 50% !important;
+              right: auto !important;
+              transform: translateX(-50%) !important;
             }
             
             /* モバイルではテーブルを非表示、カードを表示 */
             .desktop-table { display: none !important; }
             .mobile-cards { display: block !important; }
-            
-            /* ツールチップが画面外に出ないように調整 */
-            .tooltip-wrapper:first-child .tooltip-content {
-              left: 0;
-              transform: none;
-            }
-            
-            .tooltip-wrapper:last-child .tooltip-content {
-              left: auto;
-              right: 0;
-              transform: none;
-            }
           }
           
           /* タブレット向けレイアウト */
@@ -530,29 +571,65 @@ export default function QuoteWebTemplate({
             const tooltipWrappers = document.querySelectorAll('.tooltip-wrapper');
             console.log('🎯 Found tooltip wrappers:', tooltipWrappers.length);
             
-            // ツールチップ位置計算関数
+            // ツールチップ位置計算関数 - 画面端対応強化版
             function adjustTooltipPosition(wrapper, content) {
+              if (!wrapper || !content) return;
+              
               const rect = wrapper.getBoundingClientRect();
               const viewportWidth = window.innerWidth;
               const viewportHeight = window.innerHeight;
               
-              // 水平方向の調整
-              const leftEdge = rect.left - 160; // ツールチップ幅の半分
-              const rightEdge = rect.right + 160;
+              // ツールチップの想定幅（max-widthから）
+              const tooltipWidth = Math.min(320, viewportWidth - 40);
+              const tooltipHalfWidth = tooltipWidth / 2;
               
-              wrapper.classList.remove('edge-left', 'edge-right');
+              console.log('🔧 Adjusting tooltip position:', {
+                wrapperLeft: rect.left,
+                wrapperRight: rect.right,
+                wrapperWidth: rect.width,
+                viewportWidth: viewportWidth,
+                tooltipWidth: tooltipWidth
+              });
+              
+              // 既存のクラスをリセット
+              wrapper.classList.remove('edge-left', 'edge-right', 'edge-center');
               content.classList.remove('bottom-position');
               
-              if (leftEdge < 20) {
+              // 水平方向の位置判定を厳密に
+              const wrapperCenter = rect.left + (rect.width / 2);
+              const leftBoundary = tooltipHalfWidth + 20; // 余白を考慮
+              const rightBoundary = viewportWidth - tooltipHalfWidth - 20; // 余白を考慮
+              
+              if (wrapperCenter < leftBoundary) {
+                // 画面左端: ツールチップを左端に固定
+                console.log('📍 Positioning tooltip at LEFT edge');
                 wrapper.classList.add('edge-left');
-              } else if (rightEdge > viewportWidth - 20) {
+              } else if (wrapperCenter > rightBoundary) {
+                // 画面右端: ツールチップを右端に固定
+                console.log('📍 Positioning tooltip at RIGHT edge');
                 wrapper.classList.add('edge-right');
+              } else {
+                // 中央: デフォルトの中央配置
+                console.log('📍 Positioning tooltip at CENTER');
+                wrapper.classList.add('edge-center');
               }
               
               // 垂直方向の調整（上部に表示スペースがない場合）
               if (rect.top < 200) {
+                console.log('📍 Moving tooltip to BOTTOM position');
                 content.classList.add('bottom-position');
               }
+              
+              // リアルタイムでの位置確認（デバッグ用）
+              setTimeout(() => {
+                const tooltipRect = content.getBoundingClientRect();
+                console.log('✅ Tooltip positioned:', {
+                  left: tooltipRect.left,
+                  right: tooltipRect.right,
+                  width: tooltipRect.width,
+                  isVisible: tooltipRect.left >= 0 && tooltipRect.right <= viewportWidth
+                });
+              }, 100);
             }
             
             // マウスホバーイベントを強化
@@ -576,10 +653,15 @@ export default function QuoteWebTemplate({
                 }
               });
               
-              // タッチイベント
+              // タッチイベント（モバイル対応）
               wrapper.addEventListener('touchstart', function(e) {
                 console.log(\`👆 Touch start on tooltip \${index + 1}\`);
                 e.stopPropagation();
+                
+                const content = this.querySelector('.tooltip-content');
+                if (content) {
+                  adjustTooltipPosition(wrapper, content);
+                }
                 
                 // 他のアクティブなツールチップを閉じる
                 document.querySelectorAll('.tooltip-wrapper.active').forEach(w => {
@@ -589,6 +671,40 @@ export default function QuoteWebTemplate({
                 // 現在のツールチップをトグル
                 wrapper.classList.toggle('active');
               });
+            });
+            
+            // ウィンドウリサイズ時の再調整
+            let resizeTimeout;
+            window.addEventListener('resize', function() {
+              clearTimeout(resizeTimeout);
+              resizeTimeout = setTimeout(function() {
+                console.log('🔄 Window resized - readjusting all tooltips');
+                const activeTooltips = document.querySelectorAll('.tooltip-wrapper:hover .tooltip-content, .tooltip-wrapper.active .tooltip-content');
+                activeTooltips.forEach(content => {
+                  const wrapper = content.closest('.tooltip-wrapper');
+                  if (wrapper) {
+                    adjustTooltipPosition(wrapper, content);
+                  }
+                });
+              }, 250);
+            });
+            
+            // スクロール時の再調整
+            let scrollTimeout;
+            window.addEventListener('scroll', function() {
+              clearTimeout(scrollTimeout);
+              scrollTimeout = setTimeout(function() {
+                const activeTooltips = document.querySelectorAll('.tooltip-wrapper:hover .tooltip-content, .tooltip-wrapper.active .tooltip-content');
+                if (activeTooltips.length > 0) {
+                  console.log('📜 Page scrolled - readjusting active tooltips');
+                  activeTooltips.forEach(content => {
+                    const wrapper = content.closest('.tooltip-wrapper');
+                    if (wrapper) {
+                      adjustTooltipPosition(wrapper, content);
+                    }
+                  });
+                }
+              }, 100);
             });
             
             // 画面の他の場所をタップしたらツールチップを閉じる
@@ -952,21 +1068,62 @@ export default function QuoteWebTemplate({
 
         {/* 備考セクション - 備考がある場合のみ表示 */}
         {(() => {
-          // 備考の内容をチェック（空白文字を除いて内容があるか）
-          const originalNotes = quote.notes || '';
-          const normalizedNotes = originalNotes.trim();
-          const hasNotes = normalizedNotes && normalizedNotes.length > 0;
+          // 備考の内容をチェック（型安全性とcleanDuplicateSignatures適用後の再チェック）
+          const originalNotes = quote.notes;
           
-          // 備考がない場合は何も表示しない
-          if (!hasNotes) {
+          // デバッグログ（開発環境のみ）
+          if (process.env.NODE_ENV === 'development') {
+            console.log('📝 QuoteWebTemplate notes check (enhanced):', {
+              originalNotes: originalNotes,
+              originalNotesType: typeof originalNotes,
+              originalNotesLength: typeof originalNotes === 'string' ? originalNotes.length : 'N/A'
+            });
+          }
+          
+          // 型チェック: null, undefined, または文字列以外の場合は表示しない
+          if (!originalNotes || typeof originalNotes !== 'string') {
+            if (process.env.NODE_ENV === 'development') {
+              console.log('❌ Notes not displayed: invalid type or empty');
+            }
             return null;
+          }
+          
+          // 空白文字のみをチェック
+          const trimmedNotes = originalNotes.trim();
+          if (trimmedNotes.length === 0) {
+            if (process.env.NODE_ENV === 'development') {
+              console.log('❌ Notes not displayed: empty after trim');
+            }
+            return null;
+          }
+          
+          // cleanDuplicateSignatures関数を適用
+          const cleanedNotes = cleanDuplicateSignatures(trimmedNotes);
+          const finalNotes = cleanedNotes.trim();
+          
+          // 清拭後に内容がない場合は表示しない
+          if (finalNotes.length === 0) {
+            if (process.env.NODE_ENV === 'development') {
+              console.log('❌ Notes not displayed: empty after cleaning signatures');
+            }
+            return null;
+          }
+          
+          // デバッグログ（開発環境のみ）
+          if (process.env.NODE_ENV === 'development') {
+            console.log('✅ Notes will be displayed:', {
+              trimmedLength: trimmedNotes.length,
+              cleanedLength: cleanedNotes.length,
+              finalLength: finalNotes.length,
+              finalPreview: finalNotes.substring(0, 50) + (finalNotes.length > 50 ? '...' : '')
+            });
           }
           
           return (
             <section style={notesSectionStyle}>
               <h3 style={h3Style}>備考</h3>
               <div style={notesTextStyle}>
-                {cleanDuplicateSignatures(normalizedNotes)}
+                {finalNotes}
               </div>
             </section>
           );
