@@ -849,12 +849,6 @@ export async function generateSimpleHtmlQuote({
                         ${tooltipText ? `<span style="font-size: 11px; color: #1976d2; font-weight: normal; margin-left: 5px;">[※]</span>` : ''}
                       </div>
                       ${item.description ? `<div style="font-size: 12px; color: ${isDiscount ? '#dc2626 !important' : '#666666'}; line-height: 1.4;"><span style="color: ${isDiscount ? '#dc2626 !important' : '#666666'};">${item.description}</span></div>` : ''}
-                      ${tooltipText ? `
-                      <div style="margin-top: 5px; padding: 8px; background-color: #e3f2fd; border-left: 3px solid #1976d2; border-radius: 3px;">
-                        <span style="font-size: 11px; color: #1565c0; font-weight: bold;">💡 用語解説:</span>
-                        <span style="font-size: 11px; color: #424242; line-height: 1.4; display: block; margin-top: 3px;">${tooltipText}</span>
-                      </div>
-                      ` : ''}
                     </td>
                     <td style="border: 1px solid #dddddd; padding: 10px; text-align: center; font-size: 14px; color: ${itemColor};"><span style="color: ${itemColor};">${item.quantity || 0}${item.unit || ''}</span></td>
                     <td style="border: 1px solid #dddddd; padding: 10px; text-align: right; font-size: 14px; color: ${itemColor};"><span style="color: ${itemColor};">¥${(item.unitPrice || 0).toLocaleString()}</span></td>
