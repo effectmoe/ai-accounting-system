@@ -461,31 +461,55 @@ export default function QuoteHtmlTemplate({
       </head>
       <body>
         <div className="container">
-          {/* ヘッダー */}
-          <div className="header">
-            {companyInfo?.logoUrl && (
-              <img
-                src={companyInfo.logoUrl}
-                alt={companyInfo?.companyName || companyInfo?.name || ''}
-                className="logo"
-              />
-            )}
-            <div className="company-name">
-              {quote.companySnapshot?.companyName || companyInfo?.companyName || companyInfo?.name || '会社名未設定'}
-            </div>
-          </div>
-
           {/* メインコンテンツ */}
           <div>
             <h1 className="main-title">お見積書</h1>
             
-            <div className="greeting">
-              {recipientName || 
-               (quote.customer?.storeName 
-                 ? `${quote.customer.storeName}（${quote.customer?.companyName}）`
-                 : quote.customerName || quote.customer?.companyName || quote.customer?.name || 'お客様')} 様
+            {/* 顧客情報セクション（従来の見積書形式） */}
+            <div style={{
+              backgroundColor: '#f8f9fa',
+              borderRadius: '8px',
+              padding: '20px',
+              margin: '20px 0'
+            }}>
+              <div className="greeting" style={{
+                fontSize: '20px',
+                fontWeight: 'bold',
+                color: '#1f2937',
+                borderBottom: '2px solid #e0e0e0',
+                paddingBottom: '10px',
+                marginBottom: '15px'
+              }}>
+                {recipientName || 
+                 (quote.customer?.storeName 
+                   ? `${quote.customer.storeName}（${quote.customer?.companyName}）`
+                   : quote.customerName || quote.customer?.companyName || quote.customer?.name || 'お客様')} 様
+              </div>
+              
+              {/* 顧客詳細情報 */}
+              {quote.customer?.companyName && (
+                <div style={{ margin: '5px 0', fontSize: '14px', color: '#4b5563' }}>
+                  <strong>会社名：</strong>{quote.customer.companyName}
+                </div>
+              )}
+              {quote.customer?.address && (
+                <div style={{ margin: '5px 0', fontSize: '14px', color: '#4b5563' }}>
+                  <strong>住所：</strong>{quote.customer.address}
+                </div>
+              )}
+              {quote.customer?.phone && (
+                <div style={{ margin: '5px 0', fontSize: '14px', color: '#4b5563' }}>
+                  <strong>電話番号：</strong>{quote.customer.phone}
+                </div>
+              )}
+              {quote.customer?.email && (
+                <div style={{ margin: '5px 0', fontSize: '14px', color: '#4b5563' }}>
+                  <strong>メール：</strong>{quote.customer.email}
+                </div>
+              )}
             </div>
 
+            {/* 挨拶文 */}
             <div className="message">
               平素より格別のご高配を賜り、厚く御礼申し上げます。<br />
               ご依頼いただきました件について、下記の通りお見積りさせていただきます。
