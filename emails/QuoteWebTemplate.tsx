@@ -192,13 +192,23 @@ export default function QuoteWebTemplate({
           }
           
           /* ツールチップのホバー効果とタッチ対応 - 画面端対応強化版 */
-          .tooltip-wrapper {
+          /* ツールチップは項目行（.item-row, .mobile-card）内のみで有効 */
+          .item-row .tooltip-wrapper,
+          .mobile-card .tooltip-wrapper,
+          .desktop-table .tooltip-wrapper {
             position: relative;
             display: inline-block;
             border-bottom: 1px dotted #333;
             cursor: help;
             /* デバッグ用の背景色を追加 */
             background: rgba(255, 255, 0, 0.1);
+          }
+          
+          /* 備考欄ではツールチップを無効化 */
+          .notes-section .tooltip-wrapper {
+            border-bottom: none !important;
+            cursor: default !important;
+            background: transparent !important;
           }
           
           .tooltip-content {
@@ -274,18 +284,38 @@ export default function QuoteWebTemplate({
           }
           
           /* ホバー時の表示を確実にする - 強化版 */
-          .tooltip-wrapper:hover .tooltip-content,
-          .tooltip-wrapper:focus .tooltip-content,
-          .tooltip-wrapper:active .tooltip-content {
+          /* 項目行内のツールチップのみ有効 */
+          .item-row .tooltip-wrapper:hover .tooltip-content,
+          .mobile-card .tooltip-wrapper:hover .tooltip-content,
+          .desktop-table .tooltip-wrapper:hover .tooltip-content,
+          .item-row .tooltip-wrapper:focus .tooltip-content,
+          .mobile-card .tooltip-wrapper:focus .tooltip-content,
+          .desktop-table .tooltip-wrapper:focus .tooltip-content,
+          .item-row .tooltip-wrapper:active .tooltip-content,
+          .mobile-card .tooltip-wrapper:active .tooltip-content,
+          .desktop-table .tooltip-wrapper:active .tooltip-content {
             visibility: visible !important;
             opacity: 1 !important;
             display: block !important;
           }
           
-          /* デスクトップ: ホバーで表示 */
+          /* 備考欄ではツールチップを強制的に無効化 */
+          .notes-section .tooltip-wrapper:hover .tooltip-content,
+          .notes-section .tooltip-wrapper:focus .tooltip-content,
+          .notes-section .tooltip-wrapper:active .tooltip-content {
+            visibility: hidden !important;
+            opacity: 0 !important;
+            display: none !important;
+          }
+          
+          /* デスクトップ: ホバーで表示（項目行内のみ） */
           @media (hover: hover) and (pointer: fine) {
-            .tooltip-wrapper:hover .tooltip-content,
-            .tooltip-wrapper:focus .tooltip-content {
+            .item-row .tooltip-wrapper:hover .tooltip-content,
+            .mobile-card .tooltip-wrapper:hover .tooltip-content,
+            .desktop-table .tooltip-wrapper:hover .tooltip-content,
+            .item-row .tooltip-wrapper:focus .tooltip-content,
+            .mobile-card .tooltip-wrapper:focus .tooltip-content,
+            .desktop-table .tooltip-wrapper:focus .tooltip-content {
               visibility: visible !important;
               opacity: 1 !important;
               display: block !important;
@@ -299,10 +329,19 @@ export default function QuoteWebTemplate({
             display: block !important;
           }
           
-          /* モバイル: タップで表示 */
-          .tooltip-wrapper.active .tooltip-content {
+          /* モバイル: タップで表示（項目行内のみ） */
+          .item-row .tooltip-wrapper.active .tooltip-content,
+          .mobile-card .tooltip-wrapper.active .tooltip-content,
+          .desktop-table .tooltip-wrapper.active .tooltip-content {
             visibility: visible !important;
             opacity: 1 !important;
+          }
+          
+          /* 備考欄ではモバイルタップも無効化 */
+          .notes-section .tooltip-wrapper.active .tooltip-content {
+            visibility: hidden !important;
+            opacity: 0 !important;
+            display: none !important;
           }
           
           /* ツールチップの矢印 - 位置に応じて調整 */
@@ -573,21 +612,25 @@ export default function QuoteWebTemplate({
           function debugTooltips() {
             console.log('🔍 [WEB-TEMPLATE-JS:DEBUG-TOOLTIPS] Starting tooltip debug...');
             
-            const tooltipWrappers = document.querySelectorAll('.tooltip-wrapper');
-            const tooltipContents = document.querySelectorAll('.tooltip-content');
+            // 項目行内のツールチップのみを対象（備考欄を除外）
+            const tooltipWrappers = document.querySelectorAll('.item-row .tooltip-wrapper, .mobile-card .tooltip-wrapper, .desktop-table .tooltip-wrapper');
+            const tooltipContents = document.querySelectorAll('.item-row .tooltip-content, .mobile-card .tooltip-content, .desktop-table .tooltip-content');
             const notesSection = document.querySelector('.notes-section');
             const customMessage = document.querySelector('.custom-message');
+            const notesSectionTooltips = document.querySelectorAll('.notes-section .tooltip-wrapper');
             
             console.log('📊 [WEB-TEMPLATE-JS:DEBUG-TOOLTIPS] Complete page analysis:', JSON.stringify({
               tooltips: {
-                wrappers: tooltipWrappers.length,
-                contents: tooltipContents.length,
+                validWrappers: tooltipWrappers.length,
+                validContents: tooltipContents.length,
+                excludedNotesSectionTooltips: notesSectionTooltips.length,
                 wrapperList: Array.from(tooltipWrappers).map((w, index) => ({
                   index,
                   text: w.textContent?.substring(0, 50) + '...',
                   hasContent: w.querySelector('.tooltip-content') !== null,
                   hasDataTooltip: w.hasAttribute('data-tooltip'),
-                  dataTooltipValue: w.getAttribute('data-tooltip')?.substring(0, 30) + '...'
+                  dataTooltipValue: w.getAttribute('data-tooltip')?.substring(0, 30) + '...',
+                  parentElement: w.closest('.item-row, .mobile-card, .desktop-table') ? 'item-area' : 'other'
                 }))
               },
               pageElements: {
@@ -623,8 +666,9 @@ export default function QuoteWebTemplate({
               debugTooltips();
             }, 500);
             
-            const tooltipWrappers = document.querySelectorAll('.tooltip-wrapper');
-            console.log('🎯 [WEB-TEMPLATE-JS:DOM-LOADED] Found tooltip wrappers:', tooltipWrappers.length);
+            // ツールチップは項目行内のもののみ対象にする（備考欄を除外）
+            const tooltipWrappers = document.querySelectorAll('.item-row .tooltip-wrapper, .mobile-card .tooltip-wrapper, .desktop-table .tooltip-wrapper');
+            console.log('🎯 [WEB-TEMPLATE-JS:DOM-LOADED] Found tooltip wrappers (excluding notes section):', tooltipWrappers.length);
             
             // ツールチップ位置計算関数 - 画面端対応強化版
             function adjustTooltipPosition(wrapper, content) {
@@ -920,7 +964,7 @@ export default function QuoteWebTemplate({
                     }
                     
                     return (
-                      <tr key={index} style={tableBodyRowStyle}>
+                      <tr key={index} style={tableBodyRowStyle} className="item-row">
                         <td style={{...tableBodyCellStyle, color: itemColor}}>
                           {item.productLink ? (
                             <a href={item.productLink} style={{...productLinkStyle, color: isDiscount ? '#dc2626' : '#3B82F6'}}>
@@ -975,7 +1019,7 @@ export default function QuoteWebTemplate({
                 const taxAmount = subtotalAmount * (quote.taxRate || 0.1);
                 
                 return (
-                  <div key={index} style={{...itemCardStyle, borderLeft: isDiscount ? '4px solid #dc2626' : '4px solid #3B82F6'}} className="item-card">
+                  <div key={index} style={{...itemCardStyle, borderLeft: isDiscount ? '4px solid #dc2626' : '4px solid #3B82F6'}} className="item-card mobile-card">
                     <div style={itemHeaderStyle}>
                       <div style={{...itemNameStyle, color: itemColor}} className="item-name">
                         {item.productLink ? (
@@ -1175,9 +1219,9 @@ export default function QuoteWebTemplate({
           }
           
           return (
-            <section style={notesSectionStyle}>
+            <section style={notesSectionStyle} className="notes-section">
               <h3 style={h3Style}>備考</h3>
-              <div style={notesTextStyle}>
+              <div style={notesTextStyle} className="notes-content">
                 {finalNotes}
               </div>
             </section>
