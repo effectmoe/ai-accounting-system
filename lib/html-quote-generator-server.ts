@@ -339,25 +339,40 @@ export async function generateServerHtmlQuote({
               return '';
             }
             
+            // HTMLエスケープ処理を強化（ツールチップマークアップを完全除去）
+            const escapedNotes = finalNotes
+              .replace(/&/g, '&amp;')
+              .replace(/</g, '&lt;')
+              .replace(/>/g, '&gt;')
+              .replace(/"/g, '&quot;')
+              .replace(/'/g, '&#39;')
+              // ツールチップ関連の文字列パターンを除去（念のため）
+              .replace(/data-tooltip="[^"]*"/gi, '')
+              .replace(/tooltip-wrapper/gi, '')
+              .replace(/tooltip-content/gi, '')
+              .replace(/<span[^>]*class="[^"]*tooltip[^"]*"[^>]*>.*?<\/span>/gi, '');
+            
             // デバッグログ（開発環境のみ）
             if (process.env.NODE_ENV === 'development') {
               console.log('✅ Notes will be displayed:', {
                 trimmedLength: trimmedNotes.length,
                 cleanedLength: cleanedNotes.length,
                 finalLength: finalNotes.length,
-                finalPreview: finalNotes.substring(0, 50) + (finalNotes.length > 50 ? '...' : '')
+                escapedLength: escapedNotes.length,
+                finalPreview: finalNotes.substring(0, 50) + (finalNotes.length > 50 ? '...' : ''),
+                escapedPreview: escapedNotes.substring(0, 50) + (escapedNotes.length > 50 ? '...' : '')
               });
             }
             
             return `
-          <!-- 備考欄 -->
+          <!-- 備考欄（ツールチップ処理完全除外版） -->
           <tr>
             <td style="padding: 30px 40px;">
               <h3 style="margin: 0 0 15px 0; font-size: 18px; color: #333333; border-bottom: 2px solid #e0e0e0; padding-bottom: 8px;">備考</h3>
               <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: #f9f9f9; border-radius: 6px;">
                 <tr>
-                  <td style="padding: 15px;">
-                    <p style="margin: 0; font-size: 14px; color: #666666; line-height: 1.6; white-space: pre-wrap;">${finalNotes}</p>
+                  <td style="padding: 15px;" class="notes-content">
+                    <p style="margin: 0; font-size: 14px; color: #666666; line-height: 1.6; white-space: pre-wrap;">${escapedNotes}</p>
                   </td>
                 </tr>
               </table>

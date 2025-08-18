@@ -652,8 +652,18 @@ export default function QuoteHtmlTemplate({
               return (
                 <div className="notes-section">
                   <div className="notes-title">備考</div>
-                  <div className="notes-text">
-                    {finalNotes}
+                  <div className="notes-text notes-content">
+                    {(() => {
+                      // 備考テキストからツールチップマークアップを完全除去
+                      const cleanNotes = finalNotes
+                        .replace(/data-tooltip="[^"]*"/gi, '')
+                        .replace(/tooltip-wrapper/gi, '')
+                        .replace(/tooltip-content/gi, '')
+                        .replace(/<span[^>]*class="[^"]*tooltip[^"]*"[^>]*>/gi, '')
+                        .replace(/<\/span>/gi, '');
+                      
+                      return cleanNotes;
+                    })()}
                   </div>
                 </div>
               );

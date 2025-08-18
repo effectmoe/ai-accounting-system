@@ -204,8 +204,17 @@ export default function QuoteWebTemplate({
             background: rgba(255, 255, 0, 0.1);
           }
           
-          /* 備考欄ではツールチップを無効化 */
-          .notes-section .tooltip-wrapper {
+          /* 備考欄ではツールチップを完全無効化 */
+          .notes-section .tooltip-wrapper,
+          .notes-content .tooltip-wrapper {
+            border-bottom: none !important;
+            cursor: default !important;
+            background: transparent !important;
+            position: static !important;
+          }
+          
+          .notes-section .tooltip-wrapper *,
+          .notes-content .tooltip-wrapper * {
             border-bottom: none !important;
             cursor: default !important;
             background: transparent !important;
@@ -302,10 +311,14 @@ export default function QuoteWebTemplate({
           /* 備考欄ではツールチップを強制的に無効化 */
           .notes-section .tooltip-wrapper:hover .tooltip-content,
           .notes-section .tooltip-wrapper:focus .tooltip-content,
-          .notes-section .tooltip-wrapper:active .tooltip-content {
+          .notes-section .tooltip-wrapper:active .tooltip-content,
+          .notes-content .tooltip-wrapper:hover .tooltip-content,
+          .notes-content .tooltip-wrapper:focus .tooltip-content,
+          .notes-content .tooltip-wrapper:active .tooltip-content {
             visibility: hidden !important;
             opacity: 0 !important;
             display: none !important;
+            pointer-events: none !important;
           }
           
           /* デスクトップ: ホバーで表示（項目行内のみ） */
@@ -347,10 +360,12 @@ export default function QuoteWebTemplate({
           }
           
           /* 備考欄ではモバイルタップも無効化 */
-          .notes-section .tooltip-wrapper.active .tooltip-content {
+          .notes-section .tooltip-wrapper.active .tooltip-content,
+          .notes-content .tooltip-wrapper.active .tooltip-content {
             visibility: hidden !important;
             opacity: 0 !important;
             display: none !important;
+            pointer-events: none !important;
           }
           
           /* ツールチップの矢印 - 位置に応じて調整 */
@@ -706,6 +721,19 @@ export default function QuoteWebTemplate({
             // ツールチップは項目行内のもののみ対象にする（備考欄を除外）
             const tooltipWrappers = document.querySelectorAll('.item-row .tooltip-wrapper, .mobile-card .tooltip-wrapper, .desktop-table .item-row .tooltip-wrapper');
             console.log('🎯 [WEB-TEMPLATE-JS:DOM-LOADED] Found tooltip wrappers (excluding notes section):', tooltipWrappers.length);
+            
+            // 備考セクション内のツールチップを明示的に無効化
+            const notesTooltips = document.querySelectorAll('.notes-section .tooltip-wrapper, .notes-content .tooltip-wrapper');
+            if (notesTooltips.length > 0) {
+              console.log('⚠️ [WEB-TEMPLATE-JS:DOM-LOADED] Disabling tooltips in notes section:', notesTooltips.length);
+              notesTooltips.forEach((tooltip, index) => {
+                tooltip.classList.add('notes-disabled-tooltip');
+                tooltip.removeAttribute('tabindex');
+                tooltip.style.cursor = 'default';
+                tooltip.style.borderBottom = 'none';
+                console.log(\`🚫 Disabled notes tooltip \${index + 1}\`);
+              });
+            }
             
             // さらに詳細なログを追加
             console.log('🔧 [WEB-TEMPLATE-JS:DOM-LOADED] Tooltip wrapper details:', {
