@@ -202,7 +202,7 @@ export async function generateServerHtmlQuote({
                     const subtotalAmount = (item.quantity || 1) * (item.unitPrice || 0);
                     const taxAmount = subtotalAmount * (quote.taxRate || 0.1);
                     
-                    // メール版ツールチップ付きの項目名を生成（インライン注釈方式）
+                    // メール版ツールチップ付きの項目名を生成（シンプルなインライン注釈方式）
                     const renderItemWithTooltip = (itemName: string, tooltip: string) => {
                       if (!tooltip || tooltip.trim() === '') {
                         return itemName;
@@ -215,29 +215,20 @@ export async function generateServerHtmlQuote({
                         .replace(/'/g, '&#39;')
                         .replace(/</g, '&lt;')
                         .replace(/>/g, '&gt;');
-                      const escapedTooltip = tooltip
+                      
+                      // 長い説明文は30文字で切って省略記号を付ける
+                      const trimmedTooltip = tooltip.length > 30 ? tooltip.substring(0, 30) + '...' : tooltip;
+                      const escapedTooltip = trimmedTooltip
                         .replace(/&/g, '&amp;')
                         .replace(/"/g, '&quot;')
                         .replace(/'/g, '&#39;')
                         .replace(/</g, '&lt;')
                         .replace(/>/g, '&gt;');
                       
-                      // 長い説明文は50文字で切って省略記号を付ける
-                      const trimmedTooltip = tooltip.length > 50 ? tooltip.substring(0, 50) + '...' : tooltip;
-                      const escapedTrimmedTooltip = trimmedTooltip
-                        .replace(/&/g, '&amp;')
-                        .replace(/"/g, '&quot;')
-                        .replace(/'/g, '&#39;')
-                        .replace(/</g, '&lt;')
-                        .replace(/>/g, '&gt;');
+                      // シンプルなインライン注釈（マーカーなし、確実に表示される）
+                      const annotationStyle = 'color: #6b7280; font-size: 0.85em; margin-left: 6px; font-weight: normal;';
                       
-                      // メール版ライトグレーマーカースタイル
-                      const markerStyle = 'background: linear-gradient(180deg, transparent 60%, rgba(229, 231, 235, 0.8) 60%); padding: 1px 2px; border-radius: 2px; border-bottom: 1px dotted #6b7280;';
-                      
-                      // インライン注釈スタイル
-                      const annotationStyle = 'font-size: 0.75em; color: #6b7280; font-style: italic; margin-left: 4px; font-weight: normal;';
-                      
-                      return `<span style="${markerStyle}">${escapedName}</span><span style="${annotationStyle}">（※${escapedTrimmedTooltip}）</span>`;
+                      return `${escapedName}<span style="${annotationStyle}">（${escapedTooltip}）</span>`;
                     };
                     
                     // ツールチップを検索して項目名を拡張
