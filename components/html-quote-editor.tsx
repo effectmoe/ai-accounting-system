@@ -110,11 +110,24 @@ export default function HtmlQuoteEditor({
     'いつもお世話になっております。\nご依頼いただいた内容について、お見積りをお送りいたします。\nご不明な点がございましたら、お気軽にお問い合わせください。'
   );
   
+  // 挨拶文のstate追加
+  const [greetingMessage, setGreetingMessage] = useState(
+    quote.htmlSettings?.greetingMessage || 
+    '平素より格別のご高配を賜り、厚く御礼申し上げます。\nご依頼いただきました件について、下記の通りお見積りさせていただきます。'
+  );
+  
   // customMessageの変更を追跡
   const handleCustomMessageChange = (newContent: string) => {
     console.log('[HtmlQuoteEditor] customMessage changing from:', customMessage);
     console.log('[HtmlQuoteEditor] customMessage changing to:', newContent);
     setCustomMessage(newContent);
+  };
+  
+  // greetingMessageの変更を追跡
+  const handleGreetingMessageChange = (newContent: string) => {
+    console.log('[HtmlQuoteEditor] greetingMessage changing from:', greetingMessage);
+    console.log('[HtmlQuoteEditor] greetingMessage changing to:', newContent);
+    setGreetingMessage(newContent);
   };
   
   // 送信先情報の初期化（顧客の担当者情報を優先）
@@ -185,6 +198,12 @@ export default function HtmlQuoteEditor({
       if (quote.htmlSettings.customMessage !== undefined && quote.htmlSettings.customMessage !== customMessage) {
         console.log('[HtmlQuoteEditor.useEffect] Updating customMessage from:', customMessage, 'to:', quote.htmlSettings.customMessage);
         setCustomMessage(quote.htmlSettings.customMessage);
+      }
+      
+      // 挨拶文を復元
+      if (quote.htmlSettings.greetingMessage !== undefined && quote.htmlSettings.greetingMessage !== greetingMessage) {
+        console.log('[HtmlQuoteEditor.useEffect] Updating greetingMessage from:', greetingMessage, 'to:', quote.htmlSettings.greetingMessage);
+        setGreetingMessage(quote.htmlSettings.greetingMessage);
       }
       
       // 提案オプションを復元
@@ -271,6 +290,7 @@ export default function HtmlQuoteEditor({
         companyInfo,
         recipientName,
         customMessage,
+        greetingMessage,
       });
       
       const response = await fetch('/api/quotes/preview-html', {
@@ -281,6 +301,7 @@ export default function HtmlQuoteEditor({
           companyInfo,
           recipientName: recipientName || previewQuote.customerName,
           customMessage,
+          greetingMessage,
           suggestedOptions: includeInteractiveElements ? suggestedOptions : [],
           tooltips: includeInteractiveElements ? Array.from(tooltips.entries()) : [],
           productLinks: includeInteractiveElements ? Array.from(productLinks.entries()) : [],
@@ -309,7 +330,7 @@ export default function HtmlQuoteEditor({
       console.error('Preview generation error:', error);
       setHtmlPreview(`<p style="color: red;">エラー: ${error.message}</p>`);
     }
-  }, [editedQuote, companyInfo, recipientName, customMessage, suggestedOptions, tooltips, productLinks, includeTracking, includeInteractiveElements, useWebLayout, staffName]); // staffNameも依存配列に追加
+  }, [editedQuote, companyInfo, recipientName, customMessage, greetingMessage, suggestedOptions, tooltips, productLinks, includeTracking, includeInteractiveElements, useWebLayout, staffName]); // staffNameとgreetingMessageも依存配列に追加
 
   // プレビュータブが選択された時、または全画面プレビューが開かれた時に生成
   useEffect(() => {
@@ -491,6 +512,7 @@ export default function HtmlQuoteEditor({
           recipientEmail: emailToSend, // 更新されたemailToSendを使用
           recipientName,
           customMessage,
+          greetingMessage,
           attachPdf,
           pdfBuffer,
           suggestedOptions: includeInteractiveElements ? suggestedOptions : [],
@@ -521,12 +543,14 @@ export default function HtmlQuoteEditor({
       if (onSave) {
         // デバッグ用ログ
         console.log('[HtmlQuoteEditor.handleSave] Current customMessage:', customMessage);
+        console.log('[HtmlQuoteEditor.handleSave] Current greetingMessage:', greetingMessage);
         console.log('[HtmlQuoteEditor.handleSave] HTML content length:', customMessage.length);
         
         const dataToSave = {
           ...editedQuote,
           htmlSettings: {
             customMessage,
+            greetingMessage,
             suggestedOptions,
             tooltips: Array.from(tooltips.entries()),
             productLinks: Array.from(productLinks.entries()),
@@ -1007,6 +1031,20 @@ export default function HtmlQuoteEditor({
             {/* メッセージタブ */}
             <TabsContent value="message" className="space-y-4">
               <div>
+                <Label htmlFor="greeting-message">挨拶文</Label>
+                <div className="mt-1">
+                  <RichTextEditor
+                    content={greetingMessage}
+                    onChange={handleGreetingMessageChange}
+                    placeholder="お客様への挨拶文を入力（例：平素より格別のご高配を賜り...）"
+                  />
+                </div>
+                <p className="text-sm text-muted-foreground mt-1">
+                  お客様名の後に表示される挨拶文です。デフォルト：「平素より格別のご高配を賜り、厚く御礼申し上げます。ご依頼いただきました件について、下記の通りお見積りさせていただきます。」
+                </p>
+              </div>
+
+              <div>
                 <Label htmlFor="custom-message">カスタムメッセージ</Label>
                 <div className="mt-1">
                   <RichTextEditor
@@ -1016,7 +1054,7 @@ export default function HtmlQuoteEditor({
                   />
                 </div>
                 <p className="text-sm text-muted-foreground mt-1">
-                  見積書の冒頭に表示されるメッセージです。太字、リンク、文字色などの装飾が可能です。
+                  挨拶文の後に表示される追加メッセージです。特別な連絡事項などを記載できます。
                 </p>
               </div>
 
