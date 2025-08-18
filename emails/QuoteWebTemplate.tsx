@@ -28,7 +28,7 @@ interface SuggestedOption {
 // Updated: 2025-08-17 - 修正版: デバッグを追加して確実にツールチップを表示
 const renderDetailsWithTooltip = (details: string, tooltip: string) => {
   // デバッグ用ログ（開発環境でのみ）
-  if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname.includes('preview'))) {
+  if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
     console.log('🎯 QuoteWebTemplate renderDetailsWithTooltip called:', {
       details: details?.substring(0, 50) + '...',
       hasTooltip: !!tooltip,
@@ -37,11 +37,15 @@ const renderDetailsWithTooltip = (details: string, tooltip: string) => {
   }
   
   if (!tooltip || tooltip.trim() === '') {
-    console.log('❌ No tooltip provided for:', details);
+    if (process.env.NODE_ENV === 'development') {
+      console.log('❌ No tooltip provided for:', details);
+    }
     return <span>{details}</span>;
   }
   
-  console.log('✅ Creating tooltip for:', details?.substring(0, 30), 'with tooltip:', tooltip?.substring(0, 30));
+  if (process.env.NODE_ENV === 'development') {
+    console.log('✅ Creating tooltip for:', details?.substring(0, 30), 'with tooltip:', tooltip?.substring(0, 30));
+  }
   
   // HTMLエスケープ処理を強化
   const escapedDetails = details
@@ -59,7 +63,7 @@ const renderDetailsWithTooltip = (details: string, tooltip: string) => {
   
   // より目立つスタイルで確実にツールチップを表示（強化版）
   const markerHtml = `
-    <span class="tooltip-wrapper tooltip-debug show-tooltip" data-tooltip="${escapedTooltip}" title="${escapedTooltip}" tabindex="0">
+    <span class="tooltip-wrapper show-tooltip" data-tooltip="${escapedTooltip}" title="${escapedTooltip}" tabindex="0">
       <span style="
         background: linear-gradient(180deg, transparent 40%, rgba(254, 240, 138, 0.9) 40%);
         cursor: help;
@@ -120,7 +124,7 @@ export default function QuoteWebTemplate({
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://accounting-automation.vercel.app';
   
   // デバッグ用ログ（開発環境でのみ）
-  if (typeof console !== 'undefined' && typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname.includes('preview'))) {
+  if (process.env.NODE_ENV === 'development') {
     console.log('[QuoteWebTemplate] Rendering with:', {
       companyName: companyInfo?.companyName || companyInfo?.name || '未設定',
       suggestedOptionsCount: suggestedOptions?.length || 0,
@@ -205,12 +209,6 @@ export default function QuoteWebTemplate({
             cursor: help;
           }
           
-          /* デバッグ用のスタイル（開発環境での確認用） */
-          .tooltip-debug {
-            /* デバッグ用の背景色を追加 */
-            background: rgba(255, 255, 0, 0.1);
-            outline: 1px dashed rgba(255, 0, 0, 0.3);
-          }
           
           .tooltip-content {
             /* 初期状態で非表示 */
@@ -512,8 +510,8 @@ export default function QuoteWebTemplate({
       {/* JavaScriptでタッチイベントとデバッグ情報を処理 */}
       <script dangerouslySetInnerHTML={{
         __html: `
-          // 開発環境でのみデバッグログを表示
-          const isDev = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname.includes('preview'));
+          // 開発環境チェック
+          const isDev = ${process.env.NODE_ENV === 'development'};
           
           // ページ読み込み時にデバッグ情報を表示
           if (isDev) {
@@ -760,7 +758,7 @@ export default function QuoteWebTemplate({
                     const taxAmount = subtotalAmount * (quote.taxRate || 0.1);
                     
                     // デバッグログ: 項目データを確認（開発環境のみ）
-                    if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname.includes('preview'))) {
+                    if (process.env.NODE_ENV === 'development') {
                       console.log(`🎯 QuoteWebTemplate item ${index + 1}:`, {
                         itemName: item.itemName,
                         description: item.description,
@@ -972,50 +970,24 @@ export default function QuoteWebTemplate({
           </div>
         </section>
 
-        {/* 備考 - 修正版（確実に表示） */}
+        {/* 備考セクション */}
         {(() => {
-          // より寛容な備考チェック（空白文字を除いて何か内容があるか）
+          // 備考の内容をチェック（空白文字を除いて内容があるか）
           const originalNotes = quote.notes || '';
           const normalizedNotes = originalNotes.trim();
           const hasNotes = normalizedNotes && normalizedNotes.length > 0;
           
-          // デバッグ用ログ（開発環境でのみ）
-          if (typeof console !== 'undefined') {
-            console.log('📝 QuoteWebTemplate notes check (fixed version):', {
-              originalNotes: originalNotes,
-              normalizedNotes: normalizedNotes,
-              hasNotes: hasNotes,
-              notesLength: normalizedNotes.length,
-              notesPreview: normalizedNotes.substring(0, 100) || 'なし',
-              notesType: typeof quote.notes,
-              isEmpty: !hasNotes,
-              willShow: hasNotes
-            });
-          }
-          
-          // 備考が存在する場合は必ず表示（より確実な条件チェック）
-          if (hasNotes) {
-            return (
-              <section style={notesSectionStyle}>
-                <h3 style={h3Style}>備考</h3>
-                <div style={notesTextStyle}>
-                  {cleanDuplicateSignatures(normalizedNotes)}
-                </div>
-              </section>
-            );
-          }
-          
-          // 常に表示するデバッグモード（開発環境または明示的な指定）
           return (
-            <section style={{...notesSectionStyle, backgroundColor: '#fef2f2', borderLeft: '4px solid #ef4444'}}>
-              <h3 style={{...h3Style, color: '#dc2626'}}>デバッグ: 備考情報</h3>
+            <section style={notesSectionStyle}>
+              <h3 style={h3Style}>備考</h3>
               <div style={notesTextStyle}>
-                備考（元）: {quote.notes ? `"${quote.notes}"` : '空文字列または存在しません'}<br/>
-                正規化後: {normalizedNotes ? `"${normalizedNotes}"` : '空'}<br/>
-                タイプ: {typeof quote.notes}<br/>
-                長さ: {normalizedNotes.length}<br/>
-                表示判定: {hasNotes ? '表示する' : '非表示'}<br/>
-                実際の動作: この情報が表示されています
+                {hasNotes ? (
+                  cleanDuplicateSignatures(normalizedNotes)
+                ) : (
+                  <span style={{color: '#9ca3af', fontStyle: 'italic'}}>
+                    特記事項はございません
+                  </span>
+                )}
               </div>
             </section>
           );
