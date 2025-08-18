@@ -352,6 +352,8 @@ export default function QuoteWebTemplate({
             visibility: visible !important;
             opacity: 1 !important;
             display: block !important;
+            position: absolute !important;
+            z-index: 9999999 !important;
           }
           
           /* 備考欄ではツールチップを強制的に無効化 */
@@ -426,20 +428,41 @@ export default function QuoteWebTemplate({
             border-color: #f59e0b transparent transparent transparent;
           }
           
-          /* 左端配置時の矢印位置調整 */
+          /* 左端配置時の調整 */
+          .tooltip-wrapper.edge-left .tooltip-content {
+            left: 0 !important;
+            right: auto !important;
+            transform: translateX(0) !important;
+            margin-left: 0 !important;
+          }
+          
           .tooltip-wrapper.edge-left .tooltip-content::after {
             left: 30px !important;
+            right: auto !important;
             transform: translateX(0) !important;
           }
           
-          /* 右端配置時の矢印位置調整 */
+          /* 右端配置時の調整 */
+          .tooltip-wrapper.edge-right .tooltip-content {
+            left: auto !important;
+            right: 0 !important;
+            transform: translateX(0) !important;
+            margin-right: 0 !important;
+          }
+          
           .tooltip-wrapper.edge-right .tooltip-content::after {
             left: auto !important;
             right: 30px !important;
             transform: translateX(0) !important;
           }
           
-          /* 中央配置時の矢印位置調整 */
+          /* 中央配置時の調整 */
+          .tooltip-wrapper.edge-center .tooltip-content {
+            left: 50% !important;
+            right: auto !important;
+            transform: translateX(-50%) !important;
+          }
+          
           .tooltip-wrapper.edge-center .tooltip-content::after {
             left: 50% !important;
             right: auto !important;
@@ -790,36 +813,55 @@ export default function QuoteWebTemplate({
               timestamp: new Date().toISOString()
             });
             
-            // ツールチップ位置調整関数 - シンプル版
+            // ツールチップ位置調整関数 - 修正版
             function adjustTooltipPosition(wrapper, content) {
               if (!wrapper || !content) return;
               
               const rect = wrapper.getBoundingClientRect();
               const viewportWidth = window.innerWidth;
+              const tooltipWidth = 320; // ツールチップの想定幅
               
               // ビューポートの中心からの距離を計算
               const elementCenter = rect.left + (rect.width / 2);
-              const viewportCenter = viewportWidth / 2;
               
-              // 要素が画面の左側、中央、右側のどこにあるか判定
-              if (elementCenter < viewportWidth * 0.25) {
-                // 左側: ツールチップを右寄せ
+              // デバッグログ
+              console.log('📍 Adjusting tooltip position:', {
+                elementLeft: rect.left,
+                elementCenter: elementCenter,
+                viewportWidth: viewportWidth,
+                wouldOverflowLeft: (elementCenter - tooltipWidth/2) < 0,
+                wouldOverflowRight: (elementCenter + tooltipWidth/2) > viewportWidth
+              });
+              
+              // まず位置クラスをリセット
+              wrapper.classList.remove('edge-left', 'edge-right', 'edge-center');
+              
+              // 要素が画面の左側にある場合
+              if (rect.left < 100) {
+                // 左端配置
+                wrapper.classList.add('edge-left');
                 content.style.left = '0';
                 content.style.right = 'auto';
                 content.style.transform = 'translateX(0)';
-                console.log('📍 Element on left side - align tooltip to left');
-              } else if (elementCenter > viewportWidth * 0.75) {
-                // 右側: ツールチップを左寄せ
+                console.log('📍 Applied edge-left positioning');
+              } 
+              // 要素が画面の右側にある場合
+              else if (rect.right > viewportWidth - 100) {
+                // 右端配置
+                wrapper.classList.add('edge-right');
                 content.style.left = 'auto';
                 content.style.right = '0';
                 content.style.transform = 'translateX(0)';
-                console.log('📍 Element on right side - align tooltip to right');
-              } else {
-                // 中央: デフォルトの中央配置
+                console.log('📍 Applied edge-right positioning');
+              } 
+              // 中央の要素
+              else {
+                // 中央配置（デフォルト）
+                wrapper.classList.add('edge-center');
                 content.style.left = '50%';
                 content.style.right = 'auto';
                 content.style.transform = 'translateX(-50%)';
-                console.log('📍 Element in center - center tooltip');
+                console.log('📍 Applied edge-center positioning');
               }
               
               // 上部にスペースがない場合は下に表示
@@ -851,9 +893,14 @@ export default function QuoteWebTemplate({
                 console.log(\`🖱️ Mouse enter on tooltip \${index + 1}\`);
                 const content = this.querySelector('.tooltip-content');
                 if (content) {
-                  adjustTooltipPosition(wrapper, content);
+                  // まずツールチップを表示
                   content.classList.add('force-show');
                   console.log('✅ Tooltip shown on mouseenter');
+                  
+                  // 少し遅延を入れてから位置調整
+                  setTimeout(() => {
+                    adjustTooltipPosition(wrapper, content);
+                  }, 10);
                 } else {
                   console.log('❌ No tooltip content found in wrapper');
                 }
@@ -873,8 +920,10 @@ export default function QuoteWebTemplate({
                 console.log(\`🎯 Focus on tooltip \${index + 1}\`);
                 const content = this.querySelector('.tooltip-content');
                 if (content) {
-                  adjustTooltipPosition(wrapper, content);
                   content.classList.add('force-show');
+                  setTimeout(() => {
+                    adjustTooltipPosition(wrapper, content);
+                  }, 10);
                 }
               });
               
@@ -891,11 +940,6 @@ export default function QuoteWebTemplate({
                 console.log(\`👆 Touch start on tooltip \${index + 1}\`);
                 e.stopPropagation();
                 
-                const content = this.querySelector('.tooltip-content');
-                if (content) {
-                  adjustTooltipPosition(wrapper, content);
-                }
-                
                 // 他のアクティブなツールチップを閉じる
                 document.querySelectorAll('.tooltip-wrapper.active').forEach(w => {
                   if (w !== wrapper) w.classList.remove('active');
@@ -903,6 +947,13 @@ export default function QuoteWebTemplate({
                 
                 // 現在のツールチップをトグル
                 wrapper.classList.toggle('active');
+                
+                const content = this.querySelector('.tooltip-content');
+                if (content && wrapper.classList.contains('active')) {
+                  setTimeout(() => {
+                    adjustTooltipPosition(wrapper, content);
+                  }, 10);
+                }
               });
             });
             
