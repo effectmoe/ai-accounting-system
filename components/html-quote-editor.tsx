@@ -1444,7 +1444,11 @@ export default function HtmlQuoteEditor({
               {/* プレビューエリア（レスポンシブ対応） */}
               <div
                 className="border rounded-lg"
-                style={{ height: '600px', overflow: 'visible' }}
+                style={{ 
+                  height: '1200px', 
+                  minHeight: '800px',
+                  overflow: 'visible' 
+                }}
               >
                 <iframe
                   srcDoc={htmlPreview}
