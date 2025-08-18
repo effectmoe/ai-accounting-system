@@ -59,33 +59,38 @@ const renderDetailsWithTooltip = (details: string, tooltip: string) => {
   // メール版でもCSSツールチップを実装（title属性と併用）
   const markerHtml = `
     <span class="tooltip-wrapper-email" title="${escapedTooltip}" style="
-      border-bottom: 1px dotted #666;
+      border-bottom: 2px dotted #f59e0b;
       cursor: help;
       text-decoration: none;
       position: relative;
       display: inline-block;
+      background: linear-gradient(180deg, transparent 40%, rgba(254, 240, 138, 0.9) 40%);
+      padding: 2px 4px;
+      border-radius: 3px;
+      font-weight: 600;
     ">${escapedDetails}
       <span class="tooltip-content-email" style="
+        visibility: hidden;
         opacity: 0;
         pointer-events: none;
         background-color: #fef3c7;
         color: #1f2937;
         text-align: left;
-        border-radius: 6px;
-        padding: 12px 16px;
+        border-radius: 8px;
+        padding: 14px 18px;
         position: absolute;
         z-index: 999999;
-        bottom: 125%;
+        bottom: 130%;
         left: 50%;
         transform: translateX(-50%) scale(0.95);
-        width: 280px;
-        min-width: 200px;
-        max-width: 90vw;
+        width: 300px;
+        min-width: 220px;
+        max-width: 95vw;
         font-size: 14px;
         font-weight: 500;
-        box-shadow: 0 8px 25px rgba(0,0,0,0.25);
-        border: 2px solid #f59e0b;
-        transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3), 0 4px 8px rgba(0,0,0,0.1);
+        border: 3px solid #f59e0b;
+        transition: visibility 0s, opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
         white-space: normal;
         line-height: 1.5;
         word-wrap: break-word;
@@ -420,14 +425,25 @@ export default function QuoteHtmlTemplate({
               cursor: help;
             }
             .tooltip-wrapper-email:hover .tooltip-content-email {
+              visibility: visible;
               opacity: 1;
               pointer-events: auto;
               transform: translateX(-50%) scale(1);
+              transition-delay: 0.2s;
             }
             .tooltip-wrapper-email:focus .tooltip-content-email {
+              visibility: visible;
               opacity: 1;
               pointer-events: auto;
               transform: translateX(-50%) scale(1);
+              transition-delay: 0.2s;
+            }
+            .tooltip-wrapper-email.active .tooltip-content-email {
+              visibility: visible;
+              opacity: 1;
+              pointer-events: auto;
+              transform: translateX(-50%) scale(1);
+              transition-delay: 0.2s;
             }
           `
         }} />
