@@ -214,6 +214,15 @@ export default function QuoteWebTemplate({
     }).format(d);
   };
 
+  const containerStyle = {
+    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Ubuntu, sans-serif",
+    backgroundColor: '#f6f9fc',
+    padding: '0',
+    margin: '0',
+    minHeight: '100vh',
+    color: '#1f2937'
+  };
+
   return (
     <div style={containerStyle} className="main-container">
       {/* ビューポート設定 */}
