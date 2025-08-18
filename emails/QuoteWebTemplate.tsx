@@ -229,7 +229,7 @@ export default function QuoteWebTemplate({
       <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
       
       {/* デプロイバージョン情報 - デバッグ用 */}
-      {/* Deploy Version: CSS-Fix-v2 | Build Date: 2025-08-18 17:45 JST | CSS Position Conflict Fixed */}
+      {/* Deploy Version: Debug-v3 | Build Date: 2025-08-18 18:00 JST | Enhanced CSS Debugging */}
       
       {/* レスポンシブ対応のCSS */}
       <style dangerouslySetInnerHTML={{
@@ -821,6 +821,21 @@ export default function QuoteWebTemplate({
               timestamp: new Date().toISOString()
             });
             
+            // 詳細なDOM構造チェック
+            console.log('📋 DOM structure analysis:');
+            document.querySelectorAll('.tooltip-wrapper').forEach((w, i) => {
+              const content = w.querySelector('.tooltip-content');
+              console.log(`  Wrapper ${i + 1}:`, {
+                element: w,
+                hasContent: !!content,
+                parentClass: w.parentElement?.className,
+                contentText: content ? content.textContent?.substring(0, 50) + '...' : 'No content',
+                wrapperRect: w.getBoundingClientRect(),
+                isInItemRow: w.closest('.item-row') !== null,
+                isInMobileCard: w.closest('.mobile-card') !== null
+              });
+            });
+            
             // ツールチップ位置調整関数 - 高精度版
             function adjustTooltipPosition(wrapper, content) {
               if (!wrapper || !content) return;
@@ -953,6 +968,14 @@ export default function QuoteWebTemplate({
                 console.log('🖱️ Mouse enter on tooltip ' + (index + 1));
                 const content = this.querySelector('.tooltip-content');
                 if (content) {
+                  console.log('📍 Content element found:', content);
+                  console.log('📍 Content classes before:', content.className);
+                  console.log('📍 Content computed style (visibility):', window.getComputedStyle(content).visibility);
+                  console.log('📍 Content computed style (display):', window.getComputedStyle(content).display);
+                  console.log('📍 Content computed style (opacity):', window.getComputedStyle(content).opacity);
+                  console.log('📍 Content computed style (position):', window.getComputedStyle(content).position);
+                  console.log('📍 Content computed style (z-index):', window.getComputedStyle(content).zIndex);
+                  
                   // まず位置を事前計算してから表示
                   adjustTooltipPosition(wrapper, content);
                   
@@ -960,6 +983,11 @@ export default function QuoteWebTemplate({
                   requestAnimationFrame(() => {
                     content.classList.add('force-show');
                     console.log('✅ Tooltip ' + (index + 1) + ' shown with pre-calculated position');
+                    console.log('📍 Content classes after:', content.className);
+                    console.log('📍 Content computed style (visibility) after:', window.getComputedStyle(content).visibility);
+                    console.log('📍 Content computed style (display) after:', window.getComputedStyle(content).display);
+                    console.log('📍 Content computed style (opacity) after:', window.getComputedStyle(content).opacity);
+                    console.log('📍 Content computed style (position) after:', window.getComputedStyle(content).position);
                   });
                 } else {
                   console.log('❌ No tooltip content found in wrapper');
