@@ -150,17 +150,51 @@ export async function generateServerHtmlQuote({
     <tr>
       <td align="center">
         <table cellpadding="0" cellspacing="0" border="0" width="600" style="background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-          <!-- ヘッダー -->
+          <!-- ヘッダー（お見積書タイトルのみ） -->
           <tr>
-            <td style="padding: 40px 40px 30px 40px;">
+            <td style="padding: 30px 40px 20px 40px;">
               <h1 style="margin: 0; text-align: center; color: #333333; font-size: 28px; font-weight: bold;">お見積書</h1>
             </td>
           </tr>
           
-          <!-- 顧客情報 -->
+          <!-- 顧客情報セクション（従来の見積書形式） -->
+          <tr>
+            <td style="padding: 0 40px 20px 40px;">
+              <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color: #f8f9fa; border-radius: 6px; padding: 20px;">
+                <tr>
+                  <td>
+                    <p style="margin: 0 0 15px 0; font-size: 20px; font-weight: bold; color: #333333; border-bottom: 2px solid #e0e0e0; padding-bottom: 10px;">
+                      ${customerName} 様
+                    </p>
+                    ${quote.customer?.companyName ? `
+                    <p style="margin: 0 0 5px 0; font-size: 14px; color: #666666;">
+                      <strong>会社名：</strong>${quote.customer.companyName}
+                    </p>
+                    ` : ''}
+                    ${quote.customer?.address ? `
+                    <p style="margin: 0 0 5px 0; font-size: 14px; color: #666666;">
+                      <strong>住所：</strong>${quote.customer.address}
+                    </p>
+                    ` : ''}
+                    ${quote.customer?.phone ? `
+                    <p style="margin: 0 0 5px 0; font-size: 14px; color: #666666;">
+                      <strong>電話番号：</strong>${quote.customer.phone}
+                    </p>
+                    ` : ''}
+                    ${quote.customer?.email ? `
+                    <p style="margin: 0 0 5px 0; font-size: 14px; color: #666666;">
+                      <strong>メール：</strong>${quote.customer.email}
+                    </p>
+                    ` : ''}
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          
+          <!-- 挨拶文 -->
           <tr>
             <td style="padding: 0 40px 30px 40px;">
-              <p style="margin: 0 0 10px 0; font-size: 18px; font-weight: bold; color: #333333;">${customerName} 様</p>
               <p style="margin: 0 0 5px 0; font-size: 14px; color: #666666; line-height: 1.6;">平素より格別のご高配を賜り、厚く御礼申し上げます。</p>
               <p style="margin: 0; font-size: 14px; color: #666666; line-height: 1.6;">ご依頼いただきました件について、下記の通りお見積りさせていただきます。</p>
             </td>
