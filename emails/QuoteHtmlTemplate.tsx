@@ -99,6 +99,7 @@ export default function QuoteHtmlTemplate({
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>{quote.title || `お見積書 #${quote.quoteNumber}`}</title>
+        {/* Deploy Version: 644353e87 | Build Date: 2025-08-18 17:20 JST | Email Tooltip Fix Applied */}
         <style dangerouslySetInnerHTML={{
           __html: `
             * {
