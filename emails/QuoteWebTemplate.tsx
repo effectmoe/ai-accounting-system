@@ -271,8 +271,6 @@ export default function QuoteWebTemplate({
             display: inline-block;
             border-bottom: 1px dotted #333;
             cursor: help;
-            /* デバッグ用の背景色を追加 */
-            background: rgba(255, 255, 0, 0.1);
           }
           
           /* 備考欄ではツールチップを完全無効化 */
@@ -302,12 +300,9 @@ export default function QuoteWebTemplate({
             text-align: left;
             border-radius: 6px;
             padding: 12px 16px;
-            /* 位置設定 - デフォルトは中央 */
-            position: absolute;
+            /* 位置設定 - fixedに変更して親要素のoverflowの影響を受けないようにする */
+            position: fixed;
             z-index: 9999999; /* 最前面に表示 */
-            bottom: 130%;
-            left: 50%;
-            transform: translateX(-50%) scale(0.95);
             min-width: 200px;
             max-width: min(320px, calc(100vw - 40px)); /* ビューポート幅に応じて調整 */
             /* フォント設定 */
@@ -326,41 +321,16 @@ export default function QuoteWebTemplate({
             box-sizing: border-box;
           }
           
-          /* 画面左端での位置調整 - 強化版 */
-          .tooltip-wrapper.edge-left .tooltip-content {
-            left: 0 !important;
-            right: auto !important;
-            transform: translateX(0) scale(0.95) !important;
-            margin-left: 10px !important;
-          }
-          
-          /* 画面右端での位置調整 - 強化版 */
-          .tooltip-wrapper.edge-right .tooltip-content {
-            left: auto !important;
-            right: 0 !important;
-            transform: translateX(0) scale(0.95) !important;
-            margin-right: 10px !important;
-          }
-          
-          /* 中央表示（デフォルト） */
-          .tooltip-wrapper.edge-center .tooltip-content {
-            left: 50% !important;
-            right: auto !important;
-            transform: translateX(-50%) scale(0.95) !important;
-            margin-left: 0 !important;
-            margin-right: 0 !important;
-          }
-          
-          /* ツールチップが画面上部に出る場合は下に表示 */
-          .tooltip-content.bottom-position {
-            bottom: auto;
-            top: 130%;
-          }
-          
-          .tooltip-content.bottom-position::after {
-            top: auto;
-            bottom: 100%;
-            border-color: transparent transparent rgba(254, 240, 138, 0.95) transparent;
+          /* ツールチップの矢印（三角形） */
+          .tooltip-content::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 8px;
+            border-style: solid;
+            border-color: #fef3c7 transparent transparent transparent;
           }
           
           /* ホバー時の表示を確実にする - 強化版 */
@@ -815,7 +785,7 @@ export default function QuoteWebTemplate({
               timestamp: new Date().toISOString()
             });
             
-            // ツールチップ位置計算関数 - 画面端対応強化版
+            // ツールチップ位置計算関数 - position: fixed対応版
             function adjustTooltipPosition(wrapper, content) {
               if (!wrapper || !content) return;
               
@@ -835,34 +805,34 @@ export default function QuoteWebTemplate({
                 tooltipWidth: tooltipWidth
               }, null, 2));
               
-              // 既存のクラスをリセット
-              wrapper.classList.remove('edge-left', 'edge-right', 'edge-center');
-              content.classList.remove('bottom-position');
-              
-              // 水平方向の位置判定を厳密に
+              // position: fixedの場合、getBoundingClientRectの値をそのまま使用
               const wrapperCenter = rect.left + (rect.width / 2);
-              const leftBoundary = tooltipHalfWidth + 20; // 余白を考慮
-              const rightBoundary = viewportWidth - tooltipHalfWidth - 20; // 余白を考慮
               
-              if (wrapperCenter < leftBoundary) {
-                // 画面左端: ツールチップを左端に固定
-                console.log('📍 Positioning tooltip at LEFT edge');
-                wrapper.classList.add('edge-left');
-              } else if (wrapperCenter > rightBoundary) {
-                // 画面右端: ツールチップを右端に固定
-                console.log('📍 Positioning tooltip at RIGHT edge');
-                wrapper.classList.add('edge-right');
-              } else {
-                // 中央: デフォルトの中央配置
-                console.log('📍 Positioning tooltip at CENTER');
-                wrapper.classList.add('edge-center');
+              // ツールチップの位置を計算
+              let tooltipLeft = wrapperCenter - tooltipHalfWidth;
+              let tooltipTop = rect.top - 150; // ツールチップの高さを考慮
+              
+              // 画面端での調整
+              if (tooltipLeft < 10) {
+                // 左端にはみ出す場合
+                tooltipLeft = 10;
+                console.log('📍 Adjusting tooltip - too far left');
+              } else if (tooltipLeft + tooltipWidth > viewportWidth - 10) {
+                // 右端にはみ出す場合
+                tooltipLeft = viewportWidth - tooltipWidth - 10;
+                console.log('📍 Adjusting tooltip - too far right');
               }
               
-              // 垂直方向の調整（上部に表示スペースがない場合）
-              if (rect.top < 200) {
-                console.log('📍 Moving tooltip to BOTTOM position');
-                content.classList.add('bottom-position');
+              // 上部にスペースがない場合は下に表示
+              if (tooltipTop < 10) {
+                tooltipTop = rect.bottom + 10;
+                console.log('📍 Moving tooltip below element');
               }
+              
+              // スタイルを直接適用
+              content.style.left = tooltipLeft + 'px';
+              content.style.top = tooltipTop + 'px';
+              content.style.transform = 'none'; // transformをリセット
               
               // リアルタイムでの位置確認（デバッグ用）
               setTimeout(() => {
@@ -870,6 +840,7 @@ export default function QuoteWebTemplate({
                 console.log('✅ Tooltip positioned:', JSON.stringify({
                   left: tooltipRect.left,
                   right: tooltipRect.right,
+                  top: tooltipRect.top,
                   width: tooltipRect.width,
                   isVisible: tooltipRect.left >= 0 && tooltipRect.right <= viewportWidth
                 }, null, 2));
@@ -1500,6 +1471,7 @@ const mainStyle = {
   margin: '0 auto',
   padding: '2rem',
   boxSizing: 'border-box' as const,
+  overflow: 'visible', // ツールチップが見切れないようにする
 };
 
 const titleSectionStyle = {
@@ -1616,6 +1588,7 @@ const itemsContainerStyle = {
   display: 'flex',
   flexDirection: 'column' as const,
   gap: '1rem',
+  overflow: 'visible', // ツールチップが見切れないようにする
 };
 
 const itemCardStyle = {
