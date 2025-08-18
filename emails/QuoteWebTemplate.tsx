@@ -335,6 +335,17 @@ export default function QuoteWebTemplate({
             box-sizing: border-box;
           }
           
+          /* iframe環境での特別な調整 */
+          @media screen {
+            .tooltip-content {
+              /* iframe内でのツールチップが境界を超えて表示されるよう調整 */
+              clip-path: none !important;
+              overflow: visible !important;
+              /* より高いz-indexでiframe境界を超えて表示 */
+              z-index: 999999999 !important;
+            }
+          }
+          
           /* ツールチップの矢印（三角形） */
           .tooltip-content::after {
             content: '';
@@ -850,26 +861,31 @@ export default function QuoteWebTemplate({
                 wrapper.classList.add('edge-center');
                 // 要素の中心にピッタリ合わせる
                 const offsetFromLeft = elementCenter - tooltipHalfWidth;
-                content.style.left = `${offsetFromLeft}px`;
+                content.style.left = offsetFromLeft + 'px';
                 content.style.right = 'auto';
                 content.style.transform = 'translateX(0)';
-                console.log(`📍 Applied precise center positioning at ${offsetFromLeft}px`);
+                console.log('📍 Applied precise center positioning at ' + offsetFromLeft + 'px');
               }
               
-              // 上部にスペースがない場合は下に表示
-              if (rect.top < 180) {
+              // iframe環境での上部スペース判定を調整
+              // iframe内では親フレームの高さ制約（600px）を考慮
+              const isInIframe = window.self !== window.top;
+              const spaceThreshold = isInIframe ? 120 : 180;
+              
+              if (rect.top < spaceThreshold) {
                 content.style.bottom = 'auto';
                 content.style.top = '125%';
-                console.log('📍 Not enough space above - show below');
+                console.log('📍 Not enough space above (threshold: ' + spaceThreshold + 'px) - show below');
               } else {
                 content.style.bottom = '125%';
                 content.style.top = 'auto';
+                console.log('📍 Enough space above - show above');
               }
             }
             
             // マウスホバーイベントを強化
             tooltipWrappers.forEach((wrapper, index) => {
-              console.log(\`🔧 Setting up tooltip \${index + 1}\`, {
+              console.log('🔧 Setting up tooltip ' + (index + 1), {
                 element: wrapper,
                 hasContent: !!wrapper.querySelector('.tooltip-content'),
                 text: wrapper.textContent?.substring(0, 30),
@@ -882,7 +898,7 @@ export default function QuoteWebTemplate({
               }
               
               wrapper.addEventListener('mouseenter', function(e) {
-                console.log(\`🖱️ Mouse enter on tooltip \${index + 1}\`);
+                console.log('🖱️ Mouse enter on tooltip ' + (index + 1));
                 const content = this.querySelector('.tooltip-content');
                 if (content) {
                   // まず位置を事前計算してから表示
@@ -891,7 +907,7 @@ export default function QuoteWebTemplate({
                   // 位置調整後にツールチップを表示
                   requestAnimationFrame(() => {
                     content.classList.add('force-show');
-                    console.log(\`✅ Tooltip \${index + 1} shown with pre-calculated position\`);
+                    console.log('✅ Tooltip ' + (index + 1) + ' shown with pre-calculated position');
                   });
                 } else {
                   console.log('❌ No tooltip content found in wrapper');
@@ -899,7 +915,7 @@ export default function QuoteWebTemplate({
               });
               
               wrapper.addEventListener('mouseleave', function(e) {
-                console.log(\`🖱️ Mouse leave on tooltip \${index + 1}\`);
+                console.log('🖱️ Mouse leave on tooltip ' + (index + 1));
                 const content = this.querySelector('.tooltip-content');
                 if (content) {
                   content.classList.remove('force-show');
@@ -909,7 +925,7 @@ export default function QuoteWebTemplate({
               
               // フォーカスイベントも追加
               wrapper.addEventListener('focus', function(e) {
-                console.log(\`🎯 Focus on tooltip \${index + 1}\`);
+                console.log('🎯 Focus on tooltip ' + (index + 1));
                 const content = this.querySelector('.tooltip-content');
                 if (content) {
                   content.classList.add('force-show');
@@ -920,7 +936,7 @@ export default function QuoteWebTemplate({
               });
               
               wrapper.addEventListener('blur', function(e) {
-                console.log(\`🎯 Blur on tooltip \${index + 1}\`);
+                console.log('🎯 Blur on tooltip ' + (index + 1));
                 const content = this.querySelector('.tooltip-content');
                 if (content) {
                   content.classList.remove('force-show');
@@ -929,7 +945,7 @@ export default function QuoteWebTemplate({
               
               // タッチイベント（モバイル対応）
               wrapper.addEventListener('touchstart', function(e) {
-                console.log(\`👆 Touch start on tooltip \${index + 1}\`);
+                console.log('👆 Touch start on tooltip ' + (index + 1));
                 e.stopPropagation();
                 
                 // 他のアクティブなツールチップを閉じる

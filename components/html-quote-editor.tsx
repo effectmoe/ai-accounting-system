@@ -1443,15 +1443,15 @@ export default function HtmlQuoteEditor({
 
               {/* プレビューエリア（レスポンシブ対応） */}
               <div
-                className="border rounded-lg overflow-hidden"
-                style={{ height: '600px' }}
+                className="border rounded-lg"
+                style={{ height: '600px', overflow: 'visible' }}
               >
                 <iframe
                   srcDoc={htmlPreview}
                   className="w-full h-full"
                   title="HTML Quote Preview"
-                  sandbox="allow-scripts allow-popups"
-                  style={{ border: 'none' }}
+                  sandbox="allow-scripts allow-popups allow-same-origin"
+                  style={{ border: 'none', overflow: 'visible' }}
                 />
               </div>
             </TabsContent>
