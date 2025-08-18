@@ -311,12 +311,10 @@ export default function QuoteWebTemplate({
             text-align: left;
             border-radius: 6px;
             padding: 12px 16px;
-            /* 位置設定 - absoluteに戻す */
-            position: absolute;
-            z-index: 9999999; /* 最前面に表示 */
-            bottom: 125%;
-            left: 50%;
-            transform: translateX(-50%);
+            /* 位置設定 - fixedに変更してiframe制約を回避 */
+            position: fixed !important;
+            z-index: 2147483647; /* 最大値に設定 */
+            /* 初期位置は動的に設定される */
             min-width: 200px;
             max-width: min(320px, calc(100vw - 40px)); /* ビューポート幅に応じて調整 */
             /* フォント設定 */
@@ -333,6 +331,13 @@ export default function QuoteWebTemplate({
             word-wrap: break-word;
             /* 画面端で見切れないように調整 */
             box-sizing: border-box;
+            /* iframe制約を確実に回避 */
+            margin: 0 !important;
+            border-collapse: separate !important;
+            clip: auto !important;
+            -webkit-clip-path: none !important;
+            clip-path: none !important;
+            overflow: visible !important;
           }
           
           /* iframe環境での特別な調整 */
@@ -867,7 +872,7 @@ export default function QuoteWebTemplate({
                 console.log('📍 Applied precise center positioning at ' + offsetFromLeft + 'px');
               }
               
-              // iframe環境での上部スペース判定を調整
+              // iframe環境での上部スペース判定を調整（fixed position対応）
               // iframe内では親フレームの高さ制約（1200px）を考慮
               const isInIframe = window.self !== window.top;
               const spaceThreshold = isInIframe ? 200 : 180;
@@ -884,26 +889,45 @@ export default function QuoteWebTemplate({
                 willShowBelow: rect.top < spaceThreshold
               });
               
-              // iframe内でのスクロール位置を考慮した調整
-              const scrollTop = window.pageYOffset || document.documentElement.scrollTop || 0;
-              const effectiveTopSpace = rect.top + scrollTop;
+              // fixed positionに対応した絶対位置設定
+              const contentHeight = 60; // ツールチップの想定高さ
               
-              console.log('🔍 [SCROLL-DEBUG] Scroll adjustment:', {
-                scrollTop: scrollTop,
-                originalTop: rect.top,
-                effectiveTopSpace: effectiveTopSpace,
-                threshold: spaceThreshold
-              });
-              
-              if (effectiveTopSpace < spaceThreshold) {
+              if (rect.top < spaceThreshold) {
+                // 下に表示（fixed positionで絶対座標を使用）
+                const topPosition = rect.bottom + window.scrollY + 10;
+                content.style.top = topPosition + 'px';
                 content.style.bottom = 'auto';
-                content.style.top = '125%';
-                console.log('📍 Not enough space above (effective: ' + effectiveTopSpace + 'px, threshold: ' + spaceThreshold + 'px) - show below');
+                console.log('📍 Not enough space above (top: ' + rect.top + 'px, threshold: ' + spaceThreshold + 'px) - show below at: ' + topPosition + 'px');
               } else {
-                content.style.bottom = '125%';
-                content.style.top = 'auto';
-                console.log('📍 Enough space above (effective: ' + effectiveTopSpace + 'px) - show above');
+                // 上に表示（fixed positionで絶対座標を使用）
+                const topPosition = rect.top + window.scrollY - contentHeight - 10;
+                content.style.top = topPosition + 'px';
+                content.style.bottom = 'auto';
+                console.log('📍 Enough space above (top: ' + rect.top + 'px) - show above at: ' + topPosition + 'px');
               }
+              
+              // 水平位置も設定（fixed positionでは必須）
+              const elementCenter = rect.left + window.scrollX + (rect.width / 2);
+              const tooltipWidth = 320;
+              const tooltipHalfWidth = tooltipWidth / 2;
+              
+              let leftPosition = elementCenter - tooltipHalfWidth;
+              
+              // 画面端での調整
+              if (leftPosition < 10) {
+                leftPosition = 10;
+              } else if (leftPosition + tooltipWidth > window.innerWidth - 10) {
+                leftPosition = window.innerWidth - tooltipWidth - 10;
+              }
+              
+              content.style.left = leftPosition + 'px';
+              content.style.transform = 'none'; // fixed positionでは相対変換を無効化
+              
+              console.log('📍 Fixed position set:', {
+                left: leftPosition + 'px',
+                top: content.style.top,
+                elementRect: { left: rect.left, top: rect.top, width: rect.width, height: rect.height }
+              });
             }
             
             // マウスホバーイベントを強化
