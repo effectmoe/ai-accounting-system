@@ -96,6 +96,26 @@ export default function QuoteHtmlTemplate({
   customMessage,
   suggestedOptions = [],
 }: QuoteHtmlTemplateProps) {
+  // デバッグログ
+  console.log('📧 [QUOTE-HTML-TEMPLATE:START] QuoteHtmlTemplate rendering started at:', new Date().toISOString());
+  console.log('📧 [QUOTE-HTML-TEMPLATE:PROPS] Received props:', {
+    hasQuote: !!quote,
+    quoteId: quote?._id,
+    quoteNumber: quote?.quoteNumber,
+    hasNotes: !!quote?.notes,
+    notesValue: quote?.notes,
+    notesType: typeof quote?.notes,
+    notesLength: quote?.notes?.length || 0,
+    hasCompanyInfo: !!companyInfo,
+    recipientName,
+    hasCustomMessage: !!customMessage,
+    customMessage,
+    suggestedOptionsCount: suggestedOptions?.length || 0,
+    hasViewOnlineUrl: !!viewOnlineUrl,
+    hasAcceptUrl: !!acceptUrl,
+    timestamp: new Date().toISOString()
+  });
+  
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://accounting-automation.vercel.app';
   const brandColor = '#3B82F6';
   const accentColor = '#10B981';

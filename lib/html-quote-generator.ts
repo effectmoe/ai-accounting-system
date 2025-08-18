@@ -45,6 +45,8 @@ export async function generateHtmlQuote(
   options: HtmlQuoteOptions
 ): Promise<HtmlQuoteResult> {
   try {
+    console.log('🏗️ [HTML-GENERATOR:START] Starting generateHtmlQuote at:', new Date().toISOString());
+    
     const {
       quote,
       companyInfo,
@@ -61,6 +63,24 @@ export async function generateHtmlQuote(
       discussUrl: customDiscussUrl,
     } = options;
 
+    console.log('🏗️ [HTML-GENERATOR:PARAMS] Extracted parameters:', {
+      hasQuote: !!quote,
+      quoteId: quote?._id,
+      hasNotes: !!quote?.notes,
+      notesValue: quote?.notes,
+      notesType: typeof quote?.notes,
+      notesLength: quote?.notes?.length,
+      hasTooltips: !!tooltips,
+      tooltipsType: typeof tooltips,
+      tooltipsSize: tooltips?.size,
+      hasProductLinks: !!productLinks,
+      productLinksSize: productLinks?.size,
+      useWebLayout,
+      includeInteractiveElements,
+      suggestedOptionsCount: suggestedOptions?.length || 0,
+      timestamp: new Date().toISOString()
+    });
+
     // デバッグログ
     logger.debug('[html-quote-generator] Generating HTML with:', {
       companyName: companyInfo?.companyName || companyInfo?.name,
@@ -73,10 +93,25 @@ export async function generateHtmlQuote(
     const trackingId = includeTracking ? generateTrackingId() : undefined;
 
     // ツールチップが提供されていない場合はデフォルトを生成
+    console.log('🔧 [HTML-GENERATOR:TOOLTIPS] Processing tooltips...');
     const effectiveTooltips = tooltips && tooltips.size > 0 ? tooltips : generateDefaultTooltips();
+    console.log('🔧 [HTML-GENERATOR:TOOLTIPS] Effective tooltips:', {
+      originalTooltipsSize: tooltips?.size || 0,
+      effectiveTooltipsSize: effectiveTooltips.size,
+      wasGenerated: !tooltips || tooltips.size === 0,
+      timestamp: new Date().toISOString()
+    });
     
     // 見積項目にインタラクティブ要素を追加
+    console.log('⚡ [HTML-GENERATOR:ENHANCE] Enhancing quote items...');
     const enhancedQuote = enhanceQuoteItems(quote, effectiveTooltips, productLinks);
+    console.log('⚡ [HTML-GENERATOR:ENHANCE] Items enhanced:', {
+      originalItemsCount: quote?.items?.length || 0,
+      enhancedItemsCount: enhancedQuote?.items?.length || 0,
+      hasNotesAfterEnhance: !!enhancedQuote?.notes,
+      notesValueAfterEnhance: enhancedQuote?.notes,
+      timestamp: new Date().toISOString()
+    });
 
     // URLs生成（カスタムURLが提供されていればそれを使用）
     const viewOnlineUrl = `${baseUrl}/quotes/view/${quote._id}?t=${trackingId}`;
@@ -89,6 +124,22 @@ export async function generateHtmlQuote(
 
     // HTML生成 - レイアウトに応じてテンプレートを選択
     const TemplateComponent = useWebLayout ? QuoteWebTemplate : QuoteHtmlTemplate;
+    console.log('📄 [HTML-GENERATOR:TEMPLATE] Selected template:', {
+      templateName: useWebLayout ? 'QuoteWebTemplate' : 'QuoteHtmlTemplate',
+      useWebLayout,
+      timestamp: new Date().toISOString()
+    });
+    
+    console.log('📄 [HTML-GENERATOR:RENDER] Rendering template with props:', {
+      hasEnhancedQuote: !!enhancedQuote,
+      enhancedQuoteNotes: enhancedQuote?.notes,
+      hasCompanyInfo: !!companyInfo,
+      recipientName,
+      hasCustomMessage: !!customMessage,
+      customMessage,
+      suggestedOptionsCount: includeInteractiveElements ? suggestedOptions?.length : 0,
+      timestamp: new Date().toISOString()
+    });
     
     const html = await render(
       TemplateComponent({
@@ -107,6 +158,13 @@ export async function generateHtmlQuote(
         pretty: true,
       }
     );
+    
+    console.log('✅ [HTML-GENERATOR:RENDER-COMPLETE] Template rendered successfully:', {
+      htmlLength: html?.length,
+      hasHtml: !!html,
+      templateUsed: useWebLayout ? 'QuoteWebTemplate' : 'QuoteHtmlTemplate',
+      timestamp: new Date().toISOString()
+    });
 
     // プレーンテキスト版も生成
     const plainText = generatePlainText(quote, companyInfo);
@@ -138,14 +196,38 @@ function enhanceQuoteItems(
   tooltips?: Map<string, string>,
   productLinks?: Map<string, string>
 ): Quote {
+  console.log('🔨 [ENHANCE-ITEMS:START] Starting item enhancement:', {
+    hasQuote: !!quote,
+    hasItems: !!quote?.items,
+    itemsType: Array.isArray(quote?.items) ? 'array' : typeof quote?.items,
+    itemsCount: quote?.items?.length || 0,
+    hasTooltips: !!tooltips,
+    tooltipsSize: tooltips?.size || 0,
+    hasProductLinks: !!productLinks,
+    productLinksSize: productLinks?.size || 0,
+    originalNotes: quote?.notes,
+    timestamp: new Date().toISOString()
+  });
+  
   // itemsが存在しない場合はそのまま返す
   if (!quote.items || !Array.isArray(quote.items)) {
+    console.log('⚠️ [ENHANCE-ITEMS:NO-ITEMS] No items to enhance, returning original quote');
     return quote;
   }
 
+  console.log('🔨 [ENHANCE-ITEMS:PROCESSING] Processing items...');
+  
   return {
     ...quote,
     items: quote.items.map((item, index) => {
+      console.log(`🔨 [ENHANCE-ITEMS:ITEM-${index + 1}] Processing item:`, {
+        itemIndex: index,
+        itemName: item.itemName,
+        description: item.description,
+        hasItemName: !!item.itemName,
+        hasDescription: !!item.description,
+        timestamp: new Date().toISOString()
+      });
       const enhanced: any = { ...item };
       
       // itemNameとdescriptionの両方を使ってテキストを構築
@@ -676,6 +758,21 @@ export async function generateSimpleHtmlQuote({
   recipientName?: string;
   customMessage?: string;
 }): Promise<{ html: string; plainText: string; subject: string }> {
+  console.log('📧 [SIMPLE-HTML-GENERATOR:START] Starting generateSimpleHtmlQuote at:', new Date().toISOString());
+  console.log('📧 [SIMPLE-HTML-GENERATOR:PARAMS] Input parameters:', {
+    hasQuote: !!quote,
+    quoteId: quote?._id,
+    quoteNumber: quote?.quoteNumber,
+    hasNotes: !!quote?.notes,
+    notesValue: quote?.notes,
+    notesType: typeof quote?.notes,
+    notesLength: quote?.notes?.length || 0,
+    hasCompanyInfo: !!companyInfo,
+    recipientName,
+    hasCustomMessage: !!customMessage,
+    customMessage,
+    timestamp: new Date().toISOString()
+  });
   const customerName = recipientName || quote.customer?.name || quote.customer?.companyName || 'お客様';
   const issueDate = new Date(quote.issueDate || new Date()).toLocaleDateString('ja-JP');
   const validityDate = new Date(quote.validityDate || new Date()).toLocaleDateString('ja-JP');
