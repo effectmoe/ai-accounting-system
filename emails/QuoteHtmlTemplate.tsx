@@ -24,21 +24,72 @@ interface SuggestedOption {
   ctaUrl: string;
 }
 
-// メール版ツールチップ用語を検出してインライン注釈を付ける関数（シンプル版）
+// ツールチップ辞書を定義（QuoteHtmlTemplate用）
+const TOOLTIP_DICTIONARY = new Map<string, string>([
+  ['LLMO', '大規模言語モデル最適化技術'],
+  ['SaaS', 'Software as a Service - クラウド経由で提供されるソフトウェア'],
+  ['API', 'Application Programming Interface - システム間の連携インターフェース'],
+  ['UI/UX', 'ユーザーインターフェース/ユーザー体験 - 使いやすさとデザイン'],
+  ['レスポンシブ', 'PC・スマホ・タブレットなど、あらゆる画面サイズに対応'],
+  ['SEO', 'Search Engine Optimization - 検索エンジン最適化'],
+  ['ROI', 'Return on Investment - 投資収益率'],
+  ['KPI', 'Key Performance Indicator - 重要業績評価指標'],
+  ['リードタイム', '発注から納品までの期間'],
+  ['LLMOモニタリング', 'AIを活用したWebサイトの最適化とモニタリングサービス。サイトのパフォーマンス、検索順位、ユーザー行動を継続的に分析し、改善提案を行います'],
+  ['モニタリング', 'サイトのパフォーマンスや検索順位を継続的に監視・分析するサービス'],
+  ['最適化', 'システムやプロセスをより効率的に改善すること'],
+  ['パフォーマンス', 'システムの処理能力や応答速度の性能'],
+  ['システム', 'コンピュータとソフトウェアを組み合わせた仕組み'],
+  ['開発', 'ソフトウェアやシステムを設計・構築すること'],
+  ['構築', 'システムやWebサイトを作り上げること'],
+  ['設計', 'システムの設計図を作成すること'],
+  ['保守', 'システムの維持・管理・改善作業'],
+  ['運用', 'システムを日常的に運用・管理すること'],
+  ['メンテナンス', 'システムの保守点検・改良作業'],
+  ['アップデート', 'ソフトウェアやシステムの更新・改善'],
+  ['カスタマイズ', 'お客様のご要望に合わせた独自の調整・改修'],
+  ['サポート', '技術支援・問題解決・使い方指導']
+]);
+
+// メール版ツールチップ用語を検出してインライン注釈を付ける関数（キーワード特定版）
+// Updated: 2025-08-18 - 特定のキーワードのみに注釈を適用する版
 const renderDetailsWithTooltip = (details: string, tooltip: string) => {
   // ツールチップがない場合はそのまま返す
   if (!tooltip || tooltip.trim().length === 0) {
     return <span>{details}</span>;
   }
   
+  // ツールチップ辞書から該当するキーワードを検索
+  let matchedKeyword = '';
+  let matchedTooltip = '';
+  
+  // 長いキーワードから順に検索（例：「LLMOモニタリング」が「LLMO」より優先）
+  const sortedKeywords = Array.from(TOOLTIP_DICTIONARY.keys()).sort((a, b) => b.length - a.length);
+  
+  for (const keyword of sortedKeywords) {
+    if (details.includes(keyword)) {
+      matchedKeyword = keyword;
+      matchedTooltip = TOOLTIP_DICTIONARY.get(keyword) || '';
+      break;
+    }
+  }
+  
+  // マッチしたキーワードがない場合は通常のテキストとして表示
+  if (!matchedKeyword || !matchedTooltip) {
+    return <span>{details}</span>;
+  }
+  
   // 長い説明文は30文字で切って省略記号を付ける
-  const trimmedTooltip = tooltip.length > 30 ? tooltip.substring(0, 30) + '...' : tooltip;
+  const trimmedTooltip = matchedTooltip.length > 30 ? matchedTooltip.substring(0, 30) + '...' : matchedTooltip;
   
-  // シンプルなインライン注釈を作成（マーカーなし、確実に表示される）
+  // キーワード部分のみに注釈を適用（シンプルな強調表示）
   const annotationStyle = 'color: #6b7280; font-size: 0.85em; margin-left: 6px; font-weight: normal;';
-  const processedDetails = `${details}<span style="${annotationStyle}">（${trimmedTooltip}）</span>`;
+  const highlightedDetails = details.replace(
+    new RegExp(matchedKeyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'),
+    `<span style="background: rgba(254, 240, 138, 0.3); padding: 1px 2px; border-radius: 2px; font-weight: 500;">${matchedKeyword}</span><span style="${annotationStyle}">（${trimmedTooltip}）</span>`
+  );
   
-  return <span dangerouslySetInnerHTML={{ __html: processedDetails }} />;
+  return <span dangerouslySetInnerHTML={{ __html: highlightedDetails }} />;
 };
 
 export default function QuoteHtmlTemplate({

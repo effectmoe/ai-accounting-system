@@ -202,9 +202,30 @@ export async function generateServerHtmlQuote({
                     const subtotalAmount = (item.quantity || 1) * (item.unitPrice || 0);
                     const taxAmount = subtotalAmount * (quote.taxRate || 0.1);
                     
-                    // メール版ツールチップ付きの項目名を生成（シンプルなインライン注釈方式）
+                    // メール版ツールチップ付きの項目名を生成（キーワード特定版）
+                    // Updated: 2025-08-18 - 特定のキーワードのみに注釈を適用する版
                     const renderItemWithTooltip = (itemName: string, tooltip: string) => {
                       if (!tooltip || tooltip.trim() === '') {
+                        return itemName;
+                      }
+                      
+                      // ツールチップ辞書から該当するキーワードを検索
+                      let matchedKeyword = '';
+                      let matchedTooltip = '';
+                      
+                      // 長いキーワードから順に検索（例：「LLMOモニタリング」が「LLMO」より優先）
+                      const sortedKeywords = Array.from(tooltips.keys()).sort((a, b) => b.length - a.length);
+                      
+                      for (const keyword of sortedKeywords) {
+                        if (itemName.includes(keyword)) {
+                          matchedKeyword = keyword;
+                          matchedTooltip = tooltips.get(keyword) || '';
+                          break;
+                        }
+                      }
+                      
+                      // マッチしたキーワードがない場合は通常のテキストとして表示
+                      if (!matchedKeyword || !matchedTooltip) {
                         return itemName;
                       }
                       
@@ -216,8 +237,15 @@ export async function generateServerHtmlQuote({
                         .replace(/</g, '&lt;')
                         .replace(/>/g, '&gt;');
                       
+                      const escapedKeyword = matchedKeyword
+                        .replace(/&/g, '&amp;')
+                        .replace(/"/g, '&quot;')
+                        .replace(/'/g, '&#39;')
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;');
+                      
                       // 長い説明文は30文字で切って省略記号を付ける
-                      const trimmedTooltip = tooltip.length > 30 ? tooltip.substring(0, 30) + '...' : tooltip;
+                      const trimmedTooltip = matchedTooltip.length > 30 ? matchedTooltip.substring(0, 30) + '...' : matchedTooltip;
                       const escapedTooltip = trimmedTooltip
                         .replace(/&/g, '&amp;')
                         .replace(/"/g, '&quot;')
@@ -225,10 +253,14 @@ export async function generateServerHtmlQuote({
                         .replace(/</g, '&lt;')
                         .replace(/>/g, '&gt;');
                       
-                      // シンプルなインライン注釈（マーカーなし、確実に表示される）
+                      // キーワード部分のみに注釈を適用（シンプルな強調表示）
                       const annotationStyle = 'color: #6b7280; font-size: 0.85em; margin-left: 6px; font-weight: normal;';
+                      const highlightedName = escapedName.replace(
+                        new RegExp(escapedKeyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'),
+                        `<span style="background: rgba(254, 240, 138, 0.3); padding: 1px 2px; border-radius: 2px; font-weight: 500;">${escapedKeyword}</span><span style="${annotationStyle}">（${escapedTooltip}）</span>`
+                      );
                       
-                      return `${escapedName}<span style="${annotationStyle}">（${escapedTooltip}）</span>`;
+                      return highlightedName;
                     };
                     
                     // ツールチップを検索して項目名を拡張
