@@ -77,9 +77,10 @@ const renderDetailsWithTooltip = (details: string, tooltip: string) => {
         box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.3);
         color: #1f2937;
       ">${escapedDetails}</span>
-      <span class="tooltip-content force-show" style="
-        visibility: hidden;
-        opacity: 0;
+      <span class="tooltip-content" style="
+        visibility: hidden !important;
+        opacity: 0 !important;
+        display: none !important;
         background-color: #fef3c7 !important;
         color: #1f2937 !important;
         text-align: left;
@@ -201,7 +202,7 @@ export default function QuoteWebTemplate({
             }
           }
           
-          /* ツールチップのホバー効果とタッチ対応 - 強化版 */
+          /* ツールチップのホバー効果とタッチ対応 - 修正版 */
           .tooltip-wrapper {
             position: relative;
             display: inline-block;
@@ -209,11 +210,11 @@ export default function QuoteWebTemplate({
             cursor: help;
           }
           
-          
           .tooltip-content {
-            /* 初期状態で非表示 */
-            visibility: hidden;
-            opacity: 0;
+            /* 初期状態で確実に非表示 */
+            visibility: hidden !important;
+            opacity: 0 !important;
+            display: none !important;
             /* スタイル */
             background-color: #fef3c7; /* より確実な背景色 */
             color: #1f2937;
@@ -245,7 +246,7 @@ export default function QuoteWebTemplate({
             word-wrap: break-word;
           }
           
-          /* ホバー時の表示を確実にする - 強化版 */
+          /* ホバー時の表示を確実にする - 修正版 */
           .tooltip-wrapper:hover .tooltip-content,
           .tooltip-wrapper:focus .tooltip-content,
           .tooltip-wrapper:active .tooltip-content {
@@ -266,26 +267,12 @@ export default function QuoteWebTemplate({
             }
           }
           
-          /* 強制表示テスト用クラス */
-          .tooltip-content.force-show {
-            visibility: visible !important;
-            opacity: 1 !important;
-            display: block !important;
-            transform: translateX(-50%) scale(1) !important;
-          }
-          
-          /* より積極的なツールチップ表示設定 */
-          .tooltip-wrapper.show-tooltip .tooltip-content {
-            visibility: visible !important;
-            opacity: 1 !important;
-            display: block !important;
-            transform: translateX(-50%) scale(1) !important;
-          }
-          
-          /* モバイル: タップで表示 */
+          /* アクティブ状態での表示（タッチデバイス用） */
           .tooltip-wrapper.active .tooltip-content {
             visibility: visible !important;
             opacity: 1 !important;
+            display: block !important;
+            transform: translateX(-50%) scale(1) !important;
           }
           
           .tooltip-content::after {
@@ -540,19 +527,9 @@ export default function QuoteWebTemplate({
                   }))
                 });
                 
-                // 強制的にツールチップを1つ表示してテスト（開発環境のみ）
+                // ツールチップのデバッグ情報のみ出力（強制表示はしない）
                 if (tooltipWrappers.length > 0 && isDev) {
-                  const firstWrapper = tooltipWrappers[0];
-                  const firstContent = firstWrapper.querySelector('.tooltip-content');
-                  if (firstContent) {
-                    firstContent.style.visibility = 'visible';
-                    firstContent.style.opacity = '1';
-                    console.log('🧪 Test: Force showing first tooltip for 3 seconds');
-                    setTimeout(() => {
-                      firstContent.style.visibility = 'hidden';
-                      firstContent.style.opacity = '0';
-                    }, 3000);
-                  }
+                  console.log('🧪 Debug: Found tooltip wrappers, ready for hover interaction');
                 }
               }, 1000);
             });
@@ -581,21 +558,18 @@ export default function QuoteWebTemplate({
             
             const tooltipWrappers = document.querySelectorAll('.tooltip-wrapper');
             
-            // マウスホバーイベントを強化
+            // マウスホバーイベント（CSSで処理されるため、特別な処理は不要）
             tooltipWrappers.forEach((wrapper, index) => {
-              wrapper.addEventListener('mouseenter', function(e) {
-                const content = this.querySelector('.tooltip-content');
-                if (content) {
-                  content.classList.add('force-show');
-                }
-              });
-              
-              wrapper.addEventListener('mouseleave', function(e) {
-                const content = this.querySelector('.tooltip-content');
-                if (content) {
-                  content.classList.remove('force-show');
-                }
-              });
+              // デバッグ用のイベントリスナーのみ
+              if (isDev) {
+                wrapper.addEventListener('mouseenter', function(e) {
+                  console.log('🐭 Tooltip hover started:', this.textContent?.substring(0, 30));
+                });
+                
+                wrapper.addEventListener('mouseleave', function(e) {
+                  console.log('🐭 Tooltip hover ended');
+                });
+              }
               
               // タッチイベント
               wrapper.addEventListener('touchstart', function(e) {

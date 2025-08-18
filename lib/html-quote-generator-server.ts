@@ -209,23 +209,10 @@ export async function generateServerHtmlQuote({
                       
                       return `
                         <span title="${escapedTooltip}" style="
-                          background: linear-gradient(180deg, transparent 50%, rgba(254, 240, 138, 0.7) 50%);
-                          border-bottom: 2px dotted #f59e0b;
-                          padding: 1px 3px;
-                          border-radius: 2px;
-                          font-weight: 600;
+                          border-bottom: 1px dotted #666;
                           cursor: help;
+                          text-decoration: none;
                         ">${escapedName}</span>
-                        <div style="
-                          font-size: 12px;
-                          color: #1565c0;
-                          background-color: #e3f2fd;
-                          border-left: 3px solid #1976d2;
-                          padding: 6px 10px;
-                          margin: 4px 0;
-                          border-radius: 3px;
-                          line-height: 1.4;
-                        ">💡 用語解説: ${escapedTooltip}</div>
                       `;
                     };
                     
