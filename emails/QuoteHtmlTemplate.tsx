@@ -56,31 +56,15 @@ const renderDetailsWithTooltip = (details: string, tooltip: string) => {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
   
-  // メール版では項目名全体をマーキングして、説明文として表示
+  // メール版では項目名に点線の下線でツールチップがあることを示す（説明文は非表示）
   const markerHtml = `
-    <span title="${escapedTooltip}">
-      <span style="
-        background: linear-gradient(180deg, transparent 50%, rgba(254, 240, 138, 0.7) 50%);
-        border-bottom: 2px dotted #f59e0b;
-        padding: 1px 3px;
-        border-radius: 2px;
-        font-weight: 600;
-        position: relative;
-        display: inline-block;
-      ">${escapedDetails}</span>
-    </span>
-    <div style="
-      font-size: 12px;
-      color: #1565c0;
-      background-color: #e3f2fd;
-      border-left: 3px solid #1976d2;
-      padding: 6px 10px;
-      margin: 4px 0;
-      border-radius: 3px;
-      line-height: 1.4;
-    ">
-      💡 用語解説: ${escapedTooltip}
-    </div>
+    <span title="${escapedTooltip}" style="
+      border-bottom: 1px dotted #666;
+      cursor: help;
+      text-decoration: none;
+      position: relative;
+      display: inline-block;
+    ">${escapedDetails}</span>
   `;
   
   return <span dangerouslySetInnerHTML={{ __html: markerHtml }} />;
