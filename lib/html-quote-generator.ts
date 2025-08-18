@@ -205,30 +205,29 @@ function findTooltipForItem(
   const terms = Array.from(tooltips.keys());
   const descriptionLower = description.toLowerCase().trim();
   
-  // 強化されたデバッグログ（常に出力で問題を特定）
-  console.log(`🔍 [TOOLTIP DEBUG] Finding tooltip for: "${description}"`);
-  console.log(`🔍 [TOOLTIP DEBUG] Normalized: "${descriptionLower}"`);
-  console.log(`🔍 [TOOLTIP DEBUG] Available tooltips (${terms.length}):`, terms);
-  console.log(`🔍 [TOOLTIP DEBUG] tooltips Map size:`, tooltips.size);
-  console.log(`🔍 [TOOLTIP DEBUG] tooltips entries:`, Array.from(tooltips.entries()));
+  // デバッグログ（開発環境のみ）
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`🔍 Finding tooltip for: "${description}" (normalized: "${descriptionLower}")`);
+    console.log(`🗂️ Available tooltips: ${terms.join(', ')}`);
+  }
   
   // 1. 完全一致を最初に試す
-  console.log(`🔍 [TOOLTIP DEBUG] Testing exact match for: "${description}"`);
-  console.log(`🔍 [TOOLTIP DEBUG] tooltips.has("${description}"):`, tooltips.has(description));
   if (tooltips.has(description)) {
     const result = tooltips.get(description);
-    console.log(`✅ [TOOLTIP DEBUG] Exact match found: "${description}" -> "${result?.substring(0, 50)}..."`);
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`✅ Exact match found: "${description}" -> "${result?.substring(0, 50)}..."`);
+    }
     return result;
   }
   
   // 大文字小文字を無視した完全一致
-  console.log(`🔍 [TOOLTIP DEBUG] Testing case-insensitive matches for: "${descriptionLower}"`);
   for (const term of terms) {
     const termLower = term.toLowerCase();
-    console.log(`🔍 [TOOLTIP DEBUG] Comparing "${descriptionLower}" === "${termLower}":`, descriptionLower === termLower);
     if (termLower === descriptionLower) {
       const result = tooltips.get(term);
-      console.log(`✅ [TOOLTIP DEBUG] Case-insensitive exact match: "${term}" -> "${result?.substring(0, 50)}..."`);
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`✅ Case-insensitive exact match: "${term}" -> "${result?.substring(0, 50)}..."`);
+      }
       return result;
     }
   }

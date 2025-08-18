@@ -146,18 +146,26 @@ export async function POST(request: NextRequest) {
       productLinksMap = new Map();
     }
     
-    // ツールチップが空の場合は、デフォルトのツールチップを生成
-    if (tooltipsMap.size === 0) {
-      console.log('🔧 No tooltips provided, generating defaults...');
-      const { generateDefaultTooltips } = await import('@/lib/html-quote-generator');
-      const defaultTooltips = generateDefaultTooltips();
-      console.log('📚 Generated default tooltips:', defaultTooltips.size, 'entries');
-      console.log('📚 Default tooltips data:', Array.from(defaultTooltips.entries()));
-      // デフォルトのツールチップをtooltipsMapに追加
-      for (const [key, value] of defaultTooltips.entries()) {
-        tooltipsMap.set(key, value);
+    // デフォルトのツールチップを常に生成してベースとし、送信されたツールチップで上書き
+    console.log('🔧 Generating default tooltips as base...');
+    const { generateDefaultTooltips } = await import('@/lib/html-quote-generator');
+    const defaultTooltips = generateDefaultTooltips();
+    console.log('📚 Generated default tooltips:', defaultTooltips.size, 'entries');
+    
+    // まずデフォルトツールチップを設定
+    const finalTooltipsMap = new Map(defaultTooltips);
+    
+    // 送信されたツールチップで上書き
+    if (tooltipsMap.size > 0) {
+      console.log('🔄 Merging with received tooltips...');
+      for (const [key, value] of tooltipsMap.entries()) {
+        finalTooltipsMap.set(key, value);
       }
     }
+    
+    // 最終的なツールチップマップを使用
+    tooltipsMap = finalTooltipsMap;
+    console.log('✅ Final tooltips map size:', tooltipsMap.size);
     
     // デバッグログを追加（強化版）
     console.log('🔍 Preview API Debug - Enhanced version:');
