@@ -364,9 +364,11 @@ export default function QuoteWebTemplate({
             transform: translateX(-50%);
             margin-bottom: 8px;
             margin-top: 0;
-            min-width: 200px;
-            max-width: 400px;
-            width: auto;
+            /* サイズ設定 - メールクライアント対応版 */
+            display: block !important;
+            width: 320px !important;
+            max-width: 320px !important;
+            min-width: 200px !important;
             /* フォント設定 */
             font-size: 13px;
             font-weight: 400;
@@ -374,11 +376,13 @@ export default function QuoteWebTemplate({
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
             /* アニメーション */
             transition: opacity 0.2s ease, visibility 0.2s ease;
-            /* テキスト設定 */
-            white-space: normal;
-            line-height: 1.4;
-            word-wrap: break-word;
-            box-sizing: border-box;
+            /* テキスト設定 - メールクライアント対応版 */
+            white-space: normal !important;
+            line-height: 1.4 !important;
+            word-wrap: break-word !important;
+            word-break: keep-all !important;
+            overflow-wrap: break-word !important;
+            box-sizing: border-box !important;
           }
           
           /* 下に表示する場合の位置調整 */
@@ -619,21 +623,28 @@ export default function QuoteWebTemplate({
               line-height: 1.75 !important;
             }
             
-            /* モバイルでのツールチップ調整 - 簡潔版 */
+            /* モバイルでのツールチップ調整 - メールクライアント対応版 */
             .tooltip-content {
-              width: auto;
-              min-width: 150px;
-              max-width: calc(100vw - 2rem);
+              width: 280px !important;
+              min-width: 150px !important;
+              max-width: calc(100vw - 2rem) !important;
               font-size: 12px;
               padding: 10px 12px;
               margin-bottom: 6px;
+              word-break: keep-all !important;
+              overflow-wrap: break-word !important;
+              white-space: normal !important;
+              display: block !important;
             }
             
-            /* モバイルでの画面端調整 */
+            /* モバイルでの画面端調整 - メールクライアント対応版 */
             .tooltip-wrapper.edge-left .tooltip-content,
             .tooltip-wrapper.edge-right .tooltip-content {
-              width: auto !important;
+              width: 250px !important;
               max-width: calc(100vw - 4rem) !important;
+              word-break: keep-all !important;
+              overflow-wrap: break-word !important;
+              display: block !important;
             }
             
             /* モバイルではテーブルを非表示、カードを表示 */
