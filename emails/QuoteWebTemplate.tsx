@@ -360,8 +360,9 @@ export default function QuoteWebTemplate({
             transform: translateX(-50%);
             margin-bottom: 8px;
             margin-top: 0;
-            min-width: 180px;
-            max-width: 280px;
+            min-width: 200px;
+            max-width: 400px;
+            width: auto;
             /* フォント設定 */
             font-size: 13px;
             font-weight: 400;
@@ -616,8 +617,9 @@ export default function QuoteWebTemplate({
             
             /* モバイルでのツールチップ調整 - 簡潔版 */
             .tooltip-content {
-              width: calc(100vw - 2rem);
-              max-width: 250px;
+              width: auto;
+              min-width: 150px;
+              max-width: calc(100vw - 2rem);
               font-size: 12px;
               padding: 10px 12px;
               margin-bottom: 6px;
@@ -626,8 +628,8 @@ export default function QuoteWebTemplate({
             /* モバイルでの画面端調整 */
             .tooltip-wrapper.edge-left .tooltip-content,
             .tooltip-wrapper.edge-right .tooltip-content {
-              width: calc(100vw - 2rem) !important;
-              max-width: 220px !important;
+              width: auto !important;
+              max-width: calc(100vw - 4rem) !important;
             }
             
             /* モバイルではテーブルを非表示、カードを表示 */
@@ -860,7 +862,7 @@ export default function QuoteWebTemplate({
               const rect = wrapper.getBoundingClientRect();
               const viewportWidth = window.innerWidth;
               const viewportHeight = window.innerHeight;
-              const tooltipWidth = 280; // ツールチップの想定幅
+              const tooltipWidth = 400; // ツールチップの想定幅
               
               // 要素の中心位置を計算
               const elementCenter = rect.left + (rect.width / 2);
