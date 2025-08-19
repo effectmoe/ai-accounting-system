@@ -1272,47 +1272,17 @@ export default function QuoteWebTemplate({
                       </tr>
                     );
                   })}
-                  {/* 最小行数確保のための空行追加 - 明示的に条件分岐 */}
-                  {quote.items.length < 5 && (
-                    <tr key="empty-0" style={{...tableBodyRowStyle, height: '50px'}}>
-                      <td style={{...tableBodyCellStyle, padding: '1rem'}}>&nbsp;</td>
-                      <td style={tableBodyCellStyle}>&nbsp;</td>
-                      <td style={tableBodyCellStyle}>&nbsp;</td>
-                      <td style={tableBodyCellStyle}>&nbsp;</td>
-                      <td style={tableBodyCellStyle}>&nbsp;</td>
-                      <td style={tableBodyCellStyle}>&nbsp;</td>
+                  {/* 最小行数確保のための空行追加 - 5行になるまで空行を追加 */}
+                  {Array.from({ length: Math.max(0, 5 - quote.items.length) }, (_, index) => (
+                    <tr key={`empty-${index}`} style={{...tableBodyRowStyle, height: '50px'}}>
+                      <td style={{...tableBodyCellStyle, padding: '1rem'}}></td>
+                      <td style={tableBodyCellStyle}></td>
+                      <td style={tableBodyCellStyle}></td>
+                      <td style={tableBodyCellStyle}></td>
+                      <td style={tableBodyCellStyle}></td>
+                      <td style={tableBodyCellStyle}></td>
                     </tr>
-                  )}
-                  {quote.items.length < 4 && (
-                    <tr key="empty-1" style={{...tableBodyRowStyle, height: '50px'}}>
-                      <td style={{...tableBodyCellStyle, padding: '1rem'}}>&nbsp;</td>
-                      <td style={tableBodyCellStyle}>&nbsp;</td>
-                      <td style={tableBodyCellStyle}>&nbsp;</td>
-                      <td style={tableBodyCellStyle}>&nbsp;</td>
-                      <td style={tableBodyCellStyle}>&nbsp;</td>
-                      <td style={tableBodyCellStyle}>&nbsp;</td>
-                    </tr>
-                  )}
-                  {quote.items.length < 3 && (
-                    <tr key="empty-2" style={{...tableBodyRowStyle, height: '50px'}}>
-                      <td style={{...tableBodyCellStyle, padding: '1rem'}}>&nbsp;</td>
-                      <td style={tableBodyCellStyle}>&nbsp;</td>
-                      <td style={tableBodyCellStyle}>&nbsp;</td>
-                      <td style={tableBodyCellStyle}>&nbsp;</td>
-                      <td style={tableBodyCellStyle}>&nbsp;</td>
-                      <td style={tableBodyCellStyle}>&nbsp;</td>
-                    </tr>
-                  )}
-                  {quote.items.length < 2 && (
-                    <tr key="empty-3" style={{...tableBodyRowStyle, height: '50px'}}>
-                      <td style={{...tableBodyCellStyle, padding: '1rem'}}>&nbsp;</td>
-                      <td style={tableBodyCellStyle}>&nbsp;</td>
-                      <td style={tableBodyCellStyle}>&nbsp;</td>
-                      <td style={tableBodyCellStyle}>&nbsp;</td>
-                      <td style={tableBodyCellStyle}>&nbsp;</td>
-                      <td style={tableBodyCellStyle}>&nbsp;</td>
-                    </tr>
-                  )}
+                  ))}
                 </tbody>
               </table>
             </div>
