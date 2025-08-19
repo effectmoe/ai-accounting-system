@@ -224,9 +224,10 @@ export default function QuoteWebTemplate({
   };
 
   return (
-    <div style={containerStyle} className="main-container">
+    <>
       {/* ビューポート設定 */}
       <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+      <div style={containerStyle} className="main-container">
       
       {/* デプロイバージョン情報 - デバッグ用 */}
       {/* Deploy Version: Complete-No-iframe | Build Date: 2025-08-18 23:00 JST | iframe制約完全回避版 */}
@@ -1484,7 +1485,8 @@ export default function QuoteWebTemplate({
           style={{ display: 'none' }}
         />
       )}
-    </div>
+      </div>
+    </>
   );
 }
 
