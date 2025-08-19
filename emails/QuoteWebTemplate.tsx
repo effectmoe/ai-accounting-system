@@ -268,7 +268,7 @@ export default function QuoteWebTemplate({
             margin: 0;
             padding: 0;
             width: 100%;
-            overflow-x: hidden;
+            overflow-x: visible;
           }
           
           /* コンテナの基本設定 */
@@ -306,6 +306,23 @@ export default function QuoteWebTemplate({
             overflow: visible !important;
           }
           
+          /* テーブル要素でのオーバーフロー設定 */
+          .desktop-table,
+          .desktop-table table,
+          .desktop-table tbody,
+          .desktop-table tr,
+          .desktop-table td {
+            overflow: visible !important;
+          }
+          
+          /* メインコンテナとすべての親要素でオーバーフロー表示を確保 */
+          .main-container,
+          main,
+          section,
+          div {
+            overflow: visible !important;
+          }
+          
           /* 備考欄ではツールチップを完全無効化 */
           .notes-section .tooltip-wrapper,
           .notes-content .tooltip-wrapper {
@@ -333,14 +350,16 @@ export default function QuoteWebTemplate({
             text-align: left;
             border-radius: 8px;
             padding: 12px 16px;
-            /* 位置設定 - 下に表示してiframe内に収める */
+            /* 位置設定 - デフォルトは上に表示 */
             position: absolute !important;
             z-index: 99999; 
-            /* 下に表示 */
-            top: 100%;
+            /* 上に表示（デフォルト） */
+            bottom: 100%;
+            top: auto;
             left: 50%;
             transform: translateX(-50%);
-            margin-top: 8px;
+            margin-bottom: 8px;
+            margin-top: 0;
             min-width: 180px;
             max-width: 280px;
             /* フォント設定 */
@@ -357,6 +376,16 @@ export default function QuoteWebTemplate({
             box-sizing: border-box;
           }
           
+          /* 下に表示する場合の位置調整 */
+          .tooltip-position-bottom .tooltip-content {
+            top: 100% !important;
+            bottom: auto !important;
+            margin-top: 8px !important;
+            margin-bottom: 0 !important;
+            /* 確実に親要素から溢れて表示されるようにする */
+            z-index: 99999 !important;
+          }
+          
           /* 汎用的な表示設定 */
           @media screen {
             .tooltip-content {
@@ -365,16 +394,24 @@ export default function QuoteWebTemplate({
             }
           }
           
-          /* ツールチップの矢印（三角形） - 上向きに変更 */
+          /* ツールチップの矢印（三角形） - デフォルトは下向き（上に表示時） */
           .tooltip-content::after {
             content: '';
             position: absolute;
-            bottom: 100%;
+            top: 100%;
+            bottom: auto;
             left: 50%;
             transform: translateX(-50%);
             border-width: 6px;
             border-style: solid;
-            border-color: transparent transparent #1f2937 transparent;
+            border-color: #1f2937 transparent transparent transparent;
+          }
+          
+          /* 下に表示する場合の矢印を上向きに */
+          .tooltip-position-bottom .tooltip-content::after {
+            bottom: 100% !important;
+            top: auto !important;
+            border-color: transparent transparent #1f2937 transparent !important;
           }
           
           /* ホバー時の表示 */
@@ -449,17 +486,6 @@ export default function QuoteWebTemplate({
             pointer-events: none !important;
           }
           
-          /* ツールチップの矢印 - 位置に応じて調整 */
-          .tooltip-content::after {
-            content: "";
-            position: absolute;
-            bottom: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            border-width: 5px;
-            border-style: solid;
-            border-color: transparent transparent #f59e0b transparent;
-          }
           
           /* 画面端での位置調整 - 簡潔版 */
           .tooltip-wrapper.edge-left .tooltip-content {
@@ -489,7 +515,7 @@ export default function QuoteWebTemplate({
             html, body {
               font-size: 16px !important;
               width: 100% !important;
-              overflow-x: hidden !important;
+              overflow-x: visible !important;
             }
             
             .quote-header { 
@@ -827,22 +853,53 @@ export default function QuoteWebTemplate({
               });
             });
             
-            // ツールチップ位置調整関数 - 簡潔版
+            // ツールチップ位置調整関数 - 空行スペース考慮版
             function adjustTooltipPosition(wrapper, content) {
               if (!wrapper || !content) return;
               
               const rect = wrapper.getBoundingClientRect();
               const viewportWidth = window.innerWidth;
+              const viewportHeight = window.innerHeight;
               const tooltipWidth = 280; // ツールチップの想定幅
               
               // 要素の中心位置を計算
               const elementCenter = rect.left + (rect.width / 2);
+              const elementMiddle = rect.top + (rect.height / 2);
               const tooltipHalfWidth = tooltipWidth / 2;
               
               // 位置クラスをリセット
-              wrapper.classList.remove('edge-left', 'edge-right');
+              wrapper.classList.remove('edge-left', 'edge-right', 'tooltip-position-top', 'tooltip-position-bottom');
               
-              // 画面端からはみ出るかチェック
+              // テーブル内の空行の存在をチェック
+              const table = wrapper.closest('table');
+              const emptyRows = table ? table.querySelectorAll('tr[style*="height: 50px"]') : [];
+              const hasEmptyRowsBelow = emptyRows.length > 0;
+              
+              console.log('📊 Tooltip positioning analysis:', {
+                elementMiddle,
+                viewportHeight,
+                elementInUpperHalf: elementMiddle < viewportHeight / 2,
+                hasEmptyRowsBelow,
+                emptyRowsCount: emptyRows.length,
+                tableHeight: table ? table.getBoundingClientRect().height : 'no table'
+              });
+              
+              // 常に下に表示を優先（空行があるため）
+              if (hasEmptyRowsBelow && emptyRows.length >= 2) {
+                // 十分な空行がある場合は必ず下に表示
+                wrapper.classList.add('tooltip-position-bottom');
+                console.log('📍 Applied bottom positioning due to sufficient empty rows below:', emptyRows.length);
+              } else if (elementMiddle < viewportHeight / 2) {
+                // 要素が画面上半分にある → ツールチップを下に表示
+                wrapper.classList.add('tooltip-position-bottom');
+                console.log('📍 Applied bottom positioning for element in upper half');
+              } else {
+                // 要素が画面下半分にある → ツールチップを上に表示（デフォルト）
+                wrapper.classList.add('tooltip-position-top');
+                console.log('📍 Applied top positioning for element in lower half');
+              }
+              
+              // 左右の位置調整
               if (elementCenter - tooltipHalfWidth < 20) {
                 wrapper.classList.add('edge-left');
                 console.log('📍 Applied edge-left positioning');
@@ -1080,7 +1137,7 @@ export default function QuoteWebTemplate({
           {/* デスクトップ：テーブル表示、モバイル：カード表示 */}
           <div style={{display: 'block'}}>
             {/* デスクトップ用テーブル */}
-            <div style={{...desktopTableStyle, minHeight: '350px'}} className="desktop-table">
+            <div style={desktopTableStyle} className="desktop-table">
               <table style={tableStyle}>
                 <thead>
                   <tr style={tableHeaderRowStyle}>
@@ -1882,7 +1939,7 @@ const footerTextStyle = {
 const desktopTableStyle = {
   display: 'block',
   width: '100%',
-  overflowX: 'auto' as const,
+  overflow: 'visible',
   marginBottom: '1rem',
 };
 
