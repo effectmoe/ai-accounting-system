@@ -87,9 +87,13 @@ const renderDetailsWithTooltip = (details: string, tooltip: string) => {
   for (const keyword of sortedKeywords) {
     if (details.includes(keyword)) {
       matchedKeyword = keyword;
-      // 渡されたツールチップが辞書のものと異なる場合は渡されたものを優先
-      if (!tooltip || tooltip === TOOLTIP_DICTIONARY.get(keyword)) {
+      // 渡されたツールチップがない場合のみ辞書のものを使用
+      // 渡されたツールチップがある場合は常にそれを優先する
+      if (!tooltip || tooltip.trim() === '') {
         matchedTooltip = TOOLTIP_DICTIONARY.get(keyword) || tooltip;
+      } else {
+        // 渡されたツールチップをそのまま使用
+        matchedTooltip = tooltip;
       }
       break;
     }

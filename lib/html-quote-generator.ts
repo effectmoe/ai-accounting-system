@@ -287,7 +287,8 @@ function findTooltipForItem(
     return undefined;
   }
   
-  const terms = Array.from(tooltips.keys());
+  // 長いキーワードから先に検索するように並び替え
+  const terms = Array.from(tooltips.keys()).sort((a, b) => b.length - a.length);
   const descriptionLower = description.toLowerCase().trim();
   
   // デバッグログ（開発環境のみ）
