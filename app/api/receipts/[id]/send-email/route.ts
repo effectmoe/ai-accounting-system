@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ReceiptService } from '@/services/receipt.service';
 import { logger } from '@/lib/logger';
-import { jsPDF } from 'jspdf';
-import { formatCurrency, formatDate } from '@/lib/utils';
+import { generateReceiptHTML } from '@/lib/receipt-html-generator';
 
 const receiptService = new ReceiptService();
 
@@ -146,150 +145,22 @@ export async function POST(
     // 添付ファイルの準備
     const attachments = [];
     if (attachPdf) {
-      logger.debug('Generating receipt PDF for email attachment');
+      logger.debug('Generating receipt HTML for email attachment');
       
-      // jsPDFでPDFを生成
-      const doc = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4'
-      });
-
-      // タイトル
-      doc.setFontSize(24);
-      doc.text('領 収 書', 105, 30, { align: 'center' });
-
-      // 領収書番号と日付
-      doc.setFontSize(10);
-      doc.text(`領収書番号: ${receipt.receiptNumber}`, 140, 45);
-      doc.text(`発行日: ${formatDate(receipt.issueDate)}`, 140, 50);
-
-      // 宛名
-      doc.setFontSize(14);
-      doc.text(receipt.customerName, 20, 70);
-
-      // 金額
-      doc.setFontSize(20);
-      const totalAmount = formatCurrency(receipt.totalAmount);
-      doc.text(`¥${totalAmount}`, 105, 90, { align: 'center' });
-
-      // 但し書き
-      if (receipt.subject) {
-        doc.setFontSize(12);
-        doc.text(`但し、${receipt.subject}`, 20, 110);
-      }
-
-      // 内訳テーブル
-      let yPosition = 130;
-      doc.setFontSize(12);
-      doc.text('【内訳】', 20, yPosition);
+      // HTMLを生成
+      const htmlContent = generateReceiptHTML(receipt);
       
-      yPosition += 10;
-      doc.setFontSize(10);
-      
-      // テーブルヘッダー
-      doc.text('摘要', 20, yPosition);
-      doc.text('数量', 90, yPosition);
-      doc.text('単価', 120, yPosition);
-      doc.text('金額', 160, yPosition);
-      
-      yPosition += 5;
-      doc.line(20, yPosition, 190, yPosition);
-      yPosition += 5;
-
-      // 明細行
-      receipt.items.forEach(item => {
-        const unitPrice = formatCurrency(item.unitPrice);
-        const amount = formatCurrency(item.amount);
-        const unit = item.unit || '個';
-        
-        doc.text(item.description, 20, yPosition);
-        doc.text(`${item.quantity} ${unit}`, 90, yPosition);
-        doc.text(`¥${unitPrice}`, 120, yPosition);
-        doc.text(`¥${amount}`, 160, yPosition);
-        
-        yPosition += 7;
-      });
-
-      // 小計・税・合計
-      yPosition += 5;
-      doc.line(20, yPosition, 190, yPosition);
-      yPosition += 8;
-      
-      const subtotal = formatCurrency(receipt.subtotal);
-      const taxAmount = formatCurrency(receipt.taxAmount);
-      const taxRate = Math.round(receipt.taxRate * 100);
-      
-      doc.text('小計', 120, yPosition);
-      doc.text(`¥${subtotal}`, 160, yPosition);
-      
-      yPosition += 7;
-      doc.text(`消費税(${taxRate}%)`, 120, yPosition);
-      doc.text(`¥${taxAmount}`, 160, yPosition);
-      
-      yPosition += 7;
-      doc.setFontSize(12);
-      doc.text('合計', 120, yPosition);
-      doc.text(`¥${totalAmount}`, 160, yPosition);
-
-      // 発行者情報
-      yPosition = 200;
-      doc.setFontSize(12);
-      doc.text(receipt.issuerName, 20, yPosition);
-      
-      if (receipt.issuerAddress) {
-        yPosition += 7;
-        doc.setFontSize(10);
-        doc.text(receipt.issuerAddress, 20, yPosition);
-      }
-      
-      if (receipt.issuerPhone) {
-        yPosition += 6;
-        doc.text(`TEL: ${receipt.issuerPhone}`, 20, yPosition);
-      }
-      
-      if (receipt.issuerEmail) {
-        yPosition += 6;
-        doc.text(`Email: ${receipt.issuerEmail}`, 20, yPosition);
-      }
-
-      // 印影エリア
-      doc.rect(160, 195, 20, 20);
-      doc.text('印', 170, 205, { align: 'center' });
-
-      // 備考
-      if (receipt.notes) {
-        yPosition = 230;
-        doc.setFontSize(10);
-        doc.text('【備考】', 20, yPosition);
-        yPosition += 6;
-        const noteLines = doc.splitTextToSize(receipt.notes, 170);
-        doc.text(noteLines, 20, yPosition);
-      }
-
-      // フッター
-      doc.setFontSize(8);
-      doc.text(
-        'この領収書は電子的に発行されたものです。印紙税法第5条により収入印紙の貼付は不要です。',
-        105,
-        280,
-        { align: 'center' }
-      );
-
-      // PDFをバイナリ文字列として取得
-      const pdfOutput = doc.output('arraybuffer');
-      const pdfBuffer = Buffer.from(pdfOutput);
-      
-      // Base64エンコード
-      const pdfBase64 = pdfBuffer.toString('base64');
+      // HTMLをBase64エンコード（PDFとして添付）
+      const htmlBuffer = Buffer.from(htmlContent, 'utf-8');
+      const htmlBase64 = htmlBuffer.toString('base64');
       
       attachments.push({
-        filename: `receipt_${receipt.receiptNumber}.pdf`,
-        content: pdfBase64,
-        contentType: 'application/pdf',
+        filename: `receipt_${receipt.receiptNumber}.html`,
+        content: htmlBase64,
+        contentType: 'text/html',
       });
       
-      logger.debug('Receipt PDF generated for email attachment');
+      logger.debug('Receipt HTML generated for email attachment');
     }
 
     // Resendインスタンスを取得

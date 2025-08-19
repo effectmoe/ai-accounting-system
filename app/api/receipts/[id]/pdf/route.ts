@@ -1,14 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ReceiptService } from '@/services/receipt.service';
 import { logger } from '@/lib/logger';
-import { generateReceiptHTML } from '@/lib/receipt-pdf-generator';
-import { jsPDF } from 'jspdf';
-import { formatCurrency, formatDate } from '@/lib/utils';
+import { generateReceiptHTML, generateReceiptFilename, generateSafeReceiptFilename } from '@/lib/receipt-html-generator';
 
 const receiptService = new ReceiptService();
 
 /**
- * GET /api/receipts/[id]/pdf - 領収書のPDFを生成
+ * GET /api/receipts/[id]/pdf - 領収書のPDFを生成（HTMLベース）
  */
 export async function GET(
   request: NextRequest,
@@ -25,158 +23,61 @@ export async function GET(
       );
     }
 
-    // jsPDFでPDFを生成
-    const doc = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'a4'
-    });
-
-    // 日本語フォントの設定（フォントが必要な場合は別途追加）
-    // doc.addFont('NotoSansJP-Regular.ttf', 'NotoSansJP', 'normal');
-    // doc.setFont('NotoSansJP');
-
-    // タイトル
-    doc.setFontSize(24);
-    doc.text('領 収 書', 105, 30, { align: 'center' });
-
-    // 領収書番号と日付
-    doc.setFontSize(10);
-    doc.text(`領収書番号: ${receipt.receiptNumber}`, 140, 45);
-    doc.text(`発行日: ${formatDate(receipt.issueDate)}`, 140, 50);
-
-    // 宛名
-    doc.setFontSize(14);
-    doc.text(receipt.customerName, 20, 70);
-
-    // 金額
-    doc.setFontSize(20);
-    const totalAmount = formatCurrency(receipt.totalAmount);
-    doc.text(`¥${totalAmount}`, 105, 90, { align: 'center' });
-
-    // 但し書き
-    if (receipt.subject) {
-      doc.setFontSize(12);
-      doc.text(`但し、${receipt.subject}`, 20, 110);
-    }
-
-    // 内訳テーブル
-    let yPosition = 130;
-    doc.setFontSize(12);
-    doc.text('【内訳】', 20, yPosition);
+    // HTMLを生成
+    logger.debug('Generating receipt HTML for:', receipt.receiptNumber);
+    const htmlContent = generateReceiptHTML(receipt);
     
-    yPosition += 10;
-    doc.setFontSize(10);
+    // ファイル名を生成
+    const filename = generateReceiptFilename(receipt);
+    const safeFilename = generateSafeReceiptFilename(receipt);
+    logger.debug('Generated filename:', filename);
+    logger.debug('Safe filename for header:', safeFilename);
     
-    // テーブルヘッダー
-    doc.text('摘要', 20, yPosition);
-    doc.text('数量', 90, yPosition);
-    doc.text('単価', 120, yPosition);
-    doc.text('金額', 160, yPosition);
+    // URLクエリパラメータでモードを判定
+    const url = new URL(request.url);
+    const isDownload = url.searchParams.get('download') === 'true';
+    const isPrintMode = url.searchParams.get('print') === 'true';
     
-    yPosition += 5;
-    doc.line(20, yPosition, 190, yPosition);
-    yPosition += 5;
-
-    // 明細行
-    receipt.items.forEach(item => {
-      const unitPrice = formatCurrency(item.unitPrice);
-      const amount = formatCurrency(item.amount);
-      const unit = item.unit || '個';
+    // 日本語ファイル名をRFC 5987準拠でエンコード
+    const encodedFilename = encodeURIComponent(filename);
+    
+    // 印刷モード：自動的に印刷ダイアログを開くHTMLを返す
+    if (isPrintMode) {
+      const printHtml = `
+        ${htmlContent}
+        <script>
+          window.onload = function() {
+            window.print();
+            window.onafterprint = function() {
+              window.close();
+            };
+          };
+        </script>
+      `;
       
-      doc.text(item.description, 20, yPosition);
-      doc.text(`${item.quantity} ${unit}`, 90, yPosition);
-      doc.text(`¥${unitPrice}`, 120, yPosition);
-      doc.text(`¥${amount}`, 160, yPosition);
-      
-      yPosition += 7;
-    });
-
-    // 小計・税・合計
-    yPosition += 5;
-    doc.line(20, yPosition, 190, yPosition);
-    yPosition += 8;
-    
-    const subtotal = formatCurrency(receipt.subtotal);
-    const taxAmount = formatCurrency(receipt.taxAmount);
-    const taxRate = Math.round(receipt.taxRate * 100);
-    
-    doc.text('小計', 120, yPosition);
-    doc.text(`¥${subtotal}`, 160, yPosition);
-    
-    yPosition += 7;
-    doc.text(`消費税(${taxRate}%)`, 120, yPosition);
-    doc.text(`¥${taxAmount}`, 160, yPosition);
-    
-    yPosition += 7;
-    doc.setFontSize(12);
-    doc.text('合計', 120, yPosition);
-    doc.text(`¥${totalAmount}`, 160, yPosition);
-
-    // 発行者情報
-    yPosition = 200;
-    doc.setFontSize(12);
-    doc.text(receipt.issuerName, 20, yPosition);
-    
-    if (receipt.issuerAddress) {
-      yPosition += 7;
-      doc.setFontSize(10);
-      doc.text(receipt.issuerAddress, 20, yPosition);
+      return new NextResponse(printHtml, {
+        status: 200,
+        headers: {
+          'Content-Type': 'text/html; charset=utf-8',
+        },
+      });
     }
     
-    if (receipt.issuerPhone) {
-      yPosition += 6;
-      doc.text(`TEL: ${receipt.issuerPhone}`, 20, yPosition);
-    }
-    
-    if (receipt.issuerEmail) {
-      yPosition += 6;
-      doc.text(`Email: ${receipt.issuerEmail}`, 20, yPosition);
-    }
-
-    // 印影エリア
-    doc.rect(160, 195, 20, 20);
-    doc.text('印', 170, 205, { align: 'center' });
-
-    // 備考
-    if (receipt.notes) {
-      yPosition = 230;
-      doc.setFontSize(10);
-      doc.text('【備考】', 20, yPosition);
-      yPosition += 6;
-      const noteLines = doc.splitTextToSize(receipt.notes, 170);
-      doc.text(noteLines, 20, yPosition);
-    }
-
-    // フッター
-    doc.setFontSize(8);
-    doc.text(
-      'この領収書は電子的に発行されたものです。印紙税法第5条により収入印紙の貼付は不要です。',
-      105,
-      280,
-      { align: 'center' }
-    );
-
-    // PDFをバイナリ文字列として取得
-    const pdfOutput = doc.output('arraybuffer');
-    const pdfBuffer = Buffer.from(pdfOutput);
-    
-    // PDFファイル名を設定
-    const filename = `receipt_${receipt.receiptNumber}.pdf`;
-
-    // PDFを返す
-    return new NextResponse(pdfBuffer, {
+    // 通常モード：HTMLを返す（ブラウザでPDF保存可能）
+    return new NextResponse(htmlContent, {
       status: 200,
       headers: {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="${filename}"`,
+        'Content-Type': 'text/html; charset=utf-8',
+        'Content-Disposition': isDownload 
+          ? `attachment; filename="${safeFilename.replace('.pdf', '.html')}"; filename*=UTF-8''${encodedFilename.replace('.pdf', '.html')}`
+          : `inline; filename="${safeFilename.replace('.pdf', '.html')}"; filename*=UTF-8''${encodedFilename.replace('.pdf', '.html')}`,
       },
     });
   } catch (error) {
-    logger.error('Error generating receipt PDF:', error);
+    logger.error('Error generating receipt HTML/PDF:', error);
     
     return NextResponse.json(
-      { error: 'Failed to generate PDF' },
+      { error: 'Failed to generate receipt' },
       { status: 500 }
     );
   }
