@@ -21,13 +21,15 @@ import {
   Eye,
   X,
   MessageSquare,
-  Package
+  Package,
+  Receipt
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { safeFormatDate } from '@/lib/date-utils';
 import AIChatDialog from '@/components/ai-chat-dialog';
 import EmailSendModal from '@/components/email-send-modal';
+import { CreateReceiptButton } from '@/components/invoices/CreateReceiptButton';
 
 interface Invoice {
   _id: string;
@@ -391,6 +393,14 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
                 </>
               )}
             </Button>
+          )}
+          {/* 領収書作成ボタン */}
+          {['paid', 'partially_paid'].includes(invoice.status) && (
+            <CreateReceiptButton 
+              invoiceId={invoice._id}
+              invoiceNumber={invoice.invoiceNumber}
+              invoiceStatus={invoice.status}
+            />
           )}
           {['draft', 'saved'].includes(invoice.status) && (
             <Button
