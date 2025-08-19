@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { logger } from '@/lib/logger';
 // Selectコンポーネントは使用せず、ネイティブのselect要素を使用
-import { Loader2, Plus, Trash2, Sparkles, MessageSquare, ChevronDown, CheckCircle, FileText, Edit } from 'lucide-react';
+import { Loader2, Plus, Trash2, Sparkles, MessageSquare, ChevronDown, CheckCircle, FileText, Edit, Eye, EyeOff } from 'lucide-react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import AIChatDialog from '@/components/ai-chat-dialog';
@@ -26,6 +26,7 @@ interface InvoiceItem {
   taxAmount: number;
   unit?: string;
   productId?: string;
+  notes?: string; // 備考欄を追加
 }
 
 interface Customer {
@@ -89,10 +90,12 @@ function NewInvoiceContent() {
     taxAmount: 0,
     unit: '',
     productId: '',
+    notes: '', // 備考欄を初期化
   }]);
   const [notes, setNotes] = useState('');
   const [defaultBankInfo, setDefaultBankInfo] = useState<string>('');
   const [paymentMethod, setPaymentMethod] = useState('bank_transfer');
+  const [showItemNotes, setShowItemNotes] = useState(false); // 備考欄の表示/非表示を管理
 
   // 顧客・商品・会社情報を取得
   useEffect(() => {
@@ -628,6 +631,7 @@ function NewInvoiceContent() {
       taxAmount: 0,
       unit: '',
       productId: '',
+      notes: '', // 備考欄を初期化
     }]);
   };
 
@@ -685,6 +689,28 @@ function NewInvoiceContent() {
     }
   };
 
+  // 内税計算用関数
+  const calculateItemAmount = (item: InvoiceItem) => {
+    if (item.taxRate === -1) {
+      // 内税の場合：税込価格から税額を逆算
+      const taxIncludedAmount = item.quantity * item.unitPrice;
+      const taxAmount = Math.floor(taxIncludedAmount - (taxIncludedAmount / 1.1)); // デフォルト10%で計算
+      const amount = taxIncludedAmount - taxAmount;
+      return {
+        amount,
+        taxAmount,
+      };
+    } else {
+      // 通常の外税計算
+      const amount = item.quantity * item.unitPrice;
+      const taxAmount = Math.floor(amount * item.taxRate);
+      return {
+        amount,
+        taxAmount,
+      };
+    }
+  };
+
   // 明細行を更新
   const updateItem = (index: number, field: keyof InvoiceItem, value: any) => {
     const newItems = [...items];
@@ -692,9 +718,9 @@ function NewInvoiceContent() {
     
     // 金額と税額を再計算
     if (field === 'quantity' || field === 'unitPrice' || field === 'taxRate') {
-      const item = newItems[index];
-      item.amount = item.quantity * item.unitPrice;
-      item.taxAmount = Math.floor(item.amount * item.taxRate);
+      const calculated = calculateItemAmount(newItems[index]);
+      newItems[index].amount = calculated.amount;
+      newItems[index].taxAmount = calculated.taxAmount;
     }
     
     setItems(newItems);
@@ -1228,10 +1254,30 @@ function NewInvoiceContent() {
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <Label className="text-lg font-semibold">請求明細</Label>
-                <Button type="button" size="sm" variant="outline" onClick={addItem}>
-                  <Plus className="h-4 w-4 mr-1" />
-                  明細追加
-                </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    type="button" 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => setShowItemNotes(!showItemNotes)}
+                  >
+                    {showItemNotes ? (
+                      <>
+                        <EyeOff className="h-4 w-4 mr-1" />
+                        備考欄を非表示
+                      </>
+                    ) : (
+                      <>
+                        <Eye className="h-4 w-4 mr-1" />
+                        備考欄を表示
+                      </>
+                    )}
+                  </Button>
+                  <Button type="button" size="sm" variant="outline" onClick={addItem}>
+                    <Plus className="h-4 w-4 mr-1" />
+                    明細追加
+                  </Button>
+                </div>
               </div>
               
               {/* ヘッダー行 */}
@@ -1356,9 +1402,10 @@ function NewInvoiceContent() {
                           onChange={(e) => updateItem(index, 'taxRate', parseFloat(e.target.value))}
                           className="rounded-md border border-gray-200 bg-white px-2 py-1 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                         >
-                          <option value={0.10}>10%</option>
+                          <option value={0.10}>10%（標準税率）</option>
                           <option value={0.08}>8%（軽減税率）</option>
                           <option value={0.00}>0%（非課税）</option>
+                          <option value={-1}>内税（税込価格から逆算）</option>
                         </select>
                       </div>
                       <div className="col-span-7 flex justify-end items-center gap-6 text-sm">
@@ -1372,6 +1419,23 @@ function NewInvoiceContent() {
                         </div>
                       </div>
                     </div>
+                    
+                    {/* 備考欄 - 表示/非表示切り替え可能 */}
+                    {showItemNotes && (
+                      <div className="grid grid-cols-12 gap-4 items-center pt-3 border-t border-gray-100">
+                        <div className="col-span-12">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-gray-600">備考:</span>
+                            <Input
+                              placeholder="商品の詳細説明や備考を入力"
+                              value={item.notes || ''}
+                              onChange={(e) => updateItem(index, 'notes', e.target.value)}
+                              className="flex-1"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
