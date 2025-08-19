@@ -28,6 +28,7 @@ interface QuoteItem {
   unit?: string;
   productId?: string;
   discountReason?: string;
+  notes?: string; // 備考用のプロパティを追加
 }
 
 interface Customer {
@@ -101,6 +102,7 @@ function NewQuoteContent() {
     taxAmount: 0,
     unit: '',
     productId: '',
+    notes: '', // 備考用のプロパティを初期化
   }]);
   const [notes, setNotes] = useState('');
   const [defaultBankInfo, setDefaultBankInfo] = useState<string>('');
@@ -301,6 +303,7 @@ function NewQuoteContent() {
       taxAmount: 0,
       unit: '',
       productId: '',
+      notes: '', // 備考用のプロパティを初期化
     }]);
   };
 
@@ -483,6 +486,7 @@ function NewQuoteContent() {
         taxAmount: item.taxAmount || ((item.amount || (item.quantity || 1) * (item.unitPrice || 0)) * ((item.taxRate || 10) / 100)),
         unit: item.unit || '',
         productId: item.productId || '',
+        notes: item.notes || '', // 備考用のプロパティを追加
       })));
     }
     
@@ -869,8 +873,8 @@ function NewQuoteContent() {
                     <Label>備考</Label>
                     <Input
                       placeholder="商品の詳細説明や備考を入力"
-                      value={item.description || ''}
-                      onChange={(e) => updateItem(index, 'description', e.target.value)}
+                      value={item.notes || ''}
+                      onChange={(e) => updateItem(index, 'notes', e.target.value)}
                     />
                   </div>
                 )}
