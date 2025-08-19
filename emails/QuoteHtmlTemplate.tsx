@@ -230,6 +230,25 @@ export default function QuoteHtmlTemplate({
               color: #1f2937;
               margin: 30px 0 20px;
             }
+            .item-header {
+              display: grid;
+              grid-template-columns: 1fr auto auto auto;
+              gap: 20px;
+              padding: 12px 0;
+              border-bottom: 2px solid #e5e7eb;
+              font-weight: 600;
+              color: #374151;
+              background-color: #f9fafb;
+              margin: 0 -20px;
+              padding-left: 20px;
+              padding-right: 20px;
+            }
+            .item-header > div {
+              font-size: 14px;
+            }
+            .item-header > div:not(:first-child) {
+              text-align: right;
+            }
             .item-row {
               border-bottom: 1px solid #f3f4f6;
               padding: 16px 0;
@@ -440,6 +459,9 @@ export default function QuoteHtmlTemplate({
             }
             /* モバイルメールクライアント対応 */
             @media screen and (max-width: 600px) {
+              .item-header {
+                display: none;
+              }
               .item-row {
                 grid-template-columns: 1fr;
                 gap: 8px;
@@ -449,6 +471,18 @@ export default function QuoteHtmlTemplate({
               .item-total {
                 text-align: left;
                 margin-top: 4px;
+              }
+              .item-quantity::before {
+                content: "数量: ";
+                font-weight: 600;
+              }
+              .item-price::before {
+                content: "単価: ";
+                font-weight: 600;
+              }
+              .item-total::before {
+                content: "金額: ";
+                font-weight: 600;
               }
               .terms-content {
                 padding: 15px;
@@ -551,6 +585,14 @@ export default function QuoteHtmlTemplate({
             <div>
               <h2 className="section-title">見積内容</h2>
               
+              {/* ヘッダー行 */}
+              <div className="item-header">
+                <div>品目</div>
+                <div>数量</div>
+                <div>単価</div>
+                <div>金額</div>
+              </div>
+              
               {quote.items.map((item, index) => {
                 // 値引き判定
                 const isDiscount = (item.amount < 0) || 
@@ -575,7 +617,7 @@ export default function QuoteHtmlTemplate({
                       )}
                     </div>
                     <div className={`item-quantity ${isDiscount ? 'discount' : ''}`}>
-                      {item.quantity} {item.unit || '個'}
+                      {item.quantity}{item.unit ? ` ${item.unit}` : ''}
                     </div>
                     <div className={`item-price ${isDiscount ? 'discount' : ''}`}>
                       {formatCurrency(item.unitPrice)}
