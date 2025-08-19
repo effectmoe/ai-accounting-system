@@ -564,7 +564,7 @@ export default function NewCustomerPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label htmlFor="representativeName" className="block text-sm font-medium text-gray-700 mb-1">
-                    代表者名（任意）
+                    代表者名
                   </label>
                   <input
                     type="text"
@@ -579,7 +579,7 @@ export default function NewCustomerPage() {
 
                 <div>
                   <label htmlFor="representativeTitle" className="block text-sm font-medium text-gray-700 mb-1">
-                    代表者肩書き（任意）
+                    代表者肩書き
                   </label>
                   <input
                     type="text"
