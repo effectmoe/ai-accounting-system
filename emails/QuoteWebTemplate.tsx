@@ -195,6 +195,7 @@ export default function QuoteWebTemplate({
       notesPreview: quote?.notes?.substring(0, 50) || 'なし'
     });
   }
+  
   const brandColor = '#3B82F6';
   const accentColor = '#10B981';
 
@@ -1482,13 +1483,13 @@ export default function QuoteWebTemplate({
           style={{ display: 'none' }}
         />
       )}
-      </div>
-    </>
+    </div>
   );
 }
 
 // Webページ最適化されたスタイル定義
-const containerStyle = {
+// Note: containerStyle is defined inside the function component
+const webContainerStyle = {
   fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif',
   backgroundColor: '#ffffff',
   color: '#1f2937',
