@@ -762,12 +762,9 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
                         <div>
                           <label className="block text-xs font-medium text-gray-700 mb-1">項目名</label>
                           <Input
-                            value={item.itemName || item.description || ''}
+                            value={item.itemName || ''}
                             onChange={(e) => {
                               updateItem(index, 'itemName', e.target.value);
-                              if (!item.description) {
-                                updateItem(index, 'description', e.target.value);
-                              }
                             }}
                             placeholder="項目名を入力"
                             className="bg-white"

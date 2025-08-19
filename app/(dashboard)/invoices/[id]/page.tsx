@@ -573,7 +573,7 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
                           </div>
                           {showDescriptions && (
                             <>
-                              {item.itemName && item.description && item.itemName !== item.description && (
+                              {item.description && (
                                 <div className="text-sm text-gray-600 mt-1">{item.description}</div>
                               )}
                               {item.notes && (
