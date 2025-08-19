@@ -206,18 +206,6 @@ export function generateReceiptHTML(receipt: Receipt): string {
       line-height: 1.8;
     }
     
-    .stamp-area {
-      width: 100px;
-      height: 100px;
-      border: 2px solid #333;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 24px;
-      font-weight: 700;
-      color: #dc2626;
-    }
     
     /* 備考 */
     .notes-section {
@@ -384,7 +372,6 @@ export function generateReceiptHTML(receipt: Receipt): string {
           ${receipt.issuerRegistrationNumber ? `登録番号: ${receipt.issuerRegistrationNumber}` : ''}
         </div>
       </div>
-      <div class="stamp-area">印</div>
     </div>
     
     <!-- 備考 -->
