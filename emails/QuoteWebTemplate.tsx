@@ -75,27 +75,48 @@ const renderDetailsWithTooltip = (details: string, tooltip: string) => {
     console.log('✅ Creating tooltip for:', details?.substring(0, 30), 'with tooltip:', tooltip?.substring(0, 30));
   }
   
-  // ツールチップ辞書から該当するキーワードを検索
+  // 動的に渡されたツールチップを使用するため、キーワードを自動検出
+  // ツールチップの内容から推測されるキーワードを検索
   let matchedKeyword = '';
-  let matchedTooltip = '';
+  let matchedTooltip = tooltip; // 渡されたツールチップをそのまま使用
   
-  // 長いキーワードから順に検索（例：「LLMOモニタリング」が「LLMO」より優先）
+  // TOOLTIP_DICTIONARYからキーワードを検索（フォールバック）
   const sortedKeywords = Array.from(TOOLTIP_DICTIONARY.keys()).sort((a, b) => b.length - a.length);
   
+  // まず、detailsの中にTOOLTIP_DICTIONARYのキーワードが含まれているか確認
   for (const keyword of sortedKeywords) {
     if (details.includes(keyword)) {
       matchedKeyword = keyword;
-      matchedTooltip = TOOLTIP_DICTIONARY.get(keyword) || '';
+      // 渡されたツールチップが辞書のものと異なる場合は渡されたものを優先
+      if (!tooltip || tooltip === TOOLTIP_DICTIONARY.get(keyword)) {
+        matchedTooltip = TOOLTIP_DICTIONARY.get(keyword) || tooltip;
+      }
       break;
     }
   }
   
-  // マッチしたキーワードがない場合は通常のテキストとして表示
-  if (!matchedKeyword || !matchedTooltip) {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('❌ No keyword match found in dictionary for:', details);
+  // キーワードが見つからない場合は、主要な単語を抽出
+  if (!matchedKeyword) {
+    // ROI、APIなど大文字の単語やカタカナの単語を検索
+    const patterns = [
+      /[A-Z]{2,}/g,  // 大文字の連続（API、ROI、UI、UXなど）
+      /[ァ-ヴー]+/g,  // カタカナの単語
+      /[A-Za-z]+/g    // 英単語
+    ];
+    
+    for (const pattern of patterns) {
+      const matches = details.match(pattern);
+      if (matches && matches.length > 0) {
+        // 最も長い単語を選択
+        matchedKeyword = matches.reduce((a, b) => a.length > b.length ? a : b);
+        break;
+      }
     }
-    return <span>{details}</span>;
+    
+    // それでも見つからない場合は最初の10文字を使用
+    if (!matchedKeyword) {
+      matchedKeyword = details.substring(0, Math.min(10, details.length));
+    }
   }
   
   // HTMLエスケープ処理
