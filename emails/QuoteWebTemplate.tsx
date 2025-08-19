@@ -315,8 +315,8 @@ export default function QuoteWebTemplate({
             /* 位置設定 - absoluteで親要素に対して相対位置 */
             position: absolute !important;
             z-index: 999999; 
-            /* 初期位置を自動計算で調整 */
-            bottom: calc(100% + 10px);
+            /* デフォルトは下に表示 */
+            top: calc(100% + 10px);
             left: 50%;
             transform: translateX(-50%);
             min-width: 200px;
@@ -348,12 +348,12 @@ export default function QuoteWebTemplate({
           .tooltip-content::after {
             content: '';
             position: absolute;
-            top: 100%;
+            bottom: 100%;
             left: 50%;
             transform: translateX(-50%);
             border-width: 8px;
             border-style: solid;
-            border-color: #fef3c7 transparent transparent transparent;
+            border-color: transparent transparent #fef3c7 transparent;
           }
           
           /* ホバー時の表示 */
@@ -432,12 +432,12 @@ export default function QuoteWebTemplate({
           .tooltip-content::after {
             content: "";
             position: absolute;
-            top: 100%;
+            bottom: 100%;
             left: 50%;
             transform: translateX(-50%);
             border-width: 5px;
             border-style: solid;
-            border-color: #f59e0b transparent transparent transparent;
+            border-color: transparent transparent #f59e0b transparent;
           }
           
           /* JavaScript制御による精密位置調整を優先 */
@@ -824,11 +824,32 @@ export default function QuoteWebTemplate({
               
               const rect = wrapper.getBoundingClientRect();
               const viewportWidth = window.innerWidth;
+              const viewportHeight = window.innerHeight;
               const tooltipWidth = 320; // ツールチップの想定幅
+              const tooltipHeight = 100; // ツールチップの想定高さ
               
               // 要素の中心位置を計算
               const elementCenter = rect.left + (rect.width / 2);
               const tooltipHalfWidth = tooltipWidth / 2;
+              
+              // 下に表示するスペースがあるかチェック
+              const spaceBelow = viewportHeight - rect.bottom;
+              const spaceAbove = rect.top;
+              
+              // デフォルトは下に表示、スペースがない場合のみ上に表示
+              if (spaceBelow < tooltipHeight + 20 && spaceAbove > tooltipHeight + 20) {
+                // 上に表示
+                content.style.top = 'auto';
+                content.style.bottom = 'calc(100% + 10px)';
+                // 矢印の向きを変更
+                content.style.setProperty('--arrow-direction', 'down');
+              } else {
+                // 下に表示（デフォルト）
+                content.style.top = 'calc(100% + 10px)';
+                content.style.bottom = 'auto';
+                // 矢印の向きを変更
+                content.style.setProperty('--arrow-direction', 'up');
+              }
               
               // より詳細なデバッグログ
               console.log('📍 Detailed tooltip positioning:', {
