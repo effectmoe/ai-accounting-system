@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ReceiptService } from '@/services/receipt.service';
+import { CompanyInfoService } from '@/services/company-info.service';
 import { logger } from '@/lib/logger';
 import { generateReceiptHTML, generateReceiptFilename, generateSafeReceiptFilename } from '@/lib/receipt-html-generator';
 
 const receiptService = new ReceiptService();
 
 /**
- * GET /api/receipts/[id]/pdf - 領収書のPDFを生成（HTMLベース）
+ * GET /api/receipts/[id]/pdf - 領収書のPDFを生成（見積書と同じ方式）
  */
 export async function GET(
   request: NextRequest,
@@ -23,6 +24,15 @@ export async function GET(
       );
     }
 
+    // 会社情報を取得
+    const companyInfoService = new CompanyInfoService();
+    const companyInfo = await companyInfoService.getCompanyInfo();
+
+    // URLクエリパラメータでモードを判定
+    const url = new URL(request.url);
+    const isDownload = url.searchParams.get('download') === 'true';
+    const isPrintMode = url.searchParams.get('print') === 'true';
+    
     // HTMLを生成
     logger.debug('Generating receipt HTML for:', receipt.receiptNumber);
     const htmlContent = generateReceiptHTML(receipt);
@@ -32,11 +42,6 @@ export async function GET(
     const safeFilename = generateSafeReceiptFilename(receipt);
     logger.debug('Generated filename:', filename);
     logger.debug('Safe filename for header:', safeFilename);
-    
-    // URLクエリパラメータでモードを判定
-    const url = new URL(request.url);
-    const isDownload = url.searchParams.get('download') === 'true';
-    const isPrintMode = url.searchParams.get('print') === 'true';
     
     // 日本語ファイル名をRFC 5987準拠でエンコード
     const encodedFilename = encodeURIComponent(filename);
@@ -63,7 +68,7 @@ export async function GET(
       });
     }
     
-    // 通常モード：HTMLを返す（ブラウザでPDF保存可能）
+    // 通常モード：HTMLを返す（見積書と同じ方式）
     return new NextResponse(htmlContent, {
       status: 200,
       headers: {
@@ -74,7 +79,7 @@ export async function GET(
       },
     });
   } catch (error) {
-    logger.error('Error generating receipt HTML/PDF:', error);
+    logger.error('Error generating receipt PDF:', error);
     
     return NextResponse.json(
       { error: 'Failed to generate receipt' },

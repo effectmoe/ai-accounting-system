@@ -13,7 +13,7 @@ export const runtime = 'nodejs';
 
 // メール送信のための型定義
 interface EmailRequest {
-  documentType: 'quote' | 'invoice' | 'delivery-note';
+  documentType: 'quote' | 'invoice' | 'delivery-note' | 'receipt';
   documentId: string;
   to: string;
   cc?: string;
@@ -244,12 +244,13 @@ function getReplyNoticeHtml(): string {
 
 // デフォルトのメールテンプレート
 function getDefaultEmailTemplate(
-  documentType: 'quote' | 'invoice' | 'delivery-note',
+  documentType: 'quote' | 'invoice' | 'delivery-note' | 'receipt',
   documentNumber: string,
   customerName: string,
   totalAmount: number,
   dueDate?: string,
-  deliveryDate?: string
+  deliveryDate?: string,
+  documentTitle?: string
 ): { subject: string; body: string } {
   // 送信専用の注意書きHTMLを取得
   const replyNotice = getReplyNoticeHtml();
@@ -299,7 +300,7 @@ ${dueDate ? `<strong>お支払期限：</strong>${dueDate}` : ''}</p>
 <p>よろしくお願いいたします。</p>
       `.trim(),
     };
-  } else {
+  } else if (documentType === 'delivery-note') {
     // delivery-note の場合
     return {
       subject: `【納品書】${documentNumber} のご送付`,
@@ -321,6 +322,28 @@ ${deliveryDate ? `<strong>納品日：</strong>${deliveryDate}<br/>` : ''}
 <p>ご不明な点がございましたら、お気軽にお問い合わせください。</p>
 
 <p>よろしくお願いいたします。</p>
+      `.trim(),
+    };
+  } else {
+    // receipt の場合
+    return {
+      subject: `【領収書】${documentNumber} のご送付`,
+      body: `
+${replyNotice}
+
+<p>${customerName} 様</p>
+
+<p>いつもお世話になっております。</p>
+
+<p>領収書をお送りいたします。</p>
+
+<p><strong>領収書番号：</strong>${documentNumber}<br/>
+${documentTitle ? `<strong>件名：</strong>${documentTitle}<br/>` : ''}
+<strong>領収金額：</strong>¥${totalAmount.toLocaleString()}</p>
+
+<p>添付ファイルをご確認ください。</p>
+
+<p>ご査収の程、よろしくお願いいたします。</p>
       `.trim(),
     };
   }
@@ -433,7 +456,7 @@ export async function POST(request: NextRequest) {
         companyInfo: effectiveCompanyInfo,
         bankAccount: document.companySnapshot?.bankAccount,
       };
-    } else {
+    } else if (documentType === 'delivery-note') {
       // delivery-note の場合
       logger.debug('Fetching delivery note document...');
       const response = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/delivery-notes/${documentId}`);
@@ -474,6 +497,47 @@ export async function POST(request: NextRequest) {
           registrationNumber: document.companySnapshot?.invoiceRegistrationNumber,
         },
       };
+    } else {
+      // receipt の場合
+      logger.debug('Fetching receipt document...');
+      const { ReceiptService } = await import('@/services/receipt.service');
+      const receiptService = new ReceiptService();
+      document = await receiptService.getReceipt(documentId);
+      logger.debug('Receipt fetched:', document ? 'SUCCESS' : 'FAILED');
+      
+      if (!document) {
+        return NextResponse.json({ error: '領収書が見つかりません' }, { status: 404 });
+      }
+      
+      // DocumentData形式に変換
+      documentData = {
+        documentType: 'receipt',
+        documentNumber: document.receiptNumber,
+        issueDate: new Date(document.issueDate),
+        customerName: document.customerName || '',
+        customerAddress: document.customerAddress || '',
+        customer: (document as any).customer, // 顧客情報全体を渡す
+        customerSnapshot: (document as any).customerSnapshot, // スナップショットも渡す
+        items: document.items.map((item: any) => ({
+          itemName: item.description || '',
+          description: item.description || '',
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          amount: item.amount,
+        })),
+        subtotal: document.subtotal,
+        tax: document.taxAmount,
+        total: document.totalAmount,
+        notes: document.notes,
+        companyInfo: {
+          name: (document as any).companySnapshot?.companyName || document.issuerName || '',
+          address: (document as any).companySnapshot?.address || document.issuerAddress || '',
+          phone: (document as any).companySnapshot?.phone || document.issuerPhone,
+          email: (document as any).companySnapshot?.email || document.issuerEmail,
+          registrationNumber: (document as any).companySnapshot?.invoiceRegistrationNumber,
+          stampImage: (document as any).companySnapshot?.stampImage || document.issuerStamp,
+        },
+      };
     }
 
     // デフォルトのメールテンプレートを取得
@@ -483,7 +547,8 @@ export async function POST(request: NextRequest) {
       documentData.customerName,
       documentData.total,
       documentData.dueDate ? new Date(documentData.dueDate).toLocaleDateString('ja-JP') : undefined,
-      documentData.deliveryDate ? new Date(documentData.deliveryDate).toLocaleDateString('ja-JP') : undefined
+      documentData.deliveryDate ? new Date(documentData.deliveryDate).toLocaleDateString('ja-JP') : undefined,
+      document.subject // 領収書の件名を渡す
     );
 
     // メールの件名と本文を設定

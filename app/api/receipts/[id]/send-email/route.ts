@@ -150,10 +150,36 @@ export async function POST(
       // HTMLを生成
       const htmlContent = generateReceiptHTML(receipt);
       
-      // HTMLをBase64エンコード（PDFとして添付）
-      const htmlBuffer = Buffer.from(htmlContent, 'utf-8');
+      // PDF印刷用のHTMLを作成
+      const pdfHtml = `
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>領収書 ${receipt.receiptNumber}</title>
+    <style>
+        @media print {
+            body { margin: 0; padding: 0; }
+            .no-print { display: none !important; }
+        }
+        body {
+            font-family: 'Noto Sans JP', 'Hiragino Sans', 'MS Gothic', sans-serif;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+    </style>
+</head>
+<body>
+    ${htmlContent}
+</body>
+</html>`;
+      
+      // HTMLをBase64エンコード
+      const htmlBuffer = Buffer.from(pdfHtml, 'utf-8');
       const htmlBase64 = htmlBuffer.toString('base64');
       
+      // HTMLファイルとして添付（メールクライアントでPDF保存可能）
       attachments.push({
         filename: `receipt_${receipt.receiptNumber}.html`,
         content: htmlBase64,

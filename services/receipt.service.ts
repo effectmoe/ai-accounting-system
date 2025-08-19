@@ -231,11 +231,40 @@ export class ReceiptService {
   }
 
   /**
-   * 領収書を取得
+   * 領収書を取得（顧客情報を含む）
    */
   async getReceipt(id: string): Promise<Receipt | null> {
     try {
-      return await db.findById<Receipt>(this.collectionName, id);
+      const receipt = await db.findById<Receipt>(this.collectionName, id);
+      if (!receipt) {
+        return null;
+      }
+
+      // 顧客情報を取得して含める
+      if (receipt.customerId) {
+        const customer = await db.findById<Customer>(Collections.CUSTOMERS, receipt.customerId);
+        if (customer) {
+          // 顧客情報を領収書に追加（見積書と同じ方式）
+          (receipt as any).customer = customer;
+          // 顧客のメールアドレスも追加
+          (receipt as any).customerEmail = customer.email || customer.contacts?.[0]?.email || '';
+        }
+      }
+
+      // 会社情報スナップショットも含める（見積書と同じ）
+      const companyInfo = await this.companyInfoService.getCompanyInfo();
+      if (companyInfo) {
+        (receipt as any).companySnapshot = {
+          companyName: companyInfo.companyName,
+          address: this.formatCompanyAddress(companyInfo),
+          phone: companyInfo.phone,
+          email: companyInfo.email,
+          invoiceRegistrationNumber: companyInfo.invoiceRegistrationNumber,
+          stampImage: companyInfo.sealImage,
+        };
+      }
+
+      return receipt;
     } catch (error) {
       logger.error('Error getting receipt:', error);
       throw new Error('領収書の取得に失敗しました');

@@ -14,7 +14,7 @@ import { logger } from '@/lib/logger';
 interface EmailSendModalProps {
   isOpen: boolean;
   onClose: () => void;
-  documentType: 'quote' | 'invoice' | 'delivery-note';
+  documentType: 'quote' | 'invoice' | 'delivery-note' | 'receipt';
   documentId: string;
   documentNumber: string;
   documentTitle?: string; // 件名
@@ -222,7 +222,7 @@ ${formattedDueDate ? `お支払期限：${formattedDueDate}` : ''}
 
 ご査収の程、お願いいたします。`,
       };
-    } else {
+    } else if (documentType === 'delivery-note') {
       // 納品書の場合
       return {
         subject: `【納品書】${documentNumber} のご送付`,
@@ -241,6 +241,25 @@ ${deliveryDate ? `納品日：${deliveryDate}` : ''}
 ご不明な点がございましたら、お気軽にお問い合わせください。
 
 よろしくお願いいたします。`,
+      };
+    } else {
+      // 領収書の場合
+      const companyName = companyInfo?.company_name || '株式会社EFFECT';
+      return {
+        subject: `【領収書】${documentNumber} のご送付`,
+        body: `${formattedCustomerName}
+
+いつもお世話になっております、${companyName}でございます。
+
+領収書をお送りいたします。
+
+領収書番号：${documentNumber}
+${documentTitle ? `件名：${documentTitle}
+` : ''}領収金額：¥${totalAmount.toLocaleString()}
+
+添付ファイルをご確認ください。
+
+ご査収の程、よろしくお願いいたします。`,
       };
     }
   };
@@ -305,32 +324,37 @@ ${deliveryDate ? `納品日：${deliveryDate}` : ''}
       // PDFを添付する場合は、クライアントサイドで生成
       if (attachPdf) {
         try {
-          // まず見積書/請求書/納品書のデータを取得
-          const apiPath = documentType === 'delivery-note' ? 'delivery-notes' : `${documentType}s`;
+          // まず見積書/請求書/納品書/領収書のデータを取得
+          const apiPath = documentType === 'delivery-note' ? 'delivery-notes' : 
+                           documentType === 'receipt' ? 'receipts' : `${documentType}s`;
           const docResponse = await fetch(`/api/${apiPath}/${documentId}`);
           if (!docResponse.ok) {
-            throw new Error(`${documentType === 'quote' ? '見積書' : documentType === 'invoice' ? '請求書' : '納品書'}の取得に失敗しました`);
+            throw new Error(`${documentType === 'quote' ? '見積書' : documentType === 'invoice' ? '請求書' : documentType === 'delivery-note' ? '納品書' : '領収書'}の取得に失敗しました`);
           }
           
           const docData = await docResponse.json();
           
           // DocumentData形式に変換
           const documentData: DocumentData = {
-            documentType,
-            documentNumber: docData.quoteNumber || docData.invoiceNumber || docData.deliveryNoteNumber,
+            documentType: documentType, // 領収書は'receipt'のまま処理
+            documentNumber: docData.quoteNumber || docData.invoiceNumber || docData.deliveryNoteNumber || docData.receiptNumber,
             issueDate: new Date(docData.issueDate || docData.invoiceDate),
             validUntilDate: documentType === 'quote' ? new Date(docData.validityDate) : undefined,
             dueDate: documentType === 'invoice' ? new Date(docData.dueDate) : undefined,
             deliveryDate: documentType === 'delivery-note' ? new Date(docData.deliveryDate) : undefined,
-            customerName: docData.customer?.companyName || docData.customerSnapshot?.companyName || '',
-            customerAddress: docData.customer ? 
-              `${docData.customer.postalCode ? `〒${docData.customer.postalCode} ` : ''}${docData.customer.prefecture || ''}${docData.customer.city || ''}${docData.customer.address1 || ''}${docData.customer.address2 || ''}` :
-              docData.customerSnapshot?.address || '',
+            customerName: documentType === 'receipt' ? 
+              (docData.customerName || docData.customer?.companyName || '') :
+              (docData.customer?.companyName || docData.customerSnapshot?.companyName || ''),
+            customerAddress: documentType === 'receipt' ?
+              (docData.customerAddress || '') :
+              (docData.customer ? 
+                `${docData.customer.postalCode ? `〒${docData.customer.postalCode} ` : ''}${docData.customer.prefecture || ''}${docData.customer.city || ''}${docData.customer.address1 || ''}${docData.customer.address2 || ''}` :
+                docData.customerSnapshot?.address || ''),
             customer: docData.customer, // 顧客情報全体を渡す
             customerSnapshot: docData.customerSnapshot, // スナップショットも渡す
             items: docData.items.map((item: any) => ({
-              itemName: item.itemName || '',
-              description: item.description || '',
+              itemName: item.itemName || item.description || '',
+              description: item.description || item.itemName || '',
               quantity: item.quantity,
               unitPrice: item.unitPrice,
               amount: item.amount,
@@ -339,7 +363,14 @@ ${deliveryDate ? `納品日：${deliveryDate}` : ''}
             tax: docData.taxAmount,
             total: docData.totalAmount,
             notes: docData.notes,
-            companyInfo: {
+            companyInfo: documentType === 'receipt' ? {
+              name: docData.companySnapshot?.companyName || docData.issuerName || '',
+              address: docData.companySnapshot?.address || docData.issuerAddress || '',
+              phone: docData.companySnapshot?.phone || docData.issuerPhone,
+              email: docData.companySnapshot?.email || docData.issuerEmail,
+              registrationNumber: docData.companySnapshot?.invoiceRegistrationNumber,
+              stampImage: docData.companySnapshot?.stampImage || docData.issuerStamp,
+            } : {
               name: docData.companySnapshot?.companyName || '',
               address: docData.companySnapshot?.address || '',
               phone: docData.companySnapshot?.phone,
@@ -454,7 +485,7 @@ ${deliveryDate ? `納品日：${deliveryDate}` : ''}
         <div className="p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-semibold">
-              {documentType === 'quote' ? '見積書' : documentType === 'invoice' ? '請求書' : '納品書'}をメール送信
+              {documentType === 'quote' ? '見積書' : documentType === 'invoice' ? '請求書' : documentType === 'delivery-note' ? '納品書' : '領収書'}をメール送信
             </h2>
             <Button
               variant="ghost"

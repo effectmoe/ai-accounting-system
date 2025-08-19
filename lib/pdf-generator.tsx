@@ -283,6 +283,7 @@ export function generateSafeFilename(invoice: any): string {
 export const DocumentPDF: React.FC<{ data: any }> = ({ data }) => {
   const isQuote = data.documentType === 'quote';
   const isDeliveryNote = data.documentType === 'delivery-note';
+  const isReceipt = data.documentType === 'receipt';
   
   return (
     <Document>
@@ -290,7 +291,7 @@ export const DocumentPDF: React.FC<{ data: any }> = ({ data }) => {
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>
-            {isQuote ? '見積書' : isDeliveryNote ? '納品書' : '請求書'}
+            {isQuote ? '見積書' : isDeliveryNote ? '納品書' : isReceipt ? '領収書' : '請求書'}
           </Text>
         </View>
 
@@ -334,11 +335,11 @@ export const DocumentPDF: React.FC<{ data: any }> = ({ data }) => {
             {isDeliveryNote && data.deliveryDate && (
               <Text style={{ fontSize: 10 }}>納品日: {new Date(data.deliveryDate).toLocaleDateString('ja-JP')}</Text>
             )}
-            {!isQuote && !isDeliveryNote && data.dueDate && (
+            {!isQuote && !isDeliveryNote && !isReceipt && data.dueDate && (
               <Text style={{ fontSize: 10 }}>支払期限: {new Date(data.dueDate).toLocaleDateString('ja-JP')}</Text>
             )}
             <Text style={{ fontSize: 10, marginTop: 5 }}>
-              {isQuote ? '見積書番号' : isDeliveryNote ? '納品書番号' : '請求書番号'}: {data.documentNumber}
+              {isQuote ? '見積書番号' : isDeliveryNote ? '納品書番号' : isReceipt ? '領収書番号' : '請求書番号'}: {data.documentNumber}
             </Text>
             <Text style={{ fontSize: 14, fontWeight: 700, marginTop: 15 }}>{data.companyInfo?.name}</Text>
             <Text style={{ fontSize: 10 }}>{data.companyInfo?.address}</Text>
@@ -350,7 +351,7 @@ export const DocumentPDF: React.FC<{ data: any }> = ({ data }) => {
         {/* Total Amount Box */}
         <View style={styles.totalBox}>
           <Text style={styles.totalLabel}>
-            {isQuote ? '見積金額合計' : isDeliveryNote ? '納品金額合計' : '請求金額合計'}
+            {isQuote ? '見積金額合計' : isDeliveryNote ? '納品金額合計' : isReceipt ? '領収金額' : '請求金額合計'}
           </Text>
           <Text style={styles.totalAmount}>
             ¥{(data.total || 0).toLocaleString()} (税込)

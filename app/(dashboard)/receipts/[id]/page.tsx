@@ -20,6 +20,7 @@ import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { useToast } from '@/components/ui/use-toast';
 import { logger } from '@/lib/logger';
+import EmailSendModal from '@/components/email-send-modal';
 
 interface ReceiptItem {
   description: string;
@@ -74,6 +75,7 @@ export default function ReceiptDetailPage({ params }: { params: { id: string } }
   const [receipt, setReceipt] = useState<Receipt | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
+  const [showEmailModal, setShowEmailModal] = useState(false);
 
   useEffect(() => {
     fetchReceipt();
@@ -106,61 +108,29 @@ export default function ReceiptDetailPage({ params }: { params: { id: string } }
     }
   };
 
-  const handleSendEmail = async () => {
-    const email = prompt('送信先メールアドレスを入力してください:');
-    if (!email) return;
+  const handleSendEmail = () => {
+    setShowEmailModal(true);
+  };
 
-    setIsSending(true);
-    try {
-      const response = await fetch(`/api/receipts/${params.id}/send-email`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          to: email,
-          attachPdf: true,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        toast({
-          title: '成功',
-          description: `領収書を${email}に送信しました`,
-        });
-        fetchReceipt(); // ステータス更新のため再取得
-      } else {
-        toast({
-          title: 'エラー',
-          description: data.error || 'メール送信に失敗しました',
-          variant: 'destructive',
-        });
-      }
-    } catch (error) {
-      logger.error('メール送信エラー:', error);
-      toast({
-        title: 'エラー',
-        description: 'メール送信中にエラーが発生しました',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsSending(false);
-    }
+  const handleEmailSendSuccess = () => {
+    setShowEmailModal(false);
+    fetchReceipt(); // ステータス更新のため再取得
   };
 
   const handleDownloadPDF = () => {
-    window.open(`/api/receipts/${params.id}/pdf`, '_blank');
+    // ダウンロードパラメータを追加して、ファイルとしてダウンロード
+    const link = document.createElement('a');
+    link.href = `/api/receipts/${params.id}/pdf?download=true`;
+    link.download = `領収書_${receipt?.receiptNumber || params.id}.html`;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const handlePrint = () => {
-    const printWindow = window.open(`/api/receipts/${params.id}/pdf`, '_blank');
-    if (printWindow) {
-      printWindow.addEventListener('load', () => {
-        printWindow.print();
-      });
-    }
+    // print=trueパラメータを追加して、印刷ダイアログを自動的に開く
+    const printWindow = window.open(`/api/receipts/${params.id}/pdf?print=true`, '_blank');
   };
 
   const handleCancel = async () => {
@@ -245,14 +215,9 @@ export default function ReceiptDetailPage({ params }: { params: { id: string } }
                 PDFダウンロード
               </Button>
               <Button 
-                onClick={handleSendEmail} 
-                disabled={isSending}
+                onClick={handleSendEmail}
               >
-                {isSending ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Mail className="mr-2 h-4 w-4" />
-                )}
+                <Mail className="mr-2 h-4 w-4" />
                 メール送信
               </Button>
               <Button onClick={handleCancel} variant="destructive">
@@ -399,6 +364,22 @@ export default function ReceiptDetailPage({ params }: { params: { id: string } }
           </div>
         </CardContent>
       </Card>
+
+      {/* メール送信モーダル（見積書と同じコンポーネント） */}
+      <EmailSendModal
+        isOpen={showEmailModal}
+        onClose={() => setShowEmailModal(false)}
+        documentType="receipt"
+        documentId={receipt._id}
+        documentNumber={receipt.receiptNumber}
+        documentTitle={receipt.subject}
+        customerEmail={receipt.customerEmail || ''}
+        customerName={receipt.customerName}
+        customer={receipt.customer}
+        customerSnapshot={receipt.customerSnapshot}
+        totalAmount={receipt.totalAmount}
+        onSuccess={handleEmailSendSuccess}
+      />
     </div>
   );
 }
