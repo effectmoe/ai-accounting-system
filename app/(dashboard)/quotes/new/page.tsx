@@ -815,7 +815,7 @@ function NewQuoteContent() {
                   </div>
                 )}
 
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
                   <div>
                     <Label>数量</Label>
                     <Input
@@ -824,6 +824,15 @@ function NewQuoteContent() {
                       step="0.01"
                       value={item.quantity.toString()}
                       onChange={(e) => updateItem(index, 'quantity', parseFloat(e.target.value) || 0)}
+                    />
+                  </div>
+                  <div>
+                    <Label>単位</Label>
+                    <Input
+                      type="text"
+                      value={item.unit || ''}
+                      onChange={(e) => updateItem(index, 'unit', e.target.value)}
+                      placeholder="月/個/式"
                     />
                   </div>
                   <div>

@@ -711,7 +711,9 @@ export default function QuoteDetailPage({ params }: QuoteDetailPageProps) {
                           })()}
                         </div>
                       </td>
-                      <td className="text-center py-3 px-4 border border-gray-200">{item.quantity}</td>
+                      <td className="text-center py-3 px-4 border border-gray-200">
+                        {item.quantity}{item.unit ? ` ${item.unit}` : ''}
+                      </td>
                       <td className={`text-right py-3 px-4 border border-gray-200 font-mono ${item.itemType === 'discount' ? 'text-red-600' : ''}`}>
                         {item.itemType === 'discount' ? '-' : ''}¥{Math.abs(item.unitPrice || 0).toLocaleString()}
                       </td>

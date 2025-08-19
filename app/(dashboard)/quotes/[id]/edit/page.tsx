@@ -209,6 +209,7 @@ function QuoteEditPageContent({ params }: QuoteEditPageProps) {
       if (product) {
         newItems[index].itemName = product.productName;
         newItems[index].unitPrice = product.unitPrice;
+        newItems[index].unit = product.unit || '';
         newItems[index].taxRate = product.taxRate !== undefined ? product.taxRate : 10;
       }
     }
@@ -227,6 +228,7 @@ function QuoteEditPageContent({ params }: QuoteEditPageProps) {
       description: '',
       itemType: itemType,
       quantity: 1,
+      unit: '',
       unitPrice: 0,
       amount: 0,
       taxRate: 10,
@@ -608,7 +610,7 @@ function QuoteEditPageContent({ params }: QuoteEditPageProps) {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
                   <div>
                     <Label>数量</Label>
                     <Input
@@ -617,6 +619,15 @@ function QuoteEditPageContent({ params }: QuoteEditPageProps) {
                       step="0.01"
                       value={item.quantity.toString()}
                       onChange={(e) => updateItem(index, 'quantity', parseFloat(e.target.value) || 0)}
+                    />
+                  </div>
+                  <div>
+                    <Label>単位</Label>
+                    <Input
+                      type="text"
+                      value={item.unit || ''}
+                      onChange={(e) => updateItem(index, 'unit', e.target.value)}
+                      placeholder="月/個/式"
                     />
                   </div>
                   <div>
