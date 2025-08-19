@@ -333,14 +333,14 @@ export default function QuoteWebTemplate({
             text-align: left;
             border-radius: 8px;
             padding: 12px 16px;
-            /* 位置設定 - 簡潔な位置計算 */
+            /* 位置設定 - 下に表示してiframe内に収める */
             position: absolute !important;
             z-index: 99999; 
-            /* 上に表示 */
-            bottom: 100%;
+            /* 下に表示 */
+            top: 100%;
             left: 50%;
             transform: translateX(-50%);
-            margin-bottom: 8px;
+            margin-top: 8px;
             min-width: 180px;
             max-width: 280px;
             /* フォント設定 */
@@ -365,16 +365,16 @@ export default function QuoteWebTemplate({
             }
           }
           
-          /* ツールチップの矢印（三角形） - 簡潔版 */
+          /* ツールチップの矢印（三角形） - 上向きに変更 */
           .tooltip-content::after {
             content: '';
             position: absolute;
-            top: 100%;
+            bottom: 100%;
             left: 50%;
             transform: translateX(-50%);
             border-width: 6px;
             border-style: solid;
-            border-color: #1f2937 transparent transparent transparent;
+            border-color: transparent transparent #1f2937 transparent;
           }
           
           /* ホバー時の表示 */
