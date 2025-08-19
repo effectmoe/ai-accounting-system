@@ -18,7 +18,8 @@ import { SearchableSelect } from '@/components/ui/SearchableSelect';
 
 import { logger } from '@/lib/logger';
 interface QuoteItem {
-  description: string;
+  itemName: string; // 項目名
+  description: string; // 商品説明
   itemType?: 'product' | 'discount';
   quantity: number;
   unitPrice: number;
@@ -28,7 +29,7 @@ interface QuoteItem {
   unit?: string;
   productId?: string;
   discountReason?: string;
-  notes?: string; // 備考用のプロパティを追加
+  notes?: string; // 備考用のプロパティ
 }
 
 interface Customer {
@@ -228,7 +229,7 @@ function NewQuoteContent() {
       // 明細項目を変換（金額は手動で調整可能）
       if (supplierQuote.items && supplierQuote.items.length > 0) {
         const convertedItems = supplierQuote.items.map((item: any) => ({
-          itemName: item.itemName,
+          itemName: item.itemName || '',
           description: item.description || '',
           quantity: item.quantity,
           unitPrice: item.unitPrice * 1.3, // デフォルトで30%のマージンを追加
@@ -237,6 +238,7 @@ function NewQuoteContent() {
           taxAmount: Math.floor(item.quantity * (item.unitPrice * 1.3) * ((item.taxRate || 10) / 100)),
           unit: item.unit || '',
           productId: item.productId || '',
+          notes: item.notes || '',
         }));
         setItems(convertedItems);
       }
@@ -277,7 +279,8 @@ function NewQuoteContent() {
     if (field === 'productId' && value) {
       const product = products.find(p => p._id === value);
       if (product) {
-        newItems[index].description = product.productName;
+        newItems[index].itemName = product.productName;
+        newItems[index].description = product.description || '';
         newItems[index].unitPrice = product.unitPrice;
         newItems[index].taxRate = product.taxRate || 10;
         newItems[index].unit = product.unit;
@@ -294,7 +297,8 @@ function NewQuoteContent() {
 
   const addItem = (itemType: 'product' | 'discount' = 'product') => {
     setItems([...items, {
-      description: itemType === 'discount' ? '値引き' : '',
+      itemName: itemType === 'discount' ? '値引き' : '',
+      description: '',
       itemType: itemType,
       quantity: 1,
       unitPrice: 0,
@@ -358,8 +362,8 @@ function NewQuoteContent() {
       return;
     }
 
-    if (items.length === 0 || !items[0].description) {
-      console.error('[handleSubmit] No items or empty description');
+    if (items.length === 0 || !items[0].itemName) {
+      console.error('[handleSubmit] No items or empty itemName');
       setError('最低1つの項目を入力してください');
       return;
     }
@@ -793,8 +797,8 @@ function NewQuoteContent() {
                   <div className={item.itemType === 'discount' ? 'md:col-span-2' : ''}>
                     <Label>{item.itemType === 'discount' ? '値引き名 *' : '項目名 *'}</Label>
                     <Input
-                      value={item.description}
-                      onChange={(e) => updateItem(index, 'description', e.target.value)}
+                      value={item.itemName || ''}
+                      onChange={(e) => updateItem(index, 'itemName', e.target.value)}
                       placeholder={item.itemType === 'discount' ? '値引き名を入力（例：期間限定割引）' : '項目名を入力'}
                     />
                   </div>
