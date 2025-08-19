@@ -18,6 +18,7 @@ import { calculateDueDate } from '@/utils/payment-terms';
 
 import { logger } from '@/lib/logger';
 interface InvoiceItem {
+  itemName?: string;
   description: string;
   quantity: number;
   unitPrice: number;
@@ -26,6 +27,7 @@ interface InvoiceItem {
   taxAmount: number;
   unit?: string;
   productId?: string;
+  notes?: string;
 }
 
 interface Customer {
@@ -403,6 +405,7 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
   // 明細行を追加
   const addItem = () => {
     setItems([...items, {
+      itemName: '',
       description: '',
       quantity: 1,
       unitPrice: 0,
@@ -410,6 +413,7 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
       taxRate: 0.1,
       taxAmount: 0,
       unit: '個',
+      notes: '',
     }]);
   };
 
@@ -748,14 +752,35 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
                         ))}
                       </select>
                       
-                      {/* フリー入力フィールド（重複表示の解消） */}
+                      {/* 項目名入力フィールド */}
                       {!item.productId && (
-                        <Input
-                          value={item.description}
-                          onChange={(e) => updateItem(index, 'description', e.target.value)}
-                          placeholder="または品目名を直接入力"
-                          className="bg-white"
-                        />
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">項目名</label>
+                          <Input
+                            value={item.itemName || item.description || ''}
+                            onChange={(e) => {
+                              updateItem(index, 'itemName', e.target.value);
+                              if (!item.description) {
+                                updateItem(index, 'description', e.target.value);
+                              }
+                            }}
+                            placeholder="項目名を入力"
+                            className="bg-white"
+                          />
+                        </div>
+                      )}
+                      
+                      {/* 商品説明入力フィールド */}
+                      {!item.productId && (
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">商品説明</label>
+                          <Input
+                            value={item.description || ''}
+                            onChange={(e) => updateItem(index, 'description', e.target.value)}
+                            placeholder="商品説明を入力（任意）"
+                            className="bg-white"
+                          />
+                        </div>
                       )}
                       
                       {/* 選択された商品名の表示 */}
@@ -764,6 +789,17 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
                           {products.find(p => p._id === item.productId)?.productName || item.description}
                         </div>
                       )}
+                      
+                      {/* 備考入力フィールド */}
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">備考</label>
+                        <Input
+                          value={item.notes || ''}
+                          onChange={(e) => updateItem(index, 'notes', e.target.value)}
+                          placeholder="備考を入力（任意）"
+                          className="bg-white"
+                        />
+                      </div>
                       
                       {/* 商品として登録ボタン */}
                       {!item.productId && item.description && (
