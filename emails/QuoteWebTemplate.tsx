@@ -281,6 +281,8 @@ export default function QuoteWebTemplate({
             display: inline-block;
             border-bottom: 1px dotted #333;
             cursor: help;
+            /* オーバーフロー表示を確保 */
+            overflow: visible !important;
           }
           
           /* 備考欄ではツールチップを完全無効化 */
@@ -313,8 +315,8 @@ export default function QuoteWebTemplate({
             /* 位置設定 - absoluteで親要素に対して相対位置 */
             position: absolute !important;
             z-index: 999999; 
-            /* 初期位置（親要素の上に表示） */
-            top: -70px;
+            /* 初期位置を自動計算で調整 */
+            bottom: calc(100% + 10px);
             left: 50%;
             transform: translateX(-50%);
             min-width: 200px;
@@ -1651,6 +1653,8 @@ const partyCompanyStyle = {
 
 const itemsSectionStyle = {
   margin: '2rem 0',
+  overflow: 'visible !important',
+  position: 'relative',
 };
 
 const h2Style = {
@@ -1956,8 +1960,9 @@ const tableStyle = {
   borderCollapse: 'collapse' as const,
   backgroundColor: '#ffffff',
   borderRadius: '0.5rem',
-  overflow: 'hidden',
+  overflow: 'visible !important',
   boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
+  position: 'relative',
 };
 
 const tableHeaderRowStyle = {
@@ -1976,6 +1981,8 @@ const tableHeaderCellStyle = {
 
 const tableBodyRowStyle = {
   borderBottom: '1px solid #f3f4f6',
+  overflow: 'visible !important',
+  position: 'relative',
 };
 
 const tableBodyCellStyle = {
@@ -1983,6 +1990,8 @@ const tableBodyCellStyle = {
   fontSize: '0.875rem',
   borderRight: '1px solid #f3f4f6',
   verticalAlign: 'top' as const,
+  overflow: 'visible !important',
+  position: 'relative',
 };
 
 // モバイルカード用の新しいスタイル
