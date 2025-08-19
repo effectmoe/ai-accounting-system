@@ -788,7 +788,7 @@ export default function QuoteWebTemplate({
                 tooltip.removeAttribute('tabindex');
                 tooltip.style.cursor = 'default';
                 tooltip.style.borderBottom = 'none';
-                console.log(\`🚫 Disabled notes tooltip \${index + 1}\`);
+                console.log('🚫 Disabled notes tooltip ' + (index + 1));
               });
             }
             
@@ -805,7 +805,7 @@ export default function QuoteWebTemplate({
             console.log('📋 DOM structure analysis:');
             document.querySelectorAll('.tooltip-wrapper').forEach((w, i) => {
               const content = w.querySelector('.tooltip-content');
-              console.log(`  Wrapper ${i + 1}:`, {
+              console.log('  Wrapper ' + (i + 1) + ':', {
                 element: w,
                 hasContent: !!content,
                 parentClass: w.parentElement?.className,
@@ -1177,7 +1177,7 @@ export default function QuoteWebTemplate({
                     
                     // デバッグログ: 項目データを確認（開発環境のみ）
                     if (process.env.NODE_ENV === 'development') {
-                      console.log(`🎯 QuoteWebTemplate item ${index + 1}:`, {
+                      console.log('🎯 QuoteWebTemplate item ' + (index + 1) + ':', {
                         itemName: item.itemName,
                         description: item.description,
                         hasTooltip: !!item.tooltip,
