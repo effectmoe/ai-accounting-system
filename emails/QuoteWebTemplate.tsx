@@ -1191,20 +1191,20 @@ export default function QuoteWebTemplate({
                           {item.productLink ? (
                             <a href={item.productLink} style={{...productLinkStyle, color: isDiscount ? '#dc2626' : '#3B82F6'}}>
                               {item.tooltip ? 
-                                renderDetailsWithTooltip(item.itemName || item.description || '', item.tooltip) :
-                                (item.itemName || item.description || '')
+                                renderDetailsWithTooltip(item.itemName || '', item.tooltip) :
+                                (item.itemName || '')
                               }
                             </a>
                           ) : (
                             item.tooltip ? 
-                              renderDetailsWithTooltip(item.itemName || item.description || '', item.tooltip) :
-                              (item.itemName || item.description || '')
+                              renderDetailsWithTooltip(item.itemName || '', item.tooltip) :
+                              (item.itemName || '')
                           )}
-                          {item.details && (
+                          {(item.details || item.description) && (
                             <div style={{fontSize: '0.875rem', color: '#6b7280', marginTop: '0.25rem'}}>
                               {item.tooltip ? 
-                                renderDetailsWithTooltip(item.details, item.tooltip) :
-                                item.details
+                                renderDetailsWithTooltip(item.details || item.description || '', item.tooltip) :
+                                (item.details || item.description || '')
                               }
                             </div>
                           )}
@@ -1258,25 +1258,25 @@ export default function QuoteWebTemplate({
                         {item.productLink ? (
                           <a href={item.productLink} style={{...productLinkStyle, color: isDiscount ? '#dc2626' : '#3B82F6'}}>
                             {item.tooltip ? 
-                              renderDetailsWithTooltip(item.itemName || item.description || '', item.tooltip) :
-                              (item.itemName || item.description || '')
+                              renderDetailsWithTooltip(item.itemName || '', item.tooltip) :
+                              (item.itemName || '')
                             }
                           </a>
                         ) : (
                           item.tooltip ? 
-                            renderDetailsWithTooltip(item.itemName || item.description || '', item.tooltip) :
-                            (item.itemName || item.description || '')
+                            renderDetailsWithTooltip(item.itemName || '', item.tooltip) :
+                            (item.itemName || '')
                         )}
                       </div>
                       <div style={{...itemAmountStyle, color: itemColor}} className="item-amount">
                         {formatCurrency(item.amount)}
                       </div>
                     </div>
-                    {item.details && (
+                    {(item.details || item.description) && (
                       <div style={itemDetailsStyle} className="item-details">
                         {item.tooltip ? 
-                          renderDetailsWithTooltip(item.details, item.tooltip) :
-                          item.details
+                          renderDetailsWithTooltip(item.details || item.description || '', item.tooltip) :
+                          (item.details || item.description || '')
                         }
                       </div>
                     )}
