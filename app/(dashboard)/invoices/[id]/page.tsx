@@ -62,12 +62,14 @@ interface Invoice {
     };
   };
   items: Array<{
+    itemName?: string;
     description: string;
     quantity: number;
     unitPrice: number;
     amount: number;
     taxRate: number;
     taxAmount: number;
+    notes?: string;
   }>;
   subtotal: number;
   taxAmount: number;
@@ -546,14 +548,14 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
                 className="flex items-center gap-2"
               >
                 <Eye className="h-4 w-4" />
-                {showDescriptions ? '商品説明を隠す' : '商品説明を表示'}
+                {showDescriptions ? '商品説明・備考を隠す' : '商品説明・備考を表示'}
               </Button>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="bg-gray-100">
-                    {showDescriptions && <th className="text-left py-3 px-4 font-medium text-gray-700 border border-gray-200">品目</th>}
+                    <th className="text-left py-3 px-4 font-medium text-gray-700 border border-gray-200">品目</th>
                     <th className="text-center py-3 px-4 font-medium text-gray-700 border border-gray-200 w-24">数量</th>
                     <th className="text-right py-3 px-4 font-medium text-gray-700 border border-gray-200 w-32">単価</th>
                     <th className="text-right py-3 px-4 font-medium text-gray-700 border border-gray-200 w-32">小計</th>
@@ -564,7 +566,23 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
                 <tbody>
                   {invoice.items.map((item, index) => (
                     <tr key={index} className="hover:bg-gray-50">
-                      {showDescriptions && <td className="py-3 px-4 border border-gray-200">{item.description}</td>}
+                      <td className="py-3 px-4 border border-gray-200">
+                        <div>
+                          <div className="font-medium">
+                            {item.itemName || item.description}
+                          </div>
+                          {showDescriptions && (
+                            <>
+                              {item.itemName && item.description && item.itemName !== item.description && (
+                                <div className="text-sm text-gray-600 mt-1">{item.description}</div>
+                              )}
+                              {item.notes && (
+                                <div className="text-xs text-gray-500 mt-1 italic">※ {item.notes}</div>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </td>
                       <td className="text-center py-3 px-4 border border-gray-200">{item.quantity}</td>
                       <td className="text-right py-3 px-4 border border-gray-200 font-mono">¥{(item.unitPrice || 0).toLocaleString()}</td>
                       <td className="text-right py-3 px-4 border border-gray-200 font-mono">¥{(item.amount || 0).toLocaleString()}</td>
