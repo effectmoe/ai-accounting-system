@@ -431,6 +431,8 @@ export const POST = withErrorHandler(async (request: NextRequest) => {
       customerId: body.customerId,
       companyName: body.companyName,
       companyNameKana: body.companyNameKana,
+      representativeName: body.representativeName,  // 代表者名
+      representativeTitle: body.representativeTitle,  // 代表者肩書き
       department: body.department,
       postalCode: body.postalCode,
       prefecture: body.prefecture,

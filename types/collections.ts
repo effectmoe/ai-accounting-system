@@ -61,6 +61,8 @@ export interface Customer extends TimestampedDocument, TaggableDocument {
   customerId?: string; // 顧客コード
   companyName: string;
   companyNameKana?: string;
+  representativeName?: string; // 代表者名
+  representativeTitle?: string; // 代表者肩書き
   storeName?: string; // 屋号・店舗名
   storeNameKana?: string; // 屋号・店舗名カナ
   department?: string;

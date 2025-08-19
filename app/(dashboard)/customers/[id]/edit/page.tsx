@@ -12,6 +12,8 @@ interface CustomerForm {
   customerId: string;
   companyName: string;
   companyNameKana: string;
+  representativeName: string;
+  representativeTitle: string;
   storeName: string;
   storeNameKana: string;
   department: string;
@@ -45,6 +47,8 @@ export default function EditCustomerPage() {
     customerId: '',
     companyName: '',
     companyNameKana: '',
+    representativeName: '',
+    representativeTitle: '',
     storeName: '',
     storeNameKana: '',
     department: '',
@@ -86,6 +90,8 @@ export default function EditCustomerPage() {
             customerId: customer.customerId || '',
             companyName: customer.companyName || '',
             companyNameKana: customer.companyNameKana || '',
+            representativeName: customer.representativeName || '',
+            representativeTitle: customer.representativeTitle || '',
             storeName: customer.storeName || '',
             storeNameKana: customer.storeNameKana || '',
             department: customer.department || '',
@@ -378,6 +384,39 @@ export default function EditCustomerPage() {
                     onChange={handleChange}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="営業部"
+                  />
+                </div>
+              </div>
+
+              {/* 代表者情報 */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label htmlFor="representativeName" className="block text-sm font-medium text-gray-700 mb-1">
+                    代表者名（任意）
+                  </label>
+                  <input
+                    type="text"
+                    id="representativeName"
+                    name="representativeName"
+                    value={formData.representativeName}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="山田 太郎"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="representativeTitle" className="block text-sm font-medium text-gray-700 mb-1">
+                    代表者肩書き（任意）
+                  </label>
+                  <input
+                    type="text"
+                    id="representativeTitle"
+                    name="representativeTitle"
+                    value={formData.representativeTitle}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="代表取締役社長"
                   />
                 </div>
               </div>
