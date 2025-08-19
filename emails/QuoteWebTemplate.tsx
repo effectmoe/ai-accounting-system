@@ -1199,7 +1199,7 @@ export default function QuoteWebTemplate({
           {/* デスクトップ：テーブル表示、モバイル：カード表示 */}
           <div style={{display: 'block'}}>
             {/* デスクトップ用テーブル */}
-            <div style={desktopTableStyle} className="desktop-table">
+            <div style={{...desktopTableStyle, minHeight: '350px'}} className="desktop-table">
               <table style={tableStyle}>
                 <thead>
                   <tr style={tableHeaderRowStyle}>
@@ -1272,6 +1272,47 @@ export default function QuoteWebTemplate({
                       </tr>
                     );
                   })}
+                  {/* 最小行数確保のための空行追加 - 明示的に条件分岐 */}
+                  {quote.items.length < 5 && (
+                    <tr key="empty-0" style={{...tableBodyRowStyle, height: '50px'}}>
+                      <td style={{...tableBodyCellStyle, padding: '1rem'}}>&nbsp;</td>
+                      <td style={tableBodyCellStyle}>&nbsp;</td>
+                      <td style={tableBodyCellStyle}>&nbsp;</td>
+                      <td style={tableBodyCellStyle}>&nbsp;</td>
+                      <td style={tableBodyCellStyle}>&nbsp;</td>
+                      <td style={tableBodyCellStyle}>&nbsp;</td>
+                    </tr>
+                  )}
+                  {quote.items.length < 4 && (
+                    <tr key="empty-1" style={{...tableBodyRowStyle, height: '50px'}}>
+                      <td style={{...tableBodyCellStyle, padding: '1rem'}}>&nbsp;</td>
+                      <td style={tableBodyCellStyle}>&nbsp;</td>
+                      <td style={tableBodyCellStyle}>&nbsp;</td>
+                      <td style={tableBodyCellStyle}>&nbsp;</td>
+                      <td style={tableBodyCellStyle}>&nbsp;</td>
+                      <td style={tableBodyCellStyle}>&nbsp;</td>
+                    </tr>
+                  )}
+                  {quote.items.length < 3 && (
+                    <tr key="empty-2" style={{...tableBodyRowStyle, height: '50px'}}>
+                      <td style={{...tableBodyCellStyle, padding: '1rem'}}>&nbsp;</td>
+                      <td style={tableBodyCellStyle}>&nbsp;</td>
+                      <td style={tableBodyCellStyle}>&nbsp;</td>
+                      <td style={tableBodyCellStyle}>&nbsp;</td>
+                      <td style={tableBodyCellStyle}>&nbsp;</td>
+                      <td style={tableBodyCellStyle}>&nbsp;</td>
+                    </tr>
+                  )}
+                  {quote.items.length < 2 && (
+                    <tr key="empty-3" style={{...tableBodyRowStyle, height: '50px'}}>
+                      <td style={{...tableBodyCellStyle, padding: '1rem'}}>&nbsp;</td>
+                      <td style={tableBodyCellStyle}>&nbsp;</td>
+                      <td style={tableBodyCellStyle}>&nbsp;</td>
+                      <td style={tableBodyCellStyle}>&nbsp;</td>
+                      <td style={tableBodyCellStyle}>&nbsp;</td>
+                      <td style={tableBodyCellStyle}>&nbsp;</td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -1697,6 +1738,7 @@ const itemsSectionStyle = {
   margin: '2rem 0',
   overflow: 'visible !important',
   position: 'relative',
+  minHeight: '400px', // 最小高さを確保してツールチップ表示領域を確保
 };
 
 const h2Style = {
