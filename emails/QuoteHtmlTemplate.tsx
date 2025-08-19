@@ -232,7 +232,7 @@ export default function QuoteHtmlTemplate({
             }
             .item-header {
               display: grid;
-              grid-template-columns: 1fr auto auto auto;
+              grid-template-columns: 2fr 100px 120px 120px;
               gap: 20px;
               padding: 12px 0;
               border-bottom: 2px solid #e5e7eb;
@@ -253,7 +253,7 @@ export default function QuoteHtmlTemplate({
               border-bottom: 1px solid #f3f4f6;
               padding: 16px 0;
               display: grid;
-              grid-template-columns: 1fr auto auto auto;
+              grid-template-columns: 2fr 100px 120px 120px;
               gap: 20px;
               align-items: start;
             }
@@ -275,6 +275,7 @@ export default function QuoteHtmlTemplate({
               text-align: right;
               font-size: 15px;
               color: #4b5563;
+              white-space: nowrap;
             }
             .item-total {
               font-weight: bold;
