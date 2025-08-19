@@ -193,7 +193,7 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
       return;
     }
 
-    if (items.length === 0 || items.every(item => !item.description)) {
+    if (items.length === 0 || items.every(item => !item.itemName && !item.description)) {
       setError('少なくとも1つの明細を入力してください');
       return;
     }
@@ -271,7 +271,12 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
         title, // タイトルを追加
         invoiceDate: invoiceDate,
         dueDate: dueDate,
-        items: items.filter(item => item.description),
+        items: items.filter(item => item.itemName || item.description).map(item => ({
+          ...item,
+          itemName: item.itemName || item.description,
+          description: item.description || item.itemName || '',
+          notes: item.notes || ''
+        })),
         notes,
         paymentMethod,
         aiConversationId: invoice?.aiConversationId || undefined,
