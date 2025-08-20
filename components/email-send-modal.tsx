@@ -393,48 +393,38 @@ ${documentTitle ? `件名：${documentTitle}
             throw new Error('PDF generation must be done in browser environment');
           }
           
-          // 領収書の場合は特別な処理が必要
-          if (documentType === 'receipt') {
-            logger.debug('Receipt PDF generation - using @react-pdf/renderer directly');
-            // 動的インポートで@react-pdf/rendererを直接使用
-            const { pdf } = await import('@react-pdf/renderer');
-            const React = await import('react');
-            const { DocumentPDF } = await import('@/lib/pdf-generator');
-            
-            // PDFドキュメントを作成
-            const pdfDocument = React.createElement(DocumentPDF, { data: documentData });
-            const blob = await pdf(pdfDocument as any).toBlob();
-            
-            // BlobをBase64に変換
-            const reader = new FileReader();
-            pdfBase64 = await new Promise<string>((resolve, reject) => {
-              reader.onloadend = () => {
-                const base64String = reader.result as string;
-                const base64 = base64String.split(',')[1];
-                resolve(base64);
-              };
-              reader.onerror = reject;
-              reader.readAsDataURL(blob);
-            });
-            
-            logger.debug('Receipt PDF generated successfully, size:', pdfBase64?.length || 0);
-          } else {
-            // 見積書・請求書・納品書は通常の処理
-            const { generatePDFBlob } = await import('@/lib/pdf-export');
-            const blob = await generatePDFBlob(documentData);
-            
-            // BlobをBase64に変換
-            const reader = new FileReader();
-            pdfBase64 = await new Promise<string>((resolve, reject) => {
-              reader.onloadend = () => {
-                const base64String = reader.result as string;
-                const base64 = base64String.split(',')[1];
-                resolve(base64);
-              };
-              reader.onerror = reject;
-              reader.readAsDataURL(blob);
-            });
-          }
+          // すべてのドキュメントタイプでgeneratePDFBlobを使用して一貫性を保つ
+          logger.debug('Generating PDF for document type:', documentType);
+          logger.debug('DocumentData:', {
+            documentType: documentData.documentType,
+            documentNumber: documentData.documentNumber,
+            customerName: documentData.customerName,
+            subject: documentData.subject,
+            hasCompanyInfo: !!documentData.companyInfo,
+            totalAmount: documentData.total
+          });
+          
+          // generatePDFBlobを使用してPDFを生成
+          const { generatePDFBlob } = await import('@/lib/pdf-export');
+          const blob = await generatePDFBlob(documentData);
+          
+          // BlobをBase64に変換
+          const reader = new FileReader();
+          pdfBase64 = await new Promise<string>((resolve, reject) => {
+            reader.onloadend = () => {
+              const base64String = reader.result as string;
+              const base64 = base64String.split(',')[1];
+              resolve(base64);
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          });
+          
+          logger.debug('PDF generated successfully', {
+            documentType,
+            pdfSize: pdfBase64?.length || 0,
+            blobSize: blob.size
+          });
           
           logger.debug('PDF generated successfully, size:', pdfBase64?.length || 0);
         } catch (pdfError) {
