@@ -1,0 +1,463 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>見積書 QUO-20250818-TEST</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;700&display=swap');
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Noto Sans JP', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Meiryo', sans-serif;
+      font-size: 12px;
+      line-height: 1.6;
+      color: #333;
+      background-color: #f5f5f5;
+    }
+    
+    .quote-container {
+      max-width: 800px;
+      margin: 0 auto;
+      background-color: white;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      padding: 40px;
+    
+    }
+    
+    /* ヘッダー */
+    .quote-header {
+      text-align: center;
+      margin-bottom: 40px;
+      padding: 30px;
+    }
+    
+    .quote-title {
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: 4px;
+      margin: 0;
+    }
+    
+    .quote-number {
+      display: none;
+    }
+    
+    /* 顧客・会社情報 */
+    .quote-info {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 30px;
+    }
+    
+    .customer-info {
+      flex: 1;
+    }
+    
+    .customer-name {
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+    
+    .company-info {
+      text-align: right;
+      flex: 1;
+    }
+    
+    .company-name {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 5px;
+    }
+    
+    .quote-dates {
+      margin-bottom: 10px;
+      line-height: 1.8;
+    }
+    
+    /* 合計金額 */
+    .total-amount-box {
+      background-color: #e6f2ff;
+      padding: 20px;
+      margin-bottom: 30px;
+      border-radius: 5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .total-label {
+      font-size: 18px;
+      font-weight: 700;
+    }
+    
+    .total-amount {
+      font-size: 24px;
+      font-weight: 700;
+      color: #2c3e50;
+    }
+    
+    /* テーブル */
+    .quote-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 30px;
+    }
+    
+    .quote-table th {
+      background-color: #34495e;
+      color: white;
+      padding: 12px;
+      text-align: left;
+      font-weight: 700;
+    }
+    
+    .quote-table th:last-child,
+    .quote-table td:last-child {
+      text-align: right;
+    }
+    
+    .quote-table th:nth-child(2),
+    .quote-table td:nth-child(2) {
+      text-align: center;
+      width: 80px;
+    }
+    
+    .quote-table th:nth-child(3),
+    .quote-table td:nth-child(3) {
+      text-align: right;
+      width: 120px;
+    }
+    
+    .quote-table td {
+      padding: 12px;
+    }
+    
+    .quote-table tbody tr {
+      border-bottom: 1px solid #ddd;
+    }
+    
+    .quote-table tbody tr:last-child {
+      border-bottom: none;
+    }
+    
+    /* 商品明細のスタイル */
+    .item-name {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    
+    .item-description {
+      font-size: 11px;
+      color: #666;
+      margin-bottom: 4px;
+      line-height: 1.4;
+      white-space: pre-wrap;
+      font-family: 'Noto Sans JP', 'Hiragino Sans', 'Yu Gothic', 'Meiryo', sans-serif;
+      /* 特殊文字の表示を確実にする */
+      font-feature-settings: "liga" 1, "calt" 1;
+    }
+    
+    .item-notes {
+      font-size: 10px;
+      color: #888;
+      font-style: italic;
+      margin-top: 4px;
+      padding-left: 10px;
+    }
+    
+    /* 合計セクション */
+    .summary-section {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 40px;
+    }
+    
+    .summary-table {
+      width: 300px;
+      padding: 20px;
+    }
+    
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      font-size: 14px;
+    }
+    
+    .summary-row.total {
+      border-top: 2px solid #333;
+      padding-top: 12px;
+      margin-top: 8px;
+      font-size: 18px;
+      font-weight: 700;
+    }
+    
+    /* 備考 */
+    .notes-section {
+      margin-top: 30px;
+      padding: 15px;
+      background-color: #f9f9f9;
+      border-radius: 5px;
+    }
+    
+    .notes-title {
+      font-weight: 700;
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+    
+    .notes-content {
+      white-space: pre-wrap;
+      line-height: 1.8;
+      /* 特殊文字の表示を確実にする */
+      font-feature-settings: "liga" 1, "calt" 1;
+    }
+    
+    /* 黒四角文字（■）の表示を確実にする */
+    .notes-content::before {
+      content: '';
+      font-family: 'Noto Sans JP', 'Hiragino Sans', monospace;
+    }
+    
+    /* 有効期限情報 */
+    .validity-info {
+      margin-top: 30px;
+      padding: 15px;
+      background-color: #f9f9f9;
+      border-radius: 5px;
+      border-left: 4px solid #34495e;
+    }
+    
+    .validity-info h3 {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      color: #34495e;
+    }
+    
+    @media print {
+      @page {
+        size: A4;
+        margin: 15mm;
+      }
+      
+      body {
+        background-color: white;
+        margin: 0;
+        padding: 0;
+      }
+      
+      .quote-container {
+        box-shadow: none;
+        width: 100%;
+        max-width: none;
+        margin: 0;
+        padding: 0;
+        page-break-inside: avoid;
+      }
+      
+      .quote-header {
+        margin-bottom: 20px;
+        padding: 20px;
+      }
+      
+      .quote-title {
+        font-size: 24px;
+        margin-bottom: 5px;
+      }
+      
+      .quote-info {
+        margin-bottom: 20px;
+      }
+      
+      .total-amount-box {
+        margin-bottom: 15px;
+        padding: 10px;
+      }
+      
+      .quote-table {
+        margin-bottom: 15px;
+        font-size: 10px;
+      }
+      
+      .quote-table th,
+      .quote-table td {
+        padding: 6px;
+      }
+      
+      .summary-section {
+        margin-bottom: 20px;
+      }
+      
+      .summary-table {
+        padding: 15px;
+      }
+      
+      .notes-section {
+        margin-top: 20px;
+        padding: 10px;
+        page-break-inside: avoid;
+      }
+      
+      .validity-info {
+        margin-top: 20px;
+        padding: 10px;
+        page-break-inside: avoid;
+      }
+      
+      /* フォントサイズを全体的に小さく */
+      body {
+        font-size: 10px;
+      }
+      
+      .customer-name {
+        font-size: 16px;
+      }
+      
+      .total-label {
+        font-size: 14px;
+      }
+      
+      .total-amount {
+        font-size: 18px;
+      }
+      
+      /* 改ページ制御 */
+      .quote-table {
+        page-break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="quote-container">
+    <!-- ヘッダー -->
+    <div class="quote-header">
+      <h1 class="quote-title">見積書</h1>
+    </div>
+    
+    <!-- 顧客・会社情報 -->
+    <div class="quote-info">
+      <div class="customer-info">
+        <h2 class="customer-name">テスト顧客（備考確認用） 御中</h2>
+        
+        <p>ご担当者: 山田太郎 様</p>
+        
+        
+      </div>
+      
+      <div class="company-info">
+        <div class="quote-dates">
+          <p>発行日: 2025-08-18</p>
+          <p>有効期限: 2025-09-17</p>
+          <p>見積書番号: QUO-20250818-TEST</p>
+        </div>
+        <div style="margin-top: 20px;">
+          <h3 class="company-name">EFFECT Inc.</h3>
+          <p>〒150-0001 東京都渋谷区神宮前1-1-1</p>
+          <p>TEL: 03-1234-5678</p>
+          <p>info@effect.moe</p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 合計金額 -->
+    <div class="total-amount-box">
+      <div class="total-label">見積金額合計</div>
+      <div class="total-amount">¥143,000 (税込)</div>
+    </div>
+    
+    <!-- 明細テーブル -->
+    <table class="quote-table">
+      <thead>
+        <tr>
+          <th>品目・仕様</th>
+          <th>数量</th>
+          <th>単価</th>
+          <th>金額</th>
+        </tr>
+      </thead>
+      <tbody>
+        
+            <tr>
+              <td>
+                <div class="item-name">ROI分析（ツールチップ付き）</div>
+                
+                  <div class="item-description">ROI分析の詳細説明</div>
+                
+                
+              </td>
+              <td>1</td>
+              <td>¥50,000</td>
+              <td>¥50,000</td>
+            </tr>
+          
+            <tr>
+              <td>
+                <div class="item-name">WEBマーケティング戦略</div>
+                
+                  <div class="item-description">デジタルマーケティング戦略の策定</div>
+                
+                
+              </td>
+              <td>1</td>
+              <td>¥80,000</td>
+              <td>¥80,000</td>
+            </tr>
+          
+      </tbody>
+    </table>
+    
+    <!-- 合計 -->
+    <div class="summary-section">
+      <div class="summary-table">
+        <div class="summary-row">
+          <div>小計:</div>
+          <div>¥130,000</div>
+        </div>
+        <div class="summary-row">
+          <div>消費税 (10%):</div>
+          <div>¥13,000</div>
+        </div>
+        <div class="summary-row total">
+          <div>合計金額:</div>
+          <div>¥143,000</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 備考 -->
+    
+      <div class="notes-section">
+        <h3 class="notes-title">備考</h3>
+        <div class="notes-content">【重要事項】
+この見積書は備考表示のテスト用です。
+
+■ 作業内容について
+■ROI分析は3週間程度を予定しております
+■中間報告を2週間後に実施予定です
+■最終レポートはPDF形式で提供いたします
+
+■ お支払いについて
+■着手金として総額の50％を先払いでお願いします
+■残金は成果物納品後30日以内にお支払いください
+
+■ その他注意事項
+■分析に必要なデータの提供をお願いします
+■機密保持契約（NDA）の締結が必要です
+■追加分析が必要な場合は別途お見積もりします
+
+何かご不明な点がございましたら、お気軽にお問い合わせください。</div>
+      </div>
+    
+  </div>
+</body>
+</html>

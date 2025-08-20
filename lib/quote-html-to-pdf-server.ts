@@ -25,6 +25,22 @@ export async function convertQuoteHTMLtoPDF(
     console.log('[convertQuoteHTMLtoPDF] showDescriptions parameter:', showDescriptions);
     const htmlContent = generateCompactQuoteHTML(quote, companyInfo, showDescriptions);
     
+    // デバッグ: 生成されたHTMLの一部を確認（商品説明と備考を中心に）
+    console.log('[convertQuoteHTMLtoPDF] HTML contains item descriptions:', htmlContent.includes('item-description'));
+    console.log('[convertQuoteHTMLtoPDF] HTML contains notes content:', htmlContent.includes('notes-content'));
+    
+    // HTMLから商品説明部分を抽出して確認
+    const descriptionMatch = htmlContent.match(/<div class="item-description">([^<]*)</);
+    if (descriptionMatch) {
+      console.log('[convertQuoteHTMLtoPDF] First item description found:', descriptionMatch[1]);
+    }
+    
+    // HTMLから備考部分を抽出して確認  
+    const notesMatch = htmlContent.match(/<div class="notes-content">([^<]*)</);
+    if (notesMatch) {
+      console.log('[convertQuoteHTMLtoPDF] Notes content found:', notesMatch[1].substring(0, 100) + '...');
+    }
+    
     // Vercel環境での実行
     const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL;
     
@@ -47,12 +63,66 @@ export async function convertQuoteHTMLtoPDF(
     
     const page = await browser.newPage();
     
-    // HTMLを設定
+    // デバッグ: HTMLコンテンツを保存（開発環境のみ）
+    if (!isProduction) {
+      try {
+        const fs = await import('fs');
+        const path = await import('path');
+        const debugDir = path.join(process.cwd(), 'debug');
+        
+        if (!fs.existsSync(debugDir)) {
+          fs.mkdirSync(debugDir, { recursive: true });
+        }
+        
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const htmlDebugPath = path.join(debugDir, `quote-${quote.quoteNumber}-${timestamp}.html`);
+        fs.writeFileSync(htmlDebugPath, htmlContent, 'utf-8');
+        console.log('[Debug] HTML saved to:', htmlDebugPath);
+      } catch (fsError) {
+        console.warn('[Debug] HTML save failed:', fsError);
+      }
+    }
+    
+    // HTMLを設定（領収書と同じ設定に統一）
     await page.setContent(htmlContent, {
       waitUntil: 'networkidle0'
     });
     
-    // A4サイズでPDFを生成
+    // デバッグ: PDF生成前にスクリーンショットを撮影（開発環境のみ）
+    if (!isProduction) {
+      try {
+        const fs = await import('fs');
+        const path = await import('path');
+        const debugDir = path.join(process.cwd(), 'debug');
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const screenshotPath = path.join(debugDir, `quote-${quote.quoteNumber}-${timestamp}.png`);
+        
+        await page.screenshot({ 
+          path: screenshotPath, 
+          fullPage: true,
+          type: 'png'
+        });
+        console.log('[Debug] Screenshot saved to:', screenshotPath);
+        
+        // DOM要素の存在確認
+        const itemElements = await page.$$eval('.item-description', elements => 
+          elements.map(el => ({ text: el.textContent, visible: el.offsetHeight > 0 }))
+        );
+        console.log('[Debug] Item descriptions found:', itemElements.length, itemElements);
+        
+        const notesElement = await page.$eval('.notes-content', el => ({
+          text: el.textContent,
+          html: el.innerHTML,
+          visible: el.offsetHeight > 0
+        })).catch(() => null);
+        console.log('[Debug] Notes content:', notesElement);
+        
+      } catch (debugError) {
+        console.warn('[Debug] Screenshot failed:', debugError);
+      }
+    }
+    
+    // A4サイズでPDFを生成（領収書と同じ設定に統一）
     const pdfBuffer = await page.pdf({
       format: 'A4',
       printBackground: true,
@@ -65,6 +135,22 @@ export async function convertQuoteHTMLtoPDF(
     });
     
     await browser.close();
+    
+    // デバッグ: 生成されたPDFを保存してサイズを確認（開発環境のみ）
+    if (!isProduction) {
+      try {
+        const fs = await import('fs');
+        const path = await import('path');
+        const debugDir = path.join(process.cwd(), 'debug');
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const pdfDebugPath = path.join(debugDir, `quote-${quote.quoteNumber}-${timestamp}.pdf`);
+        
+        fs.writeFileSync(pdfDebugPath, pdfBuffer);
+        console.log('[Debug] PDF saved to:', pdfDebugPath, 'Size:', pdfBuffer.length, 'bytes');
+      } catch (fsError) {
+        console.warn('[Debug] PDF save failed:', fsError);
+      }
+    }
     
     logger.debug('Quote PDF generated successfully');
     return pdfBuffer;

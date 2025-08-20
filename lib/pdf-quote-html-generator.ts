@@ -113,7 +113,7 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
     }
     
     body {
-      font-family: 'Noto Sans JP', sans-serif;
+      font-family: 'Noto Sans JP', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Meiryo', sans-serif;
       font-size: 12px;
       line-height: 1.6;
       color: #333;
@@ -258,6 +258,9 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
       margin-bottom: 4px;
       line-height: 1.4;
       white-space: pre-wrap;
+      font-family: 'Noto Sans JP', 'Hiragino Sans', 'Yu Gothic', 'Meiryo', sans-serif;
+      /* 特殊文字の表示を確実にする */
+      font-feature-settings: "liga" 1, "calt" 1;
     }
     
     .item-notes {
@@ -312,6 +315,14 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
     .notes-content {
       white-space: pre-wrap;
       line-height: 1.8;
+      /* 特殊文字の表示を確実にする */
+      font-feature-settings: "liga" 1, "calt" 1;
+    }
+    
+    /* 黒四角文字（■）の表示を確実にする */
+    .notes-content::before {
+      content: '';
+      font-family: 'Noto Sans JP', 'Hiragino Sans', monospace;
     }
     
     /* 有効期限情報 */
@@ -501,7 +512,13 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
           
           // 重要なアイテムのみデバッグログ出力
           if (hasDescription || hasNotes) {
-            console.log(`[Item ${index}] ${item.itemName}: desc=${shouldShowDescriptions && hasDescription}, notes=${shouldShowDescriptions && hasNotes}`);
+            console.log(`[Item ${index}] ${item.itemName}:`);
+            console.log(`  - showDescriptions: ${shouldShowDescriptions} (type: ${typeof showDescriptions})`);
+            console.log(`  - hasDescription: ${hasDescription}`);
+            console.log(`  - hasNotes: ${hasNotes}`);
+            console.log(`  - description: ${description ? description.substring(0, 50) + '...' : 'none'}`);
+            console.log(`  - will show desc: ${shouldShowDescriptions && hasDescription}`);
+            console.log(`  - will show notes: ${shouldShowDescriptions && hasNotes}`);
           }
           
           return `
@@ -548,9 +565,13 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
         <h3 class="notes-title">備考</h3>
         <div class="notes-content">${(() => {
           let processedNotes = cleanDuplicateSignatures(quote.notes);
+          console.log('[Notes Processing] Original notes:', processedNotes.substring(0, 100));
           // 中黒（・）を黒い四角（■）に置換
+          const beforeReplace = processedNotes;
           processedNotes = processedNotes.replace(/・/g, '■');
-          console.log('[Notes Processing] Replaced ・ with ■ in notes');
+          const replacementCount = (beforeReplace.match(/・/g) || []).length;
+          console.log('[Notes Processing] Replaced', replacementCount, '・ characters with ■');
+          console.log('[Notes Processing] Final notes:', processedNotes.substring(0, 100));
           return processedNotes;
         })()}</div>
       </div>
