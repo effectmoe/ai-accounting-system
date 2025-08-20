@@ -605,11 +605,55 @@ export async function POST(request: NextRequest) {
           const serverPdfBase64 = await generatePDFBase64(documentData);
           logger.debug('Server PDF generated successfully, size:', serverPdfBase64.length, 'characters');
           
-          const attachment = {
-            filename: `${documentData.documentNumber}.pdf`,
-            content: serverPdfBase64,
-            contentType: 'application/pdf',
-          };
+          // 領収書の場合は特別な処理
+          let attachment;
+          if (documentData.documentType === 'receipt' && serverPdfBase64.startsWith('RECEIPT_HTML:')) {
+            // HTMLフォーマットの領収書をPDFに変換
+            logger.debug('Receipt HTML detected, converting to PDF...');
+            try {
+              const { convertReceiptHTMLtoPDF } = await import('@/lib/html-to-pdf-server');
+              const { ReceiptService } = await import('@/services/receipt.service');
+              const receiptService = new ReceiptService();
+              const receipt = await receiptService.getReceipt(documentId);
+              
+              if (receipt) {
+                const pdfBuffer = await convertReceiptHTMLtoPDF(receipt);
+                const pdfBase64 = pdfBuffer.toString('base64');
+                attachment = {
+                  filename: `${documentData.documentNumber}.pdf`,
+                  content: pdfBase64,
+                  contentType: 'application/pdf',
+                };
+                logger.debug('Receipt PDF attachment prepared via Puppeteer');
+              } else {
+                // フォールバック: HTMLのまま添付
+                const htmlBase64 = serverPdfBase64.replace('RECEIPT_HTML:', '');
+                attachment = {
+                  filename: `${documentData.documentNumber}.html`,
+                  content: htmlBase64,
+                  contentType: 'text/html; charset=utf-8',
+                };
+                logger.debug('Receipt HTML attachment prepared (fallback)');
+              }
+            } catch (conversionError) {
+              logger.error('Failed to convert receipt HTML to PDF:', conversionError);
+              // フォールバック: HTMLのまま添付
+              const htmlBase64 = serverPdfBase64.replace('RECEIPT_HTML:', '');
+              attachment = {
+                filename: `${documentData.documentNumber}.html`,
+                content: htmlBase64,
+                contentType: 'text/html; charset=utf-8',
+              };
+              logger.debug('Receipt HTML attachment prepared (error fallback)');
+            }
+          } else {
+            // 通常のPDF
+            attachment = {
+              filename: `${documentData.documentNumber}.pdf`,
+              content: serverPdfBase64,
+              contentType: 'application/pdf',
+            };
+          }
           attachments.push(attachment);
           logger.debug('Server PDF attachment added to array');
         } catch (pdfError) {

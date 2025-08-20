@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ReceiptService } from '@/services/receipt.service';
 import { logger } from '@/lib/logger';
-import { generateReceiptHTML } from '@/lib/receipt-html-generator';
-import { generateReceiptPDFWithPuppeteer } from '@/lib/pdf-receipt-puppeteer-generator-fixed';
+import { convertReceiptHTMLtoPDF } from '@/lib/html-to-pdf-server';
 
 const receiptService = new ReceiptService();
 
@@ -148,12 +147,13 @@ export async function POST(
     if (attachPdf) {
       logger.debug('Generating receipt PDF for email attachment');
       
-      // HTMLベースの美しいPDFを生成（PDF印刷ボタンと同じ形式）
-      logger.debug('Generating receipt PDF for email attachment using Puppeteer');
+      // HTMLベースの美しいフォーマットをPDFに変換して添付
+      // PDF印刷ボタンと同じフォーマットのPDFを生成
+      logger.debug('Converting receipt HTML to PDF for email attachment (same format as PDF print button)');
       
       try {
-        // PuppeteerでHTMLをPDFに変換
-        const pdfBuffer = await generateReceiptPDFWithPuppeteer(receipt);
+        // HTMLをPDFに変換（Puppeteerを使用）
+        const pdfBuffer = await convertReceiptHTMLtoPDF(receipt);
         const pdfBase64 = pdfBuffer.toString('base64');
         
         // PDFファイルとして添付
@@ -164,8 +164,8 @@ export async function POST(
         });
         
         logger.debug('Receipt PDF generated successfully for email attachment');
-      } catch (pdfError) {
-        logger.error('Failed to generate PDF with Puppeteer:', pdfError);
+      } catch (error) {
+        logger.error('Failed to generate receipt PDF:', error);
         throw new Error('PDF生成に失敗しました');
       }
     }
