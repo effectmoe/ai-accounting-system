@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 import { logger } from '@/lib/logger';
-import { generateQuotePDF } from '@/lib/pdf-quote-generator-simple';
+import { convertQuoteHTMLtoPDF } from '@/lib/quote-html-to-pdf-server';
 import { sendQuoteEmail } from '@/lib/resend-service';
 
 export async function POST(
@@ -72,10 +72,11 @@ export async function POST(
       // 会社情報を取得
       const companyInfo = await db.collection('company_info').findOne({});
       
-      // PDFを生成
+      // PDFを生成（プレビューと同じ形式）
       let pdfBuffer: Buffer;
       try {
-        pdfBuffer = await generateQuotePDF(quote);
+        pdfBuffer = await convertQuoteHTMLtoPDF(quote, companyInfo || {}, true);
+        logger.debug('Quote PDF generated for consideration email');
       } catch (pdfError) {
         logger.error('PDF generation failed:', pdfError);
         // PDF生成が失敗してもメールは送信する
