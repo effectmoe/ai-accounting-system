@@ -72,6 +72,9 @@ function getContactPerson(quote: any): string {
 
 // getItemDescriptionは/lib/item-utils.tsから共通インポート済み
 export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescriptions: boolean = true): string {
+  // デバッグ: showDescriptionsパラメータの値を確認
+  console.log('[generateCompactQuoteHTML] showDescriptions parameter:', showDescriptions);
+  
   // 完全なデータ構造をログ出力（一時的）
   console.log('=== FULL QUOTE DATA FOR PDF GENERATION ===');
   console.log('Quote Number:', quote.quoteNumber);
@@ -508,6 +511,17 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
           const hasDescription = description && description.toString().trim() !== '';
           const hasNotes = item.notes && item.notes.toString().trim() !== '';
           
+          // デバッグ: 商品説明の表示条件を確認
+          console.log(`Item ${index} render conditions:`, {
+            showDescriptions,
+            hasDescription,
+            description,
+            willShowDescription: showDescriptions && hasDescription,
+            hasNotes,
+            notes: item.notes,
+            willShowNotes: showDescriptions && hasNotes
+          });
+          
           return `
             <tr>
               <td>
@@ -550,7 +564,9 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
     ${quote.notes ? `
       <div class="notes-section">
         <h3 class="notes-title">備考</h3>
-        <div class="notes-content">${cleanDuplicateSignatures(quote.notes)}</div>
+        <div class="notes-content">${cleanDuplicateSignatures(quote.notes)
+          .replace(/・/g, '■')  // 中黒を黒い四角に置換
+        }</div>
       </div>
     ` : ''}
   </div>
