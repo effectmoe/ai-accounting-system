@@ -50,8 +50,8 @@ export function generateReceiptHTML(receipt: Receipt): string {
     /* ヘッダー */
     .receipt-header {
       text-align: center;
-      margin-bottom: 20px;
-      padding: 15px;
+      margin-bottom: 25px;
+      padding: 20px;
       border-bottom: 3px double #333;
     }
     
@@ -76,22 +76,22 @@ export function generateReceiptHTML(receipt: Receipt): string {
     
     /* 宛名 */
     .customer-section {
-      margin-bottom: 20px;
+      margin-bottom: 25px;
     }
     
     .customer-name {
-      font-size: 20px;
+      font-size: 22px;
       font-weight: 700;
       border-bottom: 2px solid #333;
-      padding-bottom: 3px;
-      margin-bottom: 15px;
+      padding-bottom: 5px;
+      margin-bottom: 20px;
     }
     
     /* 金額表示 */
     .amount-section {
       background-color: #f8f8f8;
-      padding: 20px;
-      margin-bottom: 20px;
+      padding: 30px;
+      margin-bottom: 30px;
       border-radius: 5px;
       text-align: center;
       border: 2px solid #2563eb;
@@ -104,16 +104,16 @@ export function generateReceiptHTML(receipt: Receipt): string {
     }
     
     .amount-value {
-      font-size: 36px;
+      font-size: 42px;
       font-weight: 700;
       color: #2563eb;
-      letter-spacing: 1px;
+      letter-spacing: 2px;
     }
     
     /* 但し書き */
     .subject-section {
-      margin-bottom: 20px;
-      padding: 10px;
+      margin-bottom: 30px;
+      padding: 15px;
       background-color: #fff8dc;
       border-left: 4px solid #fbbf24;
       border-radius: 5px;
@@ -133,43 +133,26 @@ export function generateReceiptHTML(receipt: Receipt): string {
     
     /* 発行者情報 */
     .issuer-section {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      margin-top: 20px;
-      padding-top: 15px;
+      margin-top: 30px;
+      padding-top: 20px;
       border-top: 2px solid #333;
     }
     
     .issuer-info {
-      flex: 1;
+      width: 100%;
     }
     
     .issuer-name {
-      font-size: 16px;
+      font-size: 18px;
       font-weight: 700;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
     }
     
     .issuer-details {
-      font-size: 12px;
+      font-size: 14px;
       color: #666;
-      line-height: 1.6;
+      line-height: 1.8;
     }
-    
-    /* 印鑑スペース */
-    .stamp-area {
-      width: 80px;
-      height: 80px;
-      border: 2px solid #ccc;
-      border-radius: 5px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #999;
-      font-size: 12px;
-    }
-    
     
     /* 備考 */
     .notes-section {
@@ -290,18 +273,6 @@ export function generateReceiptHTML(receipt: Receipt): string {
       <div class="subject-text">${receipt.subject || 'お品代として'}</div>
     </div>
     
-    <!-- 税額情報 -->
-    <div style="display: flex; justify-content: center; gap: 30px; margin-bottom: 20px;">
-      <div style="text-align: center;">
-        <div style="font-size: 12px; color: #666; margin-bottom: 3px;">税抜金額</div>
-        <div style="font-size: 16px; font-weight: 600;">¥${subtotal}</div>
-      </div>
-      <div style="text-align: center;">
-        <div style="font-size: 12px; color: #666; margin-bottom: 3px;">消費税（${taxRate}%）</div>
-        <div style="font-size: 16px; font-weight: 600;">¥${taxAmount}</div>
-      </div>
-    </div>
-    
     <!-- 発行者情報 -->
     <div class="issuer-section">
       <div class="issuer-info">
@@ -312,9 +283,6 @@ export function generateReceiptHTML(receipt: Receipt): string {
           ${receipt.issuerEmail ? `Email: ${receipt.issuerEmail}<br>` : ''}
           ${receipt.issuerRegistrationNumber ? `登録番号: ${receipt.issuerRegistrationNumber}` : ''}
         </div>
-      </div>
-      <div class="stamp-area">
-        印
       </div>
     </div>
     
