@@ -131,7 +131,7 @@ export async function POST(
     console.log('[Send Quote API] Email details:', {
       from,
       to: recipientEmail,
-      subject: htmlContent.subject || `お見積書 - ${quote.quoteNumber}`,
+      subject: emailSubject,
     });
     
     let emailResult;

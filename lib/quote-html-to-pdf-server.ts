@@ -50,7 +50,7 @@ export async function convertQuoteHTMLtoPDF(
     if (isProduction) {
       // 本番環境: @sparticuz/chromiumを使用
       console.log('[convertQuoteHTMLtoPDF] Using @sparticuz/chromium');
-      const execPath = await chromium.executablePath;
+      const execPath = await chromium.executablePath();
       console.log('[convertQuoteHTMLtoPDF] Chromium executable path:', execPath);
       
       browser = await puppeteer.launch({
