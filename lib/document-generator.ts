@@ -67,6 +67,7 @@ export interface DocumentData {
     registrationNumber?: string;
     stampImage?: string;
   };
+  subject?: string; // 領収書の但し書き
 }
 
 export class DocumentGenerator {

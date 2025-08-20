@@ -358,6 +358,16 @@ export const DocumentPDF: React.FC<{ data: any }> = ({ data }) => {
           </Text>
         </View>
 
+        {/* Receipt Specific Fields */}
+        {isReceipt && (
+          <View style={{ marginTop: 20, marginBottom: 20 }}>
+            <Text style={{ fontSize: 12, fontWeight: 700, marginBottom: 5 }}>但し書き</Text>
+            <View style={{ padding: 10, borderWidth: 1, borderColor: '#ddd', backgroundColor: '#f9f9f9' }}>
+              <Text style={{ fontSize: 11 }}>{data.subject || data.notes || 'お品代として'}</Text>
+            </View>
+          </View>
+        )}
+
         {/* Items Table */}
         <View style={styles.table}>
           <View style={styles.tableHeader}>
@@ -369,10 +379,10 @@ export const DocumentPDF: React.FC<{ data: any }> = ({ data }) => {
           
           {data.items?.map((item: any, index: number) => (
             <View key={index} style={styles.tableRow}>
-              <Text style={[styles.tableCell, { flex: 3 }]}>{item.description}</Text>
+              <Text style={[styles.tableCell, { flex: 3 }]}>{item.description || item.itemName || ''}</Text>
               <Text style={[styles.tableCell, { flex: 1, textAlign: 'right' }]}>{item.quantity}</Text>
-              <Text style={[styles.tableCell, { flex: 1, textAlign: 'right' }]}>¥{item.unitPrice.toLocaleString()}</Text>
-              <Text style={[styles.tableCell, { flex: 1, textAlign: 'right' }]}>¥{item.amount.toLocaleString()}</Text>
+              <Text style={[styles.tableCell, { flex: 1, textAlign: 'right' }]}>¥{(item.unitPrice || 0).toLocaleString()}</Text>
+              <Text style={[styles.tableCell, { flex: 1, textAlign: 'right' }]}>¥{(item.amount || 0).toLocaleString()}</Text>
             </View>
           ))}
         </View>
@@ -529,10 +539,10 @@ export const DeliveryNotePDF = ({ deliveryNote, customer }: { deliveryNote: any,
           
           {data.items?.map((item: any, index: number) => (
             <View key={index} style={styles.tableRow}>
-              <Text style={[styles.tableCell, { flex: 3 }]}>{item.description}</Text>
+              <Text style={[styles.tableCell, { flex: 3 }]}>{item.description || item.itemName || ''}</Text>
               <Text style={[styles.tableCell, { flex: 1, textAlign: 'right' }]}>{item.quantity}</Text>
-              <Text style={[styles.tableCell, { flex: 1, textAlign: 'right' }]}>¥{item.unitPrice.toLocaleString()}</Text>
-              <Text style={[styles.tableCell, { flex: 1, textAlign: 'right' }]}>¥{item.amount.toLocaleString()}</Text>
+              <Text style={[styles.tableCell, { flex: 1, textAlign: 'right' }]}>¥{(item.unitPrice || 0).toLocaleString()}</Text>
+              <Text style={[styles.tableCell, { flex: 1, textAlign: 'right' }]}>¥{(item.amount || 0).toLocaleString()}</Text>
             </View>
           ))}
         </View>
@@ -558,6 +568,18 @@ export const DeliveryNotePDF = ({ deliveryNote, customer }: { deliveryNote: any,
           <View style={{ marginTop: 30 }}>
             <Text style={{ fontWeight: 700, marginBottom: 5 }}>備考</Text>
             <Text style={{ fontSize: 10 }}>{data.notes}</Text>
+          </View>
+        )}
+        
+        {/* Receipt Footer Note */}
+        {isReceipt && (
+          <View style={{ marginTop: 30, paddingTop: 10, borderTopWidth: 1, borderTopColor: '#ddd' }}>
+            <Text style={{ fontSize: 8, textAlign: 'center', color: '#666' }}>
+              この領収書は電子的に発行されたものです。
+            </Text>
+            <Text style={{ fontSize: 8, textAlign: 'center', color: '#666' }}>
+              印紙税法第5条により収入印紙の貼付は不要です。
+            </Text>
           </View>
         )}
       </Page>

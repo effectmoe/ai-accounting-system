@@ -363,6 +363,7 @@ ${documentTitle ? `件名：${documentTitle}
             tax: docData.taxAmount,
             total: docData.totalAmount,
             notes: docData.notes,
+            subject: documentType === 'receipt' ? (docData.subject || docData.notes || 'お品代として') : undefined, // 領収書の但し書きを追加
             companyInfo: documentType === 'receipt' ? {
               name: docData.companySnapshot?.companyName || docData.issuerName || '',
               address: docData.companySnapshot?.address || docData.issuerAddress || '',
