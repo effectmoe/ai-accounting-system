@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { ReceiptService } from '@/services/receipt.service';
 import { logger } from '@/lib/logger';
 import { generateReceiptHTML } from '@/lib/receipt-html-generator';
-import { generatePDFBase64 } from '@/lib/pdf-export';
-import { DocumentData } from '@/lib/document-generator';
+import { generateReceiptPDFWithPuppeteer } from '@/lib/pdf-receipt-puppeteer-generator-fixed';
 
 const receiptService = new ReceiptService();
 
@@ -150,35 +149,11 @@ export async function POST(
       logger.debug('Generating receipt PDF for email attachment');
       
       try {
-        // DocumentData形式に変換（他のドキュメントと同じ形式）
-        const documentData: DocumentData = {
-          documentType: 'receipt',
-          documentNumber: receipt.receiptNumber,
-          issueDate: new Date(receipt.issueDate),
-          customerName: receipt.customerName || '',
-          customerAddress: receipt.customerAddress || '',
-          items: receipt.items.map((item: any) => ({
-            itemName: item.description || '',
-            description: item.description || '',
-            quantity: item.quantity,
-            unitPrice: item.unitPrice,
-            amount: item.amount,
-          })),
-          subtotal: receipt.subtotal,
-          tax: receipt.taxAmount,
-          total: receipt.totalAmount,
-          notes: receipt.notes,
-          companyInfo: {
-            name: receipt.issuerName || '',
-            address: receipt.issuerAddress || '',
-            phone: receipt.issuerPhone,
-            email: receipt.issuerEmail,
-            registrationNumber: receipt.issuerRegistrationNumber,
-          },
-        };
+        // PuppeteerでHTMLベースの美しいPDFを生成
+        const pdfBuffer = await generateReceiptPDFWithPuppeteer(receipt);
         
-        // 統一されたPDF生成関数を使用（見積書・請求書と同じ）
-        const pdfBase64 = await generatePDFBase64(documentData);
+        // PDFをBase64エンコード
+        const pdfBase64 = pdfBuffer.toString('base64');
         
         // PDFファイルとして添付
         attachments.push({
@@ -189,7 +164,7 @@ export async function POST(
         
         logger.debug('Receipt PDF generated successfully for email attachment');
       } catch (pdfError) {
-        logger.error('Failed to generate PDF, falling back to HTML:', pdfError);
+        logger.error('Failed to generate PDF with Puppeteer, falling back to HTML:', pdfError);
         
         // PDFの生成に失敗した場合は、HTMLをフォールバックとして添付
         const htmlContent = generateReceiptHTML(receipt);

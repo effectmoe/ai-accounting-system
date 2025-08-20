@@ -43,7 +43,46 @@ export async function generatePDFBase64(data: DocumentData): Promise<string> {
   // サーバーサイドで実行される場合
   if (typeof window === 'undefined') {
     logger.debug('Running on server side, attempting PDF generation...');
-    // jsPDFを使用したサーバーサイドPDF生成
+    
+    // 領収書の場合は特別な処理（美しいHTMLフォーマットをPDF化）
+    if (data.documentType === 'receipt') {
+      logger.debug('Receipt detected, using special HTML-based PDF generation');
+      try {
+        const { generateReceiptPDFWithPuppeteer } = await import('./pdf-receipt-puppeteer-generator-fixed');
+        const { generateReceiptHTML } = await import('./receipt-html-generator');
+        
+        // Receipt型のデータを構築
+        const receipt = {
+          receiptNumber: data.documentNumber,
+          issueDate: data.issueDate,
+          customerName: data.customerName,
+          customerAddress: data.customerAddress,
+          customer: (data as any).customer,
+          customerSnapshot: (data as any).customerSnapshot,
+          items: data.items || [],
+          subtotal: data.subtotal,
+          taxAmount: data.tax,
+          taxRate: 0.1, // 10%
+          totalAmount: data.total,
+          notes: data.notes,
+          issuerName: data.companyInfo?.name,
+          issuerAddress: data.companyInfo?.address,
+          issuerPhone: data.companyInfo?.phone,
+          issuerEmail: data.companyInfo?.email,
+          issuerRegistrationNumber: data.companyInfo?.registrationNumber,
+          issuerStamp: (data.companyInfo as any)?.stampImage,
+          subject: '領収書', // デフォルト件名
+        };
+        
+        const pdfBuffer = await generateReceiptPDFWithPuppeteer(receipt);
+        return pdfBuffer.toString('base64');
+      } catch (error) {
+        logger.error('Failed to generate receipt PDF with Puppeteer, falling back to jsPDF:', error);
+        // フォールバック: 通常のjsPDF生成
+      }
+    }
+    
+    // jsPDFを使用したサーバーサイドPDF生成（見積書・請求書・フォールバック用）
     const { generateJsPDFDocument } = await import('./jspdf-server-generator');
     return await generateJsPDFDocument(data);
   }
