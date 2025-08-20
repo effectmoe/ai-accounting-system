@@ -118,10 +118,10 @@ export default function ReceiptDetailPage({ params }: { params: { id: string } }
   };
 
   const handleDownloadPDF = () => {
-    // PDFダウンロードパラメータを追加して、PDFファイルとしてダウンロード
+    // HTMLダウンロード（見積書・請求書と同じ方式）
     const link = document.createElement('a');
-    link.href = `/api/receipts/${params.id}/pdf?format=pdf&download=true`;
-    link.download = `領収書_${receipt?.receiptNumber || params.id}.pdf`;
+    link.href = `/api/receipts/${params.id}/pdf?download=true`;
+    link.download = `領収書_${receipt?.receiptNumber || params.id}.html`;
     link.style.display = 'none';
     document.body.appendChild(link);
     link.click();
@@ -129,8 +129,8 @@ export default function ReceiptDetailPage({ params }: { params: { id: string } }
   };
 
   const handlePrint = () => {
-    // PDFを新しいウィンドウで開いて印刷ダイアログを表示
-    const printWindow = window.open(`/api/receipts/${params.id}/pdf?format=pdf&print=true`, '_blank');
+    // HTMLを新しいウィンドウで開いて印刷ダイアログを表示（ブラウザの印刷機能でPDF化）
+    const printWindow = window.open(`/api/receipts/${params.id}/pdf?print=true`, '_blank');
   };
 
   const handleCancel = async () => {
