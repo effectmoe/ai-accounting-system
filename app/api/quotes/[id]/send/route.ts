@@ -91,9 +91,22 @@ export async function POST(
     try {
       // HTMLをPDFに変換（Puppeteerを使用）- 領収書と同じパターン
       // showDescriptionsを明示的にtrueに設定してPDF生成
-      console.log('[Send Quote] Generating PDF with showDescriptions=true');
+      console.log('[Send Quote] START - Generating PDF with showDescriptions=true');
+      console.log('[Send Quote] Quote Number:', quote.quoteNumber);
+      console.log('[Send Quote] Quote ID:', quote._id);
+      console.log('[Send Quote] Quote Items Count:', quote.items?.length || 0);
+      console.log('[Send Quote] Quote Notes Length:', quote.notes?.length || 0);
+      console.log('[Send Quote] Company Info exists:', !!companyInfo);
+      
+      const pdfStartTime = Date.now();
       const pdfBuffer = await convertQuoteHTMLtoPDF(quote, companyInfo || {}, true);
+      const pdfGenerationTime = Date.now() - pdfStartTime;
+      
+      console.log('[Send Quote] PDF generation completed in', pdfGenerationTime, 'ms');
+      console.log('[Send Quote] PDF Buffer size:', pdfBuffer.length, 'bytes');
+      
       const pdfBase64 = pdfBuffer.toString('base64');
+      console.log('[Send Quote] Base64 encoded, length:', pdfBase64.length);
       
       // PDFファイルとして添付
       attachments.push({
@@ -102,6 +115,7 @@ export async function POST(
         contentType: 'application/pdf',
       });
       
+      console.log('[Send Quote] PDF attached to email');
       logger.debug('Quote PDF generated successfully for email attachment');
     } catch (error) {
       logger.error('Failed to generate quote PDF:', error);

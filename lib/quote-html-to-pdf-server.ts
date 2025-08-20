@@ -44,14 +44,22 @@ export async function convertQuoteHTMLtoPDF(
     // Vercel環境での実行
     const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL;
     
+    console.log('[convertQuoteHTMLtoPDF] Environment:', isProduction ? 'PRODUCTION' : 'DEVELOPMENT');
+    console.log('[convertQuoteHTMLtoPDF] Starting Puppeteer...');
+    
     if (isProduction) {
       // 本番環境: @sparticuz/chromiumを使用
+      console.log('[convertQuoteHTMLtoPDF] Using @sparticuz/chromium');
+      const execPath = await chromium.executablePath;
+      console.log('[convertQuoteHTMLtoPDF] Chromium executable path:', execPath);
+      
       browser = await puppeteer.launch({
         args: chromium.args,
         defaultViewport: chromium.defaultViewport,
-        executablePath: await chromium.executablePath,
+        executablePath: execPath,
         headless: chromium.headless,
       });
+      console.log('[convertQuoteHTMLtoPDF] Browser launched successfully');
     } else {
       // 開発環境: ローカルのPuppeteerを使用
       const puppeteerLocal = await import('puppeteer');
@@ -62,6 +70,24 @@ export async function convertQuoteHTMLtoPDF(
     }
     
     const page = await browser.newPage();
+    console.log('[convertQuoteHTMLtoPDF] New page created');
+    
+    // ページタイムアウト設定（領収書と同じ）
+    page.setDefaultTimeout(30000);
+    page.setDefaultNavigationTimeout(30000);
+    
+    // メモリ効率化のための設定（領収書と同じ）
+    await page.setRequestInterception(true);
+    page.on('request', (req) => {
+      // 不要なリソースをブロック
+      const resourceType = req.resourceType();
+      if (['image', 'stylesheet', 'font', 'script'].includes(resourceType)) {
+        req.abort();
+      } else {
+        req.continue();
+      }
+    });
+    console.log('[convertQuoteHTMLtoPDF] Request interception enabled');
     
     // デバッグ: HTMLコンテンツを保存（開発環境のみ）
     if (!isProduction) {
@@ -83,10 +109,19 @@ export async function convertQuoteHTMLtoPDF(
       }
     }
     
-    // HTMLを設定（領収書と同じ設定に統一）
+    // HTMLを設定（領収書と完全に同じ設定）
+    console.log('[convertQuoteHTMLtoPDF] Setting HTML content with waitUntil: domcontentloaded...');
     await page.setContent(htmlContent, {
-      waitUntil: 'networkidle0'
+      waitUntil: 'domcontentloaded',  // networkidle0より軽量
+      timeout: 20000
     });
+    console.log('[convertQuoteHTMLtoPDF] HTML content set successfully');
+    
+    // ページの内容を確認
+    const bodyHTML = await page.evaluate(() => document.body.innerHTML);
+    console.log('[convertQuoteHTMLtoPDF] Page body length:', bodyHTML.length);
+    console.log('[convertQuoteHTMLtoPDF] Page contains item-description:', bodyHTML.includes('item-description'));
+    console.log('[convertQuoteHTMLtoPDF] Page contains ■:', bodyHTML.includes('■'));
     
     // デバッグ: PDF生成前にスクリーンショットを撮影（開発環境のみ）
     if (!isProduction) {
@@ -122,7 +157,8 @@ export async function convertQuoteHTMLtoPDF(
       }
     }
     
-    // A4サイズでPDFを生成（領収書と同じ設定に統一）
+    // A4サイズでPDFを生成（領収書と完全に同じ設定）
+    console.log('[convertQuoteHTMLtoPDF] Generating PDF...');
     const pdfBuffer = await page.pdf({
       format: 'A4',
       printBackground: true,
@@ -131,10 +167,17 @@ export async function convertQuoteHTMLtoPDF(
         right: '10mm',
         bottom: '10mm',
         left: '10mm'
-      }
+      },
+      preferCSSPageSize: true,
+      // パフォーマンス向上のための設定
+      omitBackground: false,
+      timeout: 25000
     });
     
+    console.log('[convertQuoteHTMLtoPDF] PDF generated, buffer size:', pdfBuffer.length, 'bytes');
+    
     await browser.close();
+    console.log('[convertQuoteHTMLtoPDF] Browser closed');
     
     // デバッグ: 生成されたPDFを保存してサイズを確認（開発環境のみ）
     if (!isProduction) {
