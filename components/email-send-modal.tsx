@@ -321,8 +321,8 @@ ${documentTitle ? `件名：${documentTitle}
     try {
       let pdfBase64 = null;
       
-      // PDFを添付する場合は、クライアントサイドで生成
-      if (attachPdf) {
+      // PDFを添付する場合は、必ずクライアントサイドで生成
+      if (attachPdf && typeof window !== 'undefined') {
         try {
           // まず見積書/請求書/納品書/領収書のデータを取得
           const apiPath = documentType === 'delivery-note' ? 'delivery-notes' : 
@@ -382,10 +382,19 @@ ${documentTitle ? `件名：${documentTitle}
             bankAccount: docData.companySnapshot?.bankAccount || docData.bankAccount,
           };
           
-          // クライアントサイドでPDF生成
-          logger.debug('Generating PDF on client side...');
+          // クライアントサイドでPDF生成（ブラウザ環境でのみ実行）
+          logger.debug('Generating PDF on client side...', { 
+            isClient: typeof window !== 'undefined',
+            documentType: documentData.documentType 
+          });
+          
+          // ブラウザ環境であることを確認
+          if (typeof window === 'undefined') {
+            throw new Error('PDF generation must be done in browser environment');
+          }
+          
           pdfBase64 = await generatePDFBase64(documentData);
-          logger.debug('PDF generated successfully');
+          logger.debug('PDF generated successfully, size:', pdfBase64?.length || 0);
         } catch (pdfError) {
           logger.error('PDF generation error:', pdfError);
           setError('PDF生成に失敗しました。PDFなしで送信しますか？');

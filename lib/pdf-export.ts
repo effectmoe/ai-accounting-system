@@ -38,7 +38,11 @@ export async function downloadPDF(data: DocumentData): Promise<void> {
 
 // Base64エンコードされたPDFを生成（メール送信などに使用）
 export async function generatePDFBase64(data: DocumentData): Promise<string> {
-  logger.debug('generatePDFBase64 called, window check:', typeof window === 'undefined');
+  logger.debug('generatePDFBase64 called', {
+    isServer: typeof window === 'undefined',
+    documentType: data.documentType,
+    documentNumber: data.documentNumber
+  });
   
   // サーバーサイドで実行される場合
   if (typeof window === 'undefined') {
@@ -71,7 +75,7 @@ export async function generatePDFBase64(data: DocumentData): Promise<string> {
           issuerEmail: data.companyInfo?.email,
           issuerRegistrationNumber: data.companyInfo?.registrationNumber,
           issuerStamp: (data.companyInfo as any)?.stampImage,
-          subject: '領収書', // デフォルト件名
+          subject: data.subject || '領収書', // 但し書きを使用
         };
         
         // HTMLを生成してBase64エンコード
@@ -91,7 +95,8 @@ export async function generatePDFBase64(data: DocumentData): Promise<string> {
     return await generateJsPDFDocument(data);
   }
   
-  // クライアントサイドで実行される場合
+  // クライアントサイドで実行される場合 - @react-pdf/rendererを使用
+  logger.debug('Running on client side, using @react-pdf/renderer');
   const blob = await generatePDFBlob(data);
   
   return new Promise((resolve, reject) => {
