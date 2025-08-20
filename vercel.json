@@ -9,11 +9,12 @@
     "env": {
       "NODE_ENV": "production",
       "NODE_OPTIONS": "--max-old-space-size=4096",
-      "FORCE_REBUILD": "2025-08-20-puppeteer-fix",
+      "FORCE_REBUILD": "2025-08-20-puppeteer-fix-v2",
       "DO_NOT_TRACK": "1",
       "NEXT_TELEMETRY_DISABLED": "1",
       "SKIP_DB_DURING_BUILD": "true",
-      "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD": "false"
+      "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD": "false",
+      "PUPPETEER_EXECUTABLE_PATH": "/opt/chromium"
     }
   },
   "functions": {
@@ -77,6 +78,10 @@
       "memory": 1024
     },
     "app/api/quotes/[id]/accept/route.ts": {
+      "maxDuration": 45,
+      "memory": 1024
+    },
+    "app/api/quotes/[id]/send/route.ts": {
       "maxDuration": 45,
       "memory": 1024
     },

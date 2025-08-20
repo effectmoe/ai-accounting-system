@@ -43,7 +43,8 @@
     "phase2:step1": "tsx scripts/create-performance-indexes.ts",
     "phase2:indexes": "npm run phase2:step1",
     "phase2:step3": "tsx scripts/migrate-primary-contact-fields.ts",
-    "phase2:migrate": "npm run phase2:step3"
+    "phase2:migrate": "npm run phase2:step3",
+    "postinstall": "node node_modules/@sparticuz/chromium/install.js"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^1.0.0",

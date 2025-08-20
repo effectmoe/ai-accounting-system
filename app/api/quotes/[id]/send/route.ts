@@ -5,6 +5,8 @@ import { CompanyInfoService } from '@/services/company-info.service';
 import { Resend } from 'resend';
 import { generateSimpleHtmlQuote } from '@/lib/html-quote-generator';
 import { getSuggestedOptionsFromDB, generateServerHtmlQuote } from '@/lib/html-quote-generator-server';
+import { convertQuoteHTMLtoPDF } from '@/lib/quote-html-to-pdf-server';
+import { generateCompactQuoteHTML } from '@/lib/pdf-quote-html-generator';
 
 const resendApiKey = process.env.RESEND_API_KEY;
 console.log('[Send Quote API] RESEND_API_KEY exists:', !!resendApiKey);
@@ -79,6 +81,22 @@ export async function POST(
       );
     }
 
+    // PDFを生成（プレビューと同じ形式）
+    let pdfBuffer: Buffer;
+    let pdfFilename = `quote_${quote.quoteNumber}.pdf`;
+    
+    try {
+      pdfBuffer = await convertQuoteHTMLtoPDF(quote, companyInfo || {}, true);
+      logger.debug('Quote PDF generated for email attachment');
+    } catch (pdfError) {
+      logger.error('PDF generation failed, using HTML fallback:', pdfError);
+      // PDF生成が失敗した場合、正しいHTMLを生成してBufferとして送信
+      const pdfHtmlContent = generateCompactQuoteHTML(quote, companyInfo || {}, true);
+      pdfBuffer = Buffer.from(pdfHtmlContent, 'utf-8');
+      pdfFilename = `quote_${quote.quoteNumber}.html`;
+      logger.warn('Using HTML content as fallback for PDF attachment');
+    }
+    
     // Resendでメール送信（generateHtmlQuoteが既にHTMLを生成済み）
     console.log('[Send Quote API] Sending email with Resend...');
     
@@ -101,7 +119,12 @@ export async function POST(
         subject: htmlContent.subject || `お見積書 - ${quote.quoteNumber}`,
         html: htmlContent.html,
         text: htmlContent.plainText,
-        attachments: [], // 必要に応じてPDF添付
+        attachments: [
+          {
+            filename: pdfFilename,
+            content: pdfBuffer,
+          }
+        ],
       });
       
       console.log('[Send Quote API] Email result:', emailResult);
