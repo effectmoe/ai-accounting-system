@@ -28,10 +28,14 @@ export async function convertQuoteHTMLtoPDF(
     
     if (isProduction) {
       // 本番環境: @sparticuz/chromiumを使用
+      // Chromiumの設定を最適化
+      chromium.setHeadlessMode = true;
+      chromium.setGraphicsMode = false;
+      
       browser = await puppeteer.launch({
-        args: chromium.args,
+        args: [...chromium.args, '--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
         defaultViewport: chromium.defaultViewport,
-        executablePath: await chromium.executablePath,
+        executablePath: await chromium.executablePath(),
         headless: chromium.headless,
       });
     } else {
@@ -69,14 +73,14 @@ export async function convertQuoteHTMLtoPDF(
     
   } catch (error) {
     logger.error('Failed to convert quote HTML to PDF:', error);
+    logger.error('Error details:', error instanceof Error ? error.message : 'Unknown error');
     
     if (browser) {
       await browser.close();
     }
     
-    // フォールバック: HTMLをそのまま返す
-    logger.warn('Falling back to HTML content for quote PDF');
-    const htmlContent = generateCompactQuoteHTML(quote, companyInfo, showDescriptions);
-    return Buffer.from(htmlContent, 'utf-8');
+    // フォールバック: 実際にはPDFではなくHTMLを返すが、エラーを投げる
+    // これにより、呼び出し元で適切に処理できる
+    throw new Error(`PDF generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }

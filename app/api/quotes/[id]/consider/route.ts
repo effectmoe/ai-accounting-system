@@ -78,9 +78,12 @@ export async function POST(
         pdfBuffer = await convertQuoteHTMLtoPDF(quote, companyInfo || {}, true);
         logger.debug('Quote PDF generated for consideration email');
       } catch (pdfError) {
-        logger.error('PDF generation failed:', pdfError);
-        // PDF生成が失敗してもメールは送信する
-        pdfBuffer = Buffer.from('検討中見積書', 'utf-8');
+        logger.error('PDF generation failed, using HTML fallback:', pdfError);
+        // PDF生成が失敗した場合、正しいHTMLを生成してBufferとして送信
+        const { generateCompactQuoteHTML } = await import('@/lib/pdf-quote-html-generator');
+        const htmlContent = generateCompactQuoteHTML(quote, companyInfo || {}, true);
+        pdfBuffer = Buffer.from(htmlContent, 'utf-8');
+        logger.warn('Using HTML content as fallback for PDF attachment');
       }
       
       // 1. 顧客への検討中通知メール（PDF添付）
