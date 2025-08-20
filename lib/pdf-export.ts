@@ -44,11 +44,10 @@ export async function generatePDFBase64(data: DocumentData): Promise<string> {
   if (typeof window === 'undefined') {
     logger.debug('Running on server side, attempting PDF generation...');
     
-    // 領収書の場合は特別な処理（美しいHTMLフォーマットをPDF化）
+    // 領収書の場合は特別な処理（HTMLフォーマットを直接返す）
     if (data.documentType === 'receipt') {
-      logger.debug('Receipt detected, using special HTML-based PDF generation');
+      logger.debug('Receipt detected, using HTML-based format (same as PDF print button)');
       try {
-        const { generateReceiptPDFWithPuppeteer } = await import('./pdf-receipt-puppeteer-generator-fixed');
         const { generateReceiptHTML } = await import('./receipt-html-generator');
         
         // Receipt型のデータを構築
@@ -74,10 +73,12 @@ export async function generatePDFBase64(data: DocumentData): Promise<string> {
           subject: '領収書', // デフォルト件名
         };
         
-        const pdfBuffer = await generateReceiptPDFWithPuppeteer(receipt);
-        return pdfBuffer.toString('base64');
+        // HTMLを生成してBase64エンコード
+        const htmlContent = generateReceiptHTML(receipt);
+        const htmlBuffer = Buffer.from(htmlContent, 'utf-8');
+        return htmlBuffer.toString('base64');
       } catch (error) {
-        logger.error('Failed to generate receipt PDF with Puppeteer, falling back to jsPDF:', error);
+        logger.error('Failed to generate receipt HTML, falling back to jsPDF:', error);
         // フォールバック: 通常のjsPDF生成
       }
     }

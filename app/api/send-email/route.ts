@@ -583,10 +583,12 @@ export async function POST(request: NextRequest) {
       // クライアントから送られたPDFデータがある場合は使用
       if (pdfBase64) {
         logger.debug('Using client-generated PDF, size:', pdfBase64.length);
+        // 領収書の場合はHTML、それ以外はPDF
+        const isReceipt = documentData.documentType === 'receipt';
         const attachment = {
-          filename: `${documentData.documentNumber}.pdf`,
+          filename: isReceipt ? `${documentData.documentNumber}.html` : `${documentData.documentNumber}.pdf`,
           content: pdfBase64,
-          contentType: 'application/pdf',
+          contentType: isReceipt ? 'text/html' : 'application/pdf',
         };
         attachments.push(attachment);
         logger.debug('Client PDF attachment added to array');
@@ -605,10 +607,12 @@ export async function POST(request: NextRequest) {
           const serverPdfBase64 = await generatePDFBase64(documentData);
           logger.debug('Server PDF generated successfully, size:', serverPdfBase64.length, 'characters');
           
+          // 領収書の場合はHTML、それ以外はPDF
+          const isReceipt = documentData.documentType === 'receipt';
           const attachment = {
-            filename: `${documentData.documentNumber}.pdf`,
+            filename: isReceipt ? `${documentData.documentNumber}.html` : `${documentData.documentNumber}.pdf`,
             content: serverPdfBase64,
-            contentType: 'application/pdf',
+            contentType: isReceipt ? 'text/html' : 'application/pdf',
           };
           attachments.push(attachment);
           logger.debug('Server PDF attachment added to array');
