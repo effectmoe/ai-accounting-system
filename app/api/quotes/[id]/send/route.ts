@@ -3,8 +3,6 @@ import { logger } from '@/lib/logger';
 import { QuoteService } from '@/services/quote.service';
 import { CompanyInfoService } from '@/services/company-info.service';
 import { Resend } from 'resend';
-import { generateSimpleHtmlQuote } from '@/lib/html-quote-generator';
-import { getSuggestedOptionsFromDB, generateServerHtmlQuote } from '@/lib/html-quote-generator-server';
 import { convertQuoteHTMLtoPDF } from '@/lib/quote-html-to-pdf-server';
 import { generateCompactQuoteHTML } from '@/lib/pdf-quote-html-generator';
 
@@ -53,24 +51,20 @@ export async function POST(
     const companyInfoService = new CompanyInfoService();
     const companyInfo = await companyInfoService.getCompanyInfo();
 
-    // HTMLコンテンツ生成（DBからおすすめオプションを取得するサーバーサイド関数を使用）
-    const htmlContent = await generateServerHtmlQuote({
-      quote,
-      companyInfo: companyInfo || {
-        companyName: '株式会社サンプル',
-        email: 'info@example.com',
-        phone: '03-1234-5678',
-        postalCode: '100-0001',
-        prefecture: '東京都',
-        city: '千代田区',
-        address1: '1-2-3',
-        website: 'https://example.com',
-        logoUrl: '',
-        registrationNumber: '',
-      },
-      recipientName,
-      customMessage,
-    });
+    // シンプルなメール本文を生成（HTML見積書ではなく、通常のメールメッセージ）
+    const emailSubject = `お見積書のご送付 - ${quote.quoteNumber}`;
+    const emailBody = customMessage || `${recipientName || quote.customer?.companyName || 'お客様'}
+
+いつもお世話になっております。
+
+お見積書をPDFファイルにて送付させていただきます。
+
+見積書番号：${quote.quoteNumber}
+見積金額：¥${quote.total?.toLocaleString() || '0'}
+
+添付ファイルをご確認の上、ご検討のほどよろしくお願いいたします。
+
+ご不明な点がございましたら、お気軽にお問い合わせください。`;
 
     // Resend APIキーの確認
     if (!resendApiKey) {
@@ -146,9 +140,9 @@ export async function POST(
       const emailData = {
         from,
         to: recipientEmail,
-        subject: htmlContent.subject || `お見積書 - ${quote.quoteNumber}`,
-        html: htmlContent.html,
-        text: htmlContent.plainText,
+        subject: emailSubject,
+        text: emailBody,
+        html: emailBody.replace(/\n/g, '<br>'), // シンプルなHTML変換
         ...(attachments.length > 0 && {
           attachments: attachments.map(att => ({
             filename: att.filename,
