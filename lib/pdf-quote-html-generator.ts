@@ -546,12 +546,6 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
       </div>
     </div>
     
-    <!-- 有効期限情報 -->
-    <div class="validity-info">
-      <h3>見積書有効期限について</h3>
-      <p>この見積書の有効期限は ${validityDate} までです。期限を過ぎた場合は改めてお見積りいたします。</p>
-    </div>
-    
     <!-- 備考 -->
     ${quote.notes ? `
       <div class="notes-section">
