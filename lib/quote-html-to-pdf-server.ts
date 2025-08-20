@@ -40,6 +40,9 @@ export async function convertQuoteHTMLtoPDF(
       console.log('[convertQuoteHTMLtoPDF] Notes content found:', notesMatch[1].substring(0, 100) + '...');
     }
     
+    // 環境判定
+    const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL;
+    
     // Puppeteerを起動
     console.log('[convertQuoteHTMLtoPDF] Starting Puppeteer...');
     browser = await launchPuppeteer();

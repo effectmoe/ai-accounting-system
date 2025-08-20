@@ -2,18 +2,19 @@
   "buildCommand": "npm run build",
   "outputDirectory": ".next",
   "devCommand": "npm run dev",
-  "installCommand": "npm install --legacy-peer-deps --production=false",
+  "installCommand": "npm install --legacy-peer-deps --production=false && npm rebuild @sparticuz/chromium",
   "framework": "nextjs",
   "regions": ["hnd1"],
   "build": {
     "env": {
       "NODE_ENV": "production",
       "NODE_OPTIONS": "--max-old-space-size=4096",
-      "FORCE_REBUILD": "2025-08-20-receipt-pattern-fix",
+      "FORCE_REBUILD": "2025-08-21-chromium-fix",
       "DO_NOT_TRACK": "1",
       "NEXT_TELEMETRY_DISABLED": "1",
       "SKIP_DB_DURING_BUILD": "true",
-      "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD": "true"
+      "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD": "false",
+      "PUPPETEER_CACHE_DIR": "/tmp/.cache/puppeteer"
     }
   },
   "functions": {
