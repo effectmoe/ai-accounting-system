@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { ReceiptService } from '@/services/receipt.service';
 import { logger } from '@/lib/logger';
 import { generateReceiptHTML } from '@/lib/receipt-html-generator';
+import { generateReceiptPDFWithPuppeteer } from '@/lib/pdf-receipt-puppeteer-generator-fixed';
 
 const receiptService = new ReceiptService();
 
@@ -145,48 +146,39 @@ export async function POST(
     // 添付ファイルの準備
     const attachments = [];
     if (attachPdf) {
-      logger.debug('Generating receipt HTML for email attachment');
+      logger.debug('Generating receipt PDF for email attachment');
       
-      // HTMLを生成
-      const htmlContent = generateReceiptHTML(receipt);
-      
-      // PDF印刷用のHTMLを作成
-      const pdfHtml = `
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>領収書 ${receipt.receiptNumber}</title>
-    <style>
-        @media print {
-            body { margin: 0; padding: 0; }
-            .no-print { display: none !important; }
-        }
-        body {
-            font-family: 'Noto Sans JP', 'Hiragino Sans', 'MS Gothic', sans-serif;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-        }
-    </style>
-</head>
-<body>
-    ${htmlContent}
-</body>
-</html>`;
-      
-      // HTMLをBase64エンコード
-      const htmlBuffer = Buffer.from(pdfHtml, 'utf-8');
-      const htmlBase64 = htmlBuffer.toString('base64');
-      
-      // HTMLファイルとして添付（メールクライアントでPDF保存可能）
-      attachments.push({
-        filename: `receipt_${receipt.receiptNumber}.html`,
-        content: htmlBase64,
-        contentType: 'text/html',
-      });
-      
-      logger.debug('Receipt HTML generated for email attachment');
+      try {
+        // PuppeteerでPDFを生成
+        const pdfBuffer = await generateReceiptPDFWithPuppeteer(receipt);
+        
+        // PDFをBase64エンコード
+        const pdfBase64 = pdfBuffer.toString('base64');
+        
+        // PDFファイルとして添付
+        attachments.push({
+          filename: `receipt_${receipt.receiptNumber}.pdf`,
+          content: pdfBase64,
+          contentType: 'application/pdf',
+        });
+        
+        logger.debug('Receipt PDF generated successfully for email attachment');
+      } catch (pdfError) {
+        logger.error('Failed to generate PDF with Puppeteer, falling back to HTML:', pdfError);
+        
+        // PDFの生成に失敗した場合は、HTMLをフォールバックとして添付
+        const htmlContent = generateReceiptHTML(receipt);
+        const htmlBuffer = Buffer.from(htmlContent, 'utf-8');
+        const htmlBase64 = htmlBuffer.toString('base64');
+        
+        attachments.push({
+          filename: `receipt_${receipt.receiptNumber}.html`,
+          content: htmlBase64,
+          contentType: 'text/html',
+        });
+        
+        logger.debug('Fallback: Receipt HTML generated for email attachment');
+      }
     }
 
     // Resendインスタンスを取得
@@ -206,7 +198,7 @@ export async function POST(
         attachments: attachments.map(att => ({
           filename: att.filename,
           content: att.content,
-          type: att.contentType,
+          content_type: att.contentType, // Resend APIの仕様に合わせて修正
         }))
       }),
     };
