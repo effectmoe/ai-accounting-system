@@ -9,7 +9,7 @@ import { logger } from '@/lib/logger';
 
 /**
  * 領収書のHTMLからメール用PDFを生成
- * Puppeteerライクな処理をエミュレート
+ * 印刷ボタンと同じ方法でPDFを生成
  */
 export async function generateReceiptEmailPDF(receipt: Receipt): Promise<Blob> {
   try {
@@ -156,99 +156,110 @@ export async function generateReceiptEmailPDF(receipt: Receipt): Promise<Blob> {
 </body>
 </html>`;
     
-    // HTMLをBlobに変換（ブラウザ環境でのみ動作）
+    // ブラウザ環境チェック
     if (typeof window === 'undefined') {
       throw new Error('This function must be called in browser environment');
     }
     
-    // iframe を使用してHTMLをレンダリング
-    const iframe = document.createElement('iframe');
-    iframe.style.display = 'none';
-    iframe.style.width = '210mm';  // A4幅
-    iframe.style.height = '297mm'; // A4高さ
-    document.body.appendChild(iframe);
-    
-    // iframeにHTMLを書き込み
-    const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
-    if (!iframeDoc) {
-      document.body.removeChild(iframe);
-      throw new Error('Failed to access iframe document');
-    }
-    
-    iframeDoc.open();
-    iframeDoc.write(fullHtml);
-    iframeDoc.close();
-    
-    // 少し待機してレンダリングを完了させる
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
-    // html2canvasとjsPDFを使用してPDFを生成
-    const html2canvas = (await import('html2canvas')).default;
-    const jsPDF = (await import('jspdf')).default;
-    
-    // iframeの内容をキャンバスに描画（高品質設定）
-    const canvas = await html2canvas(iframeDoc.body, {
-      scale: 3, // 高解像度
-      logging: false,
-      useCORS: true,
-      allowTaint: true,
-      backgroundColor: '#ffffff',
-      windowWidth: 794, // A4のピクセル幅（210mm）
-      windowHeight: 1123, // A4のピクセル高さ（297mm）
-    });
-    
-    // PDFを生成（高品質設定）
-    const pdf = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'a4',
-      compress: false // 圧縮しない（品質優先）
-    });
-    
-    // キャンバスをPDFに追加
-    const imgWidth = 210; // A4の幅（mm）
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
-    
-    // 高品質な画像として追加
-    const imgData = canvas.toDataURL('image/png', 1.0); // 最高品質
-    pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight, '', 'FAST');
-    
-    // 複数ページの場合の処理
-    let heightLeft = imgHeight - 297; // A4の高さを超える部分
-    if (heightLeft > 0) {
-      let position = -297;
-      while (heightLeft > 0) {
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight, '', 'FAST');
-        heightLeft -= 297;
-        position -= 297;
+    try {
+      // html2canvasとjsPDFを動的インポート
+      const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
+        import('html2canvas'),
+        import('jspdf')
+      ]);
+      
+      // 一時的なコンテナを作成
+      const container = document.createElement('div');
+      container.style.position = 'absolute';
+      container.style.left = '-9999px';
+      container.style.top = '-9999px';
+      container.style.width = '210mm';
+      container.style.height = '297mm';
+      container.innerHTML = fullHtml;
+      document.body.appendChild(container);
+      
+      // 少し待機してレンダリングを完了させる
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      // 領収書コンテナを取得
+      const receiptContainer = container.querySelector('.receipt-container') || container;
+      
+      // html2canvasでキャンバスに変換（高品質設定）
+      const canvas = await html2canvas(receiptContainer as HTMLElement, {
+        scale: 2, // 高解像度（3だとメモリ不足の可能性があるため2に調整）
+        logging: false,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff',
+        width: 794, // A4のピクセル幅
+        height: 1123, // A4のピクセル高さ
+      });
+      
+      // PDFを生成
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+        compress: true // 適度な圧縮
+      });
+      
+      // キャンバスをPDFに追加
+      const imgWidth = 210; // A4の幅（mm）
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      const pageHeight = 297; // A4の高さ（mm）
+      
+      // 画像データを取得
+      const imgData = canvas.toDataURL('image/jpeg', 0.95); // JPEGで少し圧縮
+      
+      // 1ページ目を追加
+      pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, Math.min(imgHeight, pageHeight));
+      
+      // 複数ページの場合の処理
+      if (imgHeight > pageHeight) {
+        let position = -pageHeight;
+        let remainingHeight = imgHeight - pageHeight;
+        
+        while (remainingHeight > 0) {
+          pdf.addPage();
+          pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+          position -= pageHeight;
+          remainingHeight -= pageHeight;
+        }
       }
+      
+      // PDFの情報を設定
+      pdf.setProperties({
+        title: `領収書 ${receipt.receiptNumber}`,
+        subject: '領収書',
+        author: receipt.issuerName || '株式会社EFFECT',
+        keywords: 'receipt, 領収書',
+        creator: 'AAM Accounting System'
+      });
+      
+      // PDFをBlobに変換
+      const blob = pdf.output('blob');
+      
+      // コンテナを削除
+      document.body.removeChild(container);
+    
+      logger.debug('Beautiful receipt PDF generated successfully', {
+        receiptNumber: receipt.receiptNumber,
+        pdfSize: blob.size,
+        expectedSize: '約200-300KB'
+      });
+      
+      return blob;
+    } catch (innerError) {
+      // エラーの詳細をログに記録
+      logger.error('PDF generation inner error:', innerError);
+      throw innerError;
     }
-    
-    // PDFの情報を設定
-    pdf.setProperties({
-      title: `領収書 ${receipt.receiptNumber}`,
-      subject: '領収書',
-      author: receipt.issuerName || '株式会社EFFECT',
-      keywords: 'receipt, 領収書',
-      creator: 'AAM Accounting System'
-    });
-    
-    // PDFをBlobに変換
-    const blob = pdf.output('blob');
-    
-    // iframeを削除
-    document.body.removeChild(iframe);
-    
-    logger.debug('Beautiful receipt PDF generated successfully', {
-      receiptNumber: receipt.receiptNumber,
-      pdfSize: blob.size,
-      expectedSize: '約310KB'
-    });
-    
-    return blob;
   } catch (error) {
     logger.error('Failed to generate beautiful receipt PDF:', error);
-    throw error;
+    // エラーメッセージを改善
+    if (error instanceof Error) {
+      throw new Error(`領収書PDF生成エラー: ${error.message}`);
+    }
+    throw new Error('領収書のPDF生成に失敗しました');
   }
 }
