@@ -21,6 +21,8 @@ export async function convertQuoteHTMLtoPDF(
     logger.debug('Quote number:', quote.quoteNumber);
     
     // HTMLコンテンツを生成（プレビューと同じ関数を使用）
+    // デバッグ: PDF変換時のshowDescriptionsパラメータを確認
+    console.log('[convertQuoteHTMLtoPDF] showDescriptions parameter:', showDescriptions);
     const htmlContent = generateCompactQuoteHTML(quote, companyInfo, showDescriptions);
     
     // Vercel環境での実行

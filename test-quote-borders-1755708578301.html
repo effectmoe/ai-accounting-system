@@ -1,0 +1,188 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>見積書テスト - 横棒修正確認</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Arial', sans-serif;
+      font-size: 12px;
+      color: #333;
+      background-color: #f5f5f5;
+      padding: 20px;
+    }
+    .quote-container {
+      max-width: 800px;
+      margin: 0 auto;
+      background-color: white;
+      padding: 40px;
+    }
+    .quote-title {
+      font-size: 32px;
+      font-weight: bold;
+      text-align: center;
+      margin: 30px 0;
+    }
+    .quote-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 30px;
+    }
+    .quote-table th {
+      background-color: #34495e;
+      color: white;
+      padding: 12px;
+      text-align: left;
+      font-weight: bold;
+    }
+    .quote-table th:last-child,
+    .quote-table td:last-child {
+      text-align: right;
+    }
+    
+    /* ★ 修正版CSS: tdにborder-bottomを設定せず、tbody trのみに設定 */
+    .quote-table td {
+      padding: 12px;
+    }
+    
+    .quote-table tbody tr {
+      border-bottom: 1px solid #ddd;
+    }
+    
+    .quote-table tbody tr:last-child {
+      border-bottom: none;
+    }
+    
+    .item-name {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .item-description {
+      font-size: 11px;
+      color: #666;
+      margin-bottom: 4px;
+    }
+    .notes-section {
+      margin-top: 30px;
+      padding: 15px;
+      background-color: #f9f9f9;
+    }
+    .notes-title {
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    .quote-info {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 30px;
+    }
+    .customer-info {
+      flex: 1;
+    }
+    .company-info {
+      text-align: right;
+      flex: 1;
+    }
+    .quote-dates {
+      margin-bottom: 10px;
+      line-height: 1.8;
+    }
+  </style>
+</head>
+<body>
+  <div class="quote-container">
+    <h1 class="quote-title">見積書</h1>
+    
+    <!-- 顧客・会社情報 -->
+    <div class="quote-info">
+      <div class="customer-info">
+        <h2>テスト株式会社 御中</h2>
+        <p>東京都渋谷区テスト1-2-3</p>
+        <p>ご担当者: テスト太郎 様</p>
+      </div>
+      
+      <div class="company-info">
+        <div class="quote-dates">
+          <p>発行日: 2025-08-20</p>
+          <p>有効期限: 2025-09-20</p>
+          <p>見積書番号: QUO-20250820-TEST</p>
+        </div>
+        <div style="margin-top: 20px;">
+          <h3>EFFECT Inc.</h3>
+          <p>東京都渋谷区神宮前1-1-1</p>
+          <p>TEL: 03-1234-5678</p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 明細テーブル -->
+    <table class="quote-table">
+      <thead>
+        <tr>
+          <th>品目・仕様</th>
+          <th>数量</th>
+          <th>単価</th>
+          <th>金額</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>
+            <div class="item-name">Webサイト制作</div>
+            <div class="item-description">レスポンシブ対応のコーポレートサイト制作</div>
+          </td>
+          <td>1式</td>
+          <td>¥300,000</td>
+          <td>¥300,000</td>
+        </tr>
+        <tr>
+          <td>
+            <div class="item-name">システム開発</div>
+            <div class="item-description">カスタムCMS開発</div>
+          </td>
+          <td>1式</td>
+          <td>¥500,000</td>
+          <td>¥500,000</td>
+        </tr>
+        <tr>
+          <td>
+            <div class="item-name">保守サポート</div>
+            <div class="item-description">1年間の技術サポート</div>
+          </td>
+          <td>12ヶ月</td>
+          <td>¥10,000</td>
+          <td>¥120,000</td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <!-- 備考 -->
+    <div class="notes-section">
+      <div class="notes-title">備考</div>
+      <div class="notes-content">
+        ■ 納期：契約後2ヶ月<br>
+        ■ 保守サポート別途<br>
+        ■ テスト環境提供<br><br>
+        <strong>見積書有効期限について：</strong><br>
+        この見積書は発行日より30日間有効です。<br>
+        期間を過ぎた場合は再見積もりとなります。
+      </div>
+    </div>
+  </div>
+  
+  <div style="margin: 20px; padding: 20px; background-color: #e8f4fd; border-left: 4px solid #2196F3;">
+    <h3>修正確認ポイント：</h3>
+    <ul style="margin-left: 20px; line-height: 1.8;">
+      <li><strong style="color: #2196F3;">✅ 横棒の修正:</strong> テーブルの行間に横棒が1本だけ表示されているか？（2本ではない）</li>
+      <li><strong style="color: #2196F3;">✅ 最終行の処理:</strong> テーブルの最後の行に不要な横棒がないか？</li>
+      <li><strong style="color: #2196F3;">✅ 有効期限の重複:</strong> 有効期限が複数箇所に表示されていないか？</li>
+    </ul>
+  </div>
+</body>
+</html>

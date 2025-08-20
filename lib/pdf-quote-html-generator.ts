@@ -74,20 +74,10 @@ function getContactPerson(quote: any): string {
 export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescriptions: boolean = true): string {
   // デバッグ: showDescriptionsパラメータの値を確認
   console.log('[generateCompactQuoteHTML] showDescriptions parameter:', showDescriptions);
+  console.log('[generateCompactQuoteHTML] showDescriptions type:', typeof showDescriptions);
   
-  // 完全なデータ構造をログ出力（一時的）
-  console.log('=== FULL QUOTE DATA FOR PDF GENERATION ===');
-  console.log('Quote Number:', quote.quoteNumber);
-  console.log('Customer Data:', JSON.stringify(quote.customer, null, 2));
-  console.log('Customer Snapshot:', JSON.stringify(quote.customerSnapshot, null, 2));
-  console.log('Items Data:', JSON.stringify(quote.items?.map((item: any, index: number) => ({
-    index,
-    itemName: item.itemName,
-    description: item.description,
-    notes: item.notes,
-    allKeys: Object.keys(item)
-  })), null, 2));
-  console.log('=======================================');
+  // PDF生成デバッグ情報
+  console.log('[generateCompactQuoteHTML] Processing quote:', quote.quoteNumber, 'with', quote.items?.length || 0, 'items');
   const customerName = quote.customer?.companyName || quote.customer?.name || quote.customerSnapshot?.companyName || '';
   const issueDate = new Date(quote.issueDate || new Date()).toISOString().split('T')[0];
   const validityDate = new Date(quote.validityDate || new Date()).toISOString().split('T')[0];
@@ -246,7 +236,14 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
     
     .quote-table td {
       padding: 12px;
+    }
+    
+    .quote-table tbody tr {
       border-bottom: 1px solid #ddd;
+    }
+    
+    .quote-table tbody tr:last-child {
+      border-bottom: none;
     }
     
     /* 商品明細のスタイル */
@@ -495,41 +492,26 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
       </thead>
       <tbody>
         ${quote.items.map((item: any, index: number) => {
-          // コンソールログで各商品の詳細を確認（一時的）
-          console.log(`Item ${index}:`, {
-            itemName: item.itemName,
-            description: item.description,
-            notes: item.notes,
-            allFields: Object.keys(item).join(', '),
-            descriptionType: typeof item.description,
-            descriptionValue: JSON.stringify(item.description),
-            notesType: typeof item.notes,
-            notesValue: JSON.stringify(item.notes)
-          });
-          
           const description = getItemDescription(item);
           const hasDescription = description && description.toString().trim() !== '';
           const hasNotes = item.notes && item.notes.toString().trim() !== '';
           
-          // デバッグ: 商品説明の表示条件を確認
-          console.log(`Item ${index} render conditions:`, {
-            showDescriptions,
-            hasDescription,
-            description,
-            willShowDescription: showDescriptions && hasDescription,
-            hasNotes,
-            notes: item.notes,
-            willShowNotes: showDescriptions && hasNotes
-          });
+          // showDescriptionsが文字列の場合も考慮した処理
+          const shouldShowDescriptions = showDescriptions === true || showDescriptions === 'true';
+          
+          // 重要なアイテムのみデバッグログ出力
+          if (hasDescription || hasNotes) {
+            console.log(`[Item ${index}] ${item.itemName}: desc=${shouldShowDescriptions && hasDescription}, notes=${shouldShowDescriptions && hasNotes}`);
+          }
           
           return `
             <tr>
               <td>
                 <div class="item-name">${item.itemName || ''}</div>
-                ${showDescriptions && hasDescription ? `
+                ${shouldShowDescriptions && hasDescription ? `
                   <div class="item-description">${description}</div>
                 ` : ''}
-                ${showDescriptions && hasNotes ? `
+                ${shouldShowDescriptions && hasNotes ? `
                   <div class="item-notes">※ ${item.notes}</div>
                 ` : ''}
               </td>
@@ -564,9 +546,13 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
     ${quote.notes ? `
       <div class="notes-section">
         <h3 class="notes-title">備考</h3>
-        <div class="notes-content">${cleanDuplicateSignatures(quote.notes)
-          .replace(/・/g, '■')  // 中黒を黒い四角に置換
-        }</div>
+        <div class="notes-content">${(() => {
+          let processedNotes = cleanDuplicateSignatures(quote.notes);
+          // 中黒（・）を黒い四角（■）に置換
+          processedNotes = processedNotes.replace(/・/g, '■');
+          console.log('[Notes Processing] Replaced ・ with ■ in notes');
+          return processedNotes;
+        })()}</div>
       </div>
     ` : ''}
   </div>

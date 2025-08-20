@@ -90,6 +90,8 @@ export async function POST(
     
     try {
       // HTMLをPDFに変換（Puppeteerを使用）- 領収書と同じパターン
+      // showDescriptionsを明示的にtrueに設定してPDF生成
+      console.log('[Send Quote] Generating PDF with showDescriptions=true');
       const pdfBuffer = await convertQuoteHTMLtoPDF(quote, companyInfo || {}, true);
       const pdfBase64 = pdfBuffer.toString('base64');
       
@@ -103,6 +105,10 @@ export async function POST(
       logger.debug('Quote PDF generated successfully for email attachment');
     } catch (error) {
       logger.error('Failed to generate quote PDF:', error);
+      console.error('[Send Quote] PDF generation error details:', {
+        error: error instanceof Error ? error.message : error,
+        stack: error instanceof Error ? error.stack : undefined
+      });
       throw new Error('PDF生成に失敗しました');
     }
     
