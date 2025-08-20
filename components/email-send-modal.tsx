@@ -321,8 +321,9 @@ ${documentTitle ? `件名：${documentTitle}
     try {
       let pdfBase64 = null;
       
-      // PDFを添付する場合は、必ずクライアントサイドで生成
-      if (attachPdf && typeof window !== 'undefined') {
+      // 見積書以外のPDFを添付する場合は、クライアントサイドで生成
+      // 見積書はサーバーサイドでPuppeteerを使用して生成するためスキップ
+      if (attachPdf && typeof window !== 'undefined' && documentType !== 'quote') {
         try {
           // まず見積書/請求書/納品書/領収書のデータを取得
           const apiPath = documentType === 'delivery-note' ? 'delivery-notes' : 
@@ -451,30 +452,50 @@ ${documentTitle ? `件名：${documentTitle}
         }
       }
 
-      // メール送信APIを呼び出し（PDF生成済みの場合はBase64データを含める）
-      const emailData: any = {
-        documentType,
-        documentId,
-        to,
-        cc: cc || undefined,
-        bcc: bcc || undefined,
-        subject: subject || undefined,
-        body: body || undefined,
-        attachPdf,
-      };
+      // 見積書は専用のサーバーサイドエンドポイントを使用
+      let response;
       
-      // クライアントで生成したPDFがある場合は追加
-      if (pdfBase64) {
-        emailData.pdfBase64 = pdfBase64;
-      }
+      if (documentType === 'quote' && !pdfBase64) {
+        // 見積書はサーバーサイドでPuppeteerを使用してPDF生成
+        logger.debug('Using server-side quote-specific endpoint for PDF generation');
+        
+        response = await fetch(`/api/quotes/${documentId}/send`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            recipientEmail: to,
+            recipientName: customer?.companyName || '',
+            customMessage: body || undefined,
+          }),
+        });
+      } else {
+        // その他のドキュメントまたはクライアントサイドPDF生成済みの場合は汎用エンドポイント
+        const emailData: any = {
+          documentType,
+          documentId,
+          to,
+          cc: cc || undefined,
+          bcc: bcc || undefined,
+          subject: subject || undefined,
+          body: body || undefined,
+          attachPdf,
+        };
+        
+        // クライアントで生成したPDFがある場合は追加
+        if (pdfBase64) {
+          emailData.pdfBase64 = pdfBase64;
+        }
 
-      const response = await fetch('/api/send-email', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(emailData),
-      });
+        response = await fetch('/api/send-email', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(emailData),
+        });
+      }
 
       const result = await response.json();
 
