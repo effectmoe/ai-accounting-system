@@ -4,6 +4,7 @@ import { CompanyInfoService } from '@/services/company-info.service';
 import { logger } from '@/lib/logger';
 import { generateReceiptHTML, generateReceiptFilename, generateSafeReceiptFilename } from '@/lib/receipt-html-generator';
 import { generateReceiptPDFWithPuppeteer, generateReceiptPDFWithJsPDF } from '@/lib/pdf-receipt-puppeteer-generator';
+import { generateReceiptPDFWithPDFKit } from '@/lib/pdf-receipt-pdfkit-generator';
 
 const receiptService = new ReceiptService();
 
@@ -34,7 +35,7 @@ export async function GET(
     const isDownload = url.searchParams.get('download') === 'true';
     const isPrintMode = url.searchParams.get('print') === 'true';
     const format = url.searchParams.get('format') || 'pdf'; // pdf or html
-    const engine = url.searchParams.get('engine') || 'jspdf'; // puppeteer or jspdf - デフォルトをjsPDFに変更（Vercel環境での安定性のため）
+    const engine = url.searchParams.get('engine') || 'puppeteer'; // puppeteer, jspdf, or pdfkit - デフォルトをpuppeteerに変更（日本語完全対応）
     
     // HTMLを生成
     logger.debug('Generating receipt HTML for:', receipt.receiptNumber);
@@ -76,12 +77,16 @@ export async function GET(
       try {
         let pdfBuffer: Buffer;
         
-        if (engine === 'jspdf') {
+        if (engine === 'pdfkit') {
+          // PDFKitでPDF生成（デフォルト - 軽量で安定）
+          logger.debug('Using PDFKit engine for PDF generation');
+          pdfBuffer = await generateReceiptPDFWithPDFKit(receipt);
+        } else if (engine === 'jspdf') {
           // jsPDFでPDF生成（フォールバック用）
           logger.debug('Using jsPDF engine for PDF generation');
           pdfBuffer = await generateReceiptPDFWithJsPDF(receipt);
         } else {
-          // PuppeteerでPDF生成（メイン）
+          // PuppeteerでPDF生成（高品質だが重い）
           logger.debug('Using Puppeteer engine for PDF generation');
           pdfBuffer = await generateReceiptPDFWithPuppeteer(receipt);
         }

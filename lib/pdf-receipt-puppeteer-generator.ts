@@ -85,10 +85,16 @@ export async function generateReceiptPDFWithPuppeteer(receipt: Receipt): Promise
     // HTMLコンテンツを生成
     const htmlContent = generateReceiptHTML(receipt);
     
-    // HTMLを設定
+    // HTMLを設定（フォント読み込みを待つ）
     await page.setContent(htmlContent, {
-      waitUntil: 'networkidle0'
+      waitUntil: ['networkidle0', 'domcontentloaded']
     });
+    
+    // Webフォントの読み込みを待つ
+    await page.evaluateHandle('document.fonts.ready');
+    
+    // 追加の待機時間（フォントレンダリング用）
+    await new Promise(resolve => setTimeout(resolve, 500));
     
     // PDFを生成（日本語フォント対応）
     const pdfBuffer = await page.pdf({
