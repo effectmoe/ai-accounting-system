@@ -336,7 +336,12 @@ export default function ReceiptsPage() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => window.open(`/api/receipts/${receipt._id}/pdf`, '_blank')}
+                            onClick={() => {
+                              const printWindow = window.open(`/api/receipts/${receipt._id}/pdf?print=true`, '_blank', 'width=800,height=600');
+                              if (printWindow) {
+                                printWindow.focus();
+                              }
+                            }}
                           >
                             <Download className="h-4 w-4" />
                           </Button>

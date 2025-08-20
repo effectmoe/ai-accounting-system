@@ -14,7 +14,8 @@ import {
   FileText,
   Loader2,
   Edit,
-  X
+  X,
+  Eye
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
@@ -76,6 +77,7 @@ export default function ReceiptDetailPage({ params }: { params: { id: string } }
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
+  const [showPdfPreview, setShowPdfPreview] = useState(false);
 
   useEffect(() => {
     fetchReceipt();
@@ -118,19 +120,11 @@ export default function ReceiptDetailPage({ params }: { params: { id: string } }
   };
 
   const handleDownloadPDF = () => {
-    // HTMLダウンロード（見積書・請求書と同じ方式）
-    const link = document.createElement('a');
-    link.href = `/api/receipts/${params.id}/pdf?download=true`;
-    link.download = `領収書_${receipt?.receiptNumber || params.id}.html`;
-    link.style.display = 'none';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
-  const handlePrint = () => {
-    // HTMLを新しいウィンドウで開いて印刷ダイアログを表示（ブラウザの印刷機能でPDF化）
-    const printWindow = window.open(`/api/receipts/${params.id}/pdf?print=true`, '_blank');
+    // 新しいウィンドウを開いて印刷ダイアログを表示（請求書と同じ方式）
+    const printWindow = window.open(`/api/receipts/${params.id}/pdf?print=true`, '_blank', 'width=800,height=600');
+    if (printWindow) {
+      printWindow.focus();
+    }
   };
 
   const handleCancel = async () => {
@@ -206,13 +200,13 @@ export default function ReceiptDetailPage({ params }: { params: { id: string } }
         <div className="flex gap-2">
           {receipt.status !== 'cancelled' && (
             <>
-              <Button onClick={handlePrint} variant="outline">
-                <Printer className="mr-2 h-4 w-4" />
-                印刷
+              <Button onClick={() => setShowPdfPreview(true)} variant="outline">
+                <Eye className="mr-2 h-4 w-4" />
+                プレビュー
               </Button>
               <Button onClick={handleDownloadPDF} variant="outline">
                 <Download className="mr-2 h-4 w-4" />
-                PDFダウンロード
+                PDF印刷
               </Button>
               <Button 
                 onClick={handleSendEmail}
@@ -364,6 +358,52 @@ export default function ReceiptDetailPage({ params }: { params: { id: string } }
           </div>
         </CardContent>
       </Card>
+
+      {/* PDFプレビューモーダル */}
+      {showPdfPreview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-5xl h-[90vh] flex flex-col">
+            <div className="flex justify-between items-center p-4 border-b">
+              <h2 className="text-lg font-semibold">領収書プレビュー</h2>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowPdfPreview(false)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <iframe
+                src={`/api/receipts/${receipt._id}/pdf`}
+                className="w-full h-full"
+                title="領収書PDFプレビュー"
+              />
+            </div>
+            <div className="p-4 border-t flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowPdfPreview(false)}
+              >
+                閉じる
+              </Button>
+              <Button
+                onClick={() => {
+                  // 印刷ダイアログを開く（請求書と同じ方式）
+                  const printWindow = window.open(`/api/receipts/${receipt._id}/pdf?print=true`, '_blank', 'width=800,height=600');
+                  if (printWindow) {
+                    printWindow.focus();
+                  }
+                  setShowPdfPreview(false);
+                }}
+              >
+                <Download className="mr-2 h-4 w-4" />
+                PDF印刷
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* メール送信モーダル（見積書と同じコンポーネント） */}
       <EmailSendModal

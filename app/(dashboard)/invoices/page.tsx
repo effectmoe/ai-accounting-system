@@ -723,9 +723,12 @@ export default function InvoicesPage() {
                             size="sm"
                             onClick={(e) => {
                               e.stopPropagation();
-                              window.open(`/api/invoices/${invoice._id}/pdf`, '_blank');
+                              const printWindow = window.open(`/api/invoices/${invoice._id}/pdf?print=true`, '_blank', 'width=800,height=600');
+                              if (printWindow) {
+                                printWindow.focus();
+                              }
                             }}
-                            title="PDFダウンロード"
+                            title="PDF印刷"
                           >
                             <FileDown className="h-4 w-4" />
                           </Button>
