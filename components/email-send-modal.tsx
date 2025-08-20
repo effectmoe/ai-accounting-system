@@ -393,7 +393,7 @@ ${documentTitle ? `件名：${documentTitle}
             throw new Error('PDF generation must be done in browser environment');
           }
           
-          // すべてのドキュメントタイプでgeneratePDFBlobを使用して一貫性を保つ
+          // 領収書の場合は印刷ボタンと同じHTMLベースのPDF生成を使用
           logger.debug('Generating PDF for document type:', documentType);
           logger.debug('DocumentData:', {
             documentType: documentData.documentType,
@@ -404,9 +404,25 @@ ${documentTitle ? `件名：${documentTitle}
             totalAmount: documentData.total
           });
           
-          // generatePDFBlobを使用してPDFを生成
-          const { generatePDFBlob } = await import('@/lib/pdf-export');
-          const blob = await generatePDFBlob(documentData);
+          let blob: Blob;
+          
+          if (documentType === 'receipt') {
+            // 領収書は専用の美しいPDF生成関数を使用（印刷ボタンと同じ品質）
+            logger.debug('Using beautiful HTML-based PDF generation for receipt');
+            
+            // 領収書専用の美しいPDF生成関数を使用
+            const { generateReceiptEmailPDF } = await import('@/lib/receipt-email-pdf-generator');
+            blob = await generateReceiptEmailPDF(docData);
+            
+            logger.debug('Beautiful receipt PDF generated successfully', {
+              blobSize: blob.size,
+              expectedSize: '約310KB'
+            });
+          } else {
+            // 他のドキュメントタイプは既存の方法を使用
+            const { generatePDFBlob } = await import('@/lib/pdf-export');
+            blob = await generatePDFBlob(documentData);
+          }
           
           // BlobをBase64に変換
           const reader = new FileReader();
