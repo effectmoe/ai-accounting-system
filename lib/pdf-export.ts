@@ -46,57 +46,15 @@ export async function generatePDFBase64(data: DocumentData): Promise<string> {
   
   // サーバーサイドで実行される場合
   if (typeof window === 'undefined') {
-    logger.debug('Running on server side, attempting PDF generation...');
+    logger.debug('Running on server side - THIS SHOULD NOT HAPPEN FOR EMAIL SEND');
     
-    // 領収書の場合は特別な処理（美しいHTMLフォーマットを返す）
-    // 注意: サーバーサイドではHTMLを返し、クライアントサイドでPDF変換する必要がある
-    if (data.documentType === 'receipt') {
-      logger.debug('Receipt detected, returning HTML format for client-side PDF generation');
-      try {
-        const { generateReceiptHTML } = await import('./receipt-html-generator');
-        
-        // Receipt型のデータを構築
-        const receipt = {
-          receiptNumber: data.documentNumber,
-          issueDate: data.issueDate,
-          customerName: data.customerName,
-          customerAddress: data.customerAddress,
-          customer: (data as any).customer,
-          customerSnapshot: (data as any).customerSnapshot,
-          items: data.items || [],
-          subtotal: data.subtotal,
-          taxAmount: data.tax,
-          taxRate: 0.1, // 10%
-          totalAmount: data.total,
-          notes: data.notes,
-          issuerName: data.companyInfo?.name,
-          issuerAddress: data.companyInfo?.address,
-          issuerPhone: data.companyInfo?.phone,
-          issuerEmail: data.companyInfo?.email,
-          issuerRegistrationNumber: data.companyInfo?.registrationNumber,
-          issuerStamp: (data.companyInfo as any)?.stampImage,
-          subject: data.subject || '領収書', // 但し書きを使用
-        };
-        
-        // HTMLを生成してBase64エンコード
-        // クライアント側でこのHTMLをPDFに変換する必要がある
-        const htmlContent = generateReceiptHTML(receipt);
-        const htmlBuffer = Buffer.from(htmlContent, 'utf-8');
-        // 特別なマーカーを付けてHTMLとして返す
-        return 'RECEIPT_HTML:' + htmlBuffer.toString('base64');
-      } catch (error) {
-        logger.error('Failed to generate receipt HTML, falling back to jsPDF:', error);
-        // フォールバック: 通常のjsPDF生成
-      }
-    }
-    
-    // jsPDFを使用したサーバーサイドPDF生成（見積書・請求書・フォールバック用）
-    const { generateJsPDFDocument } = await import('./jspdf-server-generator');
-    return await generateJsPDFDocument(data);
+    // メール送信時はクライアントサイドでPDF生成が必須
+    // サーバーサイドでの生成は避ける
+    throw new Error('PDF generation must be done on client side for email attachments');
   }
   
   // クライアントサイドで実行される場合 - @react-pdf/rendererを使用
-  logger.debug('Running on client side, using @react-pdf/renderer');
+  logger.debug('Running on client side, using @react-pdf/renderer for ALL document types');
   const blob = await generatePDFBlob(data);
   
   return new Promise((resolve, reject) => {
