@@ -72,23 +72,6 @@ export async function convertQuoteHTMLtoPDF(
     const page = await browser.newPage();
     console.log('[convertQuoteHTMLtoPDF] New page created');
     
-    // ページタイムアウト設定（領収書と同じ）
-    page.setDefaultTimeout(30000);
-    page.setDefaultNavigationTimeout(30000);
-    
-    // メモリ効率化のための設定（領収書と同じ）
-    await page.setRequestInterception(true);
-    page.on('request', (req) => {
-      // 不要なリソースをブロック
-      const resourceType = req.resourceType();
-      if (['image', 'stylesheet', 'font', 'script'].includes(resourceType)) {
-        req.abort();
-      } else {
-        req.continue();
-      }
-    });
-    console.log('[convertQuoteHTMLtoPDF] Request interception enabled');
-    
     // デバッグ: HTMLコンテンツを保存（開発環境のみ）
     if (!isProduction) {
       try {
@@ -110,9 +93,9 @@ export async function convertQuoteHTMLtoPDF(
     }
     
     // HTMLを設定（領収書と完全に同じ設定）
-    console.log('[convertQuoteHTMLtoPDF] Setting HTML content with waitUntil: domcontentloaded...');
+    console.log('[convertQuoteHTMLtoPDF] Setting HTML content with waitUntil: networkidle0...');
     await page.setContent(htmlContent, {
-      waitUntil: 'domcontentloaded',  // networkidle0より軽量
+      waitUntil: 'networkidle0',  // 領収書と完全に同じ設定
       timeout: 20000
     });
     console.log('[convertQuoteHTMLtoPDF] HTML content set successfully');
@@ -167,11 +150,7 @@ export async function convertQuoteHTMLtoPDF(
         right: '10mm',
         bottom: '10mm',
         left: '10mm'
-      },
-      preferCSSPageSize: true,
-      // パフォーマンス向上のための設定
-      omitBackground: false,
-      timeout: 25000
+      }
     });
     
     console.log('[convertQuoteHTMLtoPDF] PDF generated, buffer size:', pdfBuffer.length, 'bytes');
