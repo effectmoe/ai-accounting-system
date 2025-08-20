@@ -211,21 +211,21 @@ export async function generateReceiptEmailPDF(receipt: Receipt): Promise<Blob> {
       // 画像データを取得
       const imgData = canvas.toDataURL('image/jpeg', 0.95); // JPEGで少し圧縮
       
-      // 1ページ目を追加
+      // 1ページ目を追加（1ページに収める）
       pdf.addImage(imgData, 'JPEG', 0, 0, imgWidth, Math.min(imgHeight, pageHeight));
       
-      // 複数ページの場合の処理
-      if (imgHeight > pageHeight) {
-        let position = -pageHeight;
-        let remainingHeight = imgHeight - pageHeight;
-        
-        while (remainingHeight > 0) {
-          pdf.addPage();
-          pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
-          position -= pageHeight;
-          remainingHeight -= pageHeight;
-        }
-      }
+      // 複数ページの処理は無効化（領収書は1ページで十分）
+      // if (imgHeight > pageHeight) {
+      //   let position = -pageHeight;
+      //   let remainingHeight = imgHeight - pageHeight;
+      //   
+      //   while (remainingHeight > 0) {
+      //     pdf.addPage();
+      //     pdf.addImage(imgData, 'JPEG', 0, position, imgWidth, imgHeight);
+      //     position -= pageHeight;
+      //     remainingHeight -= pageHeight;
+      //   }
+      // }
       
       // PDFの情報を設定
       pdf.setProperties({
