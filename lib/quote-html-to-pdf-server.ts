@@ -28,28 +28,21 @@ export async function convertQuoteHTMLtoPDF(
     
     if (isProduction) {
       // 本番環境: @sparticuz/chromiumを使用
-      // Chromiumの設定を最適化
-      chromium.setHeadlessMode = true;
-      chromium.setGraphicsMode = false;
-      
-      // Chromiumの実行パスを取得
-      const execPath = await chromium.executablePath();
-      logger.debug('Chromium executable path:', execPath);
-      
-      browser = await puppeteer.launch({
-        args: [
-          ...chromium.args,
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
-          '--disable-gpu',
-          '--single-process',
-          '--no-zygote'
-        ],
-        defaultViewport: chromium.defaultViewport,
-        executablePath: execPath,
-        headless: 'new',
-      });
+      try {
+        // Chromiumの実行パスを取得
+        const execPath = await chromium.executablePath();
+        logger.debug('Chromium executable path:', execPath);
+        
+        browser = await puppeteer.launch({
+          args: chromium.args,
+          defaultViewport: chromium.defaultViewport,
+          executablePath: execPath,
+          headless: chromium.headless,
+        });
+      } catch (launchError) {
+        logger.error('Failed to launch Chromium:', launchError);
+        throw new Error(`Failed to launch browser: ${launchError instanceof Error ? launchError.message : 'Unknown error'}`);
+      }
     } else {
       // 開発環境: ローカルのPuppeteerを使用
       const puppeteerLocal = await import('puppeteer');
