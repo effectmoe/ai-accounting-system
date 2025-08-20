@@ -2,7 +2,7 @@ import { Quote } from '@/types';
 import { generateCompactQuoteHTML } from './pdf-quote-html-generator';
 import { logger } from '@/lib/logger';
 import { CompanyInfo } from '@/types/collections';
-import { launchPuppeteer } from './puppeteer-config';
+import { launchPuppeteerSimple } from './puppeteer-simple';
 
 /**
  * サーバーサイドで見積書HTMLをPDFに変換（Vercel対応版）
@@ -43,9 +43,9 @@ export async function convertQuoteHTMLtoPDF(
     // 環境判定
     const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL;
     
-    // Puppeteerを起動
-    console.log('[convertQuoteHTMLtoPDF] Starting Puppeteer...');
-    browser = await launchPuppeteer();
+    // Puppeteerを起動（シンプル版）
+    console.log('[convertQuoteHTMLtoPDF] Starting Puppeteer (simple mode)...');
+    browser = await launchPuppeteerSimple();
     console.log('[convertQuoteHTMLtoPDF] Browser launched successfully');
     
     const page = await browser.newPage();

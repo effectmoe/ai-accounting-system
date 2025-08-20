@@ -1,7 +1,7 @@
 import { Receipt } from '@/types/receipt';
 import { generateReceiptHTML } from './receipt-html-generator';
 import { logger } from '@/lib/logger';
-import { launchPuppeteer } from './puppeteer-config';
+import { launchPuppeteerSimple } from './puppeteer-simple';
 
 /**
  * サーバーサイドでHTMLをPDFに変換（Vercel対応版）
@@ -15,8 +15,8 @@ export async function convertReceiptHTMLtoPDF(receipt: Receipt): Promise<Buffer>
     // HTMLコンテンツを生成
     const htmlContent = generateReceiptHTML(receipt);
     
-    // Puppeteerを起動
-    browser = await launchPuppeteer();
+    // Puppeteerを起動（シンプル版）
+    browser = await launchPuppeteerSimple();
     
     const page = await browser.newPage();
     
