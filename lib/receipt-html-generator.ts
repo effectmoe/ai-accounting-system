@@ -44,21 +44,21 @@ export function generateReceiptHTML(receipt: Receipt): string {
       margin: 0 auto;
       background-color: white;
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
-      padding: 30px;
+      padding: 20px;
     }
     
     /* ヘッダー */
     .receipt-header {
       text-align: center;
-      margin-bottom: 30px;
-      padding: 20px;
+      margin-bottom: 20px;
+      padding: 15px;
       border-bottom: 3px double #333;
     }
     
     .receipt-title {
-      font-size: 36px;
+      font-size: 28px;
       font-weight: 700;
-      letter-spacing: 8px;
+      letter-spacing: 6px;
       margin: 0;
     }
     
@@ -80,18 +80,18 @@ export function generateReceiptHTML(receipt: Receipt): string {
     }
     
     .customer-name {
-      font-size: 24px;
+      font-size: 20px;
       font-weight: 700;
       border-bottom: 2px solid #333;
-      padding-bottom: 5px;
-      margin-bottom: 20px;
+      padding-bottom: 3px;
+      margin-bottom: 15px;
     }
     
     /* 金額表示 */
     .amount-section {
       background-color: #f8f8f8;
-      padding: 30px;
-      margin-bottom: 30px;
+      padding: 20px;
+      margin-bottom: 20px;
       border-radius: 5px;
       text-align: center;
       border: 2px solid #2563eb;
@@ -104,16 +104,16 @@ export function generateReceiptHTML(receipt: Receipt): string {
     }
     
     .amount-value {
-      font-size: 48px;
+      font-size: 36px;
       font-weight: 700;
       color: #2563eb;
-      letter-spacing: 2px;
+      letter-spacing: 1px;
     }
     
     /* 但し書き */
     .subject-section {
-      margin-bottom: 30px;
-      padding: 15px;
+      margin-bottom: 20px;
+      padding: 10px;
       background-color: #fff8dc;
       border-left: 4px solid #fbbf24;
       border-radius: 5px;
@@ -136,8 +136,8 @@ export function generateReceiptHTML(receipt: Receipt): string {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      margin-top: 30px;
-      padding-top: 20px;
+      margin-top: 20px;
+      padding-top: 15px;
       border-top: 2px solid #333;
     }
     
@@ -146,21 +146,21 @@ export function generateReceiptHTML(receipt: Receipt): string {
     }
     
     .issuer-name {
-      font-size: 20px;
+      font-size: 16px;
       font-weight: 700;
-      margin-bottom: 15px;
+      margin-bottom: 10px;
     }
     
     .issuer-details {
-      font-size: 14px;
+      font-size: 12px;
       color: #666;
-      line-height: 2;
+      line-height: 1.6;
     }
     
     /* 印鑑スペース */
     .stamp-area {
-      width: 100px;
-      height: 100px;
+      width: 80px;
+      height: 80px;
       border: 2px solid #ccc;
       border-radius: 5px;
       display: flex;
@@ -194,19 +194,20 @@ export function generateReceiptHTML(receipt: Receipt): string {
     
     /* フッター */
     .receipt-footer {
-      margin-top: 25px;
-      padding-top: 15px;
+      margin-top: 15px;
+      padding-top: 10px;
       border-top: 1px solid #d1d5db;
       text-align: center;
-      font-size: 11px;
+      font-size: 10px;
       color: #666;
     }
     
     .digital-notice {
       background-color: #eff6ff;
-      padding: 8px;
-      border-radius: 5px;
-      margin-top: 8px;
+      padding: 5px;
+      border-radius: 3px;
+      margin-top: 5px;
+      font-size: 9px;
     }
     
     /* 印刷用スタイル */
@@ -217,12 +218,13 @@ export function generateReceiptHTML(receipt: Receipt): string {
       
       .receipt-container {
         box-shadow: none;
-        padding: 20px;
+        padding: 10px;
         max-width: 100%;
       }
       
       .receipt-header {
-        padding: 20px;
+        padding: 10px;
+        margin-bottom: 15px;
       }
       
       .amount-section {
@@ -258,7 +260,7 @@ export function generateReceiptHTML(receipt: Receipt): string {
     
     @page {
       size: A4;
-      margin: 10mm;
+      margin: 5mm;
     }
   </style>
 </head>
@@ -289,14 +291,14 @@ export function generateReceiptHTML(receipt: Receipt): string {
     </div>
     
     <!-- 税額情報 -->
-    <div style="display: flex; justify-content: center; gap: 40px; margin-bottom: 30px;">
+    <div style="display: flex; justify-content: center; gap: 30px; margin-bottom: 20px;">
       <div style="text-align: center;">
-        <div style="font-size: 14px; color: #666; margin-bottom: 5px;">税抜金額</div>
-        <div style="font-size: 20px; font-weight: 600;">¥${subtotal}</div>
+        <div style="font-size: 12px; color: #666; margin-bottom: 3px;">税抜金額</div>
+        <div style="font-size: 16px; font-weight: 600;">¥${subtotal}</div>
       </div>
       <div style="text-align: center;">
-        <div style="font-size: 14px; color: #666; margin-bottom: 5px;">消費税（${taxRate}%）</div>
-        <div style="font-size: 20px; font-weight: 600;">¥${taxAmount}</div>
+        <div style="font-size: 12px; color: #666; margin-bottom: 3px;">消費税（${taxRate}%）</div>
+        <div style="font-size: 16px; font-weight: 600;">¥${taxAmount}</div>
       </div>
     </div>
     
