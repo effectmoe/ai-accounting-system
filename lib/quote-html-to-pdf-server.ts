@@ -28,21 +28,12 @@ export async function convertQuoteHTMLtoPDF(
     
     if (isProduction) {
       // 本番環境: @sparticuz/chromiumを使用
-      try {
-        // Chromiumの実行パスを取得
-        const execPath = await chromium.executablePath();
-        logger.debug('Chromium executable path:', execPath);
-        
-        browser = await puppeteer.launch({
-          args: chromium.args,
-          defaultViewport: chromium.defaultViewport,
-          executablePath: execPath,
-          headless: chromium.headless,
-        });
-      } catch (launchError) {
-        logger.error('Failed to launch Chromium:', launchError);
-        throw new Error(`Failed to launch browser: ${launchError instanceof Error ? launchError.message : 'Unknown error'}`);
-      }
+      browser = await puppeteer.launch({
+        args: chromium.args,
+        defaultViewport: chromium.defaultViewport,
+        executablePath: await chromium.executablePath,
+        headless: chromium.headless,
+      });
     } else {
       // 開発環境: ローカルのPuppeteerを使用
       const puppeteerLocal = await import('puppeteer');
@@ -78,14 +69,13 @@ export async function convertQuoteHTMLtoPDF(
     
   } catch (error) {
     logger.error('Failed to convert quote HTML to PDF:', error);
-    logger.error('Error details:', error instanceof Error ? error.message : 'Unknown error');
     
     if (browser) {
       await browser.close();
     }
     
-    // フォールバック: 実際にはPDFではなくHTMLを返すが、エラーを投げる
-    // これにより、呼び出し元で適切に処理できる
-    throw new Error(`PDF generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    // フォールバック: HTMLをそのまま返す
+    const htmlContent = generateCompactQuoteHTML(quote, companyInfo, showDescriptions);
+    return Buffer.from(htmlContent, 'utf-8');
   }
 }

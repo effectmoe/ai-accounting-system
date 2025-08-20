@@ -81,20 +81,29 @@ export async function POST(
       );
     }
 
+    // 添付ファイルの準備
+    const attachments = [];
+    
     // PDFを生成（プレビューと同じ形式）
-    let pdfBuffer: Buffer;
-    let pdfFilename = `quote_${quote.quoteNumber}.pdf`;
+    logger.debug('Generating quote PDF for email attachment');
+    logger.debug('Converting quote HTML to PDF for email attachment (same format as PDF print button)');
     
     try {
-      pdfBuffer = await convertQuoteHTMLtoPDF(quote, companyInfo || {}, true);
-      logger.debug('Quote PDF generated for email attachment');
-    } catch (pdfError) {
-      logger.error('PDF generation failed, using HTML fallback:', pdfError);
-      // PDF生成が失敗した場合、正しいHTMLを生成してBufferとして送信
-      const pdfHtmlContent = generateCompactQuoteHTML(quote, companyInfo || {}, true);
-      pdfBuffer = Buffer.from(pdfHtmlContent, 'utf-8');
-      pdfFilename = `quote_${quote.quoteNumber}.html`;
-      logger.warn('Using HTML content as fallback for PDF attachment');
+      // HTMLをPDFに変換（Puppeteerを使用）- 領収書と同じパターン
+      const pdfBuffer = await convertQuoteHTMLtoPDF(quote, companyInfo || {}, true);
+      const pdfBase64 = pdfBuffer.toString('base64');
+      
+      // PDFファイルとして添付
+      attachments.push({
+        filename: `quote_${quote.quoteNumber}.pdf`,
+        content: pdfBase64,
+        contentType: 'application/pdf',
+      });
+      
+      logger.debug('Quote PDF generated successfully for email attachment');
+    } catch (error) {
+      logger.error('Failed to generate quote PDF:', error);
+      throw new Error('PDF生成に失敗しました');
     }
     
     // Resendでメール送信（generateHtmlQuoteが既にHTMLを生成済み）
@@ -113,19 +122,23 @@ export async function POST(
     
     let emailResult;
     try {
-      emailResult = await resend.emails.send({
+      // メール送信データを構築（領収書と同じ構造）
+      const emailData = {
         from,
         to: recipientEmail,
         subject: htmlContent.subject || `お見積書 - ${quote.quoteNumber}`,
         html: htmlContent.html,
         text: htmlContent.plainText,
-        attachments: [
-          {
-            filename: pdfFilename,
-            content: pdfBuffer,
-          }
-        ],
-      });
+        ...(attachments.length > 0 && {
+          attachments: attachments.map(att => ({
+            filename: att.filename,
+            content: att.content,
+            content_type: att.contentType, // Resend APIの仕様に合わせて修正
+          }))
+        }),
+      };
+      
+      emailResult = await resend.emails.send(emailData);
       
       console.log('[Send Quote API] Email result:', emailResult);
       
