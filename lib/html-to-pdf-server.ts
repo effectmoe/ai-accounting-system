@@ -21,12 +21,22 @@ export async function convertReceiptHTMLtoPDF(receipt: Receipt): Promise<Buffer>
     
     if (isProduction) {
       // 本番環境: @sparticuz/chromiumを使用
-      browser = await puppeteer.launch({
-        args: chromium.args,
-        defaultViewport: chromium.defaultViewport,
-        executablePath: await chromium.executablePath(),
-        headless: chromium.headless,
-      });
+      try {
+        const execPath = await chromium.executablePath();
+        browser = await puppeteer.launch({
+          args: [...chromium.args, '--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+          defaultViewport: chromium.defaultViewport,
+          executablePath: execPath,
+          headless: chromium.headless || true,
+        });
+      } catch (chromiumError) {
+        // フォールバック: executablePathなしで試す
+        browser = await puppeteer.launch({
+          args: [...chromium.args, '--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+          defaultViewport: chromium.defaultViewport,
+          headless: true,
+        });
+      }
     } else {
       // 開発環境: ローカルのPuppeteerを使用
       const puppeteerLocal = await import('puppeteer');

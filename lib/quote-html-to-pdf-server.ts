@@ -50,15 +50,27 @@ export async function convertQuoteHTMLtoPDF(
     if (isProduction) {
       // 本番環境: @sparticuz/chromiumを使用
       console.log('[convertQuoteHTMLtoPDF] Using @sparticuz/chromium');
-      const execPath = await chromium.executablePath();
-      console.log('[convertQuoteHTMLtoPDF] Chromium executable path:', execPath);
       
-      browser = await puppeteer.launch({
-        args: chromium.args,
-        defaultViewport: chromium.defaultViewport,
-        executablePath: execPath,
-        headless: chromium.headless,
-      });
+      try {
+        // Chromiumの実行パスを取得
+        const execPath = await chromium.executablePath();
+        console.log('[convertQuoteHTMLtoPDF] Chromium executable path:', execPath);
+        
+        browser = await puppeteer.launch({
+          args: [...chromium.args, '--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+          defaultViewport: chromium.defaultViewport,
+          executablePath: execPath,
+          headless: chromium.headless || true,
+        });
+      } catch (chromiumError) {
+        console.error('[convertQuoteHTMLtoPDF] Chromium launch error:', chromiumError);
+        // フォールバック: executablePathなしで試す
+        browser = await puppeteer.launch({
+          args: [...chromium.args, '--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+          defaultViewport: chromium.defaultViewport,
+          headless: true,
+        });
+      }
       console.log('[convertQuoteHTMLtoPDF] Browser launched successfully');
     } else {
       // 開発環境: ローカルのPuppeteerを使用
