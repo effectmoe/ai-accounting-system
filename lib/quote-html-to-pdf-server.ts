@@ -155,6 +155,15 @@ export async function convertQuoteHTMLtoPDF(
     
     console.log('[convertQuoteHTMLtoPDF] PDF generated, buffer size:', pdfBuffer.length, 'bytes');
     
+    // PDFバッファの最初の数バイトを確認（PDFは%PDFで始まる）
+    const pdfHeader = pdfBuffer.slice(0, 5).toString('ascii');
+    console.log('[convertQuoteHTMLtoPDF] PDF header check:', pdfHeader, '(should be %PDF-)');
+    
+    if (!pdfHeader.startsWith('%PDF')) {
+      console.error('[convertQuoteHTMLtoPDF] WARNING: Generated buffer does not appear to be a valid PDF');
+      console.error('[convertQuoteHTMLtoPDF] First 100 bytes:', pdfBuffer.slice(0, 100).toString('ascii'));
+    }
+    
     await browser.close();
     console.log('[convertQuoteHTMLtoPDF] Browser closed');
     
@@ -179,13 +188,16 @@ export async function convertQuoteHTMLtoPDF(
     
   } catch (error) {
     logger.error('Failed to convert quote HTML to PDF:', error);
+    console.error('[convertQuoteHTMLtoPDF] ERROR Details:', {
+      message: error instanceof Error ? error.message : error,
+      stack: error instanceof Error ? error.stack : undefined
+    });
     
     if (browser) {
       await browser.close();
     }
     
-    // フォールバック: HTMLをそのまま返す
-    const htmlContent = generateCompactQuoteHTML(quote, companyInfo, showDescriptions);
-    return Buffer.from(htmlContent, 'utf-8');
+    // エラーを再スローして、呼び出し元でエラーハンドリング
+    throw error;
   }
 }
