@@ -1,8 +1,7 @@
 import { Receipt } from '@/types/receipt';
 import { generateReceiptHTML } from './receipt-html-generator';
 import { logger } from '@/lib/logger';
-import puppeteer from 'puppeteer-core';
-import chromium from '@sparticuz/chromium';
+import { launchPuppeteer } from './puppeteer-config';
 
 /**
  * サーバーサイドでHTMLをPDFに変換（Vercel対応版）
@@ -16,35 +15,8 @@ export async function convertReceiptHTMLtoPDF(receipt: Receipt): Promise<Buffer>
     // HTMLコンテンツを生成
     const htmlContent = generateReceiptHTML(receipt);
     
-    // Vercel環境での実行
-    const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL;
-    
-    if (isProduction) {
-      // 本番環境: @sparticuz/chromiumを使用
-      try {
-        const execPath = await chromium.executablePath();
-        browser = await puppeteer.launch({
-          args: [...chromium.args, '--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
-          defaultViewport: chromium.defaultViewport,
-          executablePath: execPath,
-          headless: chromium.headless || true,
-        });
-      } catch (chromiumError) {
-        // フォールバック: executablePathなしで試す
-        browser = await puppeteer.launch({
-          args: [...chromium.args, '--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
-          defaultViewport: chromium.defaultViewport,
-          headless: true,
-        });
-      }
-    } else {
-      // 開発環境: ローカルのPuppeteerを使用
-      const puppeteerLocal = await import('puppeteer');
-      browser = await puppeteerLocal.default.launch({
-        headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
-      });
-    }
+    // Puppeteerを起動
+    browser = await launchPuppeteer();
     
     const page = await browser.newPage();
     

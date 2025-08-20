@@ -1,9 +1,8 @@
 import { Quote } from '@/types';
 import { generateCompactQuoteHTML } from './pdf-quote-html-generator';
 import { logger } from '@/lib/logger';
-import puppeteer from 'puppeteer-core';
-import chromium from '@sparticuz/chromium';
 import { CompanyInfo } from '@/types/collections';
+import { launchPuppeteer } from './puppeteer-config';
 
 /**
  * サーバーサイドで見積書HTMLをPDFに変換（Vercel対応版）
@@ -41,45 +40,10 @@ export async function convertQuoteHTMLtoPDF(
       console.log('[convertQuoteHTMLtoPDF] Notes content found:', notesMatch[1].substring(0, 100) + '...');
     }
     
-    // Vercel環境での実行
-    const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL;
-    
-    console.log('[convertQuoteHTMLtoPDF] Environment:', isProduction ? 'PRODUCTION' : 'DEVELOPMENT');
+    // Puppeteerを起動
     console.log('[convertQuoteHTMLtoPDF] Starting Puppeteer...');
-    
-    if (isProduction) {
-      // 本番環境: @sparticuz/chromiumを使用
-      console.log('[convertQuoteHTMLtoPDF] Using @sparticuz/chromium');
-      
-      try {
-        // Chromiumの実行パスを取得
-        const execPath = await chromium.executablePath();
-        console.log('[convertQuoteHTMLtoPDF] Chromium executable path:', execPath);
-        
-        browser = await puppeteer.launch({
-          args: [...chromium.args, '--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
-          defaultViewport: chromium.defaultViewport,
-          executablePath: execPath,
-          headless: chromium.headless || true,
-        });
-      } catch (chromiumError) {
-        console.error('[convertQuoteHTMLtoPDF] Chromium launch error:', chromiumError);
-        // フォールバック: executablePathなしで試す
-        browser = await puppeteer.launch({
-          args: [...chromium.args, '--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
-          defaultViewport: chromium.defaultViewport,
-          headless: true,
-        });
-      }
-      console.log('[convertQuoteHTMLtoPDF] Browser launched successfully');
-    } else {
-      // 開発環境: ローカルのPuppeteerを使用
-      const puppeteerLocal = await import('puppeteer');
-      browser = await puppeteerLocal.default.launch({
-        headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
-      });
-    }
+    browser = await launchPuppeteer();
+    console.log('[convertQuoteHTMLtoPDF] Browser launched successfully');
     
     const page = await browser.newPage();
     console.log('[convertQuoteHTMLtoPDF] New page created');
