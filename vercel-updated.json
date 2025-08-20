@@ -12,8 +12,7 @@
       "FORCE_REBUILD": "2025-07-30-force-console-log-test",
       "DO_NOT_TRACK": "1",
       "NEXT_TELEMETRY_DISABLED": "1",
-      "SKIP_DB_DURING_BUILD": "true",
-      "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD": "true"
+      "SKIP_DB_DURING_BUILD": "true"
     }
   },
   "functions": {
@@ -60,15 +59,18 @@
       "maxDuration": 30
     },
     "app/api/invoices/[id]/pdf/route.ts": {
-      "maxDuration": 30
+      "maxDuration": 45,
+      "memory": 1024
     },
     "app/api/quotes/[id]/pdf/route.ts": {
-      "maxDuration": 30
-    },
-    "app/api/delivery-notes/[id]/pdf/route.tsx": {
-      "maxDuration": 30
+      "maxDuration": 45,
+      "memory": 1024
     },
     "app/api/receipts/[id]/pdf/route.ts": {
+      "maxDuration": 45,
+      "memory": 1024
+    },
+    "app/api/delivery-notes/[id]/pdf/route.tsx": {
       "maxDuration": 45,
       "memory": 1024
     },

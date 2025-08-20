@@ -1,12 +1,16 @@
-import chromium from '@sparticuz/chromium';
-import puppeteer from 'puppeteer-core';
 import { generateReceiptHTML } from './receipt-html-generator';
 import { logger } from '@/lib/logger';
 import { Receipt } from '@/types/receipt';
 
-// Vercel環境用の設定
-chromium.setHeadlessMode = true;
-chromium.setGraphicsMode = false;
+// Vercel環境判定
+function isVercelEnvironment(): boolean {
+  return !!(
+    process.env.VERCEL ||
+    process.env.VERCEL_ENV ||
+    process.env.AWS_LAMBDA_FUNCTION_NAME ||
+    process.env.AWS_EXECUTION_ENV
+  );
+}
 
 /**
  * Puppeteerを使用して領収書のPDFを生成する
@@ -16,12 +20,52 @@ export async function generateReceiptPDFWithPuppeteer(receipt: Receipt): Promise
   
   try {
     logger.debug('Starting receipt PDF generation with Puppeteer for:', receipt.receiptNumber);
+    logger.debug('Environment:', {
+      NODE_ENV: process.env.NODE_ENV,
+      VERCEL: process.env.VERCEL,
+      VERCEL_ENV: process.env.VERCEL_ENV,
+      isVercel: isVercelEnvironment()
+    });
     
-    // 開発環境とVercel環境で異なる設定
-    if (process.env.NODE_ENV === 'development') {
+    // Vercel環境の判定
+    const isVercel = isVercelEnvironment();
+    
+    if (isVercel) {
+      // Vercel/AWS Lambda環境
+      logger.debug('Running in Vercel environment, using @sparticuz/chromium');
+      
+      const chromium = await import('@sparticuz/chromium');
+      const puppeteerCore = await import('puppeteer-core');
+      
+      // Chromiumの実行パスを取得
+      const executablePath = await chromium.default.executablePath();
+      logger.debug('Chromium executable path:', executablePath);
+      
+      browser = await puppeteerCore.default.launch({
+        args: [
+          ...chromium.default.args,
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-gpu',
+          '--disable-web-security',
+          '--disable-features=IsolateOrigins',
+          '--disable-site-isolation-trials',
+          '--single-process',
+          '--no-zygote',
+          '--font-render-hinting=none'
+        ],
+        defaultViewport: { width: 1200, height: 1600 },
+        executablePath: executablePath,
+        headless: true,
+        ignoreHTTPSErrors: true,
+      });
+    } else {
       // ローカル開発環境
-      const puppeteerLocal = await import('puppeteer');
-      browser = await puppeteerLocal.default.launch({
+      logger.debug('Running in local environment, using puppeteer');
+      
+      const puppeteer = await import('puppeteer');
+      browser = await puppeteer.default.launch({
         headless: true,
         args: [
           '--no-sandbox',
@@ -33,15 +77,6 @@ export async function generateReceiptPDFWithPuppeteer(receipt: Receipt): Promise
           '--single-process',
           '--disable-gpu'
         ]
-      });
-    } else {
-      // Vercel環境
-      browser = await puppeteer.launch({
-        args: [...chromium.args, '--hide-scrollbars', '--disable-web-security'],
-        defaultViewport: chromium.defaultViewport,
-        executablePath: await chromium.executablePath(),
-        headless: chromium.headless,
-        ignoreHTTPSErrors: true,
       });
     }
 

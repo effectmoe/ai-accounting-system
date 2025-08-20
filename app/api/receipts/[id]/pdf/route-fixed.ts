@@ -3,18 +3,26 @@ import { ReceiptService } from '@/services/receipt.service';
 import { CompanyInfoService } from '@/services/company-info.service';
 import { logger } from '@/lib/logger';
 import { generateReceiptHTML, generateReceiptFilename, generateSafeReceiptFilename } from '@/lib/receipt-html-generator';
-import { generateReceiptPDFWithPuppeteer, generateReceiptPDFWithJsPDF } from '@/lib/pdf-receipt-puppeteer-generator';
+import { 
+  generateReceiptPDFWithPuppeteer, 
+  generateReceiptPDFWithJsPDF,
+  generateReceiptPDFWithAutoFallback 
+} from '@/lib/pdf-receipt-puppeteer-generator-fixed';
 
 const receiptService = new ReceiptService();
 
 /**
- * GET /api/receipts/[id]/pdf - 領収書のPDFを生成（見積書と同じ方式）
+ * GET /api/receipts/[id]/pdf - 領収書のPDFを生成（改善版）
  */
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const startTime = Date.now();
+  
   try {
+    logger.debug('Starting receipt PDF generation for ID:', params.id);
+    
     // 領収書を取得
     const receipt = await receiptService.getReceipt(params.id);
     
@@ -34,7 +42,7 @@ export async function GET(
     const isDownload = url.searchParams.get('download') === 'true';
     const isPrintMode = url.searchParams.get('print') === 'true';
     const format = url.searchParams.get('format') || 'pdf'; // pdf or html
-    const engine = url.searchParams.get('engine') || 'jspdf'; // puppeteer or jspdf - デフォルトをjsPDFに変更（Vercel環境での安定性のため）
+    const engine = url.searchParams.get('engine') || 'auto'; // puppeteer, jspdf, auto
     
     // HTMLを生成
     logger.debug('Generating receipt HTML for:', receipt.receiptNumber);
@@ -76,15 +84,25 @@ export async function GET(
       try {
         let pdfBuffer: Buffer;
         
-        if (engine === 'jspdf') {
-          // jsPDFでPDF生成（フォールバック用）
-          logger.debug('Using jsPDF engine for PDF generation');
-          pdfBuffer = await generateReceiptPDFWithJsPDF(receipt);
-        } else {
-          // PuppeteerでPDF生成（メイン）
-          logger.debug('Using Puppeteer engine for PDF generation');
-          pdfBuffer = await generateReceiptPDFWithPuppeteer(receipt);
+        // エンジン選択に基づいてPDF生成
+        switch (engine) {
+          case 'jspdf':
+            logger.debug('Using jsPDF engine for PDF generation');
+            pdfBuffer = await generateReceiptPDFWithJsPDF(receipt);
+            break;
+          case 'puppeteer':
+            logger.debug('Using Puppeteer engine for PDF generation');
+            pdfBuffer = await generateReceiptPDFWithPuppeteer(receipt);
+            break;
+          case 'auto':
+          default:
+            logger.debug('Using auto-fallback PDF generation');
+            pdfBuffer = await generateReceiptPDFWithAutoFallback(receipt);
+            break;
         }
+        
+        const processingTime = Date.now() - startTime;
+        logger.debug(`PDF generation completed in ${processingTime}ms, size: ${pdfBuffer.length} bytes`);
         
         // PDFを返す
         return new NextResponse(pdfBuffer, {
@@ -95,10 +113,18 @@ export async function GET(
               ? `attachment; filename="${safeFilename}"; filename*=UTF-8''${encodedFilename}`
               : `inline; filename="${safeFilename}"; filename*=UTF-8''${encodedFilename}`,
             'Content-Length': pdfBuffer.length.toString(),
+            'X-Processing-Time': processingTime.toString(),
+            'Cache-Control': 'private, max-age=300', // 5分間キャッシュ
           },
         });
       } catch (pdfError) {
-        logger.error('PDF generation failed, falling back to HTML:', pdfError);
+        const processingTime = Date.now() - startTime;
+        logger.error('PDF generation failed, falling back to HTML:', {
+          error: pdfError instanceof Error ? pdfError.message : 'Unknown error',
+          processingTime,
+          receiptId: params.id,
+          engine
+        });
         
         // PDF生成に失敗した場合、HTMLでフォールバック
         return new NextResponse(htmlContent, {
@@ -108,12 +134,15 @@ export async function GET(
             'Content-Disposition': isDownload 
               ? `attachment; filename="${safeFilename.replace('.pdf', '.html')}"; filename*=UTF-8''${encodedFilename.replace('.pdf', '.html')}`
               : `inline; filename="${safeFilename.replace('.pdf', '.html')}"; filename*=UTF-8''${encodedFilename.replace('.pdf', '.html')}`,
+            'X-Fallback': 'true',
+            'X-Error': pdfError instanceof Error ? pdfError.message : 'Unknown error',
           },
         });
       }
     }
     
     // HTMLモード（デフォルト）
+    const processingTime = Date.now() - startTime;
     return new NextResponse(htmlContent, {
       status: 200,
       headers: {
@@ -121,13 +150,25 @@ export async function GET(
         'Content-Disposition': isDownload 
           ? `attachment; filename="${safeFilename.replace('.pdf', '.html')}"; filename*=UTF-8''${encodedFilename.replace('.pdf', '.html')}`
           : `inline; filename="${safeFilename.replace('.pdf', '.html')}"; filename*=UTF-8''${encodedFilename.replace('.pdf', '.html')}`,
+        'X-Processing-Time': processingTime.toString(),
+        'Cache-Control': 'private, max-age=300',
       },
     });
   } catch (error) {
-    logger.error('Error generating receipt PDF:', error);
+    const processingTime = Date.now() - startTime;
+    logger.error('Error generating receipt PDF:', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      receiptId: params.id,
+      processingTime
+    });
     
     return NextResponse.json(
-      { error: 'Failed to generate receipt' },
+      { 
+        error: 'Failed to generate receipt',
+        details: error instanceof Error ? error.message : 'Unknown error',
+        processingTime 
+      },
       { status: 500 }
     );
   }
