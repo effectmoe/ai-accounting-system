@@ -393,7 +393,23 @@ ${documentTitle ? `件名：${documentTitle}
             throw new Error('PDF generation must be done in browser environment');
           }
           
-          pdfBase64 = await generatePDFBase64(documentData);
+          // 直接@react-pdf/rendererを使用してPDF生成（クライアントサイドのみ）
+          const { generatePDFBlob } = await import('@/lib/pdf-export');
+          const blob = await generatePDFBlob(documentData);
+          
+          // BlobをBase64に変換
+          const reader = new FileReader();
+          pdfBase64 = await new Promise<string>((resolve, reject) => {
+            reader.onloadend = () => {
+              const base64String = reader.result as string;
+              // data:application/pdf;base64, を削除して純粋なBase64文字列を返す
+              const base64 = base64String.split(',')[1];
+              resolve(base64);
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          });
+          
           logger.debug('PDF generated successfully, size:', pdfBase64?.length || 0);
         } catch (pdfError) {
           logger.error('PDF generation error:', pdfError);

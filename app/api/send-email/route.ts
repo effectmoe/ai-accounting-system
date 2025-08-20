@@ -591,86 +591,23 @@ export async function POST(request: NextRequest) {
         attachments.push(attachment);
         logger.debug('Client PDF attachment added to array');
       } else {
-        // クライアントからPDFが送られていない場合はサーバー側で生成を試みる
-        try {
-          logger.debug('No client PDF provided, generating on server...');
-          logger.debug('Document data summary:', {
-            documentType: documentData.documentType,
-            documentNumber: documentData.documentNumber,
-            customerName: documentData.customerName,
-            itemsCount: documentData.items?.length || 0,
-            total: documentData.total
-          });
-          
-          const serverPdfBase64 = await generatePDFBase64(documentData);
-          logger.debug('Server PDF generated successfully, size:', serverPdfBase64.length, 'characters');
-          
-          // 領収書の場合は特別な処理
-          let attachment;
-          if (documentData.documentType === 'receipt' && serverPdfBase64.startsWith('RECEIPT_HTML:')) {
-            // HTMLフォーマットの領収書をPDFに変換
-            logger.debug('Receipt HTML detected, converting to PDF...');
-            try {
-              const { convertReceiptHTMLtoPDF } = await import('@/lib/html-to-pdf-server');
-              const { ReceiptService } = await import('@/services/receipt.service');
-              const receiptService = new ReceiptService();
-              const receipt = await receiptService.getReceipt(documentId);
-              
-              if (receipt) {
-                const pdfBuffer = await convertReceiptHTMLtoPDF(receipt);
-                const pdfBase64 = pdfBuffer.toString('base64');
-                attachment = {
-                  filename: `${documentData.documentNumber}.pdf`,
-                  content: pdfBase64,
-                  contentType: 'application/pdf',
-                };
-                logger.debug('Receipt PDF attachment prepared via Puppeteer');
-              } else {
-                // フォールバック: HTMLのまま添付
-                const htmlBase64 = serverPdfBase64.replace('RECEIPT_HTML:', '');
-                attachment = {
-                  filename: `${documentData.documentNumber}.html`,
-                  content: htmlBase64,
-                  contentType: 'text/html; charset=utf-8',
-                };
-                logger.debug('Receipt HTML attachment prepared (fallback)');
-              }
-            } catch (conversionError) {
-              logger.error('Failed to convert receipt HTML to PDF:', conversionError);
-              // フォールバック: HTMLのまま添付
-              const htmlBase64 = serverPdfBase64.replace('RECEIPT_HTML:', '');
-              attachment = {
-                filename: `${documentData.documentNumber}.html`,
-                content: htmlBase64,
-                contentType: 'text/html; charset=utf-8',
-              };
-              logger.debug('Receipt HTML attachment prepared (error fallback)');
+        // クライアントからPDFが送られていない場合はエラーを返す
+        logger.error('=== NO CLIENT PDF PROVIDED ===');
+        logger.error('Client-side PDF generation is required but no PDF was provided');
+        
+        // クライアント側でPDF生成が必須であることを明示
+        return NextResponse.json(
+          { 
+            error: 'PDFの生成に失敗しました。ブラウザでPDFを生成してから送信してください。',
+            details: 'Client-side PDF generation is required for all document types',
+            debugInfo: {
+              documentType: documentData.documentType,
+              documentNumber: documentData.documentNumber,
+              message: 'No pdfBase64 provided in request'
             }
-          } else {
-            // 通常のPDF
-            attachment = {
-              filename: `${documentData.documentNumber}.pdf`,
-              content: serverPdfBase64,
-              contentType: 'application/pdf',
-            };
-          }
-          attachments.push(attachment);
-          logger.debug('Server PDF attachment added to array');
-        } catch (pdfError) {
-          logger.error('=== SERVER PDF GENERATION FAILED ===');
-          logger.error('Server PDF generation failed:', pdfError);
-          logger.error('PDF error details:', {
-            message: pdfError instanceof Error ? pdfError.message : String(pdfError),
-            stack: pdfError instanceof Error ? pdfError.stack : null,
-            type: pdfError instanceof Error ? pdfError.constructor.name : typeof pdfError
-          });
-          
-          // サーバー側のPDF生成に失敗した場合はエラーを返す
-          return NextResponse.json(
-            { error: 'PDF生成に失敗しました。クライアントサイドでのPDF生成を試してください。' },
-            { status: 500 }
-          );
-        }
+          },
+          { status: 400 }
+        );
       }
     } else {
       logger.debug('PDF attachment not requested (attachPdf is false)');
