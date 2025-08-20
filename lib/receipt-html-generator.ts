@@ -10,9 +10,9 @@ export function generateReceiptHTML(receipt: Receipt): string {
     day: 'numeric'
   });
 
-  const subtotal = (receipt.subtotal || 0).toLocaleString();
-  const taxAmount = (receipt.taxAmount || 0).toLocaleString();
-  const totalAmount = (receipt.totalAmount || 0).toLocaleString();
+  const subtotal = (receipt.subtotal ?? 0).toLocaleString('ja-JP');
+  const taxAmount = (receipt.taxAmount ?? 0).toLocaleString('ja-JP');
+  const totalAmount = (receipt.totalAmount ?? 0).toLocaleString('ja-JP');
   const taxRate = Math.round((receipt.taxRate || 0.1) * 100);
 
   const htmlContent = `
@@ -309,7 +309,7 @@ export function generateReceiptHTML(receipt: Receipt): string {
     
     <!-- 宛名 -->
     <div class="customer-section">
-      <div class="customer-name">${receipt.customerName}</div>
+      <div class="customer-name">${receipt.customerName || '様'}</div>
     </div>
     
     <!-- 金額 -->
@@ -339,10 +339,10 @@ export function generateReceiptHTML(receipt: Receipt): string {
         <tbody>
           ${receipt.items.map(item => `
           <tr>
-            <td>${item.description}</td>
-            <td class="text-center">${item.quantity} ${item.unit || ''}</td>
-            <td class="text-right">¥${item.unitPrice.toLocaleString()}</td>
-            <td class="text-right">¥${item.amount.toLocaleString()}</td>
+            <td>${item.description || '-'}</td>
+            <td class="text-center">${(item.quantity ?? 1).toLocaleString('ja-JP')} ${item.unit || '式'}</td>
+            <td class="text-right">¥${(item.unitPrice ?? 0).toLocaleString('ja-JP')}</td>
+            <td class="text-right">¥${(item.amount ?? 0).toLocaleString('ja-JP')}</td>
           </tr>
           `).join('')}
           <tr class="summary-row">
@@ -364,7 +364,7 @@ export function generateReceiptHTML(receipt: Receipt): string {
     <!-- 発行者情報 -->
     <div class="issuer-section">
       <div class="issuer-info">
-        <div class="issuer-name">${receipt.issuerName}</div>
+        <div class="issuer-name">${receipt.issuerName || '発行者名'}</div>
         <div class="issuer-details">
           ${receipt.issuerAddress ? `${receipt.issuerAddress}<br>` : ''}
           ${receipt.issuerPhone ? `TEL: ${receipt.issuerPhone}<br>` : ''}

@@ -3,6 +3,7 @@ import { ReceiptService } from '@/services/receipt.service';
 import { CompanyInfoService } from '@/services/company-info.service';
 import { logger } from '@/lib/logger';
 import { generateReceiptHTML, generateReceiptFilename, generateSafeReceiptFilename } from '@/lib/receipt-html-generator';
+import { generateReceiptPDFWithPuppeteer, generateReceiptPDFWithJsPDF } from '@/lib/pdf-receipt-puppeteer-generator';
 
 const receiptService = new ReceiptService();
 
@@ -32,6 +33,8 @@ export async function GET(
     const url = new URL(request.url);
     const isDownload = url.searchParams.get('download') === 'true';
     const isPrintMode = url.searchParams.get('print') === 'true';
+    const format = url.searchParams.get('format') || 'pdf'; // pdf or html
+    const engine = url.searchParams.get('engine') || 'puppeteer'; // puppeteer or jspdf
     
     // HTMLを生成
     logger.debug('Generating receipt HTML for:', receipt.receiptNumber);
@@ -68,7 +71,49 @@ export async function GET(
       });
     }
     
-    // 通常モード：HTMLを返す（見積書と同じ方式）
+    // PDF生成モード
+    if (format === 'pdf') {
+      try {
+        let pdfBuffer: Buffer;
+        
+        if (engine === 'jspdf') {
+          // jsPDFでPDF生成（フォールバック用）
+          logger.debug('Using jsPDF engine for PDF generation');
+          pdfBuffer = await generateReceiptPDFWithJsPDF(receipt);
+        } else {
+          // PuppeteerでPDF生成（メイン）
+          logger.debug('Using Puppeteer engine for PDF generation');
+          pdfBuffer = await generateReceiptPDFWithPuppeteer(receipt);
+        }
+        
+        // PDFを返す
+        return new NextResponse(pdfBuffer, {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/pdf',
+            'Content-Disposition': isDownload 
+              ? `attachment; filename="${safeFilename}"; filename*=UTF-8''${encodedFilename}`
+              : `inline; filename="${safeFilename}"; filename*=UTF-8''${encodedFilename}`,
+            'Content-Length': pdfBuffer.length.toString(),
+          },
+        });
+      } catch (pdfError) {
+        logger.error('PDF generation failed, falling back to HTML:', pdfError);
+        
+        // PDF生成に失敗した場合、HTMLでフォールバック
+        return new NextResponse(htmlContent, {
+          status: 200,
+          headers: {
+            'Content-Type': 'text/html; charset=utf-8',
+            'Content-Disposition': isDownload 
+              ? `attachment; filename="${safeFilename.replace('.pdf', '.html')}"; filename*=UTF-8''${encodedFilename.replace('.pdf', '.html')}`
+              : `inline; filename="${safeFilename.replace('.pdf', '.html')}"; filename*=UTF-8''${encodedFilename.replace('.pdf', '.html')}`,
+          },
+        });
+      }
+    }
+    
+    // HTMLモード（デフォルト）
     return new NextResponse(htmlContent, {
       status: 200,
       headers: {

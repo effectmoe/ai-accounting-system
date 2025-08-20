@@ -26,6 +26,7 @@ export interface Receipt extends TimestampedDocument {
   issuerAddress?: string;
   issuerPhone?: string;
   issuerEmail?: string;
+  issuerRegistrationNumber?: string; // 登録番号（適格請求書発行事業者登録番号）
   issuerStamp?: string; // 印影画像データ（Base64）
   
   // 金額情報
