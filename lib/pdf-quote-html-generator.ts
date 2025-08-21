@@ -217,13 +217,18 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
       margin-bottom: 20px;
     }
     
+    .quote-table thead tr {
+      height: 50px;
+    }
+    
     .quote-table th {
       background-color: #34495e;
       color: white;
-      padding: 14px 12px;
+      padding: 0 12px;
       text-align: left;
       font-weight: 700;
       vertical-align: middle;
+      height: 50px;
     }
     
     .quote-table th:last-child,
