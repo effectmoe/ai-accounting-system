@@ -68,9 +68,12 @@ export async function sendQuoteEmail(
     // 添付ファイルの準備
     const attachments = [];
     if (attachPdf && pdfBuffer) {
+      // BufferをBase64文字列に変換
+      const contentBase64 = pdfBuffer.toString('base64');
       attachments.push({
         filename: `見積書_${quote.quoteNumber}.pdf`,
-        content: pdfBuffer,
+        content: contentBase64,
+        content_type: 'application/pdf', // Resend APIの仕様に合わせて追加
       });
     }
 

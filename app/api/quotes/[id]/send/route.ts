@@ -132,6 +132,13 @@ export async function POST(
       from,
       to: recipientEmail,
       subject: emailSubject,
+      attachmentCount: attachments.length,
+      attachmentDetails: attachments.map(att => ({
+        filename: att.filename,
+        contentLength: att.content?.length || 0,
+        contentType: att.contentType,
+        isBase64: typeof att.content === 'string'
+      }))
     });
     
     let emailResult;

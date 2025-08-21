@@ -184,7 +184,7 @@ async function sendEmail(options: {
         attachments: options.attachments.map(att => ({
           filename: att.filename,
           content: att.content,
-          type: att.contentType,
+          content_type: att.contentType, // Resend APIの仕様に合わせて修正
         }))
       }),
     };
@@ -194,6 +194,13 @@ async function sendEmail(options: {
       to: emailData.to,
       subject: emailData.subject,
       hasAttachments: !!emailData.attachments?.length,
+      attachmentCount: emailData.attachments?.length || 0,
+      attachmentDetails: emailData.attachments?.map(att => ({
+        filename: att.filename,
+        contentLength: att.content?.length || 0,
+        contentType: att.content_type,
+        contentPreview: att.content?.substring(0, 50) + '...'
+      }))
     });
 
     const { data, error: resendError } = await resend.emails.send(emailData);
