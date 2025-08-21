@@ -17,24 +17,26 @@ export async function GET(
       return NextResponse.json({ error: 'Invoice not found' }, { status: 404 });
     }
 
+    // URLクエリパラメータでダウンロードモードを判定
+    const url = new URL(request.url);
+    const isDownload = url.searchParams.get('download') === 'true';
+    const isPrintMode = url.searchParams.get('print') === 'true';
+    const showDescriptions = url.searchParams.get('showDescriptions') !== 'false'; // デフォルトはtrue
+
     // 会社情報を取得
     const companyInfoService = new CompanyInfoService();
     const companyInfo = await companyInfoService.getCompanyInfo();
 
     // HTMLを生成（コンパクト版を使用）
     logger.debug('Generating compact invoice HTML for:', invoice.invoiceNumber);
-    const htmlContent = generateCompactInvoiceHTML(invoice, companyInfo);
+    logger.debug('Show descriptions:', showDescriptions);
+    const htmlContent = generateCompactInvoiceHTML(invoice, companyInfo, showDescriptions);
     
     // 新しい命名規則でファイル名を生成: 請求日_帳表名_顧客名
     const filename = generateInvoiceFilename(invoice);
     const safeFilename = generateSafeFilename(invoice);
     logger.debug('Generated filename:', filename);
     logger.debug('Safe filename for header:', safeFilename);
-    
-    // URLクエリパラメータでダウンロードモードを判定
-    const url = new URL(request.url);
-    const isDownload = url.searchParams.get('download') === 'true';
-    const isPrintMode = url.searchParams.get('print') === 'true';
     
     // 日本語ファイル名をRFC 5987準拠でエンコード
     const encodedFilename = encodeURIComponent(filename);

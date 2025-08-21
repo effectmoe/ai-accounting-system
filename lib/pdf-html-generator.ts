@@ -315,7 +315,11 @@ export function generateInvoiceHTML(invoice: any, companyInfo: any): string {
         <tbody>
           ${invoice.items.map((item: any) => `
             <tr>
-              <td>${item.description || item.itemName || ''}</td>
+              <td>
+                <div>${item.itemName || item.description || ''}</div>
+                ${item.description && item.itemName !== item.description ? `<div style="font-size: 10px; color: #666; margin-top: 2px;">${item.description}</div>` : ''}
+                ${item.notes ? `<div style="font-size: 9px; color: #888; margin-top: 1px; font-style: italic;">※ ${item.notes}</div>` : ''}
+              </td>
               <td>${item.quantity}</td>
               <td>¥${(item.unitPrice || 0).toLocaleString()}</td>
               <td>¥${(item.amount || 0).toLocaleString()}</td>

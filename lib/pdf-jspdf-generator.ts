@@ -120,7 +120,26 @@ export async function generateInvoicePDF(invoice: any, companyInfo: any): Promis
     doc.line(tableX, y + 8, tableX + 170, y + 8);
     
     // 内容
-    doc.text(item.description || item.itemName || '', itemX + 2, y + 6);
+    const mainText = item.itemName || item.description || '';
+    doc.text(mainText, itemX + 2, y + 6);
+    
+    // 商品説明と備考を追加（縦スペースがあれば）
+    let additionalY = y + 6;
+    if (item.description && item.itemName !== item.description) {
+      additionalY += 3;
+      doc.setFontSize(8);
+      doc.setTextColor(100, 100, 100);
+      doc.text(item.description, itemX + 4, additionalY);
+    }
+    if (item.notes) {
+      additionalY += 3;
+      doc.setFontSize(7);
+      doc.setTextColor(136, 136, 136);
+      doc.text(`※ ${item.notes}`, itemX + 4, additionalY);
+    }
+    doc.setFontSize(10);
+    doc.setTextColor(0, 0, 0);
+    
     itemX += colWidths[0];
     
     doc.text(item.quantity.toString(), itemX + colWidths[1] - 2, y + 6, { align: 'right' });
@@ -131,7 +150,9 @@ export async function generateInvoicePDF(invoice: any, companyInfo: any): Promis
     
     doc.text(`JPY ${(item.amount || 0).toLocaleString()}`, itemX + colWidths[3] - 2, y + 6, { align: 'right' });
     
-    y += 10;
+    // 説明や備考がある場合は追加のスペースを確保
+    const hasAdditionalInfo = (item.description && item.itemName !== item.description) || item.notes;
+    y += hasAdditionalInfo ? 16 : 10;
   });
 
   y += 10;

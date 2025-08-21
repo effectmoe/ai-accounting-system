@@ -1,4 +1,4 @@
-export function generateCompactInvoiceHTML(invoice: any, companyInfo: any): string {
+export function generateCompactInvoiceHTML(invoice: any, companyInfo: any, showDescriptions: boolean = true): string {
   const customerName = invoice.customer?.companyName || invoice.customer?.name || invoice.customerSnapshot?.companyName || '';
   const issueDate = new Date(invoice.issueDate || invoice.invoiceDate || new Date()).toISOString().split('T')[0];
   const dueDate = new Date(invoice.dueDate).toISOString().split('T')[0];
@@ -352,7 +352,19 @@ export function generateCompactInvoiceHTML(invoice: any, companyInfo: any): stri
       <tbody>
         ${invoice.items.map((item: any) => `
           <tr>
-            <td>${item.description || ''}</td>
+            <td>
+              ${item.itemName || item.description || ''}
+              ${showDescriptions && item.description && item.itemName !== item.description ? `
+                <div style="font-size: 11px; color: #666; margin-top: 4px; line-height: 1.4;">
+                  ${item.description}
+                </div>
+              ` : ''}
+              ${showDescriptions && item.notes ? `
+                <div style="font-size: 10px; color: #888; margin-top: 2px; font-style: italic; line-height: 1.3;">
+                  ※ ${item.notes}
+                </div>
+              ` : ''}
+            </td>
             <td>${item.quantity}</td>
             <td>¥${(item.unitPrice || 0).toLocaleString()}</td>
             <td>¥${(item.amount || 0).toLocaleString()}</td>
@@ -392,7 +404,7 @@ export function generateCompactInvoiceHTML(invoice: any, companyInfo: any): stri
     ` : ''}
     
     <!-- 備考 -->
-    ${invoice.notes ? `
+    ${showDescriptions && invoice.notes ? `
       <div class="notes-section">
         <h3 class="notes-title">備考</h3>
         <div class="notes-content">${invoice.notes}</div>
