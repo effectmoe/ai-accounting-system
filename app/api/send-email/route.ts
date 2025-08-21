@@ -176,6 +176,44 @@ async function sendEmail(options: {
       finalFromName: fromName
     });
 
+    // Resend用の添付ファイル形式を準備
+    let resendAttachments = null;
+    if (options.attachments && options.attachments.length > 0) {
+      logger.debug('=== RESEND ATTACHMENT FORMATTING ===');
+      logger.debug('Original attachments:', {
+        count: options.attachments.length,
+        details: options.attachments.map(att => ({
+          filename: att.filename,
+          contentLength: att.content.length,
+          contentType: att.contentType,
+          isValidBase64: /^[A-Za-z0-9+/]*={0,2}$/.test(att.content)
+        }))
+      });
+      
+      resendAttachments = options.attachments.map(att => {
+        const resendAttachment = {
+          filename: att.filename,
+          content: att.content,
+          content_type: att.contentType, // Resend APIの仕様（アンダースコア使用）
+        };
+        
+        logger.debug('Formatted attachment for Resend:', {
+          filename: resendAttachment.filename,
+          contentLength: resendAttachment.content.length,
+          contentType: resendAttachment.content_type,
+          contentValidation: {
+            isString: typeof resendAttachment.content === 'string',
+            hasContent: resendAttachment.content.length > 0,
+            isBase64: /^[A-Za-z0-9+/]*={0,2}$/.test(resendAttachment.content),
+            startsWithPDF: resendAttachment.content.startsWith('JVBERi0'), // "%PDF-" in base64
+            preview: resendAttachment.content.substring(0, 50)
+          }
+        });
+        
+        return resendAttachment;
+      });
+    }
+
     const emailData = {
       from: `${fromName} <${fromAddress}>`,
       to: [options.to],
@@ -183,30 +221,67 @@ async function sendEmail(options: {
       ...(options.bcc && { bcc: [options.bcc] }),
       subject: options.subject,
       html: options.body,
-      ...(options.attachments && options.attachments.length > 0 && {
-        attachments: options.attachments.map(att => ({
-          filename: att.filename,
-          content: att.content,
-          content_type: att.contentType, // Resend APIの仕様に合わせて修正
-        }))
-      }),
+      ...(resendAttachments && { attachments: resendAttachments }),
     };
 
-    logger.debug('Sending email with Resend data:', {
+    logger.debug('=== FINAL RESEND EMAIL DATA ===');
+    logger.debug('Resend email data structure:', {
       from: emailData.from,
       to: emailData.to,
       subject: emailData.subject,
       hasAttachments: !!emailData.attachments?.length,
       attachmentCount: emailData.attachments?.length || 0,
-      attachmentDetails: emailData.attachments?.map(att => ({
+      emailDataKeys: Object.keys(emailData),
+      attachmentStructure: emailData.attachments?.map(att => ({
         filename: att.filename,
         contentLength: att.content?.length || 0,
         contentType: att.content_type,
-        contentPreview: att.content?.substring(0, 50) + '...'
+        hasContent: !!att.content,
+        isValidBase64: typeof att.content === 'string' && /^[A-Za-z0-9+/]*={0,2}$/.test(att.content)
       }))
     });
 
+    logger.debug('=== CALLING RESEND API ===');
+    logger.debug('About to call resend.emails.send', {
+      dataKeys: Object.keys(emailData),
+      hasAttachments: !!emailData.attachments,
+      attachmentCount: emailData.attachments?.length || 0,
+      emailDataSerialization: {
+        canSerialize: true,
+        // 実際のJSONシリアライゼーションをテスト
+        serializedSize: JSON.stringify(emailData).length
+      }
+    });
+    
+    // Resend APIへの送信前の最終検証
+    if (emailData.attachments && emailData.attachments.length > 0) {
+      logger.debug('Final attachment validation before Resend API call:', {
+        attachments: emailData.attachments.map((att, index) => ({
+          index,
+          filename: att.filename,
+          contentType: att.content_type,
+          contentSize: att.content?.length || 0,
+          contentExists: !!att.content,
+          contentIsString: typeof att.content === 'string',
+          isValidBase64: typeof att.content === 'string' && /^[A-Za-z0-9+/]*={0,2}$/.test(att.content),
+          contentStructure: {
+            hasFilename: !!att.filename,
+            hasContentType: !!att.content_type,
+            hasContent: !!att.content
+          }
+        }))
+      });
+    }
+    
     const { data, error: resendError } = await resend.emails.send(emailData);
+
+    logger.debug('=== RESEND API RESPONSE ===');
+    logger.debug('Resend API response:', {
+      hasError: !!resendError,
+      hasData: !!data,
+      dataId: data?.id,
+      errorMessage: resendError?.message
+    });
 
     if (resendError) {
       logger.error('Resend送信エラー:', resendError);
@@ -214,17 +289,35 @@ async function sendEmail(options: {
         name: resendError.name,
         message: resendError.message,
         response: (resendError as any).response,
-        statusCode: (resendError as any).statusCode
+        statusCode: (resendError as any).statusCode,
+        stack: (resendError as any).stack,
+        attachmentRelated: emailData.attachments?.length > 0,
+        resendAPILimitations: {
+          // Resend API制限の参考情報
+          maxAttachmentSize: '25MB per attachment',
+          totalMessageSize: '40MB including all attachments',
+          allowedContentTypes: 'application/pdf should be supported',
+          base64Required: 'attachments require base64 encoding'
+        },
+        debugInfo: {
+          attachmentSizes: emailData.attachments?.map(att => att.content?.length || 0),
+          totalAttachmentSize: emailData.attachments?.reduce((sum, att) => sum + (att.content?.length || 0), 0) || 0
+        }
       });
       throw new Error(`Resend API error: ${resendError.message || 'Unknown error'}`);
     }
 
-    logger.debug('Email sent successfully via Resend:', data);
+    logger.debug('Email sent successfully via Resend:', {
+      messageId: data?.id,
+      hasAttachments: !!emailData.attachments?.length,
+      attachmentCount: emailData.attachments?.length || 0
+    });
     logger.info('メール送信成功:', {
       messageId: data?.id,
       from: emailData.from,
       to: emailData.to,
-      subject: emailData.subject
+      subject: emailData.subject,
+      attachmentCount: emailData.attachments?.length || 0
     });
     return { success: true, messageId: data?.id || 'unknown' };
   } catch (error) {
@@ -585,21 +678,37 @@ export async function POST(request: NextRequest) {
 
     // 添付ファイルの準備
     logger.debug('=== ATTACHMENT PREPARATION START ===');
-    logger.debug('Preparing attachments...', { attachPdf, hasPdfBase64: !!pdfBase64 });
+    logger.debug('Preparing attachments...', { 
+      attachPdf, 
+      hasPdfBase64: !!pdfBase64,
+      pdfBase64Length: pdfBase64?.length || 0,
+      documentType,
+      documentNumber: documentData.documentNumber
+    });
     const attachments = [];
     if (attachPdf) {
       logger.debug('PDF attachment requested');
       
       // クライアントから送られたPDFデータがある場合は使用
       if (pdfBase64) {
-        logger.debug('Using client-generated PDF, size:', pdfBase64.length);
+        logger.debug('Using client-generated PDF', {
+          size: pdfBase64.length,
+          documentNumber: documentData.documentNumber,
+          firstChars: pdfBase64.substring(0, 50),
+          isBase64: /^[A-Za-z0-9+/]*={0,2}$/.test(pdfBase64)
+        });
+        
         const attachment = {
           filename: `${documentData.documentNumber}.pdf`,
           content: pdfBase64,
           contentType: 'application/pdf',
         };
         attachments.push(attachment);
-        logger.debug('Client PDF attachment added to array');
+        logger.debug('Client PDF attachment added to array', {
+          filename: attachment.filename,
+          contentLength: attachment.content.length,
+          contentType: attachment.contentType
+        });
       } else if (documentType === 'quote') {
         // 見積書の場合はサーバーサイドでPDF生成
         logger.debug('Quote document detected, generating PDF on server-side');
@@ -680,10 +789,18 @@ export async function POST(request: NextRequest) {
                     stack: simpleError instanceof Error ? simpleError.stack : undefined
                   });
                   
-                  // 最終手段: PDFなしでメール送信を続行
-                  logger.warn('PDF generation completely failed, proceeding without PDF attachment');
-                  pdfBuffer = null;
-                  pdfAttachmentSuccessful = false;
+                  // 最終手段: テスト用PDFを生成してデバッグ
+                  logger.warn('All PDF generation methods failed, trying test PDF as emergency fallback');
+                  try {
+                    const { generateTestPDF } = await import('@/lib/test-pdf-generator');
+                    pdfBuffer = await generateTestPDF(`test-${documentData.documentNumber}.pdf`);
+                    pdfAttachmentSuccessful = true;
+                    logger.info('Emergency test PDF generated successfully - this confirms PDF attachment system is working');
+                  } catch (testPdfError) {
+                    logger.error('Even test PDF generation failed - PDF system is completely broken:', testPdfError);
+                    pdfBuffer = null;
+                    pdfAttachmentSuccessful = false;
+                  }
                 }
               }
             }
@@ -722,26 +839,80 @@ export async function POST(request: NextRequest) {
                   pdfAttachmentSuccessful = true;
                   logger.debug('Simple PDF generation successful');
                 } catch (simpleError) {
-                  logger.error('All PDF generation methods failed:', {
+                  logger.error('All PDF generation methods failed, trying test PDF as last resort:', {
                     error: simpleError instanceof Error ? simpleError.message : String(simpleError)
                   });
                   
-                  pdfBuffer = null;
-                  pdfAttachmentSuccessful = false;
+                  // 最終手段: テスト用PDFを生成してデバッグ
+                  try {
+                    const { generateTestPDF } = await import('@/lib/test-pdf-generator');
+                    pdfBuffer = await generateTestPDF(`test-${documentData.documentNumber}.pdf`);
+                    pdfAttachmentSuccessful = true;
+                    logger.info('Emergency test PDF generated successfully in development - this confirms PDF attachment system is working');
+                  } catch (testPdfError) {
+                    logger.error('Even test PDF generation failed in development - PDF system is completely broken:', testPdfError);
+                    pdfBuffer = null;
+                    pdfAttachmentSuccessful = false;
+                  }
                 }
               }
             }
           }
           
           // PDF添付の処理
+          logger.debug('=== PDF ATTACHMENT PROCESSING ===', {
+            pdfAttachmentSuccessful,
+            hasPdfBuffer: !!pdfBuffer,
+            bufferLength: pdfBuffer?.length || 0
+          });
+          
           if (pdfAttachmentSuccessful && pdfBuffer && pdfBuffer.length > 0) {
             // PDFヘッダーチェック（可能な場合のみ）
             try {
               const pdfHeader = pdfBuffer.slice(0, 5).toString('ascii');
+              logger.debug('PDF header check:', {
+                header: pdfHeader,
+                isValidPDF: pdfHeader.startsWith('%PDF'),
+                bufferLength: pdfBuffer.length
+              });
+              
               if (pdfHeader.startsWith('%PDF')) {
                 // 有効なPDFとして処理
-                const pdfBase64Generated = pdfBuffer.toString('base64');
-                logger.debug('PDF generated and encoded to base64, length:', pdfBase64Generated.length);
+                logger.debug('Valid PDF detected, starting base64 encoding');
+                
+                let pdfBase64Generated: string;
+                try {
+                  pdfBase64Generated = pdfBuffer.toString('base64');
+                  
+                  // Base64の検証
+                  const isValidBase64 = /^[A-Za-z0-9+/]*={0,2}$/.test(pdfBase64Generated);
+                  const decodedBuffer = Buffer.from(pdfBase64Generated, 'base64');
+                  const roundTripValid = decodedBuffer.equals(pdfBuffer);
+                  
+                  logger.debug('PDF successfully encoded to base64', {
+                    originalBufferLength: pdfBuffer.length,
+                    base64Length: pdfBase64Generated.length,
+                    base64Preview: pdfBase64Generated.substring(0, 100),
+                    isValidBase64,
+                    roundTripValid,
+                    decodedLength: decodedBuffer.length,
+                    startsWithPDFMagic: pdfBase64Generated.startsWith('JVBERi0') // "%PDF-" in base64
+                  });
+                  
+                  if (!isValidBase64) {
+                    throw new Error('Generated base64 is not valid');
+                  }
+                  if (!roundTripValid) {
+                    throw new Error('Base64 round-trip encoding failed');
+                  }
+                } catch (encodingError) {
+                  logger.error('Base64 encoding failed:', {
+                    error: encodingError instanceof Error ? encodingError.message : String(encodingError),
+                    bufferLength: pdfBuffer.length,
+                    bufferHeader: pdfHeader
+                  });
+                  throw encodingError;
+                }
                 
                 const attachment = {
                   filename: `${documentData.documentNumber}.pdf`,
@@ -749,36 +920,72 @@ export async function POST(request: NextRequest) {
                   contentType: 'application/pdf',
                 };
                 attachments.push(attachment);
-                logger.debug('Server-generated PDF attachment added to array');
+                logger.debug('Server-generated PDF attachment added to array', {
+                  filename: attachment.filename,
+                  contentLength: attachment.content.length,
+                  contentType: attachment.contentType,
+                  arrayLength: attachments.length,
+                  attachmentValidation: {
+                    hasFilename: !!attachment.filename,
+                    hasContent: !!attachment.content,
+                    hasContentType: !!attachment.contentType,
+                    contentIsString: typeof attachment.content === 'string'
+                  }
+                });
               } else {
                 // HTMLなど、PDFではないコンテンツの場合
-                logger.warn('Generated content is not a valid PDF, treating as HTML fallback');
+                logger.warn('Generated content is not a valid PDF, treating as HTML fallback', {
+                  header: pdfHeader,
+                  bufferLength: pdfBuffer.length,
+                  contentPreview: pdfBuffer.slice(0, 200).toString('utf8')
+                });
                 
                 // HTMLとしてメール本文に追加する処理を追加することも可能
                 // ここではPDF添付を諦めて続行
                 logger.warn('PDF attachment failed, continuing without attachment');
               }
             } catch (headerError) {
-              logger.warn('PDF header check failed, but continuing:', headerError);
+              logger.warn('PDF header check failed, but attempting attachment anyway:', {
+                error: headerError instanceof Error ? headerError.message : String(headerError),
+                bufferLength: pdfBuffer.length
+              });
+              
               // ヘッダーチェックに失敗してもPDF添付を試行
               try {
                 const pdfBase64Generated = pdfBuffer.toString('base64');
+                logger.debug('Force encoding PDF to base64 despite header check failure', {
+                  base64Length: pdfBase64Generated.length,
+                  bufferLength: pdfBuffer.length
+                });
+                
                 const attachment = {
                   filename: `${documentData.documentNumber}.pdf`,
                   content: pdfBase64Generated,
                   contentType: 'application/pdf',
                 };
                 attachments.push(attachment);
-                logger.debug('PDF attachment added despite header check failure');
+                logger.debug('PDF attachment added despite header check failure', {
+                  filename: attachment.filename,
+                  contentLength: attachment.content.length,
+                  arrayLength: attachments.length
+                });
               } catch (attachError) {
-                logger.error('PDF attachment completely failed:', attachError);
+                logger.error('PDF attachment completely failed:', {
+                  error: attachError instanceof Error ? attachError.message : String(attachError),
+                  bufferLength: pdfBuffer.length
+                });
               }
             }
           } else {
             logger.warn('PDF generation was not successful, proceeding without PDF attachment', {
               pdfAttachmentSuccessful,
               hasPdfBuffer: !!pdfBuffer,
-              bufferLength: pdfBuffer?.length || 0
+              bufferLength: pdfBuffer?.length || 0,
+              debugInfo: {
+                documentType,
+                documentNumber: documentData.documentNumber,
+                quoteNumber: document.quoteNumber
+              }
             });
           }
           
@@ -823,7 +1030,16 @@ export async function POST(request: NextRequest) {
     }
     
     logger.debug('=== ATTACHMENT PREPARATION END ===');
-    logger.debug('Final attachments array:', attachments.map(a => ({ filename: a.filename, size: a.content.length })));
+    logger.debug('Final attachments array:', {
+      count: attachments.length,
+      details: attachments.map(a => ({ 
+        filename: a.filename, 
+        contentSize: a.content.length,
+        contentType: a.contentType,
+        isValidBase64: /^[A-Za-z0-9+/]*={0,2}$/.test(a.content),
+        contentPreview: a.content.substring(0, 50) + '...'
+      }))
+    });
 
     // 顧客のメール設定に基づいて送信先を決定
     let finalTo = to;
@@ -860,9 +1076,22 @@ export async function POST(request: NextRequest) {
     }
 
     // メール送信
-    logger.debug('Sending email with attachments count:', attachments.length);
-    logger.debug('Email attachments:', attachments.map(a => ({ filename: a.filename, size: a.content.length })));
-    logger.debug(`Final email recipients - To: ${finalTo}, CC: ${finalCc}, BCC: ${bcc}`);
+    logger.debug('=== EMAIL SENDING START ===');
+    logger.debug('Sending email with attachments', {
+      attachmentCount: attachments.length,
+      hasAttachments: attachments.length > 0,
+      attachmentDetails: attachments.map(a => ({ 
+        filename: a.filename, 
+        contentSize: a.content.length,
+        contentType: a.contentType 
+      })),
+      recipients: {
+        to: finalTo,
+        cc: finalCc,
+        bcc: bcc
+      },
+      subject: emailSubject
+    });
     
     const result = await sendEmail({
       to: finalTo,

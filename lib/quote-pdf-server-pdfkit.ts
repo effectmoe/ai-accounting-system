@@ -59,6 +59,11 @@ export async function generateQuotePDFWithPDFkit(
     // データを収集
     doc.on('data', (chunk: Buffer) => {
       chunks.push(chunk);
+      logger.debug('[PDFkit Server] Received data chunk', {
+        chunkSize: chunk.length,
+        totalChunks: chunks.length,
+        totalSize: chunks.reduce((sum, c) => sum + c.length, 0)
+      });
     });
     
     // PDFの作成が完了したときのPromise
