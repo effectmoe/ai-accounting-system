@@ -33,12 +33,6 @@ export async function generateQuoteEmailPDF(quote: any, companyInfo?: any): Prom
     // 美しいHTMLを生成（印刷ボタンと同じ、showDescriptions=true）
     const htmlContent = generateCompactQuoteHTML(quote, finalCompanyInfo, true);
     
-    logger.debug('Generated HTML content for quote:', {
-      quoteNumber: quote.quoteNumber,
-      htmlLength: htmlContent.length,
-      hasQuoteContainer: htmlContent.includes('quote-container')
-    });
-    
     // ブラウザ環境チェック
     if (typeof window === 'undefined') {
       throw new Error('This function must be called in browser environment');
@@ -153,11 +147,8 @@ export async function generateQuoteEmailPDF(quote: any, companyInfo?: any): Prom
         });
         
         // サーバーサイドのPDF APIを使用
-        const pdfResponse = await fetch(`/api/quotes/${quote._id}/pdf`, {
+        const pdfResponse = await fetch(`/api/quotes/${quote._id}/pdf?download=true&engine=jspdf`, {
           method: 'GET',
-          headers: {
-            'Accept': 'application/pdf'
-          }
         });
         
         if (!pdfResponse.ok) {
@@ -175,11 +166,8 @@ export async function generateQuoteEmailPDF(quote: any, companyInfo?: any): Prom
       // フォールバック: サーバーサイドのPDF APIを使用
       logger.debug('Falling back to server-side PDF generation');
       
-      const pdfResponse = await fetch(`/api/quotes/${quote._id}/pdf`, {
+      const pdfResponse = await fetch(`/api/quotes/${quote._id}/pdf?download=true&engine=jspdf`, {
         method: 'GET',
-        headers: {
-          'Accept': 'application/pdf'
-        }
       });
       
       if (!pdfResponse.ok) {

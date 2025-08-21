@@ -72,12 +72,6 @@ function getContactPerson(quote: any): string {
 
 // getItemDescriptionは/lib/item-utils.tsから共通インポート済み
 export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescriptions: boolean = true): string {
-  // デバッグ: showDescriptionsパラメータの値を確認
-  console.log('[generateCompactQuoteHTML] showDescriptions parameter:', showDescriptions);
-  console.log('[generateCompactQuoteHTML] showDescriptions type:', typeof showDescriptions);
-  
-  // PDF生成デバッグ情報
-  console.log('[generateCompactQuoteHTML] Processing quote:', quote.quoteNumber, 'with', quote.items?.length || 0, 'items');
   const customerName = quote.customer?.companyName || quote.customer?.name || quote.customerSnapshot?.companyName || '';
   const issueDate = new Date(quote.issueDate || new Date()).toISOString().split('T')[0];
   const validityDate = new Date(quote.validityDate || new Date()).toISOString().split('T')[0];
@@ -199,7 +193,7 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
     .total-amount {
       font-size: 24px;
       font-weight: 700;
-      color: #2c3e50;
+      color: #0066cc;
     }
     
     /* テーブル */
@@ -502,33 +496,19 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
         </tr>
       </thead>
       <tbody>
-        ${quote.items.map((item: any, index: number) => {
+        ${quote.items.map((item: any) => {
           const description = getItemDescription(item);
           const hasDescription = description && description.toString().trim() !== '';
           const hasNotes = item.notes && item.notes.toString().trim() !== '';
-          
-          // showDescriptionsが文字列の場合も考慮した処理
-          const shouldShowDescriptions = showDescriptions === true || showDescriptions === 'true';
-          
-          // 重要なアイテムのみデバッグログ出力
-          if (hasDescription || hasNotes) {
-            console.log(`[Item ${index}] ${item.itemName}:`);
-            console.log(`  - showDescriptions: ${shouldShowDescriptions} (type: ${typeof showDescriptions})`);
-            console.log(`  - hasDescription: ${hasDescription}`);
-            console.log(`  - hasNotes: ${hasNotes}`);
-            console.log(`  - description: ${description ? description.substring(0, 50) + '...' : 'none'}`);
-            console.log(`  - will show desc: ${shouldShowDescriptions && hasDescription}`);
-            console.log(`  - will show notes: ${shouldShowDescriptions && hasNotes}`);
-          }
           
           return `
             <tr>
               <td>
                 <div class="item-name">${item.itemName || ''}</div>
-                ${shouldShowDescriptions && hasDescription ? `
+                ${showDescriptions && hasDescription ? `
                   <div class="item-description">${description}</div>
                 ` : ''}
-                ${shouldShowDescriptions && hasNotes ? `
+                ${showDescriptions && hasNotes ? `
                   <div class="item-notes">※ ${item.notes}</div>
                 ` : ''}
               </td>
@@ -546,11 +526,11 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
       <div class="summary-table">
         <div class="summary-row">
           <div>小計:</div>
-          <div>¥${Math.round(subtotal).toLocaleString()}</div>
+          <div>¥${subtotal.toLocaleString()}</div>
         </div>
         <div class="summary-row">
           <div>消費税 (10%):</div>
-          <div>¥${Math.round(taxAmount).toLocaleString()}</div>
+          <div>¥${taxAmount.toLocaleString()}</div>
         </div>
         <div class="summary-row total">
           <div>合計金額:</div>
@@ -565,13 +545,8 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
         <h3 class="notes-title">備考</h3>
         <div class="notes-content">${(() => {
           let processedNotes = cleanDuplicateSignatures(quote.notes);
-          console.log('[Notes Processing] Original notes:', processedNotes.substring(0, 100));
           // 中黒（・）を黒い四角（■）に置換
-          const beforeReplace = processedNotes;
           processedNotes = processedNotes.replace(/・/g, '■');
-          const replacementCount = (beforeReplace.match(/・/g) || []).length;
-          console.log('[Notes Processing] Replaced', replacementCount, '・ characters with ■');
-          console.log('[Notes Processing] Final notes:', processedNotes.substring(0, 100));
           return processedNotes;
         })()}</div>
       </div>
