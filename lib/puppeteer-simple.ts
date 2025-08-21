@@ -26,13 +26,7 @@ export async function launchPuppeteerSimple() {
       try {
         // Vercel環境では特殊な処理が必要
         if (process.env.VERCEL) {
-          // @sparticuz/chromium-minの設定を強制的に設定
-          if (chromium.default.setHeadlessMode) {
-            chromium.default.setHeadlessMode = true;
-          }
-          if (chromium.default.setGraphicsMode) {
-            chromium.default.setGraphicsMode = false;
-          }
+          // @sparticuz/chromium-minは設定済みのため、追加設定は不要
           
           // @sparticuz/chromium-minから実際のバイナリを取得
           // chromium-minはバイナリを含まないので、常にURLから取得する

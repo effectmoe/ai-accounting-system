@@ -1,10 +1,6 @@
-import chromium from '@sparticuz/chromium';
+import chromium from '@sparticuz/chromium-min';
 import puppeteer from 'puppeteer-core';
 import { generateCompactInvoiceHTML } from './pdf-compact-generator';
-
-// Vercel環境用の設定
-chromium.setHeadlessMode = true;
-chromium.setGraphicsMode = false;
 
 export async function generateInvoicePDFWithPuppeteer(invoice: any, companyInfo: any, showDescriptions: boolean = true): Promise<Buffer> {
   let browser = null;

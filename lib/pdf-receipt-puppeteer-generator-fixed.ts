@@ -1,4 +1,4 @@
-import chromium from '@sparticuz/chromium';
+import chromium from '@sparticuz/chromium-min';
 import puppeteer from 'puppeteer-core';
 import { generateReceiptHTML } from './receipt-html-generator';
 import { logger } from '@/lib/logger';
@@ -26,9 +26,9 @@ function isDevelopmentEnvironment(): boolean {
 /**
  * Vercel/Production環境用のChromium設定
  */
-function getVercelChromiumConfig() {
-  // @sparticuz/chromium の最新設定方法
-  const executablePath = chromium.executablePath;
+async function getVercelChromiumConfig() {
+  // @sparticuz/chromium-min の最新設定方法
+  const executablePath = await chromium.executablePath();
   
   return {
     args: [
@@ -114,14 +114,14 @@ export async function generateReceiptPDFWithPuppeteer(receipt: Receipt): Promise
       // Chromiumの実行可能パスを事前に確認
       let executablePath: string;
       try {
-        executablePath = await chromium.executablePath;
+        executablePath = await chromium.executablePath();
         logger.debug('Chromium executable path:', executablePath);
       } catch (pathError) {
         logger.error('Failed to get Chromium executable path:', pathError);
         throw new Error('Chromium実行ファイルが見つかりません');
       }
       
-      const config = getVercelChromiumConfig();
+      const config = await getVercelChromiumConfig();
       
       // より詳細なログ出力
       logger.debug('Puppeteer launch config:', {

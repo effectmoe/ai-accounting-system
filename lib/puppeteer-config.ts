@@ -1,9 +1,5 @@
 import puppeteer from 'puppeteer-core';
-import chromium from '@sparticuz/chromium';
-
-// Chromiumのローカルパスを設定（Vercel環境用）
-chromium.setHeadlessMode = true;
-chromium.setGraphicsMode = false;
+import chromium from '@sparticuz/chromium-min';
 
 /**
  * Vercel環境でPuppeteerを起動するための共通設定
