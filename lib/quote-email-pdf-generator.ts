@@ -77,17 +77,17 @@ export async function generateQuoteEmailPDF(quote: any, companyInfo?: any): Prom
       
       document.body.appendChild(container);
       
-      // フォント読み込みとレンダリングを確実に完了させる
-      await document.fonts.ready;
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // 少し待機してレンダリングを完了させる（請求書と同じ100msに戻す）
+      await new Promise(resolve => setTimeout(resolve, 100));
       
       // 見積書コンテナを取得
       const quoteContainer = container.querySelector('.quote-container') || container;
       
-      // html2canvasでキャンバスに変換（適度な品質でサイズを抑える）
+      // html2canvasでキャンバスに変換（請求書と同じ設定）
+      logger.debug('Starting html2canvas conversion...');
       const canvas = await html2canvas(quoteContainer as HTMLElement, {
         scale: 1.5, // 品質とサイズのバランス（2→1.5に削減）
-        logging: false,
+        logging: false, // 請求書と同じくfalseに
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#ffffff',
@@ -95,6 +95,12 @@ export async function generateQuoteEmailPDF(quote: any, companyInfo?: any): Prom
         height: 1123, // A4のピクセル高さ
         windowWidth: 794,
         windowHeight: 1123,
+      });
+      
+      logger.debug('Canvas created', {
+        width: canvas.width,
+        height: canvas.height,
+        isEmpty: canvas.width === 0 || canvas.height === 0
       });
       
       // PDFを生成（圧縮設定を追加）
@@ -106,12 +112,27 @@ export async function generateQuoteEmailPDF(quote: any, companyInfo?: any): Prom
       });
       
       // キャンバスをJPEGに変換（PNGよりサイズが小さい）
+      logger.debug('Converting canvas to image...');
       const imgData = canvas.toDataURL('image/jpeg', 0.85); // JPEG形式、品質85%
+      
+      logger.debug('Image data created', {
+        dataLength: imgData.length,
+        isDataUrl: imgData.startsWith('data:'),
+        mimeType: imgData.substring(5, 15)
+      });
+      
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
       
+      logger.debug('Adding image to PDF', {
+        pdfWidth,
+        pdfHeight
+      });
+      
       // 画像をPDFのサイズに合わせる
       pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+      
+      logger.debug('Image added to PDF successfully');
       
       // PDFの情報を設定
       pdf.setProperties({
@@ -123,7 +144,26 @@ export async function generateQuoteEmailPDF(quote: any, companyInfo?: any): Prom
       });
       
       // Blobとして出力（圧縮済み）
+      logger.debug('Generating PDF blob...');
       const pdfBlob = pdf.output('blob');
+      
+      logger.debug('PDF blob generated', {
+        size: pdfBlob.size,
+        type: pdfBlob.type
+      });
+      
+      // PDFの最初の数バイトを確認（PDFヘッダーチェック）
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const arrayBuffer = reader.result as ArrayBuffer;
+        const bytes = new Uint8Array(arrayBuffer).slice(0, 10);
+        const header = String.fromCharCode.apply(null, Array.from(bytes));
+        logger.debug('PDF header check', {
+          header,
+          isPDF: header.startsWith('%PDF')
+        });
+      };
+      reader.readAsArrayBuffer(pdfBlob.slice(0, 10));
       
       // クリーンアップ
       document.body.removeChild(container);
@@ -189,16 +229,31 @@ export async function generateQuoteEmailPDF(quote: any, companyInfo?: any): Prom
  * EmailSendModalで使用
  */
 export async function generateQuoteEmailPDFBase64(quote: any, companyInfo?: any): Promise<string> {
-  const blob = await generateQuoteEmailPDF(quote, companyInfo);
-  
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const base64String = reader.result as string;
-      const base64 = base64String.split(',')[1];
-      resolve(base64);
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
+  try {
+    const blob = await generateQuoteEmailPDF(quote, companyInfo);
+    
+    return new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        const base64 = base64String.split(',')[1];
+        
+        // Base64が有効かチェック
+        if (!base64 || base64.length < 100) {
+          logger.error('Invalid base64 generated for quote PDF', {
+            base64Length: base64?.length || 0
+          });
+          reject(new Error('Invalid PDF base64'));
+          return;
+        }
+        
+        resolve(base64);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  } catch (error) {
+    logger.error('Failed to generate quote PDF base64:', error);
+    throw error;
+  }
 }
