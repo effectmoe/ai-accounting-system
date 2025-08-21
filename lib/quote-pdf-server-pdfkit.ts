@@ -21,9 +21,25 @@ export async function generateQuotePDFWithPDFkit(
       total: quote.total
     });
     
-    // 動的インポート
-    const PDFDocument = (await import('pdfkit')).default;
-    logger.debug('[PDFkit Server] PDFkit imported successfully');
+    // PDFkitの正しいインポート（CommonJSモジュール）
+    let PDFDocument;
+    try {
+      const pdfkit = await import('pdfkit');
+      // PDFkitはdefaultではなく直接エクスポートされている可能性がある
+      PDFDocument = pdfkit.default || pdfkit;
+      // PDFDocumentがコンストラクタ関数であることを確認
+      if (typeof PDFDocument !== 'function') {
+        // もしオブジェクトの場合、PDFDocumentプロパティを探す
+        PDFDocument = (pdfkit as any).PDFDocument || pdfkit.default || pdfkit;
+      }
+      logger.debug('[PDFkit Server] PDFkit imported successfully', {
+        type: typeof PDFDocument,
+        hasConstructor: typeof PDFDocument === 'function'
+      });
+    } catch (importError) {
+      logger.error('[PDFkit Server] Failed to import PDFkit:', importError);
+      throw new Error(`PDFkit import failed: ${importError instanceof Error ? importError.message : 'Unknown error'}`);
+    }
     
     const doc = new PDFDocument({
       size: 'A4',

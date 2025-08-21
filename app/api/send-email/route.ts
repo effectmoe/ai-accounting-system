@@ -631,108 +631,159 @@ export async function POST(request: NextRequest) {
             logger.warn('Company info not found, using default values');
           }
           
-          let pdfBuffer: Buffer;
+          let pdfBuffer: Buffer | null = null;
+          let pdfAttachmentSuccessful = false;
           
-          // Vercel環境ではjsPDFを優先して使用（Puppeteerは不安定なため）
+          // Vercel環境ではより確実な方法を優先
           const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL;
           
           if (isProduction) {
-            // 本番環境（Vercel）では確実なPDFkitを最優先で使用
-            logger.debug('Production environment detected, using PDFkit for quote PDF generation');
+            // 本番環境（Vercel）では順次フォールバック戦略を採用
+            logger.debug('Production environment detected, trying multiple PDF generation methods');
+            
+            // 方法1: PDFkit（最優先）
             try {
+              logger.debug('Attempting PDFkit PDF generation...');
               const { generateQuotePDFWithPDFkit } = await import('@/lib/quote-pdf-server-pdfkit');
               pdfBuffer = await generateQuotePDFWithPDFkit(document, companyInfo || {});
+              pdfAttachmentSuccessful = true;
               logger.debug('PDFkit quote PDF generation successful');
             } catch (pdfkitError) {
-              logger.error('PDFkit failed, falling back to jsPDF:', {
+              logger.error('PDFkit failed, trying next method:', {
                 error: pdfkitError instanceof Error ? pdfkitError.message : String(pdfkitError),
-                stack: pdfkitError instanceof Error ? pdfkitError.stack : undefined,
-                documentId: document._id || document.id,
-                quoteNumber: document.quoteNumber
+                stack: pdfkitError instanceof Error ? pdfkitError.stack : undefined
               });
               
-              // PDFkitが失敗した場合はjsPDFを試す
+              // 方法2: jsPDF
               try {
+                logger.debug('Attempting jsPDF PDF generation...');
                 const { generateQuotePDFServer } = await import('@/lib/quote-pdf-server-jspdf');
                 pdfBuffer = await generateQuotePDFServer(document, companyInfo || {});
+                pdfAttachmentSuccessful = true;
                 logger.debug('jsPDF fallback PDF generation successful');
               } catch (jsPdfError) {
-                logger.error('jsPDF also failed, trying Puppeteer as last resort:', {
+                logger.error('jsPDF also failed, trying simple PDF method:', {
                   error: jsPdfError instanceof Error ? jsPdfError.message : String(jsPdfError),
-                  stack: jsPdfError instanceof Error ? jsPdfError.stack : undefined,
-                  documentId: document._id || document.id,
-                  quoteNumber: document.quoteNumber
+                  stack: jsPdfError instanceof Error ? jsPdfError.stack : undefined
                 });
                 
-                // 最後の手段としてPuppeteerを試す
-                const { convertQuoteHTMLtoPDF } = await import('@/lib/quote-html-to-pdf-server');
-                pdfBuffer = await convertQuoteHTMLtoPDF(document, companyInfo || {}, true);
-                logger.debug('Puppeteer last resort PDF generation successful');
+                // 方法3: シンプルPDF（Puppeteer試行 → HTMLフォールバック）
+                try {
+                  logger.debug('Attempting simple PDF generation...');
+                  const { generateSimpleQuotePDF } = await import('@/lib/quote-pdf-simple');
+                  pdfBuffer = await generateSimpleQuotePDF(document, companyInfo || {});
+                  pdfAttachmentSuccessful = true;
+                  logger.debug('Simple PDF generation successful');
+                } catch (simpleError) {
+                  logger.error('All PDF generation methods failed:', {
+                    error: simpleError instanceof Error ? simpleError.message : String(simpleError),
+                    stack: simpleError instanceof Error ? simpleError.stack : undefined
+                  });
+                  
+                  // 最終手段: PDFなしでメール送信を続行
+                  logger.warn('PDF generation completely failed, proceeding without PDF attachment');
+                  pdfBuffer = null;
+                  pdfAttachmentSuccessful = false;
+                }
               }
             }
           } else {
-            // 開発環境ではPDFkitを優先（確実性のため）
-            logger.debug('Development environment detected, using PDFkit for quote PDF generation');
+            // 開発環境では順次試行（デバッグしやすい）
+            logger.debug('Development environment detected, trying PDF generation methods');
+            
             try {
+              logger.debug('Attempting PDFkit PDF generation...');
               const { generateQuotePDFWithPDFkit } = await import('@/lib/quote-pdf-server-pdfkit');
               pdfBuffer = await generateQuotePDFWithPDFkit(document, companyInfo || {});
+              pdfAttachmentSuccessful = true;
               logger.debug('PDFkit PDF generation successful');
             } catch (pdfkitError) {
-              logger.error('PDFkit failed, falling back to Puppeteer:', {
+              logger.error('PDFkit failed, trying Puppeteer:', {
                 error: pdfkitError instanceof Error ? pdfkitError.message : String(pdfkitError),
-                stack: pdfkitError instanceof Error ? pdfkitError.stack : undefined,
-                documentId: document._id || document.id,
-                quoteNumber: document.quoteNumber
+                stack: pdfkitError instanceof Error ? pdfkitError.stack : undefined
               });
               
-              // PDFkitが失敗した場合はPuppeteerを試す（開発環境でデバッグしやすいため）
               try {
+                logger.debug('Attempting Puppeteer PDF generation...');
                 const { convertQuoteHTMLtoPDF } = await import('@/lib/quote-html-to-pdf-server');
                 pdfBuffer = await convertQuoteHTMLtoPDF(document, companyInfo || {}, true);
-                logger.debug('Puppeteer fallback PDF generation successful');
+                pdfAttachmentSuccessful = true;
+                logger.debug('Puppeteer PDF generation successful');
               } catch (puppeteerError) {
-                logger.error('Puppeteer also failed, trying jsPDF as last resort:', {
+                logger.error('Puppeteer also failed, trying simple PDF as last resort:', {
                   error: puppeteerError instanceof Error ? puppeteerError.message : String(puppeteerError),
-                  stack: puppeteerError instanceof Error ? puppeteerError.stack : undefined,
-                  documentId: document._id || document.id,
-                  quoteNumber: document.quoteNumber
+                  stack: puppeteerError instanceof Error ? puppeteerError.stack : undefined
                 });
                 
-                // 最後の手段としてjsPDFを試す
-                const { generateQuotePDFServer } = await import('@/lib/quote-pdf-server-jspdf');
-                pdfBuffer = await generateQuotePDFServer(document, companyInfo || {});
-                logger.debug('jsPDF last resort PDF generation successful');
+                try {
+                  logger.debug('Attempting simple PDF generation...');
+                  const { generateSimpleQuotePDF } = await import('@/lib/quote-pdf-simple');
+                  pdfBuffer = await generateSimpleQuotePDF(document, companyInfo || {});
+                  pdfAttachmentSuccessful = true;
+                  logger.debug('Simple PDF generation successful');
+                } catch (simpleError) {
+                  logger.error('All PDF generation methods failed:', {
+                    error: simpleError instanceof Error ? simpleError.message : String(simpleError)
+                  });
+                  
+                  pdfBuffer = null;
+                  pdfAttachmentSuccessful = false;
+                }
               }
             }
           }
           
-          // PDFバッファの検証
-          if (!pdfBuffer || pdfBuffer.length === 0) {
-            throw new Error('Generated PDF buffer is empty');
+          // PDF添付の処理
+          if (pdfAttachmentSuccessful && pdfBuffer && pdfBuffer.length > 0) {
+            // PDFヘッダーチェック（可能な場合のみ）
+            try {
+              const pdfHeader = pdfBuffer.slice(0, 5).toString('ascii');
+              if (pdfHeader.startsWith('%PDF')) {
+                // 有効なPDFとして処理
+                const pdfBase64Generated = pdfBuffer.toString('base64');
+                logger.debug('PDF generated and encoded to base64, length:', pdfBase64Generated.length);
+                
+                const attachment = {
+                  filename: `${documentData.documentNumber}.pdf`,
+                  content: pdfBase64Generated,
+                  contentType: 'application/pdf',
+                };
+                attachments.push(attachment);
+                logger.debug('Server-generated PDF attachment added to array');
+              } else {
+                // HTMLなど、PDFではないコンテンツの場合
+                logger.warn('Generated content is not a valid PDF, treating as HTML fallback');
+                
+                // HTMLとしてメール本文に追加する処理を追加することも可能
+                // ここではPDF添付を諦めて続行
+                logger.warn('PDF attachment failed, continuing without attachment');
+              }
+            } catch (headerError) {
+              logger.warn('PDF header check failed, but continuing:', headerError);
+              // ヘッダーチェックに失敗してもPDF添付を試行
+              try {
+                const pdfBase64Generated = pdfBuffer.toString('base64');
+                const attachment = {
+                  filename: `${documentData.documentNumber}.pdf`,
+                  content: pdfBase64Generated,
+                  contentType: 'application/pdf',
+                };
+                attachments.push(attachment);
+                logger.debug('PDF attachment added despite header check failure');
+              } catch (attachError) {
+                logger.error('PDF attachment completely failed:', attachError);
+              }
+            }
+          } else {
+            logger.warn('PDF generation was not successful, proceeding without PDF attachment', {
+              pdfAttachmentSuccessful,
+              hasPdfBuffer: !!pdfBuffer,
+              bufferLength: pdfBuffer?.length || 0
+            });
           }
-          
-          // PDFヘッダーチェック
-          const pdfHeader = pdfBuffer.slice(0, 5).toString('ascii');
-          if (!pdfHeader.startsWith('%PDF')) {
-            logger.error('Invalid PDF buffer, header:', pdfHeader);
-            throw new Error('Generated PDF is invalid');
-          }
-          
-          // Base64エンコード
-          const pdfBase64Generated = pdfBuffer.toString('base64');
-          logger.debug('PDF generated and encoded to base64, length:', pdfBase64Generated.length);
-          
-          // 添付ファイルとして追加
-          const attachment = {
-            filename: `${documentData.documentNumber}.pdf`,
-            content: pdfBase64Generated,
-            contentType: 'application/pdf',
-          };
-          attachments.push(attachment);
-          logger.debug('Server-generated PDF attachment added to array');
           
         } catch (pdfError) {
-          logger.error('Server-side PDF generation failed:', {
+          logger.error('Quote PDF generation process encountered error, but continuing with email:', {
             error: pdfError instanceof Error ? pdfError.message : String(pdfError),
             stack: pdfError instanceof Error ? pdfError.stack : undefined,
             documentId: document._id || document.id,
@@ -745,24 +796,8 @@ export async function POST(request: NextRequest) {
             }
           });
           
-          return NextResponse.json(
-            { 
-              error: 'PDF生成に失敗しました',
-              details: pdfError instanceof Error ? pdfError.message : 'Unknown error',
-              debugInfo: {
-                documentType: documentData.documentType,
-                documentNumber: documentData.documentNumber,
-                errorType: pdfError instanceof Error ? pdfError.constructor.name : 'Unknown',
-                message: 'Server-side PDF generation failed',
-                environment: {
-                  NODE_ENV: process.env.NODE_ENV,
-                  VERCEL: process.env.VERCEL,
-                  platform: process.platform
-                }
-              }
-            },
-            { status: 500 }
-          );
+          // PDFエラーでもメール送信は続行
+          logger.warn('PDF generation failed, but proceeding with email without PDF attachment');
         }
       } else {
         // 見積書以外でクライアントからPDFが送られていない場合はエラーを返す
