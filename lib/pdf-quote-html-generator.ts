@@ -193,13 +193,9 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
       margin-bottom: 20px;
       border-radius: 5px;
       height: 60px;
-      display: table;
-      width: 100%;
-    }
-    
-    .total-amount-box > div {
-      display: table-cell;
-      vertical-align: middle;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       padding: 0 20px;
     }
     
@@ -212,7 +208,6 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
       font-size: 20px;
       font-weight: 700;
       color: #0066cc;
-      text-align: right;
     }
     
     /* テーブル */
@@ -475,12 +470,8 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
     
     <!-- 合計金額 -->
     <div class="total-amount-box">
-      <div>
-        <span class="total-label">見積金額合計</span>
-      </div>
-      <div>
-        <span class="total-amount">¥${totalAmount.toLocaleString()} (税込)</span>
-      </div>
+      <span class="total-label">見積金額合計</span>
+      <span class="total-amount">¥${totalAmount.toLocaleString()} (税込)</span>
     </div>
     
     <!-- 明細テーブル -->
