@@ -190,13 +190,12 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
     /* 合計金額 */
     .total-amount-box {
       background-color: #e6f2ff;
+      padding: 20px;
       margin-bottom: 20px;
       border-radius: 5px;
-      height: 60px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 0 20px;
     }
     
     .total-label {
@@ -220,11 +219,9 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
     .quote-table th {
       background-color: #34495e;
       color: white;
-      padding: 16px 12px;
+      padding: 12px;
       text-align: left;
       font-weight: 700;
-      height: 50px;
-      vertical-align: middle;
     }
     
     .quote-table th:last-child,
