@@ -322,8 +322,8 @@ ${documentTitle ? `件名：${documentTitle}
       let pdfBase64 = null;
       
       // PDFを添付する場合のクライアントサイド生成処理
-      // 見積書はサーバーサイドで生成するためスキップ
-      if (attachPdf && typeof window !== 'undefined' && documentType !== 'quote') {
+      // 全ドキュメントタイプでクライアントサイド生成
+      if (attachPdf && typeof window !== 'undefined') {
         try {
           // まず見積書/請求書/納品書/領収書のデータを取得
           const apiPath = documentType === 'delivery-note' ? 'delivery-notes' : 
@@ -445,9 +445,30 @@ ${documentTitle ? `件名：${documentTitle}
               invoiceNumber: docData.invoiceNumber
             });
           } else if (documentType === 'quote') {
-            // 見積書はサーバーサイドPDF生成を使用（印刷ボタンと同じPuppeteer方式）
-            logger.debug('Skipping client-side PDF generation for quote, will use server-side');
-            // pdfBase64は設定せず、後続のサーバーサイド処理で生成
+            // 見積書も専用の美しいPDF生成関数を使用（印刷ボタンと同じ品質）
+            logger.debug('Using beautiful HTML-based PDF generation for quote');
+            
+            // 会社情報を取得
+            let quoteCompanyInfo = companyInfo;
+            if (!quoteCompanyInfo) {
+              try {
+                const companyResponse = await fetch('/api/company-info');
+                if (companyResponse.ok) {
+                  quoteCompanyInfo = await companyResponse.json();
+                }
+              } catch (error) {
+                logger.warn('Failed to fetch company info for quote PDF:', error);
+              }
+            }
+            
+            // 見積書専用の美しいPDF生成関数を使用
+            const { generateQuoteEmailPDF } = await import('@/lib/quote-email-pdf-generator');
+            blob = await generateQuoteEmailPDF(docData, quoteCompanyInfo);
+            
+            logger.debug('Beautiful quote PDF generated successfully', {
+              blobSize: blob.size,
+              quoteNumber: docData.quoteNumber
+            });
           } else {
             // 他のドキュメントタイプは既存の方法を使用
             const { generatePDFBlob } = await import('@/lib/pdf-export');
