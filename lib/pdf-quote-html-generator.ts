@@ -100,8 +100,8 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
   const companyPhone = quote.companySnapshot?.phone || companyInfo?.phone || '';
   const companyEmail = quote.companySnapshot?.email || companyInfo?.email || '';
   
-  // 備考欄の処理
-  const processedNotes = quote.notes ? cleanDuplicateSignatures(quote.notes).replace(/・/g, '■') : '';
+  // 備考欄の処理（特殊文字変換を削除）
+  const processedNotes = quote.notes ? cleanDuplicateSignatures(quote.notes) : '';
 
   const htmlContent = `
 <!DOCTYPE html>
@@ -120,7 +120,7 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
     }
     
     body {
-      font-family: 'Noto Sans JP', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', 'Meiryo', sans-serif;
+      font-family: 'Noto Sans JP', sans-serif;
       font-size: 12px;
       line-height: 1.6;
       color: #333;
@@ -265,9 +265,6 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
       margin-bottom: 4px;
       line-height: 1.4;
       white-space: pre-wrap;
-      font-family: 'Noto Sans JP', 'Hiragino Sans', 'Yu Gothic', 'Meiryo', sans-serif;
-      /* 特殊文字の表示を確実にする */
-      font-feature-settings: "liga" 1, "calt" 1;
     }
     
     .item-notes {
@@ -322,14 +319,6 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
     .notes-content {
       white-space: pre-wrap;
       line-height: 1.8;
-      /* 特殊文字の表示を確実にする */
-      font-feature-settings: "liga" 1, "calt" 1;
-    }
-    
-    /* 黒四角文字（■）の表示を確実にする */
-    .notes-content::before {
-      content: '';
-      font-family: 'Noto Sans JP', 'Hiragino Sans', monospace;
     }
     
     /* 有効期限情報 */

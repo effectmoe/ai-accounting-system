@@ -77,8 +77,9 @@ export async function generateQuoteEmailPDF(quote: any, companyInfo?: any): Prom
       
       document.body.appendChild(container);
       
-      // 少し待機してレンダリングを完了させる
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // フォント読み込みとレンダリングを確実に完了させる
+      await document.fonts.ready;
+      await new Promise(resolve => setTimeout(resolve, 500));
       
       // 見積書コンテナを取得
       const quoteContainer = container.querySelector('.quote-container') || container;
