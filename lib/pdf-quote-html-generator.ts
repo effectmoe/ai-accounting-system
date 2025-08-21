@@ -220,12 +220,10 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
     .quote-table th {
       background-color: #34495e;
       color: white;
-      padding: 12px;
+      padding: 14px 12px;
       text-align: left;
       font-weight: 700;
       vertical-align: middle;
-      height: 45px;
-      line-height: 21px;
     }
     
     .quote-table th:last-child,
