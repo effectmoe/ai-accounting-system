@@ -1,12 +1,12 @@
 import chromium from '@sparticuz/chromium';
 import puppeteer from 'puppeteer-core';
-import { generateInvoiceHTML } from './pdf-html-generator';
+import { generateCompactInvoiceHTML } from './pdf-compact-generator';
 
 // Vercel環境用の設定
 chromium.setHeadlessMode = true;
 chromium.setGraphicsMode = false;
 
-export async function generateInvoicePDFWithPuppeteer(invoice: any, companyInfo: any): Promise<Buffer> {
+export async function generateInvoicePDFWithPuppeteer(invoice: any, companyInfo: any, showDescriptions: boolean = true): Promise<Buffer> {
   let browser = null;
   
   try {
@@ -30,8 +30,8 @@ export async function generateInvoicePDFWithPuppeteer(invoice: any, companyInfo:
 
     const page = await browser.newPage();
     
-    // HTMLコンテンツを生成
-    const htmlContent = generateInvoiceHTML(invoice, companyInfo);
+    // コンパクト版HTMLコンテンツを生成（プレビューと同じレイアウト）
+    const htmlContent = generateCompactInvoiceHTML(invoice, companyInfo, showDescriptions);
     
     // HTMLを設定
     await page.setContent(htmlContent, {
@@ -43,10 +43,10 @@ export async function generateInvoicePDFWithPuppeteer(invoice: any, companyInfo:
       format: 'A4',
       printBackground: true,
       margin: {
-        top: '20mm',
-        right: '20mm',
-        bottom: '20mm',
-        left: '20mm'
+        top: '15mm',
+        right: '15mm',
+        bottom: '15mm',
+        left: '15mm'
       }
     });
     

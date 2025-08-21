@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { InvoiceService } from '@/services/invoice.service';
 import { CompanyInfoService } from '@/services/company-info.service';
 import { generateCompactInvoiceHTML, generateInvoiceFilename, generateSafeFilename } from '@/lib/pdf-compact-generator';
+import { generateInvoicePDFWithPuppeteer } from '@/lib/pdf-puppeteer-generator';
 
 import { logger } from '@/lib/logger';
 export async function GET(
@@ -27,10 +28,50 @@ export async function GET(
     const companyInfoService = new CompanyInfoService();
     const companyInfo = await companyInfoService.getCompanyInfo();
 
-    // HTMLを生成（コンパクト版を使用）
-    logger.debug('Generating compact invoice HTML for:', invoice.invoiceNumber);
+    // 印刷モードまたはプレビューモード（HTMLを返す）
+    if (isPrintMode || !isDownload) {
+      // HTMLを生成（コンパクト版を使用）
+      logger.debug('Generating compact invoice HTML for:', invoice.invoiceNumber);
+      logger.debug('Show descriptions:', showDescriptions);
+      const htmlContent = generateCompactInvoiceHTML(invoice, companyInfo, showDescriptions);
+      
+      if (isPrintMode) {
+        // 印刷モード：自動的に印刷ダイアログを開くHTMLを返す
+        const printHtml = `
+          ${htmlContent}
+          <script>
+            window.onload = function() {
+              window.print();
+              window.onafterprint = function() {
+                window.close();
+              };
+            };
+          </script>
+        `;
+        
+        return new NextResponse(printHtml, {
+          status: 200,
+          headers: {
+            'Content-Type': 'text/html; charset=utf-8',
+          },
+        });
+      }
+      
+      // プレビューモード：HTMLを返す
+      return new NextResponse(htmlContent, {
+        status: 200,
+        headers: {
+          'Content-Type': 'text/html; charset=utf-8',
+        },
+      });
+    }
+
+    // ダウンロードモード：PDFを生成して返す
+    logger.debug('Generating PDF for invoice:', invoice.invoiceNumber);
     logger.debug('Show descriptions:', showDescriptions);
-    const htmlContent = generateCompactInvoiceHTML(invoice, companyInfo, showDescriptions);
+    
+    // PuppeteerでPDFを生成（プレビューと同じshowDescriptionsパラメータを使用）
+    const pdfBuffer = await generateInvoicePDFWithPuppeteer(invoice, companyInfo, showDescriptions);
     
     // 新しい命名規則でファイル名を生成: 請求日_帳表名_顧客名
     const filename = generateInvoiceFilename(invoice);
@@ -41,37 +82,12 @@ export async function GET(
     // 日本語ファイル名をRFC 5987準拠でエンコード
     const encodedFilename = encodeURIComponent(filename);
     
-    // HTMLを返し、ブラウザの印刷機能を使ってPDFに変換
-    if (isPrintMode) {
-      // 印刷モード：自動的に印刷ダイアログを開くHTMLを返す
-      const printHtml = `
-        ${htmlContent}
-        <script>
-          window.onload = function() {
-            window.print();
-            window.onafterprint = function() {
-              window.close();
-            };
-          };
-        </script>
-      `;
-      
-      return new NextResponse(printHtml, {
-        status: 200,
-        headers: {
-          'Content-Type': 'text/html; charset=utf-8',
-        },
-      });
-    }
-    
-    // 通常モード：HTMLを返す
-    return new NextResponse(htmlContent, {
+    // PDFを返す
+    return new NextResponse(pdfBuffer, {
       status: 200,
       headers: {
-        'Content-Type': 'text/html; charset=utf-8',
-        'Content-Disposition': isDownload 
-          ? `attachment; filename="${safeFilename.replace('.pdf', '.html')}"; filename*=UTF-8''${encodedFilename.replace('.pdf', '.html')}`
-          : `inline; filename="${safeFilename.replace('.pdf', '.html')}"; filename*=UTF-8''${encodedFilename.replace('.pdf', '.html')}`,
+        'Content-Type': 'application/pdf',
+        'Content-Disposition': `attachment; filename="${safeFilename}"; filename*=UTF-8''${encodedFilename}`,
       },
     });
   } catch (error) {
