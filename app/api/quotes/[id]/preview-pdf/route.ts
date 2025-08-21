@@ -39,7 +39,13 @@ export async function GET(
       );
     }
     
-    logger.info(`[Quote Preview PDF] PDF generated successfully, size: ${pdfBuffer.length} bytes`);
+    // BufferまたはUint8Arrayを適切に処理
+    const buffer = Buffer.isBuffer(pdfBuffer) 
+      ? pdfBuffer 
+      : Buffer.from(pdfBuffer);
+    
+    logger.info(`[Quote Preview PDF] PDF generated successfully, size: ${buffer.length} bytes`);
+    logger.info(`[Quote Preview PDF] PDF header: ${buffer.slice(0, 5).toString('ascii')}`);
     
     // PDFファイル名を生成
     const issueDate = new Date(quote.issueDate).toLocaleDateString('ja-JP', {
@@ -53,18 +59,20 @@ export async function GET(
     const safeFilename = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
     const encodedFilename = encodeURIComponent(filename);
     
-    // PDFを返す
-    return new NextResponse(pdfBuffer, {
+    // PDFを返す（Blobとして明示的に作成）
+    const response = new Response(buffer, {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Length': pdfBuffer.length.toString(),
+        'Content-Length': buffer.length.toString(),
         'Content-Disposition': `inline; filename="${safeFilename}"; filename*=UTF-8''${encodedFilename}`,
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Pragma': 'no-cache',
         'Expires': '0'
       },
     });
+    
+    return response;
   } catch (error) {
     logger.error('[Quote Preview PDF] Error:', error);
     logger.error('[Quote Preview PDF] Stack:', error instanceof Error ? error.stack : 'No stack trace');
