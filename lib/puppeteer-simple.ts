@@ -14,21 +14,46 @@ export async function launchPuppeteerSimple() {
   
   if (isProduction) {
     try {
-      // @sparticuz/chromiumを動的にインポート
-      const chromium = await import('@sparticuz/chromium');
+      // @sparticuz/chromium-minを動的にインポート
+      const chromium = await import('@sparticuz/chromium-min');
       
-      console.log('[PuppeteerSimple] Using @sparticuz/chromium');
-      console.log('[PuppeteerSimple] Chromium args:', chromium.default.args);
+      console.log('[PuppeteerSimple] Using @sparticuz/chromium-min');
+      console.log('[PuppeteerSimple] Chromium version:', chromium.default.version || 'unknown');
+      console.log('[PuppeteerSimple] Chromium args count:', chromium.default.args?.length);
       
-      // 実行パスを事前に取得して確認
+      // @sparticuz/chromium-minの実行パスを取得
       let execPath;
       try {
-        execPath = await chromium.default.executablePath();
-        console.log('[PuppeteerSimple] Chromium executable path:', execPath);
+        // Vercel環境では特殊な処理が必要
+        if (process.env.VERCEL) {
+          // @sparticuz/chromium-minの設定を強制的に設定
+          if (chromium.default.setHeadlessMode) {
+            chromium.default.setHeadlessMode = true;
+          }
+          if (chromium.default.setGraphicsMode) {
+            chromium.default.setGraphicsMode = false;
+          }
+          
+          // @sparticuz/chromium-minから実際のバイナリを取得
+          try {
+            execPath = await chromium.default.executablePath();
+            console.log('[PuppeteerSimple] Got Chromium path from @sparticuz/chromium-min:', execPath);
+          } catch (e: any) {
+            console.log('[PuppeteerSimple] executablePath error:', e.message);
+            // chromium-minはバイナリを含まないので、外部URLから取得する必要がある
+            execPath = await chromium.default.executablePath(
+              'https://github.com/Sparticuz/chromium/releases/download/v131.0.1/chromium-v131.0.1-pack.tar'
+            );
+            console.log('[PuppeteerSimple] Using downloaded Chromium path:', execPath);
+          }
+        } else {
+          execPath = await chromium.default.executablePath();
+          console.log('[PuppeteerSimple] Chromium executable path:', execPath);
+        }
       } catch (pathError: any) {
         console.error('[PuppeteerSimple] Failed to get executable path:', pathError.message);
-        // パスが取得できない場合はnullを使用（Puppeteerがデフォルトを探す）
-        execPath = null;
+        // エラーでも続行（Puppeteerのデフォルトを使用）
+        execPath = undefined;
       }
       
       // シンプルな設定でブラウザを起動
@@ -38,8 +63,8 @@ export async function launchPuppeteerSimple() {
         headless: chromium.default.headless || true,
       };
       
-      // 実行パスが有効な場合のみ設定
-      if (execPath) {
+      // 実行パスが有効な場合のみ設定（undefinedの場合はPuppeteerのデフォルトを使用）
+      if (execPath !== undefined) {
         launchOptions.executablePath = execPath;
       }
       

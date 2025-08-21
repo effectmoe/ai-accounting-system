@@ -16,8 +16,8 @@ export async function GET() {
   };
 
   try {
-    // @sparticuz/chromiumの情報を取得
-    const chromium = await import('@sparticuz/chromium');
+    // @sparticuz/chromium-minの情報を取得
+    const chromium = await import('@sparticuz/chromium-min');
     diagnostics.chromium = {
       available: true,
       version: chromium.default.version || 'unknown',
@@ -28,7 +28,10 @@ export async function GET() {
 
     // 実行パスを取得
     try {
-      const execPath = await chromium.default.executablePath();
+      // chromium-minはURLを指定する必要がある
+      const execPath = await chromium.default.executablePath(
+        'https://github.com/Sparticuz/chromium/releases/download/v131.0.1/chromium-v131.0.1-pack.tar'
+      );
       diagnostics.chromium.executablePath = execPath;
       
       // ファイルの存在確認（Vercel環境では使えない可能性あり）
