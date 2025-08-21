@@ -196,6 +196,7 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
       display: flex;
       justify-content: space-between;
       align-items: center;
+      min-height: 60px;
     }
     
     .total-label {
@@ -223,6 +224,9 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
       text-align: left;
       font-weight: 700;
       vertical-align: middle;
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
     }
     
     .quote-table th:last-child,
@@ -237,7 +241,7 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
     }
     
     .quote-table th:nth-child(2) {
-      text-align: center;
+      justify-content: center;
     }
     
     .quote-table th:nth-child(3),
@@ -248,7 +252,7 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
     
     .quote-table th:nth-child(3),
     .quote-table th:last-child {
-      text-align: right;
+      justify-content: flex-end;
       padding-right: 12px;
     }
     
