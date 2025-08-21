@@ -843,9 +843,9 @@ export default function QuoteDetailPage({ params }: QuoteDetailPageProps) {
             </div>
             <div className="flex-1 overflow-hidden">
               <iframe
-                src={`/api/quotes/${quote._id}/preview-pdf`}
+                src={`/api/quotes/${quote._id}/pdf?showDescriptions=${showItemDescriptions}`}
                 className="w-full h-full"
-                title="見積書PDFプレビュー"
+                title="見積書プレビュー"
               />
             </div>
             <div className="p-4 border-t flex justify-end gap-2">
