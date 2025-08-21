@@ -419,6 +419,31 @@ ${documentTitle ? `件名：${documentTitle}
               blobSize: blob.size,
               expectedSize: '約310KB'
             });
+          } else if (documentType === 'invoice') {
+            // 請求書も専用の美しいPDF生成関数を使用（印刷ボタンと同じ品質）
+            logger.debug('Using beautiful HTML-based PDF generation for invoice');
+            
+            // 会社情報を取得
+            let invoiceCompanyInfo = companyInfo;
+            if (!invoiceCompanyInfo) {
+              try {
+                const companyResponse = await fetch('/api/company-info');
+                if (companyResponse.ok) {
+                  invoiceCompanyInfo = await companyResponse.json();
+                }
+              } catch (error) {
+                logger.warn('Failed to fetch company info for invoice PDF:', error);
+              }
+            }
+            
+            // 請求書専用の美しいPDF生成関数を使用
+            const { generateInvoiceEmailPDF } = await import('@/lib/invoice-email-pdf-generator');
+            blob = await generateInvoiceEmailPDF(docData, invoiceCompanyInfo);
+            
+            logger.debug('Beautiful invoice PDF generated successfully', {
+              blobSize: blob.size,
+              invoiceNumber: docData.invoiceNumber
+            });
           } else {
             // 他のドキュメントタイプは既存の方法を使用
             const { generatePDFBlob } = await import('@/lib/pdf-export');
