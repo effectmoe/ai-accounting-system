@@ -61,7 +61,8 @@
       "maxDuration": 30
     },
     "app/api/invoices/[id]/pdf/route.ts": {
-      "maxDuration": 30
+      "maxDuration": 45,
+      "memory": 1024
     },
     "app/api/quotes/[id]/pdf/route.ts": {
       "maxDuration": 30
