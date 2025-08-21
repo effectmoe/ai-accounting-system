@@ -190,34 +190,23 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
     /* 合計金額 */
     .total-amount-box {
       background-color: #e6f2ff;
-      padding: 0;
+      padding: 18px 20px;
       margin-bottom: 20px;
       border-radius: 5px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      height: 55px;
     }
     
     .total-label {
       font-size: 16px;
       font-weight: 700;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100%;
-      padding: 0 20px;
     }
     
     .total-amount {
       font-size: 20px;
       font-weight: 700;
       color: #0066cc;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100%;
-      padding: 0 20px;
     }
     
     /* テーブル */
@@ -230,12 +219,10 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
     .quote-table th {
       background-color: #34495e;
       color: white;
-      padding: 0 12px;
+      padding: 12px;
       text-align: left;
       font-weight: 700;
       vertical-align: middle;
-      height: 45px;
-      line-height: 45px;
     }
     
     .quote-table th:last-child,
