@@ -89,6 +89,19 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
   // 顧客の電話・メール情報
   const customerPhone = quote.customer?.phone || quote.customerSnapshot?.phone || '';
   const customerEmail = quote.customer?.email || quote.customerSnapshot?.email || '';
+  
+  // 会社情報を事前に計算
+  const companyName = quote.companySnapshot?.companyName || companyInfo?.companyName || companyInfo?.name || '会社名未設定';
+  const companyAddress = quote.companySnapshot?.address || 
+                         companyInfo?.address1 || 
+                         companyInfo?.address || 
+                         [companyInfo?.prefecture, companyInfo?.city, companyInfo?.address1].filter(Boolean).join(' ') || 
+                         '';
+  const companyPhone = quote.companySnapshot?.phone || companyInfo?.phone || '';
+  const companyEmail = quote.companySnapshot?.email || companyInfo?.email || '';
+  
+  // 備考欄の処理
+  const processedNotes = quote.notes ? cleanDuplicateSignatures(quote.notes).replace(/・/g, '■') : '';
 
   const htmlContent = `
 <!DOCTYPE html>
@@ -453,28 +466,10 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
           <p>見積書番号: ${quote.quoteNumber}</p>
         </div>
         <div style="margin-top: 20px;">
-          <h3 class="company-name">${(() => {
-            if (quote.companySnapshot?.companyName) return quote.companySnapshot.companyName;
-            if (companyInfo?.companyName) return companyInfo.companyName;
-            if (companyInfo?.name) return companyInfo.name;
-            return '会社名未設定';
-          })()}</h3>
-          ${(() => {
-            const address = quote.companySnapshot?.address || 
-                          companyInfo?.address1 || 
-                          (companyInfo?.address && companyInfo.address) ||
-                          [companyInfo?.prefecture, companyInfo?.city, companyInfo?.address1]
-                            .filter(Boolean).join(' ');
-            return address ? `<p>${address}</p>` : '';
-          })()}
-          ${(() => {
-            const phone = quote.companySnapshot?.phone || companyInfo?.phone;
-            return phone ? `<p>TEL: ${phone}</p>` : '';
-          })()}
-          ${(() => {
-            const email = quote.companySnapshot?.email || companyInfo?.email;
-            return email ? `<p>${email}</p>` : '';
-          })()}
+          <h3 class="company-name">${companyName}</h3>
+          ${companyAddress ? `<p>${companyAddress}</p>` : ''}
+          ${companyPhone ? `<p>TEL: ${companyPhone}</p>` : ''}
+          ${companyEmail ? `<p>${companyEmail}</p>` : ''}
         </div>
       </div>
     </div>
@@ -540,15 +535,10 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
     </div>
     
     <!-- 備考 -->
-    ${quote.notes ? `
+    ${processedNotes ? `
       <div class="notes-section">
         <h3 class="notes-title">備考</h3>
-        <div class="notes-content">${(() => {
-          let processedNotes = cleanDuplicateSignatures(quote.notes);
-          // 中黒（・）を黒い四角（■）に置換
-          processedNotes = processedNotes.replace(/・/g, '■');
-          return processedNotes;
-        })()}</div>
+        <div class="notes-content">${processedNotes}</div>
       </div>
     ` : ''}
   </div>

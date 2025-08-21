@@ -445,10 +445,10 @@ ${documentTitle ? `件名：${documentTitle}
               invoiceNumber: docData.invoiceNumber
             });
           } else if (documentType === 'quote') {
-            // 見積書はサーバーサイドPDF生成を使用（クライアント側での生成に問題があるため）
-            logger.debug('Skipping client-side PDF generation for quote, will use server-side');
-            // pdfBase64をnullのままにして、後でサーバーサイドエンドポイントを使用
-            pdfBase64 = null;
+            // 見積書もクライアントサイドPDF生成を試みる（IIFEを削除して修正済み）
+            const { generateQuoteEmailPDFBase64 } = await import('@/lib/quote-email-pdf-generator');
+            logger.debug('Generating quote PDF for email attachment...');
+            pdfBase64 = await generateQuoteEmailPDFBase64(docData, companyInfo);
           } else {
             // 他のドキュメントタイプは既存の方法を使用
             const { generatePDFBlob } = await import('@/lib/pdf-export');
