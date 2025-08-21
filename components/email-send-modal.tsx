@@ -444,6 +444,31 @@ ${documentTitle ? `件名：${documentTitle}
               blobSize: blob.size,
               invoiceNumber: docData.invoiceNumber
             });
+          } else if (documentType === 'quote') {
+            // 見積書も専用の美しいPDF生成関数を使用（印刷ボタンと同じ品質）
+            logger.debug('Using beautiful HTML-based PDF generation for quote');
+            
+            // 会社情報を取得
+            let quoteCompanyInfo = companyInfo;
+            if (!quoteCompanyInfo) {
+              try {
+                const companyResponse = await fetch('/api/company-info');
+                if (companyResponse.ok) {
+                  quoteCompanyInfo = await companyResponse.json();
+                }
+              } catch (error) {
+                logger.warn('Failed to fetch company info for quote PDF:', error);
+              }
+            }
+            
+            // 見積書専用の美しいPDF生成関数を使用
+            const { generateQuoteEmailPDF } = await import('@/lib/quote-email-pdf-generator');
+            blob = await generateQuoteEmailPDF(docData, quoteCompanyInfo);
+            
+            logger.debug('Beautiful quote PDF generated successfully', {
+              blobSize: blob.size,
+              quoteNumber: docData.quoteNumber
+            });
           } else {
             // 他のドキュメントタイプは既存の方法を使用
             const { generatePDFBlob } = await import('@/lib/pdf-export');
