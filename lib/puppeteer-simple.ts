@@ -24,31 +24,34 @@ export async function launchPuppeteerSimple() {
       // @sparticuz/chromium-minの実行パスを取得
       let execPath;
       try {
-        // Vercel環境では特殊な処理が必要
-        if (process.env.VERCEL) {
-          // @sparticuz/chromium-minは設定済みのため、追加設定は不要
-          
-          // @sparticuz/chromium-minから実際のバイナリを取得
-          // chromium-minはバイナリを含まないので、常にURLから取得する
-          execPath = await chromium.default.executablePath(
-            'https://github.com/Sparticuz/chromium/releases/download/v131.0.1/chromium-v131.0.1-pack.tar'
-          );
-          console.log('[PuppeteerSimple] Using downloaded Chromium path:', execPath);
-        } else {
-          execPath = await chromium.default.executablePath();
-          console.log('[PuppeteerSimple] Chromium executable path:', execPath);
-        }
+        // chromium-minではexecutablePathはデフォルトで提供される
+        execPath = await chromium.default.executablePath();
+        console.log('[PuppeteerSimple] Chromium executable path obtained:', !!execPath);
       } catch (pathError: any) {
         console.error('[PuppeteerSimple] Failed to get executable path:', pathError.message);
-        // エラーでも続行（Puppeteerのデフォルトを使用）
+        // Vercel環境では@sparticuz/chromium-minのデフォルト動作に任せる
         execPath = undefined;
       }
       
-      // シンプルな設定でブラウザを起動
+      // Vercel環境向けの設定でブラウザを起動
       const launchOptions: any = {
-        args: chromium.default.args,
+        args: [
+          ...chromium.default.args,
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-gpu',
+          '--disable-web-security',
+          '--disable-features=VizDisplayCompositor',
+          '--single-process',
+          '--no-zygote',
+          '--memory-pressure-off',
+          '--max_old_space_size=4096',
+          '--font-render-hinting=none'
+        ],
         defaultViewport: chromium.default.defaultViewport,
-        headless: chromium.default.headless || true,
+        headless: true,
+        timeout: 30000
       };
       
       // 実行パスが有効な場合のみ設定（undefinedの場合はPuppeteerのデフォルトを使用）

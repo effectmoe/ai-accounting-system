@@ -9,11 +9,21 @@ import { generateCompactQuoteHTML } from './pdf-quote-html-generator';
 import { logger } from '@/lib/logger';
 
 // jsPDFライブラリをサーバーサイドで使用するためのポリフィル
-global.window = global.window || {} as any;
-global.navigator = global.navigator || { userAgent: '' } as any;
-global.document = global.document || {
-  createElement: () => ({ getContext: () => null }),
-} as any;
+if (typeof window === 'undefined') {
+  global.window = {
+    location: { protocol: 'https:' },
+    navigator: { userAgent: 'node' },
+    document: {
+      createElement: () => ({ getContext: () => null }),
+      createElementNS: () => ({ getContext: () => null }),
+    },
+    atob: (str: string) => Buffer.from(str, 'base64').toString('binary'),
+    btoa: (str: string) => Buffer.from(str, 'binary').toString('base64'),
+  } as any;
+  
+  global.navigator = global.navigator || { userAgent: 'node' } as any;
+  global.document = global.document || global.window.document as any;
+}
 
 /**
  * サーバーサイドでjsPDFを使用して見積書PDFを生成
@@ -23,10 +33,15 @@ export async function generateQuotePDFServer(
   companyInfo: CompanyInfo
 ): Promise<Buffer> {
   try {
-    logger.debug('[jsPDF Server] Starting quote PDF generation');
+    logger.debug('[jsPDF Server] Starting quote PDF generation', {
+      quoteNumber: quote.quoteNumber,
+      itemCount: quote.items?.length || 0,
+      total: quote.total
+    });
     
     // 動的インポート
     const jsPDF = (await import('jspdf')).default;
+    logger.debug('[jsPDF Server] jsPDF imported successfully');
     
     // A4サイズのPDFを作成
     const pdf = new jsPDF({
@@ -35,10 +50,12 @@ export async function generateQuotePDFServer(
       format: 'a4',
       compress: true
     });
+    logger.debug('[jsPDF Server] PDF instance created');
     
     // 日本語フォントの設定（サーバーサイドではフォント埋め込みが必要）
     // 基本的なフォントで対応
     pdf.setFont('helvetica');
+    logger.debug('[jsPDF Server] Font set to helvetica');
     
     // タイトル
     pdf.setFontSize(20);
@@ -131,18 +148,41 @@ export async function generateQuotePDFServer(
     });
     
     // BufferとしてPDFを出力
+    logger.debug('[jsPDF Server] Generating PDF output...');
     const pdfArrayBuffer = pdf.output('arraybuffer');
     const pdfBuffer = Buffer.from(pdfArrayBuffer);
     
+    // PDFバッファの検証
+    if (!pdfBuffer || pdfBuffer.length === 0) {
+      throw new Error('Generated PDF buffer is empty');
+    }
+    
+    // PDFヘッダーの確認
+    const pdfHeader = pdfBuffer.slice(0, 5).toString('ascii');
+    if (!pdfHeader.startsWith('%PDF')) {
+      logger.error('[jsPDF Server] Invalid PDF buffer generated', {
+        headerBytes: pdfHeader,
+        bufferLength: pdfBuffer.length,
+        first50Bytes: pdfBuffer.slice(0, 50).toString('ascii')
+      });
+      throw new Error('Generated buffer is not a valid PDF');
+    }
+    
     logger.debug('[jsPDF Server] PDF generated successfully', {
       size: pdfBuffer.length,
-      quoteNumber: quote.quoteNumber
+      quoteNumber: quote.quoteNumber,
+      header: pdfHeader
     });
     
     return pdfBuffer;
     
   } catch (error) {
-    logger.error('[jsPDF Server] Failed to generate quote PDF:', error);
+    logger.error('[jsPDF Server] Failed to generate quote PDF:', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      quoteNumber: quote.quoteNumber,
+      itemCount: quote.items?.length || 0
+    });
     throw new Error(`jsPDF PDF generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }

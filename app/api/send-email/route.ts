@@ -12,7 +12,7 @@ import { logger } from '@/lib/logger';
 export const runtime = 'nodejs';
 
 // APIルートのボディサイズ制限を10MBに設定（デフォルトは4.5MB）
-export const maxDuration = 30; // 30秒のタイムアウト
+export const maxDuration = 60; // 60秒のタイムアウト（PDF生成時間を考慮）
 
 // メール送信のための型定義
 interface EmailRequest {
@@ -605,24 +605,105 @@ export async function POST(request: NextRequest) {
         logger.debug('Quote document detected, generating PDF on server-side');
         
         try {
+          // データの検証
+          if (!document) {
+            throw new Error('Quote document is null or undefined');
+          }
+          if (!document.quoteNumber) {
+            throw new Error('Quote number is missing');
+          }
+          if (!document.items || document.items.length === 0) {
+            throw new Error('Quote items are missing or empty');
+          }
+          
+          logger.debug('Quote data validation passed', {
+            quoteNumber: document.quoteNumber,
+            itemCount: document.items.length,
+            hasCustomer: !!document.customer,
+            hasTotal: typeof document.total === 'number'
+          });
+          
           // 会社情報を取得
           const companyInfoService = new CompanyInfoService();
           const companyInfo = await companyInfoService.getCompanyInfo();
           
+          if (!companyInfo) {
+            logger.warn('Company info not found, using default values');
+          }
+          
           let pdfBuffer: Buffer;
           
-          try {
-            // まずPuppeteerでPDF生成を試みる
-            logger.debug('Attempting Puppeteer PDF generation for quote');
-            const { convertQuoteHTMLtoPDF } = await import('@/lib/quote-html-to-pdf-server');
-            pdfBuffer = await convertQuoteHTMLtoPDF(document, companyInfo || {}, true);
-            logger.debug('Puppeteer PDF generation successful');
-          } catch (puppeteerError) {
-            // Puppeteerが失敗した場合、jsPDFでフォールバック
-            logger.warn('Puppeteer failed, falling back to jsPDF:', puppeteerError);
-            const { generateQuotePDFServer } = await import('@/lib/quote-pdf-server-jspdf');
-            pdfBuffer = await generateQuotePDFServer(document, companyInfo || {});
-            logger.debug('jsPDF fallback PDF generation successful');
+          // Vercel環境ではjsPDFを優先して使用（Puppeteerは不安定なため）
+          const isProduction = process.env.NODE_ENV === 'production' || process.env.VERCEL;
+          
+          if (isProduction) {
+            // 本番環境（Vercel）では確実なPDFkitを最優先で使用
+            logger.debug('Production environment detected, using PDFkit for quote PDF generation');
+            try {
+              const { generateQuotePDFWithPDFkit } = await import('@/lib/quote-pdf-server-pdfkit');
+              pdfBuffer = await generateQuotePDFWithPDFkit(document, companyInfo || {});
+              logger.debug('PDFkit quote PDF generation successful');
+            } catch (pdfkitError) {
+              logger.error('PDFkit failed, falling back to jsPDF:', {
+                error: pdfkitError instanceof Error ? pdfkitError.message : String(pdfkitError),
+                stack: pdfkitError instanceof Error ? pdfkitError.stack : undefined,
+                documentId: document._id || document.id,
+                quoteNumber: document.quoteNumber
+              });
+              
+              // PDFkitが失敗した場合はjsPDFを試す
+              try {
+                const { generateQuotePDFServer } = await import('@/lib/quote-pdf-server-jspdf');
+                pdfBuffer = await generateQuotePDFServer(document, companyInfo || {});
+                logger.debug('jsPDF fallback PDF generation successful');
+              } catch (jsPdfError) {
+                logger.error('jsPDF also failed, trying Puppeteer as last resort:', {
+                  error: jsPdfError instanceof Error ? jsPdfError.message : String(jsPdfError),
+                  stack: jsPdfError instanceof Error ? jsPdfError.stack : undefined,
+                  documentId: document._id || document.id,
+                  quoteNumber: document.quoteNumber
+                });
+                
+                // 最後の手段としてPuppeteerを試す
+                const { convertQuoteHTMLtoPDF } = await import('@/lib/quote-html-to-pdf-server');
+                pdfBuffer = await convertQuoteHTMLtoPDF(document, companyInfo || {}, true);
+                logger.debug('Puppeteer last resort PDF generation successful');
+              }
+            }
+          } else {
+            // 開発環境ではPDFkitを優先（確実性のため）
+            logger.debug('Development environment detected, using PDFkit for quote PDF generation');
+            try {
+              const { generateQuotePDFWithPDFkit } = await import('@/lib/quote-pdf-server-pdfkit');
+              pdfBuffer = await generateQuotePDFWithPDFkit(document, companyInfo || {});
+              logger.debug('PDFkit PDF generation successful');
+            } catch (pdfkitError) {
+              logger.error('PDFkit failed, falling back to Puppeteer:', {
+                error: pdfkitError instanceof Error ? pdfkitError.message : String(pdfkitError),
+                stack: pdfkitError instanceof Error ? pdfkitError.stack : undefined,
+                documentId: document._id || document.id,
+                quoteNumber: document.quoteNumber
+              });
+              
+              // PDFkitが失敗した場合はPuppeteerを試す（開発環境でデバッグしやすいため）
+              try {
+                const { convertQuoteHTMLtoPDF } = await import('@/lib/quote-html-to-pdf-server');
+                pdfBuffer = await convertQuoteHTMLtoPDF(document, companyInfo || {}, true);
+                logger.debug('Puppeteer fallback PDF generation successful');
+              } catch (puppeteerError) {
+                logger.error('Puppeteer also failed, trying jsPDF as last resort:', {
+                  error: puppeteerError instanceof Error ? puppeteerError.message : String(puppeteerError),
+                  stack: puppeteerError instanceof Error ? puppeteerError.stack : undefined,
+                  documentId: document._id || document.id,
+                  quoteNumber: document.quoteNumber
+                });
+                
+                // 最後の手段としてjsPDFを試す
+                const { generateQuotePDFServer } = await import('@/lib/quote-pdf-server-jspdf');
+                pdfBuffer = await generateQuotePDFServer(document, companyInfo || {});
+                logger.debug('jsPDF last resort PDF generation successful');
+              }
+            }
           }
           
           // PDFバッファの検証
@@ -651,7 +732,19 @@ export async function POST(request: NextRequest) {
           logger.debug('Server-generated PDF attachment added to array');
           
         } catch (pdfError) {
-          logger.error('Server-side PDF generation failed:', pdfError);
+          logger.error('Server-side PDF generation failed:', {
+            error: pdfError instanceof Error ? pdfError.message : String(pdfError),
+            stack: pdfError instanceof Error ? pdfError.stack : undefined,
+            documentId: document._id || document.id,
+            documentType: documentData.documentType,
+            documentNumber: documentData.documentNumber,
+            environment: {
+              NODE_ENV: process.env.NODE_ENV,
+              VERCEL: process.env.VERCEL,
+              platform: process.platform
+            }
+          });
+          
           return NextResponse.json(
             { 
               error: 'PDF生成に失敗しました',
@@ -659,7 +752,13 @@ export async function POST(request: NextRequest) {
               debugInfo: {
                 documentType: documentData.documentType,
                 documentNumber: documentData.documentNumber,
-                message: 'Server-side PDF generation failed'
+                errorType: pdfError instanceof Error ? pdfError.constructor.name : 'Unknown',
+                message: 'Server-side PDF generation failed',
+                environment: {
+                  NODE_ENV: process.env.NODE_ENV,
+                  VERCEL: process.env.VERCEL,
+                  platform: process.platform
+                }
               }
             },
             { status: 500 }
