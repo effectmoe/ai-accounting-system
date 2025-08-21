@@ -6,8 +6,10 @@ async function downloadChromium() {
   console.log('Downloading Chromium for Vercel...');
   
   try {
-    // Chromiumのバイナリパスを取得
-    const execPath = await chromium.executablePath();
+    // Chromiumのバイナリパスを取得 - URLを指定して強制ダウンロード
+    const execPath = await chromium.executablePath(
+      'https://github.com/Sparticuz/chromium/releases/download/v131.0.1/chromium-v131.0.1-pack.tar'
+    );
     console.log('Chromium executable path:', execPath);
     
     // バイナリが存在するか確認

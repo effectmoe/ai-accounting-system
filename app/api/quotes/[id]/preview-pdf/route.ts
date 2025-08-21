@@ -47,6 +47,15 @@ export async function GET(
     logger.info(`[Quote Preview PDF] PDF generated successfully, size: ${buffer.length} bytes`);
     logger.info(`[Quote Preview PDF] PDF header: ${buffer.slice(0, 5).toString('ascii')}`);
     
+    // PDFヘッダーの検証
+    if (!buffer.slice(0, 5).toString('ascii').startsWith('%PDF')) {
+      logger.error('[Quote Preview PDF] Invalid PDF header');
+      return NextResponse.json(
+        { error: 'Generated file is not a valid PDF' },
+        { status: 500 }
+      );
+    }
+    
     // PDFファイル名を生成
     const issueDate = new Date(quote.issueDate).toLocaleDateString('ja-JP', {
       year: 'numeric',
@@ -55,24 +64,18 @@ export async function GET(
     }).replace(/\//g, '');
     
     const customerName = quote.customerSnapshot?.name || quote.customer?.name || '顧客名なし';
-    const filename = `${issueDate}_見積書_${customerName}.pdf`;
-    const safeFilename = filename.replace(/[^a-zA-Z0-9._-]/g, '_');
+    const filename = `quote_${quote.quoteNumber}.pdf`;
     const encodedFilename = encodeURIComponent(filename);
     
-    // PDFを返す（Blobとして明示的に作成）
-    const response = new Response(buffer, {
+    // NextResponseを使用してPDFを返す
+    return new NextResponse(buffer, {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Length': buffer.length.toString(),
-        'Content-Disposition': `inline; filename="${safeFilename}"; filename*=UTF-8''${encodedFilename}`,
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        'Pragma': 'no-cache',
-        'Expires': '0'
+        'Content-Disposition': `inline; filename="${filename}"; filename*=UTF-8''${encodedFilename}`,
       },
     });
-    
-    return response;
   } catch (error) {
     logger.error('[Quote Preview PDF] Error:', error);
     logger.error('[Quote Preview PDF] Stack:', error instanceof Error ? error.stack : 'No stack trace');

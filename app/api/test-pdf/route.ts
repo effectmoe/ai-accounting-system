@@ -57,14 +57,13 @@ export async function GET() {
       throw new Error('Generated content is not a valid PDF');
     }
     
-    // PDFを返す
-    return new Response(buffer, {
+    // PDFを返す - NextResponseを使用
+    return new NextResponse(buffer, {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Length': buffer.length.toString(),
         'Content-Disposition': 'inline; filename="test.pdf"',
-        'Cache-Control': 'no-cache'
       }
     });
     

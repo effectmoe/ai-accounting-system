@@ -35,17 +35,11 @@ export async function launchPuppeteerSimple() {
           }
           
           // @sparticuz/chromium-minから実際のバイナリを取得
-          try {
-            execPath = await chromium.default.executablePath();
-            console.log('[PuppeteerSimple] Got Chromium path from @sparticuz/chromium-min:', execPath);
-          } catch (e: any) {
-            console.log('[PuppeteerSimple] executablePath error:', e.message);
-            // chromium-minはバイナリを含まないので、外部URLから取得する必要がある
-            execPath = await chromium.default.executablePath(
-              'https://github.com/Sparticuz/chromium/releases/download/v131.0.1/chromium-v131.0.1-pack.tar'
-            );
-            console.log('[PuppeteerSimple] Using downloaded Chromium path:', execPath);
-          }
+          // chromium-minはバイナリを含まないので、常にURLから取得する
+          execPath = await chromium.default.executablePath(
+            'https://github.com/Sparticuz/chromium/releases/download/v131.0.1/chromium-v131.0.1-pack.tar'
+          );
+          console.log('[PuppeteerSimple] Using downloaded Chromium path:', execPath);
         } else {
           execPath = await chromium.default.executablePath();
           console.log('[PuppeteerSimple] Chromium executable path:', execPath);
