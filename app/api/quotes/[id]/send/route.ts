@@ -117,10 +117,24 @@ export async function POST(
       console.log('[Send Quote] PDF generation completed in', pdfGenerationTime, 'ms');
       console.log('[Send Quote] PDF Buffer size:', pdfBuffer.length, 'bytes');
       
+      // PDFバッファの検証
+      if (!pdfBuffer || pdfBuffer.length === 0) {
+        throw new Error('PDF buffer is empty');
+      }
+      
+      // PDFヘッダーチェック
+      const pdfHeader = pdfBuffer.slice(0, 5).toString('ascii');
+      if (!pdfHeader.startsWith('%PDF')) {
+        console.error('[Send Quote] Invalid PDF buffer, header:', pdfHeader);
+        throw new Error('Generated PDF is invalid');
+      }
+      
+      // Base64エンコード（Bufferを直接使用）
       const pdfBase64 = pdfBuffer.toString('base64');
       console.log('[Send Quote] Base64 encoded, length:', pdfBase64.length);
+      console.log('[Send Quote] Base64 sample:', pdfBase64.substring(0, 100));
       
-      // PDFファイルとして添付
+      // PDFファイルとして添付（Resend APIの正しい形式）
       attachments.push({
         filename: `quote_${quote.quoteNumber}.pdf`,
         content: pdfBase64,
@@ -175,8 +189,7 @@ export async function POST(
         ...(attachments.length > 0 && {
           attachments: attachments.map(att => ({
             filename: att.filename,
-            content: att.content,
-            content_type: att.contentType, // Resend APIの仕様に合わせて修正
+            content: att.content, // Base64文字列のまま送信
           }))
         }),
       };
