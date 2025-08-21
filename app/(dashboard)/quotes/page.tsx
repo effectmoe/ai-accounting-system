@@ -701,7 +701,7 @@ function QuotesPageContent() {
                             size="sm"
                             onClick={(e) => {
                               e.stopPropagation();
-                              window.open(`/api/quotes/${quote._id}/preview-pdf`, '_blank');
+                              window.open(`/api/quotes/${quote._id}/pdf?showDescriptions=true`, '_blank');
                             }}
                             title="PDFダウンロード"
                           >
