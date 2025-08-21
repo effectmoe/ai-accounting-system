@@ -445,52 +445,34 @@ ${documentTitle ? `件名：${documentTitle}
               invoiceNumber: docData.invoiceNumber
             });
           } else if (documentType === 'quote') {
-            // 見積書も専用の美しいPDF生成関数を使用（印刷ボタンと同じ品質）
-            logger.debug('Using beautiful HTML-based PDF generation for quote');
-            
-            // 会社情報を取得
-            let quoteCompanyInfo = companyInfo;
-            if (!quoteCompanyInfo) {
-              try {
-                const companyResponse = await fetch('/api/company-info');
-                if (companyResponse.ok) {
-                  quoteCompanyInfo = await companyResponse.json();
-                }
-              } catch (error) {
-                logger.warn('Failed to fetch company info for quote PDF:', error);
-              }
-            }
-            
-            // 見積書専用の美しいPDF生成関数を使用
-            const { generateQuoteEmailPDF } = await import('@/lib/quote-email-pdf-generator');
-            blob = await generateQuoteEmailPDF(docData, quoteCompanyInfo);
-            
-            logger.debug('Beautiful quote PDF generated successfully', {
-              blobSize: blob.size,
-              quoteNumber: docData.quoteNumber
-            });
+            // 見積書はサーバーサイドPDF生成を使用（クライアント側での生成に問題があるため）
+            logger.debug('Skipping client-side PDF generation for quote, will use server-side');
+            // pdfBase64をnullのままにして、後でサーバーサイドエンドポイントを使用
+            pdfBase64 = null;
           } else {
             // 他のドキュメントタイプは既存の方法を使用
             const { generatePDFBlob } = await import('@/lib/pdf-export');
             blob = await generatePDFBlob(documentData);
           }
           
-          // BlobをBase64に変換
-          const reader = new FileReader();
-          pdfBase64 = await new Promise<string>((resolve, reject) => {
-            reader.onloadend = () => {
-              const base64String = reader.result as string;
-              const base64 = base64String.split(',')[1];
-              resolve(base64);
-            };
-            reader.onerror = reject;
-            reader.readAsDataURL(blob);
-          });
+          // BlobをBase64に変換（見積書以外の場合）
+          if (blob) {
+            const reader = new FileReader();
+            pdfBase64 = await new Promise<string>((resolve, reject) => {
+              reader.onloadend = () => {
+                const base64String = reader.result as string;
+                const base64 = base64String.split(',')[1];
+                resolve(base64);
+              };
+              reader.onerror = reject;
+              reader.readAsDataURL(blob);
+            });
+          }
           
           logger.debug('PDF generated successfully', {
             documentType,
             pdfSize: pdfBase64?.length || 0,
-            blobSize: blob.size
+            blobSize: blob?.size || 0
           });
           
           logger.debug('PDF generated successfully, size:', pdfBase64?.length || 0);
