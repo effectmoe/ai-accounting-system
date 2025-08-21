@@ -97,12 +97,47 @@ export function isValidEmail(value: any): value is string {
   return emailRegex.test(value);
 }
 
+/**
+ * 全角文字を半角に変換するヘルパー関数
+ */
+function normalizePhoneNumber(phone: string): string {
+  if (!phone) return '';
+  
+  let normalized = phone;
+  
+  // 全角数字を半角に変換
+  normalized = normalized.replace(/[０-９]/g, (s) => {
+    return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
+  });
+  
+  // 全角ハイフン・記号を半角に変換
+  normalized = normalized.replace(/[－‐―ー]/g, '-');
+  normalized = normalized.replace(/［/g, '(');
+  normalized = normalized.replace(/］/g, ')');
+  normalized = normalized.replace(/＋/g, '+');
+  normalized = normalized.replace(/　/g, ' '); // 全角スペース→半角
+  
+  return normalized.trim();
+}
+
 // 電話番号検証（日本）
 export function isValidPhoneNumber(value: any): value is string {
   if (typeof value !== 'string') return false;
-  // 数字、ハイフン、括弧、プラス記号を許可
-  const phoneRegex = /^[\d\-\(\)\+\s]+$/;
-  return phoneRegex.test(value) && value.replace(/\D/g, '').length >= 10;
+  
+  // 全角文字を半角に正規化してからバリデーション
+  const normalizedValue = normalizePhoneNumber(value);
+  
+  // 数字、ハイフン、括弧、プラス記号、スペースを許可
+  const phoneRegex = /^[\d\-\(\)\+\s\.#]*(?:ext\.?\s*\d+)?$/i;
+  
+  // 基本的な文字パターンチェック
+  if (!phoneRegex.test(normalizedValue)) return false;
+  
+  // 数字のみを抽出して長さをチェック
+  const digitsOnly = normalizedValue.replace(/\D/g, '');
+  
+  // 最低10桁、最大15桁の数字を要求（国際電話番号も考慮）
+  return digitsOnly.length >= 10 && digitsOnly.length <= 15;
 }
 
 // 郵便番号検証（日本）

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDatabase } from '@/lib/mongodb-client';
 import { Customer } from '@/types/collections';
 import { ObjectId } from 'mongodb';
+import { normalizePhoneNumber } from '@/lib/phone-utils';
 
 import { logger } from '@/lib/logger';
 // GET: 顧客詳細取得
@@ -120,6 +121,24 @@ export async function PUT(
       }
     }
 
+    // 電話番号とFAXの正規化処理（全角→半角）
+    const normalizedPhone = normalizePhoneNumber(body.phone);
+    const normalizedFax = normalizePhoneNumber(body.fax);
+    
+    // 担当者の電話番号も正規化
+    const normalizedContacts = (body.contacts || []).map((contact: any) => ({
+      ...contact,
+      phone: normalizePhoneNumber(contact.phone)
+    }));
+    
+    console.log('📞 API電話番号正規化 (更新):', {
+      originalPhone: body.phone,
+      normalizedPhone,
+      originalFax: body.fax,
+      normalizedFax,
+      contactsCount: normalizedContacts.length
+    });
+
     // 顧客データの更新
     const updateData: Partial<Customer> = {
       customerId: body.customerId,
@@ -133,12 +152,12 @@ export async function PUT(
       city: body.city,
       address1: body.address1,
       address2: body.address2,
-      phone: body.phone,
-      fax: body.fax,
+      phone: normalizedPhone,  // 正規化された電話番号
+      fax: normalizedFax,      // 正規化されたFAX
       email: body.email,
       website: body.website,
       paymentTerms: body.paymentTerms ? parseInt(body.paymentTerms) : undefined,
-      contacts: body.contacts || [],
+      contacts: normalizedContacts,  // 正規化された担当者データ
       tags: body.tags || [],
       notes: body.notes,
       isActive: body.isActive !== undefined ? body.isActive : true,

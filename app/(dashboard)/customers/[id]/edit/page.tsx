@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { Customer, Contact } from '@/types/collections';
+import { normalizePhoneNumber } from '@/lib/phone-utils';
 
 import { logger } from '@/lib/logger';
 interface CustomerForm {
@@ -197,9 +198,17 @@ export default function EditCustomerPage() {
     try {
       setSaving(true);
 
-      // タグの配列化処理
+      // タグの配列化処理と電話番号の正規化
       const submitData = {
         ...formData,
+        // 電話番号とFAXを正規化
+        phone: normalizePhoneNumber(formData.phone),
+        fax: normalizePhoneNumber(formData.fax),
+        // 担当者の電話番号も正規化
+        contacts: formData.contacts.map(contact => ({
+          ...contact,
+          phone: normalizePhoneNumber(contact.phone || '')
+        })),
         tags: formData.tags ? formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag) : [],
       };
 
@@ -234,7 +243,25 @@ export default function EditCustomerPage() {
   // 入力値の更新
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
-    const finalValue = type === 'checkbox' ? (e.target as HTMLInputElement).checked : value;
+    let finalValue: string | boolean = type === 'checkbox' ? (e.target as HTMLInputElement).checked : value;
+    
+    // 電話番号・FAXフィールドの場合は全角文字を半角に正規化
+    if (['phone', 'fax'].includes(name) && typeof finalValue === 'string') {
+      const normalizedValue = normalizePhoneNumber(finalValue);
+      finalValue = normalizedValue;
+      
+      // 入力フィールドの値も同時に更新（視覚的フィードバック）
+      if (e.target instanceof HTMLInputElement) {
+        e.target.value = normalizedValue;
+      }
+      
+      console.log('📞 電話番号正規化 (編集):', {
+        field: name,
+        original: value,
+        normalized: normalizedValue
+      });
+    }
+    
     setFormData(prev => ({ ...prev, [name]: finalValue }));
     // エラーをクリア
     if (errors[name as keyof CustomerForm]) {
@@ -268,10 +295,21 @@ export default function EditCustomerPage() {
 
   // 担当者情報の更新
   const updateContact = (index: number, field: keyof Contact, value: string | boolean) => {
+    // 担当者の電話番号フィールドも正規化
+    let finalValue = value;
+    if (field === 'phone' && typeof value === 'string') {
+      finalValue = normalizePhoneNumber(value);
+      console.log('📞 担当者電話番号正規化 (編集):', {
+        contactIndex: index,
+        original: value,
+        normalized: finalValue
+      });
+    }
+    
     setFormData(prev => ({
       ...prev,
       contacts: prev.contacts.map((contact, i) => 
-        i === index ? { ...contact, [field]: value } : contact
+        i === index ? { ...contact, [field]: finalValue } : contact
       )
     }));
   };
