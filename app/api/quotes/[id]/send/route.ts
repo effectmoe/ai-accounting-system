@@ -101,20 +101,33 @@ export async function POST(
     logger.debug('Converting quote HTML to PDF for email attachment (same format as PDF print button)');
     
     try {
-      // HTMLをPDFに変換（Puppeteerを使用）- 領収書と同じパターン
-      // showDescriptionsを明示的にtrueに設定してPDF生成
-      console.log('[Send Quote] START - Generating PDF with showDescriptions=true');
-      console.log('[Send Quote] Quote Number:', quote.quoteNumber);
-      console.log('[Send Quote] Quote ID:', quote._id);
-      console.log('[Send Quote] Quote Items Count:', quote.items?.length || 0);
-      console.log('[Send Quote] Quote Notes Length:', quote.notes?.length || 0);
-      console.log('[Send Quote] Company Info exists:', !!companyInfo);
+      let pdfBuffer: Buffer;
       
-      const pdfStartTime = Date.now();
-      const pdfBuffer = await convertQuoteHTMLtoPDF(quote, companyInfo || {}, true);
-      const pdfGenerationTime = Date.now() - pdfStartTime;
+      try {
+        // まずPuppeteerでPDF生成を試みる
+        console.log('[Send Quote] START - Generating PDF with Puppeteer');
+        console.log('[Send Quote] Quote Number:', quote.quoteNumber);
+        console.log('[Send Quote] Quote ID:', quote._id);
+        console.log('[Send Quote] Quote Items Count:', quote.items?.length || 0);
+        console.log('[Send Quote] Quote Notes Length:', quote.notes?.length || 0);
+        console.log('[Send Quote] Company Info exists:', !!companyInfo);
+        
+        const pdfStartTime = Date.now();
+        pdfBuffer = await convertQuoteHTMLtoPDF(quote, companyInfo || {}, true);
+        const pdfGenerationTime = Date.now() - pdfStartTime;
+        
+        console.log('[Send Quote] Puppeteer PDF generation completed in', pdfGenerationTime, 'ms');
+      } catch (puppeteerError) {
+        // Puppeteerが失敗した場合、jsPDFでフォールバック
+        console.error('[Send Quote] Puppeteer failed, falling back to jsPDF:', puppeteerError);
+        
+        // jsPDFを使用したサーバーサイド生成
+        const { generateQuotePDFServer } = await import('@/lib/quote-pdf-server-jspdf');
+        pdfBuffer = await generateQuotePDFServer(quote, companyInfo || {});
+        
+        console.log('[Send Quote] jsPDF fallback PDF generation completed');
+      }
       
-      console.log('[Send Quote] PDF generation completed in', pdfGenerationTime, 'ms');
       console.log('[Send Quote] PDF Buffer size:', pdfBuffer.length, 'bytes');
       
       // PDFバッファの検証
