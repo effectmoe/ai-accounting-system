@@ -190,13 +190,13 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
     /* 合計金額 */
     .total-amount-box {
       background-color: #e6f2ff;
-      padding: 15px 20px;
+      padding: 0;
       margin-bottom: 20px;
       border-radius: 5px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      min-height: 50px;
+      height: 55px;
     }
     
     .total-label {
@@ -204,6 +204,9 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
       font-weight: 700;
       display: flex;
       align-items: center;
+      justify-content: center;
+      height: 100%;
+      padding: 0 20px;
     }
     
     .total-amount {
@@ -212,6 +215,9 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
       color: #0066cc;
       display: flex;
       align-items: center;
+      justify-content: center;
+      height: 100%;
+      padding: 0 20px;
     }
     
     /* テーブル */
@@ -224,11 +230,12 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
     .quote-table th {
       background-color: #34495e;
       color: white;
-      padding: 10px 12px;
+      padding: 0 12px;
       text-align: left;
       font-weight: 700;
       vertical-align: middle;
-      height: 40px;
+      height: 45px;
+      line-height: 45px;
     }
     
     .quote-table th:last-child,
@@ -242,10 +249,20 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
       width: 80px;
     }
     
+    .quote-table th:nth-child(2) {
+      text-align: center;
+    }
+    
     .quote-table th:nth-child(3),
     .quote-table td:nth-child(3) {
       text-align: right;
       width: 120px;
+    }
+    
+    .quote-table th:nth-child(3),
+    .quote-table th:last-child {
+      text-align: right;
+      padding-right: 12px;
     }
     
     .quote-table td {
