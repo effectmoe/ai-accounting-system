@@ -600,8 +600,73 @@ export async function POST(request: NextRequest) {
         };
         attachments.push(attachment);
         logger.debug('Client PDF attachment added to array');
+      } else if (documentType === 'quote') {
+        // 見積書の場合はサーバーサイドでPDF生成
+        logger.debug('Quote document detected, generating PDF on server-side');
+        
+        try {
+          // 会社情報を取得
+          const companyInfoService = new CompanyInfoService();
+          const companyInfo = await companyInfoService.getCompanyInfo();
+          
+          let pdfBuffer: Buffer;
+          
+          try {
+            // まずPuppeteerでPDF生成を試みる
+            logger.debug('Attempting Puppeteer PDF generation for quote');
+            const { convertQuoteHTMLtoPDF } = await import('@/lib/quote-html-to-pdf-server');
+            pdfBuffer = await convertQuoteHTMLtoPDF(document, companyInfo || {}, true);
+            logger.debug('Puppeteer PDF generation successful');
+          } catch (puppeteerError) {
+            // Puppeteerが失敗した場合、jsPDFでフォールバック
+            logger.warn('Puppeteer failed, falling back to jsPDF:', puppeteerError);
+            const { generateQuotePDFServer } = await import('@/lib/quote-pdf-server-jspdf');
+            pdfBuffer = await generateQuotePDFServer(document, companyInfo || {});
+            logger.debug('jsPDF fallback PDF generation successful');
+          }
+          
+          // PDFバッファの検証
+          if (!pdfBuffer || pdfBuffer.length === 0) {
+            throw new Error('Generated PDF buffer is empty');
+          }
+          
+          // PDFヘッダーチェック
+          const pdfHeader = pdfBuffer.slice(0, 5).toString('ascii');
+          if (!pdfHeader.startsWith('%PDF')) {
+            logger.error('Invalid PDF buffer, header:', pdfHeader);
+            throw new Error('Generated PDF is invalid');
+          }
+          
+          // Base64エンコード
+          const pdfBase64Generated = pdfBuffer.toString('base64');
+          logger.debug('PDF generated and encoded to base64, length:', pdfBase64Generated.length);
+          
+          // 添付ファイルとして追加
+          const attachment = {
+            filename: `${documentData.documentNumber}.pdf`,
+            content: pdfBase64Generated,
+            contentType: 'application/pdf',
+          };
+          attachments.push(attachment);
+          logger.debug('Server-generated PDF attachment added to array');
+          
+        } catch (pdfError) {
+          logger.error('Server-side PDF generation failed:', pdfError);
+          return NextResponse.json(
+            { 
+              error: 'PDF生成に失敗しました',
+              details: pdfError instanceof Error ? pdfError.message : 'Unknown error',
+              debugInfo: {
+                documentType: documentData.documentType,
+                documentNumber: documentData.documentNumber,
+                message: 'Server-side PDF generation failed'
+              }
+            },
+            { status: 500 }
+          );
+        }
       } else {
-        // クライアントからPDFが送られていない場合はエラーを返す
+        // 見積書以外でクライアントからPDFが送られていない場合はエラーを返す
         logger.error('=== NO CLIENT PDF PROVIDED ===');
         logger.error('Client-side PDF generation is required but no PDF was provided');
         
@@ -609,7 +674,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(
           { 
             error: 'PDFの生成に失敗しました。ブラウザでPDFを生成してから送信してください。',
-            details: 'Client-side PDF generation is required for all document types',
+            details: 'Client-side PDF generation is required for this document type',
             debugInfo: {
               documentType: documentData.documentType,
               documentNumber: documentData.documentNumber,

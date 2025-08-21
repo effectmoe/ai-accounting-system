@@ -109,12 +109,26 @@ export default function HtmlQuoteEditorPage() {
   const handleSend = async (emailOptions: any) => {
     console.log('[HTML Editor Page] handleSend called with:', emailOptions);
     try {
-      // 見積書の送信処理
-      console.log('[HTML Editor Page] Sending to API:', `/api/quotes/${quoteId}/send`);
-      const response = await fetch(`/api/quotes/${quoteId}/send`, {
+      // 見積書の送信処理 - 新しい /api/send-email エンドポイントを使用
+      const emailRequest = {
+        documentType: 'quote' as const,
+        documentId: quoteId,
+        to: emailOptions.to || emailOptions.email,
+        cc: emailOptions.cc,
+        bcc: emailOptions.bcc,
+        subject: emailOptions.subject,
+        body: emailOptions.body || emailOptions.customMessage,
+        attachPdf: emailOptions.attachPdf !== false, // デフォルトはtrue
+        pdfBase64: emailOptions.pdfBase64 // クライアント生成のPDFがあれば使用
+      };
+      
+      console.log('[HTML Editor Page] Sending to API:', '/api/send-email');
+      console.log('[HTML Editor Page] Request payload:', emailRequest);
+      
+      const response = await fetch('/api/send-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(emailOptions),
+        body: JSON.stringify(emailRequest),
       });
       
       console.log('[HTML Editor Page] Response status:', response.status);

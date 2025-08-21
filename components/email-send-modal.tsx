@@ -483,55 +483,30 @@ ${documentTitle ? `件名：${documentTitle}
         }
       }
 
-      // 見積書は専用のサーバーサイドエンドポイントを使用
-      let response;
+      // すべてのドキュメントで汎用エンドポイントを使用
+      const emailData: any = {
+        documentType,
+        documentId,
+        to,
+        cc: cc || undefined,
+        bcc: bcc || undefined,
+        subject: subject || undefined,
+        body: body || undefined,
+        attachPdf,
+      };
       
-      if (documentType === 'quote' && attachPdf) {
-        // 見積書はサーバーサイドでPuppeteerを使用してPDF生成・送信
-        logger.debug('Using server-side quote-specific endpoint for PDF generation and sending');
-        
-        response = await fetch(`/api/quotes/${documentId}/send`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            to,
-            cc: cc || undefined,
-            bcc: bcc || undefined,
-            subject: subject || undefined,
-            body: body || undefined,
-            recipientEmail: to, // 互換性のため
-            recipientName: customer?.companyName || '',
-            customMessage: body || undefined,
-          }),
-        });
-      } else {
-        // その他のドキュメントまたはクライアントサイドPDF生成済みの場合は汎用エンドポイント
-        const emailData: any = {
-          documentType,
-          documentId,
-          to,
-          cc: cc || undefined,
-          bcc: bcc || undefined,
-          subject: subject || undefined,
-          body: body || undefined,
-          attachPdf,
-        };
-        
-        // クライアントで生成したPDFがある場合は追加
-        if (pdfBase64) {
-          emailData.pdfBase64 = pdfBase64;
-        }
-
-        response = await fetch('/api/send-email', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(emailData),
-        });
+      // クライアントで生成したPDFがある場合は追加
+      if (pdfBase64) {
+        emailData.pdfBase64 = pdfBase64;
       }
+
+      const response = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(emailData),
+      });
 
       const result = await response.json();
 

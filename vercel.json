@@ -82,10 +82,6 @@
       "maxDuration": 45,
       "memory": 1024
     },
-    "app/api/quotes/[id]/send/route.ts": {
-      "maxDuration": 45,
-      "memory": 1024
-    },
     "app/api/test-refactor/route.ts": {
       "maxDuration": 60
     },
