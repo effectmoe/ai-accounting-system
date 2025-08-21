@@ -42,7 +42,7 @@ export async function generateInvoicePDFWithJsPDF(invoice: any, companyInfo: any
     // ヘッダー（請求書）
     doc.setFontSize(24);
     doc.setFont('helvetica', 'bold');
-    doc.text('SEIKYU-SHO', pageWidth / 2, currentY, { align: 'center' });
+    doc.text('請求書', pageWidth / 2, currentY, { align: 'center' });
     doc.text('(Invoice)', pageWidth / 2, currentY + 8, { align: 'center' });
     currentY += 25;
     
@@ -59,7 +59,7 @@ export async function generateInvoicePDFWithJsPDF(invoice: any, companyInfo: any
     // 左側：顧客情報
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
-    doc.text(`${customerName} sama`, leftColumnX, currentY);
+    doc.text(`${customerName} 様`, leftColumnX, currentY);
     currentY += 8;
     
     doc.setFontSize(10);
@@ -85,9 +85,9 @@ export async function generateInvoicePDFWithJsPDF(invoice: any, companyInfo: any
     
     // 発行日と支払期限
     doc.setFontSize(10);
-    doc.text(`Hakko-bi: ${issueDate}`, rightColumnX, rightY);
+    doc.text(`発行日: ${issueDate}`, rightColumnX, rightY);
     rightY += 5;
-    doc.text(`Shiharai Kigen: ${dueDate}`, rightColumnX, rightY);
+    doc.text(`支払期限: ${dueDate}`, rightColumnX, rightY);
     rightY += 10;
     
     // 会社情報
@@ -128,8 +128,8 @@ export async function generateInvoicePDFWithJsPDF(invoice: any, companyInfo: any
     
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
-    doc.text('Seikyuu Kingaku Gokei', margin + 5, currentY + 6);
-    doc.text(`¥${totalAmount.toLocaleString()} (zeikomi)`, pageWidth - margin - 5, currentY + 6, { align: 'right' });
+    doc.text('請求金額合計', margin + 5, currentY + 6);
+    doc.text(`¥${totalAmount.toLocaleString()} (税込)`, pageWidth - margin - 5, currentY + 6, { align: 'right' });
     
     currentY += totalBoxHeight + 10;
     
@@ -147,13 +147,13 @@ export async function generateInvoicePDFWithJsPDF(invoice: any, companyInfo: any
     doc.setFont('helvetica', 'bold');
     
     let colX = margin;
-    doc.text('Hinmoku/Shiyou', colX + 2, currentY + 7);
+    doc.text('品目/仕様', colX + 2, currentY + 7);
     colX += colWidths[0];
-    doc.text('Suryo', colX + 2, currentY + 7, { align: 'center' });
+    doc.text('数量', colX + 2, currentY + 7, { align: 'center' });
     colX += colWidths[1];
-    doc.text('Tanka', colX + 2, currentY + 7, { align: 'right' });
+    doc.text('単価', colX + 2, currentY + 7, { align: 'right' });
     colX += colWidths[2];
-    doc.text('Kingaku', colX + 2, currentY + 7, { align: 'right' });
+    doc.text('金額', colX + 2, currentY + 7, { align: 'right' });
     
     currentY += 10;
     doc.setTextColor(0, 0, 0); // 黒文字に戻す
@@ -214,12 +214,12 @@ export async function generateInvoicePDFWithJsPDF(invoice: any, companyInfo: any
     doc.setFont('helvetica', 'normal');
     
     // 小計
-    doc.text('Shokei:', summaryStartX, currentY);
+    doc.text('小計:', summaryStartX, currentY);
     doc.text(`¥${subtotal.toLocaleString()}`, summaryStartX + summaryWidth, currentY, { align: 'right' });
     currentY += 6;
     
     // 消費税
-    doc.text('Shouhizei (10%):', summaryStartX, currentY);
+    doc.text('消費税 (10%):', summaryStartX, currentY);
     doc.text(`¥${taxAmount.toLocaleString()}`, summaryStartX + summaryWidth, currentY, { align: 'right' });
     currentY += 6;
     
@@ -230,7 +230,7 @@ export async function generateInvoicePDFWithJsPDF(invoice: any, companyInfo: any
     
     doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
-    doc.text('Gokei Kingaku:', summaryStartX, currentY);
+    doc.text('合計金額:', summaryStartX, currentY);
     doc.text(`¥${totalAmount.toLocaleString()}`, summaryStartX + summaryWidth, currentY, { align: 'right' });
     
     currentY += 15;
@@ -239,18 +239,18 @@ export async function generateInvoicePDFWithJsPDF(invoice: any, companyInfo: any
     if (invoice.paymentMethod === 'bank_transfer' && companyInfo?.bankAccount) {
       doc.setFontSize(12);
       doc.setFont('helvetica', 'bold');
-      doc.text('Furikomi-saki:', margin, currentY);
+      doc.text('振込先:', margin, currentY);
       currentY += 8;
       
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
-      doc.text(`Ginko: ${companyInfo.bankAccount.bankName}`, margin + 5, currentY);
+      doc.text(`銀行: ${companyInfo.bankAccount.bankName}`, margin + 5, currentY);
       currentY += 5;
-      doc.text(`Shiten: ${companyInfo.bankAccount.branchName}`, margin + 5, currentY);
+      doc.text(`支店: ${companyInfo.bankAccount.branchName}`, margin + 5, currentY);
       currentY += 5;
-      doc.text(`Koza: ${companyInfo.bankAccount.accountType} ${companyInfo.bankAccount.accountNumber}`, margin + 5, currentY);
+      doc.text(`口座: ${companyInfo.bankAccount.accountType} ${companyInfo.bankAccount.accountNumber}`, margin + 5, currentY);
       currentY += 5;
-      doc.text(`Meigi: ${companyInfo.bankAccount.accountHolder}`, margin + 5, currentY);
+      doc.text(`名義: ${companyInfo.bankAccount.accountHolder}`, margin + 5, currentY);
       currentY += 10;
     }
     
@@ -263,7 +263,7 @@ export async function generateInvoicePDFWithJsPDF(invoice: any, companyInfo: any
       
       doc.setFontSize(12);
       doc.setFont('helvetica', 'bold');
-      doc.text('Biko:', margin, currentY);
+      doc.text('備考:', margin, currentY);
       currentY += 8;
       
       doc.setFontSize(10);

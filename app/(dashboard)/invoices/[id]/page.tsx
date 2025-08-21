@@ -721,29 +721,17 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
                 閉じる
               </Button>
               <Button
-                onClick={async () => {
-                  try {
-                    const response = await fetch(`/api/invoices/${invoice._id}/pdf?download=true`);
-                    if (response.ok) {
-                      const blob = await response.blob();
-                      const url = window.URL.createObjectURL(blob);
-                      const a = document.createElement('a');
-                      a.href = url;
-                      a.download = `請求書_${invoice.invoiceNumber}.pdf`;
-                      document.body.appendChild(a);
-                      a.click();
-                      window.URL.revokeObjectURL(url);
-                      document.body.removeChild(a);
-                    }
-                    setShowPdfPreview(false);
-                  } catch (error) {
-                    console.error('PDF download failed:', error);
-                    alert('PDFのダウンロードに失敗しました');
+                onClick={() => {
+                  // 印刷ダイアログを開く（領収書と同じ方式）
+                  const printWindow = window.open(`/api/invoices/${invoice._id}/pdf?print=true`, '_blank', 'width=800,height=600');
+                  if (printWindow) {
+                    printWindow.focus();
                   }
+                  setShowPdfPreview(false);
                 }}
               >
                 <Download className="mr-2 h-4 w-4" />
-                ダウンロード
+                PDF印刷
               </Button>
             </div>
           </div>
