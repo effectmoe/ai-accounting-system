@@ -467,8 +467,8 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
     
     <!-- 合計金額 -->
     <div class="total-amount-box">
-      <span class="total-label">見積金額合計</span>
-      <span class="total-amount">¥${totalAmount.toLocaleString()} (税込)</span>
+      <div class="total-label">見積金額合計</div>
+      <div class="total-amount">¥${totalAmount.toLocaleString()} (税込)</div>
     </div>
     
     <!-- 明細テーブル -->
