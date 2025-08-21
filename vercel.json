@@ -88,6 +88,10 @@
     },
     "app/api/test-refactor/route.ts": {
       "maxDuration": 60
+    },
+    "app/api/send-email/route.ts": {
+      "maxDuration": 30,
+      "memory": 1024
     }
   },
   "public": true,

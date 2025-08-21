@@ -78,38 +78,50 @@ export async function generateInvoiceEmailPDF(invoice: any, companyInfo?: any): 
       document.body.appendChild(container);
       
       // 少し待機してレンダリングを完了させる
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await new Promise(resolve => setTimeout(resolve, 100));
       
       // 請求書コンテナを取得
       const invoiceContainer = container.querySelector('.invoice-container') || container;
       
-      // html2canvasでキャンバスに変換（高品質設定）
+      // html2canvasでキャンバスに変換（適度な品質でサイズを抑える）
       const canvas = await html2canvas(invoiceContainer as HTMLElement, {
-        scale: 2, // 高解像度
+        scale: 1.5, // 品質とサイズのバランス（2→1.5に削減）
         logging: false,
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#ffffff',
         width: 794, // A4のピクセル幅
         height: 1123, // A4のピクセル高さ
+        windowWidth: 794,
+        windowHeight: 1123,
       });
       
-      // PDFを生成
+      // PDFを生成（圧縮設定を追加）
       const pdf = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
-        format: 'a4'
+        format: 'a4',
+        compress: true // 圧縮を有効化
       });
       
-      // キャンバスをPDFに追加
-      const imgData = canvas.toDataURL('image/png');
+      // キャンバスをJPEGに変換（PNGよりサイズが小さい）
+      const imgData = canvas.toDataURL('image/jpeg', 0.85); // JPEG形式、品質85%
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
       
       // 画像をPDFのサイズに合わせる
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
       
-      // Blobとして出力
+      // PDFの情報を設定
+      pdf.setProperties({
+        title: `請求書 ${invoice.invoiceNumber}`,
+        subject: '請求書',
+        author: companyInfo?.companyName || '株式会社EFFECT',
+        keywords: 'invoice, 請求書',
+        creator: 'AAM Accounting System'
+      });
+      
+      // Blobとして出力（圧縮済み）
       const pdfBlob = pdf.output('blob');
       
       // クリーンアップ
@@ -124,8 +136,27 @@ export async function generateInvoiceEmailPDF(invoice: any, companyInfo?: any): 
       
       logger.debug('Beautiful invoice PDF generated successfully', {
         blobSize: pdfBlob.size,
+        sizeInMB: (pdfBlob.size / (1024 * 1024)).toFixed(2),
         invoiceNumber: invoice.invoiceNumber
       });
+      
+      // PDFサイズが3MBを超える場合は警告してサーバーサイド生成を使用
+      if (pdfBlob.size > 3 * 1024 * 1024) {
+        logger.warn('PDF size exceeds 3MB, falling back to server-side generation', {
+          sizeInMB: (pdfBlob.size / (1024 * 1024)).toFixed(2)
+        });
+        
+        // サーバーサイドのPDF APIを使用
+        const pdfResponse = await fetch(`/api/invoices/${invoice._id}/pdf?download=true&engine=jspdf`, {
+          method: 'GET',
+        });
+        
+        if (!pdfResponse.ok) {
+          throw new Error('Server-side PDF generation failed');
+        }
+        
+        return await pdfResponse.blob();
+      }
       
       return pdfBlob;
       

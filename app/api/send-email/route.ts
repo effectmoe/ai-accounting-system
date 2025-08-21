@@ -11,6 +11,9 @@ import { logger } from '@/lib/logger';
 // 日本語フォント処理のためにNode.js Runtimeを使用
 export const runtime = 'nodejs';
 
+// APIルートのボディサイズ制限を10MBに設定（デフォルトは4.5MB）
+export const maxDuration = 30; // 30秒のタイムアウト
+
 // メール送信のための型定義
 interface EmailRequest {
   documentType: 'quote' | 'invoice' | 'delivery-note' | 'receipt';
