@@ -18,20 +18,44 @@ export async function launchPuppeteerSimple() {
       const chromium = await import('@sparticuz/chromium');
       
       console.log('[PuppeteerSimple] Using @sparticuz/chromium');
+      console.log('[PuppeteerSimple] Chromium args:', chromium.default.args);
+      
+      // 実行パスを事前に取得して確認
+      let execPath;
+      try {
+        execPath = await chromium.default.executablePath();
+        console.log('[PuppeteerSimple] Chromium executable path:', execPath);
+      } catch (pathError: any) {
+        console.error('[PuppeteerSimple] Failed to get executable path:', pathError.message);
+        // パスが取得できない場合はnullを使用（Puppeteerがデフォルトを探す）
+        execPath = null;
+      }
       
       // シンプルな設定でブラウザを起動
-      const browser = await puppeteer.launch({
+      const launchOptions: any = {
         args: chromium.default.args,
         defaultViewport: chromium.default.defaultViewport,
-        executablePath: await chromium.default.executablePath(),
-        headless: chromium.default.headless,
+        headless: chromium.default.headless || true,
+      };
+      
+      // 実行パスが有効な場合のみ設定
+      if (execPath) {
+        launchOptions.executablePath = execPath;
+      }
+      
+      console.log('[PuppeteerSimple] Launch options:', {
+        ...launchOptions,
+        args: launchOptions.args?.length + ' args'
       });
+      
+      const browser = await puppeteer.launch(launchOptions);
       
       console.log('[PuppeteerSimple] Browser launched successfully');
       return browser;
       
     } catch (error: any) {
       console.error('[PuppeteerSimple] Failed to launch with @sparticuz/chromium:', error.message);
+      console.error('[PuppeteerSimple] Error stack:', error.stack);
       
       // フォールバック: 最小限の設定で起動
       console.log('[PuppeteerSimple] Attempting minimal fallback');
@@ -51,15 +75,31 @@ export async function launchPuppeteerSimple() {
       return browser;
     }
   } else {
-    // 開発環境
-    console.log('[PuppeteerSimple] Development environment - using local puppeteer');
-    const puppeteerLocal = await import('puppeteer');
-    const browser = await puppeteerLocal.default.launch({
-      headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
-    });
-    
-    console.log('[PuppeteerSimple] Browser launched in development');
-    return browser;
+    // 開発環境 - puppeteer-coreを使用
+    console.log('[PuppeteerSimple] Development environment - using puppeteer-core');
+    try {
+      // 開発環境でもpuppeteer-coreを使用
+      const browser = await puppeteer.launch({
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+        // 開発環境では通常のChromiumを使用
+        executablePath: process.platform === 'darwin' 
+          ? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+          : process.platform === 'win32'
+          ? 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe'
+          : '/usr/bin/google-chrome-stable' // Linux
+      });
+      
+      console.log('[PuppeteerSimple] Browser launched in development');
+      return browser;
+    } catch (error) {
+      console.error('[PuppeteerSimple] Failed in development, trying without executablePath');
+      // Chrome/Chromiumが見つからない場合のフォールバック
+      const browser = await puppeteer.launch({
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
+      });
+      return browser;
+    }
   }
 }
