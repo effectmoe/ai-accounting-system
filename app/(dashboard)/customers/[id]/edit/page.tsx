@@ -141,8 +141,20 @@ export default function EditCustomerPage() {
       newErrors.email = '有効なメールアドレスを入力してください';
     }
 
-    if (formData.phone && !/^[\d-+\s()]*$/.test(formData.phone)) {
-      newErrors.phone = '有効な電話番号を入力してください';
+    // 電話番号の緩やかなバリデーション（より多くの形式を許可）
+    if (formData.phone && formData.phone.trim()) {
+      // 基本的な文字チェック（数字、ハイフン、プラス、スペース、括弧、ピリオド、#、ext などを許可）
+      const phonePattern = /^[\d\-+\s().\#]*(?:ext\.?\s*\d+)?$/i;
+      // 最低限の文字数チェック（3文字以上、30文字以下）
+      const minLength = 3;
+      const maxLength = 30;
+      const cleanPhone = formData.phone.replace(/[\s\-()]/g, ''); // スペース、ハイフン、括弧を除去して文字数をチェック
+      
+      if (!phonePattern.test(formData.phone)) {
+        newErrors.phone = '電話番号に使用できない文字が含まれています';
+      } else if (cleanPhone.length < minLength || cleanPhone.length > maxLength) {
+        newErrors.phone = `電話番号は${minLength}〜${maxLength}文字で入力してください`;
+      }
     }
 
     if (formData.paymentTerms && !/^\d+$/.test(formData.paymentTerms)) {
