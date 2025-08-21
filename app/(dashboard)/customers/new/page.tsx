@@ -92,22 +92,26 @@ export default function NewCustomerPage() {
       console.log('📞 電話番号バリデーション詳細:', {
         original: formData.phone,
         normalized: normalizedPhone,
-        originalHasZenkaku: /[０-９－‐―ー]/.test(formData.phone),
-        normalizedHasZenkaku: /[０-９－‐―ー]/.test(normalizedPhone)
+        originalHasZenkaku: /[０-９－‐―ー−─（）＋　．＃]/.test(formData.phone),
+        normalizedHasZenkaku: /[０-９－‐―ー−─（）＋　．＃]/.test(normalizedPhone)
       });
       
-      // 基本的な文字チェック（数字、ハイフン、プラス、スペース、括弧、ピリオド、#、ext などを許可）
-      const phonePattern = /^[\d\-+\s().\#]*(?:ext\.?\s*\d+)?$/i;
+      // 基本的な文字チェック（半角・全角両方の数字、ハイフン、プラス、スペース、括弧、ピリオド、#、ext などを許可）
+      // 全角文字も許可する包括的なパターン
+      const phonePattern = /^[\d０-９\-－‐―ー−─+＋\s　()（）.\．#＃]*(?:ext\.?\s*[\d０-９]+)?$/i;
       // 最低限の文字数チェック（3文字以上、30文字以下）
       const minLength = 3;
       const maxLength = 30;
-      const cleanPhone = normalizedPhone.replace(/[\s\-()]/g, ''); // スペース、ハイフン、括弧を除去して文字数をチェック
+      // 正規化後の電話番号から区切り文字を除去して文字数をチェック
+      const cleanPhone = normalizedPhone.replace(/[\s\-()]/g, '');
       
-      if (!phonePattern.test(normalizedPhone)) {
+      if (!phonePattern.test(formData.phone)) {
+        // 元の入力値（正規化前）でパターンチェック
         console.log('❌ 電話番号バリデーションエラー:', {
-          phone: normalizedPhone,
+          originalPhone: formData.phone,
+          normalizedPhone: normalizedPhone,
           pattern: phonePattern.toString(),
-          testResult: phonePattern.test(normalizedPhone)
+          testResult: phonePattern.test(formData.phone)
         });
         newErrors.phone = '電話番号に使用できない文字が含まれています';
       } else if (cleanPhone.length < minLength || cleanPhone.length > maxLength) {
@@ -120,6 +124,7 @@ export default function NewCustomerPage() {
         newErrors.phone = `電話番号は${minLength}〜${maxLength}文字で入力してください`;
       } else {
         console.log('✅ 電話番号バリデーション成功:', {
+          originalPhone: formData.phone,
           normalizedPhone,
           cleanPhone,
           length: cleanPhone.length
@@ -258,8 +263,15 @@ export default function NewCustomerPage() {
         field: name,
         original: value,
         normalized: normalizedValue,
-        hasZenkaku: /[０-９－‐―ー]/.test(value),
-        normalizedHasZenkaku: /[０-９－‐―ー]/.test(normalizedValue)
+        hasZenkaku: /[０-９－‐―ー−─（）＋　．＃]/.test(value),
+        normalizedHasZenkaku: /[０-９－‐―ー−─（）＋　．＃]/.test(normalizedValue),
+        lengthBefore: value.length,
+        lengthAfter: normalizedValue.length,
+        charCodes: value.split('').map(char => ({
+          char,
+          code: char.charCodeAt(0),
+          isZenkaku: /[０-９－‐―ー−─（）＋　．＃]/.test(char)
+        }))
       });
     }
     

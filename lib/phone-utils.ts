@@ -6,6 +6,8 @@ import { logger } from '@/lib/logger';
 export function normalizePhoneNumber(phone: string | undefined | null): string {
   if (!phone) return '';
   
+  logger.debug(`[normalizePhoneNumber] 入力値: "${phone}"`);
+  
   let normalized = phone.trim();
   
   // プレフィックスの削除
@@ -18,24 +20,51 @@ export function normalizePhoneNumber(phone: string | undefined | null): string {
   for (const prefix of prefixes) {
     if (normalized.startsWith(prefix)) {
       normalized = normalized.substring(prefix.length).trim();
+      logger.debug(`[normalizePhoneNumber] プレフィックス除去: "${prefix}" → "${normalized}"`);
       break;
     }
   }
   
   // 全角数字を半角に変換
+  const beforeDigit = normalized;
   normalized = normalized.replace(/[０-９]/g, (s) => {
     return String.fromCharCode(s.charCodeAt(0) - 0xFEE0);
   });
+  if (beforeDigit !== normalized) {
+    logger.debug(`[normalizePhoneNumber] 全角数字変換: "${beforeDigit}" → "${normalized}"`);
+  }
   
-  // 全角ハイフン・記号を半角に変換
-  normalized = normalized.replace(/[－‐―ー]/g, '-');
+  // 全角ハイフン・記号を半角に変換（より包括的に）
+  const beforeSymbol = normalized;
+  // より多くの全角ハイフンパターンに対応
+  normalized = normalized.replace(/[－‐―ー−─]/g, '-'); // 長い線も追加
   normalized = normalized.replace(/［/g, '(');
   normalized = normalized.replace(/］/g, ')');
+  normalized = normalized.replace(/（/g, '('); // 全角括弧も追加
+  normalized = normalized.replace(/）/g, ')'); // 全角括弧も追加
   normalized = normalized.replace(/＋/g, '+');
   normalized = normalized.replace(/　/g, ' '); // 全角スペース→半角
+  normalized = normalized.replace(/．/g, '.'); // 全角ピリオドも追加
+  normalized = normalized.replace(/＃/g, '#'); // 全角シャープも追加
+  
+  if (beforeSymbol !== normalized) {
+    logger.debug(`[normalizePhoneNumber] 記号変換: "${beforeSymbol}" → "${normalized}"`);
+  }
   
   // 余分な空白を削除
+  const beforeTrim = normalized;
   normalized = normalized.replace(/\s+/g, ' ').trim();
+  if (beforeTrim !== normalized) {
+    logger.debug(`[normalizePhoneNumber] 空白整理: "${beforeTrim}" → "${normalized}"`);
+  }
+  
+  logger.debug(`[normalizePhoneNumber] 最終結果: "${phone}" → "${normalized}"`);
+  
+  // 残存全角文字チェック
+  const hasRemainingZenkaku = /[０-９－‐―ー−─（）＋　．＃]/g.test(normalized);
+  if (hasRemainingZenkaku) {
+    logger.warn(`[normalizePhoneNumber] 警告: 変換後も全角文字が残存している: "${normalized}"`);
+  }
   
   return normalized;
 }
