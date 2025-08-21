@@ -224,6 +224,8 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
       text-align: left;
       font-weight: 700;
       vertical-align: middle;
+      height: 45px;
+      line-height: 21px;
     }
     
     .quote-table th:last-child,
