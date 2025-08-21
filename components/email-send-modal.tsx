@@ -321,8 +321,8 @@ ${documentTitle ? `件名：${documentTitle}
     try {
       let pdfBase64 = null;
       
-      // 見積書以外のPDFを添付する場合は、クライアントサイドで生成
-      // 見積書はサーバーサイドでPuppeteerを使用して生成するためスキップ
+      // PDFを添付する場合のクライアントサイド生成処理
+      // 見積書はサーバーサイドで生成するためスキップ
       if (attachPdf && typeof window !== 'undefined' && documentType !== 'quote') {
         try {
           // まず見積書/請求書/納品書/領収書のデータを取得
@@ -445,10 +445,9 @@ ${documentTitle ? `件名：${documentTitle}
               invoiceNumber: docData.invoiceNumber
             });
           } else if (documentType === 'quote') {
-            // 見積書もクライアントサイドPDF生成を試みる（IIFEを削除して修正済み）
-            const { generateQuoteEmailPDFBase64 } = await import('@/lib/quote-email-pdf-generator');
-            logger.debug('Generating quote PDF for email attachment...');
-            pdfBase64 = await generateQuoteEmailPDFBase64(docData, companyInfo);
+            // 見積書はサーバーサイドPDF生成を使用（印刷ボタンと同じPuppeteer方式）
+            logger.debug('Skipping client-side PDF generation for quote, will use server-side');
+            // pdfBase64は設定せず、後続のサーバーサイド処理で生成
           } else {
             // 他のドキュメントタイプは既存の方法を使用
             const { generatePDFBlob } = await import('@/lib/pdf-export');
@@ -487,9 +486,9 @@ ${documentTitle ? `件名：${documentTitle}
       // 見積書は専用のサーバーサイドエンドポイントを使用
       let response;
       
-      if (documentType === 'quote' && !pdfBase64) {
-        // 見積書はサーバーサイドでPuppeteerを使用してPDF生成
-        logger.debug('Using server-side quote-specific endpoint for PDF generation');
+      if (documentType === 'quote' && attachPdf) {
+        // 見積書はサーバーサイドでPuppeteerを使用してPDF生成・送信
+        logger.debug('Using server-side quote-specific endpoint for PDF generation and sending');
         
         response = await fetch(`/api/quotes/${documentId}/send`, {
           method: 'POST',
@@ -497,7 +496,12 @@ ${documentTitle ? `件名：${documentTitle}
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            recipientEmail: to,
+            to,
+            cc: cc || undefined,
+            bcc: bcc || undefined,
+            subject: subject || undefined,
+            body: body || undefined,
+            recipientEmail: to, // 互換性のため
             recipientName: customer?.companyName || '',
             customMessage: body || undefined,
           }),
