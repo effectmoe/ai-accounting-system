@@ -121,8 +121,8 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
     
     body {
       font-family: 'Noto Sans JP', sans-serif;
-      font-size: 12px;
-      line-height: 1.6;
+      font-size: 11px;
+      line-height: 1.5;
       color: #333;
       background-color: #f5f5f5;
     }
@@ -132,19 +132,19 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
       margin: 0 auto;
       background-color: white;
       box-shadow: 0 0 10px rgba(0,0,0,0.1);
-      padding: 40px;
+      padding: 30px;
     
     }
     
     /* ヘッダー */
     .quote-header {
       text-align: center;
-      margin-bottom: 40px;
-      padding: 30px;
+      margin-bottom: 30px;
+      padding: 20px;
     }
     
     .quote-title {
-      font-size: 32px;
+      font-size: 28px;
       font-weight: 700;
       letter-spacing: 4px;
       margin: 0;
@@ -158,7 +158,7 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
     .quote-info {
       display: flex;
       justify-content: space-between;
-      margin-bottom: 30px;
+      margin-bottom: 20px;
     }
     
     .customer-info {
@@ -166,9 +166,9 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
     }
     
     .customer-name {
-      font-size: 20px;
+      font-size: 18px;
       font-weight: 700;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
     }
     
     .company-info {
@@ -177,51 +177,58 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
     }
     
     .company-name {
-      font-size: 16px;
+      font-size: 14px;
       font-weight: 700;
       margin-bottom: 5px;
     }
     
     .quote-dates {
-      margin-bottom: 10px;
-      line-height: 1.8;
+      margin-bottom: 8px;
+      line-height: 1.6;
     }
     
     /* 合計金額 */
     .total-amount-box {
       background-color: #e6f2ff;
-      padding: 20px;
-      margin-bottom: 30px;
+      padding: 15px 20px;
+      margin-bottom: 20px;
       border-radius: 5px;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      min-height: 50px;
     }
     
     .total-label {
-      font-size: 18px;
+      font-size: 16px;
       font-weight: 700;
+      display: flex;
+      align-items: center;
     }
     
     .total-amount {
-      font-size: 24px;
+      font-size: 20px;
       font-weight: 700;
       color: #0066cc;
+      display: flex;
+      align-items: center;
     }
     
     /* テーブル */
     .quote-table {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 30px;
+      margin-bottom: 20px;
     }
     
     .quote-table th {
       background-color: #34495e;
       color: white;
-      padding: 12px;
+      padding: 10px 12px;
       text-align: left;
       font-weight: 700;
+      vertical-align: middle;
+      height: 40px;
     }
     
     .quote-table th:last-child,
@@ -242,7 +249,8 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
     }
     
     .quote-table td {
-      padding: 12px;
+      padding: 10px 12px;
+      vertical-align: middle;
     }
     
     .quote-table tbody tr {
@@ -256,22 +264,22 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
     /* 商品明細のスタイル */
     .item-name {
       font-weight: 600;
-      margin-bottom: 4px;
+      margin-bottom: 2px;
     }
     
     .item-description {
-      font-size: 11px;
+      font-size: 10px;
       color: #666;
-      margin-bottom: 4px;
-      line-height: 1.4;
+      margin-bottom: 2px;
+      line-height: 1.3;
       white-space: pre-wrap;
     }
     
     .item-notes {
-      font-size: 10px;
+      font-size: 9px;
       color: #888;
       font-style: italic;
-      margin-top: 4px;
+      margin-top: 2px;
       padding-left: 10px;
     }
     
@@ -279,12 +287,12 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
     .summary-section {
       display: flex;
       justify-content: flex-end;
-      margin-bottom: 40px;
+      margin-bottom: 20px;
     }
     
     .summary-table {
-      width: 300px;
-      padding: 20px;
+      width: 280px;
+      padding: 15px;
     }
     
     .summary-row {
@@ -304,36 +312,37 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
     
     /* 備考 */
     .notes-section {
-      margin-top: 30px;
-      padding: 15px;
+      margin-top: 15px;
+      padding: 12px;
       background-color: #f9f9f9;
       border-radius: 5px;
     }
     
     .notes-title {
       font-weight: 700;
-      margin-bottom: 10px;
-      font-size: 14px;
+      margin-bottom: 8px;
+      font-size: 12px;
     }
     
     .notes-content {
       white-space: pre-wrap;
-      line-height: 1.8;
+      line-height: 1.6;
+      font-size: 10px;
     }
     
     /* 有効期限情報 */
     .validity-info {
-      margin-top: 30px;
-      padding: 15px;
+      margin-top: 15px;
+      padding: 12px;
       background-color: #f9f9f9;
       border-radius: 5px;
       border-left: 4px solid #34495e;
     }
     
     .validity-info h3 {
-      font-size: 14px;
+      font-size: 12px;
       font-weight: 700;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       color: #34495e;
     }
     
