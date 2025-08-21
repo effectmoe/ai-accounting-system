@@ -27,9 +27,22 @@ export async function POST(
     const requestBody = await request.json();
     console.log('[Send Quote API] Received data:', JSON.stringify(requestBody, null, 2));
     
-    const { recipientEmail, recipientName, customMessage } = requestBody;
+    // 新しいフォーマットと旧フォーマットの両方をサポート
+    const { 
+      to, 
+      cc, 
+      bcc, 
+      subject: customSubject, 
+      body: customBody,
+      recipientEmail, 
+      recipientName, 
+      customMessage 
+    } = requestBody;
+    
+    // 宛先メールアドレスの取得（新フォーマット優先）
+    const toEmail = to || recipientEmail;
 
-    if (!recipientEmail) {
+    if (!toEmail) {
       return NextResponse.json(
         { error: 'Recipient email is required' },
         { status: 400 }
@@ -50,10 +63,13 @@ export async function POST(
     // 会社情報を取得
     const companyInfoService = new CompanyInfoService();
     const companyInfo = await companyInfoService.getCompanyInfo();
+    
+    // メールの件名と本文を決定（quoteオブジェクトが取得できた後）
+    const emailSubject = customSubject || `お見積書のご送付 - ${quote.quoteNumber}`;
+    const emailBody = customBody || customMessage;
 
-    // シンプルなメール本文を生成（HTML見積書ではなく、通常のメールメッセージ）
-    const emailSubject = `お見積書のご送付 - ${quote.quoteNumber}`;
-    const emailBody = customMessage || `${recipientName || quote.customer?.companyName || 'お客様'}
+    // デフォルトのメール本文を生成（カスタムボディがない場合）
+    const defaultEmailBody = `${recipientName || quote.customer?.companyName || 'お客様'}
 
 いつもお世話になっております。
 
@@ -65,6 +81,8 @@ export async function POST(
 添付ファイルをご確認の上、ご検討のほどよろしくお願いいたします。
 
 ご不明な点がございましたら、お気軽にお問い合わせください。`;
+    
+    const finalEmailBody = emailBody || defaultEmailBody;
 
     // Resend APIキーの確認
     if (!resendApiKey) {
@@ -130,7 +148,9 @@ export async function POST(
     
     console.log('[Send Quote API] Email details:', {
       from,
-      to: recipientEmail,
+      to: toEmail,
+      cc,
+      bcc,
       subject: emailSubject,
       attachmentCount: attachments.length,
       attachmentDetails: attachments.map(att => ({
@@ -144,12 +164,14 @@ export async function POST(
     let emailResult;
     try {
       // メール送信データを構築（領収書と同じ構造）
-      const emailData = {
+      const emailData: any = {
         from,
-        to: recipientEmail,
+        to: toEmail,
         subject: emailSubject,
-        text: emailBody,
-        html: emailBody.replace(/\n/g, '<br>'), // シンプルなHTML変換
+        text: finalEmailBody,
+        html: finalEmailBody.replace(/\n/g, '<br>'), // シンプルなHTML変換
+        ...(cc && { cc }),
+        ...(bcc && { bcc }),
         ...(attachments.length > 0 && {
           attachments: attachments.map(att => ({
             filename: att.filename,
