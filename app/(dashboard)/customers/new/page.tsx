@@ -84,19 +84,46 @@ export default function NewCustomerPage() {
       newErrors.email = '有効なメールアドレスを入力してください';
     }
 
-    // 電話番号の緩やかなバリデーション（より多くの形式を許可）
+    // 電話番号のバリデーション（事前に正規化を適用）
     if (formData.phone && formData.phone.trim()) {
+      // バリデーション前に正規化を適用
+      const normalizedPhone = normalizePhoneNumber(formData.phone);
+      
+      console.log('📞 電話番号バリデーション詳細:', {
+        original: formData.phone,
+        normalized: normalizedPhone,
+        originalHasZenkaku: /[０-９－‐―ー]/.test(formData.phone),
+        normalizedHasZenkaku: /[０-９－‐―ー]/.test(normalizedPhone)
+      });
+      
       // 基本的な文字チェック（数字、ハイフン、プラス、スペース、括弧、ピリオド、#、ext などを許可）
       const phonePattern = /^[\d\-+\s().\#]*(?:ext\.?\s*\d+)?$/i;
       // 最低限の文字数チェック（3文字以上、30文字以下）
       const minLength = 3;
       const maxLength = 30;
-      const cleanPhone = formData.phone.replace(/[\s\-()]/g, ''); // スペース、ハイフン、括弧を除去して文字数をチェック
+      const cleanPhone = normalizedPhone.replace(/[\s\-()]/g, ''); // スペース、ハイフン、括弧を除去して文字数をチェック
       
-      if (!phonePattern.test(formData.phone)) {
+      if (!phonePattern.test(normalizedPhone)) {
+        console.log('❌ 電話番号バリデーションエラー:', {
+          phone: normalizedPhone,
+          pattern: phonePattern.toString(),
+          testResult: phonePattern.test(normalizedPhone)
+        });
         newErrors.phone = '電話番号に使用できない文字が含まれています';
       } else if (cleanPhone.length < minLength || cleanPhone.length > maxLength) {
+        console.log('❌ 電話番号長さエラー:', {
+          cleanPhone,
+          length: cleanPhone.length,
+          minLength,
+          maxLength
+        });
         newErrors.phone = `電話番号は${minLength}〜${maxLength}文字で入力してください`;
+      } else {
+        console.log('✅ 電話番号バリデーション成功:', {
+          normalizedPhone,
+          cleanPhone,
+          length: cleanPhone.length
+        });
       }
     }
 
@@ -227,10 +254,12 @@ export default function NewCustomerPage() {
         e.target.value = normalizedValue;
       }
       
-      console.log('📞 電話番号正規化:', {
+      console.log('📞 電話番号正規化 (onChange):', {
         field: name,
         original: value,
-        normalized: normalizedValue
+        normalized: normalizedValue,
+        hasZenkaku: /[０-９－‐―ー]/.test(value),
+        normalizedHasZenkaku: /[０-９－‐―ー]/.test(normalizedValue)
       });
     }
     
