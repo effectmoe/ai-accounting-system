@@ -224,9 +224,6 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
       text-align: left;
       font-weight: 700;
       vertical-align: middle;
-      display: flex;
-      align-items: center;
-      justify-content: flex-start;
     }
     
     .quote-table th:last-child,
@@ -240,20 +237,10 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
       width: 80px;
     }
     
-    .quote-table th:nth-child(2) {
-      justify-content: center;
-    }
-    
     .quote-table th:nth-child(3),
     .quote-table td:nth-child(3) {
       text-align: right;
       width: 120px;
-    }
-    
-    .quote-table th:nth-child(3),
-    .quote-table th:last-child {
-      justify-content: flex-end;
-      padding-right: 12px;
     }
     
     .quote-table td {
