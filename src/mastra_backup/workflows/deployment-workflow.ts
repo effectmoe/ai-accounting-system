@@ -1,0 +1,68 @@
+import { Workflow } from '@mastra/core';
+import { mastraDeploymentAgent } from '../agents/mastra-deployment-agent';
+
+import { logger } from '@/lib/logger';
+export const deploymentWorkflow = new Workflow({
+  name: 'deployment-workflow',
+  description: 'Complete deployment workflow for the accounting automation system',
+  version: '1.0.0',
+
+  steps: [
+    {
+      id: 'validate-config',
+      name: 'Validate Configuration',
+      agent: mastraDeploymentAgent,
+      action: 'validateConfig',
+      input: {
+        platform: 'vercel',
+        environment: 'production',
+        buildCommand: 'npm run build'
+      }
+    },
+    {
+      id: 'build-and-deploy',
+      name: 'Build and Deploy',
+      agent: mastraDeploymentAgent,
+      action: 'deployToVercel',
+      input: {
+        platform: 'vercel',
+        environment: 'production',
+        buildCommand: 'npm run build'
+      },
+      dependencies: ['validate-config']
+    },
+    {
+      id: 'check-status',
+      name: 'Check Deployment Status',
+      agent: mastraDeploymentAgent,
+      action: 'checkDeploymentStatus',
+      input: {
+        deploymentId: '{{ steps.build-and-deploy.output.deploymentId }}'
+      },
+      dependencies: ['build-and-deploy']
+    }
+  ],
+
+  // Workflow hooks
+  hooks: {
+    beforeWorkflow: async (context: any) => {
+      logger.debug('[Deployment Workflow] Starting deployment workflow...');
+    },
+    
+    afterWorkflow: async (context: any, result: any) => {
+      logger.debug('[Deployment Workflow] Workflow completed');
+      
+      if (result.success) {
+        logger.debug(`[Deployment Workflow] Successfully deployed to: ${result.url}`);
+      } else {
+        logger.error(`[Deployment Workflow] Deployment failed: ${result.error}`);
+      }
+    },
+    
+    onError: async (error: any, context: any) => {
+      logger.error(`[Deployment Workflow] Error in step ${context.currentStep}:`, error);
+    }
+  }
+});
+
+export default deploymentWorkflow;
