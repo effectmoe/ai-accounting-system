@@ -1,0 +1,273 @@
+{
+  "project": "accounting-automation",
+  "version": "1.0.0",
+  "description": "AI Accounting Automation System with Japanese Tax Support",
+  "agents": [
+    {
+      "id": "accounting-agent",
+      "name": "Accounting Agent",
+      "description": "会計処理・仕訳作成・請求書処理・財務レポート生成を行う日本税制対応エージェント",
+      "model": "deepseek-chat",
+      "tools": [
+        "create_journal",
+        "process_transaction",
+        "create_invoice",
+        "generate_financial_report",
+        "calculate_balance_sheet",
+        "export_accounting_data"
+      ]
+    },
+    {
+      "id": "customer-agent",
+      "name": "Customer Agent",
+      "description": "顧客データの管理・分析・CRM機能を提供するエージェント",
+      "model": "deepseek-chat",
+      "tools": [
+        "create_customer",
+        "update_customer",
+        "delete_customer",
+        "search_customers",
+        "analyze_customer_data",
+        "export_customer_list"
+      ]
+    },
+    {
+      "id": "database-agent",
+      "name": "Database Agent",
+      "description": "MongoDBデータベース操作・バックアップ・復元を行うエージェント",
+      "model": "deepseek-chat",
+      "tools": [
+        "query_database",
+        "create_record",
+        "update_record",
+        "delete_record",
+        "backup_database",
+        "restore_database"
+      ]
+    },
+    {
+      "id": "deployment-agent",
+      "name": "Deployment Agent",
+      "description": "CI/CD・自動デプロイ・ビルド管理を行うエージェント",
+      "model": "deepseek-chat",
+      "tools": [
+        "deploy_to_vercel",
+        "run_tests",
+        "build_project",
+        "check_health_status"
+      ]
+    },
+    {
+      "id": "japan-tax-agent",
+      "name": "Japan Tax Agent",
+      "description": "日本の税制に完全対応した税金計算エージェント",
+      "model": "deepseek-chat",
+      "tools": [
+        "calculate_consumption_tax",
+        "calculate_income_tax",
+        "calculate_corporate_tax",
+        "generate_tax_report"
+      ]
+    },
+    {
+      "id": "ocr-agent",
+      "name": "OCR Agent",
+      "description": "請求書・領収書のOCR処理とデータ抽出を行うエージェント",
+      "model": "deepseek-chat",
+      "tools": [
+        "process_invoice_ocr",
+        "process_receipt_ocr",
+        "extract_text_from_image",
+        "analyze_document"
+      ]
+    },
+    {
+      "id": "problem-solving-agent",
+      "name": "Problem Solving Agent",
+      "description": "エラー診断・問題解決・修正提案を行うエージェント",
+      "model": "deepseek-chat",
+      "tools": [
+        "diagnose_error",
+        "suggest_fix",
+        "analyze_logs"
+      ]
+    },
+    {
+      "id": "product-agent",
+      "name": "Product Agent",
+      "description": "商品管理・在庫管理・商品分析を行うエージェント",
+      "model": "deepseek-chat",
+      "tools": [
+        "create_product",
+        "update_product",
+        "delete_product",
+        "search_products",
+        "analyze_inventory"
+      ]
+    },
+    {
+      "id": "refactor-agent",
+      "name": "Refactor Agent",
+      "description": "コード最適化・リファクタリング支援エージェント",
+      "model": "deepseek-chat",
+      "tools": [
+        "analyze_code",
+        "suggest_improvements",
+        "refactor_code"
+      ]
+    },
+    {
+      "id": "ui-agent",
+      "name": "UI Agent",
+      "description": "UI生成・フォーム作成・ダッシュボード生成エージェント",
+      "model": "deepseek-chat",
+      "tools": [
+        "generate_form",
+        "create_dashboard",
+        "export_pdf",
+        "create_chart"
+      ]
+    },
+    {
+      "id": "construction-agent",
+      "name": "Construction Agent",
+      "description": "建設業特有の会計処理・工事進行基準対応エージェント",
+      "model": "deepseek-chat",
+      "tools": [
+        "process_construction_accounting",
+        "calculate_progress",
+        "manage_projects",
+        "generate_construction_reports"
+      ]
+    },
+    {
+      "id": "web-scraper-agent",
+      "name": "Web Scraper Agent",
+      "description": "Webデータ収集・スクレイピング・分析エージェント",
+      "model": "deepseek-chat",
+      "tools": [
+        "scrape_website",
+        "extract_data",
+        "analyze_content"
+      ]
+    }
+  ],
+  "workflows": [
+    {
+      "id": "accounting-workflow",
+      "name": "Accounting Workflow",
+      "description": "会計処理の完全自動化ワークフロー（取引入力→仕訳→税計算→レポート生成）",
+      "steps": [
+        {
+          "name": "validate_input",
+          "agent": "database-agent"
+        },
+        {
+          "name": "process_documents",
+          "agent": "ocr-agent"
+        },
+        {
+          "name": "categorize_transaction",
+          "agent": "accounting-agent"
+        },
+        {
+          "name": "calculate_tax",
+          "agent": "japan-tax-agent"
+        },
+        {
+          "name": "create_journal_entry",
+          "agent": "accounting-agent"
+        },
+        {
+          "name": "save_to_database",
+          "agent": "database-agent"
+        }
+      ]
+    },
+    {
+      "id": "compliance-workflow",
+      "name": "Compliance Workflow",
+      "description": "コンプライアンスチェック・監査対応ワークフロー",
+      "steps": [
+        {
+          "name": "check_regulations",
+          "agent": "japan-tax-agent"
+        },
+        {
+          "name": "validate_transactions",
+          "agent": "accounting-agent"
+        },
+        {
+          "name": "generate_audit_trail",
+          "agent": "database-agent"
+        },
+        {
+          "name": "create_compliance_report",
+          "agent": "accounting-agent"
+        }
+      ]
+    },
+    {
+      "id": "invoice-processing-workflow",
+      "name": "Invoice Processing Workflow",
+      "description": "請求書OCRから仕訳作成まで一括処理ワークフロー",
+      "steps": [
+        {
+          "name": "ocr_processing",
+          "agent": "ocr-agent"
+        },
+        {
+          "name": "data_extraction",
+          "agent": "ocr-agent"
+        },
+        {
+          "name": "validation",
+          "agent": "accounting-agent"
+        },
+        {
+          "name": "journal_creation",
+          "agent": "accounting-agent"
+        },
+        {
+          "name": "approval_flow",
+          "agent": "database-agent"
+        }
+      ]
+    },
+    {
+      "id": "deployment-workflow",
+      "name": "Deployment Workflow",
+      "description": "テスト・ビルド・デプロイ自動化ワークフロー",
+      "steps": [
+        {
+          "name": "run_tests",
+          "agent": "deployment-agent"
+        },
+        {
+          "name": "build_application",
+          "agent": "deployment-agent"
+        },
+        {
+          "name": "deploy_to_vercel",
+          "agent": "deployment-agent"
+        },
+        {
+          "name": "health_check",
+          "agent": "deployment-agent"
+        },
+        {
+          "name": "notify_status",
+          "agent": "database-agent"
+        }
+      ]
+    }
+  ],
+  "environment_variables": [
+    "DEEPSEEK_API_KEY",
+    "MONGODB_URI",
+    "AZURE_FORM_RECOGNIZER_ENDPOINT",
+    "AZURE_FORM_RECOGNIZER_KEY",
+    "OPENAI_API_KEY",
+    "ANTHROPIC_API_KEY"
+  ]
+}
