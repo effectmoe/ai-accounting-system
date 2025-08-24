@@ -1,7 +1,12 @@
-var mastra$1 = mastra;
-const telemetry = {
-  enabled: false
-  // Disable telemetry to avoid deployment issues
+// テレメトリーを完全に無効化
+export const telemetry = {
+  enabled: false,
+  serviceName: 'accounting-automation',
+  sampling: {
+    type: 'always_off'
+  }
 };
 
-export { mastra$1 as default, telemetry };
+// mastraをimportしてからexport
+import { mastra } from './index.mjs';
+export default mastra;
