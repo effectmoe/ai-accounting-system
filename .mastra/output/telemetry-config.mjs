@@ -1,9 +1,7 @@
-import { Mastra } from '@mastra/core';
+var mastra$1 = mastra;
+const telemetry = {
+  enabled: false
+  // Disable telemetry to avoid deployment issues
+};
 
-export const mastra = new Mastra({
-  name: "AI Accounting System",
-  telemetry: { enabled: false }
-});
-
-export const telemetry = { enabled: false };
-export default mastra;
+export { mastra$1 as default, telemetry };
