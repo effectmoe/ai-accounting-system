@@ -427,8 +427,9 @@ export class QuoteService {
         throw new Error('見積書が見つかりません');
       }
 
-      if (quote.status !== 'accepted') {
-        throw new Error('承認された見積書のみ請求書に変換できます');
+      // どのステータスの見積書でも請求書に変換可能にする
+      if (quote.status === 'cancelled') {
+        throw new Error('キャンセルされた見積書は請求書に変換できません');
       }
 
       if (quote.convertedToInvoiceId) {
