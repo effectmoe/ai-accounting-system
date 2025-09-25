@@ -411,7 +411,7 @@ export default function QuoteDetailPage({ params }: QuoteDetailPageProps) {
                 承認済みにする
               </Button>
             )}
-            {quote.status === 'accepted' && !quote.convertedToInvoiceId && (
+            {!quote.convertedToInvoiceId && (
               <Button
                 size="sm"
                 onClick={handleConvertToInvoice}
@@ -426,7 +426,7 @@ export default function QuoteDetailPage({ params }: QuoteDetailPageProps) {
                 ) : (
                   <>
                     <Calculator className="mr-2 h-4 w-4" />
-                    請求書に変換
+                    請求書を作成
                   </>
                 )}
               </Button>
