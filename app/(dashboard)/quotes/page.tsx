@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Search, FileText, Loader2, Sparkles, FileDown, CheckCircle, Calculator, Trash2, CheckCircle2, Copy } from 'lucide-react';
+import { Plus, Search, FileText, Loader2, Sparkles, FileDown, CheckCircle, Calculator, Trash2, CheckCircle2, Copy, Edit } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { safeFormatDate } from '@/lib/date-utils';
 import { cache, SimpleCache } from '@/lib/cache';
@@ -396,6 +396,28 @@ function QuotesPageContent() {
 
   return (
     <div className="container mx-auto p-6">
+      <style jsx>{`
+        [title]:hover::after {
+          content: attr(title);
+          position: absolute;
+          background: #1f2937;
+          color: white;
+          padding: 4px 8px;
+          border-radius: 4px;
+          font-size: 12px;
+          white-space: nowrap;
+          z-index: 1000;
+          animation: fadeIn 0.1s ease-in-out;
+          pointer-events: none;
+          transform: translateY(-100%);
+          margin-top: -8px;
+        }
+
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+      `}</style>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">見積書一覧</h1>
       </div>
@@ -704,17 +726,35 @@ function QuotesPageContent() {
                               window.open(`/api/quotes/${quote._id}/pdf`, '_blank');
                             }}
                             title="PDFダウンロード"
+                            className="hover:bg-gray-100 transition-colors duration-75 group"
                           >
                             <FileDown className="h-4 w-4" />
+                            <span className="sr-only">PDFダウンロード</span>
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              router.push(`/quotes/${quote._id}/edit`);
+                            }}
+                            title="編集"
+                            className="hover:bg-blue-50 hover:text-blue-600 transition-colors duration-75 group"
+                            disabled={isLoading}
+                          >
+                            <Edit className="h-4 w-4" />
+                            <span className="sr-only">編集</span>
                           </Button>
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={(e) => handleDuplicate(quote._id, e)}
                             title="複製"
+                            className="hover:bg-green-50 hover:text-green-600 transition-colors duration-75 group"
                             disabled={isLoading}
                           >
                             <Copy className="h-4 w-4" />
+                            <span className="sr-only">複製</span>
                           </Button>
                           {quote.status === 'accepted' && !quote.convertedToInvoiceId && (
                             <Button
@@ -723,12 +763,14 @@ function QuotesPageContent() {
                               onClick={(e) => handleConvertToInvoice(quote._id, e)}
                               disabled={convertingQuotes.has(quote._id)}
                               title="請求書に変換"
+                              className="hover:bg-purple-50 hover:text-purple-600 transition-colors duration-75 group"
                             >
                               {convertingQuotes.has(quote._id) ? (
                                 <Loader2 className="h-4 w-4 animate-spin" />
                               ) : (
                                 <Calculator className="h-4 w-4" />
                               )}
+                              <span className="sr-only">請求書に変換</span>
                             </Button>
                           )}
                           {quote.convertedToInvoiceId && (
@@ -740,8 +782,10 @@ function QuotesPageContent() {
                                 router.push(`/invoices/${quote.convertedToInvoiceId}`);
                               }}
                               title="変換された請求書を表示"
+                              className="hover:bg-green-50 hover:text-green-600 transition-colors duration-75 group"
                             >
                               <CheckCircle className="h-4 w-4" />
+                              <span className="sr-only">変換された請求書を表示</span>
                             </Button>
                           )}
                           <Button
@@ -752,10 +796,11 @@ function QuotesPageContent() {
                               handleDelete(quote._id);
                             }}
                             title="削除"
-                            className="hover:bg-red-50 hover:text-red-600"
+                            className="hover:bg-red-50 hover:text-red-600 transition-colors duration-75 group"
                             disabled={isLoading}
                           >
                             <Trash2 className="h-4 w-4" />
+                            <span className="sr-only">削除</span>
                           </Button>
                         </div>
                       </TableCell>
