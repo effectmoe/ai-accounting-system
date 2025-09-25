@@ -10,15 +10,15 @@ import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { logger } from '@/lib/logger';
-import { 
-  ArrowLeft, 
-  Download, 
-  Edit, 
-  Trash2, 
-  Calculator, 
-  CheckCircle, 
-  XCircle, 
-  Clock, 
+import {
+  ArrowLeft,
+  Download,
+  Edit,
+  Trash2,
+  Calculator,
+  CheckCircle,
+  XCircle,
+  Clock,
   AlertTriangle,
   Loader2,
   AlertCircle,
@@ -29,7 +29,8 @@ import {
   Send,
   FileDown,
   Package,
-  Sparkles
+  Sparkles,
+  Undo2
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
@@ -71,6 +72,7 @@ export default function QuoteDetailPage({ params }: QuoteDetailPageProps) {
   const [error, setError] = useState<string | null>(null);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [isConverting, setIsConverting] = useState(false);
+  const [isUndoingConversion, setIsUndoingConversion] = useState(false);
   const [showPdfPreview, setShowPdfPreview] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [showItemDescriptions, setShowItemDescriptions] = useState(true);
@@ -220,6 +222,39 @@ export default function QuoteDetailPage({ params }: QuoteDetailPageProps) {
       alert(`変換エラー: ${error instanceof Error ? error.message : '不明なエラー'}`);
     } finally {
       setIsConverting(false);
+    }
+  };
+
+  // 請求書変換の取り消し処理
+  const handleUndoConvertToInvoice = async () => {
+    if (!quote) return;
+
+    if (!confirm('請求書変換を取り消しますか？関連する請求書も削除されます。')) {
+      return;
+    }
+
+    setIsUndoingConversion(true);
+    try {
+      const response = await fetch(`/api/quotes/${quote._id}/undo-convert-to-invoice`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        fetchQuote(); // 見積書データを再読み込み
+        alert('請求書変換を取り消しました');
+      } else {
+        throw new Error(data.details || data.error || '取り消しに失敗しました');
+      }
+    } catch (error) {
+      logger.error('Error undoing quote to invoice conversion:', error);
+      alert(`取り消しエラー: ${error instanceof Error ? error.message : '不明なエラー'}`);
+    } finally {
+      setIsUndoingConversion(false);
     }
   };
 
@@ -427,6 +462,28 @@ export default function QuoteDetailPage({ params }: QuoteDetailPageProps) {
                   <>
                     <Calculator className="mr-2 h-4 w-4" />
                     請求書を作成
+                  </>
+                )}
+              </Button>
+            )}
+            {/* 請求書変換取り消しボタン */}
+            {quote.status === 'converted' && quote.convertedToInvoiceId && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleUndoConvertToInvoice}
+                disabled={isUndoingConversion}
+                className="bg-red-50 hover:bg-red-100 border-red-200 text-red-700"
+              >
+                {isUndoingConversion ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    取り消し中...
+                  </>
+                ) : (
+                  <>
+                    <Undo2 className="mr-2 h-4 w-4" />
+                    変換を取り消し
                   </>
                 )}
               </Button>
