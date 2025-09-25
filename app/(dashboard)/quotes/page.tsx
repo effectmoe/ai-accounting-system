@@ -448,6 +448,49 @@ function QuotesPageContent() {
 
   return (
     <div className="container mx-auto p-6">
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          /* ツールチップの高速表示設定 */
+          [title] {
+            position: relative;
+          }
+
+          [title]:hover::before {
+            content: attr(title);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            white-space: nowrap;
+            z-index: 1000;
+            animation: fadeIn 0.1s ease-out;
+            pointer-events: none;
+            margin-bottom: 4px;
+          }
+
+          [title]:hover::after {
+            content: '';
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 4px solid transparent;
+            border-top-color: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            pointer-events: none;
+          }
+
+          @keyframes fadeIn {
+            from { opacity: 0; transform: translateX(-50%) translateY(-2px); }
+            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+          }
+        `
+      }} />
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-bold">見積書一覧</h1>
       </div>
@@ -756,7 +799,8 @@ function QuotesPageContent() {
                               window.open(`/api/quotes/${quote._id}/pdf`, '_blank');
                             }}
                             title="PDFダウンロード"
-                            className="hover:bg-gray-100 transition-colors duration-75 group"
+                            className="hover:bg-gray-100 transition-colors duration-75 group relative"
+                            style={{'--tooltip-delay': '200ms'} as any}
                           >
                             <FileDown className="h-4 w-4" />
                             <span className="sr-only">PDFダウンロード</span>
