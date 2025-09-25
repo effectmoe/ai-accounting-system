@@ -492,6 +492,62 @@ export class QuoteService {
   }
 
   /**
+   * 請求書変換を取り消し
+   */
+  async undoConvertToInvoice(quoteId: string): Promise<Quote> {
+    try {
+      // 見積書を取得
+      const quote = await this.getQuote(quoteId);
+      if (!quote) {
+        throw new Error('見積書が見つかりません');
+      }
+
+      if (quote.status !== 'converted') {
+        throw new Error('この見積書は請求書に変換されていません');
+      }
+
+      if (!quote.convertedToInvoiceId) {
+        throw new Error('変換された請求書IDが見つかりません');
+      }
+
+      // 請求書の削除確認（オプション - 請求書を残す場合はコメントアウト）
+      const invoiceService = new InvoiceService();
+      try {
+        // 請求書を削除
+        await invoiceService.deleteInvoice(quote.convertedToInvoiceId.toString());
+        logger.debug('Associated invoice deleted:', { invoiceId: quote.convertedToInvoiceId });
+      } catch (invoiceError) {
+        logger.warn('Could not delete associated invoice:', {
+          invoiceId: quote.convertedToInvoiceId,
+          error: invoiceError
+        });
+        // 請求書削除に失敗しても見積書の状態は戻す
+      }
+
+      // 見積書のステータスを元に戻す
+      const updatedQuote = await this.updateQuote(quoteId, {
+        status: 'accepted', // 承認済みに戻す
+        convertedToInvoiceId: undefined,
+        convertedToInvoiceDate: undefined,
+      });
+
+      if (!updatedQuote) {
+        throw new Error('見積書の更新に失敗しました');
+      }
+
+      logger.debug('Quote conversion undone:', {
+        quoteId,
+        quoteNumber: updatedQuote.quoteNumber
+      });
+
+      return updatedQuote;
+    } catch (error) {
+      logger.error('Error in undoConvertToInvoice:', error);
+      throw error instanceof Error ? error : new Error('請求書変換の取り消しに失敗しました');
+    }
+  }
+
+  /**
    * 月次の見積書集計
    */
   async getMonthlyAggregation(year: number, month: number): Promise<any> {
