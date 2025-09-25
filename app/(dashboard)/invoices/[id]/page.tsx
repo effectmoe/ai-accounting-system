@@ -60,12 +60,14 @@ interface Invoice {
     };
   };
   items: Array<{
+    itemName?: string;
     description: string;
     quantity: number;
     unitPrice: number;
     amount: number;
     taxRate: number;
     taxAmount: number;
+    notes?: string;
   }>;
   subtotal: number;
   taxAmount: number;
@@ -554,7 +556,17 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
                 <tbody>
                   {invoice.items.map((item, index) => (
                     <tr key={index} className="hover:bg-gray-50">
-                      {showDescriptions && <td className="py-3 px-4 border border-gray-200">{item.description}</td>}
+                      {showDescriptions && <td className="py-3 px-4 border border-gray-200">
+                        <div>
+                          <div className="font-medium">{item.itemName || item.description || '商品名未設定'}</div>
+                          {item.description && item.description !== item.itemName && (
+                            <div className="text-sm text-gray-600 mt-1">{item.description}</div>
+                          )}
+                          {item.notes && (
+                            <div className="text-xs text-gray-500 mt-1 italic">※ {item.notes}</div>
+                          )}
+                        </div>
+                      </td>}
                       <td className="text-center py-3 px-4 border border-gray-200">{item.quantity}</td>
                       <td className="text-right py-3 px-4 border border-gray-200 font-mono">¥{(item.unitPrice || 0).toLocaleString()}</td>
                       <td className="text-right py-3 px-4 border border-gray-200 font-mono">¥{(item.amount || 0).toLocaleString()}</td>
