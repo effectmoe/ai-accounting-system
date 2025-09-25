@@ -352,7 +352,11 @@ export function generateCompactInvoiceHTML(invoice: any, companyInfo: any): stri
       <tbody>
         ${invoice.items.map((item: any) => `
           <tr>
-            <td>${item.description || ''}</td>
+            <td>
+              <div style="font-weight: 600; margin-bottom: 4px;">${item.itemName || item.description || '商品名未設定'}</div>
+              ${item.description && item.description !== item.itemName ? `<div style="font-size: 12px; color: #666;">${item.description}</div>` : ''}
+              ${item.notes ? `<div style="font-size: 11px; color: #888; font-style: italic;">※ ${item.notes}</div>` : ''}
+            </td>
             <td>${item.quantity}</td>
             <td>¥${(item.unitPrice || 0).toLocaleString()}</td>
             <td>¥${(item.amount || 0).toLocaleString()}</td>
