@@ -8,20 +8,21 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { logger } from '@/lib/logger';
-import { 
-  ArrowLeft, 
-  Download, 
-  Send, 
-  Edit, 
-  Trash2, 
-  CheckCircle, 
+import {
+  ArrowLeft,
+  Download,
+  Send,
+  Edit,
+  Trash2,
+  CheckCircle,
   AlertCircle,
   Sparkles,
   Loader2,
   Eye,
   X,
   MessageSquare,
-  Package
+  Package,
+  Receipt
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
@@ -268,6 +269,42 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
     }
   };
 
+  const handleConvertToReceipt = async () => {
+    if (!invoice) return;
+
+    if (!confirm('この請求書から領収書を作成しますか？\n\n作成される領収書は下書き状態となり、後から編集可能です。')) {
+      return;
+    }
+
+    setIsUpdating(true);
+    try {
+      const response = await fetch(`/api/invoices/${invoice._id}/convert-to-receipt`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({}),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert('領収書の作成が完了しました！\n\n作成された領収書は下書き状態です。必要に応じて但し書きなどの情報を編集してください。');
+        fetchInvoice(); // 請求書データを再読み込み
+        if (confirm('作成された領収書を確認しますか？')) {
+          router.push(`/receipts/${data._id}`);
+        }
+      } else {
+        throw new Error(data.details || data.error || '変換に失敗しました');
+      }
+    } catch (error) {
+      logger.error('Error converting invoice to receipt:', error);
+      alert(`変換エラー: ${error instanceof Error ? error.message : '不明なエラー'}`);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="container mx-auto p-6 flex justify-center items-center h-screen">
@@ -390,6 +427,27 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
                 <>
                   <Package className="mr-2 h-4 w-4" />
                   納品書作成
+                </>
+              )}
+            </Button>
+          )}
+          {/* 領収書作成ボタン（支払済み・一部支払済みの場合に表示） */}
+          {['paid', 'partially_paid'].includes(invoice.status) && (
+            <Button
+              variant="outline"
+              onClick={handleConvertToReceipt}
+              disabled={isUpdating}
+              className="bg-purple-50 hover:bg-purple-100 border-purple-200 text-purple-700"
+            >
+              {isUpdating ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  作成中...
+                </>
+              ) : (
+                <>
+                  <Receipt className="mr-2 h-4 w-4" />
+                  領収書作成
                 </>
               )}
             </Button>
