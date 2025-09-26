@@ -1,8 +1,20 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { TrendingUp, FileText, AlertCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+  TrendingUp,
+  FileText,
+  AlertCircle,
+  FileEdit,
+  Receipt,
+  Package,
+  Invoice,
+  Plus,
+  List
+} from 'lucide-react';
 
 interface DashboardData {
   revenue: number;
@@ -14,6 +26,7 @@ interface DashboardData {
 }
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [data, setData] = useState<DashboardData>({
     revenue: 0,
     expenses: 0,
@@ -109,7 +122,121 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
-      
+
+      {/* クイックアクション */}
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold mb-4">クイックアクション</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* 見積書 */}
+          <Card className="hover:shadow-md transition-shadow cursor-pointer">
+            <CardContent className="p-4">
+              <div className="flex flex-col items-center space-y-2">
+                <FileEdit className="h-8 w-8 text-blue-600" />
+                <h3 className="font-medium text-center">見積書</h3>
+                <div className="flex space-x-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => router.push('/quotes')}
+                  >
+                    <List className="h-4 w-4 mr-1" />
+                    一覧
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => router.push('/quotes/new')}
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    作成
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* 請求書 */}
+          <Card className="hover:shadow-md transition-shadow cursor-pointer">
+            <CardContent className="p-4">
+              <div className="flex flex-col items-center space-y-2">
+                <Invoice className="h-8 w-8 text-green-600" />
+                <h3 className="font-medium text-center">請求書</h3>
+                <div className="flex space-x-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => router.push('/invoices')}
+                  >
+                    <List className="h-4 w-4 mr-1" />
+                    一覧
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => router.push('/invoices/new')}
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    作成
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* 納品書 */}
+          <Card className="hover:shadow-md transition-shadow cursor-pointer">
+            <CardContent className="p-4">
+              <div className="flex flex-col items-center space-y-2">
+                <Package className="h-8 w-8 text-orange-600" />
+                <h3 className="font-medium text-center">納品書</h3>
+                <div className="flex space-x-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => router.push('/delivery-notes')}
+                  >
+                    <List className="h-4 w-4 mr-1" />
+                    一覧
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => router.push('/delivery-notes/new')}
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    作成
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* 領収書 */}
+          <Card className="hover:shadow-md transition-shadow cursor-pointer">
+            <CardContent className="p-4">
+              <div className="flex flex-col items-center space-y-2">
+                <Receipt className="h-8 w-8 text-purple-600" />
+                <h3 className="font-medium text-center">領収書</h3>
+                <div className="flex space-x-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => router.push('/receipts')}
+                  >
+                    <List className="h-4 w-4 mr-1" />
+                    一覧
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => router.push('/receipts/new')}
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    作成
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
