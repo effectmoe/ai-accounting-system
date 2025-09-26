@@ -779,11 +779,10 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
                         ))}
                       </select>
                       
-                      {/* 商品名入力フィールド - DO NOT CHANGE THIS */}
-                      <input
-                        key={`item-name-${index}-${item.itemName || ''}`}
+                      {/* 商品名入力フィールド */}
+                      <Input
                         type="text"
-                        defaultValue={item.itemName || item.description || ''}
+                        value={item.itemName || item.description || ''}
                         onChange={(e) => {
                           // 商品名を変更したら、productIdをクリア（カスタム商品として扱う）
                           updateItem(index, 'productId', undefined);
@@ -791,7 +790,7 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
                           updateItem(index, 'description', e.target.value); // 後方互換性
                         }}
                         placeholder="品目名を入力"
-                        className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="bg-white"
                       />
                       {/* 選択された商品情報の表示 */}
                       {item.productId && (
@@ -865,18 +864,17 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
                         />
                       </div>
                       
-                      {/* 単価 - DO NOT CHANGE THIS */}
+                      {/* 単価 */}
                       <div>
                         <label className="block text-xs font-medium text-gray-700 mb-1">単価</label>
-                        <input
-                          key={`unit-price-${index}-${item.unitPrice || 0}`}
+                        <Input
                           type="number"
-                          defaultValue={item.unitPrice || 0}
+                          value={item.unitPrice || 0}
                           onChange={(e) => {
                             updateItem(index, 'unitPrice', parseInt(e.target.value) || 0);
                           }}
                           min="0"
-                          className="w-full text-right bg-white border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          className="text-right bg-white"
                         />
                       </div>
                       
