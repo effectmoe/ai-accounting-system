@@ -132,8 +132,7 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
   const [existingReceiptId, setExistingReceiptId] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchInvoice();
-    checkExistingReceipt();
+    fetchInvoiceAndCheckReceipt();
   }, [params.id]);
 
   const checkExistingReceipt = async () => {
@@ -143,16 +142,17 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
       });
       if (response.ok) {
         const data = await response.json();
-        if (data.receipts && data.receipts.length > 0) {
+        if (data && data.receipts && Array.isArray(data.receipts) && data.receipts.length > 0) {
           setExistingReceiptId(data.receipts[0].id);
         }
       }
     } catch (error) {
       logger.error('Error checking existing receipt:', error);
+      // エラーが発生しても処理を続行
     }
   };
 
-  const fetchInvoice = async () => {
+  const fetchInvoiceAndCheckReceipt = async () => {
     try {
       const response = await fetch(`/api/invoices/${params.id}`);
       if (!response.ok) {
@@ -163,12 +163,19 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
       logger.debug('Invoice status:', data.status);
       logger.debug('Invoice convertedToDeliveryNoteId:', data.convertedToDeliveryNoteId);
       setInvoice(data);
+
+      // 請求書データ取得後に領収書の存在をチェック
+      await checkExistingReceipt();
     } catch (error) {
       logger.error('Error fetching invoice:', error);
       setError('請求書の取得に失敗しました');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const fetchInvoice = async () => {
+    await fetchInvoiceAndCheckReceipt();
   };
 
   const updateStatus = async (status: string) => {
