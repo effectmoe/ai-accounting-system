@@ -782,18 +782,13 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
                       {/* 商品名入力フィールド */}
                       <input
                         type="text"
-                        defaultValue={item.itemName || item.description || ''}
+                        key={`product-name-${index}-${item.itemName || ''}`}
+                        value={item.itemName || item.description || ''}
                         onChange={(e) => {
                           // 商品名を変更したら、productIdをクリア（カスタム商品として扱う）
                           updateItem(index, 'productId', undefined);
                           updateItem(index, 'itemName', e.target.value);
                           updateItem(index, 'description', e.target.value); // 後方互換性
-                        }}
-                        onInput={(e) => {
-                          const value = (e.target as HTMLInputElement).value;
-                          // onInputでも更新を試みる
-                          updateItem(index, 'itemName', value);
-                          updateItem(index, 'description', value);
                         }}
                         placeholder="品目名を入力"
                         className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -876,13 +871,10 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
                         <label className="block text-xs font-medium text-gray-700 mb-1">単価</label>
                         <input
                           type="number"
-                          defaultValue={item.unitPrice || 0}
+                          key={`unit-price-${index}-${item.unitPrice || 0}`}
+                          value={item.unitPrice || 0}
                           onChange={(e) => {
                             updateItem(index, 'unitPrice', parseInt(e.target.value) || 0);
-                          }}
-                          onInput={(e) => {
-                            const value = (e.target as HTMLInputElement).value;
-                            updateItem(index, 'unitPrice', parseInt(value) || 0);
                           }}
                           min="0"
                           className="w-full text-right bg-white border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
