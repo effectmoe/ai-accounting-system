@@ -780,17 +780,22 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
                       </select>
                       
                       {/* 商品名入力フィールド */}
-                      <Input
+                      <input
                         type="text"
                         value={item.itemName || item.description || ''}
                         onChange={(e) => {
-                          // 商品名を変更したら、productIdをクリア（カスタム商品として扱う）
-                          updateItem(index, 'productId', undefined);
-                          updateItem(index, 'itemName', e.target.value);
-                          updateItem(index, 'description', e.target.value); // 後方互換性
+                          const newValue = e.target.value;
+                          const newItems = [...items];
+                          newItems[index] = {
+                            ...newItems[index],
+                            productId: undefined,
+                            itemName: newValue,
+                            description: newValue
+                          };
+                          setItems(newItems);
                         }}
                         placeholder="品目名を入力"
-                        className="bg-white"
+                        className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                       {/* 選択された商品情報の表示 */}
                       {item.productId && (
@@ -867,14 +872,27 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
                       {/* 単価 */}
                       <div>
                         <label className="block text-xs font-medium text-gray-700 mb-1">単価</label>
-                        <Input
+                        <input
                           type="number"
                           value={item.unitPrice || 0}
                           onChange={(e) => {
-                            updateItem(index, 'unitPrice', parseInt(e.target.value) || 0);
+                            const newPrice = parseInt(e.target.value) || 0;
+                            const newItems = [...items];
+                            const quantity = newItems[index].quantity || 1;
+                            const taxRate = newItems[index].taxRate || 0;
+                            const amount = Math.floor(quantity * newPrice);
+                            const taxAmount = Math.floor(amount * taxRate);
+
+                            newItems[index] = {
+                              ...newItems[index],
+                              unitPrice: newPrice,
+                              amount: amount,
+                              taxAmount: taxAmount
+                            };
+                            setItems(newItems);
                           }}
                           min="0"
-                          className="text-right bg-white"
+                          className="w-full text-right bg-white border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
                       </div>
                       
