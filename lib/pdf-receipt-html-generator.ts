@@ -59,6 +59,42 @@ function getCustomerName(receipt: any): string {
   return '顧客名未設定';
 }
 
+// 但し書きを生成するヘルパー関数
+function generatePurpose(receipt: any): string {
+  // 既に設定されている場合はそれを使用
+  if (receipt.purpose) {
+    return receipt.purpose;
+  }
+  if (receipt.notes) {
+    return receipt.notes;
+  }
+
+  // 商品名から自動生成
+  if (receipt.items && receipt.items.length > 0) {
+    const itemNames = receipt.items.map((item: any) =>
+      item.itemName || item.description || '商品'
+    );
+
+    // 重複を除去
+    const uniqueItems = [...new Set(itemNames)];
+
+    if (uniqueItems.length === 1) {
+      return `${uniqueItems[0]}の代金として`;
+    } else if (uniqueItems.length <= 3) {
+      return `${uniqueItems.join('、')}の代金として`;
+    } else {
+      return `${uniqueItems[0]}他${uniqueItems.length - 1}品目の代金として`;
+    }
+  }
+
+  // 請求書番号がある場合
+  if (receipt.invoiceNumber) {
+    return `${receipt.invoiceNumber}の代金として`;
+  }
+
+  return '上記の通り正に領収いたしました。';
+}
+
 // ファイル名生成: 発行日_領収書_顧客名.pdf
 export function generateReceiptFilename(receipt: any): string {
   const issueDate = receipt.issueDate ? new Date(receipt.issueDate) : new Date();
@@ -361,28 +397,28 @@ export function generateCompactReceiptHTML(receipt: any, companyInfo: any, showD
         <div class="purpose-section">
             <div class="purpose-title">但し書き</div>
             <div class="purpose-content">
-                ${receipt.purpose || receipt.notes || '上記の通り正に領収いたしました。'}
+                ${generatePurpose(receipt)}
             </div>
         </div>
 
         <!-- 発行者情報 -->
         <div class="company-info">
             <div class="company-left">
-                ${receipt.companySnapshot?.invoiceRegistrationNumber ? `
+                ${receipt.companySnapshot?.invoiceRegistrationNumber || receipt.issuerRegistrationNumber ? `
                 <div style="font-size: 10px; margin-bottom: 5px;">
-                    登録番号: ${receipt.companySnapshot.invoiceRegistrationNumber}
+                    登録番号: ${receipt.companySnapshot?.invoiceRegistrationNumber || receipt.issuerRegistrationNumber}
                 </div>
                 ` : ''}
             </div>
             <div class="company-right">
-                <div class="company-name">${receipt.companySnapshot?.companyName || companyInfo?.company_name || '会社名未設定'}</div>
-                <div>${receipt.companySnapshot?.address || companyInfo?.address || ''}</div>
-                ${receipt.companySnapshot?.phone ? `<div>TEL: ${receipt.companySnapshot.phone}</div>` : ''}
-                ${receipt.companySnapshot?.email ? `<div>Email: ${receipt.companySnapshot.email}</div>` : ''}
+                <div class="company-name">${receipt.companySnapshot?.companyName || receipt.issuerName || companyInfo?.company_name || '会社名未設定'}</div>
+                <div>${receipt.companySnapshot?.address || receipt.issuerAddress || companyInfo?.address || ''}</div>
+                ${receipt.companySnapshot?.phone || receipt.issuerPhone ? `<div>TEL: ${receipt.companySnapshot?.phone || receipt.issuerPhone}</div>` : ''}
+                ${receipt.companySnapshot?.email || receipt.issuerEmail ? `<div>Email: ${receipt.companySnapshot?.email || receipt.issuerEmail}</div>` : ''}
 
-                ${receipt.companySnapshot?.sealImageUrl || receipt.companySnapshot?.stampImage ? `
+                ${receipt.companySnapshot?.sealImageUrl || receipt.companySnapshot?.stampImage || receipt.issuerStamp ? `
                 <div style="margin-top: 15px;">
-                    <img src="${receipt.companySnapshot.sealImageUrl || receipt.companySnapshot.stampImage}"
+                    <img src="${receipt.companySnapshot?.sealImageUrl || receipt.companySnapshot?.stampImage || receipt.issuerStamp}"
                          alt="社印" style="width: 60px; height: 60px; object-fit: contain;" />
                 </div>
                 ` : ''}
