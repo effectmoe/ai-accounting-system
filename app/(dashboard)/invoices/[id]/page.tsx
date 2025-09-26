@@ -85,6 +85,9 @@ interface Invoice {
   costAmount?: number;
   profitAmount?: number;
   profitMargin?: number;
+  receiptIssued?: boolean;
+  receiptIssuedAt?: string;
+  receiptId?: string;
 }
 
 const statusLabels: Record<string, string> = {
@@ -126,10 +129,28 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
   const [showAIChat, setShowAIChat] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [showDescriptions, setShowDescriptions] = useState(true);
+  const [existingReceiptId, setExistingReceiptId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchInvoice();
+    checkExistingReceipt();
   }, [params.id]);
+
+  const checkExistingReceipt = async () => {
+    try {
+      const response = await fetch(`/api/invoices/${params.id}/convert-to-receipt`, {
+        method: 'GET',
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data.receipts && data.receipts.length > 0) {
+          setExistingReceiptId(data.receipts[0].id);
+        }
+      }
+    } catch (error) {
+      logger.error('Error checking existing receipt:', error);
+    }
+  };
 
   const fetchInvoice = async () => {
     try {
@@ -292,10 +313,16 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
         alert('領収書の作成が完了しました！\n\n作成された領収書は下書き状態です。必要に応じて但し書きなどの情報を編集してください。');
         fetchInvoice(); // 請求書データを再読み込み
         if (confirm('作成された領収書を確認しますか？')) {
-          router.push(`/receipts/${data._id}`);
+          router.push(`/receipts/${data.receipt._id}`);
         }
       } else {
-        throw new Error(data.details || data.error || '変換に失敗しました');
+        // すでに領収書が存在する場合
+        if (response.status === 400 && data.existingReceiptId) {
+          alert('この請求書にはすでに領収書が作成されています。\n\n既存の領収書ページに移動します。');
+          router.push(`/receipts/${data.existingReceiptId}`);
+        } else {
+          throw new Error(data.details || data.error || '変換に失敗しました');
+        }
       }
     } catch (error) {
       logger.error('Error converting invoice to receipt:', error);
@@ -431,26 +458,39 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
               )}
             </Button>
           )}
-          {/* 領収書作成ボタン（支払済み・一部支払済みの場合に表示） */}
+          {/* 領収書ボタン（支払済み・一部支払済みの場合に表示） */}
           {['paid', 'partially_paid'].includes(invoice.status) && (
-            <Button
-              variant="outline"
-              onClick={handleConvertToReceipt}
-              disabled={isUpdating}
-              className="bg-purple-50 hover:bg-purple-100 border-purple-200 text-purple-700"
-            >
-              {isUpdating ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  作成中...
-                </>
-              ) : (
-                <>
-                  <Receipt className="mr-2 h-4 w-4" />
-                  領収書作成
-                </>
-              )}
-            </Button>
+            existingReceiptId ? (
+              // すでに領収書が存在する場合は「領収書を見る」ボタン
+              <Button
+                variant="outline"
+                onClick={() => router.push(`/receipts/${existingReceiptId}`)}
+                className="bg-purple-50 hover:bg-purple-100 border-purple-200 text-purple-700"
+              >
+                <Receipt className="mr-2 h-4 w-4" />
+                領収書を見る
+              </Button>
+            ) : (
+              // 領収書がまだない場合は「領収書作成」ボタン
+              <Button
+                variant="outline"
+                onClick={handleConvertToReceipt}
+                disabled={isUpdating}
+                className="bg-purple-50 hover:bg-purple-100 border-purple-200 text-purple-700"
+              >
+                {isUpdating ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    作成中...
+                  </>
+                ) : (
+                  <>
+                    <Receipt className="mr-2 h-4 w-4" />
+                    領収書作成
+                  </>
+                )}
+              </Button>
+            )
           )}
           {['draft', 'saved'].includes(invoice.status) && (
             <Button
@@ -704,7 +744,7 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
           </div>
 
           {/* 変換履歴 */}
-          {invoice.convertedToDeliveryNoteId && (
+          {(invoice.convertedToDeliveryNoteId || existingReceiptId) && (
             <>
               <Separator className="my-6" />
               <div>
@@ -727,6 +767,25 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
                       </span>
                     )}
                   </div>
+                  {existingReceiptId && (
+                    <div className="flex items-center gap-2 mt-2">
+                      <Receipt className="h-4 w-4 text-purple-600" />
+                      <span className="text-gray-600">領収書を作成済み:</span>
+                      <Button
+                        variant="link"
+                        size="sm"
+                        onClick={() => router.push(`/receipts/${existingReceiptId}`)}
+                        className="p-0 h-auto text-purple-600"
+                      >
+                        領収書を表示
+                      </Button>
+                      {invoice.receiptIssuedAt && (
+                        <span className="text-gray-500">
+                          ({safeFormatDate(invoice.receiptIssuedAt, 'yyyy年MM月dd日')})
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             </>
