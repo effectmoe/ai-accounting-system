@@ -19,6 +19,8 @@ import { calculateDueDate } from '@/utils/payment-terms';
 import { logger } from '@/lib/logger';
 interface InvoiceItem {
   description: string;
+  itemName?: string;  // 商品名（品目名）
+  notes?: string;     // 商品説明・備考
   quantity: number;
   unitPrice: number;
   amount: number;
@@ -191,7 +193,7 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
       return;
     }
 
-    if (items.length === 0 || items.every(item => !item.description)) {
+    if (items.length === 0 || items.every(item => !item.description && !item.itemName)) {
       setError('少なくとも1つの明細を入力してください');
       return;
     }
@@ -269,7 +271,7 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
         title, // タイトルを追加
         invoiceDate: invoiceDate,
         dueDate: dueDate,
-        items: items.filter(item => item.description),
+        items: items.filter(item => item.description || item.itemName),
         notes,
         paymentMethod,
         aiConversationId: invoice?.aiConversationId || undefined,
@@ -345,7 +347,8 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
       newItems[index] = {
         ...newItems[index],
         productId: selectedProduct._id,
-        description: selectedProduct.productName,
+        itemName: selectedProduct.productName,
+        description: selectedProduct.productName, // 後方互換性のため
         unitPrice: selectedProduct.unitPrice,
         taxRate: selectedProduct.taxRate,
         unit: selectedProduct.unit,
@@ -359,7 +362,8 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
   // 商品として登録する処理
   const handleRegisterAsProduct = async (index: number) => {
     const item = items[index];
-    if (!item.description) {
+    const productName = item.itemName || item.description;
+    if (!productName) {
       setError('商品名を入力してください');
       return;
     }
@@ -369,12 +373,13 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          productName: item.description,
+          productName: productName,
           productCode: `PROD-${Date.now()}`, // 仮の商品コード
           unitPrice: item.unitPrice,
           taxRate: item.taxRate,
           unit: item.unit || '個',
           isActive: true,
+          notes: item.notes || '', // 商品説明も保存
         }),
       });
 
@@ -404,6 +409,8 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
   const addItem = () => {
     setItems([...items, {
       description: '',
+      itemName: '',
+      notes: '',
       quantity: 1,
       unitPrice: 0,
       amount: 0,
@@ -507,10 +514,11 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
       logger.debug('[EditPage] Due date not updated. Current:', data.dueDate);
     }
     
-    // itemsは常に更新（AIが明示的に変更したもの）
+    // itemsは常に更新（AIが明示的に変更したもの） - 重複回避のため完全置換
     if (data.items && Array.isArray(data.items) && data.items.length > 0) {
-      logger.debug('[EditPage] Updating items from AI:', JSON.stringify(data.items, null, 2));
-      logger.debug('[EditPage] Items detail:');
+      logger.debug('[EditPage] Updating items from AI (replacing all existing items):', JSON.stringify(data.items, null, 2));
+      logger.debug('[EditPage] Current items before replacement:', items.length);
+      logger.debug('[EditPage] New items detail:');
       data.items.forEach((item, index) => {
         logger.debug(`[EditPage] Item ${index}:`, JSON.stringify({
           description: item.description,
@@ -521,7 +529,16 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
           total: item.amount + item.taxAmount
         }, null, 2));
       });
-      setItems(data.items);
+
+      // 重複を避けるため、既存のitemsを完全にクリアしてから設定
+      logger.debug('[EditPage] Clearing existing items to prevent duplication');
+      setItems([]); // 一旦クリア
+
+      // フレームの次のタイミングで新しいアイテムを設定
+      setTimeout(() => {
+        logger.debug('[EditPage] Setting new items after clearing');
+        setItems(data.items);
+      }, 0);
     } else {
       logger.debug('[EditPage] No items to update from AI data');
     }
@@ -751,22 +768,37 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
                       {/* フリー入力フィールド（重複表示の解消） */}
                       {!item.productId && (
                         <Input
-                          value={item.description}
-                          onChange={(e) => updateItem(index, 'description', e.target.value)}
+                          value={item.itemName || item.description}
+                          onChange={(e) => {
+                            updateItem(index, 'itemName', e.target.value);
+                            updateItem(index, 'description', e.target.value); // 後方互換性
+                          }}
                           placeholder="または品目名を直接入力"
                           className="bg-white"
                         />
                       )}
-                      
+
                       {/* 選択された商品名の表示 */}
                       {item.productId && (
                         <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-md text-sm">
-                          {products.find(p => p._id === item.productId)?.productName || item.description}
+                          {products.find(p => p._id === item.productId)?.productName || item.itemName || item.description}
                         </div>
                       )}
+
+                      {/* 商品説明・備考フィールド（常に表示） */}
+                      <div className="mt-2">
+                        <label className="block text-xs font-medium text-gray-700 mb-1">商品説明・備考</label>
+                        <Textarea
+                          value={item.notes || ''}
+                          onChange={(e) => updateItem(index, 'notes', e.target.value)}
+                          placeholder="商品の詳細説明や備考を入力..."
+                          rows={2}
+                          className="bg-white text-sm"
+                        />
+                      </div>
                       
                       {/* 商品として登録ボタン */}
-                      {!item.productId && item.description && (
+                      {!item.productId && (item.itemName || item.description) && (
                         <Button
                           type="button"
                           variant="outline"
