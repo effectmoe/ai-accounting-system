@@ -846,7 +846,7 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
                     </div>
                     
                     {/* 下段：数値情報 */}
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
                       {/* 数量 */}
                       <div>
                         <label className="block text-xs font-medium text-gray-700 mb-1">数量</label>
@@ -874,23 +874,20 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
                       {/* 単価 */}
                       <div>
                         <label className="block text-xs font-medium text-gray-700 mb-1">単価</label>
-                        <div className="flex items-center">
-                          <span className="text-gray-500 text-sm mr-1">¥</span>
-                          <input
-                            type="number"
-                            defaultValue={item.unitPrice || 0}
-                            onChange={(e) => {
-                              updateItem(index, 'unitPrice', parseInt(e.target.value) || 0);
-                            }}
-                            onInput={(e) => {
-                              const value = (e.target as HTMLInputElement).value;
-                              updateItem(index, 'unitPrice', parseInt(value) || 0);
-                            }}
-                            min="0"
-                            className="text-right bg-white flex-1 border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            data-testid={`unit-price-${index}`}
-                          />
-                        </div>
+                        <input
+                          type="number"
+                          defaultValue={item.unitPrice || 0}
+                          onChange={(e) => {
+                            updateItem(index, 'unitPrice', parseInt(e.target.value) || 0);
+                          }}
+                          onInput={(e) => {
+                            const value = (e.target as HTMLInputElement).value;
+                            updateItem(index, 'unitPrice', parseInt(value) || 0);
+                          }}
+                          min="0"
+                          className="w-full text-right bg-white border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          data-testid={`unit-price-${index}`}
+                        />
                       </div>
                       
                       {/* 税率 */}
