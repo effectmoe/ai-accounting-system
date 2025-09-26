@@ -587,15 +587,15 @@ export default function InvoiceDetailPage({ params }: { params: { id: string } }
             <div>
               <h3 className="font-semibold mb-2">請求先</h3>
               <div className="space-y-1 text-sm">
-                <p className="font-medium">{invoice.customerSnapshot.companyName}</p>
-                {invoice.customerSnapshot.contactName && (
+                <p className="font-medium">{invoice.customerSnapshot?.companyName}</p>
+                {invoice.customerSnapshot?.contactName && (
                   <p>{invoice.customerSnapshot.contactName} 様</p>
                 )}
-                <p>{invoice.customerSnapshot.address}</p>
-                {invoice.customerSnapshot.phone && (
+                <p>{invoice.customerSnapshot?.address}</p>
+                {invoice.customerSnapshot?.phone && (
                   <p>TEL: {invoice.customerSnapshot.phone}</p>
                 )}
-                {invoice.customerSnapshot.email && (
+                {invoice.customerSnapshot?.email && (
                   <p>Email: {invoice.customerSnapshot.email}</p>
                 )}
               </div>
