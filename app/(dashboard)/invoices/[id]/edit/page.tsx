@@ -768,23 +768,31 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
                         ))}
                       </select>
                       
-                      {/* フリー入力フィールド（重複表示の解消） */}
-                      {!item.productId && (
-                        <Input
-                          value={item.itemName || item.description}
-                          onChange={(e) => {
-                            updateItem(index, 'itemName', e.target.value);
-                            updateItem(index, 'description', e.target.value); // 後方互換性
-                          }}
-                          placeholder="または品目名を直接入力"
-                          className="bg-white"
-                        />
-                      )}
-
-                      {/* 選択された商品名の表示 */}
+                      {/* 商品名入力フィールド（常に表示） */}
+                      <Input
+                        value={item.itemName || item.description}
+                        onChange={(e) => {
+                          // 商品名を変更したら、productIdをクリア（カスタム商品として扱う）
+                          updateItem(index, 'productId', undefined);
+                          updateItem(index, 'itemName', e.target.value);
+                          updateItem(index, 'description', e.target.value); // 後方互換性
+                        }}
+                        placeholder={item.productId ? "商品名を編集（編集するとカスタム商品になります）" : "品目名を入力"}
+                        className="bg-white"
+                      />
+                      {/* 選択された商品情報の表示 */}
                       {item.productId && (
-                        <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-md text-sm">
-                          {products.find(p => p._id === item.productId)?.productName || item.itemName || item.description}
+                        <div className="text-xs text-gray-500 mt-1">
+                          元の商品: {products.find(p => p._id === item.productId)?.productName || '不明'}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              updateItem(index, 'productId', undefined);
+                            }}
+                            className="ml-2 text-blue-500 hover:text-blue-700"
+                          >
+                            [商品選択を解除]
+                          </button>
                         </div>
                       )}
 
