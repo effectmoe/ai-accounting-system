@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -781,6 +781,7 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
                       
                       {/* 商品名入力フィールド - DO NOT CHANGE THIS */}
                       <input
+                        key={`item-name-${index}-${item.itemName || ''}`}
                         type="text"
                         defaultValue={item.itemName || item.description || ''}
                         onChange={(e) => {
@@ -868,6 +869,7 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
                       <div>
                         <label className="block text-xs font-medium text-gray-700 mb-1">単価</label>
                         <input
+                          key={`unit-price-${index}-${item.unitPrice || 0}`}
                           type="number"
                           defaultValue={item.unitPrice || 0}
                           onChange={(e) => {
