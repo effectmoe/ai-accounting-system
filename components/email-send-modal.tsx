@@ -14,7 +14,7 @@ import { logger } from '@/lib/logger';
 interface EmailSendModalProps {
   isOpen: boolean;
   onClose: () => void;
-  documentType: 'quote' | 'invoice' | 'delivery-note';
+  documentType: 'quote' | 'invoice' | 'delivery-note' | 'receipt';
   documentId: string;
   documentNumber: string;
   documentTitle?: string; // 件名
@@ -25,6 +25,7 @@ interface EmailSendModalProps {
   totalAmount: number;
   dueDate?: string;
   deliveryDate?: string; // 納品書用
+  paidDate?: string; // 領収書用
   onSuccess?: () => void;
 }
 
@@ -42,6 +43,7 @@ export default function EmailSendModal({
   totalAmount,
   dueDate,
   deliveryDate,
+  paidDate,
   onSuccess,
 }: EmailSendModalProps) {
   // 顧客のメール設定に基づいて初期メールアドレスを決定
@@ -222,7 +224,7 @@ ${formattedDueDate ? `お支払期限：${formattedDueDate}` : ''}
 
 ご査収の程、お願いいたします。`,
       };
-    } else {
+    } else if (documentType === 'delivery-note') {
       // 納品書の場合
       return {
         subject: `【納品書】${documentNumber} のご送付`,
@@ -235,6 +237,35 @@ ${formattedDueDate ? `お支払期限：${formattedDueDate}` : ''}
 納品書番号：${documentNumber}
 ${deliveryDate ? `納品日：${deliveryDate}` : ''}
 合計金額：¥${totalAmount.toLocaleString()}
+
+添付ファイルをご確認ください。
+
+ご不明な点がございましたら、お気軽にお問い合わせください。
+
+よろしくお願いいたします。`,
+      };
+    } else {
+      // 領収書の場合
+      const formatPaidDate = (dateStr?: string) => {
+        if (!dateStr) return '';
+        const date = new Date(dateStr);
+        if (isNaN(date.getTime())) return '';
+        return date.toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' });
+      };
+
+      const formattedPaidDate = formatPaidDate(paidDate);
+
+      return {
+        subject: `【領収書】${documentNumber} のご送付`,
+        body: `${formattedCustomerName}
+
+いつもお世話になっております。
+
+領収書をお送りいたします。
+
+領収書番号：${documentNumber}
+${formattedPaidDate ? `支払日：${formattedPaidDate}` : ''}
+領収金額：¥${totalAmount.toLocaleString()}
 
 添付ファイルをご確認ください。
 
@@ -305,11 +336,16 @@ ${deliveryDate ? `納品日：${deliveryDate}` : ''}
       // PDFを添付する場合は、クライアントサイドで生成
       if (attachPdf) {
         try {
-          // まず見積書/請求書/納品書のデータを取得
+          // まず見積書/請求書/納品書/領収書のデータを取得
           const apiPath = documentType === 'delivery-note' ? 'delivery-notes' : `${documentType}s`;
           const docResponse = await fetch(`/api/${apiPath}/${documentId}`);
           if (!docResponse.ok) {
-            throw new Error(`${documentType === 'quote' ? '見積書' : documentType === 'invoice' ? '請求書' : '納品書'}の取得に失敗しました`);
+            throw new Error(`${
+              documentType === 'quote' ? '見積書' :
+              documentType === 'invoice' ? '請求書' :
+              documentType === 'delivery-note' ? '納品書' :
+              '領収書'
+            }の取得に失敗しました`);
           }
           
           const docData = await docResponse.json();
@@ -317,35 +353,36 @@ ${deliveryDate ? `納品日：${deliveryDate}` : ''}
           // DocumentData形式に変換
           const documentData: DocumentData = {
             documentType,
-            documentNumber: docData.quoteNumber || docData.invoiceNumber || docData.deliveryNoteNumber,
+            documentNumber: docData.quoteNumber || docData.invoiceNumber || docData.deliveryNoteNumber || docData.receiptNumber,
             issueDate: new Date(docData.issueDate || docData.invoiceDate),
             validUntilDate: documentType === 'quote' ? new Date(docData.validityDate) : undefined,
             dueDate: documentType === 'invoice' ? new Date(docData.dueDate) : undefined,
             deliveryDate: documentType === 'delivery-note' ? new Date(docData.deliveryDate) : undefined,
-            customerName: docData.customer?.companyName || docData.customerSnapshot?.companyName || '',
-            customerAddress: docData.customer ? 
+            paidDate: documentType === 'receipt' ? new Date(docData.paidDate || docData.issueDate) : undefined,
+            customerName: docData.customer?.companyName || docData.customerSnapshot?.companyName || docData.customerName || '',
+            customerAddress: docData.customer ?
               `${docData.customer.postalCode ? `〒${docData.customer.postalCode} ` : ''}${docData.customer.prefecture || ''}${docData.customer.city || ''}${docData.customer.address1 || ''}${docData.customer.address2 || ''}` :
-              docData.customerSnapshot?.address || '',
+              docData.customerSnapshot?.address || docData.customerAddress || '',
             customer: docData.customer, // 顧客情報全体を渡す
             customerSnapshot: docData.customerSnapshot, // スナップショットも渡す
-            items: docData.items.map((item: any) => ({
+            items: docData.items ? docData.items.map((item: any) => ({
               itemName: item.itemName || '',
               description: item.description || '',
               quantity: item.quantity,
               unitPrice: item.unitPrice,
               amount: item.amount,
-            })),
+            })) : [],
             subtotal: docData.subtotal,
             tax: docData.taxAmount,
             total: docData.totalAmount,
-            notes: docData.notes,
+            notes: docData.notes || docData.purpose,
             companyInfo: {
-              name: docData.companySnapshot?.companyName || '',
-              address: docData.companySnapshot?.address || '',
-              phone: docData.companySnapshot?.phone,
-              email: docData.companySnapshot?.email,
-              registrationNumber: docData.companySnapshot?.invoiceRegistrationNumber,
-              stampImage: docData.companySnapshot?.stampImage,
+              name: docData.companySnapshot?.companyName || docData.issuerName || '',
+              address: docData.companySnapshot?.address || docData.issuerAddress || '',
+              phone: docData.companySnapshot?.phone || docData.issuerPhone,
+              email: docData.companySnapshot?.email || docData.issuerEmail,
+              registrationNumber: docData.companySnapshot?.invoiceRegistrationNumber || docData.issuerRegistrationNumber,
+              stampImage: docData.companySnapshot?.stampImage || docData.issuerStamp,
             },
             bankAccount: docData.companySnapshot?.bankAccount || docData.bankAccount,
           };
