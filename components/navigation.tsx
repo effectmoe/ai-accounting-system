@@ -50,6 +50,7 @@ const Navigation = () => {
       items: [
         { href: '/quotes', label: '見積書' },
         { href: '/invoices', label: '請求書' },
+        { href: '/receipts', label: '領収書' },
         { href: '/recurring-invoices', label: '定期請求書' },
         { href: '/delivery-notes', label: '納品書' },
         { href: '/bank-import', label: '銀行取引インポート' },
@@ -85,12 +86,13 @@ const Navigation = () => {
   // 主要なナビゲーション項目（常に表示）
   const mainNavItems: NavItem[] = [
     { href: '/', label: 'ダッシュボード' },
-    { 
+    {
       label: '販売管理',
       dropdown: true,
       items: [
         { href: '/quotes', label: '見積書' },
         { href: '/invoices', label: '請求書' },
+        { href: '/receipts', label: '領収書' },
         { href: '/recurring-invoices', label: '定期請求書' },
         { href: '/delivery-notes', label: '納品書' },
         { href: '/bank-import', label: '銀行取引インポート' },
