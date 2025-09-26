@@ -42,7 +42,16 @@ export async function POST(
       title,
       ...invoiceData
     } = originalInvoice;
-    
+
+    // 商品アイテムからproductIdを削除（複製時は全てカスタム商品として扱う）
+    if (invoiceData.items) {
+      invoiceData.items = invoiceData.items.map((item: any) => {
+        const { productId, ...itemWithoutProductId } = item;
+        return itemWithoutProductId;
+      });
+      logger.debug('[POST /api/invoices/[id]/duplicate] Removed productId from items for editing flexibility');
+    }
+
     // 新しい請求書を作成
     const newInvoice = await invoiceService.createInvoice({
       ...invoiceData,
