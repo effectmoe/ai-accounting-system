@@ -20,7 +20,8 @@ import {
   Loader2,
   Eye,
   FileText,
-  CheckCircle2
+  CheckCircle2,
+  X
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
@@ -99,6 +100,7 @@ export default function ReceiptDetailPage({ params }: { params: { id: string } }
   const [receipt, setReceipt] = useState<Receipt | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
+  const [showPdfPreview, setShowPdfPreview] = useState(false);
 
   useEffect(() => {
     fetchReceipt();
@@ -251,6 +253,14 @@ export default function ReceiptDetailPage({ params }: { params: { id: string } }
           編集
         </Button>
 
+        <Button
+          variant="outline"
+          onClick={() => setShowPdfPreview(true)}
+        >
+          <Eye className="h-4 w-4 mr-2" />
+          プレビュー
+        </Button>
+
         {receipt.status === 'draft' && (
           <Button
             onClick={() => handleStatusChange('issued')}
@@ -271,7 +281,16 @@ export default function ReceiptDetailPage({ params }: { params: { id: string } }
           </Button>
         )}
 
-        <Button variant="outline" disabled>
+        <Button
+          variant="outline"
+          onClick={() => {
+            // 新しいウィンドウを開いて印刷ダイアログを表示
+            const printWindow = window.open(`/api/receipts/${params.id}/pdf?print=true`, '_blank', 'width=800,height=600');
+            if (printWindow) {
+              printWindow.focus();
+            }
+          }}
+        >
           <Download className="h-4 w-4 mr-2" />
           PDF出力
         </Button>
@@ -526,6 +545,48 @@ export default function ReceiptDetailPage({ params }: { params: { id: string } }
           )}
         </div>
       </div>
+
+      {/* PDFプレビューモーダル */}
+      {showPdfPreview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-5xl h-[90vh] flex flex-col">
+            <div className="flex justify-between items-center p-4 border-b">
+              <h2 className="text-lg font-semibold">領収書プレビュー</h2>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowPdfPreview(false)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <iframe
+                src={`/api/receipts/${receipt?._id}/pdf`}
+                className="w-full h-full"
+                title="領収書PDFプレビュー"
+              />
+            </div>
+            <div className="p-4 border-t flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowPdfPreview(false)}
+              >
+                閉じる
+              </Button>
+              <Button
+                onClick={() => {
+                  window.open(`/api/receipts/${receipt?._id}/pdf?download=true`, '_blank');
+                  setShowPdfPreview(false);
+                }}
+              >
+                <Download className="mr-2 h-4 w-4" />
+                ダウンロード
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
