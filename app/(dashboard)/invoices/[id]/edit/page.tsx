@@ -779,17 +779,14 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
                         ))}
                       </select>
                       
-                      {/* 商品名入力フィールド（ネイティブinputタグで強制編集可能） */}
+                      {/* 商品名入力フィールド（デフォルト値のみ設定して非制御） */}
                       <input
                         type="text"
-                        value={item.itemName || item.description || ''}
+                        defaultValue={item.itemName || item.description || ''}
                         onChange={(e) => {
-                          console.log('[DEBUG] Product name change detected:', {
+                          console.log('[DEBUG] Product name change detected (uncontrolled):', {
                             index,
-                            oldValue: item.itemName || item.description,
                             newValue: e.target.value,
-                            hasProductId: !!item.productId,
-                            productId: item.productId,
                             event: 'onChange triggered'
                           });
                           // 商品名を変更したら、productIdをクリア（カスタム商品として扱う）
@@ -798,13 +795,17 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
                           updateItem(index, 'description', e.target.value); // 後方互換性
                         }}
                         onInput={(e) => {
-                          console.log('[DEBUG] Product name onInput:', (e.target as HTMLInputElement).value);
+                          const value = (e.target as HTMLInputElement).value;
+                          console.log('[DEBUG] Product name onInput:', value);
+                          // onInputでも更新を試みる
+                          updateItem(index, 'itemName', value);
+                          updateItem(index, 'description', value);
                         }}
                         onFocus={() => console.log('[DEBUG] Product name focused')}
                         onClick={() => console.log('[DEBUG] Product name clicked')}
                         onKeyDown={(e) => console.log('[DEBUG] Key pressed:', e.key)}
                         placeholder="品目名を入力"
-                        className="flex h-10 w-full rounded-md border-2 border-blue-500 bg-white px-3 py-2 text-sm"
+                        className="flex h-10 w-full rounded-md border-2 border-purple-500 bg-white px-3 py-2 text-sm"
                         style={{ backgroundColor: 'white' }}
                         data-testid={`product-name-${index}`}
                       />
