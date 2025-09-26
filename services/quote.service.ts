@@ -442,6 +442,7 @@ export class QuoteService {
       // 見積書データを請求書データに変換
       const defaultInvoiceData: Omit<Invoice, '_id' | 'createdAt' | 'updatedAt'> = {
         invoiceNumber: await invoiceService.generateInvoiceNumber(),
+        title: quote.title, // 見積書のタイトルを転記
         customerId: quote.customerId,
         issueDate: new Date(),
         dueDate: new Date(Date.now() + (quote.customer?.paymentTerms || 30) * 24 * 60 * 60 * 1000), // デフォルト30日後
