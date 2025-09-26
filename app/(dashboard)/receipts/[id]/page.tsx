@@ -26,6 +26,7 @@ import {
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { safeFormatDate } from '@/lib/date-utils';
+import EmailSendModal from '@/components/email-send-modal';
 
 interface Receipt {
   _id: string;
@@ -101,6 +102,7 @@ export default function ReceiptDetailPage({ params }: { params: { id: string } }
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [showPdfPreview, setShowPdfPreview] = useState(false);
+  const [showEmailModal, setShowEmailModal] = useState(false);
 
   useEffect(() => {
     fetchReceipt();
@@ -293,6 +295,14 @@ export default function ReceiptDetailPage({ params }: { params: { id: string } }
         >
           <Download className="h-4 w-4 mr-2" />
           PDF出力
+        </Button>
+
+        <Button
+          variant="outline"
+          onClick={() => setShowEmailModal(true)}
+        >
+          <Send className="h-4 w-4 mr-2" />
+          メール送信
         </Button>
 
         <Button
@@ -586,6 +596,25 @@ export default function ReceiptDetailPage({ params }: { params: { id: string } }
             </div>
           </div>
         </div>
+      )}
+
+      {/* メール送信モーダル */}
+      {receipt && (
+        <EmailSendModal
+          isOpen={showEmailModal}
+          onClose={() => setShowEmailModal(false)}
+          documentType="receipt"
+          documentId={receipt._id}
+          documentNumber={receipt.receiptNumber}
+          documentTitle={receipt.title}
+          customerEmail={receipt.customerSnapshot?.email}
+          customerName={receipt.customerSnapshot?.companyName || receipt.customerName}
+          customer={receipt.customer}
+          customerSnapshot={receipt.customerSnapshot}
+          totalAmount={receipt.totalAmount}
+          paidDate={receipt.paidDate}
+          onSuccess={fetchReceipt}
+        />
       )}
     </div>
   );

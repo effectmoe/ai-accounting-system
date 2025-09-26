@@ -36,6 +36,7 @@ export interface DocumentData {
   validUntil?: string;
   dueDate?: string | Date; // 支払期日・入金期日
   deliveryDate?: string | Date; // 納品日
+  paidDate?: string | Date; // 支払日・領収日（領収書用）
   paymentMethod?: string; // 支払方法
   bankInfo?: { // 振込先情報
     bankName?: string;
