@@ -54,7 +54,7 @@ export default function ReceiptsPage() {
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [customerFilter, setCustomerFilter] = useState('');
   const [selectedReceipts, setSelectedReceipts] = useState<Set<string>>(new Set());
   const [bulkStatus, setBulkStatus] = useState('');
@@ -79,7 +79,7 @@ export default function ReceiptsPage() {
         sortOrder: 'desc',
       });
 
-      if (statusFilter) params.append('status', statusFilter);
+      if (statusFilter && statusFilter !== 'all') params.append('status', statusFilter);
 
       const response = await fetch(`/api/receipts?${params}`);
       if (!response.ok) {
@@ -271,7 +271,7 @@ export default function ReceiptsPage() {
                 <SelectValue placeholder="ステータス" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">全て</SelectItem>
+                <SelectItem value="all">全て</SelectItem>
                 <SelectItem value="draft">下書き</SelectItem>
                 <SelectItem value="issued">発行済み</SelectItem>
                 <SelectItem value="sent">送信済み</SelectItem>
