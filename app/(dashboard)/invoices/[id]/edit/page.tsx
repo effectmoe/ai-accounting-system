@@ -779,16 +779,11 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
                         ))}
                       </select>
                       
-                      {/* 商品名入力フィールド（デフォルト値のみ設定して非制御） */}
+                      {/* 商品名入力フィールド */}
                       <input
                         type="text"
                         defaultValue={item.itemName || item.description || ''}
                         onChange={(e) => {
-                          console.log('[DEBUG] Product name change detected (uncontrolled):', {
-                            index,
-                            newValue: e.target.value,
-                            event: 'onChange triggered'
-                          });
                           // 商品名を変更したら、productIdをクリア（カスタム商品として扱う）
                           updateItem(index, 'productId', undefined);
                           updateItem(index, 'itemName', e.target.value);
@@ -796,17 +791,12 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
                         }}
                         onInput={(e) => {
                           const value = (e.target as HTMLInputElement).value;
-                          console.log('[DEBUG] Product name onInput:', value);
                           // onInputでも更新を試みる
                           updateItem(index, 'itemName', value);
                           updateItem(index, 'description', value);
                         }}
-                        onFocus={() => console.log('[DEBUG] Product name focused')}
-                        onClick={() => console.log('[DEBUG] Product name clicked')}
-                        onKeyDown={(e) => console.log('[DEBUG] Key pressed:', e.key)}
                         placeholder="品目名を入力"
-                        className="flex h-10 w-full rounded-md border-2 border-purple-500 bg-white px-3 py-2 text-sm"
-                        style={{ backgroundColor: 'white' }}
+                        className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                         data-testid={`product-name-${index}`}
                       />
                       {/* 選択された商品情報の表示 */}
@@ -864,21 +854,10 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
                           type="number"
                           value={item.quantity || 1}
                           onChange={(e) => {
-                            console.log('[DEBUG] Quantity change detected:', {
-                              index,
-                              oldValue: item.quantity,
-                              newValue: e.target.value,
-                              event: 'onChange triggered'
-                            });
                             updateItem(index, 'quantity', parseInt(e.target.value) || 0);
                           }}
-                          onFocus={() => console.log('[DEBUG] Quantity focused')}
                           min="0"
-                          className="text-center bg-white border-2 border-red-300"
-                          disabled={false}
-                          readOnly={false}
-                          tabIndex={0}
-                          autoComplete="off"
+                          className="text-center bg-white"
                         />
                       </div>
                       
@@ -899,27 +878,16 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
                           <span className="text-gray-500 text-sm mr-1">¥</span>
                           <input
                             type="number"
-                            value={item.unitPrice || 0}
+                            defaultValue={item.unitPrice || 0}
                             onChange={(e) => {
-                              console.log('[DEBUG] Unit price change detected:', {
-                                index,
-                                oldValue: item.unitPrice,
-                                newValue: e.target.value,
-                                hasProductId: !!item.productId,
-                                productId: item.productId,
-                                event: 'onChange triggered'
-                              });
                               updateItem(index, 'unitPrice', parseInt(e.target.value) || 0);
                             }}
                             onInput={(e) => {
-                              console.log('[DEBUG] Unit price onInput:', (e.target as HTMLInputElement).value);
+                              const value = (e.target as HTMLInputElement).value;
+                              updateItem(index, 'unitPrice', parseInt(value) || 0);
                             }}
-                            onFocus={() => console.log('[DEBUG] Unit price focused')}
-                            onClick={() => console.log('[DEBUG] Unit price clicked')}
-                            onKeyDown={(e) => console.log('[DEBUG] Unit price key pressed:', e.key)}
                             min="0"
-                            className="text-right bg-white flex-1 border-2 border-green-500 px-3 py-2 rounded-md"
-                            style={{ backgroundColor: 'white', textAlign: 'right' }}
+                            className="text-right bg-white flex-1 border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                             data-testid={`unit-price-${index}`}
                           />
                         </div>
