@@ -839,7 +839,6 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
                           value={item.unit || '個'}
                           onChange={(e) => updateItem(index, 'unit', e.target.value)}
                           className="text-center bg-white"
-                          disabled={!!item.productId}
                         />
                       </div>
                       
@@ -854,7 +853,6 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
                             onChange={(e) => updateItem(index, 'unitPrice', parseInt(e.target.value) || 0)}
                             min="0"
                             className="text-right bg-white flex-1"
-                            disabled={!!item.productId}
                           />
                         </div>
                       </div>
@@ -866,7 +864,6 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
                           value={item.taxRate}
                           onChange={(e) => updateItem(index, 'taxRate', parseFloat(e.target.value))}
                           className="w-full px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-center"
-                          disabled={!!item.productId}
                         >
                           <option value="0">0%</option>
                           <option value="0.08">8%</option>
