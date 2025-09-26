@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { InvoiceService } from '@/services/invoice.service';
 import { CompanyInfoService } from '@/services/company-info.service';
-import { generateCompactInvoiceHTML, generateInvoiceFilename, generateSafeFilename } from '@/lib/pdf-compact-generator';
+import { generateCompactInvoiceHTML, generateInvoiceFilename, generateSafeInvoiceFilename } from '@/lib/pdf-invoice-html-generator';
 
 import { logger } from '@/lib/logger';
 export async function GET(
@@ -21,20 +21,22 @@ export async function GET(
     const companyInfoService = new CompanyInfoService();
     const companyInfo = await companyInfoService.getCompanyInfo();
 
-    // HTMLを生成（コンパクト版を使用）
-    logger.debug('Generating compact invoice HTML for:', invoice.invoiceNumber);
-    const htmlContent = generateCompactInvoiceHTML(invoice, companyInfo);
-    
-    // 新しい命名規則でファイル名を生成: 請求日_帳表名_顧客名
-    const filename = generateInvoiceFilename(invoice);
-    const safeFilename = generateSafeFilename(invoice);
-    logger.debug('Generated filename:', filename);
-    logger.debug('Safe filename for header:', safeFilename);
-    
     // URLクエリパラメータでダウンロードモードを判定
     const url = new URL(request.url);
     const isDownload = url.searchParams.get('download') === 'true';
     const isPrintMode = url.searchParams.get('print') === 'true';
+    const showDescriptions = url.searchParams.get('showDescriptions') !== 'false'; // デフォルトは表示
+
+    // HTMLを生成（コンパクト版を使用）
+    logger.debug('Generating compact invoice HTML for:', invoice.invoiceNumber);
+    logger.debug('Show descriptions:', showDescriptions);
+    const htmlContent = generateCompactInvoiceHTML(invoice, companyInfo, showDescriptions);
+    
+    // 新しい命名規則でファイル名を生成: 請求日_帳表名_顧客名
+    const filename = generateInvoiceFilename(invoice);
+    const safeFilename = generateSafeInvoiceFilename(invoice);
+    logger.debug('Generated filename:', filename);
+    logger.debug('Safe filename for header:', safeFilename);
     
     // 日本語ファイル名をRFC 5987準拠でエンコード
     const encodedFilename = encodeURIComponent(filename);
