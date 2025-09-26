@@ -784,14 +784,21 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
                         type="text"
                         value={item.itemName || item.description || ''}
                         onChange={(e) => {
+                          const newValue = e.target.value;
                           // 商品名を変更したら、productIdをクリア（カスタム商品として扱う）
-                          updateItem(index, 'productId', undefined);
-                          updateItem(index, 'itemName', e.target.value);
-                          updateItem(index, 'description', e.target.value); // 後方互換性
+                          const newItems = [...invoiceData.items];
+                          newItems[index] = {
+                            ...newItems[index],
+                            productId: undefined,
+                            itemName: newValue,
+                            description: newValue,
+                            amount: (newItems[index].quantity || 1) * (newItems[index].unitPrice || 0),
+                            taxAmount: (newItems[index].quantity || 1) * (newItems[index].unitPrice || 0) * (newItems[index].taxRate || 0)
+                          };
+                          setInvoiceData(prev => ({ ...prev, items: newItems }));
                         }}
                         placeholder="品目名を入力"
                         className="bg-white"
-                        data-testid={`product-name-${index}`}
                       />
                       {/* 選択された商品情報の表示 */}
                       {item.productId && (
@@ -872,11 +879,18 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
                           type="number"
                           value={item.unitPrice || 0}
                           onChange={(e) => {
-                            updateItem(index, 'unitPrice', parseInt(e.target.value) || 0);
+                            const newPrice = parseInt(e.target.value) || 0;
+                            const newItems = [...invoiceData.items];
+                            newItems[index] = {
+                              ...newItems[index],
+                              unitPrice: newPrice,
+                              amount: (newItems[index].quantity || 1) * newPrice,
+                              taxAmount: (newItems[index].quantity || 1) * newPrice * (newItems[index].taxRate || 0)
+                            };
+                            setInvoiceData(prev => ({ ...prev, items: newItems }));
                           }}
                           min="0"
                           className="text-right bg-white"
-                          data-testid={`unit-price-${index}`}
                         />
                       </div>
                       
