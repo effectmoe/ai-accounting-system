@@ -144,6 +144,17 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
       
       setInvoiceDate(issueDateValue ? format(issueDateValue, 'yyyy-MM-dd') : '');
       setDueDate(dueDateValue ? format(dueDateValue, 'yyyy-MM-dd') : '');
+
+      // デバッグ: アイテムデータの確認
+      console.log('[DEBUG] Loading invoice items:', (data.items || []).map((item, index) => ({
+        index,
+        itemName: item.itemName,
+        description: item.description,
+        unitPrice: item.unitPrice,
+        productId: item.productId,
+        hasProductId: !!item.productId
+      })));
+
       setItems(data.items || []);
       setNotes(data.notes || '');
       setPaymentMethod(data.paymentMethod || 'bank_transfer');
@@ -772,6 +783,13 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
                       <Input
                         value={item.itemName || item.description}
                         onChange={(e) => {
+                          console.log('[DEBUG] Product name change detected:', {
+                            index,
+                            oldValue: item.itemName || item.description,
+                            newValue: e.target.value,
+                            hasProductId: !!item.productId,
+                            productId: item.productId
+                          });
                           // 商品名を変更したら、productIdをクリア（カスタム商品として扱う）
                           updateItem(index, 'productId', undefined);
                           updateItem(index, 'itemName', e.target.value);
@@ -779,6 +797,7 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
                         }}
                         placeholder={item.productId ? "商品名を編集（編集するとカスタム商品になります）" : "品目名を入力"}
                         className="bg-white"
+                        data-testid={`product-name-${index}`}
                       />
                       {/* 選択された商品情報の表示 */}
                       {item.productId && (
@@ -858,9 +877,19 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
                           <Input
                             type="number"
                             value={item.unitPrice}
-                            onChange={(e) => updateItem(index, 'unitPrice', parseInt(e.target.value) || 0)}
+                            onChange={(e) => {
+                              console.log('[DEBUG] Unit price change detected:', {
+                                index,
+                                oldValue: item.unitPrice,
+                                newValue: e.target.value,
+                                hasProductId: !!item.productId,
+                                productId: item.productId
+                              });
+                              updateItem(index, 'unitPrice', parseInt(e.target.value) || 0);
+                            }}
                             min="0"
                             className="text-right bg-white flex-1"
+                            data-testid={`unit-price-${index}`}
                           />
                         </div>
                       </div>
