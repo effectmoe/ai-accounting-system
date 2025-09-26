@@ -792,6 +792,12 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
                         placeholder="品目名を入力"
                         className="flex h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
+                      {/* 現在の品目名を表示（リアルタイム更新） */}
+                      {item.itemName && item.itemName !== (item.description || '') && (
+                        <div className="text-sm text-gray-600 mt-1">
+                          現在の品目: <span className="font-medium">{item.itemName}</span>
+                        </div>
+                      )}
                       {/* 選択された商品情報の表示 */}
                       {item.productId && (
                         <div className="text-xs text-gray-500 mt-1">
