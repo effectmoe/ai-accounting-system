@@ -779,8 +779,9 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
                         ))}
                       </select>
                       
-                      {/* 商品名入力フィールド（強制的に編集可能） */}
-                      <Input
+                      {/* 商品名入力フィールド（ネイティブinputタグで強制編集可能） */}
+                      <input
+                        type="text"
                         value={item.itemName || item.description || ''}
                         onChange={(e) => {
                           console.log('[DEBUG] Product name change detected:', {
@@ -797,17 +798,15 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
                           updateItem(index, 'description', e.target.value); // 後方互換性
                         }}
                         onInput={(e) => {
-                          console.log('[DEBUG] Product name onInput:', e.target.value);
+                          console.log('[DEBUG] Product name onInput:', (e.target as HTMLInputElement).value);
                         }}
                         onFocus={() => console.log('[DEBUG] Product name focused')}
                         onClick={() => console.log('[DEBUG] Product name clicked')}
+                        onKeyDown={(e) => console.log('[DEBUG] Key pressed:', e.key)}
                         placeholder="品目名を入力"
-                        className="bg-white border-2 border-blue-300"
+                        className="flex h-10 w-full rounded-md border-2 border-blue-500 bg-white px-3 py-2 text-sm"
+                        style={{ backgroundColor: 'white' }}
                         data-testid={`product-name-${index}`}
-                        disabled={false}
-                        readOnly={false}
-                        tabIndex={0}
-                        autoComplete="off"
                       />
                       {/* 選択された商品情報の表示 */}
                       {item.productId && (
@@ -897,7 +896,7 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
                         <label className="block text-xs font-medium text-gray-700 mb-1">単価</label>
                         <div className="flex items-center">
                           <span className="text-gray-500 text-sm mr-1">¥</span>
-                          <Input
+                          <input
                             type="number"
                             value={item.unitPrice || 0}
                             onChange={(e) => {
@@ -912,17 +911,15 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
                               updateItem(index, 'unitPrice', parseInt(e.target.value) || 0);
                             }}
                             onInput={(e) => {
-                              console.log('[DEBUG] Unit price onInput:', e.target.value);
+                              console.log('[DEBUG] Unit price onInput:', (e.target as HTMLInputElement).value);
                             }}
                             onFocus={() => console.log('[DEBUG] Unit price focused')}
                             onClick={() => console.log('[DEBUG] Unit price clicked')}
+                            onKeyDown={(e) => console.log('[DEBUG] Unit price key pressed:', e.key)}
                             min="0"
-                            className="text-right bg-white flex-1 border-2 border-green-300"
+                            className="text-right bg-white flex-1 border-2 border-green-500 px-3 py-2 rounded-md"
+                            style={{ backgroundColor: 'white', textAlign: 'right' }}
                             data-testid={`unit-price-${index}`}
-                            disabled={false}
-                            readOnly={false}
-                            tabIndex={0}
-                            autoComplete="off"
                           />
                         </div>
                       </div>
