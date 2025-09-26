@@ -305,23 +305,26 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
 
   // 明細行を更新
   const updateItem = (index: number, field: keyof InvoiceItem, value: any) => {
+    logger.debug('[EditPage] updateItem called:', { index, field, value, currentItems: items.length });
     const newItems = [...items];
     newItems[index] = { ...newItems[index], [field]: value };
+    logger.debug('[EditPage] Updated item:', { index, field, oldValue: items[index]?.[field], newValue: value });
 
     // 金額と税額を自動計算
     if (field === 'quantity' || field === 'unitPrice' || field === 'taxRate') {
       const quantity = field === 'quantity' ? Number(value) || 0 : newItems[index].quantity || 0;
       const unitPrice = field === 'unitPrice' ? Number(value) || 0 : newItems[index].unitPrice || 0;
       const taxRate = field === 'taxRate' ? Number(value) || 0 : newItems[index].taxRate || 0;
-      
+
       const amount = Math.floor(quantity * unitPrice);
       const taxAmount = Math.floor(amount * taxRate);
-      
+
       newItems[index].amount = amount;
       newItems[index].taxAmount = taxAmount;
     }
 
     setItems(newItems);
+    logger.debug('[EditPage] Items state updated, new length:', newItems.length);
   };
 
   // 商品を選択した際の処理
@@ -790,7 +793,10 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
                         <label className="block text-xs font-medium text-gray-700 mb-1">商品説明・備考</label>
                         <Textarea
                           value={item.notes || ''}
-                          onChange={(e) => updateItem(index, 'notes', e.target.value)}
+                          onChange={(e) => {
+                            logger.debug('[EditPage] Textarea onChange triggered:', { index, value: e.target.value, currentNotes: item.notes });
+                            updateItem(index, 'notes', e.target.value);
+                          }}
                           placeholder="商品の詳細説明や備考を入力..."
                           rows={2}
                           className="bg-white text-sm"
