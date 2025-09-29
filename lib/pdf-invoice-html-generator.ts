@@ -109,7 +109,7 @@ export function generateCompactInvoiceHTML(invoice: any, companyInfo: any, showD
   <style>
     @page {
       size: A4;
-      margin: 15mm;
+      margin: 10mm 15mm 15mm 15mm;
     }
 
     * {
@@ -127,10 +127,11 @@ export function generateCompactInvoiceHTML(invoice: any, companyInfo: any, showD
     }
 
     .container {
-      max-width: 210mm;
+      width: 100%;
       margin: 0 auto;
       background: white;
       min-height: 297mm;
+      padding: 0 5mm;
     }
 
     .header {
@@ -201,12 +202,15 @@ export function generateCompactInvoiceHTML(invoice: any, companyInfo: any, showD
       border-collapse: collapse;
       margin-bottom: 20px;
       font-size: 10px;
+      table-layout: fixed;
     }
 
     .items-table th, .items-table td {
       border: 1px solid #333;
-      padding: 6px 4px;
+      padding: 5px 3px;
       text-align: center;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .items-table th {
@@ -217,7 +221,8 @@ export function generateCompactInvoiceHTML(invoice: any, companyInfo: any, showD
 
     .description-cell {
       text-align: left;
-      min-width: ${showDescriptions ? '150px' : '100px'};
+      width: ${showDescriptions ? '35%' : '30%'};
+      padding-left: 5px !important;
     }
 
     .item-name {
@@ -229,62 +234,68 @@ export function generateCompactInvoiceHTML(invoice: any, companyInfo: any, showD
       color: #666;
       font-size: 9px;
       margin-bottom: 2px;
+      word-wrap: break-word;
     }
 
     .item-notes {
       color: #888;
       font-size: 8px;
       font-style: italic;
+      word-wrap: break-word;
     }
 
     .number-cell {
       text-align: right;
       font-family: 'Courier New', monospace;
-      width: 60px;
+      width: 12%;
+      padding-right: 3px !important;
     }
 
     .wide-number-cell {
       text-align: right;
       font-family: 'Courier New', monospace;
-      width: 80px;
+      width: 15%;
+      padding-right: 3px !important;
     }
 
     .quantity-cell {
-      width: 40px;
+      width: 8%;
     }
 
     .unit-cell {
-      width: 35px;
+      width: 8%;
     }
 
     .totals-section {
       display: flex;
       justify-content: flex-end;
       margin-bottom: 20px;
+      margin-right: 5px;
     }
 
     .totals-table {
       border-collapse: collapse;
       font-size: 11px;
+      width: auto;
     }
 
     .totals-table td {
       border: 1px solid #333;
-      padding: 6px 12px;
+      padding: 5px 10px;
     }
 
     .totals-table .label {
       background-color: #f0f0f0;
       font-weight: bold;
       text-align: left;
-      min-width: 80px;
+      width: 80px;
     }
 
     .totals-table .amount {
       text-align: right;
       font-family: 'Courier New', monospace;
       font-weight: bold;
-      min-width: 100px;
+      width: 100px;
     }
 
     .total-amount {
