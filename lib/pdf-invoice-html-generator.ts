@@ -130,7 +130,6 @@ export function generateCompactInvoiceHTML(invoice: any, companyInfo: any, showD
       width: 100%;
       margin: 0 auto;
       background: white;
-      min-height: 297mm;
       padding: 0 5mm;
     }
 
@@ -334,8 +333,17 @@ export function generateCompactInvoiceHTML(invoice: any, companyInfo: any, showD
     }
 
     @media print {
-      body { -webkit-print-color-adjust: exact; }
-      .container { box-shadow: none; }
+      body {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .container {
+        box-shadow: none;
+        page-break-after: auto;
+      }
+      html, body {
+        height: auto;
+      }
     }
   </style>
 </head>
