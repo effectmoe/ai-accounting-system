@@ -494,7 +494,8 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
         if (invoice.customerId && !selectedCustomerId) {
           setSelectedCustomerId(invoice.customerId);
         } else if (invoice.customer?.companyName && !customerName) {
-          setCustomerName(invoice.customer.companyName);
+          // Optional Chainingを使用して安全にアクセス
+          setCustomerName(invoice.customer?.companyName || '');
         }
       }
     }
