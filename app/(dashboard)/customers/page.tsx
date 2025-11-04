@@ -597,11 +597,13 @@ function CustomersPageContent() {
       });
     }
 
-    // flushSync完了後、フラグをクリア
-    isRestoringFromURL.current = false;
-
     // 今回のsearchParamsを記憶
     prevSearchParamsRef.current = currentSearchParams;
+
+    // フラグをクリア（次のイベントループまで遅延させて、updateURL useEffectの実行を確実にスキップ）
+    queueMicrotask(() => {
+      isRestoringFromURL.current = false;
+    });
   }, [searchParams]);
 
   // デバウンス処理
@@ -675,7 +677,12 @@ function CustomersPageContent() {
     }
   }, [currentPage, searchTerm, sortBy, sortOrder, filters, router]);
 
+  // 状態変更時にURLを更新（ただしURL復元中は除く）
   useEffect(() => {
+    // URL復元中はupdateURLをスキップ（無限ループと意図しないURL上書きを防止）
+    if (isRestoringFromURL.current) {
+      return;
+    }
     updateURL();
   }, [updateURL]);
 
