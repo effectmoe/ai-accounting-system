@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo, Suspense } from 'react';
+import { flushSync } from 'react-dom';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Plus, Edit, Trash2, Search, Filter, ChevronLeft, ChevronRight, ChevronUp, ChevronDown, ChevronsUpDown, X, Columns, GripVertical } from 'lucide-react';
@@ -512,35 +513,24 @@ function CustomersPageContent() {
     const sortByParam = searchParams.get('sortBy') as SortableField;
     const sortOrderParam = searchParams.get('sortOrder') as SortOrder;
 
-    setCurrentPage(page);
-    setSearchTerm(search);
-    
-    if (sortByParam && ['customerId', 'companyName', 'companyNameKana', 'department', 'prefecture', 'city', 'email', 'paymentTerms', 'createdAt', 'primaryContactName', 'primaryContactNameKana'].includes(sortByParam)) {
-      setSortBy(sortByParam);
-    }
-    
-    if (sortOrderParam && ['asc', 'desc'].includes(sortOrderParam)) {
-      setSortOrder(sortOrderParam);
-    }
-    
     // フィルターパラメータの復元
     const newFilters: FilterState = {};
-    
+
     const isActiveParam = searchParams.get('isActive');
     if (isActiveParam !== null) {
       newFilters.isActive = isActiveParam === 'true';
     }
-    
+
     const prefecture = searchParams.get('prefecture');
     if (prefecture) {
       newFilters.prefecture = prefecture;
     }
-    
+
     const city = searchParams.get('city');
     if (city) {
       newFilters.city = city;
     }
-    
+
     const paymentTermsMin = searchParams.get('paymentTermsMin');
     if (paymentTermsMin) {
       const min = parseInt(paymentTermsMin);
@@ -548,7 +538,7 @@ function CustomersPageContent() {
         newFilters.paymentTermsMin = min;
       }
     }
-    
+
     const paymentTermsMax = searchParams.get('paymentTermsMax');
     if (paymentTermsMax) {
       const max = parseInt(paymentTermsMax);
@@ -556,27 +546,39 @@ function CustomersPageContent() {
         newFilters.paymentTermsMax = max;
       }
     }
-    
+
     const createdAtStart = searchParams.get('createdAtStart');
     if (createdAtStart) {
       newFilters.createdAtStart = createdAtStart;
     }
-    
+
     const createdAtEnd = searchParams.get('createdAtEnd');
     if (createdAtEnd) {
       newFilters.createdAtEnd = createdAtEnd;
     }
-    
-    setFilters(newFilters);
 
-    // フィルターが設定されている場合はフィルターパネルを開く
-    const hasFilters = Object.keys(newFilters).length > 0;
-    setShowFilters(hasFilters);
+    // flushSyncで同期的に更新を強制
+    flushSync(() => {
+      setCurrentPage(page);
+      setSearchTerm(search);
 
-    // URL復元完了後、次のイベントループでフラグをクリア
-    setTimeout(() => {
-      isRestoringFromURL.current = false;
-    }, 0);
+      if (sortByParam && ['customerId', 'companyName', 'companyNameKana', 'department', 'prefecture', 'city', 'email', 'paymentTerms', 'createdAt', 'primaryContactName', 'primaryContactNameKana'].includes(sortByParam)) {
+        setSortBy(sortByParam);
+      }
+
+      if (sortOrderParam && ['asc', 'desc'].includes(sortOrderParam)) {
+        setSortOrder(sortOrderParam);
+      }
+
+      setFilters(newFilters);
+
+      // フィルターが設定されている場合はフィルターパネルを開く
+      const hasFilters = Object.keys(newFilters).length > 0;
+      setShowFilters(hasFilters);
+    });
+
+    // flushSync完了後、フラグをクリア
+    isRestoringFromURL.current = false;
   }, [searchParams]);
 
   // デバウンス処理
