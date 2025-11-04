@@ -643,9 +643,12 @@ function CustomersPageContent() {
     
     const queryString = params.toString();
     const newURL = queryString ? `?${queryString}` : '';
-    
+
+    // URLが変更された場合のみ更新
     if (window.location.search !== newURL) {
-      router.replace(`/customers${newURL}`, { scroll: false });
+      // Next.js App Routerでは相対URLの方が確実に動作する
+      const targetURL = newURL || window.location.pathname;
+      router.replace(targetURL, { scroll: false });
     }
   }, [currentPage, searchTerm, sortBy, sortOrder, filters, router]);
 
