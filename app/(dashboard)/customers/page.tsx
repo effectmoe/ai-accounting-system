@@ -241,8 +241,8 @@ function CustomersPageContent() {
   const [filters, setFilters] = useState<FilterState>({});
   const [showFilters, setShowFilters] = useState(false);
 
-  // 初回マウントを追跡するref
-  const isInitialMount = useRef(true);
+  // URL復元中を追跡するref
+  const isRestoringFromURL = useRef(false);
   
   // カラム表示設定
   const {
@@ -504,11 +504,14 @@ function CustomersPageContent() {
 
   // URLパラメータから初期状態を設定
   useEffect(() => {
+    // URL復元中フラグをセット
+    isRestoringFromURL.current = true;
+
     const page = parseInt(searchParams.get('page') || '1');
     const search = searchParams.get('search') || '';
     const sortByParam = searchParams.get('sortBy') as SortableField;
     const sortOrderParam = searchParams.get('sortOrder') as SortOrder;
-    
+
     setCurrentPage(page);
     setSearchTerm(search);
     
@@ -565,10 +568,15 @@ function CustomersPageContent() {
     }
     
     setFilters(newFilters);
-    
+
     // フィルターが設定されている場合はフィルターパネルを開く
     const hasFilters = Object.keys(newFilters).length > 0;
     setShowFilters(hasFilters);
+
+    // URL復元完了後、次のイベントループでフラグをクリア
+    setTimeout(() => {
+      isRestoringFromURL.current = false;
+    }, 0);
   }, [searchParams]);
 
   // デバウンス処理
@@ -581,14 +589,13 @@ function CustomersPageContent() {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // フィルター変更時もページを1に戻す（初回マウント時を除く）
+  // フィルター変更時もページを1に戻す（URL復元中を除く）
   useEffect(() => {
-    if (isInitialMount.current) {
-      // 初回マウント時はページリセットをスキップ
-      isInitialMount.current = false;
+    if (isRestoringFromURL.current) {
+      // URL復元中はページリセットをスキップ
       return;
     }
-    // フィルターが実際に変更された場合のみページをリセット
+    // ユーザーがフィルターを変更した場合のみページをリセット
     setCurrentPage(1);
   }, [filters]);
 
