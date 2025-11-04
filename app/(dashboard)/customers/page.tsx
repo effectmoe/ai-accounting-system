@@ -601,9 +601,10 @@ function CustomersPageContent() {
     prevSearchParamsRef.current = currentSearchParams;
 
     // フラグをクリア（次のイベントループまで遅延させて、updateURL useEffectの実行を確実にスキップ）
-    queueMicrotask(() => {
+    // queueMicrotaskではReactのuseEffect処理と競合するため、setTimeoutを使用
+    setTimeout(() => {
       isRestoringFromURL.current = false;
-    });
+    }, 0);
   }, [searchParams]);
 
   // デバウンス処理
@@ -634,6 +635,13 @@ function CustomersPageContent() {
   const updateURL = useCallback(() => {
     // URL復元中はURL更新をスキップ（無限ループ防止）
     if (isRestoringFromURL.current) {
+      return;
+    }
+
+    // 現在のsearchParamsがprevSearchParamsRefと同じ場合もスキップ
+    // （URL復元直後の不要な更新を防止）
+    const currentSearchParams = new URLSearchParams(window.location.search).toString();
+    if (currentSearchParams === prevSearchParamsRef.current) {
       return;
     }
 
