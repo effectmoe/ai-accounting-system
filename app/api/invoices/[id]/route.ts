@@ -42,6 +42,7 @@ export async function GET(
       convertedToDeliveryNoteId: invoice.convertedToDeliveryNoteId, // 納品書変換IDを明示的に含める
       convertedToDeliveryNoteDate: invoice.convertedToDeliveryNoteDate, // 納品書変換日を明示的に含める
       invoiceDate: invoice.issueDate, // フロントエンドの期待する形式に合わせる
+      customer: invoice.customer, // 編集ページで使用するため、customerオブジェクトを含める
       customerSnapshot: invoice.customer ? {
         companyName: invoice.customer.companyName || invoice.customer.name || '',
         address: [
