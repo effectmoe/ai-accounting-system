@@ -229,6 +229,7 @@ function CustomersPageContent() {
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [total, setTotal] = useState(0);
   const [selectedCustomers, setSelectedCustomers] = useState<Set<string>>(new Set());
   const [sortBy, setSortBy] = useState<SortableField>('createdAt');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
@@ -485,6 +486,7 @@ function CustomersPageContent() {
       
       if (data.success) {
         setCustomers(data.customers);
+        setTotal(data.total);
         setTotalPages(Math.ceil(data.total / ITEMS_PER_PAGE));
       } else {
         throw new Error(data.error || '顧客データの取得に失敗しました');
@@ -1481,7 +1483,7 @@ function CustomersPageContent() {
         {totalPages > 1 && (
           <div className="flex items-center justify-between p-4 border-t">
             <div className="text-sm text-gray-600">
-              {((currentPage - 1) * ITEMS_PER_PAGE) + 1} - {Math.min(currentPage * ITEMS_PER_PAGE, customers.length)} 件を表示
+              {((currentPage - 1) * ITEMS_PER_PAGE) + 1} - {Math.min(currentPage * ITEMS_PER_PAGE, total)} 件を表示
             </div>
             <div className="flex gap-2">
               <button
