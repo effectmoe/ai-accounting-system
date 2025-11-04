@@ -140,6 +140,9 @@ export async function PUT(
       tags: body.tags || [],
       notes: body.notes,
       isActive: body.isActive !== undefined ? body.isActive : true,
+      // メール送信設定を保存
+      emailRecipientPreference: body.emailRecipientPreference || null,
+      primaryContactIndex: body.primaryContactIndex !== undefined ? body.primaryContactIndex : 0,
       updatedAt: new Date(),
     };
 
