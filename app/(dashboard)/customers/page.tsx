@@ -244,6 +244,9 @@ function CustomersPageContent() {
 
   // URL復元中を追跡するref
   const isRestoringFromURL = useRef(false);
+
+  // 前回のsearchParamsを記憶（Race Condition防止）
+  const prevSearchParamsRef = useRef<string>('');
   
   // カラム表示設定
   const {
@@ -505,6 +508,15 @@ function CustomersPageContent() {
 
   // URLパラメータから初期状態を設定
   useEffect(() => {
+    // searchParamsを文字列化して前回と比較
+    const currentSearchParams = searchParams.toString();
+
+    // searchParamsが前回と同じ場合は処理をスキップ（Race Condition防止）
+    // router.replace()は非同期なので、更新前のsearchParamsで再実行されることがある
+    if (currentSearchParams === prevSearchParamsRef.current) {
+      return;
+    }
+
     // URL復元中フラグをセット
     isRestoringFromURL.current = true;
 
@@ -557,28 +569,39 @@ function CustomersPageContent() {
       newFilters.createdAtEnd = createdAtEnd;
     }
 
-    // flushSyncで同期的に更新を強制
-    flushSync(() => {
-      setCurrentPage(page);
-      setSearchTerm(search);
+    // 現在の状態と異なる場合のみ更新（Race Condition防止）
+    // router.replace()は非同期なので、古いsearchParamsで再実行されることがある
+    if (currentPage !== page || searchTerm !== search || JSON.stringify(filters) !== JSON.stringify(newFilters) ||
+        (sortByParam && sortBy !== sortByParam) || (sortOrderParam && sortOrder !== sortOrderParam)) {
 
-      if (sortByParam && ['customerId', 'companyName', 'companyNameKana', 'department', 'prefecture', 'city', 'email', 'paymentTerms', 'createdAt', 'primaryContactName', 'primaryContactNameKana'].includes(sortByParam)) {
-        setSortBy(sortByParam);
-      }
+      // flushSyncで同期的に更新を強制
+      flushSync(() => {
+        if (currentPage !== page) setCurrentPage(page);
+        if (searchTerm !== search) setSearchTerm(search);
 
-      if (sortOrderParam && ['asc', 'desc'].includes(sortOrderParam)) {
-        setSortOrder(sortOrderParam);
-      }
+        if (sortByParam && ['customerId', 'companyName', 'companyNameKana', 'department', 'prefecture', 'city', 'email', 'paymentTerms', 'createdAt', 'primaryContactName', 'primaryContactNameKana'].includes(sortByParam)) {
+          if (sortBy !== sortByParam) setSortBy(sortByParam);
+        }
 
-      setFilters(newFilters);
+        if (sortOrderParam && ['asc', 'desc'].includes(sortOrderParam)) {
+          if (sortOrder !== sortOrderParam) setSortOrder(sortOrderParam);
+        }
 
-      // フィルターが設定されている場合はフィルターパネルを開く
-      const hasFilters = Object.keys(newFilters).length > 0;
-      setShowFilters(hasFilters);
-    });
+        if (JSON.stringify(filters) !== JSON.stringify(newFilters)) {
+          setFilters(newFilters);
+        }
+
+        // フィルターが設定されている場合はフィルターパネルを開く
+        const hasFilters = Object.keys(newFilters).length > 0;
+        setShowFilters(hasFilters);
+      });
+    }
 
     // flushSync完了後、フラグをクリア
     isRestoringFromURL.current = false;
+
+    // 今回のsearchParamsを記憶
+    prevSearchParamsRef.current = currentSearchParams;
   }, [searchParams]);
 
   // デバウンス処理
