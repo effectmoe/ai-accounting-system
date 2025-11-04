@@ -139,7 +139,7 @@ const Navigation = () => {
                         <ChevronDown className="ml-1 h-4 w-4" />
                       </button>
                       {dropdownOpen === item.label && (
-                        <div className="absolute top-full left-0 mt-2 w-56 bg-white shadow-lg rounded-md py-1 z-50 border border-gray-200">
+                        <div className="absolute top-full left-0 mt-0 w-56 bg-white shadow-lg rounded-md py-1 z-50 border border-gray-200">
                           {item.items?.map((subItem) => (
                             <Link
                               key={subItem.href}
