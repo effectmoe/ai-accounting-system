@@ -288,21 +288,30 @@ ${context.availableActions.map(action => `• ${action}`).join('\n')}
         {/* 統合チャットボタン */}
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed right-6 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-full p-4 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 z-50"
-          style={{ bottom: '24px' }}
+          className="fixed right-6 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-full p-1 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 z-50 overflow-hidden"
+          style={{ bottom: '24px', width: '56px', height: '56px' }}
           title={`${currentAgent.name} - ${currentAgent.specialty}`}
         >
-          <currentAgent.icon size={24} />
+          <img
+            src="https://i.pravatar.cc/48?img=12"
+            alt="Agent Avatar"
+            className="w-full h-full object-cover rounded-full"
+          />
         </button>
         
         {/* エージェント選択ボタン */}
         <div className="fixed right-24" style={{ bottom: '24px' }}>
           <button
             onClick={() => setShowAgentMenu(!showAgentMenu)}
-            className="bg-gray-800 text-white rounded-full p-3 shadow-lg hover:bg-gray-700 transition-colors"
+            className="bg-gray-800 text-white rounded-full p-1 shadow-lg hover:bg-gray-700 transition-colors overflow-hidden"
+            style={{ width: '48px', height: '48px' }}
             title="AIエージェント選択"
           >
-            <Users size={20} />
+            <img
+              src="https://i.pravatar.cc/48?img=33"
+              alt="Agent Selection"
+              className="w-full h-full object-cover rounded-full"
+            />
           </button>
           
           {showAgentMenu && (
