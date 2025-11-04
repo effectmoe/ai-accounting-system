@@ -607,6 +607,11 @@ function CustomersPageContent() {
 
   // URLパラメータを更新
   const updateURL = useCallback(() => {
+    // URL復元中はURL更新をスキップ（無限ループ防止）
+    if (isRestoringFromURL.current) {
+      return;
+    }
+
     const params = new URLSearchParams();
     if (currentPage > 1) params.set('page', currentPage.toString());
     if (searchTerm) params.set('search', searchTerm);
