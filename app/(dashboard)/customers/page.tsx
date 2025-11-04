@@ -1505,6 +1505,7 @@ function CustomersPageContent() {
             </div>
             <div className="flex gap-2">
               <button
+                type="button"
                 onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                 disabled={currentPage === 1}
                 className={`p-2 rounded ${
@@ -1519,6 +1520,7 @@ function CustomersPageContent() {
                 {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                   <button
                     key={page}
+                    type="button"
                     onClick={() => setCurrentPage(page)}
                     className={`px-3 py-1 rounded ${
                       currentPage === page
@@ -1531,6 +1533,7 @@ function CustomersPageContent() {
                 ))}
               </div>
               <button
+                type="button"
                 onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                 disabled={currentPage === totalPages}
                 className={`p-2 rounded ${
