@@ -233,13 +233,16 @@ function CustomersPageContent() {
   const [selectedCustomers, setSelectedCustomers] = useState<Set<string>>(new Set());
   const [sortBy, setSortBy] = useState<SortableField>('createdAt');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
-  
+
   // ステータス更新中の顧客IDを管理
   const [updatingStatus, setUpdatingStatus] = useState<Set<string>>(new Set());
-  
+
   // フィルター関連の状態
   const [filters, setFilters] = useState<FilterState>({});
   const [showFilters, setShowFilters] = useState(false);
+
+  // 初回マウントを追跡するref
+  const isInitialMount = useRef(true);
   
   // カラム表示設定
   const {
@@ -578,8 +581,14 @@ function CustomersPageContent() {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // フィルター変更時もページを1に戻す
+  // フィルター変更時もページを1に戻す（初回マウント時を除く）
   useEffect(() => {
+    if (isInitialMount.current) {
+      // 初回マウント時はページリセットをスキップ
+      isInitialMount.current = false;
+      return;
+    }
+    // フィルターが実際に変更された場合のみページをリセット
     setCurrentPage(1);
   }, [filters]);
 
