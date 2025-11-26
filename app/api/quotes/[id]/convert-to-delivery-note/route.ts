@@ -3,15 +3,20 @@ import { MongoClient, ObjectId } from 'mongodb';
 import { format } from 'date-fns';
 
 import { logger } from '@/lib/logger';
-const uri = process.env.MONGODB_URI;
-if (!uri) {
-  throw new Error('Please add your MongoDB URI to .env.local');
-}
 
 let client: MongoClient | null = null;
 
+function getUri(): string {
+  const uri = process.env.MONGODB_URI;
+  if (!uri) {
+    throw new Error('Please add your MongoDB URI to .env.local');
+  }
+  return uri;
+}
+
 async function getClient() {
   if (!client) {
+    const uri = getUri();
     client = new MongoClient(uri);
     await client.connect();
   }
