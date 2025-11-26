@@ -43,15 +43,16 @@ export async function GET(
     
     // companySnapshotがない場合は追加
     if (!result.companySnapshot && companyInfo) {
+      const postalCode = companyInfo.postalCode ? `〒${companyInfo.postalCode}` : '';
+      const mainAddress = `${companyInfo.prefecture || ''}${companyInfo.city || ''}${companyInfo.address1 || ''}`;
+      const buildingName = companyInfo.address2 || '';
+      const address = buildingName
+        ? `${postalCode} ${mainAddress}\n${buildingName}`
+        : `${postalCode} ${mainAddress}`;
+
       result.companySnapshot = {
         companyName: companyInfo.companyName || '会社名未設定',
-        address: [
-          companyInfo.postalCode ? `〒${companyInfo.postalCode}` : '',
-          companyInfo.prefecture || '',
-          companyInfo.city || '',
-          companyInfo.address1 || '',
-          companyInfo.address2 || ''
-        ].filter(Boolean).join(' '),
+        address,
         phone: companyInfo.phone,
         email: companyInfo.email,
         invoiceRegistrationNumber: companyInfo.registrationNumber || '',
