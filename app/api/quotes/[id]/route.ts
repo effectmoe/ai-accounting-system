@@ -30,13 +30,16 @@ export async function GET(
       status: quote.status, // ステータスを明示的に含める
       companySnapshot: {
         companyName: companyInfo?.companyName || '会社名未設定',
-        address: companyInfo ? [
-          companyInfo.postalCode ? `〒${companyInfo.postalCode}` : '',
-          companyInfo.prefecture || '',
-          companyInfo.city || '',
-          companyInfo.address1 || '',
-          companyInfo.address2 || ''
-        ].filter(Boolean).join(' ') : '',
+        address: companyInfo ? (() => {
+          const postalCode = companyInfo.postalCode ? `〒${companyInfo.postalCode}` : '';
+          const mainAddress = `${companyInfo.prefecture || ''}${companyInfo.city || ''}${companyInfo.address1 || ''}`;
+          const buildingName = companyInfo.address2 || '';
+          // 郵便番号+住所を1行目、ビル名を2行目に（改行区切り）
+          if (buildingName) {
+            return `${postalCode} ${mainAddress}\n${buildingName}`;
+          }
+          return `${postalCode} ${mainAddress}`;
+        })() : '',
         phone: companyInfo?.phone,
         email: companyInfo?.email,
         invoiceRegistrationNumber: companyInfo?.registrationNumber || '',
