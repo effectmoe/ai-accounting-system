@@ -394,6 +394,7 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
           unit: item.unit || '個',
           isActive: true,
           notes: item.notes || '', // 商品説明も保存
+          category: 'その他', // 必須フィールド - デフォルトカテゴリ
         }),
       });
 
