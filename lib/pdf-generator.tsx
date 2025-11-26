@@ -186,7 +186,9 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, companyInfo }) 
             <Text style={{ fontSize: 9 }}>発行日: {issueDate}</Text>
             <Text style={{ fontSize: 9 }}>支払期限: {dueDate}</Text>
             <Text style={{ marginTop: 15, fontWeight: 700, fontSize: 11 }}>{companyInfo?.companyName || ''}</Text>
-            {companyInfo?.address && <Text style={{ fontSize: 8 }}>{companyInfo.address}</Text>}
+            {companyInfo?.address && companyInfo.address.split('\n').map((line: string, i: number) => (
+              <Text key={i} style={{ fontSize: 8 }}>{line}</Text>
+            ))}
             {companyInfo?.phone && <Text style={{ fontSize: 8 }}>TEL: {companyInfo.phone}</Text>}
             {companyInfo?.email && <Text style={{ fontSize: 8 }}>{companyInfo.email}</Text>}
           </View>
@@ -342,7 +344,9 @@ export const DocumentPDF: React.FC<{ data: any }> = ({ data }) => {
               {isQuote ? '見積書番号' : isDeliveryNote ? '納品書番号' : '請求書番号'}: {data.documentNumber}
             </Text>
             <Text style={{ fontSize: 12, fontWeight: 700, marginTop: 10 }}>{data.companyInfo?.name}</Text>
-            <Text style={{ fontSize: 8 }}>{data.companyInfo?.address}</Text>
+            {data.companyInfo?.address && data.companyInfo.address.split('\n').map((line: string, i: number) => (
+              <Text key={i} style={{ fontSize: 8 }}>{line}</Text>
+            ))}
             {data.companyInfo?.phone && <Text style={{ fontSize: 8 }}>TEL: {data.companyInfo.phone}</Text>}
             {data.companyInfo?.email && <Text style={{ fontSize: 8 }}>{data.companyInfo.email}</Text>}
           </View>
@@ -502,7 +506,9 @@ export const DeliveryNotePDF = ({ deliveryNote, customer }: { deliveryNote: any,
             <Text style={{ fontSize: 9 }}>納品日: {data.deliveryDate ? new Date(data.deliveryDate).toLocaleDateString('ja-JP') : ''}</Text>
             <Text style={{ fontSize: 9, marginTop: 5 }}>納品書番号: {data.documentNumber}</Text>
             <Text style={{ fontSize: 11, fontWeight: 700, marginTop: 10 }}>{data.companyInfo?.name}</Text>
-            <Text style={{ fontSize: 8 }}>{data.companyInfo?.address}</Text>
+            {data.companyInfo?.address && data.companyInfo.address.split('\n').map((line: string, i: number) => (
+              <Text key={i} style={{ fontSize: 8 }}>{line}</Text>
+            ))}
             {data.companyInfo?.phone && <Text style={{ fontSize: 8 }}>TEL: {data.companyInfo.phone}</Text>}
             {data.companyInfo?.email && <Text style={{ fontSize: 8 }}>{data.companyInfo.email}</Text>}
           </View>
