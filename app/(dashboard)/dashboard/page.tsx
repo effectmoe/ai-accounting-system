@@ -11,7 +11,7 @@ import {
   FileEdit,
   Receipt,
   Package,
-  Invoice,
+  ClipboardList,
   Plus,
   List
 } from 'lucide-react';
@@ -158,7 +158,7 @@ export default function DashboardPage() {
           <Card className="hover:shadow-md transition-shadow cursor-pointer">
             <CardContent className="p-4">
               <div className="flex flex-col items-center space-y-2">
-                <Invoice className="h-8 w-8 text-green-600" />
+                <ClipboardList className="h-8 w-8 text-green-600" />
                 <h3 className="font-medium text-center">請求書</h3>
                 <div className="flex space-x-2">
                   <Button
