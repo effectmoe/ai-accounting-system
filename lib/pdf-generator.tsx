@@ -17,30 +17,30 @@ Font.register({
   ],
 });
 
-// スタイル定義
+// スタイル定義 - 1ページに収まるようにコンパクト化
 const styles = StyleSheet.create({
   page: {
     fontFamily: 'NotoSansJP',
-    padding: 40,
-    fontSize: 10,
+    padding: 25,
+    fontSize: 9,
   },
   header: {
-    marginBottom: 20,
+    marginBottom: 10,
     textAlign: 'center',
   },
   title: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 700,
-    marginBottom: 10,
+    marginBottom: 5,
   },
   invoiceNumber: {
-    fontSize: 12,
-    marginBottom: 20,
+    fontSize: 10,
+    marginBottom: 10,
   },
   infoSection: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 30,
+    marginBottom: 15,
   },
   customerInfo: {
     flex: 1,
@@ -50,42 +50,42 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   customerName: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 700,
-    marginBottom: 10,
+    marginBottom: 5,
   },
   totalBox: {
     backgroundColor: '#e6f2ff',
-    padding: 20,
-    marginBottom: 30,
-    marginTop: 20,
+    padding: 10,
+    marginBottom: 15,
+    marginTop: 10,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
   totalLabel: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: 700,
   },
   totalAmount: {
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: 700,
   },
   table: {
-    marginBottom: 20,
+    marginBottom: 10,
   },
   tableHeader: {
     flexDirection: 'row',
     backgroundColor: '#34495e',
     color: 'white',
-    padding: 8,
+    padding: 5,
     fontWeight: 700,
   },
   tableRow: {
     flexDirection: 'row',
     borderBottomWidth: 1,
     borderBottomColor: '#ddd',
-    paddingVertical: 8,
+    paddingVertical: 4,
   },
   col1: {
     flex: 4,
@@ -108,45 +108,46 @@ const styles = StyleSheet.create({
   },
   summarySection: {
     alignItems: 'flex-end',
-    marginBottom: 20,
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    width: 200,
-    justifyContent: 'space-between',
-    marginBottom: 5,
-  },
-  summaryTotal: {
-    borderTopWidth: 2,
-    borderTopColor: '#333',
-    paddingTop: 10,
-    fontWeight: 700,
-    fontSize: 14,
-  },
-  notes: {
-    marginTop: 20,
-    padding: 15,
-    backgroundColor: '#f9f9f9',
-  },
-  notesTitle: {
-    fontWeight: 700,
     marginBottom: 10,
   },
-  totalSection: {
-    alignItems: 'flex-end',
-    marginTop: 20,
-    marginBottom: 20,
-  },
-  totalRow: {
+  summaryRow: {
     flexDirection: 'row',
     width: 180,
     justifyContent: 'space-between',
     marginBottom: 3,
-    paddingHorizontal: 10,
+  },
+  summaryTotal: {
+    borderTopWidth: 2,
+    borderTopColor: '#333',
+    paddingTop: 5,
+    fontWeight: 700,
+    fontSize: 11,
+  },
+  notes: {
+    marginTop: 10,
+    padding: 8,
+    backgroundColor: '#f9f9f9',
+  },
+  notesTitle: {
+    fontWeight: 700,
+    marginBottom: 5,
+    fontSize: 9,
+  },
+  totalSection: {
+    alignItems: 'flex-end',
+    marginTop: 10,
+    marginBottom: 10,
+  },
+  totalRow: {
+    flexDirection: 'row',
+    width: 160,
+    justifyContent: 'space-between',
+    marginBottom: 2,
+    paddingHorizontal: 5,
   },
   tableCell: {
-    paddingVertical: 8,
-    paddingHorizontal: 5,
+    paddingVertical: 4,
+    paddingHorizontal: 3,
     borderBottomWidth: 1,
     borderBottomColor: '#ddd',
   },
@@ -401,11 +402,11 @@ export const DocumentPDF: React.FC<{ data: any }> = ({ data }) => {
         </View>
 
         {/* Notes */}
-        <View style={{ marginTop: 30 }}>
+        <View style={{ marginTop: 10 }}>
           {isQuote && data.validUntilDate && (
-            <View style={{ marginBottom: 20, padding: 10, borderWidth: 1, borderColor: '#ddd' }}>
-              <Text style={{ fontWeight: 700, marginBottom: 5 }}>見積書有効期限について</Text>
-              <Text style={{ fontSize: 10 }}>
+            <View style={{ marginBottom: 8, padding: 6, borderWidth: 1, borderColor: '#ddd' }}>
+              <Text style={{ fontWeight: 700, marginBottom: 3, fontSize: 8 }}>見積書有効期限について</Text>
+              <Text style={{ fontSize: 8 }}>
                 この見積書の有効期限は {new Date(data.validUntilDate).toLocaleDateString('ja-JP')} までです。
                 期限を過ぎた場合は改めてお見積りいたします。
               </Text>
@@ -413,8 +414,8 @@ export const DocumentPDF: React.FC<{ data: any }> = ({ data }) => {
           )}
           {data.notes && (
             <View>
-              <Text style={{ fontWeight: 700, marginBottom: 5 }}>備考</Text>
-              <Text style={{ fontSize: 10 }}>{data.notes}</Text>
+              <Text style={{ fontWeight: 700, marginBottom: 3, fontSize: 8 }}>備考</Text>
+              <Text style={{ fontSize: 8 }}>{data.notes}</Text>
             </View>
           )}
         </View>
@@ -570,9 +571,9 @@ export const DeliveryNotePDF = ({ deliveryNote, customer }: { deliveryNote: any,
 
         {/* Notes */}
         {data.notes && (
-          <View style={{ marginTop: 30 }}>
-            <Text style={{ fontWeight: 700, marginBottom: 5 }}>備考</Text>
-            <Text style={{ fontSize: 10 }}>{data.notes}</Text>
+          <View style={{ marginTop: 10 }}>
+            <Text style={{ fontWeight: 700, marginBottom: 3, fontSize: 8 }}>備考</Text>
+            <Text style={{ fontSize: 8 }}>{data.notes}</Text>
           </View>
         )}
       </Page>
