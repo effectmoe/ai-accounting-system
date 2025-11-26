@@ -46,7 +46,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   companyInfo: {
-    flex: 1,
+    flex: 2,
     textAlign: 'right',
   },
   customerName: {
@@ -183,12 +183,12 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, companyInfo }) 
           </View>
 
           <View style={styles.companyInfo}>
-            <Text>発行日: {issueDate}</Text>
-            <Text>支払期限: {dueDate}</Text>
-            <Text style={{ marginTop: 20, fontWeight: 700 }}>{companyInfo?.companyName || ''}</Text>
-            {companyInfo?.address && <Text>{companyInfo.address}</Text>}
-            {companyInfo?.phone && <Text>TEL: {companyInfo.phone}</Text>}
-            {companyInfo?.email && <Text>{companyInfo.email}</Text>}
+            <Text style={{ fontSize: 9 }}>発行日: {issueDate}</Text>
+            <Text style={{ fontSize: 9 }}>支払期限: {dueDate}</Text>
+            <Text style={{ marginTop: 15, fontWeight: 700, fontSize: 11 }}>{companyInfo?.companyName || ''}</Text>
+            {companyInfo?.address && <Text style={{ fontSize: 8 }}>{companyInfo.address}</Text>}
+            {companyInfo?.phone && <Text style={{ fontSize: 8 }}>TEL: {companyInfo.phone}</Text>}
+            {companyInfo?.email && <Text style={{ fontSize: 8 }}>{companyInfo.email}</Text>}
           </View>
         </View>
 
@@ -338,13 +338,13 @@ export const DocumentPDF: React.FC<{ data: any }> = ({ data }) => {
             {!isQuote && !isDeliveryNote && data.dueDate && (
               <Text style={{ fontSize: 10 }}>支払期限: {new Date(data.dueDate).toLocaleDateString('ja-JP')}</Text>
             )}
-            <Text style={{ fontSize: 10, marginTop: 5 }}>
+            <Text style={{ fontSize: 9, marginTop: 5 }}>
               {isQuote ? '見積書番号' : isDeliveryNote ? '納品書番号' : '請求書番号'}: {data.documentNumber}
             </Text>
-            <Text style={{ fontSize: 14, fontWeight: 700, marginTop: 15 }}>{data.companyInfo?.name}</Text>
-            <Text style={{ fontSize: 10 }}>{data.companyInfo?.address}</Text>
-            {data.companyInfo?.phone && <Text style={{ fontSize: 10 }}>TEL: {data.companyInfo.phone}</Text>}
-            {data.companyInfo?.email && <Text style={{ fontSize: 10 }}>{data.companyInfo.email}</Text>}
+            <Text style={{ fontSize: 12, fontWeight: 700, marginTop: 10 }}>{data.companyInfo?.name}</Text>
+            <Text style={{ fontSize: 8 }}>{data.companyInfo?.address}</Text>
+            {data.companyInfo?.phone && <Text style={{ fontSize: 8 }}>TEL: {data.companyInfo.phone}</Text>}
+            {data.companyInfo?.email && <Text style={{ fontSize: 8 }}>{data.companyInfo.email}</Text>}
           </View>
         </View>
 
@@ -498,13 +498,13 @@ export const DeliveryNotePDF = ({ deliveryNote, customer }: { deliveryNote: any,
           </View>
           
           <View style={styles.companyInfo}>
-            <Text style={{ fontSize: 10 }}>発行日: {data.issueDate ? new Date(data.issueDate).toLocaleDateString('ja-JP') : ''}</Text>
-            <Text style={{ fontSize: 10 }}>納品日: {data.deliveryDate ? new Date(data.deliveryDate).toLocaleDateString('ja-JP') : ''}</Text>
-            <Text style={{ fontSize: 10, marginTop: 5 }}>納品書番号: {data.documentNumber}</Text>
-            <Text style={{ fontSize: 14, fontWeight: 700, marginTop: 15 }}>{data.companyInfo?.name}</Text>
-            <Text style={{ fontSize: 10 }}>{data.companyInfo?.address}</Text>
-            {data.companyInfo?.phone && <Text style={{ fontSize: 10 }}>TEL: {data.companyInfo.phone}</Text>}
-            {data.companyInfo?.email && <Text style={{ fontSize: 10 }}>{data.companyInfo.email}</Text>}
+            <Text style={{ fontSize: 9 }}>発行日: {data.issueDate ? new Date(data.issueDate).toLocaleDateString('ja-JP') : ''}</Text>
+            <Text style={{ fontSize: 9 }}>納品日: {data.deliveryDate ? new Date(data.deliveryDate).toLocaleDateString('ja-JP') : ''}</Text>
+            <Text style={{ fontSize: 9, marginTop: 5 }}>納品書番号: {data.documentNumber}</Text>
+            <Text style={{ fontSize: 11, fontWeight: 700, marginTop: 10 }}>{data.companyInfo?.name}</Text>
+            <Text style={{ fontSize: 8 }}>{data.companyInfo?.address}</Text>
+            {data.companyInfo?.phone && <Text style={{ fontSize: 8 }}>TEL: {data.companyInfo.phone}</Text>}
+            {data.companyInfo?.email && <Text style={{ fontSize: 8 }}>{data.companyInfo.email}</Text>}
           </View>
         </View>
 
