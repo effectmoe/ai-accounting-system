@@ -26,6 +26,7 @@ interface InvoiceItem {
   taxAmount: number;
   unit?: string;
   productId?: string;
+  notes?: string;
 }
 
 interface Customer {
@@ -660,6 +661,7 @@ function NewInvoiceContent() {
           category: 'その他',
           stockQuantity: 0,  // 必須: 在庫数を追加（デフォルト0）
           isActive: true,
+          notes: item.notes || '', // 商品説明・備考も保存
         }),
       });
 
@@ -1303,8 +1305,19 @@ function NewInvoiceContent() {
                         <Input
                           type="number"
                           placeholder="1"
-                          value={item.quantity}
-                          onChange={(e) => updateItem(index, 'quantity', parseFloat(e.target.value) || 0)}
+                          value={item.quantity || ''}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            // 空の場合は0、そうでなければ数値に変換（先頭の0を削除）
+                            const numValue = value === '' ? 0 : parseInt(value, 10) || 0;
+                            updateItem(index, 'quantity', numValue);
+                          }}
+                          onFocus={(e) => {
+                            // フォーカス時に0の場合は空にして入力しやすくする
+                            if (e.target.value === '0') {
+                              e.target.value = '';
+                            }
+                          }}
                           className="text-center"
                         />
                       </div>
@@ -1322,8 +1335,19 @@ function NewInvoiceContent() {
                           <Input
                             type="number"
                             placeholder="0"
-                            value={item.unitPrice}
-                            onChange={(e) => updateItem(index, 'unitPrice', parseFloat(e.target.value) || 0)}
+                            value={item.unitPrice || ''}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              // 空の場合は0、そうでなければ数値に変換（先頭の0を削除）
+                              const numValue = value === '' ? 0 : parseInt(value, 10) || 0;
+                              updateItem(index, 'unitPrice', numValue);
+                            }}
+                            onFocus={(e) => {
+                              // フォーカス時に0の場合は空にして入力しやすくする
+                              if (e.target.value === '0') {
+                                e.target.value = '';
+                              }
+                            }}
                             className="pl-8 text-right"
                           />
                         </div>
@@ -1346,7 +1370,19 @@ function NewInvoiceContent() {
                         </Button>
                       </div>
                     </div>
-                    
+
+                    {/* 商品説明・備考フィールド */}
+                    <div className="mt-3 mb-3">
+                      <label className="block text-xs font-medium text-gray-700 mb-1">商品説明・備考</label>
+                      <Textarea
+                        value={item.notes || ''}
+                        onChange={(e) => updateItem(index, 'notes', e.target.value)}
+                        placeholder="商品の詳細説明や備考を入力..."
+                        rows={2}
+                        className="bg-white text-sm"
+                      />
+                    </div>
+
                     {/* 詳細行 */}
                     <div className="grid grid-cols-12 gap-4 items-center pt-3 border-t border-gray-100">
                       <div className="col-span-5 flex items-center gap-2 text-sm text-gray-600">
