@@ -570,39 +570,17 @@ export async function POST(request: NextRequest) {
     logger.debug('=== ATTACHMENT PREPARATION END ===');
     logger.debug('Final attachments array:', attachments.map(a => ({ filename: a.filename, size: a.content.length })));
 
-    // 顧客のメール設定に基づいて送信先を決定
+    // 送信先を決定（クライアントから渡されたアドレスを優先）
+    // ユーザーが手動で入力したメールアドレスを使用する
     let finalTo = to;
     let finalCc = cc;
-    
-    // 顧客IDを取得（複数のパターンに対応）
-    const customerId = document.customerId || document.customer?._id || document.customer?.id;
-    
-    if (customerId) {
-      logger.debug(`Getting email recipients for customer ID: ${customerId}`);
-      
-      const recipients = await getEmailRecipients(customerId);
-      if (recipients.to.length > 0) {
-        // 顧客設定のメールアドレスを優先的に使用
-        finalTo = recipients.to[0]; // 主送信先
-        logger.debug(`Using customer preference email: ${finalTo} (override client provided: ${to})`);
-        
-        if (recipients.to.length > 1) {
-          // 複数の送信先がある場合、追加をCCに
-          finalCc = cc ? `${cc},${recipients.to.slice(1).join(',')}` : recipients.to.slice(1).join(',');
-        }
-        if (recipients.cc && recipients.cc.length > 0) {
-          // 顧客設定のCCも追加
-          finalCc = finalCc ? `${finalCc},${recipients.cc.join(',')}` : recipients.cc.join(',');
-        }
-        logger.debug(`Email recipients from customer settings - To: ${finalTo}, CC: ${finalCc}`);
-      } else {
-        logger.debug('No email recipients found in customer settings, using provided TO address');
-        // 顧客設定がない場合は、クライアントから渡されたアドレスを使用
-        logger.debug(`Using client provided email: ${to}`);
-      }
-    } else {
-      logger.debug('No customer ID found, using client provided email');
-    }
+
+    logger.debug(`Using client provided email: ${to} (CC: ${cc})`);
+
+    // 注意: 以前は顧客設定のメールアドレスを優先していましたが、
+    // ユーザーが手動で入力したアドレスを尊重するように変更しました。
+    // クライアント側（email-send-modal.tsx）で既に顧客設定に基づいて
+    // 初期メールアドレスが設定されているため、API側では上書きしません。
 
     // メール送信
     logger.debug('Sending email with attachments count:', attachments.length);

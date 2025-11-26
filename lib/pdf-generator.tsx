@@ -365,10 +365,18 @@ export const DocumentPDF: React.FC<{ data: any }> = ({ data }) => {
             <Text style={[styles.tableCell, { flex: 1, textAlign: 'right' }]}>単価</Text>
             <Text style={[styles.tableCell, { flex: 1, textAlign: 'right' }]}>金額</Text>
           </View>
-          
+
           {data.items?.map((item: any, index: number) => (
             <View key={index} style={styles.tableRow}>
-              <Text style={[styles.tableCell, { flex: 3 }]}>{item.description}</Text>
+              <View style={[styles.tableCell, { flex: 3 }]}>
+                <Text>{item.itemName || item.description}</Text>
+                {item.description && item.itemName && item.description !== item.itemName && (
+                  <Text style={{ fontSize: 8, color: '#666', marginTop: 2 }}>{item.description}</Text>
+                )}
+                {item.notes && (
+                  <Text style={{ fontSize: 7, color: '#888', fontStyle: 'italic', marginTop: 2 }}>※ {item.notes}</Text>
+                )}
+              </View>
               <Text style={[styles.tableCell, { flex: 1, textAlign: 'right' }]}>{item.quantity}</Text>
               <Text style={[styles.tableCell, { flex: 1, textAlign: 'right' }]}>¥{item.unitPrice.toLocaleString()}</Text>
               <Text style={[styles.tableCell, { flex: 1, textAlign: 'right' }]}>¥{item.amount.toLocaleString()}</Text>
@@ -525,10 +533,18 @@ export const DeliveryNotePDF = ({ deliveryNote, customer }: { deliveryNote: any,
             <Text style={[styles.tableCell, { flex: 1, textAlign: 'right' }]}>単価</Text>
             <Text style={[styles.tableCell, { flex: 1, textAlign: 'right' }]}>金額</Text>
           </View>
-          
+
           {data.items?.map((item: any, index: number) => (
             <View key={index} style={styles.tableRow}>
-              <Text style={[styles.tableCell, { flex: 3 }]}>{item.description}</Text>
+              <View style={[styles.tableCell, { flex: 3 }]}>
+                <Text>{item.itemName || item.description}</Text>
+                {item.description && item.itemName && item.description !== item.itemName && (
+                  <Text style={{ fontSize: 8, color: '#666', marginTop: 2 }}>{item.description}</Text>
+                )}
+                {item.notes && (
+                  <Text style={{ fontSize: 7, color: '#888', fontStyle: 'italic', marginTop: 2 }}>※ {item.notes}</Text>
+                )}
+              </View>
               <Text style={[styles.tableCell, { flex: 1, textAlign: 'right' }]}>{item.quantity}</Text>
               <Text style={[styles.tableCell, { flex: 1, textAlign: 'right' }]}>¥{item.unitPrice.toLocaleString()}</Text>
               <Text style={[styles.tableCell, { flex: 1, textAlign: 'right' }]}>¥{item.amount.toLocaleString()}</Text>
