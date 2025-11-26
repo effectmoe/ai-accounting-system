@@ -374,7 +374,7 @@ export const DocumentPDF: React.FC<{ data: any }> = ({ data }) => {
                   <Text style={{ fontSize: 8, color: '#666', marginTop: 2 }}>{item.description}</Text>
                 )}
                 {item.notes && (
-                  <Text style={{ fontSize: 7, color: '#888', fontStyle: 'italic', marginTop: 2 }}>※ {item.notes}</Text>
+                  <Text style={{ fontSize: 7, color: '#888', marginTop: 2 }}>※ {item.notes}</Text>
                 )}
               </View>
               <Text style={[styles.tableCell, { flex: 1, textAlign: 'right' }]}>{item.quantity}</Text>
@@ -542,7 +542,7 @@ export const DeliveryNotePDF = ({ deliveryNote, customer }: { deliveryNote: any,
                   <Text style={{ fontSize: 8, color: '#666', marginTop: 2 }}>{item.description}</Text>
                 )}
                 {item.notes && (
-                  <Text style={{ fontSize: 7, color: '#888', fontStyle: 'italic', marginTop: 2 }}>※ {item.notes}</Text>
+                  <Text style={{ fontSize: 7, color: '#888', marginTop: 2 }}>※ {item.notes}</Text>
                 )}
               </View>
               <Text style={[styles.tableCell, { flex: 1, textAlign: 'right' }]}>{item.quantity}</Text>
