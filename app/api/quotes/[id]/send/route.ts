@@ -6,17 +6,24 @@ import { Resend } from 'resend';
 import { generateSimpleHtmlQuote } from '@/lib/html-quote-generator';
 import { getSuggestedOptionsFromDB, generateServerHtmlQuote } from '@/lib/html-quote-generator-server';
 
-const resendApiKey = process.env.RESEND_API_KEY;
-console.log('[Send Quote API] RESEND_API_KEY exists:', !!resendApiKey);
-console.log('[Send Quote API] RESEND_API_KEY prefix:', resendApiKey?.substring(0, 10) + '...');
-console.log('[Send Quote API] RESEND_FROM_EMAIL:', process.env.RESEND_FROM_EMAIL);
+// Resendの遅延初期化（ビルド時のエラーを防ぐ）
+let resend: Resend | null = null;
 
-// Resend API キーの検証
-if (!resendApiKey || resendApiKey === 'undefined' || resendApiKey.length < 10) {
-  console.error('[Send Quote API] Invalid RESEND_API_KEY:', resendApiKey);
+function getResend(): Resend {
+  if (!resend) {
+    const resendApiKey = process.env.RESEND_API_KEY;
+    console.log('[Send Quote API] RESEND_API_KEY exists:', !!resendApiKey);
+    console.log('[Send Quote API] RESEND_API_KEY prefix:', resendApiKey?.substring(0, 10) + '...');
+    console.log('[Send Quote API] RESEND_FROM_EMAIL:', process.env.RESEND_FROM_EMAIL);
+
+    if (!resendApiKey || resendApiKey === 'undefined' || resendApiKey.length < 10) {
+      console.error('[Send Quote API] Invalid RESEND_API_KEY:', resendApiKey);
+      throw new Error('RESEND_API_KEY is not configured');
+    }
+    resend = new Resend(resendApiKey);
+  }
+  return resend;
 }
-
-const resend = new Resend(resendApiKey);
 
 export async function POST(
   request: NextRequest,
@@ -70,32 +77,24 @@ export async function POST(
       customMessage,
     });
 
-    // Resend APIキーの確認
-    if (!resendApiKey) {
-      console.error('[Send Quote API] RESEND_API_KEY is not configured');
-      return NextResponse.json(
-        { error: 'Email service is not configured. Please contact administrator.' },
-        { status: 500 }
-      );
-    }
-
     // Resendでメール送信（generateHtmlQuoteが既にHTMLを生成済み）
     console.log('[Send Quote API] Sending email with Resend...');
-    
+
     // Resendが推奨するfromアドレスフォーマット
     const fromEmail = process.env.RESEND_FROM_EMAIL || 'accounting@effect.moe';
     const fromName = companyInfo?.companyName || 'AAM Accounting';
     const from = `${fromName} <${fromEmail}>`;
-    
+
     console.log('[Send Quote API] Email details:', {
       from,
       to: recipientEmail,
       subject: htmlContent.subject || `お見積書 - ${quote.quoteNumber}`,
     });
-    
+
     let emailResult;
     try {
-      emailResult = await resend.emails.send({
+      const resendClient = getResend();
+      emailResult = await resendClient.emails.send({
         from,
         to: recipientEmail,
         subject: htmlContent.subject || `お見積書 - ${quote.quoteNumber}`,
