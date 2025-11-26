@@ -109,7 +109,7 @@ export function generateCompactInvoiceHTML(invoice: any, companyInfo: any, showD
   <style>
     @page {
       size: A4;
-      margin: 10mm 15mm 15mm 15mm;
+      margin: 8mm 12mm 10mm 12mm;
     }
 
     * {
@@ -120,8 +120,8 @@ export function generateCompactInvoiceHTML(invoice: any, companyInfo: any, showD
 
     body {
       font-family: "Noto Sans JP", "ヒラギノ角ゴ Pro W3", "Hiragino Kaku Gothic Pro", "メイリオ", Meiryo, sans-serif;
-      font-size: 11px;
-      line-height: 1.4;
+      font-size: 10px;
+      line-height: 1.3;
       color: #333;
       background: white;
     }
@@ -130,31 +130,31 @@ export function generateCompactInvoiceHTML(invoice: any, companyInfo: any, showD
       width: 100%;
       margin: 0 auto;
       background: white;
-      padding: 0 5mm;
+      padding: 0 3mm;
     }
 
     .header {
       text-align: center;
-      margin-bottom: 20px;
+      margin-bottom: 12px;
       border-bottom: 2px solid #000;
-      padding-bottom: 10px;
+      padding-bottom: 6px;
     }
 
     .title {
-      font-size: 24px;
+      font-size: 20px;
       font-weight: bold;
-      margin-bottom: 8px;
+      margin-bottom: 4px;
     }
 
     .invoice-number {
-      font-size: 12px;
-      margin-bottom: 10px;
+      font-size: 10px;
+      margin-bottom: 6px;
     }
 
     .info-section {
       display: flex;
       justify-content: space-between;
-      margin-bottom: 20px;
+      margin-bottom: 12px;
     }
 
     .customer-info, .company-info {
@@ -167,8 +167,8 @@ export function generateCompactInvoiceHTML(invoice: any, companyInfo: any, showD
 
     .info-title {
       font-weight: bold;
-      font-size: 12px;
-      margin-bottom: 5px;
+      font-size: 10px;
+      margin-bottom: 3px;
       border-bottom: 1px solid #ccc;
       padding-bottom: 2px;
     }
@@ -176,8 +176,8 @@ export function generateCompactInvoiceHTML(invoice: any, companyInfo: any, showD
     .dates-section {
       display: flex;
       justify-content: space-between;
-      margin-bottom: 20px;
-      padding: 8px;
+      margin-bottom: 12px;
+      padding: 5px;
       background-color: #f5f5f5;
     }
 
@@ -186,27 +186,27 @@ export function generateCompactInvoiceHTML(invoice: any, companyInfo: any, showD
     }
 
     .date-label {
-      font-size: 10px;
+      font-size: 9px;
       color: #666;
-      margin-bottom: 3px;
+      margin-bottom: 2px;
     }
 
     .date-value {
       font-weight: bold;
-      font-size: 11px;
+      font-size: 10px;
     }
 
     .items-table {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 20px;
-      font-size: 10px;
+      margin-bottom: 12px;
+      font-size: 9px;
       table-layout: fixed;
     }
 
     .items-table th, .items-table td {
       border: 1px solid #333;
-      padding: 5px 3px;
+      padding: 3px 2px;
       text-align: center;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -215,30 +215,31 @@ export function generateCompactInvoiceHTML(invoice: any, companyInfo: any, showD
     .items-table th {
       background-color: #f0f0f0;
       font-weight: bold;
-      font-size: 9px;
+      font-size: 8px;
     }
 
     .description-cell {
       text-align: left;
-      width: ${showDescriptions ? '35%' : '30%'};
-      padding-left: 5px !important;
+      width: ${showDescriptions ? '38%' : '32%'};
+      padding-left: 3px !important;
     }
 
     .item-name {
       font-weight: bold;
-      margin-bottom: 2px;
+      margin-bottom: 1px;
+      font-size: 9px;
     }
 
     .item-description {
       color: #666;
-      font-size: 9px;
-      margin-bottom: 2px;
+      font-size: 8px;
+      margin-bottom: 1px;
       word-wrap: break-word;
     }
 
     .item-notes {
       color: #888;
-      font-size: 8px;
+      font-size: 7px;
       font-style: italic;
       word-wrap: break-word;
     }
@@ -268,68 +269,68 @@ export function generateCompactInvoiceHTML(invoice: any, companyInfo: any, showD
     .totals-section {
       display: flex;
       justify-content: flex-end;
-      margin-bottom: 20px;
-      margin-right: 5px;
+      margin-bottom: 10px;
+      margin-right: 3px;
     }
 
     .totals-table {
       border-collapse: collapse;
-      font-size: 11px;
+      font-size: 9px;
       width: auto;
     }
 
     .totals-table td {
       border: 1px solid #333;
-      padding: 5px 10px;
+      padding: 3px 6px;
     }
 
     .totals-table .label {
       background-color: #f0f0f0;
       font-weight: bold;
       text-align: left;
-      width: 80px;
+      width: 70px;
     }
 
     .totals-table .amount {
       text-align: right;
       font-family: 'Courier New', monospace;
       font-weight: bold;
-      width: 100px;
+      width: 90px;
     }
 
     .total-amount {
-      font-size: 14px;
+      font-size: 11px;
       background-color: #e6f3ff !important;
     }
 
     .payment-info {
-      margin-top: 20px;
-      font-size: 10px;
+      margin-top: 10px;
+      font-size: 9px;
     }
 
     .payment-title {
       font-weight: bold;
-      margin-bottom: 5px;
+      margin-bottom: 3px;
       border-bottom: 1px solid #ccc;
       padding-bottom: 2px;
     }
 
     .notes-section {
-      margin-top: 20px;
-      font-size: 10px;
+      margin-top: 10px;
+      font-size: 9px;
     }
 
     .notes-title {
       font-weight: bold;
-      margin-bottom: 5px;
+      margin-bottom: 3px;
       border-bottom: 1px solid #ccc;
       padding-bottom: 2px;
     }
 
     .seal-image {
-      max-width: 60px;
-      max-height: 60px;
-      margin-top: 10px;
+      max-width: 50px;
+      max-height: 50px;
+      margin-top: 5px;
     }
 
     @media print {

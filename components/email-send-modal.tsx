@@ -368,6 +368,7 @@ ${formattedPaidDate ? `支払日：${formattedPaidDate}` : ''}
             items: docData.items ? docData.items.map((item: any) => ({
               itemName: item.itemName || '',
               description: item.description || '',
+              notes: item.notes || '',
               quantity: item.quantity,
               unitPrice: item.unitPrice,
               amount: item.amount,
