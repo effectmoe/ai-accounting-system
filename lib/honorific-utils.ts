@@ -49,7 +49,7 @@ export function formatCustomerNameWithHonorific(
 
 /**
  * メール本文用の宛名を生成
- * （改行なしバージョン）
+ * 会社名と担当者名がある場合は改行で区切る
  */
 export function formatCustomerNameForEmail(
   customer?: Customer | null,
@@ -58,14 +58,15 @@ export function formatCustomerNameForEmail(
   const companyName = customer?.companyName || customerSnapshot?.companyName || '';
   const primaryContact = customer?.contacts?.find(c => c.isPrimary) || customer?.contacts?.[0];
   const contactName = primaryContact?.name || customerSnapshot?.contactName || '';
-  
+
   if (companyName && contactName) {
-    return `${companyName} ${contactName} 様`;
+    // 会社名と担当者名を改行で区切る
+    return `${companyName}\n${contactName} 様`;
   } else if (contactName && !companyName) {
     return `${contactName} 様`;
   } else if (companyName) {
     return `${companyName} 御中`;
   }
-  
+
   return '顧客名未設定';
 }
