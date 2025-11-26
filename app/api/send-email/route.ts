@@ -353,17 +353,34 @@ export async function POST(request: NextRequest) {
       const currentCompanyInfo = await companyInfoService.getCompanyInfo();
       
       // companySnapshotが不完全な場合に現在の会社情報をフォールバックとして使用
+      // 住所は改行区切りで連結（address1: 住所、address2: ビル名など）
+      const buildAddress = () => {
+        if (document.companySnapshot?.address) return document.companySnapshot.address;
+        if (!currentCompanyInfo) return '住所未設定';
+
+        const postalCode = currentCompanyInfo.postalCode ? `〒${currentCompanyInfo.postalCode}` : '';
+        const mainAddress = `${currentCompanyInfo.prefecture || ''}${currentCompanyInfo.city || ''}${currentCompanyInfo.address1 || ''}`;
+        const buildingName = currentCompanyInfo.address2 || '';
+
+        // 住所とビル名を改行で連結
+        const parts = [postalCode, mainAddress, buildingName].filter(Boolean);
+        if (parts.length === 0) return '住所未設定';
+
+        // 郵便番号と住所を1行目、ビル名を2行目に
+        if (buildingName) {
+          return `${postalCode} ${mainAddress}\n${buildingName}`;
+        }
+        return `${postalCode} ${mainAddress}`;
+      };
+
       const effectiveCompanyInfo = {
         name: document.companySnapshot?.companyName || currentCompanyInfo?.companyName || '会社名未設定',
-        address: document.companySnapshot?.address || 
-                currentCompanyInfo?.address1 || 
-                `${currentCompanyInfo?.prefecture || ''} ${currentCompanyInfo?.city || ''} ${currentCompanyInfo?.address1 || ''}`.trim() ||
-                '住所未設定',
+        address: buildAddress(),
         phone: document.companySnapshot?.phone || currentCompanyInfo?.phone,
         email: document.companySnapshot?.email || currentCompanyInfo?.email,
         registrationNumber: document.companySnapshot?.invoiceRegistrationNumber || currentCompanyInfo?.registrationNumber,
       };
-      
+
       logger.debug('Effective company info for email:', effectiveCompanyInfo);
       
       // DocumentData形式に変換
@@ -399,17 +416,34 @@ export async function POST(request: NextRequest) {
       const currentCompanyInfo = await companyInfoService.getCompanyInfo();
       
       // companySnapshotが不完全な場合に現在の会社情報をフォールバックとして使用
+      // 住所は改行区切りで連結（address1: 住所、address2: ビル名など）
+      const buildInvoiceAddress = () => {
+        if (document.companySnapshot?.address) return document.companySnapshot.address;
+        if (!currentCompanyInfo) return '住所未設定';
+
+        const postalCode = currentCompanyInfo.postalCode ? `〒${currentCompanyInfo.postalCode}` : '';
+        const mainAddress = `${currentCompanyInfo.prefecture || ''}${currentCompanyInfo.city || ''}${currentCompanyInfo.address1 || ''}`;
+        const buildingName = currentCompanyInfo.address2 || '';
+
+        // 住所とビル名を改行で連結
+        const parts = [postalCode, mainAddress, buildingName].filter(Boolean);
+        if (parts.length === 0) return '住所未設定';
+
+        // 郵便番号と住所を1行目、ビル名を2行目に
+        if (buildingName) {
+          return `${postalCode} ${mainAddress}\n${buildingName}`;
+        }
+        return `${postalCode} ${mainAddress}`;
+      };
+
       const effectiveCompanyInfo = {
         name: document.companySnapshot?.companyName || currentCompanyInfo?.companyName || '会社名未設定',
-        address: document.companySnapshot?.address || 
-                currentCompanyInfo?.address1 || 
-                `${currentCompanyInfo?.prefecture || ''} ${currentCompanyInfo?.city || ''} ${currentCompanyInfo?.address1 || ''}`.trim() ||
-                '住所未設定',
+        address: buildInvoiceAddress(),
         phone: document.companySnapshot?.phone || currentCompanyInfo?.phone,
         email: document.companySnapshot?.email || currentCompanyInfo?.email,
         registrationNumber: document.companySnapshot?.invoiceRegistrationNumber || currentCompanyInfo?.registrationNumber,
       };
-      
+
       logger.debug('Effective company info for invoice email:', effectiveCompanyInfo);
       
       // DocumentData形式に変換
