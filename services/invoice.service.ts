@@ -10,6 +10,7 @@ export interface InvoiceSearchParams {
   dateFrom?: Date;
   dateTo?: Date;
   isGeneratedByAI?: boolean;
+  search?: string;
   limit?: number;
   skip?: number;
   sortBy?: string;
@@ -52,6 +53,17 @@ export class InvoiceService {
 
       if (params.isGeneratedByAI !== undefined) {
         filter.isGeneratedByAI = params.isGeneratedByAI;
+      }
+
+      // 検索クエリ（請求書番号、顧客名で検索）
+      if (params.search) {
+        const searchRegex = { $regex: params.search, $options: 'i' };
+        filter.$or = [
+          { invoiceNumber: searchRegex },
+          { title: searchRegex },
+          { 'customerSnapshot.companyName': searchRegex },
+          { 'customerSnapshot.contactName': searchRegex },
+        ];
       }
 
       const limit = params.limit || 20;

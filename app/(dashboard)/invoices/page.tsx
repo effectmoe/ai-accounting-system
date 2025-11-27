@@ -63,11 +63,27 @@ export default function InvoicesPage() {
   const [dateFrom, setDateFrom] = useState<string>('');
   const [dateTo, setDateTo] = useState<string>('');
   const [datePreset, setDatePreset] = useState<string>('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const itemsPerPage = 20;
+
+  // デバウンス処理
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+      setCurrentPage(1); // 検索時はページを1に戻す
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // フィルター変更時もページを1に戻す
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter, aiOnlyFilter, dateFrom, dateTo]);
 
   useEffect(() => {
     fetchInvoices();
-  }, [statusFilter, aiOnlyFilter, currentPage, sortBy, sortOrder, dateFrom, dateTo]);
+  }, [statusFilter, aiOnlyFilter, currentPage, sortBy, sortOrder, dateFrom, dateTo, debouncedSearchQuery]);
 
   const fetchInvoices = async () => {
     setIsLoading(true);
@@ -89,6 +105,9 @@ export default function InvoicesPage() {
         sortOrder: sortOrder,
       });
 
+      if (debouncedSearchQuery) {
+        params.append('search', debouncedSearchQuery);
+      }
       if (statusFilter !== 'all') {
         params.append('status', statusFilter);
       }
