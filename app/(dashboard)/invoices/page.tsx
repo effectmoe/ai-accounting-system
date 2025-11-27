@@ -116,11 +116,6 @@ export default function InvoicesPage() {
     }
   };
 
-  const handleSearch = () => {
-    // TODO: 検索機能の実装
-    logger.debug('Search:', searchQuery);
-  };
-
   const handleDatePresetChange = (preset: string) => {
     setDatePreset(preset);
     const today = new Date();
@@ -172,7 +167,7 @@ export default function InvoicesPage() {
   };
 
   const getDateFilterLabel = () => {
-    if (!dateFrom && !dateTo) return '期間を選択';
+    if (!dateFrom && !dateTo) return '発行日で絞り込み';
     if (datePreset && datePreset !== 'custom') {
       const presetLabels: Record<string, string> = {
         'today': '今日',
@@ -182,14 +177,14 @@ export default function InvoicesPage() {
         'lastMonth': '先月',
         'thisYear': '今年',
       };
-      return presetLabels[datePreset] || '期間を選択';
+      return presetLabels[datePreset] || '発行日で絞り込み';
     }
     if (dateFrom && dateTo) {
       return `${format(new Date(dateFrom), 'M/d', { locale: ja })} - ${format(new Date(dateTo), 'M/d', { locale: ja })}`;
     }
     if (dateFrom) return `${format(new Date(dateFrom), 'M/d', { locale: ja })} 以降`;
     if (dateTo) return `${format(new Date(dateTo), 'M/d', { locale: ja })} まで`;
-    return '期間を選択';
+    return '発行日で絞り込み';
   };
 
   const handleSort = (field: string) => {
@@ -525,7 +520,7 @@ export default function InvoicesPage() {
                 placeholder="請求書番号、顧客名で検索..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                aria-label="請求書検索"
               />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -567,7 +562,7 @@ export default function InvoicesPage() {
               </PopoverTrigger>
               <PopoverContent className="w-80 p-4" align="start">
                 <div className="space-y-4">
-                  <div className="font-medium text-sm">期間を選択</div>
+                  <div className="font-medium text-sm">発行日で絞り込み</div>
 
                   {/* プリセット選択 */}
                   <div className="grid grid-cols-2 gap-2">
@@ -659,10 +654,6 @@ export default function InvoicesPage() {
             >
               <Sparkles className="mr-2 h-4 w-4" />
               AI作成のみ
-            </Button>
-            <Button onClick={handleSearch}>
-              <Search className="mr-2 h-4 w-4" />
-              検索
             </Button>
           </div>
 
