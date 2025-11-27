@@ -8,7 +8,9 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Search, FileText, Loader2, Sparkles, FileDown, CheckCircle, Calculator, Trash2, CheckCircle2, Copy, Edit, Undo2 } from 'lucide-react';
+import { Plus, Search, FileText, Loader2, Sparkles, FileDown, CheckCircle, Calculator, Trash2, CheckCircle2, Copy, Edit, Undo2, Calendar, X } from 'lucide-react';
+import { format, startOfMonth, endOfMonth, startOfYear, endOfYear, subMonths, subDays } from 'date-fns';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
 import { safeFormatDate } from '@/lib/date-utils';
 import { cache, SimpleCache } from '@/lib/cache';
@@ -70,6 +72,9 @@ function QuotesPageContent() {
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const itemsPerPage = 20;
   const [error, setError] = useState<string | null>(null);
+  const [dateFrom, setDateFrom] = useState<string>('');
+  const [dateTo, setDateTo] = useState<string>('');
+  const [datePreset, setDatePreset] = useState<string>('');
 
   // URLパラメータから初期値を設定
   useEffect(() => {
@@ -98,11 +103,11 @@ function QuotesPageContent() {
   // フィルター変更時もページを1に戻す
   useEffect(() => {
     setCurrentPage(1);
-  }, [statusFilter, aiOnlyFilter]);
+  }, [statusFilter, aiOnlyFilter, dateFrom, dateTo]);
 
   useEffect(() => {
     fetchQuotes();
-  }, [statusFilter, aiOnlyFilter, currentPage, debouncedSearchQuery, sortBy, sortOrder]);
+  }, [statusFilter, aiOnlyFilter, currentPage, debouncedSearchQuery, sortBy, sortOrder, dateFrom, dateTo]);
 
   // URLパラメータを更新
   useEffect(() => {
@@ -144,6 +149,8 @@ function QuotesPageContent() {
         ...(debouncedSearchQuery && { search: debouncedSearchQuery }),
         ...(statusFilter !== 'all' && { status: statusFilter }),
         ...(aiOnlyFilter && { isGeneratedByAI: 'true' }),
+        ...(dateFrom && { dateFrom }),
+        ...(dateTo && { dateTo }),
       };
 
       // キャッシュキーを生成
@@ -446,6 +453,76 @@ function QuotesPageContent() {
 
   const totalPages = Math.ceil(totalCount / itemsPerPage);
 
+  // 日付プリセット選択
+  const handleDatePresetChange = (preset: string) => {
+    const today = new Date();
+    setDatePreset(preset);
+
+    switch (preset) {
+      case 'today':
+        const todayStr = format(today, 'yyyy-MM-dd');
+        setDateFrom(todayStr);
+        setDateTo(todayStr);
+        break;
+      case 'last7days':
+        setDateFrom(format(subDays(today, 7), 'yyyy-MM-dd'));
+        setDateTo(format(today, 'yyyy-MM-dd'));
+        break;
+      case 'last30days':
+        setDateFrom(format(subDays(today, 30), 'yyyy-MM-dd'));
+        setDateTo(format(today, 'yyyy-MM-dd'));
+        break;
+      case 'thisMonth':
+        setDateFrom(format(startOfMonth(today), 'yyyy-MM-dd'));
+        setDateTo(format(endOfMonth(today), 'yyyy-MM-dd'));
+        break;
+      case 'lastMonth':
+        const lastMonth = subMonths(today, 1);
+        setDateFrom(format(startOfMonth(lastMonth), 'yyyy-MM-dd'));
+        setDateTo(format(endOfMonth(lastMonth), 'yyyy-MM-dd'));
+        break;
+      case 'thisYear':
+        setDateFrom(format(startOfYear(today), 'yyyy-MM-dd'));
+        setDateTo(format(endOfYear(today), 'yyyy-MM-dd'));
+        break;
+      default:
+        setDateFrom('');
+        setDateTo('');
+    }
+  };
+
+  // 日付フィルターをクリア
+  const clearDateFilter = () => {
+    setDateFrom('');
+    setDateTo('');
+    setDatePreset('');
+  };
+
+  // 日付フィルターラベル取得
+  const getDateFilterLabel = () => {
+    if (datePreset) {
+      const labels: Record<string, string> = {
+        today: '今日',
+        last7days: '過去7日間',
+        last30days: '過去30日間',
+        thisMonth: '今月',
+        lastMonth: '先月',
+        thisYear: '今年',
+      };
+      return labels[datePreset] || '';
+    }
+    if (dateFrom || dateTo) {
+      if (dateFrom && dateTo) {
+        return `${dateFrom} 〜 ${dateTo}`;
+      } else if (dateFrom) {
+        return `${dateFrom} 以降`;
+      } else {
+        return `${dateTo} まで`;
+      }
+    }
+    return '';
+  };
+
   return (
     <div className="container mx-auto p-6">
       <style dangerouslySetInnerHTML={{
@@ -581,8 +658,8 @@ function QuotesPageContent() {
       {/* フィルター */}
       <Card className="mb-6">
         <CardContent className="pt-6">
-          <div className="flex gap-4 items-end">
-            <div className="flex-1">
+          <div className="flex gap-4 items-end flex-wrap">
+            <div className="flex-1 min-w-[200px]">
               <Input
                 placeholder="見積書番号、顧客名で検索..."
                 value={searchQuery}
@@ -605,6 +682,107 @@ function QuotesPageContent() {
                 <SelectItem value="converted">請求書変換済み</SelectItem>
               </SelectContent>
             </Select>
+
+            {/* 日付フィルター */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant={dateFrom || dateTo ? 'default' : 'outline'}>
+                  <Calendar className="mr-2 h-4 w-4" />
+                  {getDateFilterLabel() || '発行日で絞り込み'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80" align="end">
+                <div className="space-y-4">
+                  <div className="font-medium text-sm">発行日で絞り込み</div>
+
+                  {/* プリセットボタン */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      variant={datePreset === 'today' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => handleDatePresetChange('today')}
+                    >
+                      今日
+                    </Button>
+                    <Button
+                      variant={datePreset === 'last7days' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => handleDatePresetChange('last7days')}
+                    >
+                      過去7日間
+                    </Button>
+                    <Button
+                      variant={datePreset === 'last30days' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => handleDatePresetChange('last30days')}
+                    >
+                      過去30日間
+                    </Button>
+                    <Button
+                      variant={datePreset === 'thisMonth' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => handleDatePresetChange('thisMonth')}
+                    >
+                      今月
+                    </Button>
+                    <Button
+                      variant={datePreset === 'lastMonth' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => handleDatePresetChange('lastMonth')}
+                    >
+                      先月
+                    </Button>
+                    <Button
+                      variant={datePreset === 'thisYear' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => handleDatePresetChange('thisYear')}
+                    >
+                      今年
+                    </Button>
+                  </div>
+
+                  {/* カスタム日付範囲 */}
+                  <div className="space-y-2">
+                    <div className="text-sm text-gray-500">または期間を指定</div>
+                    <div className="flex gap-2 items-center">
+                      <Input
+                        type="date"
+                        value={dateFrom}
+                        onChange={(e) => {
+                          setDateFrom(e.target.value);
+                          setDatePreset('');
+                        }}
+                        className="flex-1"
+                      />
+                      <span className="text-gray-400">〜</span>
+                      <Input
+                        type="date"
+                        value={dateTo}
+                        onChange={(e) => {
+                          setDateTo(e.target.value);
+                          setDatePreset('');
+                        }}
+                        className="flex-1"
+                      />
+                    </div>
+                  </div>
+
+                  {/* クリアボタン */}
+                  {(dateFrom || dateTo) && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full"
+                      onClick={clearDateFilter}
+                    >
+                      <X className="mr-2 h-4 w-4" />
+                      日付フィルターをクリア
+                    </Button>
+                  )}
+                </div>
+              </PopoverContent>
+            </Popover>
+
             <Button
               variant={aiOnlyFilter ? 'default' : 'outline'}
               onClick={() => setAiOnlyFilter(!aiOnlyFilter)}
@@ -613,6 +791,40 @@ function QuotesPageContent() {
               AI作成のみ
             </Button>
           </div>
+
+          {/* アクティブフィルター表示 */}
+          {(dateFrom || dateTo || statusFilter !== 'all' || aiOnlyFilter) && (
+            <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t">
+              <span className="text-sm text-gray-500">適用中のフィルター:</span>
+              {statusFilter !== 'all' && (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  ステータス: {statusLabels[statusFilter]}
+                  <X
+                    className="h-3 w-3 cursor-pointer"
+                    onClick={() => setStatusFilter('all')}
+                  />
+                </Badge>
+              )}
+              {(dateFrom || dateTo) && (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  発行日: {getDateFilterLabel()}
+                  <X
+                    className="h-3 w-3 cursor-pointer"
+                    onClick={clearDateFilter}
+                  />
+                </Badge>
+              )}
+              {aiOnlyFilter && (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  AI作成のみ
+                  <X
+                    className="h-3 w-3 cursor-pointer"
+                    onClick={() => setAiOnlyFilter(false)}
+                  />
+                </Badge>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 
