@@ -11,6 +11,7 @@ export interface QuoteSearchParams {
   dateFrom?: Date;
   dateTo?: Date;
   isGeneratedByAI?: boolean;
+  search?: string;
   limit?: number;
   skip?: number;
   sortBy?: string;
@@ -55,9 +56,20 @@ export class QuoteService {
         filter.isGeneratedByAI = params.isGeneratedByAI;
       }
 
+      // 検索クエリ（見積書番号、顧客名で検索）
+      if (params.search) {
+        const searchRegex = { $regex: params.search, $options: 'i' };
+        filter.$or = [
+          { quoteNumber: searchRegex },
+          { title: searchRegex },
+          { 'customerSnapshot.companyName': searchRegex },
+          { 'customerSnapshot.contactName': searchRegex },
+        ];
+      }
+
       const limit = params.limit || 20;
       const skip = params.skip || 0;
-      
+
       // ソート設定（フィールド名のマッピング）
       const fieldMapping: Record<string, string> = {
         'quoteDate': 'issueDate',  // フロントエンドはquoteDateを送るが、DBではissueDate

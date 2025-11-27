@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
     const dateFrom = searchParams.get('dateFrom') ? new Date(searchParams.get('dateFrom')!) : undefined;
     const dateTo = searchParams.get('dateTo') ? new Date(searchParams.get('dateTo')!) : undefined;
     const isGeneratedByAI = searchParams.get('isGeneratedByAI') === 'true' ? true : undefined;
+    const search = searchParams.get('search') || undefined;
     const limit = parseInt(searchParams.get('limit') || '20');
     const skip = parseInt(searchParams.get('skip') || '0');
     const sortBy = searchParams.get('sortBy') || 'issueDate';
@@ -25,6 +26,7 @@ export async function GET(request: NextRequest) {
       dateFrom,
       dateTo,
       isGeneratedByAI,
+      search,
       limit,
       skip,
       sortBy,
