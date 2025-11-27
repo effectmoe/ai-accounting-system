@@ -9,9 +9,10 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Search, FileText, Loader2, Sparkles, FileDown, CheckCircle2, Trash2, Copy, Coins } from 'lucide-react';
-import { format } from 'date-fns';
+import { Plus, Search, FileText, Loader2, Sparkles, FileDown, CheckCircle2, Trash2, Copy, Coins, Calendar, X } from 'lucide-react';
+import { format, startOfMonth, endOfMonth, startOfYear, endOfYear, subMonths, subDays } from 'date-fns';
 import { ja } from 'date-fns/locale';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { safeFormatDate } from '@/lib/date-utils';
 import { PaymentRecordDialog } from '@/components/payment-record-dialog';
 
@@ -59,11 +60,14 @@ export default function InvoicesPage() {
   const [paymentDialogInvoice, setPaymentDialogInvoice] = useState<Invoice | null>(null);
   const [sortBy, setSortBy] = useState<string>('invoiceDate');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [dateFrom, setDateFrom] = useState<string>('');
+  const [dateTo, setDateTo] = useState<string>('');
+  const [datePreset, setDatePreset] = useState<string>('');
   const itemsPerPage = 20;
 
   useEffect(() => {
     fetchInvoices();
-  }, [statusFilter, aiOnlyFilter, currentPage, sortBy, sortOrder]);
+  }, [statusFilter, aiOnlyFilter, currentPage, sortBy, sortOrder, dateFrom, dateTo]);
 
   const fetchInvoices = async () => {
     setIsLoading(true);
@@ -91,6 +95,12 @@ export default function InvoicesPage() {
       if (aiOnlyFilter) {
         params.append('isGeneratedByAI', 'true');
       }
+      if (dateFrom) {
+        params.append('dateFrom', dateFrom);
+      }
+      if (dateTo) {
+        params.append('dateTo', dateTo);
+      }
 
       const response = await fetch(`/api/invoices?${params}`);
       const data = await response.json();
@@ -109,6 +119,77 @@ export default function InvoicesPage() {
   const handleSearch = () => {
     // TODO: 検索機能の実装
     logger.debug('Search:', searchQuery);
+  };
+
+  const handleDatePresetChange = (preset: string) => {
+    setDatePreset(preset);
+    const today = new Date();
+
+    switch (preset) {
+      case 'today':
+        const todayStr = format(today, 'yyyy-MM-dd');
+        setDateFrom(todayStr);
+        setDateTo(todayStr);
+        break;
+      case 'last7days':
+        setDateFrom(format(subDays(today, 7), 'yyyy-MM-dd'));
+        setDateTo(format(today, 'yyyy-MM-dd'));
+        break;
+      case 'last30days':
+        setDateFrom(format(subDays(today, 30), 'yyyy-MM-dd'));
+        setDateTo(format(today, 'yyyy-MM-dd'));
+        break;
+      case 'thisMonth':
+        setDateFrom(format(startOfMonth(today), 'yyyy-MM-dd'));
+        setDateTo(format(endOfMonth(today), 'yyyy-MM-dd'));
+        break;
+      case 'lastMonth':
+        const lastMonth = subMonths(today, 1);
+        setDateFrom(format(startOfMonth(lastMonth), 'yyyy-MM-dd'));
+        setDateTo(format(endOfMonth(lastMonth), 'yyyy-MM-dd'));
+        break;
+      case 'thisYear':
+        setDateFrom(format(startOfYear(today), 'yyyy-MM-dd'));
+        setDateTo(format(endOfYear(today), 'yyyy-MM-dd'));
+        break;
+      case 'custom':
+        // カスタムの場合は何もしない（ユーザーが手動入力）
+        break;
+      case 'all':
+      default:
+        setDateFrom('');
+        setDateTo('');
+        break;
+    }
+    setCurrentPage(1);
+  };
+
+  const clearDateFilter = () => {
+    setDateFrom('');
+    setDateTo('');
+    setDatePreset('');
+    setCurrentPage(1);
+  };
+
+  const getDateFilterLabel = () => {
+    if (!dateFrom && !dateTo) return '期間を選択';
+    if (datePreset && datePreset !== 'custom') {
+      const presetLabels: Record<string, string> = {
+        'today': '今日',
+        'last7days': '過去7日',
+        'last30days': '過去30日',
+        'thisMonth': '今月',
+        'lastMonth': '先月',
+        'thisYear': '今年',
+      };
+      return presetLabels[datePreset] || '期間を選択';
+    }
+    if (dateFrom && dateTo) {
+      return `${format(new Date(dateFrom), 'M/d', { locale: ja })} - ${format(new Date(dateTo), 'M/d', { locale: ja })}`;
+    }
+    if (dateFrom) return `${format(new Date(dateFrom), 'M/d', { locale: ja })} 以降`;
+    if (dateTo) return `${format(new Date(dateTo), 'M/d', { locale: ja })} まで`;
+    return '期間を選択';
   };
 
   const handleSort = (field: string) => {
@@ -438,8 +519,8 @@ export default function InvoicesPage() {
       {/* フィルター */}
       <Card className="mb-6">
         <CardContent className="pt-6">
-          <div className="flex gap-4 items-end">
-            <div className="flex-1">
+          <div className="flex flex-wrap gap-4 items-end">
+            <div className="flex-1 min-w-[200px]">
               <Input
                 placeholder="請求書番号、顧客名で検索..."
                 value={searchQuery}
@@ -463,6 +544,115 @@ export default function InvoicesPage() {
                 <SelectItem value="cancelled">キャンセル</SelectItem>
               </SelectContent>
             </Select>
+
+            {/* 日付フィルター */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={dateFrom || dateTo ? 'default' : 'outline'}
+                  className="w-[180px] justify-start"
+                >
+                  <Calendar className="mr-2 h-4 w-4" />
+                  {getDateFilterLabel()}
+                  {(dateFrom || dateTo) && (
+                    <X
+                      className="ml-auto h-4 w-4 opacity-50 hover:opacity-100"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        clearDateFilter();
+                      }}
+                    />
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80 p-4" align="start">
+                <div className="space-y-4">
+                  <div className="font-medium text-sm">期間を選択</div>
+
+                  {/* プリセット選択 */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      variant={datePreset === 'today' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => handleDatePresetChange('today')}
+                    >
+                      今日
+                    </Button>
+                    <Button
+                      variant={datePreset === 'last7days' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => handleDatePresetChange('last7days')}
+                    >
+                      過去7日
+                    </Button>
+                    <Button
+                      variant={datePreset === 'last30days' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => handleDatePresetChange('last30days')}
+                    >
+                      過去30日
+                    </Button>
+                    <Button
+                      variant={datePreset === 'thisMonth' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => handleDatePresetChange('thisMonth')}
+                    >
+                      今月
+                    </Button>
+                    <Button
+                      variant={datePreset === 'lastMonth' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => handleDatePresetChange('lastMonth')}
+                    >
+                      先月
+                    </Button>
+                    <Button
+                      variant={datePreset === 'thisYear' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => handleDatePresetChange('thisYear')}
+                    >
+                      今年
+                    </Button>
+                  </div>
+
+                  <div className="border-t pt-4">
+                    <div className="font-medium text-sm mb-2">カスタム期間</div>
+                    <div className="flex gap-2 items-center">
+                      <Input
+                        type="date"
+                        value={dateFrom}
+                        onChange={(e) => {
+                          setDateFrom(e.target.value);
+                          setDatePreset('custom');
+                        }}
+                        className="flex-1"
+                      />
+                      <span className="text-gray-500">〜</span>
+                      <Input
+                        type="date"
+                        value={dateTo}
+                        onChange={(e) => {
+                          setDateTo(e.target.value);
+                          setDatePreset('custom');
+                        }}
+                        className="flex-1"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between pt-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={clearDateFilter}
+                    >
+                      クリア
+                    </Button>
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+
             <Button
               variant={aiOnlyFilter ? 'default' : 'outline'}
               onClick={() => setAiOnlyFilter(!aiOnlyFilter)}
@@ -475,6 +665,63 @@ export default function InvoicesPage() {
               検索
             </Button>
           </div>
+
+          {/* アクティブフィルター表示 */}
+          {(statusFilter !== 'all' || dateFrom || dateTo || aiOnlyFilter) && (
+            <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t">
+              <span className="text-sm text-gray-500">フィルター:</span>
+              {statusFilter !== 'all' && (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  ステータス: {
+                    {
+                      'draft': '下書き',
+                      'sent': '送信済み',
+                      'viewed': '開封済み',
+                      'unpaid': '未払い',
+                      'paid': '支払済み',
+                      'partially_paid': '一部支払済み',
+                      'overdue': '期限超過',
+                      'cancelled': 'キャンセル'
+                    }[statusFilter]
+                  }
+                  <X
+                    className="h-3 w-3 cursor-pointer"
+                    onClick={() => setStatusFilter('all')}
+                  />
+                </Badge>
+              )}
+              {(dateFrom || dateTo) && (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  期間: {getDateFilterLabel()}
+                  <X
+                    className="h-3 w-3 cursor-pointer"
+                    onClick={clearDateFilter}
+                  />
+                </Badge>
+              )}
+              {aiOnlyFilter && (
+                <Badge variant="secondary" className="flex items-center gap-1">
+                  AI作成のみ
+                  <X
+                    className="h-3 w-3 cursor-pointer"
+                    onClick={() => setAiOnlyFilter(false)}
+                  />
+                </Badge>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 px-2 text-xs"
+                onClick={() => {
+                  setStatusFilter('all');
+                  clearDateFilter();
+                  setAiOnlyFilter(false);
+                }}
+              >
+                すべてクリア
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
 
