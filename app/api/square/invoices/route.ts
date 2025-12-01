@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
 
     // locationId が省略された場合、デフォルトロケーションを自動取得
     if (!locationId) {
-      const locations = await squareService.listSquareLocations();
+      const locations = await squareService.listLocations();
       if (locations.length === 0) {
         return NextResponse.json({
           success: false,
