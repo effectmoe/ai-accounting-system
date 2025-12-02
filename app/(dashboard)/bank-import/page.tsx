@@ -1,34 +1,52 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { 
-  Upload, 
-  FileText, 
-  CheckCircle2, 
-  AlertCircle, 
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Upload,
+  FileText,
+  CheckCircle2,
+  AlertCircle,
   Loader2,
   ArrowRight,
   DollarSign,
   TrendingUp,
   TrendingDown,
-  Search
+  Search,
+  FileSpreadsheet,
+  Building2,
+  Landmark,
+  Copy,
+  Save,
+  AlertTriangle,
+  History,
+  Download
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { logger } from '@/lib/logger';
+
+interface BankOption {
+  type: string;
+  code: string;
+  name: string;
+  nameEn: string;
+}
 
 interface MatchResult {
   date: string;
   content: string;
   amount: number;
   customerName?: string;
+  referenceNumber?: string;
   matchedInvoice?: {
     _id: string;
     invoiceNumber: string;
@@ -40,6 +58,35 @@ interface MatchResult {
   matchReason?: string;
 }
 
+interface AccountInfo {
+  BANKID?: string;
+  ACCTID?: string;
+  ACCTTYPE?: string;
+}
+
+interface DuplicateTransaction {
+  date: string;
+  content: string;
+  amount: number;
+  existingImportDate?: string;
+  existingFileName?: string;
+}
+
+interface DuplicateCheckResult {
+  totalChecked: number;
+  duplicateCount: number;
+  newTransactionCount: number;
+  duplicateTransactions: DuplicateTransaction[];
+}
+
+interface TransactionImportResult {
+  success: boolean;
+  created: number;
+  skipped: number;
+  duplicates: number;
+  errors: string[];
+}
+
 export default function BankImportPage() {
   const router = useRouter();
   const [file, setFile] = useState<File | null>(null);
@@ -48,11 +95,37 @@ export default function BankImportPage() {
   const [autoMatch, setAutoMatch] = useState(true);
   const [autoConfirm, setAutoConfirm] = useState(false);
   const [onlyHighConfidence, setOnlyHighConfidence] = useState(true);
-  
+  const [saveTransactions, setSaveTransactions] = useState(false);
+  const [skipDuplicates, setSkipDuplicates] = useState(true);
+
   const [parseResult, setParseResult] = useState<any>(null);
   const [matchResults, setMatchResults] = useState<MatchResult[]>([]);
   const [importResult, setImportResult] = useState<any>(null);
   const [errors, setErrors] = useState<string[]>([]);
+  const [fileType, setFileType] = useState<'csv' | 'ofx' | null>(null);
+  const [accountInfo, setAccountInfo] = useState<AccountInfo | null>(null);
+  const [bankType, setBankType] = useState<string>('auto');
+  const [banks, setBanks] = useState<BankOption[]>([]);
+  const [detectedBank, setDetectedBank] = useState<{ type: string; name: string } | null>(null);
+  const [duplicateCheck, setDuplicateCheck] = useState<DuplicateCheckResult | null>(null);
+  const [transactionImportResult, setTransactionImportResult] = useState<TransactionImportResult | null>(null);
+  const [importId, setImportId] = useState<string | null>(null);
+
+  // 対応銀行一覧を取得
+  useEffect(() => {
+    const fetchBanks = async () => {
+      try {
+        const response = await fetch('/api/bank-import/banks');
+        const data = await response.json();
+        if (data.success) {
+          setBanks(data.banks);
+        }
+      } catch (error) {
+        logger.error('Failed to fetch banks', error);
+      }
+    };
+    fetchBanks();
+  }, []);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -67,12 +140,21 @@ export default function BankImportPage() {
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    
+
     const droppedFile = e.dataTransfer.files[0];
-    if (droppedFile && droppedFile.type === 'text/csv') {
+    const fileName = droppedFile?.name.toLowerCase() || '';
+    const isValidFile = droppedFile && (
+      droppedFile.type === 'text/csv' ||
+      fileName.endsWith('.csv') ||
+      fileName.endsWith('.ofx') ||
+      fileName.endsWith('.qfx')
+    );
+
+    if (isValidFile) {
       setFile(droppedFile);
+      setErrors([]);
     } else {
-      setErrors(['CSVファイルを選択してください']);
+      setErrors(['CSVまたはOFXファイルを選択してください']);
     }
   }, []);
 
@@ -89,15 +171,25 @@ export default function BankImportPage() {
 
     setIsUploading(true);
     setErrors([]);
-    
+    setFileType(null);
+    setAccountInfo(null);
+    setDetectedBank(null);
+    setDuplicateCheck(null);
+    setTransactionImportResult(null);
+    setImportId(null);
+
     try {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('autoMatch', autoMatch.toString());
       formData.append('autoConfirm', autoConfirm.toString());
       formData.append('onlyHighConfidence', onlyHighConfidence.toString());
+      formData.append('bankType', bankType);
+      formData.append('saveTransactions', saveTransactions.toString());
+      formData.append('skipDuplicates', skipDuplicates.toString());
 
-      const response = await fetch('/api/bank-import/csv', {
+      // 統合エンドポイントを使用（CSV/OFX自動判定）
+      const response = await fetch('/api/bank-import', {
         method: 'POST',
         body: formData,
       });
@@ -105,21 +197,47 @@ export default function BankImportPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'CSVインポートに失敗しました');
+        throw new Error(data.error || 'ファイルインポートに失敗しました');
       }
 
       setParseResult(data.parseResult);
       setMatchResults(data.matchResults || []);
       setImportResult(data.importResult);
-      
+      setFileType(data.fileType);
+
+      // 検出された銀行情報を設定
+      if (data.detectedBank && data.bankInfo) {
+        setDetectedBank({ type: data.detectedBank, name: data.bankInfo.name });
+      }
+
+      // OFXの場合、口座情報を設定
+      if (data.parseResult.accountInfo) {
+        setAccountInfo(data.parseResult.accountInfo);
+      }
+
+      // 重複チェック結果を設定
+      if (data.duplicateCheck) {
+        setDuplicateCheck(data.duplicateCheck);
+      }
+
+      // 取引インポート結果を設定
+      if (data.transactionImportResult) {
+        setTransactionImportResult(data.transactionImportResult);
+      }
+
+      // インポートIDを設定
+      if (data.importId) {
+        setImportId(data.importId);
+      }
+
       if (data.parseResult.errors?.length > 0) {
         setErrors(data.parseResult.errors);
       }
 
-      logger.info('CSV import successful', data);
+      logger.info('Bank import successful', { fileType: data.fileType, detectedBank: data.detectedBank, ...data });
     } catch (error) {
-      logger.error('CSV import error:', error);
-      setErrors([error instanceof Error ? error.message : 'CSVインポートに失敗しました']);
+      logger.error('Bank import error:', error);
+      setErrors([error instanceof Error ? error.message : 'ファイルインポートに失敗しました']);
     } finally {
       setIsUploading(false);
     }
@@ -138,17 +256,57 @@ export default function BankImportPage() {
 
   return (
     <div className="container mx-auto p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold">銀行取引インポート</h1>
-        <p className="text-gray-600 mt-2">住信SBIネット銀行のCSVファイルから入金データを取り込みます</p>
+      <div className="mb-6 flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">銀行取引インポート</h1>
+          <p className="text-gray-600 mt-2">
+            銀行のCSVまたはOFXファイルから入金データを取り込みます
+          </p>
+          <div className="mt-2 flex gap-2">
+            <Badge variant="outline" className="text-xs">
+              <FileSpreadsheet className="w-3 h-3 mr-1" />
+              CSV対応
+            </Badge>
+            <Badge variant="outline" className="text-xs">
+              <FileText className="w-3 h-3 mr-1" />
+              OFX/QFX対応
+            </Badge>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <Link href="/bank-import/matching">
+            <Button variant="outline">
+              <Search className="h-4 w-4 mr-2" />
+              手動マッチング
+            </Button>
+          </Link>
+          <Link href="/bank-import/scheduled">
+            <Button variant="outline">
+              <ArrowRight className="h-4 w-4 mr-2" />
+              定期インポート
+            </Button>
+          </Link>
+          <Link href="/bank-import/history">
+            <Button variant="outline">
+              <History className="h-4 w-4 mr-2" />
+              インポート履歴
+            </Button>
+          </Link>
+          <Link href="/bank-import/export">
+            <Button variant="outline">
+              <Download className="h-4 w-4 mr-2" />
+              エクスポート
+            </Button>
+          </Link>
+        </div>
       </div>
 
       {/* アップロードエリア */}
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle>CSVファイルのアップロード</CardTitle>
+          <CardTitle>銀行データファイルのアップロード</CardTitle>
           <CardDescription>
-            住信SBIネット銀行からダウンロードした入出金明細CSVファイルを選択してください
+            住信SBIネット銀行からダウンロードした入出金明細ファイル（CSV/OFX/QFX）を選択してください
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -189,17 +347,80 @@ export default function BankImportPage() {
                 <input
                   id="file-upload"
                   type="file"
-                  accept=".csv"
+                  accept=".csv,.ofx,.qfx"
                   className="hidden"
                   onChange={handleFileSelect}
                 />
+                <p className="text-xs text-gray-500 mt-2">
+                  対応形式: CSV, OFX, QFX
+                </p>
               </div>
             )}
           </div>
 
+          {/* 銀行選択 */}
+          <div className="mt-6">
+            <label className="text-sm font-medium mb-2 block">
+              <Landmark className="inline-block w-4 h-4 mr-1" />
+              銀行を選択（CSVの場合）
+            </label>
+            <Select value={bankType} onValueChange={setBankType}>
+              <SelectTrigger className="w-full md:w-[300px]">
+                <SelectValue placeholder="銀行を選択..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="auto">自動判定</SelectItem>
+                {banks.map((bank) => (
+                  <SelectItem key={bank.type} value={bank.type}>
+                    {bank.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-gray-500 mt-1">
+              CSVファイルの場合、銀行を選択するか「自動判定」で自動検出します
+            </p>
+          </div>
+
           {/* オプション */}
           <div className="mt-6 space-y-3">
+            <p className="text-sm font-medium text-gray-700">インポートオプション</p>
+
+            {/* 取引保存オプション */}
             <div className="flex items-center space-x-2">
+              <Checkbox
+                id="saveTransactions"
+                checked={saveTransactions}
+                onCheckedChange={(checked) => setSaveTransactions(checked as boolean)}
+              />
+              <label
+                htmlFor="saveTransactions"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                <Save className="inline-block w-4 h-4 mr-1" />
+                取引をデータベースに保存
+              </label>
+            </div>
+
+            {saveTransactions && (
+              <div className="flex items-center space-x-2 ml-6">
+                <Checkbox
+                  id="skipDuplicates"
+                  checked={skipDuplicates}
+                  onCheckedChange={(checked) => setSkipDuplicates(checked as boolean)}
+                />
+                <label
+                  htmlFor="skipDuplicates"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  <Copy className="inline-block w-4 h-4 mr-1" />
+                  重複する取引をスキップ
+                </label>
+              </div>
+            )}
+
+            {/* マッチングオプション */}
+            <div className="flex items-center space-x-2 mt-4">
               <Checkbox
                 id="autoMatch"
                 checked={autoMatch}
@@ -212,7 +433,7 @@ export default function BankImportPage() {
                 請求書と自動マッチング
               </label>
             </div>
-            
+
             {autoMatch && (
               <>
                 <div className="flex items-center space-x-2 ml-6">
@@ -228,7 +449,7 @@ export default function BankImportPage() {
                     マッチした入金を自動確認
                   </label>
                 </div>
-                
+
                 {autoConfirm && (
                   <div className="flex items-center space-x-2 ml-12">
                     <Checkbox
@@ -289,7 +510,28 @@ export default function BankImportPage() {
       {parseResult && (
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>インポート結果</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              インポート結果
+              {fileType && (
+                <Badge variant="secondary" className="ml-2">
+                  {fileType.toUpperCase()}
+                </Badge>
+              )}
+              {detectedBank && (
+                <Badge variant="outline" className="ml-2">
+                  <Landmark className="h-3 w-3 mr-1" />
+                  {detectedBank.name}
+                </Badge>
+              )}
+            </CardTitle>
+            {accountInfo && (
+              <CardDescription className="flex items-center gap-2 mt-2">
+                <Building2 className="h-4 w-4" />
+                口座: {accountInfo.BANKID && `銀行コード ${accountInfo.BANKID}`}
+                {accountInfo.ACCTID && ` / 口座番号 ****${accountInfo.ACCTID.slice(-4)}`}
+                {accountInfo.ACCTTYPE && ` (${accountInfo.ACCTTYPE})`}
+              </CardDescription>
+            )}
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -342,6 +584,127 @@ export default function BankImportPage() {
                 </div>
               )}
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* 重複チェック結果 */}
+      {duplicateCheck && (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Copy className="h-5 w-5" />
+              重複チェック結果
+            </CardTitle>
+            <CardDescription>
+              インポート済みの取引との重複チェック結果
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">チェック件数</span>
+                  <Search className="h-4 w-4 text-gray-400" />
+                </div>
+                <p className="text-2xl font-bold mt-2">{duplicateCheck.totalChecked}</p>
+              </div>
+
+              <div className="bg-yellow-50 p-4 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">重複</span>
+                  <AlertTriangle className="h-4 w-4 text-yellow-600" />
+                </div>
+                <p className="text-2xl font-bold mt-2 text-yellow-600">
+                  {duplicateCheck.duplicateCount}
+                </p>
+              </div>
+
+              <div className="bg-green-50 p-4 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">新規取引</span>
+                  <CheckCircle2 className="h-4 w-4 text-green-600" />
+                </div>
+                <p className="text-2xl font-bold mt-2 text-green-600">
+                  {duplicateCheck.newTransactionCount}
+                </p>
+              </div>
+            </div>
+
+            {/* 重複取引のリスト */}
+            {duplicateCheck.duplicateTransactions.length > 0 && (
+              <div className="mt-4">
+                <p className="text-sm font-medium text-gray-700 mb-2">重複取引一覧</p>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>日付</TableHead>
+                      <TableHead>取引内容</TableHead>
+                      <TableHead className="text-right">金額</TableHead>
+                      <TableHead>既存インポート日</TableHead>
+                      <TableHead>ファイル名</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {duplicateCheck.duplicateTransactions.map((dup, index) => (
+                      <TableRow key={index} className="bg-yellow-50/50">
+                        <TableCell>
+                          {dup.date ? format(new Date(dup.date), 'yyyy/MM/dd', { locale: ja }) : '—'}
+                        </TableCell>
+                        <TableCell className="max-w-[200px] truncate">
+                          {dup.content}
+                        </TableCell>
+                        <TableCell className="text-right font-medium">
+                          ¥{dup.amount?.toLocaleString() || 0}
+                        </TableCell>
+                        <TableCell className="text-sm text-gray-600">
+                          {dup.existingImportDate
+                            ? format(new Date(dup.existingImportDate), 'yyyy/MM/dd HH:mm', { locale: ja })
+                            : '—'}
+                        </TableCell>
+                        <TableCell className="text-sm text-gray-600">
+                          {dup.existingFileName || '—'}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                {duplicateCheck.duplicateCount > 10 && (
+                  <p className="text-sm text-gray-500 mt-2">
+                    ※ 他 {duplicateCheck.duplicateCount - 10} 件の重複があります
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* 取引インポート結果 */}
+            {transactionImportResult && (
+              <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+                <p className="text-sm font-medium text-blue-800 mb-2">
+                  <Save className="inline-block h-4 w-4 mr-1" />
+                  データベース保存結果
+                </p>
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div>
+                    <p className="text-lg font-bold text-blue-600">{transactionImportResult.created}</p>
+                    <p className="text-xs text-gray-600">新規保存</p>
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold text-yellow-600">{transactionImportResult.skipped}</p>
+                    <p className="text-xs text-gray-600">スキップ</p>
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold text-orange-600">{transactionImportResult.duplicates}</p>
+                    <p className="text-xs text-gray-600">重複</p>
+                  </div>
+                </div>
+                {transactionImportResult.errors.length > 0 && (
+                  <div className="mt-2 text-sm text-red-600">
+                    エラー: {transactionImportResult.errors.join(', ')}
+                  </div>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
