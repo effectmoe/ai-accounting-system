@@ -68,3 +68,55 @@ export interface CSVImportRequest {
   autoMatch?: boolean;
   confirmAll?: boolean;
 }
+
+/**
+ * OFXファイルのトランザクション要素
+ */
+export interface OFXTransaction {
+  TRNTYPE: string;    // 取引種別 (CREDIT, DEBIT, etc.)
+  DTPOSTED: string;   // 日付 (YYYYMMDDHHMMSS)
+  TRNAMT: string;     // 金額
+  FITID: string;      // 取引ID
+  NAME?: string;      // 振込人名/摘要
+  MEMO?: string;      // メモ
+}
+
+/**
+ * OFXファイルの口座情報
+ */
+export interface OFXAccountInfo {
+  BANKID?: string;    // 銀行コード
+  ACCTID?: string;    // 口座番号
+  ACCTTYPE?: string;  // 口座種別
+}
+
+/**
+ * OFXインポート結果
+ */
+export interface OFXImportResult {
+  success: boolean;
+  transactions: BankTransaction[];
+  errors: string[];
+  totalCount: number;
+  depositCount: number;
+  withdrawalCount: number;
+  totalDepositAmount: number;
+  totalWithdrawalAmount: number;
+  accountInfo?: OFXAccountInfo;
+}
+
+/**
+ * 銀行インポート結果（CSV/OFX共通）
+ */
+export interface BankImportResult {
+  success: boolean;
+  transactions: BankTransaction[];
+  errors: string[];
+  totalCount: number;
+  depositCount: number;
+  withdrawalCount: number;
+  totalDepositAmount: number;
+  totalWithdrawalAmount: number;
+  fileType: 'csv' | 'ofx';
+  accountInfo?: OFXAccountInfo;
+}
