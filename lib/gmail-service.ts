@@ -313,11 +313,12 @@ export async function sendQuoteEmail(
       response: info.response,
     });
 
-    // イベント記録
+    // イベント記録（Cloudflare Workers経由）
     await recordEmailEvent({
       messageId: info.messageId || '',
       quoteId: quote._id?.toString() || '',
       recipientEmail,
+      subject: htmlQuoteResult.subject,
       trackingId: htmlQuoteResult.trackingId,
       sentAt: new Date().toISOString(),
     });
@@ -752,26 +753,68 @@ export async function sendBatchQuoteEmails(
 }
 
 /**
- * メール送信イベントを記録
+ * メール送信イベントを記録（Cloudflare Workers経由）
  */
 async function recordEmailEvent(event: {
   messageId: string;
-  quoteId: string;
+  quoteId?: string;
+  invoiceId?: string;
+  deliveryNoteId?: string;
+  receiptId?: string;
   recipientEmail: string;
+  senderEmail?: string;
+  subject?: string;
   trackingId?: string;
   sentAt: string;
 }) {
   try {
-    logger.info('Email event recorded:', {
-      messageId: event.messageId,
-      quoteId: event.quoteId,
-      recipientEmail: event.recipientEmail,
-      trackingId: event.trackingId,
-      sentAt: event.sentAt
+    const trackingWorkerUrl = process.env.TRACKING_WORKER_URL;
+
+    if (!trackingWorkerUrl) {
+      logger.warn('TRACKING_WORKER_URL not configured - skipping remote tracking');
+      logger.info('Email event recorded locally:', {
+        messageId: event.messageId,
+        quoteId: event.quoteId,
+        recipientEmail: event.recipientEmail,
+        trackingId: event.trackingId,
+        sentAt: event.sentAt
+      });
+      return;
+    }
+
+    // Cloudflare Workers に送信記録を登録
+    const response = await fetch(`${trackingWorkerUrl}/record`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        trackingId: event.trackingId,
+        messageId: event.messageId,
+        quoteId: event.quoteId,
+        invoiceId: event.invoiceId,
+        deliveryNoteId: event.deliveryNoteId,
+        receiptId: event.receiptId,
+        recipientEmail: event.recipientEmail,
+        senderEmail: event.senderEmail || GMAIL_USER,
+        subject: event.subject,
+      }),
     });
 
-    // TODO: Cloudflare D1への記録はPhase 4で実装
-
+    if (!response.ok) {
+      const errorText = await response.text();
+      logger.error('Failed to record email event to Cloudflare:', {
+        status: response.status,
+        error: errorText,
+      });
+    } else {
+      const result = await response.json();
+      logger.info('Email event recorded to Cloudflare:', {
+        id: result.id,
+        trackingId: event.trackingId,
+        recipientEmail: event.recipientEmail,
+      });
+    }
   } catch (error) {
     logger.error('Error recording email event:', { error });
   }
@@ -793,31 +836,91 @@ export function getGmailConfigStatus(): {
 }
 
 /**
- * メール送信統計を取得
- * TODO: Cloudflare D1から取得するようPhase 4で実装
+ * メール送信統計を取得（Cloudflare Workers経由）
  */
-export async function getEmailStats(quoteId: string) {
+export async function getEmailStats(options: {
+  quoteId?: string;
+  invoiceId?: string;
+  trackingId?: string;
+}): Promise<{
+  sent: number;
+  opened: number;
+  clicked: number;
+  lastOpenedAt?: string;
+  lastClickedAt?: string;
+  deviceBreakdown: { device_type: string; count: number }[];
+  clientBreakdown: { email_client: string; count: number }[];
+}> {
   try {
-    // TODO: Cloudflare D1 APIから統計を取得
-    logger.info(`Fetching email stats for quote: ${quoteId}`);
+    const trackingWorkerUrl = process.env.TRACKING_WORKER_URL;
+
+    if (!trackingWorkerUrl) {
+      logger.warn('TRACKING_WORKER_URL not configured - returning empty stats');
+      return {
+        sent: 0,
+        opened: 0,
+        clicked: 0,
+        deviceBreakdown: [],
+        clientBreakdown: [],
+      };
+    }
+
+    // クエリパラメータを構築
+    const params = new URLSearchParams();
+    if (options.quoteId) params.set('quoteId', options.quoteId);
+    if (options.invoiceId) params.set('invoiceId', options.invoiceId);
+    if (options.trackingId) params.set('id', options.trackingId);
+
+    const response = await fetch(`${trackingWorkerUrl}/stats?${params.toString()}`);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      logger.error('Failed to fetch email stats from Cloudflare:', {
+        status: response.status,
+        error: errorText,
+      });
+      return {
+        sent: 0,
+        opened: 0,
+        clicked: 0,
+        deviceBreakdown: [],
+        clientBreakdown: [],
+      };
+    }
+
+    const data = await response.json() as {
+      sendRecord?: {
+        open_count: number;
+        click_count: number;
+        last_opened_at?: string;
+        last_clicked_at?: string;
+      };
+      events: { event_type: string; count: number }[];
+      deviceBreakdown: { device_type: string; count: number }[];
+      clientBreakdown: { email_client: string; count: number }[];
+    };
+
+    // イベントから統計を抽出
+    const openEvent = data.events.find(e => e.event_type === 'open');
+    const clickEvent = data.events.find(e => e.event_type === 'click');
 
     return {
-      sent: 0,
-      delivered: 0,
-      opened: 0,
-      clicked: 0,
-      bounced: 0,
-      complained: 0,
+      sent: data.sendRecord ? 1 : 0,
+      opened: data.sendRecord?.open_count || openEvent?.count || 0,
+      clicked: data.sendRecord?.click_count || clickEvent?.count || 0,
+      lastOpenedAt: data.sendRecord?.last_opened_at,
+      lastClickedAt: data.sendRecord?.last_clicked_at,
+      deviceBreakdown: data.deviceBreakdown || [],
+      clientBreakdown: data.clientBreakdown || [],
     };
   } catch (error) {
     logger.error('Error fetching email stats:', { error });
     return {
       sent: 0,
-      delivered: 0,
       opened: 0,
       clicked: 0,
-      bounced: 0,
-      complained: 0,
+      deviceBreakdown: [],
+      clientBreakdown: [],
     };
   }
 }
