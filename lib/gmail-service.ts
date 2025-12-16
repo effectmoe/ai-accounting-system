@@ -13,16 +13,16 @@ import { Quote, CompanyInfo } from '@/types/collections';
 
 // 環境変数
 const {
-  GOOGLE_CLIENT_ID,
-  GOOGLE_CLIENT_SECRET,
+  GMAIL_CLIENT_ID,
+  GMAIL_CLIENT_SECRET,
   GMAIL_REFRESH_TOKEN,
   GMAIL_USER // info@effect.moe
 } = process.env;
 
 // Gmail設定の検証
 const missingCredentials: string[] = [];
-if (!GOOGLE_CLIENT_ID) missingCredentials.push('GOOGLE_CLIENT_ID is not set');
-if (!GOOGLE_CLIENT_SECRET) missingCredentials.push('GOOGLE_CLIENT_SECRET is not set');
+if (!GMAIL_CLIENT_ID) missingCredentials.push('GMAIL_CLIENT_ID is not set');
+if (!GMAIL_CLIENT_SECRET) missingCredentials.push('GMAIL_CLIENT_SECRET is not set');
 if (!GMAIL_REFRESH_TOKEN) missingCredentials.push('GMAIL_REFRESH_TOKEN is not set');
 if (!GMAIL_USER) missingCredentials.push('GMAIL_USER is not set');
 
@@ -107,8 +107,8 @@ export interface SendReceiptEmailOptions {
  */
 function createOAuth2Client(): OAuth2Client {
   const oauth2Client = new OAuth2Client(
-    GOOGLE_CLIENT_ID,
-    GOOGLE_CLIENT_SECRET,
+    GMAIL_CLIENT_ID,
+    GMAIL_CLIENT_SECRET,
     'https://developers.google.com/oauthplayground'
   );
 
@@ -132,8 +132,8 @@ async function createTransporter(): Promise<nodemailer.Transporter> {
       auth: {
         type: 'OAuth2',
         user: GMAIL_USER,
-        clientId: GOOGLE_CLIENT_ID,
-        clientSecret: GOOGLE_CLIENT_SECRET,
+        clientId: GMAIL_CLIENT_ID,
+        clientSecret: GMAIL_CLIENT_SECRET,
         refreshToken: GMAIL_REFRESH_TOKEN,
         accessToken: accessToken.token || undefined
       }
@@ -230,7 +230,7 @@ export async function sendQuoteEmail(
     // Gmail設定のログ
     logger.info('Gmail configuration', {
       isConfigured: isGmailConfigured,
-      hasClientId: !!GOOGLE_CLIENT_ID,
+      hasClientId: !!GMAIL_CLIENT_ID,
       hasRefreshToken: !!GMAIL_REFRESH_TOKEN,
       gmailUser: GMAIL_USER,
       recipientEmail,
