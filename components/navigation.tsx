@@ -79,6 +79,7 @@ const Navigation = () => {
         { href: '/faq', label: 'FAQ' },
         { href: '/settings', label: '設定' },
         { href: '/settings/email-templates', label: 'メールテンプレート' },
+        { href: '/settings/square', label: 'Square連携' },
       ]
     }
   ];

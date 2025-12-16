@@ -453,6 +453,15 @@ export default function SettingsPage() {
                 おすすめオプション
               </div>
             </button>
+            <button
+              onClick={() => router.push('/settings/square')}
+              className="py-2 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium text-sm"
+            >
+              <div className="flex items-center gap-2">
+                <CreditCard className="w-4 h-4" />
+                Square連携
+              </div>
+            </button>
           </nav>
         </div>
 
