@@ -92,6 +92,7 @@ export async function generateHtmlQuote(
     });
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://accounting-automation.vercel.app';
+    const trackingWorkerUrl = process.env.TRACKING_WORKER_URL;
     const trackingId = includeTracking ? generateTrackingId() : undefined;
 
     // ツールチップが提供されていない場合はデフォルトを生成
@@ -120,8 +121,11 @@ export async function generateHtmlQuote(
     const acceptUrl = customAcceptUrl || `${baseUrl}/quotes/accept/${quote._id}?t=${trackingId}`;
     const considerUrl = customConsiderUrl || `${baseUrl}/quotes/consider/${quote._id}?t=${trackingId}`;
     const discussUrl = customDiscussUrl || `${baseUrl}/quotes/discuss/${quote._id}?t=${trackingId}`;
+    // Cloudflare Workers URLが設定されていればそちらを使用、なければローカルAPIにフォールバック
     const trackingPixelUrl = includeTracking
-      ? `${baseUrl}/api/tracking/open?id=${trackingId}&doc=quote&qid=${quote._id}`
+      ? trackingWorkerUrl
+        ? `${trackingWorkerUrl}/pixel?id=${trackingId}`
+        : `${baseUrl}/api/tracking/open?id=${trackingId}&doc=quote&qid=${quote._id}`
       : undefined;
 
     // HTML生成 - レイアウトに応じてテンプレートを選択
@@ -822,9 +826,15 @@ export async function generateSimpleHtmlQuote({
   
   // ベースURL
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://accounting-automation.vercel.app';
-  
+  const trackingWorkerUrl = process.env.TRACKING_WORKER_URL;
+
   // トラッキングID生成
   const trackingId = `qt_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+
+  // トラッキングピクセルURL（Cloudflare Workersを優先）
+  const trackingPixelUrl = trackingWorkerUrl
+    ? `${trackingWorkerUrl}/pixel?id=${trackingId}`
+    : `${baseUrl}/api/tracking/open?id=${trackingId}&doc=quote&qid=${quote._id}`;
   
   // CTA URLs
   const viewOnlineUrl = `${baseUrl}/quotes/view/${quote._id}?t=${trackingId}`;
@@ -1143,7 +1153,7 @@ export async function generateSimpleHtmlQuote({
   </table>
   
   <!-- トラッキングピクセル -->
-  <img src="${baseUrl}/api/tracking/open?id=${trackingId}&doc=quote&qid=${quote._id}" width="1" height="1" style="display: none;" alt="" />
+  <img src="${trackingPixelUrl}" width="1" height="1" style="display: none;" alt="" />
 </body>
 </html>
   `.trim();
