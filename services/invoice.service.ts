@@ -76,8 +76,17 @@ export class InvoiceService {
         ];
 
         // マッチした顧客がいる場合、その顧客IDも検索条件に追加
+        // customerId は ObjectId 型と String 型の両方で検索（DBの保存形式に対応）
         if (matchingCustomerIds.length > 0) {
-          searchConditions.push({ customerId: { $in: matchingCustomerIds } });
+          const customerIdStrings = matchingCustomerIds.map(id => id?.toString()).filter(Boolean);
+          searchConditions.push({
+            customerId: {
+              $in: [
+                ...matchingCustomerIds,  // ObjectId型
+                ...customerIdStrings      // String型
+              ]
+            }
+          });
         }
 
         filter.$or = searchConditions;
