@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { sendQuoteEmail } from '@/lib/resend-service';
+import { sendQuoteEmail } from '@/lib/gmail-service';
 import { logger } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
