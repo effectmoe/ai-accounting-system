@@ -1,4 +1,10 @@
 {
+  "crons": [
+    {
+      "path": "/api/cron/email-resend",
+      "schedule": "0 9 * * *"
+    }
+  ],
   "buildCommand": "npm run build",
   "outputDirectory": ".next",
   "devCommand": "npm run dev",
@@ -69,6 +75,12 @@
     },
     "app/api/test-refactor/route.ts": {
       "maxDuration": 60
+    },
+    "app/api/cron/email-resend/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/email-resend/route.ts": {
+      "maxDuration": 30
     }
   },
   "public": true,
