@@ -6,10 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import AIChatDialog from '@/components/ai-chat-dialog';
 import SimpleKnowledgeDialog from '@/components/simple-knowledge-dialog';
-import { 
-  Plus, 
-  FileText, 
-  Users, 
+import {
+  Plus,
+  FileText,
+  Users,
   Upload,
   BarChart3,
   TrendingUp,
@@ -26,7 +26,8 @@ import {
   BookOpen,
   HelpCircle,
   Database,
-  BookOpenCheck
+  BookOpenCheck,
+  Mail
 } from 'lucide-react';
 
 const quickActions = [
@@ -120,6 +121,14 @@ const quickActions = [
     href: '/purchase-invoices',
     icon: Receipt,
     color: 'from-green-500 to-green-600',
+    badge: '新機能'
+  },
+  {
+    title: 'メール分析',
+    description: 'メール開封率・クリック率の分析',
+    href: '/analytics/email',
+    icon: Mail,
+    color: 'from-pink-500 to-pink-600',
     badge: '新機能'
   }
 ];
