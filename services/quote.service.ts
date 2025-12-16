@@ -56,15 +56,32 @@ export class QuoteService {
         filter.isGeneratedByAI = params.isGeneratedByAI;
       }
 
-      // 検索クエリ（見積書番号、顧客名で検索）
+      // 検索クエリ（見積書番号、タイトル、顧客名で検索）
       if (params.search) {
         const searchRegex = { $regex: params.search, $options: 'i' };
-        filter.$or = [
+
+        // 顧客名で検索する場合、まず顧客を検索してIDを取得
+        const matchingCustomers = await db.find<Customer>(Collections.CUSTOMERS, {
+          $or: [
+            { companyName: searchRegex },
+            { companyNameKana: searchRegex },
+            { 'contacts.name': searchRegex },
+          ]
+        });
+        const matchingCustomerIds = matchingCustomers.map(c => c._id);
+
+        // 見積書のフィールドまたは顧客IDで検索
+        const searchConditions: any[] = [
           { quoteNumber: searchRegex },
           { title: searchRegex },
-          { 'customerSnapshot.companyName': searchRegex },
-          { 'customerSnapshot.contactName': searchRegex },
         ];
+
+        // マッチした顧客がいる場合、その顧客IDも検索条件に追加
+        if (matchingCustomerIds.length > 0) {
+          searchConditions.push({ customerId: { $in: matchingCustomerIds } });
+        }
+
+        filter.$or = searchConditions;
       }
 
       const limit = params.limit || 20;
