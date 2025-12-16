@@ -471,7 +471,7 @@ export default function EmailTemplateManager({
                 placeholder="{{customerName}} 様&#10;&#10;お世話になっております..."
               />
               <p className="text-sm text-muted-foreground mt-1">
-                変数は {{`{{変数名}}`}} の形式で記述してください
+                変数は {'{{変数名}}'} の形式で記述してください
               </p>
             </div>
           </div>

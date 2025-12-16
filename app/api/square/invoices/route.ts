@@ -44,24 +44,24 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      invoices: invoices.map(inv => ({
+      invoices: invoices.map((inv: any) => ({
         id: inv.id,
-        invoiceNumber: inv.invoiceNumber,
+        invoiceNumber: inv.invoice_number,
         title: inv.title,
         status: inv.status,
-        createdAt: inv.createdAt,
-        updatedAt: inv.updatedAt,
-        scheduledAt: inv.scheduledAt,
-        orderId: inv.orderId,
-        primaryRecipient: inv.primaryRecipient,
-        paymentRequests: inv.paymentRequests?.map((pr: any) => ({
+        createdAt: inv.created_at,
+        updatedAt: inv.updated_at,
+        scheduledAt: inv.scheduled_at,
+        orderId: inv.order_id,
+        primaryRecipient: inv.primary_recipient,
+        paymentRequests: inv.payment_requests?.map((pr: any) => ({
           uid: pr.uid,
-          requestType: pr.requestType,
-          dueDate: pr.dueDate,
-          computedAmountMoney: pr.computedAmountMoney,
-          totalCompletedAmountMoney: pr.totalCompletedAmountMoney,
+          requestType: pr.request_type,
+          dueDate: pr.due_date,
+          computedAmountMoney: pr.computed_amount_money,
+          totalCompletedAmountMoney: pr.total_completed_amount_money,
         })),
-        publicUrl: inv.publicUrl,
+        publicUrl: inv.public_url,
       })),
       total: invoices.length,
     });

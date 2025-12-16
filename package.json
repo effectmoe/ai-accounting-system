@@ -165,6 +165,7 @@
     "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1",
     "sonner": "^1.7.3",
+    "square": "^43.2.1",
     "tailwind-merge": "^2.6.0",
     "tailwindcss": "^3.4.17",
     "tailwindcss-animate": "^1.0.7",

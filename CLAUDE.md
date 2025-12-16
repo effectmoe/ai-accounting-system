@@ -51,6 +51,7 @@ if (companyName && contactName) {
 | APIが検索クエリを無視する | APIルートで`search`パラメータを取得していない | `app/api/invoices/route.ts`と`app/api/quotes/route.ts`で`searchParams.get('search')`を追加 |
 | サービス層で検索が実行されない | `SearchParams`インターフェースに`search`フィールドがない | `services/invoice.service.ts`と`services/quote.service.ts`のインターフェースに`search?: string`を追加し、MongoDBの`$or`と正規表現で検索実装 |
 | 日付フィルターが効かない | useEffectの依存配列に`dateFrom`/`dateTo`が含まれていない | `useEffect`の依存配列に`dateFrom, dateTo`を追加 |
+| 🚨 顧客名で検索しても結果がヒットしない | MongoDBで`customerId`がObjectId型で保存されているが、検索時に文字列として比較している | ObjectId型とString型の両方で検索するように修正（下記参照） |
 
 **検索機能の3層実装パターン:**
 
@@ -97,8 +98,17 @@ if (params.search) {
   ];
 
   // マッチした顧客がいる場合、その顧客IDも検索条件に追加
+  // ⚠️ 重要: customerId は ObjectId 型と String 型の両方で検索が必要（DBの保存形式に対応）
   if (matchingCustomerIds.length > 0) {
-    searchConditions.push({ customerId: { $in: matchingCustomerIds } });
+    const customerIdStrings = matchingCustomerIds.map(id => id?.toString()).filter(Boolean);
+    searchConditions.push({
+      customerId: {
+        $in: [
+          ...matchingCustomerIds,  // ObjectId型
+          ...customerIdStrings      // String型
+        ]
+      }
+    });
   }
 
   filter.$or = searchConditions;
@@ -192,7 +202,7 @@ vercel
 
 ---
 
-**最終更新**: 2025-11-27
+**最終更新**: 2025-12-17
 
 ---
 
@@ -200,8 +210,36 @@ vercel
 
 | 日付 | タイトル | パス |
 |------|---------|------|
+| 2025-12-17 | 顧客名検索バグ修正レポート | （本セッションで修正、ObjectId/String型対応） |
+| 2025-12-03 | 銀行取引インポート機能実装レポート | `/Users/tonychustudio/Documents/alldocs/report/2025-12-03_AI会計システム_銀行取引インポート機能実装レポート.md` |
+| 2025-12-02 | Square同期エラー修正レポート | `/Users/tonychustudio/Documents/alldocs/report/2025-12-02_AI会計システム_Square同期エラー修正レポート.md` |
 | 2025-11-27 | フィルター機能実装レポート | `/Users/tonychustudio/Documents/alldocs/report/2025-11-27_AI会計システム_フィルター機能実装レポート.md` |
 | 2025-11-27 | PWA化実装レポート | `/Users/tonychustudio/Documents/alldocs/report/2025-11-27_AI会計システム_PWA化実装レポート.md` |
 | 2025-11-27 | PDF住所改行対応レポート | `/Users/tonychustudio/Documents/alldocs/report/2025-11-27_AI会計システム_PDF住所改行対応レポート.md` |
 | 2025-11-26 | 請求書画面バグ修正レポート | `/Users/tonychustudio/Documents/alldocs/report/2025-11-26_AI会計システム_請求書画面バグ修正レポート.md` |
 | 2025-11-26 | メール宛名改行問題修正レポート | `/Users/tonychustudio/Documents/alldocs/report/2025-11-26_AI会計システム_メール宛名改行問題修正レポート.md` |
+
+---
+
+## Claude Code Skills 連携
+
+このプロジェクトはClaude Code Skillsに登録されています。
+
+### スキルファイル
+`/Users/tonychustudio/.claude/skills/ai-accounting-system/SKILL.md`
+
+### トリガーフレーズ（省略文章で起動）
+以下のフレーズで自動的にこのプロジェクトのコンテキストが読み込まれます：
+
+| フレーズ | 説明 |
+|----------|------|
+| `会計システム` | AI会計システム全般 |
+| `AI会計` | プロジェクト名トリガー |
+| `請求書検索` | 請求書検索機能 |
+| `見積書PDF` | 見積書PDF生成 |
+| `accounting-automation` | Vercel本番URL |
+
+### 関連マニュアル
+| マニュアル | パス |
+|-----------|------|
+| Square API連携構築マニュアル | `/Users/tonychustudio/Documents/alldocs/tutorial/2025-12-02_AI会計システム_Square_API連携構築マニュアル.md` |
