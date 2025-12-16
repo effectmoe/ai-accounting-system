@@ -96,3 +96,7 @@ add-env-vars.sh
 
 # backup files
 *.tar.gz.env
+
+# Cloudflare Workers
+cloudflare-email-tracker/node_modules/
+cloudflare-email-tracker/.wrangler/
