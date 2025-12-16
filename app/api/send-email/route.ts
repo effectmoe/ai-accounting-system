@@ -6,6 +6,7 @@ import { generatePDFBase64 } from '@/lib/pdf-export';
 import { DocumentData } from '@/lib/document-generator';
 import { db } from '@/lib/mongodb-client';
 import { Customer } from '@/types/collections';
+import { sendGenericEmail, getGmailConfigStatus } from '@/lib/gmail-service';
 
 import { logger } from '@/lib/logger';
 // 日本語フォント処理のためにNode.js Runtimeを使用
@@ -24,29 +25,10 @@ interface EmailRequest {
   pdfBase64?: string; // クライアントで生成されたPDFのBase64データ
 }
 
-// Resendのインスタンスをグローバルに保持（遅延初期化）
-let resendInstance: any = null;
-
-// Resendの遅延初期化関数
-async function getResendInstance() {
-  if (!resendInstance) {
-    const resendApiKey = process.env.RESEND_API_KEY;
-    
-    if (!resendApiKey) {
-      throw new Error('RESEND_API_KEY is not configured');
-    }
-    
-    // 動的インポート
-    const { Resend } = await import('resend');
-    resendInstance = new Resend(resendApiKey);
-    
-    logger.debug('Resend initialized:', {
-      apiKeyExists: true,
-      apiKeyPrefix: resendApiKey.substring(0, 10)
-    });
-  }
-  
-  return resendInstance;
+// Gmail設定状態のログ出力
+const gmailConfig = getGmailConfigStatus();
+if (!gmailConfig.isConfigured) {
+  logger.warn('Gmail not fully configured:', gmailConfig.missingCredentials);
 }
 
 // 顧客のメール設定に基づいて送信先を取得するヘルパー関数
@@ -133,7 +115,7 @@ async function getEmailRecipients(customerId?: string): Promise<{ to: string[]; 
   }
 }
 
-// メール送信サービス
+// メール送信サービス（Gmail OAuth2版）
 async function sendEmail(options: {
   to: string;
   cc?: string;
@@ -147,76 +129,55 @@ async function sendEmail(options: {
   }>;
 }) {
   try {
-    logger.debug('Sending email via Resend:', {
+    logger.debug('Sending email via Gmail OAuth2:', {
       to: options.to,
       cc: options.cc,
       bcc: options.bcc,
       subject: options.subject,
       hasAttachments: !!options.attachments?.length,
-      apiKeyExists: !!process.env.RESEND_API_KEY,
     });
 
-    // Resendインスタンスを取得（遅延初期化）
-    const resend = await getResendInstance();
-
-    // Resendでメール送信
-    const fromAddress = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
     const fromName = process.env.EMAIL_FROM_NAME || '株式会社EFFECT';
 
-    // 環境変数デバッグ
-    logger.debug('Resend環境変数の確認:', {
-      RESEND_API_KEY_EXISTS: !!process.env.RESEND_API_KEY,
-      RESEND_API_KEY_PREFIX: process.env.RESEND_API_KEY?.substring(0, 10),
-      RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL,
-      EMAIL_FROM_NAME: process.env.EMAIL_FROM_NAME,
-      finalFromAddress: fromAddress,
+    // Gmail環境変数デバッグ
+    const gmailStatus = getGmailConfigStatus();
+    logger.debug('Gmail設定状態:', {
+      isConfigured: gmailStatus.isConfigured,
+      gmailUser: gmailStatus.gmailUser,
+      missingCredentials: gmailStatus.missingCredentials,
       finalFromName: fromName
     });
 
-    const emailData = {
-      from: `${fromName} <${fromAddress}>`,
-      to: [options.to],
-      ...(options.cc && { cc: [options.cc] }),
-      ...(options.bcc && { bcc: [options.bcc] }),
+    // 添付ファイルをGmailサービス形式に変換
+    const gmailAttachments = options.attachments?.map(att => ({
+      filename: att.filename,
+      content: Buffer.from(att.content, 'base64'),
+      contentType: att.contentType,
+    }));
+
+    // Gmail OAuth2でメール送信
+    const result = await sendGenericEmail({
+      to: options.to,
       subject: options.subject,
       html: options.body,
-      ...(options.attachments && options.attachments.length > 0 && {
-        attachments: options.attachments.map(att => ({
-          filename: att.filename,
-          content: att.content,
-          type: att.contentType,
-        }))
-      }),
-    };
-
-    logger.debug('Sending email with Resend data:', {
-      from: emailData.from,
-      to: emailData.to,
-      subject: emailData.subject,
-      hasAttachments: !!emailData.attachments?.length,
+      attachments: gmailAttachments,
+      ccEmails: options.cc ? [options.cc] : undefined,
+      bccEmails: options.bcc ? [options.bcc] : undefined,
+      fromName,
     });
 
-    const { data, error: resendError } = await resend.emails.send(emailData);
-
-    if (resendError) {
-      logger.error('Resend送信エラー:', resendError);
-      logger.error('Resendエラー詳細:', {
-        name: resendError.name,
-        message: resendError.message,
-        response: (resendError as any).response,
-        statusCode: (resendError as any).statusCode
-      });
-      throw new Error(`Resend API error: ${resendError.message || 'Unknown error'}`);
+    if (!result.success) {
+      logger.error('Gmail送信エラー:', result.error);
+      throw new Error(`Gmail API error: ${result.error || 'Unknown error'}`);
     }
 
-    logger.debug('Email sent successfully via Resend:', data);
+    logger.debug('Email sent successfully via Gmail:', result);
     logger.info('メール送信成功:', {
-      messageId: data?.id,
-      from: emailData.from,
-      to: emailData.to,
-      subject: emailData.subject
+      messageId: result.messageId,
+      to: options.to,
+      subject: options.subject
     });
-    return { success: true, messageId: data?.id || 'unknown' };
+    return { success: true, messageId: result.messageId || 'unknown' };
   } catch (error) {
     logger.error('メール送信エラー:', error);
     throw new Error(`メール送信に失敗しました: ${error instanceof Error ? error.message : String(error)}`);

@@ -2,28 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { QuoteService } from '@/services/quote.service';
 import { CompanyInfoService } from '@/services/company-info.service';
-import { Resend } from 'resend';
+import { sendGenericEmail, getGmailConfigStatus } from '@/lib/gmail-service';
 import { generateSimpleHtmlQuote } from '@/lib/html-quote-generator';
 import { getSuggestedOptionsFromDB, generateServerHtmlQuote } from '@/lib/html-quote-generator-server';
-
-// Resendの遅延初期化（ビルド時のエラーを防ぐ）
-let resend: Resend | null = null;
-
-function getResend(): Resend {
-  if (!resend) {
-    const resendApiKey = process.env.RESEND_API_KEY;
-    console.log('[Send Quote API] RESEND_API_KEY exists:', !!resendApiKey);
-    console.log('[Send Quote API] RESEND_API_KEY prefix:', resendApiKey?.substring(0, 10) + '...');
-    console.log('[Send Quote API] RESEND_FROM_EMAIL:', process.env.RESEND_FROM_EMAIL);
-
-    if (!resendApiKey || resendApiKey === 'undefined' || resendApiKey.length < 10) {
-      console.error('[Send Quote API] Invalid RESEND_API_KEY:', resendApiKey);
-      throw new Error('RESEND_API_KEY is not configured');
-    }
-    resend = new Resend(resendApiKey);
-  }
-  return resend;
-}
 
 export async function POST(
   request: NextRequest,
@@ -77,67 +58,45 @@ export async function POST(
       customMessage,
     });
 
-    // Resendでメール送信（generateHtmlQuoteが既にHTMLを生成済み）
-    console.log('[Send Quote API] Sending email with Resend...');
+    // Gmail OAuth2でメール送信
+    console.log('[Send Quote API] Sending email with Gmail OAuth2...');
 
-    // Resendが推奨するfromアドレスフォーマット
-    const fromEmail = process.env.RESEND_FROM_EMAIL || 'accounting@effect.moe';
+    // Gmail設定状態を確認
+    const gmailStatus = getGmailConfigStatus();
+    console.log('[Send Quote API] Gmail config status:', gmailStatus);
+
     const fromName = companyInfo?.companyName || 'AAM Accounting';
-    const from = `${fromName} <${fromEmail}>`;
 
     console.log('[Send Quote API] Email details:', {
-      from,
+      fromName,
       to: recipientEmail,
       subject: htmlContent.subject || `お見積書 - ${quote.quoteNumber}`,
     });
 
-    let emailResult;
-    try {
-      const resendClient = getResend();
-      emailResult = await resendClient.emails.send({
-        from,
-        to: recipientEmail,
-        subject: htmlContent.subject || `お見積書 - ${quote.quoteNumber}`,
-        html: htmlContent.html,
-        text: htmlContent.plainText,
-        attachments: [], // 必要に応じてPDF添付
-      });
-      
-      console.log('[Send Quote API] Email result:', emailResult);
-      
-      if (!emailResult) {
-        console.error('[Send Quote API] No response from Resend API');
-        throw new Error('No response from email service');
-      }
-      
-      if (emailResult.error) {
-        console.error('[Send Quote API] Resend error:', emailResult.error);
-        throw new Error(emailResult.error.message || 'Failed to send email');
-      }
-      
-      if (!emailResult.data) {
-        console.error('[Send Quote API] No data in Resend response');
-        throw new Error('Invalid response from email service');
-      }
-    } catch (resendError) {
-      console.error('[Send Quote API] Resend send error:', resendError);
-      // エラーメッセージを詳細化
-      const errorMessage = resendError instanceof Error ? resendError.message : 'Unknown error';
-      console.error('[Send Quote API] Error details:', {
-        message: errorMessage,
-        stack: resendError instanceof Error ? resendError.stack : undefined,
-      });
-      
-      // Resend API キーが無効な場合の特別処理
-      if (errorMessage.includes('API key') || errorMessage.includes('Unauthorized')) {
+    // Gmail サービスでメール送信
+    const emailResult = await sendGenericEmail({
+      to: recipientEmail,
+      subject: htmlContent.subject || `お見積書 - ${quote.quoteNumber}`,
+      html: htmlContent.html,
+      text: htmlContent.plainText,
+      fromName,
+    });
+
+    console.log('[Send Quote API] Email result:', emailResult);
+
+    if (!emailResult.success) {
+      console.error('[Send Quote API] Gmail send error:', emailResult.error);
+
+      // 認証エラーの特別処理
+      if (emailResult.error?.includes('OAuth') || emailResult.error?.includes('token')) {
         return NextResponse.json(
           { error: 'メール送信サービスの認証に失敗しました。管理者にお問い合わせください。' },
           { status: 500 }
         );
       }
-      
+
       return NextResponse.json(
-        { error: `メール送信に失敗しました: ${errorMessage}` },
+        { error: `メール送信に失敗しました: ${emailResult.error}` },
         { status: 500 }
       );
     }
@@ -149,7 +108,7 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
-      messageId: emailResult.data?.id || 'unknown',
+      messageId: emailResult.messageId || 'unknown',
       sentAt: new Date().toISOString(),
     });
 
