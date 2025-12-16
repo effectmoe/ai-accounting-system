@@ -90,6 +90,19 @@ export default {
         return await handleGetEvents(request, env);
       }
 
+      // 再送信機能用エンドポイント
+      if (pathname === '/unopened' && request.method === 'GET') {
+        return await handleGetUnopenedEmails(request, env);
+      }
+
+      if (pathname === '/resend-update' && request.method === 'POST') {
+        return await handleResendUpdate(request, env);
+      }
+
+      if (pathname === '/resend-stats' && request.method === 'GET') {
+        return await handleResendStats(request, env);
+      }
+
       if (pathname === '/health') {
         return new Response(JSON.stringify({ status: 'ok', timestamp: new Date().toISOString() }), {
           headers: { 'Content-Type': 'application/json' },
@@ -471,4 +484,141 @@ async function updateClickCount(db: D1Database, trackingId: string): Promise<voi
         updated_at = ?
     WHERE tracking_id = ?
   `).bind(now, now, trackingId).run();
+}
+
+/**
+ * 未開封メール一覧取得
+ * GET /unopened?minDays=3&maxDays=30&limit=100
+ */
+async function handleGetUnopenedEmails(request: Request, env: Env): Promise<Response> {
+  const url = new URL(request.url);
+  const minDays = parseInt(url.searchParams.get('minDays') || '3', 10);
+  const maxDays = parseInt(url.searchParams.get('maxDays') || '30', 10);
+  const limit = parseInt(url.searchParams.get('limit') || '100', 10);
+
+  try {
+    // 指定日数内で未開封のメールを取得
+    const records = await env.DB.prepare(`
+      SELECT
+        id, tracking_id, message_id, quote_id, invoice_id,
+        delivery_note_id, receipt_id, recipient_email, sender_email,
+        subject, sent_at, status, open_count, click_count,
+        last_opened_at, last_clicked_at, resend_count, last_resend_at
+      FROM email_send_records
+      WHERE open_count = 0
+        AND status IN ('sent', 'delivered')
+        AND datetime(sent_at) >= datetime('now', '-' || ? || ' days')
+        AND datetime(sent_at) <= datetime('now', '-' || ? || ' days')
+      ORDER BY sent_at ASC
+      LIMIT ?
+    `).bind(maxDays, minDays, limit).all();
+
+    return new Response(JSON.stringify({
+      records: records.results || [],
+      count: records.results?.length || 0,
+    }), {
+      headers: { 'Content-Type': 'application/json', ...corsHeaders(env.CORS_ORIGIN) },
+    });
+  } catch (error) {
+    console.error('Get unopened emails error:', error);
+    return new Response(JSON.stringify({ error: 'Failed to get unopened emails' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json', ...corsHeaders(env.CORS_ORIGIN) },
+    });
+  }
+}
+
+/**
+ * 再送信記録更新
+ * POST /resend-update
+ */
+async function handleResendUpdate(request: Request, env: Env): Promise<Response> {
+  try {
+    const body = await request.json() as {
+      trackingId: string;
+      resendCount: number;
+      lastResendAt: string;
+    };
+
+    const now = new Date().toISOString();
+
+    await env.DB.prepare(`
+      UPDATE email_send_records
+      SET resend_count = ?,
+          last_resend_at = ?,
+          updated_at = ?
+      WHERE tracking_id = ?
+    `).bind(body.resendCount, body.lastResendAt, now, body.trackingId).run();
+
+    return new Response(JSON.stringify({ success: true }), {
+      headers: { 'Content-Type': 'application/json', ...corsHeaders(env.CORS_ORIGIN) },
+    });
+  } catch (error) {
+    console.error('Resend update error:', error);
+    return new Response(JSON.stringify({ error: 'Failed to update resend record' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json', ...corsHeaders(env.CORS_ORIGIN) },
+    });
+  }
+}
+
+/**
+ * 再送信統計取得
+ * GET /resend-stats
+ */
+async function handleResendStats(request: Request, env: Env): Promise<Response> {
+  try {
+    // 総送信数
+    const totalSentResult = await env.DB.prepare(`
+      SELECT COUNT(*) as count FROM email_send_records
+    `).first() as { count: number } | null;
+
+    // 開封済み数
+    const totalOpenedResult = await env.DB.prepare(`
+      SELECT COUNT(*) as count FROM email_send_records WHERE open_count > 0
+    `).first() as { count: number } | null;
+
+    // 再送信待ち数（未開封 & 再送信上限未達）
+    const pendingResendResult = await env.DB.prepare(`
+      SELECT COUNT(*) as count FROM email_send_records
+      WHERE open_count = 0
+        AND (resend_count IS NULL OR resend_count < 3)
+        AND status IN ('sent', 'delivered')
+    `).first() as { count: number } | null;
+
+    // 再送信後の開封数（resend_count > 0 & open_count > 0）
+    const resendOpenedResult = await env.DB.prepare(`
+      SELECT COUNT(*) as count FROM email_send_records
+      WHERE resend_count > 0 AND open_count > 0
+    `).first() as { count: number } | null;
+
+    // 再送信総数
+    const totalResendResult = await env.DB.prepare(`
+      SELECT COUNT(*) as count FROM email_send_records WHERE resend_count > 0
+    `).first() as { count: number } | null;
+
+    const totalSent = totalSentResult?.count || 0;
+    const totalOpened = totalOpenedResult?.count || 0;
+    const pendingResend = pendingResendResult?.count || 0;
+    const resendOpened = resendOpenedResult?.count || 0;
+    const totalResend = totalResendResult?.count || 0;
+
+    const resendSuccessRate = totalResend > 0 ? (resendOpened / totalResend) * 100 : 0;
+
+    return new Response(JSON.stringify({
+      totalSent,
+      totalOpened,
+      pendingResend,
+      resendSuccessRate: Math.round(resendSuccessRate * 100) / 100,
+      openRate: totalSent > 0 ? Math.round((totalOpened / totalSent) * 10000) / 100 : 0,
+    }), {
+      headers: { 'Content-Type': 'application/json', ...corsHeaders(env.CORS_ORIGIN) },
+    });
+  } catch (error) {
+    console.error('Get resend stats error:', error);
+    return new Response(JSON.stringify({ error: 'Failed to get resend stats' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json', ...corsHeaders(env.CORS_ORIGIN) },
+    });
+  }
 }
