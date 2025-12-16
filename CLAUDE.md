@@ -43,6 +43,70 @@ if (companyName && contactName) {
 
 **詳細レポート**: `/Users/tonychustudio/Documents/alldocs/report/2025-11-26_AI会計システム_メール宛名改行問題修正レポート.md`
 
+### 検索・フィルター機能関連
+
+| 症状 | 原因 | 解決策 |
+|------|------|--------|
+| 一覧ページで検索が動作しない | フロントエンドからAPIへ`search`パラメータが送信されていない | `fetchInvoices`/`fetchQuotes`関数内で`params.append('search', debouncedSearchQuery)`を追加 |
+| APIが検索クエリを無視する | APIルートで`search`パラメータを取得していない | `app/api/invoices/route.ts`と`app/api/quotes/route.ts`で`searchParams.get('search')`を追加 |
+| サービス層で検索が実行されない | `SearchParams`インターフェースに`search`フィールドがない | `services/invoice.service.ts`と`services/quote.service.ts`のインターフェースに`search?: string`を追加し、MongoDBの`$or`と正規表現で検索実装 |
+| 日付フィルターが効かない | useEffectの依存配列に`dateFrom`/`dateTo`が含まれていない | `useEffect`の依存配列に`dateFrom, dateTo`を追加 |
+
+**検索機能の3層実装パターン:**
+
+```typescript
+// 1. フロントエンド（page.tsx）
+const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
+
+useEffect(() => {
+  const timer = setTimeout(() => {
+    setDebouncedSearchQuery(searchQuery);
+    setCurrentPage(1);
+  }, 500);
+  return () => clearTimeout(timer);
+}, [searchQuery]);
+
+// fetchInvoices内で
+if (debouncedSearchQuery) {
+  params.append('search', debouncedSearchQuery);
+}
+
+// 2. APIルート（route.ts）
+const search = searchParams.get('search') || undefined;
+const result = await service.searchInvoices({ ...params, search });
+
+// 3. サービス層（service.ts）
+// 顧客名検索は、顧客コレクションを先に検索してIDを取得する方式
+if (params.search) {
+  const searchRegex = { $regex: params.search, $options: 'i' };
+
+  // 顧客名で検索する場合、まず顧客を検索してIDを取得
+  const matchingCustomers = await db.find<Customer>(Collections.CUSTOMERS, {
+    $or: [
+      { companyName: searchRegex },
+      { companyNameKana: searchRegex },
+      { 'contacts.name': searchRegex },
+    ]
+  });
+  const matchingCustomerIds = matchingCustomers.map(c => c._id);
+
+  // 請求書/見積書のフィールドまたは顧客IDで検索
+  const searchConditions: any[] = [
+    { invoiceNumber: searchRegex }, // または quoteNumber
+    { title: searchRegex },
+  ];
+
+  // マッチした顧客がいる場合、その顧客IDも検索条件に追加
+  if (matchingCustomerIds.length > 0) {
+    searchConditions.push({ customerId: { $in: matchingCustomerIds } });
+  }
+
+  filter.$or = searchConditions;
+}
+```
+
+**詳細レポート**: `/Users/tonychustudio/Documents/alldocs/report/2025-11-27_AI会計システム_フィルター機能実装レポート.md`
+
 ### 住所改行対応の詳細
 
 **修正が必要なファイル（住所生成ロジック変更時）:**
@@ -136,6 +200,8 @@ vercel
 
 | 日付 | タイトル | パス |
 |------|---------|------|
+| 2025-11-27 | フィルター機能実装レポート | `/Users/tonychustudio/Documents/alldocs/report/2025-11-27_AI会計システム_フィルター機能実装レポート.md` |
+| 2025-11-27 | PWA化実装レポート | `/Users/tonychustudio/Documents/alldocs/report/2025-11-27_AI会計システム_PWA化実装レポート.md` |
 | 2025-11-27 | PDF住所改行対応レポート | `/Users/tonychustudio/Documents/alldocs/report/2025-11-27_AI会計システム_PDF住所改行対応レポート.md` |
 | 2025-11-26 | 請求書画面バグ修正レポート | `/Users/tonychustudio/Documents/alldocs/report/2025-11-26_AI会計システム_請求書画面バグ修正レポート.md` |
 | 2025-11-26 | メール宛名改行問題修正レポート | `/Users/tonychustudio/Documents/alldocs/report/2025-11-26_AI会計システム_メール宛名改行問題修正レポート.md` |
