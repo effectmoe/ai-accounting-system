@@ -46,6 +46,8 @@ CREATE TABLE IF NOT EXISTS email_send_records (
   click_count INTEGER DEFAULT 0,
   last_opened_at TEXT,
   last_clicked_at TEXT,
+  resend_count INTEGER DEFAULT 0,
+  last_resend_at TEXT,
   created_at TEXT DEFAULT (datetime('now')),
   updated_at TEXT DEFAULT (datetime('now'))
 );
