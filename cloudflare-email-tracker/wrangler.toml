@@ -2,11 +2,10 @@ name = "accounting-email-tracker"
 main = "src/index.ts"
 compatibility_date = "2024-12-01"
 
-# 本番環境では以下を設定（wrangler d1 create後に更新）
-# [[d1_databases]]
-# binding = "DB"
-# database_name = "accounting-email-events"
-# database_id = "YOUR_DATABASE_ID_HERE"
+[[d1_databases]]
+binding = "DB"
+database_name = "accounting-email-events"
+database_id = "981aafab-bd24-42a2-8e50-dcd3c51cff09"
 
 # 環境変数
 [vars]
