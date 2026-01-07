@@ -13,7 +13,7 @@
     "build": "DO_NOT_TRACK=1 NEXT_TELEMETRY_DISABLED=1 NODE_OPTIONS='--max-old-space-size=4096' next build",
     "build:stable": "node scripts/stable-build.js",
     "build:vercel": "./scripts/vercel-build.sh",
-    "build:cloudflare": "DO_NOT_TRACK=1 NEXT_TELEMETRY_DISABLED=1 NODE_OPTIONS='--max-old-space-size=4096' next build",
+    "build:cloudflare": "DO_NOT_TRACK=1 NEXT_TELEMETRY_DISABLED=1 NODE_OPTIONS='--max-old-space-size=4096' next build && rm -rf .next/cache",
     "deploy:cloudflare": "echo '⚠️  Cloudflare Pagesへのデプロイは Git連携を使用してください。\\n手順: git push → Cloudflare Dashboardで自動ビルド\\n詳細: docs/cloudflare-deployment.md' && exit 1",
     "postbuild": "node scripts/disable-telemetry.js",
     "start": "node server.js",
