@@ -39,21 +39,21 @@ export function middleware(request: NextRequest) {
     return response;
   }
 
-  // パスワード認証が有効な場合のチェック
-  if (process.env.SITE_PASSWORD && !isPublicPath) {
-    const authToken = request.cookies.get('auth-token');
-    
-    if (!authToken || authToken.value !== 'authenticated') {
-      // 認証されていない場合、APIリクエストには401を返す
-      if (pathname.startsWith('/api/')) {
-        return NextResponse.json(
-          { error: 'Unauthorized' },
-          { status: 401 }
-        );
-      }
-      // ページリクエストの場合は、クライアントサイドで処理
-    }
-  }
+  // パスワード認証を無効化
+  // if (process.env.SITE_PASSWORD && !isPublicPath) {
+  //   const authToken = request.cookies.get('auth-token');
+  //
+  //   if (!authToken || authToken.value !== 'authenticated') {
+  //     // 認証されていない場合、APIリクエストには401を返す
+  //     if (pathname.startsWith('/api/')) {
+  //       return NextResponse.json(
+  //         { error: 'Unauthorized' },
+  //         { status: 401 }
+  //       );
+  //     }
+  //     // ページリクエストの場合は、クライアントサイドで処理
+  //   }
+  // }
 
   return NextResponse.next();
 }
