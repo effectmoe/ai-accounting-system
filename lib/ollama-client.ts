@@ -1,0 +1,323 @@
+import { logger } from '@/lib/logger';
+
+/**
+ * Ollama API クライアント
+ * ローカルLLM（Command R）との連携
+ */
+
+interface OllamaMessage {
+  role: 'system' | 'user' | 'assistant';
+  content: string;
+  images?: string[]; // Base64エンコードされた画像データ（Vision models用）
+}
+
+interface OllamaResponse {
+  model: string;
+  created_at: string;
+  message: {
+    role: string;
+    content: string;
+  };
+  done: boolean;
+  total_duration?: number;
+  load_duration?: number;
+  prompt_eval_count?: number;
+  prompt_eval_duration?: number;
+  eval_count?: number;
+  eval_duration?: number;
+}
+
+interface OllamaOptions {
+  model?: string;
+  temperature?: number;
+  num_predict?: number; // Ollamaでは max_tokens の代わりに num_predict
+  top_p?: number;
+  top_k?: number;
+  repeat_penalty?: number;
+  stream?: boolean;
+}
+
+export class OllamaClient {
+  private baseURL: string;
+  private defaultModel: string;
+  private defaultTimeout: number = 60000; // 60秒（Command Rは大きなモデルなので余裕を持たせる）
+  private isAvailable: boolean = false;
+
+  constructor(baseURL?: string, model?: string) {
+    this.baseURL = baseURL || process.env.OLLAMA_URL || 'http://localhost:11434';
+    this.defaultModel = model || process.env.OLLAMA_MODEL || 'command-r';
+
+    logger.debug('[OllamaClient] Initializing...', {
+      baseURL: this.baseURL,
+      model: this.defaultModel
+    });
+  }
+
+  /**
+   * Ollamaの利用可能性を確認
+   */
+  async checkAvailability(): Promise<boolean> {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5秒タイムアウト
+
+      const response = await fetch(`${this.baseURL}/api/tags`, {
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        logger.debug('[OllamaClient] Ollama not available:', response.status);
+        this.isAvailable = false;
+        return false;
+      }
+
+      const data = await response.json();
+      const models = data.models || [];
+      const hasModel = models.some((m: any) => m.name.includes(this.defaultModel));
+
+      logger.debug('[OllamaClient] Available models:', models.map((m: any) => m.name));
+      logger.debug('[OllamaClient] Target model available:', hasModel);
+
+      this.isAvailable = hasModel;
+      return hasModel;
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        logger.debug('[OllamaClient] Availability check timed out');
+      } else {
+        logger.debug('[OllamaClient] Availability check failed:', error);
+      }
+      this.isAvailable = false;
+      return false;
+    }
+  }
+
+  /**
+   * チャット補完APIを呼び出す
+   */
+  async chat(
+    messages: OllamaMessage[],
+    options: OllamaOptions = {}
+  ): Promise<OllamaResponse> {
+    const {
+      model = this.defaultModel,
+      temperature = 0,
+      num_predict = 4000,
+      top_p,
+      top_k,
+      repeat_penalty,
+      stream = false,
+    } = options;
+
+    const requestBody = {
+      model,
+      messages,
+      stream,
+      options: {
+        temperature,
+        num_predict,
+        ...(top_p !== undefined && { top_p }),
+        ...(top_k !== undefined && { top_k }),
+        ...(repeat_penalty !== undefined && { repeat_penalty }),
+      }
+    };
+
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), this.defaultTimeout);
+
+      logger.debug('[OllamaClient] Sending request to Ollama...', {
+        model,
+        messagesCount: messages.length,
+        temperature
+      });
+
+      const response = await fetch(`${this.baseURL}/api/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        logger.error('[OllamaClient] Ollama API error:', errorText);
+        throw new Error(`Ollama API request failed: ${response.status} ${errorText}`);
+      }
+
+      const data = await response.json();
+      logger.debug('[OllamaClient] Response received successfully');
+
+      return data as OllamaResponse;
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        logger.error('[OllamaClient] Request timed out');
+        throw new Error('Ollama request timed out');
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * シンプルな補完リクエスト
+   */
+  async complete(prompt: string, options: OllamaOptions = {}): Promise<string> {
+    const messages: OllamaMessage[] = [
+      { role: 'user', content: prompt }
+    ];
+
+    const response = await this.chat(messages, options);
+    return response.message.content || '';
+  }
+
+  /**
+   * システムプロンプト付きの補完リクエスト
+   */
+  async completeWithSystem(
+    systemPrompt: string,
+    userPrompt: string,
+    options: OllamaOptions = {}
+  ): Promise<string> {
+    const messages: OllamaMessage[] = [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt }
+    ];
+
+    const response = await this.chat(messages, options);
+    return response.message.content || '';
+  }
+
+  /**
+   * 画像分析（Vision models用）
+   * @param imageData - 画像データ（BufferまたはBase64文字列）
+   * @param prompt - 分析指示プロンプト
+   * @param visionModel - Vision model名（デフォルト: qwen3-vl）
+   * @param options - Ollamaオプション
+   */
+  async analyzeImage(
+    imageData: Buffer | string,
+    prompt: string,
+    visionModel: string = 'qwen3-vl',
+    options: OllamaOptions = {}
+  ): Promise<string> {
+    // Base64エンコード（BufferならBase64に変換、文字列ならそのまま使用）
+    const base64Image = Buffer.isBuffer(imageData)
+      ? imageData.toString('base64')
+      : imageData;
+
+    logger.debug('[OllamaClient] Analyzing image with vision model...', {
+      model: visionModel,
+      imageSize: base64Image.length,
+      promptLength: prompt.length
+    });
+
+    const messages: OllamaMessage[] = [
+      {
+        role: 'user',
+        content: prompt,
+        images: [base64Image]
+      }
+    ];
+
+    const response = await this.chat(messages, {
+      ...options,
+      model: visionModel
+    });
+
+    return response.message.content || '';
+  }
+
+  /**
+   * 画像からJSON抽出（OCR用）
+   * @param imageData - 画像データ（BufferまたはBase64文字列）
+   * @param systemPrompt - システムプロンプト（現在は使用せず、userPromptに統合）
+   * @param userPrompt - ユーザープロンプト
+   * @param visionModel - Vision model名（デフォルト: qwen3-vl）
+   * @param options - Ollamaオプション
+   *
+   * 注意: Qwen3-VLはシステムプロンプト付きの2メッセージ形式だと
+   * 空レスポンスを返すことがあるため、シングルメッセージ形式を使用
+   */
+  async extractJSONFromImage(
+    imageData: Buffer | string,
+    systemPrompt: string,
+    userPrompt: string,
+    visionModel: string = 'qwen3-vl',
+    options: OllamaOptions = {}
+  ): Promise<string> {
+    // Base64エンコード
+    const base64Image = Buffer.isBuffer(imageData)
+      ? imageData.toString('base64')
+      : imageData;
+
+    logger.debug('[OllamaClient] Extracting JSON from image...', {
+      model: visionModel,
+      imageSize: base64Image.length
+    });
+
+    // Qwen3-VLはシステムプロンプトとの組み合わせで空レスポンスを返すことがあるため
+    // シングルメッセージ形式（userのみ）を使用
+    // システムプロンプトの内容はユーザープロンプトに統合
+    const combinedPrompt = systemPrompt
+      ? `${systemPrompt}\n\n${userPrompt}`
+      : userPrompt;
+
+    const messages: OllamaMessage[] = [
+      {
+        role: 'user',
+        content: combinedPrompt,
+        images: [base64Image]
+      }
+    ];
+
+    const response = await this.chat(messages, {
+      ...options,
+      model: visionModel,
+      // temperatureはoptionsから渡された値を使用（デフォルトは0.3）
+      temperature: options.temperature ?? 0.3
+    });
+
+    return response.message.content || '';
+  }
+
+  /**
+   * 利用可能性のフラグを取得
+   */
+  getAvailability(): boolean {
+    return this.isAvailable;
+  }
+
+  /**
+   * 設定情報を取得
+   */
+  getConfig() {
+    return {
+      baseURL: this.baseURL,
+      model: this.defaultModel,
+      isAvailable: this.isAvailable
+    };
+  }
+}
+
+// シングルトンインスタンス
+let defaultClient: OllamaClient | null = null;
+
+export function getOllamaClient(): OllamaClient {
+  if (!defaultClient) {
+    defaultClient = new OllamaClient();
+  }
+  return defaultClient;
+}
+
+/**
+ * Ollamaの利用可能性を確認するヘルパー関数
+ */
+export async function isOllamaAvailable(): Promise<boolean> {
+  const client = getOllamaClient();
+  return await client.checkAvailability();
+}
