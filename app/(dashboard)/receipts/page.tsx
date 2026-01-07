@@ -234,51 +234,6 @@ export default function ReceiptsPage() {
     }
   };
 
-  const fetchReceipts = async () => {
-    try {
-      setLoading(true);
-      const params = new URLSearchParams({
-        limit: itemsPerPage.toString(),
-        skip: ((currentPage - 1) * itemsPerPage).toString(),
-        sortBy: sortBy,
-        sortOrder: sortOrder,
-      });
-
-      if (statusFilter && statusFilter !== 'all') params.append('status', statusFilter);
-      if (searchTerm) params.append('search', searchTerm);
-
-      // 勘定科目フィルタ
-      if (accountCategoryFilter && accountCategoryFilter !== 'all') {
-        params.append('accountCategory', accountCategoryFilter);
-      }
-
-      // 金額範囲フィルタ
-      if (amountMin) params.append('amountMin', amountMin);
-      if (amountMax) params.append('amountMax', amountMax);
-
-      // タブによるフィルタ
-      if (activeTab === 'scanned') {
-        params.append('scannedFromPdf', 'true');
-      } else if (activeTab === 'manual') {
-        params.append('scannedFromPdf', 'false');
-      }
-
-      const response = await fetch(`/api/receipts?${params}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch receipts');
-      }
-
-      const data = await response.json();
-      setReceipts(data.receipts || []);
-      setTotalCount(data.total || 0);
-    } catch (error) {
-      logger.error('Error fetching receipts:', error);
-      setReceipts([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleStatusChange = async (receiptId: string, newStatus: string) => {
     setIsUpdating(true);
     try {
