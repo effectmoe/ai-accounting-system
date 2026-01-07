@@ -106,7 +106,7 @@ export default function ReceiptsPage() {
   const [itemsPerPage] = useState(20);
   const totalPages = Math.ceil(totalCount / itemsPerPage);
 
-  // データ取得関数
+  // データ取得関数（早期定義）
   const fetchReceipts = useCallback(async () => {
     try {
       setLoading(true);
