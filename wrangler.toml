@@ -1,0 +1,40 @@
+# Cloudflare Pages Configuration
+name = "ai-accounting-system"
+compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Pages build output directory
+pages_build_output_dir = ".next"
+
+# KV Namespace (for caching)
+[[kv_namespaces]]
+binding = "CACHE"
+id = "1eb4ad9f94a74b59864e3572d7598488"
+preview_id = "3c6fb2cd668f42adb0c11b9dfbaeeb54"
+
+# Environment variables
+# Set via: wrangler pages secret put VARIABLE_NAME --project-name=ai-accounting-system
+# Or via Cloudflare Dashboard: Workers & Pages > ai-accounting-system > Settings > Environment Variables
+
+# Note: The following are configuration comments for future Workers/Durable Objects implementation
+# These will be configured separately when implementing API Workers
+
+# Workers AI Binding (for future AI features)
+# [ai]
+# binding = "AI"
+
+# Durable Objects (for OCR and AI processing)
+# [[durable_objects.bindings]]
+# name = "OCR_PROCESSOR"
+# class_name = "OCRProcessor"
+# script_name = "ai-accounting-system"
+
+# [[durable_objects.bindings]]
+# name = "ACCOUNTING_AI"
+# class_name = "AccountingAI"
+# script_name = "ai-accounting-system"
+
+# [[durable_objects.bindings]]
+# name = "TAX_AI"
+# class_name = "TaxAI"
+# script_name = "ai-accounting-system"
