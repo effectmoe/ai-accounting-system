@@ -407,7 +407,7 @@ export default function ReceiptsPage() {
   };
 
   // サーバー側でフィルタリングするため、filteredReceiptsはreceiptsをそのまま使用
-  const filteredReceipts = receipts;
+  const filteredReceipts = receipts || [];
 
   if (loading) {
     return (
