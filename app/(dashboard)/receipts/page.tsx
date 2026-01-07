@@ -134,7 +134,7 @@ export default function ReceiptsPage() {
     if (activeTab === 'scanned') {
       fetchPendingPdfs();
     }
-  }, [currentPage, searchTerm, statusFilter, activeTab, sortBy, sortOrder, accountCategoryFilter, amountMin, amountMax]);
+  }, [fetchReceipts, activeTab]);
 
   // 処理待ちPDF情報を取得
   const fetchPendingPdfs = async () => {
@@ -188,7 +188,7 @@ export default function ReceiptsPage() {
     }
   };
 
-  const fetchReceipts = async () => {
+  const fetchReceipts = useCallback(async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams({
@@ -231,7 +231,7 @@ export default function ReceiptsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [itemsPerPage, currentPage, sortBy, sortOrder, statusFilter, searchTerm, accountCategoryFilter, amountMin, amountMax, activeTab]);
 
   const handleStatusChange = async (receiptId: string, newStatus: string) => {
     setIsUpdating(true);
