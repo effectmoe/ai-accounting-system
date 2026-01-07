@@ -106,89 +106,8 @@ export default function ReceiptsPage() {
   const [itemsPerPage] = useState(20);
   const totalPages = Math.ceil(totalCount / itemsPerPage);
 
-  // タブ変更時にページをリセット
-  useEffect(() => {
-    setCurrentPage(1);
-    setSelectedReceipts(new Set());
-    setProcessingResult(null);
-    setScanSnapResult(null);
-  }, [activeTab]);
-
-  // ScanSnapスキャン完了時のハンドラ
-  const handleScanSnapComplete = useCallback((result: DirectScanResult) => {
-    setScanSnapResult(result);
-    // データを再取得
-    fetchReceipts();
-    logger.info('ScanSnap scan completed:', result);
-  }, []);
-
-  // ScanSnapスキャンエラー時のハンドラ
-  const handleScanSnapError = useCallback((error: string) => {
-    logger.error('ScanSnap scan error:', error);
-    alert(`スキャンエラー: ${error}`);
-  }, []);
-
-  // データ取得
-  useEffect(() => {
-    fetchReceipts();
-    if (activeTab === 'scanned') {
-      fetchPendingPdfs();
-    }
-  }, [currentPage, searchTerm, statusFilter, activeTab, sortBy, sortOrder, accountCategoryFilter, amountMin, amountMax]);
-
-  // 処理待ちPDF情報を取得
-  const fetchPendingPdfs = async () => {
-    try {
-      const response = await fetch('/api/scan-receipt/pending');
-      if (response.ok) {
-        const data = await response.json();
-        setPendingPdfCount(data.pendingCount || 0);
-        setPendingPdfFiles(data.pendingFiles || []);
-      }
-    } catch (error) {
-      logger.error('Error fetching pending PDFs:', error);
-    }
-  };
-
-  // スキャン処理を実行
-  const handleProcessScan = async () => {
-    if (isProcessing) return;
-
-    setIsProcessing(true);
-    setProcessingResult(null);
-
-    try {
-      const response = await fetch('/api/scan-receipt/process', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to process scan receipts');
-      }
-
-      const data = await response.json();
-      setProcessingResult({
-        success: data.successCount || 0,
-        failed: data.failedCount || 0,
-        total: data.processedCount || 0,
-      });
-
-      // データを再取得
-      await fetchReceipts();
-      await fetchPendingPdfs();
-
-      logger.info('Scan processing completed:', data);
-    } catch (error) {
-      logger.error('Error processing scan receipts:', error);
-      alert('スキャン処理に失敗しました');
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const fetchReceipts = async () => {
+  // データ取得関数（useCallbackでラップ）
+  const fetchReceipts = useCallback(async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams({
@@ -230,6 +149,88 @@ export default function ReceiptsPage() {
       setReceipts([]);
     } finally {
       setLoading(false);
+    }
+  }, [itemsPerPage, currentPage, sortBy, sortOrder, statusFilter, searchTerm, accountCategoryFilter, amountMin, amountMax, activeTab]);
+
+  // 処理待ちPDF情報を取得
+  const fetchPendingPdfs = useCallback(async () => {
+    try {
+      const response = await fetch('/api/scan-receipt/pending');
+      if (response.ok) {
+        const data = await response.json();
+        setPendingPdfCount(data.pendingCount || 0);
+        setPendingPdfFiles(data.pendingFiles || []);
+      }
+    } catch (error) {
+      logger.error('Error fetching pending PDFs:', error);
+    }
+  }, []);
+
+  // タブ変更時にページをリセット
+  useEffect(() => {
+    setCurrentPage(1);
+    setSelectedReceipts(new Set());
+    setProcessingResult(null);
+    setScanSnapResult(null);
+  }, [activeTab]);
+
+  // ScanSnapスキャン完了時のハンドラ
+  const handleScanSnapComplete = useCallback((result: DirectScanResult) => {
+    setScanSnapResult(result);
+    // データを再取得
+    fetchReceipts();
+    logger.info('ScanSnap scan completed:', result);
+  }, [fetchReceipts]);
+
+  // ScanSnapスキャンエラー時のハンドラ
+  const handleScanSnapError = useCallback((error: string) => {
+    logger.error('ScanSnap scan error:', error);
+    alert(`スキャンエラー: ${error}`);
+  }, []);
+
+  // データ取得
+  useEffect(() => {
+    fetchReceipts();
+    if (activeTab === 'scanned') {
+      fetchPendingPdfs();
+    }
+  }, [fetchReceipts, fetchPendingPdfs, activeTab]);
+
+  // スキャン処理を実行
+  const handleProcessScan = async () => {
+    if (isProcessing) return;
+
+    setIsProcessing(true);
+    setProcessingResult(null);
+
+    try {
+      const response = await fetch('/api/scan-receipt/process', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to process scan receipts');
+      }
+
+      const data = await response.json();
+      setProcessingResult({
+        success: data.successCount || 0,
+        failed: data.failedCount || 0,
+        total: data.processedCount || 0,
+      });
+
+      // データを再取得
+      await fetchReceipts();
+      await fetchPendingPdfs();
+
+      logger.info('Scan processing completed:', data);
+    } catch (error) {
+      logger.error('Error processing scan receipts:', error);
+      alert('スキャン処理に失敗しました');
+    } finally {
+      setIsProcessing(false);
     }
   };
 
