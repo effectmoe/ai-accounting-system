@@ -1,7 +1,7 @@
 // Service Worker for AAM Accounting Automation PWA
-const CACHE_NAME = 'aam-accounting-v1';
-const STATIC_CACHE_NAME = 'aam-static-v1';
-const DYNAMIC_CACHE_NAME = 'aam-dynamic-v1';
+const CACHE_NAME = 'aam-accounting-v2';
+const STATIC_CACHE_NAME = 'aam-static-v2';
+const DYNAMIC_CACHE_NAME = 'aam-dynamic-v2';
 
 // Static assets to cache on install
 const STATIC_ASSETS = [
