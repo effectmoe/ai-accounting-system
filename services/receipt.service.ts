@@ -193,57 +193,6 @@ export class ReceiptService {
         }
       }
 
-      // スキャン取込フィルタ
-      if (params.scannedFromPdf !== undefined) {
-        if (params.scannedFromPdf) {
-          filter.scannedFromPdf = true;
-        } else {
-          // 手動作成の場合、scannedFromPdfがfalseまたは未設定のものを取得
-          filter.$or = [
-            { scannedFromPdf: false },
-            { scannedFromPdf: { $exists: false } },
-          ];
-        }
-      }
-
-      // 勘定科目フィルタ
-      if (params.accountCategory) {
-        filter.accountCategory = params.accountCategory;
-      }
-
-      // 金額範囲フィルタ
-      if (params.amountMin !== undefined || params.amountMax !== undefined) {
-        filter.totalAmount = {};
-        if (params.amountMin !== undefined) {
-          filter.totalAmount.$gte = params.amountMin;
-        }
-        if (params.amountMax !== undefined) {
-          filter.totalAmount.$lte = params.amountMax;
-        }
-      }
-
-      // 検索クエリ
-      if (params.search) {
-        const searchRegex = { $regex: params.search, $options: 'i' };
-        const searchConditions = [
-          { receiptNumber: searchRegex },
-          { customerName: searchRegex },
-          { issuerName: searchRegex },
-          { invoiceNumber: searchRegex }, // 請求書番号でも検索可能に
-          { subject: searchRegex },
-        ];
-        if (filter.$or) {
-          // 既存の$orがある場合は$andで結合
-          filter.$and = [
-            { $or: filter.$or },
-            { $or: searchConditions },
-          ];
-          delete filter.$or;
-        } else {
-          filter.$or = searchConditions;
-        }
-      }
-
       const limit = params.limit || 20;
       const skip = params.skip || 0;
 
@@ -260,11 +209,11 @@ export class ReceiptService {
         skip,
       });
 
-      // 顧客情報を取得してマージ（スキャン取込の場合はcustomerIdがない）
-      const customerIds = [...new Set(receipts.map(receipt => receipt.customerId?.toString()).filter(Boolean))] as string[];
+      // 顧客情報を取得してマージ
+      const customerIds = [...new Set(receipts.map(receipt => receipt.customerId?.toString()).filter(Boolean))];
       if (customerIds.length > 0) {
         const customers = await db.find<Customer>(Collections.CUSTOMERS, {
-          _id: { $in: customerIds.map(id => new ObjectId(id)) }
+          _id: { $in: customerIds.map(id => new ObjectId(id!)) }
         });
 
         const customerMap = new Map(
@@ -272,12 +221,10 @@ export class ReceiptService {
         );
 
         receipts.forEach(receipt => {
-          if (receipt.customerId) {
-            const customer = customerMap.get(receipt.customerId.toString());
-            if (customer) {
-              // 顧客情報を領収書に添付（型定義には含まれないが実行時に利用）
-              (receipt as any).customer = customer;
-            }
+          const customer = customerMap.get(receipt.customerId.toString());
+          if (customer) {
+            // 顧客情報を領収書に添付（型定義には含まれないが実行時に利用）
+            (receipt as any).customer = customer;
           }
         });
       }
