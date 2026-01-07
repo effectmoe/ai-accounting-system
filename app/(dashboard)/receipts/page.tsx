@@ -267,7 +267,7 @@ export default function ReceiptsPage() {
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      const allIds = new Set(receipts.map(receipt => receipt._id));
+      const allIds = new Set((receipts || []).map(receipt => receipt._id));
       setSelectedReceipts(allIds);
     } else {
       setSelectedReceipts(new Set());
@@ -407,7 +407,7 @@ export default function ReceiptsPage() {
   };
 
   // サーバー側でフィルタリングするため、filteredReceiptsはreceiptsをそのまま使用
-  const filteredReceipts = receipts;
+  const filteredReceipts = receipts || [];
 
   if (loading) {
     return (
