@@ -4,7 +4,7 @@
  */
 
 import { ObjectId } from 'mongodb';
-import { getDB } from '@/lib/mongodb-client';
+import { getDatabase } from '@/lib/mongodb-client';
 import { ScheduledImportConfig, ScheduledImportRun } from '@/types/scheduled-import';
 import { logger } from '@/lib/logger';
 
@@ -20,7 +20,7 @@ export class ScheduledImportService {
     limit?: number;
     offset?: number;
   }): Promise<{ items: ScheduledImportConfig[]; total: number }> {
-    const db = await getDB();
+    const db = await getDatabase();
     const collection = db.collection<ScheduledImportConfig>(COLLECTION_CONFIG);
 
     const filter: Record<string, unknown> = {};
@@ -45,7 +45,7 @@ export class ScheduledImportService {
    * 設定を取得
    */
   async getConfig(id: string): Promise<ScheduledImportConfig | null> {
-    const db = await getDB();
+    const db = await getDatabase();
     const collection = db.collection<ScheduledImportConfig>(COLLECTION_CONFIG);
     return collection.findOne({ _id: new ObjectId(id) });
   }
@@ -54,7 +54,7 @@ export class ScheduledImportService {
    * 設定を作成
    */
   async createConfig(config: Omit<ScheduledImportConfig, '_id' | 'createdAt' | 'updatedAt'>): Promise<string> {
-    const db = await getDB();
+    const db = await getDatabase();
     const collection = db.collection<ScheduledImportConfig>(COLLECTION_CONFIG);
 
     const now = new Date();
@@ -79,7 +79,7 @@ export class ScheduledImportService {
     id: string,
     update: Partial<Omit<ScheduledImportConfig, '_id' | 'createdAt'>>
   ): Promise<void> {
-    const db = await getDB();
+    const db = await getDatabase();
     const collection = db.collection<ScheduledImportConfig>(COLLECTION_CONFIG);
 
     const updateDoc: Record<string, unknown> = {
@@ -103,7 +103,7 @@ export class ScheduledImportService {
    * 設定を削除
    */
   async deleteConfig(id: string): Promise<void> {
-    const db = await getDB();
+    const db = await getDatabase();
     const collection = db.collection<ScheduledImportConfig>(COLLECTION_CONFIG);
     await collection.deleteOne({ _id: new ObjectId(id) });
     logger.info('Deleted scheduled import config', { id });
@@ -113,7 +113,7 @@ export class ScheduledImportService {
    * 設定の有効/無効を切り替え
    */
   async toggleConfig(id: string, isEnabled: boolean): Promise<void> {
-    const db = await getDB();
+    const db = await getDatabase();
     const collection = db.collection<ScheduledImportConfig>(COLLECTION_CONFIG);
 
     const updateDoc: Record<string, unknown> = {
@@ -144,7 +144,7 @@ export class ScheduledImportService {
     limit?: number;
     offset?: number;
   }): Promise<{ items: ScheduledImportRun[]; total: number }> {
-    const db = await getDB();
+    const db = await getDatabase();
     const collection = db.collection<ScheduledImportRun>(COLLECTION_RUNS);
 
     const filter: Record<string, unknown> = {};
@@ -169,7 +169,7 @@ export class ScheduledImportService {
    * 実行履歴を記録
    */
   async createRun(run: Omit<ScheduledImportRun, '_id' | 'createdAt'>): Promise<string> {
-    const db = await getDB();
+    const db = await getDatabase();
     const collection = db.collection<ScheduledImportRun>(COLLECTION_RUNS);
 
     const doc: ScheduledImportRun = {
@@ -188,7 +188,7 @@ export class ScheduledImportService {
     id: string,
     update: Partial<Omit<ScheduledImportRun, '_id' | 'configId' | 'startedAt' | 'createdAt'>>
   ): Promise<void> {
-    const db = await getDB();
+    const db = await getDatabase();
     const collection = db.collection<ScheduledImportRun>(COLLECTION_RUNS);
 
     await collection.updateOne(
@@ -245,7 +245,7 @@ export class ScheduledImportService {
    * インデックスを作成
    */
   async createIndexes(): Promise<void> {
-    const db = await getDB();
+    const db = await getDatabase();
 
     const configCollection = db.collection(COLLECTION_CONFIG);
     await configCollection.createIndex({ isEnabled: 1 });
