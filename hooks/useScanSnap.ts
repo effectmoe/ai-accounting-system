@@ -43,6 +43,64 @@ declare global {
 }
 
 /**
+ * 画像をCanvasで圧縮する（Vercel 4.5MBボディサイズ制限対応）
+ * OCRに十分な品質を維持しつつ、ファイルサイズを削減
+ */
+async function compressImageForUpload(base64Data: string, quality: number = 0.75): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+
+    img.onload = () => {
+      // 最大サイズを制限（長辺2000px）- OCRには十分
+      const maxDimension = 2000;
+      let { width, height } = img;
+
+      if (width > maxDimension || height > maxDimension) {
+        if (width > height) {
+          height = Math.round((height * maxDimension) / width);
+          width = maxDimension;
+        } else {
+          width = Math.round((width * maxDimension) / height);
+          height = maxDimension;
+        }
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        reject(new Error('Canvas context not available'));
+        return;
+      }
+
+      // 高品質な描画設定
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      ctx.drawImage(img, 0, 0, width, height);
+
+      // JPEG形式で圧縮（OCR用に0.75品質）
+      const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
+      console.log(`[ScanSnap] Image compressed: ${base64Data.length} -> ${compressedBase64.length} (${Math.round(compressedBase64.length / base64Data.length * 100)}%)`);
+
+      resolve(compressedBase64);
+    };
+
+    img.onerror = () => {
+      reject(new Error('Failed to load image for compression'));
+    };
+
+    // Base64データがdata:プレフィックスを含まない場合は追加
+    if (base64Data.startsWith('data:')) {
+      img.src = base64Data;
+    } else {
+      img.src = `data:image/jpeg;base64,${base64Data}`;
+    }
+  });
+}
+
+/**
  * ScanSnap Web SDK を使用するためのカスタムフック
  *
  * 使用前にScanSnap Homeがインストール・起動されている必要があります。
@@ -441,13 +499,36 @@ export function useScanSnap(options: UseScanSnapOptions = {}): UseScanSnapReturn
 
     // OCR処理APIを呼び出し
     try {
-      console.log('[ScanSnap] Calling OCR API with image length:', imageBase64.length);
+      console.log('[ScanSnap] Original image length:', imageBase64.length);
+
+      // 画像を圧縮（Vercel 4.5MBボディ制限対応）
+      let compressedImage: string;
+      try {
+        compressedImage = await compressImageForUpload(imageBase64, 0.75);
+        console.log('[ScanSnap] Compressed image length:', compressedImage.length);
+      } catch (compressError) {
+        console.warn('[ScanSnap] Compression failed, using original:', compressError);
+        compressedImage = imageBase64;
+      }
+
+      // 圧縮後もまだ大きすぎる場合はさらに品質を下げる
+      if (compressedImage.length > 3_500_000) {
+        console.log('[ScanSnap] Image still too large, applying more compression...');
+        try {
+          compressedImage = await compressImageForUpload(imageBase64, 0.5);
+          console.log('[ScanSnap] Further compressed image length:', compressedImage.length);
+        } catch {
+          // 無視して現在の圧縮済み画像を使用
+        }
+      }
+
+      console.log('[ScanSnap] Calling OCR API with image length:', compressedImage.length);
 
       const response = await fetch('/api/scan-receipt/direct-scan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          imageBase64,
+          imageBase64: compressedImage,
           fileName: `scansnap_${Date.now()}.jpg`,
         }),
       });
