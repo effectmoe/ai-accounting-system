@@ -81,6 +81,9 @@
     },
     "app/api/email-resend/route.ts": {
       "maxDuration": 30
+    },
+    "app/api/scan-receipt/direct-scan/route.ts": {
+      "maxDuration": 120
     }
   },
   "public": true,

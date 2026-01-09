@@ -4,7 +4,7 @@
  */
 
 import { ObjectId } from 'mongodb';
-import { getDB } from '@/lib/mongodb-client';
+import { getDatabase } from '@/lib/mongodb-client';
 import { BankTransaction } from '@/types/bank-csv';
 import {
   ImportedBankTransaction,
@@ -33,7 +33,7 @@ export class BankTransactionService {
    * 単一取引の重複チェック
    */
   async checkDuplicate(transaction: BankTransaction): Promise<DuplicateCheckResult> {
-    const db = await getDB();
+    const db = await getDatabase();
     const collection = db.collection<ImportedBankTransaction>(COLLECTION_TRANSACTIONS);
 
     const hash = this.generateTransactionHash(transaction);
@@ -71,7 +71,7 @@ export class BankTransactionService {
    * 複数取引の一括重複チェック
    */
   async checkDuplicates(transactions: BankTransaction[]): Promise<Map<string, DuplicateCheckResult>> {
-    const db = await getDB();
+    const db = await getDatabase();
     const collection = db.collection<ImportedBankTransaction>(COLLECTION_TRANSACTIONS);
 
     const results = new Map<string, DuplicateCheckResult>();
@@ -119,7 +119,7 @@ export class BankTransactionService {
       skipDuplicates?: boolean;
     }
   ): Promise<ExtendedImportResult> {
-    const db = await getDB();
+    const db = await getDatabase();
     const collection = db.collection<ImportedBankTransaction>(COLLECTION_TRANSACTIONS);
 
     const result: ExtendedImportResult = {
@@ -200,7 +200,7 @@ export class BankTransactionService {
    * インポート履歴を作成
    */
   async createImportHistory(history: Omit<BankImportHistory, '_id' | 'createdAt' | 'updatedAt'>): Promise<string> {
-    const db = await getDB();
+    const db = await getDatabase();
     const collection = db.collection<BankImportHistory>(COLLECTION_HISTORY);
 
     const now = new Date();
@@ -221,7 +221,7 @@ export class BankTransactionService {
     importId: string,
     update: Partial<Omit<BankImportHistory, '_id' | 'importId' | 'createdAt'>>
   ): Promise<void> {
-    const db = await getDB();
+    const db = await getDatabase();
     const collection = db.collection<BankImportHistory>(COLLECTION_HISTORY);
 
     await collection.updateOne(
@@ -243,7 +243,7 @@ export class BankTransactionService {
     offset?: number;
     status?: string;
   }): Promise<{ items: BankImportHistory[]; total: number }> {
-    const db = await getDB();
+    const db = await getDatabase();
     const collection = db.collection<BankImportHistory>(COLLECTION_HISTORY);
 
     const filter: Record<string, unknown> = {};
@@ -276,7 +276,7 @@ export class BankTransactionService {
     limit?: number;
     offset?: number;
   }): Promise<{ items: ImportedBankTransaction[]; total: number }> {
-    const db = await getDB();
+    const db = await getDatabase();
     const collection = db.collection<ImportedBankTransaction>(COLLECTION_TRANSACTIONS);
 
     const filter: Record<string, unknown> = {};
@@ -324,7 +324,7 @@ export class BankTransactionService {
       matchReason?: string;
     }
   ): Promise<void> {
-    const db = await getDB();
+    const db = await getDatabase();
     const collection = db.collection<ImportedBankTransaction>(COLLECTION_TRANSACTIONS);
 
     await collection.updateOne(
@@ -342,7 +342,7 @@ export class BankTransactionService {
    * 取引を確認済みにする
    */
   async confirmTransaction(transactionId: string, confirmedBy?: string): Promise<void> {
-    const db = await getDB();
+    const db = await getDatabase();
     const collection = db.collection<ImportedBankTransaction>(COLLECTION_TRANSACTIONS);
 
     const now = new Date();
@@ -363,7 +363,7 @@ export class BankTransactionService {
    * インデックスを作成
    */
   async createIndexes(): Promise<void> {
-    const db = await getDB();
+    const db = await getDatabase();
 
     // 取引コレクション
     const transactionsCollection = db.collection(COLLECTION_TRANSACTIONS);

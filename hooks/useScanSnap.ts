@@ -7,6 +7,7 @@ import {
   FileFormat,
   Compression,
   ColorMode,
+  Rotation,
   ScanSnapErrorCodes,
   DirectScanResult,
 } from '@/types/scansnap';
@@ -32,6 +33,15 @@ interface UseScanSnapReturn {
   scanAndProcess: () => Promise<DirectScanResult | null>;
 }
 
+// グローバルなスクリプト読み込み状態（HMRでリセットされないようにwindowに保持）
+declare global {
+  interface Window {
+    __scanSnapSDKLoaded?: boolean;
+    __scanSnapSDKLoading?: boolean;
+    jQuery?: unknown;
+  }
+}
+
 /**
  * ScanSnap Web SDK を使用するためのカスタムフック
  *
@@ -46,56 +56,134 @@ export function useScanSnap(options: UseScanSnapOptions = {}): UseScanSnapReturn
   const [lastError, setLastError] = useState<string | null>(null);
   const [lastResult, setLastResult] = useState<DirectScanResult | null>(null);
 
-  const sdkLoadedRef = useRef(false);
   const initializedRef = useRef(false);
+  const mountedRef = useRef(true);
 
   // SDKスクリプトの読み込み
   useEffect(() => {
-    if (sdkLoadedRef.current) return;
+    mountedRef.current = true;
+
+    // 既に読み込み済みなら何もしない
+    if (window.__scanSnapSDKLoaded && window.scansnap?.websdk) {
+      if (autoConnect && !initializedRef.current) {
+        setTimeout(() => {
+          if (mountedRef.current) {
+            connect();
+          }
+        }, 100);
+      }
+      return;
+    }
+
+    // 読み込み中なら待機
+    if (window.__scanSnapSDKLoading) {
+      const checkLoaded = setInterval(() => {
+        if (window.__scanSnapSDKLoaded && window.scansnap?.websdk) {
+          clearInterval(checkLoaded);
+          if (autoConnect && !initializedRef.current && mountedRef.current) {
+            connect();
+          }
+        }
+      }, 100);
+      return () => clearInterval(checkLoaded);
+    }
+
+    window.__scanSnapSDKLoading = true;
 
     const loadSDK = async () => {
-      // jQueryがなければ読み込む
-      if (!window.jQuery && !document.querySelector('script[src*="jquery"]')) {
-        const jqueryScript = document.createElement('script');
-        jqueryScript.src = '/lib/jquery-3.6.0.min.js';
-        jqueryScript.async = false;
-        document.head.appendChild(jqueryScript);
+      try {
+        // jQueryがなければ読み込む
+        if (!window.jQuery) {
+          const existingJquery = document.querySelector('script[src*="jquery"]');
+          if (!existingJquery) {
+            const jqueryScript = document.createElement('script');
+            jqueryScript.src = '/lib/jquery-3.6.0.min.js';
+            jqueryScript.async = false;
+            document.head.appendChild(jqueryScript);
 
-        await new Promise<void>((resolve) => {
-          jqueryScript.onload = () => resolve();
-        });
-      }
+            await new Promise<void>((resolve, reject) => {
+              jqueryScript.onload = () => resolve();
+              jqueryScript.onerror = () => reject(new Error('jQuery load failed'));
+            });
+          } else {
+            // 既存のスクリプトが読み込み完了を待つ
+            await new Promise<void>((resolve) => {
+              const check = setInterval(() => {
+                if (window.jQuery) {
+                  clearInterval(check);
+                  resolve();
+                }
+              }, 50);
+              setTimeout(() => {
+                clearInterval(check);
+                resolve();
+              }, 3000);
+            });
+          }
+        }
 
-      // ScanSnap SDKを読み込む
-      if (!document.querySelector('script[src*="scansnap.websdk"]')) {
-        const sdkScript = document.createElement('script');
-        sdkScript.src = '/lib/scansnap.websdk.js';
-        sdkScript.async = false;
-        document.head.appendChild(sdkScript);
+        // ScanSnap SDKを読み込む
+        if (!window.scansnap?.websdk) {
+          const existingSDK = document.querySelector('script[src*="scansnap.websdk"]');
+          if (!existingSDK) {
+            const sdkScript = document.createElement('script');
+            sdkScript.src = '/lib/scansnap.websdk.js';
+            sdkScript.async = false;
+            document.head.appendChild(sdkScript);
 
-        await new Promise<void>((resolve) => {
-          sdkScript.onload = () => resolve();
-        });
-      }
+            await new Promise<void>((resolve, reject) => {
+              sdkScript.onload = () => resolve();
+              sdkScript.onerror = () => reject(new Error('ScanSnap SDK load failed'));
+            });
+          } else {
+            // 既存のスクリプトが読み込み完了を待つ
+            await new Promise<void>((resolve) => {
+              const check = setInterval(() => {
+                if (window.scansnap?.websdk) {
+                  clearInterval(check);
+                  resolve();
+                }
+              }, 50);
+              setTimeout(() => {
+                clearInterval(check);
+                resolve();
+              }, 3000);
+            });
+          }
+        }
 
-      sdkLoadedRef.current = true;
+        window.__scanSnapSDKLoaded = true;
+        window.__scanSnapSDKLoading = false;
 
-      // 自動接続
-      if (autoConnect) {
-        setTimeout(() => {
-          connect();
-        }, 500);
+        // 自動接続
+        if (autoConnect && mountedRef.current) {
+          setTimeout(() => {
+            if (mountedRef.current) {
+              connect();
+            }
+          }, 500);
+        }
+      } catch (error) {
+        console.error('[ScanSnap] SDK load error:', error);
+        window.__scanSnapSDKLoading = false;
       }
     };
 
     loadSDK();
+
+    // クリーンアップ
+    return () => {
+      mountedRef.current = false;
+    };
   }, [autoConnect]);
 
   // ScanSnap Homeへの接続
   const connect = useCallback(async (): Promise<boolean> => {
     if (!window.scansnap?.websdk) {
       const error = 'ScanSnap SDKが読み込まれていません';
-      setLastError(error);
+      if (mountedRef.current) {
+        setLastError(error);
+      }
       onError?.(error);
       return false;
     }
@@ -104,8 +192,10 @@ export function useScanSnap(options: UseScanSnapOptions = {}): UseScanSnapReturn
       return true;
     }
 
-    setStatus('connecting');
-    setLastError(null);
+    if (mountedRef.current) {
+      setStatus('connecting');
+      setLastError(null);
+    }
 
     try {
       const resultCode = await new Promise<number>((resolve) => {
@@ -114,16 +204,21 @@ export function useScanSnap(options: UseScanSnapOptions = {}): UseScanSnapReturn
         });
       });
 
+      if (!mountedRef.current) return false;
+
       if (resultCode === 0) {
         initializedRef.current = true;
         setStatus('connected');
 
-        // スキャン設定（自動モード）
+        // スキャン設定（自動モード + OCR補助設定）
         const sdk = window.scansnap.websdk;
-        sdk.scanMode = ScanMode.Auto;           // 自動（99）- ユーザー推奨
-        sdk.format = FileFormat.JPEG;           // JPEG形式（PDF変換不要）
+        sdk.scanMode = ScanMode.Auto;           // 自動（99）- ハードウェアにお任せ
+        sdk.format = FileFormat.JPEG;           // JPEG形式
         sdk.compression = Compression.JPEG;     // JPEG圧縮
         sdk.colorMode = ColorMode.Auto;         // カラー自動判別
+        sdk.deskew = true;                      // 傾き補正ON（OCRに有効）
+        sdk.blankPageSkip = true;               // 白紙スキップON
+        sdk.rotation = Rotation.Auto;           // 回転自動補正（OCRに有効）
 
         return true;
       } else {
@@ -143,6 +238,7 @@ export function useScanSnap(options: UseScanSnapOptions = {}): UseScanSnapReturn
         return false;
       }
     } catch (error) {
+      if (!mountedRef.current) return false;
       const errorMessage = error instanceof Error ? error.message : '接続エラー';
       setLastError(errorMessage);
       setStatus('error');
@@ -161,7 +257,9 @@ export function useScanSnap(options: UseScanSnapOptions = {}): UseScanSnapReturn
   const scan = useCallback(async (): Promise<DirectScanResult | null> => {
     if (!window.scansnap?.websdk || !initializedRef.current) {
       const error = 'ScanSnapに接続されていません';
-      setLastError(error);
+      if (mountedRef.current) {
+        setLastError(error);
+      }
       onError?.(error);
       return null;
     }
@@ -170,9 +268,11 @@ export function useScanSnap(options: UseScanSnapOptions = {}): UseScanSnapReturn
       return null;
     }
 
-    setIsScanning(true);
-    setStatus('scanning');
-    setLastError(null);
+    if (mountedRef.current) {
+      setIsScanning(true);
+      setStatus('scanning');
+      setLastError(null);
+    }
 
     const startTime = Date.now();
 
@@ -214,8 +314,10 @@ export function useScanSnap(options: UseScanSnapOptions = {}): UseScanSnapReturn
 
       if (scanResult !== 0) {
         const errorMessage = ScanSnapErrorCodes[scanResult] || `スキャンエラー: ${scanResult}`;
-        setLastError(errorMessage);
-        setStatus('error');
+        if (mountedRef.current) {
+          setLastError(errorMessage);
+          setStatus('error');
+        }
         onError?.(errorMessage);
 
         // 詳細なエラーメッセージをコンソールに出力
@@ -255,8 +357,10 @@ export function useScanSnap(options: UseScanSnapOptions = {}): UseScanSnapReturn
 
       if (scannedFileIds.length === 0) {
         const error = 'スキャンされたファイルがありません。原稿がスキャナーにセットされているか確認してください。';
-        setLastError(error);
-        setStatus('connected');
+        if (mountedRef.current) {
+          setLastError(error);
+          setStatus('connected');
+        }
         onError?.(error);
         return null;
       }
@@ -267,6 +371,18 @@ export function useScanSnap(options: UseScanSnapOptions = {}): UseScanSnapReturn
         window.scansnap!.websdk.GetBase64Data(scannedFileIds[0])
           .done((data: string) => {
             console.log('[ScanSnap] Base64 data received, length:', data?.length);
+            // デバッグ: Base64データの最初の100文字を表示（フォーマット確認用）
+            console.log('[ScanSnap] Base64 data prefix:', data?.substring(0, 100));
+            // デバッグ: データ形式の確認
+            if (data?.startsWith('data:')) {
+              console.log('[ScanSnap] Data URL format detected');
+            } else if (data?.startsWith('/9j/')) {
+              console.log('[ScanSnap] Raw JPEG Base64 detected');
+            } else if (data?.startsWith('iVBOR')) {
+              console.log('[ScanSnap] Raw PNG Base64 detected');
+            } else {
+              console.log('[ScanSnap] Unknown data format, first chars:', data?.substring(0, 20));
+            }
             resolve(data);
           })
           .fail((err: unknown) => {
@@ -286,16 +402,22 @@ export function useScanSnap(options: UseScanSnapOptions = {}): UseScanSnapReturn
       // Base64データを一時的に保存（後でOCR処理に使用）
       (result as DirectScanResult & { _imageBase64: string })._imageBase64 = base64Data;
 
-      setStatus('connected');
+      if (mountedRef.current) {
+        setStatus('connected');
+      }
       return result;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'スキャンエラー';
-      setLastError(errorMessage);
-      setStatus('connected');
+      if (mountedRef.current) {
+        setLastError(errorMessage);
+        setStatus('connected');
+      }
       onError?.(errorMessage);
       return null;
     } finally {
-      setIsScanning(false);
+      if (mountedRef.current) {
+        setIsScanning(false);
+      }
     }
   }, [isScanning, onError]);
 
@@ -310,7 +432,9 @@ export function useScanSnap(options: UseScanSnapOptions = {}): UseScanSnapReturn
     const imageBase64 = (scanResult as DirectScanResult & { _imageBase64?: string })._imageBase64;
     if (!imageBase64) {
       const error = '画像データの取得に失敗しました';
-      setLastError(error);
+      if (mountedRef.current) {
+        setLastError(error);
+      }
       onError?.(error);
       return null;
     }
@@ -343,13 +467,17 @@ export function useScanSnap(options: UseScanSnapOptions = {}): UseScanSnapReturn
 
       const result: DirectScanResult = await response.json();
       console.log('[ScanSnap] OCR API result:', result);
-      setLastResult(result);
+      if (mountedRef.current) {
+        setLastResult(result);
+      }
       onScanComplete?.(result);
       return result;
     } catch (error) {
       console.error('[ScanSnap] OCR API error:', error);
       const errorMessage = error instanceof Error ? error.message : 'OCR処理エラー';
-      setLastError(errorMessage);
+      if (mountedRef.current) {
+        setLastError(errorMessage);
+      }
       onError?.(errorMessage);
       return null;
     }
