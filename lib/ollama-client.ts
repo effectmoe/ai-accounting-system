@@ -2,7 +2,17 @@ import { logger } from '@/lib/logger';
 
 /**
  * Ollama API クライアント
- * ローカルLLM（Command R）との連携
+ * ローカルLLM（Qwen3-VL Thinking）との連携
+ *
+ * クラウド対応:
+ * - ローカル開発: http://localhost:11434
+ * - クラウド本番: https://local-ollama.otona-off.style (Cloudflare Tunnel経由)
+ *
+ * 環境変数:
+ * - OLLAMA_URL: OllamaのベースURL
+ * - OLLAMA_MODEL: デフォルトモデル（qwen3-vl - 2025-01 Command R廃止）
+ * - OLLAMA_VISION_MODEL: Visionモデル（qwen3-vl）
+ * - OLLAMA_TIMEOUT: タイムアウト（ミリ秒、デフォルト: 120000）
  */
 
 interface OllamaMessage {
@@ -17,6 +27,7 @@ interface OllamaResponse {
   message: {
     role: string;
     content: string;
+    thinking?: string; // Qwen3-VLのthinkingモード用（/no_think未使用時）
   };
   done: boolean;
   total_duration?: number;
@@ -37,19 +48,47 @@ interface OllamaOptions {
   stream?: boolean;
 }
 
+// デフォルト設定
+const DEFAULT_LOCAL_URL = 'http://localhost:11434';
+const DEFAULT_CLOUD_URL = 'https://local-ollama.otona-off.style';
+const DEFAULT_TIMEOUT_LOCAL = 60000;  // ローカル: 60秒
+const DEFAULT_TIMEOUT_CLOUD = 180000; // クラウド: 180秒（Tunnel経由のレイテンシを考慮）
+
 export class OllamaClient {
   private baseURL: string;
   private defaultModel: string;
-  private defaultTimeout: number = 60000; // 60秒（Command Rは大きなモデルなので余裕を持たせる）
+  private defaultTimeout: number;
   private isAvailable: boolean = false;
+  private isCloudMode: boolean = false;
 
   constructor(baseURL?: string, model?: string) {
-    this.baseURL = baseURL || process.env.OLLAMA_URL || 'http://localhost:11434';
-    this.defaultModel = model || process.env.OLLAMA_MODEL || 'command-r';
+    // クラウド環境かローカル環境かを判定
+    this.isCloudMode = process.env.VERCEL === '1' ||
+                       process.env.CLOUDFLARE === '1' ||
+                       process.env.NODE_ENV === 'production';
 
-    logger.debug('[OllamaClient] Initializing...', {
+    // URL決定ロジック: 環境変数 > クラウド/ローカルデフォルト
+    // 環境変数の値をtrimして改行文字を除去
+    if (baseURL) {
+      this.baseURL = baseURL.trim();
+    } else if (process.env.OLLAMA_URL) {
+      this.baseURL = process.env.OLLAMA_URL.trim();
+    } else {
+      this.baseURL = this.isCloudMode ? DEFAULT_CLOUD_URL : DEFAULT_LOCAL_URL;
+    }
+
+    // 2025-01: Command R廃止 → Qwen3-VL Thinkingに統合
+    this.defaultModel = model || process.env.OLLAMA_MODEL || 'qwen3-vl';
+
+    // タイムアウト設定: 環境変数 > クラウド/ローカルデフォルト
+    const envTimeout = process.env.OLLAMA_TIMEOUT ? parseInt(process.env.OLLAMA_TIMEOUT, 10) : undefined;
+    this.defaultTimeout = envTimeout || (this.isCloudMode ? DEFAULT_TIMEOUT_CLOUD : DEFAULT_TIMEOUT_LOCAL);
+
+    logger.info('[OllamaClient] Initializing...', {
       baseURL: this.baseURL,
-      model: this.defaultModel
+      model: this.defaultModel,
+      isCloudMode: this.isCloudMode,
+      timeout: this.defaultTimeout
     });
   }
 
@@ -282,7 +321,79 @@ export class OllamaClient {
       temperature: options.temperature ?? 0.3
     });
 
+    // Qwen3-VLのthinkingモードが有効な場合、thinkingフィールドも返される
+    // /no_think フラグを使用している場合は thinking は空
+    if (response.message.thinking) {
+      logger.debug('[OllamaClient] Qwen3-VL thinking mode response:', {
+        thinkingLength: response.message.thinking.length,
+        contentLength: response.message.content?.length || 0
+      });
+    }
+
     return response.message.content || '';
+  }
+
+  /**
+   * Thinkingモード付きチャット（税務・会計相談、仕訳相談用）
+   * Qwen3-VLのThinkingモードを有効化し、推論プロセスを含めた回答を生成
+   *
+   * @param systemPrompt - システムプロンプト
+   * @param userPrompt - ユーザーの質問
+   * @param conversationHistory - 会話履歴（省略可）
+   * @param options - Ollamaオプション
+   * @returns 回答テキスト（thinkingプロセスは内部で処理される）
+   */
+  async chatWithThinking(
+    systemPrompt: string,
+    userPrompt: string,
+    conversationHistory: Array<{ role: 'user' | 'assistant'; content: string }> = [],
+    options: OllamaOptions = {}
+  ): Promise<{ content: string; thinking?: string }> {
+    logger.debug('[OllamaClient] Starting Thinking mode chat...', {
+      systemPromptLength: systemPrompt.length,
+      userPromptLength: userPrompt.length,
+      historyLength: conversationHistory.length
+    });
+
+    // Thinkingモードを有効化するため、プロンプトに /think を追加
+    // Qwen3-VLでは /think をプロンプト末尾に付けるとThinkingモードが有効になる
+    const thinkingUserPrompt = `${userPrompt}\n\n/think`;
+
+    const messages: OllamaMessage[] = [
+      { role: 'system', content: systemPrompt },
+      ...conversationHistory.map(msg => ({
+        role: msg.role as 'user' | 'assistant',
+        content: msg.content
+      })),
+      { role: 'user', content: thinkingUserPrompt }
+    ];
+
+    // Thinkingモードは推論に時間がかかるため、タイムアウトを延長
+    const thinkingTimeout = Math.max(this.defaultTimeout, 180000); // 最低3分
+    const originalTimeout = this.defaultTimeout;
+    this.defaultTimeout = thinkingTimeout;
+
+    try {
+      const response = await this.chat(messages, {
+        ...options,
+        model: options.model || this.defaultModel,
+        temperature: options.temperature ?? 0.7, // 相談系はやや高めの温度
+        num_predict: options.num_predict ?? 2000, // 回答は長めに
+      });
+
+      logger.debug('[OllamaClient] Thinking mode response received:', {
+        contentLength: response.message.content?.length || 0,
+        hasThinking: !!response.message.thinking
+      });
+
+      return {
+        content: response.message.content || '',
+        thinking: response.message.thinking
+      };
+    } finally {
+      // タイムアウトを元に戻す
+      this.defaultTimeout = originalTimeout;
+    }
   }
 
   /**
@@ -299,8 +410,17 @@ export class OllamaClient {
     return {
       baseURL: this.baseURL,
       model: this.defaultModel,
-      isAvailable: this.isAvailable
+      isAvailable: this.isAvailable,
+      isCloudMode: this.isCloudMode,
+      timeout: this.defaultTimeout
     };
+  }
+
+  /**
+   * クラウドモードかどうかを取得
+   */
+  isCloud(): boolean {
+    return this.isCloudMode;
   }
 }
 
