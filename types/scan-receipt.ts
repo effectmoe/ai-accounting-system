@@ -31,6 +31,13 @@ export interface ScannedReceiptMetadata {
   visionModelUsed: string;
   ocrConfidence?: number; // 0-1
   rawOcrText?: string; // OCR生テキスト（デバッグ用）
+
+  // 画像アップロード情報
+  imageKey?: string; // R2オブジェクトキー
+  imageSize?: number; // 画像サイズ（バイト）
+  imageWidth?: number;
+  imageHeight?: number;
+  imageFormat?: string; // 'webp'
 }
 
 // Vision Model から抽出されるデータ構造

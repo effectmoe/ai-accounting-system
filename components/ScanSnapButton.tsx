@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -16,9 +16,15 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { Loader2, Wifi, WifiOff, ScanLine, CheckCircle2, AlertCircle } from 'lucide-react';
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from '@/components/ui/alert';
+import { Loader2, Wifi, WifiOff, ScanLine, CheckCircle2, AlertCircle, Info, Bell } from 'lucide-react';
 import { useScanSnap } from '@/hooks/useScanSnap';
 import { DirectScanResult } from '@/types/scansnap';
+import { toast } from 'sonner';
 
 interface ScanSnapButtonProps {
   onScanComplete?: (result: DirectScanResult) => void;
@@ -41,6 +47,8 @@ export function ScanSnapButton({
   className,
 }: ScanSnapButtonProps) {
   const [showResultDialog, setShowResultDialog] = useState(false);
+  const [showSetupGuide, setShowSetupGuide] = useState(false);
+  const [isFirstConnection, setIsFirstConnection] = useState(true);
 
   const {
     status,
@@ -63,11 +71,31 @@ export function ScanSnapButton({
   const handleClick = async () => {
     // 未接続なら接続
     if (!isReady) {
+      // 初回接続時は許可ダイアログの案内を表示
+      if (isFirstConnection) {
+        toast.info(
+          'ScanSnap Homeの許可ダイアログが表示される場合があります。\n「はい」をクリックしてください。',
+          {
+            duration: 5000,
+            icon: <Bell className="h-4 w-4" />,
+          }
+        );
+        setIsFirstConnection(false);
+      }
+
       const connected = await connect();
       if (!connected) {
         return;
       }
     }
+
+    // スキャン開始の通知
+    toast.info(
+      'スキャンを開始します。許可ダイアログが表示された場合は「はい」を押してください。',
+      {
+        duration: 3000,
+      }
+    );
 
     // スキャン実行
     await scanAndProcess();
@@ -103,34 +131,55 @@ export function ScanSnapButton({
 
   return (
     <>
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              onClick={handleClick}
-              disabled={status === 'connecting' || status === 'scanning'}
-              variant="outline"
-              className={`flex items-center gap-2 ${className}`}
-            >
-              {status === 'connecting' || status === 'scanning' ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <ScanLine className="h-4 w-4" />
-              )}
-              {getButtonText()}
-              <StatusIcon />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>ScanSnapスキャナーで領収書をスキャン</p>
-            <p className="text-xs text-muted-foreground">
-              {status === 'disconnected' && 'クリックして接続'}
-              {status === 'connected' && 'スキャン準備完了'}
-              {status === 'error' && lastError}
-            </p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      <div className="flex items-center gap-1">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                onClick={handleClick}
+                disabled={status === 'connecting' || status === 'scanning'}
+                variant="outline"
+                className={`flex items-center gap-2 ${className}`}
+              >
+                {status === 'connecting' || status === 'scanning' ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <ScanLine className="h-4 w-4" />
+                )}
+                {getButtonText()}
+                <StatusIcon />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>ScanSnapスキャナーで領収書をスキャン</p>
+              <p className="text-xs text-muted-foreground">
+                {status === 'disconnected' && 'クリックして接続'}
+                {status === 'connected' && 'スキャン準備完了'}
+                {status === 'error' && lastError}
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+
+        {/* 設定ガイドボタン */}
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setShowSetupGuide(true)}
+              >
+                <Info className="h-4 w-4 text-muted-foreground" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>許可ダイアログを無効化する方法</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
 
       {/* 結果ダイアログ */}
       <Dialog open={showResultDialog} onOpenChange={setShowResultDialog}>
@@ -213,6 +262,47 @@ export function ScanSnapButton({
                 続けてスキャン
               </Button>
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* 設定ガイドダイアログ */}
+      <Dialog open={showSetupGuide} onOpenChange={setShowSetupGuide}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Info className="h-5 w-5 text-blue-500" />
+              許可ダイアログを無効化する方法
+            </DialogTitle>
+            <DialogDescription>
+              以下の設定を変更すると、毎回の許可確認が不要になります。
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 pt-4">
+            <Alert>
+              <Info className="h-4 w-4" />
+              <AlertTitle>ScanSnap Home の設定変更</AlertTitle>
+              <AlertDescription className="space-y-2 mt-2">
+                <ol className="list-decimal list-inside space-y-1 text-sm">
+                  <li><strong>ScanSnap Home</strong> を開く</li>
+                  <li>メニューバー → <strong>ScanSnap Home</strong> → <strong>環境設定</strong></li>
+                  <li><strong>スキャン</strong> タブを選択</li>
+                  <li>「ネットワークスキャン」の設定を確認</li>
+                  <li>「常に許可」を選択して保存</li>
+                </ol>
+              </AlertDescription>
+            </Alert>
+
+            <p className="text-xs text-muted-foreground">
+              ※ 設定変更後はScanSnap Homeを再起動してください。
+            </p>
+          </div>
+
+          <div className="flex justify-end pt-4">
+            <Button variant="outline" onClick={() => setShowSetupGuide(false)}>
+              閉じる
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
