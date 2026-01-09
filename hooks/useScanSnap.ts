@@ -47,56 +47,88 @@ declare global {
  * OCRに十分な品質を維持しつつ、ファイルサイズを削減
  */
 async function compressImageForUpload(base64Data: string, quality: number = 0.75): Promise<string> {
+  console.log('[ScanSnap Compress] Starting compression, input length:', base64Data.length);
+
   return new Promise((resolve, reject) => {
+    // 10秒タイムアウト
+    const timeout = setTimeout(() => {
+      console.error('[ScanSnap Compress] Timeout after 10 seconds');
+      reject(new Error('Image compression timeout'));
+    }, 10000);
+
     const img = new Image();
 
     img.onload = () => {
-      // 最大サイズを制限（長辺2000px）- OCRには十分
-      const maxDimension = 2000;
-      let { width, height } = img;
+      console.log('[ScanSnap Compress] Image loaded, dimensions:', img.width, 'x', img.height);
 
-      if (width > maxDimension || height > maxDimension) {
-        if (width > height) {
-          height = Math.round((height * maxDimension) / width);
-          width = maxDimension;
-        } else {
-          width = Math.round((width * maxDimension) / height);
-          height = maxDimension;
+      try {
+        // 最大サイズを制限（長辺2000px）- OCRには十分
+        const maxDimension = 2000;
+        let { width, height } = img;
+
+        if (width > maxDimension || height > maxDimension) {
+          if (width > height) {
+            height = Math.round((height * maxDimension) / width);
+            width = maxDimension;
+          } else {
+            width = Math.round((width * maxDimension) / height);
+            height = maxDimension;
+          }
+          console.log('[ScanSnap Compress] Resized to:', width, 'x', height);
         }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          clearTimeout(timeout);
+          reject(new Error('Canvas context not available'));
+          return;
+        }
+
+        // 高品質な描画設定
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // JPEG形式で圧縮（OCR用に0.75品質）
+        const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
+        console.log(`[ScanSnap Compress] Done: ${base64Data.length} -> ${compressedBase64.length} (${Math.round(compressedBase64.length / base64Data.length * 100)}%)`);
+
+        clearTimeout(timeout);
+        resolve(compressedBase64);
+      } catch (e) {
+        console.error('[ScanSnap Compress] Error in onload:', e);
+        clearTimeout(timeout);
+        reject(e);
       }
-
-      const canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
-
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        reject(new Error('Canvas context not available'));
-        return;
-      }
-
-      // 高品質な描画設定
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'high';
-      ctx.drawImage(img, 0, 0, width, height);
-
-      // JPEG形式で圧縮（OCR用に0.75品質）
-      const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
-      console.log(`[ScanSnap] Image compressed: ${base64Data.length} -> ${compressedBase64.length} (${Math.round(compressedBase64.length / base64Data.length * 100)}%)`);
-
-      resolve(compressedBase64);
     };
 
-    img.onerror = () => {
+    img.onerror = (e) => {
+      console.error('[ScanSnap Compress] Image load error:', e);
+      clearTimeout(timeout);
       reject(new Error('Failed to load image for compression'));
     };
 
     // Base64データがdata:プレフィックスを含まない場合は追加
+    let imgSrc: string;
     if (base64Data.startsWith('data:')) {
-      img.src = base64Data;
+      imgSrc = base64Data;
     } else {
-      img.src = `data:image/jpeg;base64,${base64Data}`;
+      // JPEG/PNGを判定
+      if (base64Data.startsWith('/9j/')) {
+        imgSrc = `data:image/jpeg;base64,${base64Data}`;
+      } else if (base64Data.startsWith('iVBOR')) {
+        imgSrc = `data:image/png;base64,${base64Data}`;
+      } else {
+        // デフォルトはJPEG
+        imgSrc = `data:image/jpeg;base64,${base64Data}`;
+      }
     }
+    console.log('[ScanSnap Compress] Setting image src, format:', imgSrc.substring(0, 30));
+    img.src = imgSrc;
   });
 }
 
@@ -481,15 +513,23 @@ export function useScanSnap(options: UseScanSnapOptions = {}): UseScanSnapReturn
 
   // スキャン → OCR処理 → 領収書登録
   const scanAndProcess = useCallback(async (): Promise<DirectScanResult | null> => {
+    console.log('[ScanSnap] scanAndProcess started');
+
     // まずスキャン
     const scanResult = await scan();
+    console.log('[ScanSnap] scan() completed, result:', scanResult?.success);
+
     if (!scanResult || !scanResult.success) {
+      console.log('[ScanSnap] Scan failed or no result');
       return scanResult;
     }
 
     const imageBase64 = (scanResult as DirectScanResult & { _imageBase64?: string })._imageBase64;
+    console.log('[ScanSnap] imageBase64 exists:', !!imageBase64, 'length:', imageBase64?.length);
+
     if (!imageBase64) {
       const error = '画像データの取得に失敗しました';
+      console.error('[ScanSnap] No imageBase64 data');
       if (mountedRef.current) {
         setLastError(error);
       }
@@ -499,30 +539,51 @@ export function useScanSnap(options: UseScanSnapOptions = {}): UseScanSnapReturn
 
     // OCR処理APIを呼び出し
     try {
+      console.log('[ScanSnap] Starting OCR process');
       console.log('[ScanSnap] Original image length:', imageBase64.length);
+      console.log('[ScanSnap] Original image prefix:', imageBase64.substring(0, 50));
 
       // 画像を圧縮（Vercel 4.5MBボディ制限対応）
       let compressedImage: string;
       try {
+        console.log('[ScanSnap] Starting compression with quality 0.75');
         compressedImage = await compressImageForUpload(imageBase64, 0.75);
         console.log('[ScanSnap] Compressed image length:', compressedImage.length);
       } catch (compressError) {
-        console.warn('[ScanSnap] Compression failed, using original:', compressError);
-        compressedImage = imageBase64;
+        console.warn('[ScanSnap] Compression failed:', compressError);
+        // 圧縮失敗時は元画像をdata:形式に変換
+        if (imageBase64.startsWith('data:')) {
+          compressedImage = imageBase64;
+        } else {
+          compressedImage = `data:image/jpeg;base64,${imageBase64}`;
+        }
+        console.log('[ScanSnap] Using original image, length:', compressedImage.length);
       }
 
       // 圧縮後もまだ大きすぎる場合はさらに品質を下げる
       if (compressedImage.length > 3_500_000) {
-        console.log('[ScanSnap] Image still too large, applying more compression...');
+        console.log('[ScanSnap] Image still too large (' + compressedImage.length + '), applying more compression...');
         try {
           compressedImage = await compressImageForUpload(imageBase64, 0.5);
           console.log('[ScanSnap] Further compressed image length:', compressedImage.length);
-        } catch {
+        } catch (e) {
+          console.warn('[ScanSnap] Second compression failed:', e);
           // 無視して現在の圧縮済み画像を使用
         }
       }
 
-      console.log('[ScanSnap] Calling OCR API with image length:', compressedImage.length);
+      // 最終サイズチェック
+      const bodySizeEstimate = JSON.stringify({
+        imageBase64: compressedImage,
+        fileName: `scansnap_${Date.now()}.jpg`,
+      }).length;
+      console.log('[ScanSnap] Estimated request body size:', bodySizeEstimate, 'bytes (~' + Math.round(bodySizeEstimate / 1024 / 1024 * 100) / 100 + ' MB)');
+
+      if (bodySizeEstimate > 4_500_000) {
+        console.error('[ScanSnap] WARNING: Request body exceeds Vercel 4.5MB limit!');
+      }
+
+      console.log('[ScanSnap] Calling OCR API...');
 
       const response = await fetch('/api/scan-receipt/direct-scan', {
         method: 'POST',
