@@ -9,6 +9,8 @@
   },
   "scripts": {
     "dev": "next dev",
+    "dev:clean": "rm -rf .next node_modules/.cache",
+    "dev:scan": "npm run dev:clean && next dev -p 3003 & sleep 3 && tsx scripts/watch-scan-folder.ts",
     "prebuild": "node scripts/disable-telemetry.js",
     "build": "DO_NOT_TRACK=1 NEXT_TELEMETRY_DISABLED=1 NODE_OPTIONS='--max-old-space-size=4096' next build",
     "build:stable": "node scripts/stable-build.js",
@@ -51,6 +53,7 @@
     "@ai-sdk/anthropic": "^1.0.0",
     "@ai-sdk/openai": "^1.0.14",
     "@anthropic-ai/sdk": "^0.27.3",
+    "@aws-sdk/client-s3": "^3.965.0",
     "@azure/ai-form-recognizer": "^5.1.0",
     "@azure/cosmos": "^4.4.0",
     "@azure/openai": "^2.0.0",
