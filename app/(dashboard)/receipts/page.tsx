@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -64,8 +64,27 @@ interface Receipt {
   issuerName?: string;
 }
 
+// LocalStorageキー
+const FILTER_STORAGE_KEY = 'receipts-filter-state';
+
+// localStorageから初期値を取得するヘルパー関数
+const getStoredValue = (key: string, defaultValue: string): string => {
+  if (typeof window === 'undefined') return defaultValue;
+  try {
+    const stored = localStorage.getItem(FILTER_STORAGE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (parsed[key] !== undefined) return parsed[key];
+    }
+  } catch (e) {
+    // ignore
+  }
+  return defaultValue;
+};
+
 export default function ReceiptsPage() {
   const router = useRouter();
+
   const [receipts, setReceipts] = useState<Receipt[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -77,7 +96,7 @@ export default function ReceiptsPage() {
   const [isDeleting, setIsDeleting] = useState(false);
 
   // 並び替え
-  const [sortBy, setSortBy] = useState<'issueDate' | 'totalAmount' | 'issuerName'>('issueDate');
+  const [sortBy, setSortBy] = useState<'issueDate' | 'totalAmount' | 'issuerName' | 'processedAt'>('issueDate');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
   // フィルター
@@ -106,6 +125,69 @@ export default function ReceiptsPage() {
   const [itemsPerPage] = useState(20);
   const totalPages = Math.ceil(totalCount / itemsPerPage);
 
+  // 検索のデバウンス処理（500ms待機後に検索実行）
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+
+  // 初回マウント時にlocalStorageからフィルター状態を復元
+  const [isInitialized, setIsInitialized] = useState(false);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const stored = localStorage.getItem(FILTER_STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed.search) {
+          setSearchTerm(parsed.search);
+          setDebouncedSearchTerm(parsed.search); // デバウンス値も同時に設定
+        }
+        if (parsed.status) setStatusFilter(parsed.status);
+        if (parsed.sortBy) setSortBy(parsed.sortBy);
+        if (parsed.sortOrder) setSortOrder(parsed.sortOrder);
+        if (parsed.accountCategory) setAccountCategoryFilter(parsed.accountCategory);
+        if (parsed.amountMin) setAmountMin(parsed.amountMin);
+        if (parsed.amountMax) setAmountMax(parsed.amountMax);
+        if (parsed.activeTab) setActiveTab(parsed.activeTab);
+      }
+    } catch (e) {
+      // ignore
+    }
+    // 少し遅延させて初期化完了とする（State更新が反映されるのを待つ）
+    setTimeout(() => {
+      setIsInitialized(true);
+    }, 0);
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (debouncedSearchTerm !== searchTerm) {
+        setDebouncedSearchTerm(searchTerm);
+        setCurrentPage(1);
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchTerm, debouncedSearchTerm]);
+
+  // フィルター状態をlocalStorageに保存（初期化完了後のみ）
+  useEffect(() => {
+    if (!isInitialized) return;
+    if (typeof window === 'undefined') return;
+    try {
+      const filterState = {
+        search: searchTerm,
+        status: statusFilter,
+        sortBy: sortBy,
+        sortOrder: sortOrder,
+        accountCategory: accountCategoryFilter,
+        amountMin: amountMin,
+        amountMax: amountMax,
+        activeTab: activeTab,
+      };
+      localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify(filterState));
+    } catch (e) {
+      // ignore storage errors
+    }
+  }, [isInitialized, searchTerm, statusFilter, sortBy, sortOrder, accountCategoryFilter, amountMin, amountMax, activeTab]);
+
   // データ取得関数（早期定義）
   const fetchReceipts = useCallback(async () => {
     try {
@@ -118,7 +200,7 @@ export default function ReceiptsPage() {
       });
 
       if (statusFilter && statusFilter !== 'all') params.append('status', statusFilter);
-      if (searchTerm) params.append('search', searchTerm);
+      if (debouncedSearchTerm) params.append('search', debouncedSearchTerm);
 
       // 勘定科目フィルタ
       if (accountCategoryFilter && accountCategoryFilter !== 'all') {
@@ -150,7 +232,7 @@ export default function ReceiptsPage() {
     } finally {
       setLoading(false);
     }
-  }, [itemsPerPage, currentPage, sortBy, sortOrder, statusFilter, searchTerm, accountCategoryFilter, amountMin, amountMax, activeTab]);
+  }, [itemsPerPage, currentPage, sortBy, sortOrder, statusFilter, debouncedSearchTerm, accountCategoryFilter, amountMin, amountMax, activeTab]);
 
   // 処理待ちPDF情報を取得
   const fetchPendingPdfs = useCallback(async () => {
@@ -188,13 +270,14 @@ export default function ReceiptsPage() {
     alert(`スキャンエラー: ${error}`);
   }, []);
 
-  // データ取得
+  // データ取得（初期化完了後のみ実行）
   useEffect(() => {
+    if (!isInitialized) return; // 初期化完了まで待機
     fetchReceipts();
     if (activeTab === 'scanned') {
       fetchPendingPdfs();
     }
-  }, [fetchReceipts, fetchPendingPdfs, activeTab]);
+  }, [isInitialized, fetchReceipts, fetchPendingPdfs, activeTab]);
 
   // スキャン処理を実行
   const handleProcessScan = async () => {
@@ -351,7 +434,7 @@ export default function ReceiptsPage() {
   };
 
   // 並び替えのトグル
-  const toggleSort = (field: 'issueDate' | 'totalAmount' | 'issuerName') => {
+  const toggleSort = (field: 'issueDate' | 'totalAmount' | 'issuerName' | 'processedAt') => {
     if (sortBy === field) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
     } else {
@@ -362,7 +445,7 @@ export default function ReceiptsPage() {
   };
 
   // 並び替えアイコンの取得
-  const getSortIcon = (field: 'issueDate' | 'totalAmount' | 'issuerName') => {
+  const getSortIcon = (field: 'issueDate' | 'totalAmount' | 'issuerName' | 'processedAt') => {
     if (sortBy !== field) return <ArrowUpDown className="h-4 w-4 ml-1 opacity-50" />;
     return sortOrder === 'asc'
       ? <ArrowUp className="h-4 w-4 ml-1" />
@@ -456,26 +539,6 @@ export default function ReceiptsPage() {
           </Button>
         </div>
       </div>
-
-      {/* タブナビゲーション */}
-      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as TabType)}>
-        <TabsList>
-          <TabsTrigger value="all">すべて</TabsTrigger>
-          <TabsTrigger value="manual" className="flex items-center gap-1">
-            <FileText className="h-4 w-4" />
-            発行領収書
-          </TabsTrigger>
-          <TabsTrigger value="scanned" className="flex items-center gap-1">
-            <Scan className="h-4 w-4" />
-            受領領収書
-            {pendingPdfCount > 0 && (
-              <Badge variant="destructive" className="ml-1 h-5 px-1.5 text-xs">
-                {pendingPdfCount}
-              </Badge>
-            )}
-          </TabsTrigger>
-        </TabsList>
-      </Tabs>
 
       {/* スキャン処理結果 */}
       {processingResult && (
@@ -576,7 +639,201 @@ export default function ReceiptsPage() {
         </Card>
       )}
 
-      {/* 一括操作 */}
+      {/* 統計情報 */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">総領収書数</CardTitle>
+            <ReceiptIcon className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalCount}</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">発行済み</CardTitle>
+            <CheckCircle2 className="h-4 w-4 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {receipts.filter(r => r.status === 'issued').length}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">送信済み</CardTitle>
+            <FileDown className="h-4 w-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {receipts.filter(r => r.status === 'sent').length}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">総金額</CardTitle>
+            <FileText className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              ¥{receipts.reduce((sum, receipt) => sum + receipt.totalAmount, 0).toLocaleString()}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* タブナビゲーション */}
+      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as TabType)}>
+        <TabsList>
+          <TabsTrigger value="all">すべて</TabsTrigger>
+          <TabsTrigger value="manual" className="flex items-center gap-1">
+            <FileText className="h-4 w-4" />
+            発行領収書
+          </TabsTrigger>
+          <TabsTrigger value="scanned" className="flex items-center gap-1">
+            <Scan className="h-4 w-4" />
+            受領領収書
+            {pendingPdfCount > 0 && (
+              <Badge variant="destructive" className="ml-1 h-5 px-1.5 text-xs">
+                {pendingPdfCount}
+              </Badge>
+            )}
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
+
+      {/* フィルターバー */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="space-y-4">
+            {/* 上段: 検索と基本フィルター */}
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-1">
+                <div className="relative">
+                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="領収書番号、発行元、請求書番号で検索..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="ステータス" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">全ステータス</SelectItem>
+                  <SelectItem value="draft">下書き</SelectItem>
+                  <SelectItem value="issued">発行済み</SelectItem>
+                  <SelectItem value="sent">送信済み</SelectItem>
+                  <SelectItem value="cancelled">キャンセル</SelectItem>
+                </SelectContent>
+              </Select>
+
+              {/* 並び替え */}
+              <Select value={`${sortBy}-${sortOrder}`} onValueChange={(value) => {
+                const [field, order] = value.split('-') as ['issueDate' | 'totalAmount' | 'issuerName' | 'processedAt', 'asc' | 'desc'];
+                setSortBy(field);
+                setSortOrder(order);
+                setCurrentPage(1);
+              }}>
+                <SelectTrigger className="w-48">
+                  <ArrowUpDown className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="並び替え" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="issueDate-desc">発行日（新しい順）</SelectItem>
+                  <SelectItem value="issueDate-asc">発行日（古い順）</SelectItem>
+                  <SelectItem value="processedAt-desc">スキャン日（新しい順）</SelectItem>
+                  <SelectItem value="processedAt-asc">スキャン日（古い順）</SelectItem>
+                  <SelectItem value="totalAmount-desc">金額（高い順）</SelectItem>
+                  <SelectItem value="totalAmount-asc">金額（低い順）</SelectItem>
+                  <SelectItem value="issuerName-asc">発行元（A→Z）</SelectItem>
+                  <SelectItem value="issuerName-desc">発行元（Z→A）</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* 下段: 詳細フィルター */}
+            <div className="flex flex-col sm:flex-row gap-4 items-end">
+              {/* 勘定科目フィルター（受領領収書タブまたはすべてタブ時のみ表示） */}
+              {(activeTab === 'scanned' || activeTab === 'all') && (
+                <div className="w-48">
+                  <label className="text-xs text-muted-foreground mb-1 block">勘定科目</label>
+                  <Select value={accountCategoryFilter} onValueChange={setAccountCategoryFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="勘定科目" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">全勘定科目</SelectItem>
+                      {ACCOUNT_CATEGORIES.map(cat => (
+                        <SelectItem key={cat.code} value={cat.code}>
+                          {cat.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {/* 金額範囲フィルター */}
+              <div className="flex items-end gap-2">
+                <div className="w-32">
+                  <label className="text-xs text-muted-foreground mb-1 block">金額（最小）</label>
+                  <Input
+                    type="number"
+                    placeholder="0"
+                    value={amountMin}
+                    onChange={(e) => setAmountMin(e.target.value)}
+                  />
+                </div>
+                <span className="pb-2 text-muted-foreground">〜</span>
+                <div className="w-32">
+                  <label className="text-xs text-muted-foreground mb-1 block">金額（最大）</label>
+                  <Input
+                    type="number"
+                    placeholder="上限なし"
+                    value={amountMax}
+                    onChange={(e) => setAmountMax(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* フィルタークリアボタン */}
+              {(accountCategoryFilter !== 'all' || amountMin || amountMax || statusFilter !== 'all' || searchTerm) && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setAccountCategoryFilter('all');
+                    setAmountMin('');
+                    setAmountMax('');
+                    setStatusFilter('all');
+                    setSearchTerm('');
+                    setDebouncedSearchTerm(''); // 即座にクリアして検索を実行
+                    setCurrentPage(1);
+                  }}
+                  className="text-muted-foreground"
+                >
+                  <Filter className="h-4 w-4 mr-1" />
+                  フィルターをクリア
+                </Button>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* 一括操作（領収書一覧テーブルのすぐ上に表示） */}
       {selectedReceipts.size > 0 && (
         <Card className="border-blue-200 bg-blue-50">
           <CardContent className="p-4">
@@ -646,177 +903,6 @@ export default function ReceiptsPage() {
         </Card>
       )}
 
-      {/* 統計情報 */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">総領収書数</CardTitle>
-            <ReceiptIcon className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalCount}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">発行済み</CardTitle>
-            <CheckCircle2 className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {receipts.filter(r => r.status === 'issued').length}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">送信済み</CardTitle>
-            <FileDown className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {receipts.filter(r => r.status === 'sent').length}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">総金額</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              ¥{receipts.reduce((sum, receipt) => sum + receipt.totalAmount, 0).toLocaleString()}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* フィルターバー */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="space-y-4">
-            {/* 上段: 検索と基本フィルター */}
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="領収書番号、発行元、請求書番号で検索..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="ステータス" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">全ステータス</SelectItem>
-                  <SelectItem value="draft">下書き</SelectItem>
-                  <SelectItem value="issued">発行済み</SelectItem>
-                  <SelectItem value="sent">送信済み</SelectItem>
-                  <SelectItem value="cancelled">キャンセル</SelectItem>
-                </SelectContent>
-              </Select>
-
-              {/* 並び替え */}
-              <Select value={`${sortBy}-${sortOrder}`} onValueChange={(value) => {
-                const [field, order] = value.split('-') as ['issueDate' | 'totalAmount' | 'issuerName', 'asc' | 'desc'];
-                setSortBy(field);
-                setSortOrder(order);
-                setCurrentPage(1);
-              }}>
-                <SelectTrigger className="w-48">
-                  <ArrowUpDown className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="並び替え" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="issueDate-desc">発行日（新しい順）</SelectItem>
-                  <SelectItem value="issueDate-asc">発行日（古い順）</SelectItem>
-                  <SelectItem value="totalAmount-desc">金額（高い順）</SelectItem>
-                  <SelectItem value="totalAmount-asc">金額（低い順）</SelectItem>
-                  <SelectItem value="issuerName-asc">発行元（A→Z）</SelectItem>
-                  <SelectItem value="issuerName-desc">発行元（Z→A）</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* 下段: 詳細フィルター */}
-            <div className="flex flex-col sm:flex-row gap-4 items-end">
-              {/* 勘定科目フィルター（受領領収書タブまたはすべてタブ時のみ表示） */}
-              {(activeTab === 'scanned' || activeTab === 'all') && (
-                <div className="w-48">
-                  <label className="text-xs text-muted-foreground mb-1 block">勘定科目</label>
-                  <Select value={accountCategoryFilter} onValueChange={setAccountCategoryFilter}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="勘定科目" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">全勘定科目</SelectItem>
-                      {ACCOUNT_CATEGORIES.map(cat => (
-                        <SelectItem key={cat.code} value={cat.code}>
-                          {cat.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-
-              {/* 金額範囲フィルター */}
-              <div className="flex items-end gap-2">
-                <div className="w-32">
-                  <label className="text-xs text-muted-foreground mb-1 block">金額（最小）</label>
-                  <Input
-                    type="number"
-                    placeholder="0"
-                    value={amountMin}
-                    onChange={(e) => setAmountMin(e.target.value)}
-                  />
-                </div>
-                <span className="pb-2 text-muted-foreground">〜</span>
-                <div className="w-32">
-                  <label className="text-xs text-muted-foreground mb-1 block">金額（最大）</label>
-                  <Input
-                    type="number"
-                    placeholder="上限なし"
-                    value={amountMax}
-                    onChange={(e) => setAmountMax(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              {/* フィルタークリアボタン */}
-              {(accountCategoryFilter !== 'all' || amountMin || amountMax || statusFilter !== 'all' || searchTerm) && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setAccountCategoryFilter('all');
-                    setAmountMin('');
-                    setAmountMax('');
-                    setStatusFilter('all');
-                    setSearchTerm('');
-                    setCurrentPage(1);
-                  }}
-                  className="text-muted-foreground"
-                >
-                  <Filter className="h-4 w-4 mr-1" />
-                  フィルターをクリア
-                </Button>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* 領収書一覧テーブル */}
       <Card>
         <CardHeader>
@@ -843,6 +929,7 @@ export default function ReceiptsPage() {
                   <TableHead>領収書番号</TableHead>
                   <TableHead>発行元</TableHead>
                   <TableHead>発行日</TableHead>
+                  <TableHead>スキャン日</TableHead>
                   <TableHead>金額</TableHead>
                   <TableHead>勘定科目</TableHead>
                   <TableHead>ステータス</TableHead>
@@ -881,6 +968,15 @@ export default function ReceiptsPage() {
                     </TableCell>
                     <TableCell onClick={() => router.push(`/receipts/${receipt._id}`)}>
                       {safeFormatDate(receipt.issueDate, 'yyyy/MM/dd', ja)}
+                    </TableCell>
+                    <TableCell onClick={() => router.push(`/receipts/${receipt._id}`)}>
+                      {receipt.scanMetadata?.processedAt ? (
+                        <span className="text-sm">
+                          {safeFormatDate(receipt.scanMetadata.processedAt, 'yyyy/MM/dd HH:mm', ja)}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground text-xs">-</span>
+                      )}
                     </TableCell>
                     <TableCell onClick={() => router.push(`/receipts/${receipt._id}`)}>
                       ¥{receipt.totalAmount.toLocaleString()}
