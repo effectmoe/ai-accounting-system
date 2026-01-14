@@ -16,10 +16,6 @@
 | PDFで住所とビル名が1行表示される | APIルートで住所生成時にスペース区切り使用 | 4つのAPIルート（quotes, invoices, delivery-notes, receipts）で住所生成ロジックを改行区切り（`\n`）に変更 |
 | PDFが2ページにまたがる | コンテンツサイズがA4に収まらない | フォントサイズ調整、余白削減、flexの比率調整 |
 | 備考欄がPDFに表示されない | notesフィールドのマッピング漏れ | pdf-generator.tsxでnotesの表示ロジックを追加 |
-| Puppeteer/Chromiumエラー | 誤ってPuppeteerを使用 | `@react-pdf/renderer`の`renderToBuffer()`を使用。Puppeteerパッケージを削除 |
-| 領収書PDFが生成されない | ReceiptPDFコンポーネントが未定義 | `lib/pdf-receipt-generator.tsx`にReceiptPDFを実装 |
-
-**詳細**: `/Users/tonychustudio/Documents/alldocs/tutorial/2025-12-17_AI会計システム_メールトラッキング_トラブルシューティング.md` セクション8
 
 ### 請求書画面関連
 
@@ -31,17 +27,11 @@
 
 **詳細レポート**: `/Users/tonychustudio/Documents/alldocs/report/2025-11-26_AI会計システム_請求書画面バグ修正レポート.md`
 
-### メール送信関連（Gmail OAuth2）
+### メール送信関連
 
 | 症状 | 原因 | 解決策 |
 |------|------|--------|
 | メール本文で会社名と担当者名が同一行 | `formatCustomerNameForEmail`関数でスペース区切り | `lib/honorific-utils.ts`で改行（`\n`）区切りに変更 |
-| Gmail not configured | 環境変数未設定 | GMAIL_CLIENT_ID, GMAIL_CLIENT_SECRET, GMAIL_REFRESH_TOKEN, GMAIL_USER を設定 |
-| invalid_grant | リフレッシュトークン失効 | Google OAuth Playground で新規トークン取得 |
-| invalid_client | 環境変数に改行文字（`\n`）が含まれている | `echo -n`で環境変数を再追加（セクション1-3参照） |
-| トラッキングが記録されない | TRACKING_WORKER_URL未設定 | Cloudflare Workers URLをVercelに設定 |
-| 開封が検知されない | 画像ブロック | ユーザー側で画像表示を許可（システム側では制御不可） |
-| CC/BCCに自動入力される | ブラウザのautocomplete | `autoComplete="off"`と一意の`name`属性を追加（セクション11参照） |
 
 **正しい宛名フォーマット:**
 ```typescript
@@ -51,23 +41,7 @@ if (companyName && contactName) {
 }
 ```
 
-**メールトラッキング実装詳細**: `/Users/tonychustudio/Documents/alldocs/tutorial/2025-12-17_AI会計システム_メールトラッキング実装マニュアル.md`
-
-**トラブルシューティング**: `/Users/tonychustudio/Documents/alldocs/tutorial/2025-12-17_AI会計システム_メールトラッキング_トラブルシューティング.md`
-
-### メール分析ダッシュボード関連
-
-| 症状 | 原因 | 解決策 |
-|------|------|--------|
-| ダッシュボードがモックデータを表示 | `quoteId`未指定時にハードコードされたモックデータを返していた | API呼び出しを常に実行し、Cloudflare Workersから実データを取得 |
-| 日付フィルターが機能しない | `dateRange`パラメータがAPIに渡されていない | `fetchData()`で`params.set('dateRange', selectedDateRange)`を追加 |
-| グラフにデータが表示されない | APIレスポンスに`timelineData`/`dailyStats`がない | APIルートでCloudflare Workersからの統計データを含めてレスポンス |
-
-**修正対象ファイル:**
-- `app/api/email-events/stats/route.ts` - 日付範囲フィルタリングとAPIレスポンス拡張
-- `components/email-analytics-dashboard.tsx` - API呼び出しロジック修正とモックデータ削除
-
-**詳細**: `/Users/tonychustudio/Documents/alldocs/tutorial/2025-12-17_AI会計システム_メールトラッキング_トラブルシューティング.md` セクション5
+**詳細レポート**: `/Users/tonychustudio/Documents/alldocs/report/2025-11-26_AI会計システム_メール宛名改行問題修正レポート.md`
 
 ### 検索・フィルター機能関連
 
@@ -209,17 +183,8 @@ vercel
 ```
 
 ### 環境変数（必須）
-
-| 変数名 | 説明 | 備考 |
-|--------|------|------|
-| `MONGODB_URI` | MongoDBの接続文字列 | 必須 |
-| `GMAIL_CLIENT_ID` | Google OAuth クライアントID | メール送信用 |
-| `GMAIL_CLIENT_SECRET` | Google OAuth クライアントシークレット | メール送信用 |
-| `GMAIL_REFRESH_TOKEN` | Gmail API リフレッシュトークン | 90日未使用で失効 |
-| `GMAIL_USER` | 送信元メールアドレス | info@effect.moe |
-| `TRACKING_WORKER_URL` | Cloudflare Workers URL | メールトラッキング用 |
-
-**注意**: `RESEND_API_KEY`は廃止。Gmail OAuth2に移行済み（2025-12-17）
+- `MONGODB_URI`: MongoDBの接続文字列
+- `RESEND_API_KEY`: Resend APIキー（メール送信用）
 
 ---
 
@@ -234,20 +199,10 @@ vercel
 - A4サイズ: 595 x 842 ポイント
 - 日本語フォント: Noto Sans JP を使用
 - 改行は`\n`で区切り、`split('\n').map()`でレンダリング
-- **⚠️ Puppeteerは使用していない** - `pdf-puppeteer-generator.ts` は名前だけで、実際は `@react-pdf/renderer` の `renderToBuffer()` を使用
-
-### PDF生成ファイル構成
-| ファイル | 役割 |
-|---------|------|
-| `lib/pdf-generator.tsx` | InvoicePDF, DeliveryNotePDF コンポーネント |
-| `lib/pdf-receipt-generator.tsx` | ReceiptPDF コンポーネント |
-| `lib/pdf-puppeteer-generator.ts` | PDF生成関数（renderToBuffer使用） |
-
-**詳細マニュアル**: `/Users/tonychustudio/Documents/alldocs/tutorial/2025-12-17_AI会計システム_PDF生成_メール添付実装マニュアル.md`
 
 ---
 
-**最終更新**: 2025-12-18
+**最終更新**: 2025-12-17
 
 ---
 
@@ -255,13 +210,6 @@ vercel
 
 | 日付 | タイトル | パス |
 |------|---------|------|
-| 2025-12-17 | Gmail OAuth2 invalid_client エラー修正 | トラブルシューティング: セクション1-3, 事例4 |
-| 2025-12-17 | メールフォームCC/BCC自動入力修正 | トラブルシューティング: セクション11, 事例5 |
-| 2025-12-17 | 「送信専用」バナー削除 | トラブルシューティング: 事例6 |
-| 2025-12-18 | ダッシュボードモックデータ問題修正 | トラブルシューティング: `/Users/tonychustudio/Documents/alldocs/tutorial/2025-12-17_AI会計システム_メールトラッキング_トラブルシューティング.md` セクション5 |
-| 2025-12-17 | PDF生成・メール添付実装マニュアル | `/Users/tonychustudio/Documents/alldocs/tutorial/2025-12-17_AI会計システム_PDF生成_メール添付実装マニュアル.md` |
-| 2025-12-17 | メールトラッキング実装マニュアル | `/Users/tonychustudio/Documents/alldocs/tutorial/2025-12-17_AI会計システム_メールトラッキング実装マニュアル.md` |
-| 2025-12-17 | メールトラッキング トラブルシューティング | `/Users/tonychustudio/Documents/alldocs/tutorial/2025-12-17_AI会計システム_メールトラッキング_トラブルシューティング.md` |
 | 2025-12-17 | 顧客名検索バグ修正レポート | （本セッションで修正、ObjectId/String型対応） |
 | 2025-12-03 | 銀行取引インポート機能実装レポート | `/Users/tonychustudio/Documents/alldocs/report/2025-12-03_AI会計システム_銀行取引インポート機能実装レポート.md` |
 | 2025-12-02 | Square同期エラー修正レポート | `/Users/tonychustudio/Documents/alldocs/report/2025-12-02_AI会計システム_Square同期エラー修正レポート.md` |

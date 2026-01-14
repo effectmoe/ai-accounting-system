@@ -70,13 +70,6 @@ export interface ExtractedReceiptData {
   // 勘定科目推定
   accountCategory?: string; // AI推定の勘定科目
   accountCategoryReason?: string; // 推定理由
-
-  // OCR信頼度スコア（SKILL: accounting-ocr-expert）
-  // 0.9-1.0: 鮮明、全項目読み取り可能
-  // 0.7-0.9: 一部不鮮明だが主要項目は読み取り可能
-  // 0.5-0.7: 複数項目が不鮮明、推定が必要
-  // 0.0-0.5: 大部分が読み取り不可
-  confidence?: number;
 }
 
 // 抽出された明細項目
