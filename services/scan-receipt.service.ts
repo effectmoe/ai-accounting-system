@@ -1,6 +1,6 @@
 /**
  * スキャン領収書処理サービス
- * scan-receipt/ フォルダのPDFをOCR処理して領収書として登録
+ * scan-receipt/ フォルダのPDF/JPG/PNGをOCR処理して領収書として登録
  */
 
 import * as fs from 'fs';
@@ -11,6 +11,8 @@ import { OllamaClient } from '@/lib/ollama-client';
 import { convertPdfToImage, cleanupTempDir, isValidPdf, isPdftoppmAvailable } from '@/lib/pdf-to-image';
 import { logger } from '@/lib/logger';
 import { CompanyInfoService } from './company-info.service';
+import { convertToWebp, ConversionResult } from '@/lib/image-converter';
+import { uploadToR2, generateReceiptImageKey, UploadResult } from '@/lib/r2-client';
 import { Receipt, ReceiptItem, ReceiptStatus, AccountCategory, ACCOUNT_CATEGORIES } from '@/types/receipt';
 import {
   ScanReceiptResult,
@@ -76,23 +78,27 @@ export class ScanReceiptService {
         fs.mkdirSync(this.processedDir, { recursive: true });
       }
 
-      // PDFファイルをリスト
+      // サポートする拡張子（JPG/PNG優先、PDF対応）
+      const supportedExtensions = ['.jpg', '.jpeg', '.png', '.pdf'];
       const files = fs.readdirSync(this.scanDir);
-      const pdfFiles = files.filter(f =>
-        f.toLowerCase().endsWith('.pdf') &&
-        !f.startsWith('.')
-      );
+      const receiptFiles = files.filter(f => {
+        const ext = path.extname(f).toLowerCase();
+        return supportedExtensions.includes(ext) && !f.startsWith('.');
+      });
 
       // 対象ファイルをフィルタ
       const targetFiles = params.targetFiles?.length
-        ? pdfFiles.filter(f => params.targetFiles!.includes(f))
-        : pdfFiles;
+        ? receiptFiles.filter(f => params.targetFiles!.includes(f))
+        : receiptFiles;
 
-      logger.info(`[ScanReceiptService] Found ${targetFiles.length} PDF files to process`);
+      logger.info(`[ScanReceiptService] Found ${targetFiles.length} receipt files to process`);
 
-      // 各PDFを処理
-      for (const pdfFile of targetFiles) {
-        const itemResult = await this.processSinglePdf(pdfFile);
+      // 各ファイルを処理
+      for (const receiptFile of targetFiles) {
+        const ext = path.extname(receiptFile).toLowerCase();
+        const itemResult = ext === '.pdf'
+          ? await this.processSinglePdf(receiptFile)
+          : await this.processSingleImage(receiptFile);
         result.results.push(itemResult);
         result.processedCount++;
 
@@ -154,8 +160,25 @@ export class ScanReceiptService {
       const tempDir = path.dirname(imagePath);
       await cleanupTempDir(tempDir);
 
+      // 仮の領収書IDを生成（R2パス用）
+      const tempReceiptId = new ObjectId().toString();
+
+      // WEBP変換とR2アップロード
+      let imageUploadResult: { url: string; metadata: ConversionResult & { key: string } } | null = null;
+      try {
+        imageUploadResult = await this.convertAndUploadToR2(imageBuffer, tempReceiptId);
+        logger.info(`[ScanReceiptService] Image uploaded to R2: ${imageUploadResult.url}`);
+      } catch (uploadError) {
+        // R2アップロードが失敗しても領収書登録は続行
+        logger.warn(`[ScanReceiptService] Image upload failed, continuing without image:`, uploadError);
+      }
+
       // 領収書を作成
-      const receipt = await this.createReceiptFromExtractedData(extractedData, fileName);
+      const receipt = await this.createReceiptFromExtractedData(
+        extractedData,
+        fileName,
+        imageUploadResult
+      );
 
       // PDFをprocessedフォルダに移動
       const processedPath = path.join(this.processedDir, fileName);
@@ -182,15 +205,204 @@ export class ScanReceiptService {
   }
 
   /**
+   * 単一の画像ファイル（JPG/PNG）を処理
+   */
+  async processSingleImage(fileName: string): Promise<ScanReceiptItemResult> {
+    const startTime = Date.now();
+    const imagePath = path.join(this.scanDir, fileName);
+
+    logger.info(`[ScanReceiptService] Processing image: ${fileName}`);
+
+    try {
+      // ファイルの存在確認
+      if (!fs.existsSync(imagePath)) {
+        return {
+          fileName,
+          status: 'failed',
+          error: 'File not found',
+          processingTime: Date.now() - startTime,
+        };
+      }
+
+      // 画像を読み込み
+      const imageBuffer = fs.readFileSync(imagePath);
+
+      // Vision ModelでOCR処理
+      const extractedData = await this.extractReceiptDataWithVision(imageBuffer);
+
+      // 仮の領収書IDを生成（R2パス用）
+      const tempReceiptId = new ObjectId().toString();
+
+      // WEBP変換とR2アップロード
+      let imageUploadResult: { url: string; metadata: ConversionResult & { key: string } } | null = null;
+      try {
+        imageUploadResult = await this.convertAndUploadToR2(imageBuffer, tempReceiptId);
+        logger.info(`[ScanReceiptService] Image uploaded to R2: ${imageUploadResult.url}`);
+      } catch (uploadError) {
+        // R2アップロードが失敗しても領収書登録は続行
+        logger.warn(`[ScanReceiptService] Image upload failed, continuing without image:`, uploadError);
+      }
+
+      // 領収書を作成
+      const receipt = await this.createReceiptFromExtractedData(
+        extractedData,
+        fileName,
+        imageUploadResult
+      );
+
+      // 画像をprocessedフォルダに移動
+      const processedPath = path.join(this.processedDir, fileName);
+      fs.renameSync(imagePath, processedPath);
+
+      logger.info(`[ScanReceiptService] Successfully processed: ${fileName} -> ${receipt.receiptNumber}`);
+
+      return {
+        fileName,
+        status: 'success',
+        receiptId: receipt._id?.toString(),
+        receiptNumber: receipt.receiptNumber,
+        processingTime: Date.now() - startTime,
+      };
+    } catch (error) {
+      logger.error(`[ScanReceiptService] Error processing image ${fileName}:`, error);
+      return {
+        fileName,
+        status: 'failed',
+        error: error instanceof Error ? error.message : 'Unknown error',
+        processingTime: Date.now() - startTime,
+      };
+    }
+  }
+
+  /**
+   * 画像をWEBPに変換してR2にアップロード
+   */
+  private async convertAndUploadToR2(
+    imageBuffer: Buffer,
+    receiptId: string
+  ): Promise<{ url: string; metadata: ConversionResult & { key: string } }> {
+    // PNG → WEBP変換
+    const webpResult = await convertToWebp(imageBuffer, {
+      quality: 85,
+      maxWidth: 2000,
+      maxHeight: 2000,
+    });
+
+    logger.info(`[ScanReceiptService] WEBP conversion complete: ${webpResult.size} bytes, ${webpResult.width}x${webpResult.height}`);
+
+    // R2にアップロード
+    const key = generateReceiptImageKey(receiptId);
+    const uploadResult = await uploadToR2(webpResult.buffer, key, {
+      contentType: 'image/webp',
+      metadata: {
+        receiptId,
+        originalFormat: 'png',
+        width: String(webpResult.width),
+        height: String(webpResult.height),
+      },
+    });
+
+    return {
+      url: uploadResult.url,
+      metadata: {
+        ...webpResult,
+        key: uploadResult.key,
+      },
+    };
+  }
+
+  /**
    * Vision Modelで画像からレシートデータを抽出（リトライ付き）
+   *
+   * SKILL: accounting-ocr-expert
+   * 対象モデル: Qwen3-VL-8B-Instruct (LM Studio)
+   * 設計書: /Users/tonychustudio/Documents/alldocs/tutorial/2026-01-14_会計OCR_SKILL設計書.md
    */
   async extractReceiptDataWithVision(imageBuffer: Buffer, maxRetries: number = 3): Promise<ExtractedReceiptData> {
-    // 注意: Qwen3-VLは長いプロンプトで空レスポンスを返すことがある
-    // ミニマルなプロンプトを使用
-    const systemPrompt = ''; // システムプロンプトは使用しない
+    // SKILL システムプロンプト（基本版）
+    // Qwen3-VLの安定性を考慮し、ollama-client.tsで単一メッセージに結合される
+    const systemPrompt = `あなたは日本の会計処理に精通したOCRエキスパートです。領収書やレシートの画像を分析し、JSON形式で正確にデータを抽出してください。
 
-    // ミニマルプロンプト（Qwen3-VLで安定動作確認済み）
-    const userPrompt = `領収書のJSON：{"issuerName":"店舗名", "issuerAddress":"住所", "issuerPhone":"電話", "issueDate":"YYYY-MM-DD", "subtotal":税抜金額, "taxAmount":消費税, "totalAmount":合計, "accountCategory":"接待交際費/会議費/旅費交通費/車両費/消耗品費/通信費/福利厚生費/新聞図書費/雑費から選択"}`;
+# 出力形式
+必ず以下のJSON形式で出力してください。余計な説明は不要です。
+
+{
+  "issuerName": "店舗名・発行者名",
+  "issuerAddress": "住所（あれば）",
+  "issuerPhone": "電話番号（あれば）",
+  "registrationNumber": "インボイス登録番号T+13桁（あれば）",
+  "issueDate": "YYYY-MM-DD",
+  "subtotal": 税抜金額（数値）,
+  "taxAmount": 消費税額（数値）,
+  "taxRate": 税率（10または8）,
+  "totalAmount": 合計金額（数値）,
+  "accountCategory": "勘定科目",
+  "confidence": 0.0-1.0の信頼度
+}
+
+# 金額処理ルール
+- 円マーク（¥、￥）を除去
+- 桁区切りカンマを除去
+- 全角数字を半角に変換
+- 「円」「税込」などの文字を除去
+- 結果は必ず数値型（Integer）
+
+# 日付処理ルール
+- 和暦は西暦に変換（令和6年→2024年、令和7年→2025年）
+- 区切りは全てハイフンに統一（YYYY-MM-DD）
+
+# 勘定科目推定ルール
+
+## 公的機関からの領収書（最優先判定）
+発行元が以下の場合は「租税公課」に分類：
+- 市区町村: 福岡市、北九州市、早良区、中央区、博多区、東区、西区、南区、城南区、小倉北区、小倉南区、八幡東区、八幡西区、戸畑区、若松区、門司区
+- その他の市区町村名（〇〇市、〇〇区、〇〇町、〇〇村）
+- 県庁、税務署、法務局、年金事務所等の公的機関
+accountCategoryReasonに「公的機関（福岡市）」等と記載すること
+
+## 一般ルール
+| キーワード | 勘定科目 |
+|-----------|---------|
+| 文房具、事務用品、コピー | 消耗品費 |
+| 電車、バス、タクシー、駐車場 | 旅費交通費 |
+| 書籍、本、雑誌 | 新聞図書費 |
+| 宅配、郵便、切手 | 通信費 |
+| ガソリン、高速道路 | 車両費 |
+| 社員向け飲食、弁当 | 福利厚生費 |
+| その他 | 雑費 |
+
+## 飲食レシートの判定ルール（会議費 vs 接待交際費）
+飲食店（カフェ、レストラン、居酒屋等）のレシートは以下の優先順位で判定：
+
+### 優先順位1: アルコール飲料の有無
+- アルコール飲料（ビール、酒、ワイン、焼酎、ハイボール、サワー、カクテル等）の記載あり → 接待交際費
+- アルコール飲料の記載なし → 会議費
+
+### 優先順位2: 金額基準（優先順位1で判断できない場合）
+- 合計金額が3,000円以上 → 接待交際費
+- 合計金額が3,000円未満 → 会議費
+
+### 判定理由の記載
+accountCategoryReasonに判定根拠を記載すること：
+例: 「ビール記載あり」「アルコールなし、合計2,500円」
+
+# 信頼度スコア基準
+- 0.9-1.0: 鮮明、全項目読み取り可能
+- 0.7-0.9: 一部不鮮明だが主要項目は読み取り可能
+- 0.5-0.7: 複数項目が不鮮明、推定が必要
+- 0.0-0.5: 大部分が読み取り不可
+
+# 禁止事項
+- 画像に存在しない情報の捏造
+- 不確実な情報の断定的記載
+- JSON形式以外での出力
+- 余計な説明やコメントの追加
+
+読み取れない項目はnullを設定してください。`;
+
+    // ユーザープロンプト
+    // /no_think: Qwen3-VLのthinkingモード無効（安定性優先）
+    const userPrompt = `/no_think この領収書を読み取ってJSONで出力してください。`;
 
     let lastError: Error | null = null;
 
@@ -262,29 +474,51 @@ export class ScanReceiptService {
 
   /**
    * JSONレスポンスをパース
+   * SKILL出力フォーマット→ExtractedReceiptDataへのマッピングを行う
    */
   private parseJsonResponse(response: string): ExtractedReceiptData {
     try {
+      let rawData: Record<string, unknown>;
+
       // コードブロック内のJSONを抽出
       const jsonMatch = response.match(/```(?:json)?\s*([\s\S]*?)```/);
       if (jsonMatch) {
-        return JSON.parse(jsonMatch[1].trim());
+        rawData = JSON.parse(jsonMatch[1].trim());
+      } else {
+        // コードブロックがない場合、直接JSONとしてパース
+        const trimmed = response.trim();
+        if (trimmed.startsWith('{')) {
+          rawData = JSON.parse(trimmed);
+        } else {
+          // JSON部分を探す
+          const jsonStart = response.indexOf('{');
+          const jsonEnd = response.lastIndexOf('}');
+          if (jsonStart !== -1 && jsonEnd !== -1) {
+            rawData = JSON.parse(response.substring(jsonStart, jsonEnd + 1));
+          } else {
+            throw new Error('No valid JSON found in response');
+          }
+        }
       }
 
-      // コードブロックがない場合、直接JSONとしてパース
-      const trimmed = response.trim();
-      if (trimmed.startsWith('{')) {
-        return JSON.parse(trimmed);
-      }
+      // SKILL出力フォーマット→ExtractedReceiptDataへのマッピング
+      const result: ExtractedReceiptData = {
+        issuerName: rawData.issuerName as string | undefined,
+        issuerAddress: rawData.issuerAddress as string | undefined,
+        issuerPhone: rawData.issuerPhone as string | undefined,
+        // registrationNumber → issuerRegistrationNumber マッピング
+        issuerRegistrationNumber: (rawData.registrationNumber || rawData.issuerRegistrationNumber) as string | undefined,
+        issueDate: rawData.issueDate as string | undefined,
+        subtotal: this.parseNumber(rawData.subtotal),
+        taxAmount: this.parseNumber(rawData.taxAmount),
+        totalAmount: this.parseNumber(rawData.totalAmount),
+        taxRate: this.parseNumber(rawData.taxRate),
+        accountCategory: rawData.accountCategory as string | undefined,
+        // 信頼度スコア（SKILL出力）
+        confidence: this.parseNumber(rawData.confidence),
+      };
 
-      // JSON部分を探す
-      const jsonStart = response.indexOf('{');
-      const jsonEnd = response.lastIndexOf('}');
-      if (jsonStart !== -1 && jsonEnd !== -1) {
-        return JSON.parse(response.substring(jsonStart, jsonEnd + 1));
-      }
-
-      throw new Error('No valid JSON found in response');
+      return result;
     } catch (error) {
       logger.error('[ScanReceiptService] Failed to parse JSON response:', error);
       throw new Error(`Failed to parse OCR result: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -292,11 +526,29 @@ export class ScanReceiptService {
   }
 
   /**
+   * 数値をパース（文字列・数値・nullに対応）
+   */
+  private parseNumber(value: unknown): number | undefined {
+    if (value === null || value === undefined) {
+      return undefined;
+    }
+    if (typeof value === 'number') {
+      return value;
+    }
+    if (typeof value === 'string') {
+      const num = parseFloat(value.replace(/[,¥￥円]/g, ''));
+      return isNaN(num) ? undefined : num;
+    }
+    return undefined;
+  }
+
+  /**
    * 抽出データから領収書を作成
    */
   async createReceiptFromExtractedData(
     extractedData: ExtractedReceiptData,
-    originalFileName: string
+    originalFileName: string,
+    imageUploadResult?: { url: string; metadata: ConversionResult & { key: string } } | null
   ): Promise<Receipt> {
     // 領収書番号を生成（SCAN-timestamp-random形式）
     const timestamp = Date.now().toString(36).toUpperCase();
@@ -337,7 +589,21 @@ export class ScanReceiptService {
       originalFileName,
       processedAt: new Date(),
       visionModelUsed: this.visionModel,
+      // 画像アップロード情報を追加
+      ...(imageUploadResult && {
+        imageKey: imageUploadResult.metadata.key,
+        imageSize: imageUploadResult.metadata.size,
+        imageWidth: imageUploadResult.metadata.width,
+        imageHeight: imageUploadResult.metadata.height,
+        imageFormat: imageUploadResult.metadata.format,
+      }),
     };
+
+    // 勘定科目の判定（AI推定を使用）
+    // ※ルールベースは一旦無効化し、学習効果を検証
+    // const ruleBasedCategory = this.applyAccountCategoryRules(extractedData);
+    const finalAccountCategory = this.validateAccountCategory(extractedData.accountCategory);
+    const categoryConfidence = extractedData.accountCategory ? 0.8 : 0;
 
     // 領収書データを作成
     const receiptData: Omit<Receipt, '_id' | 'createdAt' | 'updatedAt'> = {
@@ -372,13 +638,19 @@ export class ScanReceiptService {
       notes: extractedData.notes,
       status: 'issued' as ReceiptStatus, // 自動的に発行済みに
 
-      // 勘定科目（AI推定）
-      accountCategory: this.validateAccountCategory(extractedData.accountCategory),
-      accountCategoryConfidence: extractedData.accountCategory ? 0.8 : 0, // AI推定の場合は0.8
+      // 勘定科目（ルールベース優先、次にAI推定）
+      accountCategory: finalAccountCategory,
+      accountCategoryConfidence: categoryConfidence,
 
       // スキャン取込フラグ
       scannedFromPdf: true,
       scanMetadata,
+
+      // 画像URL（R2にアップロードされた場合）
+      ...(imageUploadResult && {
+        imageUrl: imageUploadResult.url,
+        imageUploadedAt: new Date(),
+      }),
     };
 
     // 領収書を保存
@@ -419,6 +691,185 @@ export class ScanReceiptService {
 
     logger.warn(`[ScanReceiptService] Invalid account category from AI: "${category}", using 未分類`);
     return '未分類';
+  }
+
+  /**
+   * ルールベースの勘定科目分類（AIの出力を上書き）
+   * 発行者名から業種を判定し、適切な勘定科目に分類
+   */
+  private applyAccountCategoryRules(
+    extractedData: ExtractedReceiptData
+  ): AccountCategory | undefined {
+    const issuerName = extractedData.issuerName || '';
+    const subject = extractedData.subject || '';
+    const notes = extractedData.notes || '';
+    const totalAmount = extractedData.totalAmount || 0;
+
+    // 明細の品名も検索対象に含める
+    const itemNames = (extractedData.items || [])
+      .map(item => item.itemName || '')
+      .join(' ');
+
+    // 検索対象テキスト（発行者名、件名、備考、明細品名）
+    const searchText = `${issuerName} ${subject} ${notes} ${itemNames}`.toLowerCase();
+
+    // ========================================
+    // ルール1: 飲食店の判定
+    // - お酒あり → 接待交際費
+    // - お酒なし → 会議費
+    // - 判断不能 → 3,000円未満: 会議費、3,000円以上: 接待交際費
+    // ========================================
+    const restaurantKeywords = [
+      // 一般的な飲食店
+      '飲食', 'レストラン', '食堂', 'カフェ', 'cafe', '喫茶',
+      '居酒屋', 'バー', 'bar', 'スナック', 'パブ',
+      // 料理ジャンル
+      'ラーメン', '拉麺', 'らーめん', 'そば', '蕎麦', 'うどん',
+      '焼肉', '焼き肉', 'やきにく', 'ステーキ', 'しゃぶしゃぶ',
+      '寿司', 'すし', '鮨', '回転寿司',
+      '鶏', '鳥', 'とり', 'チキン', '焼鳥', '焼き鳥', 'やきとり',
+      'ピザ', 'パスタ', 'イタリアン', 'フレンチ', '中華', '韓国',
+      'カレー', 'ハンバーグ', '定食', '弁当', '丼',
+      // 店舗形態
+      '料理', '厨房', 'キッチン', 'kitchen', 'ダイニング', 'dining',
+      '食事', 'グルメ', 'フード', 'food',
+      // 特定チェーン・業態
+      'マクドナルド', 'スタバ', 'スターバックス', 'ドトール',
+      'サイゼリヤ', 'ガスト', 'デニーズ', 'ジョイフル',
+      'ココイチ', '吉野家', '松屋', 'すき家', 'なか卯',
+      '串カツ', '天ぷら', 'てんぷら', '天麩羅',
+      'ビストロ', 'トラットリア', 'オステリア',
+    ];
+
+    // お酒を示すキーワード
+    const alcoholKeywords = [
+      // ビール
+      'ビール', 'beer', '生ビール', '瓶ビール', '缶ビール',
+      'アサヒ', 'キリン', 'サッポロ', 'サントリー', 'エビス',
+      // 日本酒・焼酎
+      '日本酒', '焼酎', '泡盛', '清酒', '純米', '大吟醸', '吟醸',
+      '芋焼酎', '麦焼酎', '米焼酎', '黒霧島', '白霧島',
+      // ワイン
+      'ワイン', 'wine', '赤ワイン', '白ワイン', 'スパークリング',
+      'シャンパン', 'シャンペン', 'ロゼ',
+      // ウイスキー・洋酒
+      'ウイスキー', 'ウィスキー', 'whisky', 'whiskey',
+      'ハイボール', 'ブランデー', 'ジン', 'ウォッカ', 'ラム', 'テキーラ',
+      // カクテル・サワー
+      'カクテル', 'サワー', '酎ハイ', 'チューハイ',
+      'レモンサワー', 'グレープフルーツサワー', '梅サワー',
+      'モヒート', 'ジントニック', 'カシス',
+      // その他
+      '酒', 'アルコール', '飲み放題', '乾杯', 'お通し',
+      'ドリンク飲み放題', '宴会', 'コース',
+    ];
+
+    // ノンアルコールを示すキーワード（お酒なしの判定に使用）
+    const nonAlcoholKeywords = [
+      'ノンアルコール', 'ノンアル', 'ソフトドリンク',
+      'コーヒー', '紅茶', 'ジュース', 'ウーロン茶', '緑茶',
+      'コーラ', 'オレンジジュース', 'お茶',
+    ];
+
+    // 飲食店かどうかを判定
+    let isRestaurant = false;
+    for (const keyword of restaurantKeywords) {
+      if (searchText.includes(keyword.toLowerCase())) {
+        isRestaurant = true;
+        break;
+      }
+    }
+
+    if (isRestaurant) {
+      // お酒キーワードをチェック
+      let hasAlcohol = false;
+      let alcoholKeywordFound = '';
+      for (const keyword of alcoholKeywords) {
+        if (searchText.includes(keyword.toLowerCase())) {
+          hasAlcohol = true;
+          alcoholKeywordFound = keyword;
+          break;
+        }
+      }
+
+      // ノンアルコールのみかチェック（お酒キーワードがない場合）
+      let hasOnlyNonAlcohol = false;
+      if (!hasAlcohol) {
+        for (const keyword of nonAlcoholKeywords) {
+          if (searchText.includes(keyword.toLowerCase())) {
+            hasOnlyNonAlcohol = true;
+            break;
+          }
+        }
+      }
+
+      if (hasAlcohol) {
+        // お酒あり → 接待交際費
+        logger.info(`[ScanReceiptService] Rule applied: Restaurant with alcohol (keyword: "${alcoholKeywordFound}") → 接待交際費`);
+        return '接待交際費';
+      } else if (hasOnlyNonAlcohol) {
+        // お酒なし（ノンアルコールのみ確認） → 会議費
+        logger.info(`[ScanReceiptService] Rule applied: Restaurant without alcohol (non-alcohol drink detected) → 会議費`);
+        return '会議費';
+      } else {
+        // 判断不能 → 金額で判定
+        if (totalAmount < 3000) {
+          logger.info(`[ScanReceiptService] Rule applied: Restaurant (unclear alcohol), amount ${totalAmount} < 3000 → 会議費`);
+          return '会議費';
+        } else {
+          logger.info(`[ScanReceiptService] Rule applied: Restaurant (unclear alcohol), amount ${totalAmount} >= 3000 → 接待交際費`);
+          return '接待交際費';
+        }
+      }
+    }
+
+    // ========================================
+    // ルール2: 駐車場 → 旅費交通費
+    // ========================================
+    const parkingKeywords = [
+      '駐車', 'パーキング', 'parking', 'コインパーキング',
+      'タイムズ', 'リパーク', '三井のリパーク',
+    ];
+
+    for (const keyword of parkingKeywords) {
+      if (searchText.includes(keyword.toLowerCase())) {
+        logger.info(`[ScanReceiptService] Rule applied: Parking detected (keyword: "${keyword}") → 旅費交通費`);
+        return '旅費交通費';
+      }
+    }
+
+    // ========================================
+    // ルール3: コンビニ → 消耗品費（デフォルト）
+    // ========================================
+    const convenienceKeywords = [
+      'コンビニ', 'セブン', 'セブンイレブン', 'ファミリーマート', 'ファミマ',
+      'ローソン', 'ミニストップ', 'デイリーヤマザキ',
+    ];
+
+    for (const keyword of convenienceKeywords) {
+      if (searchText.includes(keyword.toLowerCase())) {
+        logger.info(`[ScanReceiptService] Rule applied: Convenience store detected (keyword: "${keyword}") → 消耗品費`);
+        return '消耗品費';
+      }
+    }
+
+    // ========================================
+    // ルール4: ガソリンスタンド → 車両費
+    // ========================================
+    const gasStationKeywords = [
+      'ガソリン', 'ガソリンスタンド', 'gs', 'エネオス', 'eneos',
+      '出光', 'コスモ', '昭和シェル', 'シェル', '給油',
+    ];
+
+    for (const keyword of gasStationKeywords) {
+      if (searchText.includes(keyword.toLowerCase())) {
+        logger.info(`[ScanReceiptService] Rule applied: Gas station detected (keyword: "${keyword}") → 車両費`);
+        return '車両費';
+      }
+    }
+
+    // ルールに該当しない場合はundefined（AIの判定を尊重）
+    return undefined;
   }
 
   /**
@@ -464,7 +915,7 @@ export class ScanReceiptService {
   }
 
   /**
-   * 未処理のPDFファイル数を取得
+   * 未処理のファイル数を取得（JPG/PNG/PDF対応）
    */
   async getPendingPdfCount(): Promise<number> {
     try {
@@ -472,21 +923,22 @@ export class ScanReceiptService {
         return 0;
       }
 
+      const supportedExtensions = ['.jpg', '.jpeg', '.png', '.pdf'];
       const files = fs.readdirSync(this.scanDir);
-      const pdfFiles = files.filter(f =>
-        f.toLowerCase().endsWith('.pdf') &&
-        !f.startsWith('.')
-      );
+      const receiptFiles = files.filter(f => {
+        const ext = path.extname(f).toLowerCase();
+        return supportedExtensions.includes(ext) && !f.startsWith('.');
+      });
 
-      return pdfFiles.length;
+      return receiptFiles.length;
     } catch (error) {
-      logger.error('[ScanReceiptService] Error getting pending PDF count:', error);
+      logger.error('[ScanReceiptService] Error getting pending file count:', error);
       return 0;
     }
   }
 
   /**
-   * 未処理のPDFファイル一覧を取得
+   * 未処理のファイル一覧を取得（JPG/PNG/PDF対応）
    */
   async getPendingPdfFiles(): Promise<string[]> {
     try {
@@ -494,13 +946,14 @@ export class ScanReceiptService {
         return [];
       }
 
+      const supportedExtensions = ['.jpg', '.jpeg', '.png', '.pdf'];
       const files = fs.readdirSync(this.scanDir);
-      return files.filter(f =>
-        f.toLowerCase().endsWith('.pdf') &&
-        !f.startsWith('.')
-      );
+      return files.filter(f => {
+        const ext = path.extname(f).toLowerCase();
+        return supportedExtensions.includes(ext) && !f.startsWith('.');
+      });
     } catch (error) {
-      logger.error('[ScanReceiptService] Error getting pending PDF files:', error);
+      logger.error('[ScanReceiptService] Error getting pending files:', error);
       return [];
     }
   }

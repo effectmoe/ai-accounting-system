@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { logger } from '@/lib/logger';
 import {
   ArrowLeft,
@@ -21,7 +22,8 @@ import {
   Eye,
   FileText,
   CheckCircle2,
-  X
+  X,
+  ImageIcon
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
@@ -53,6 +55,19 @@ interface Receipt {
     email?: string;
     registrationNumber?: string;
   };
+  // スキャン領収書の発行者情報（OCRで取得）
+  scannedFromPdf?: boolean;
+  issuerName?: string;
+  issuerAddress?: string;
+  issuerPhone?: string;
+  issuerRegistrationNumber?: string;
+  accountCategory?: string;
+  accountCategoryConfidence?: number;
+  scanMetadata?: {
+    originalFileName: string;
+    processedAt: string;
+    visionModelUsed: string;
+  };
   items: Array<{
     itemName?: string;
     description: string;
@@ -74,6 +89,8 @@ interface Receipt {
   emailSentTo?: string[];
   pdfUrl?: string;
   pdfGeneratedAt?: string;
+  imageUrl?: string; // R2にアップロードされたスキャン画像（WEBP）
+  imageUploadedAt?: string;
   invoice?: {
     _id: string;
     invoiceNumber: string;
@@ -103,6 +120,9 @@ export default function ReceiptDetailPage({ params }: { params: { id: string } }
   const [updating, setUpdating] = useState(false);
   const [showPdfPreview, setShowPdfPreview] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [showOriginalPdf, setShowOriginalPdf] = useState(false);
+  const [originalFileError, setOriginalFileError] = useState(false);
 
   useEffect(() => {
     fetchReceipt();
@@ -255,13 +275,34 @@ export default function ReceiptDetailPage({ params }: { params: { id: string } }
           編集
         </Button>
 
-        <Button
-          variant="outline"
-          onClick={() => setShowPdfPreview(true)}
-        >
-          <Eye className="h-4 w-4 mr-2" />
-          プレビュー
-        </Button>
+        {/* プレビューボタン: 発行領収書→PDF、受領領収書→スキャン画像/元PDF */}
+        {receipt.scannedFromPdf ? (
+          receipt.imageUrl ? (
+            <Button
+              variant="outline"
+              onClick={() => setShowImageModal(true)}
+            >
+              <Eye className="h-4 w-4 mr-2" />
+              プレビュー
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              onClick={() => setShowOriginalPdf(true)}
+            >
+              <Eye className="h-4 w-4 mr-2" />
+              プレビュー
+            </Button>
+          )
+        ) : (
+          <Button
+            variant="outline"
+            onClick={() => setShowPdfPreview(true)}
+          >
+            <Eye className="h-4 w-4 mr-2" />
+            プレビュー
+          </Button>
+        )}
 
         {receipt.status === 'draft' && (
           <Button
@@ -408,7 +449,7 @@ export default function ReceiptDetailPage({ params }: { params: { id: string } }
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {receipt.items.map((item, index) => (
+                  {(receipt.items || []).map((item, index) => (
                     <TableRow key={index}>
                       <TableCell>
                         <div>
@@ -456,74 +497,130 @@ export default function ReceiptDetailPage({ params }: { params: { id: string } }
 
         {/* サイドバー */}
         <div className="space-y-6">
-          {/* 顧客情報 */}
+          {/* 宛先情報 - 手動作成のみ表示（スキャン領収書では不要） */}
+          {!receipt.scannedFromPdf && (
+            <Card>
+              <CardHeader>
+                <CardTitle>宛先情報</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground">宛名</label>
+                  <p className="font-medium">{receipt.customerName}</p>
+                </div>
+                {receipt.customerSnapshot && (
+                  <>
+                    {receipt.customerSnapshot.address && (
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">住所</label>
+                        <p className="text-sm whitespace-pre-wrap">{receipt.customerSnapshot.address}</p>
+                      </div>
+                    )}
+                    {receipt.customerSnapshot.phone && (
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">電話番号</label>
+                        <p className="text-sm">{receipt.customerSnapshot.phone}</p>
+                      </div>
+                    )}
+                    {receipt.customerSnapshot.email && (
+                      <div>
+                        <label className="text-sm font-medium text-muted-foreground">メールアドレス</label>
+                        <p className="text-sm">{receipt.customerSnapshot.email}</p>
+                      </div>
+                    )}
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* 発行者情報 - スキャン領収書と手動作成で表示を切り替え */}
           <Card>
             <CardHeader>
-              <CardTitle>宛先情報</CardTitle>
+              <CardTitle>
+                {receipt.scannedFromPdf ? '発行元（店舗/取引先）' : '発行者情報（自社）'}
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">宛名</label>
-                <p className="font-medium">{receipt.customerName}</p>
-              </div>
-              {receipt.customerSnapshot && (
+              {receipt.scannedFromPdf ? (
+                // スキャン領収書：OCRで読み取った店舗情報を表示
                 <>
-                  {receipt.customerSnapshot.address && (
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">店舗名/会社名</label>
+                    <p className="font-medium">{receipt.issuerName || '（不明）'}</p>
+                  </div>
+                  {receipt.issuerAddress && (
                     <div>
                       <label className="text-sm font-medium text-muted-foreground">住所</label>
-                      <p className="text-sm">{receipt.customerSnapshot.address}</p>
+                      <p className="text-sm whitespace-pre-wrap">{receipt.issuerAddress}</p>
                     </div>
                   )}
-                  {receipt.customerSnapshot.phone && (
+                  {receipt.issuerPhone && (
                     <div>
                       <label className="text-sm font-medium text-muted-foreground">電話番号</label>
-                      <p className="text-sm">{receipt.customerSnapshot.phone}</p>
+                      <p className="text-sm">{receipt.issuerPhone}</p>
                     </div>
                   )}
-                  {receipt.customerSnapshot.email && (
+                  {receipt.issuerRegistrationNumber && (
                     <div>
-                      <label className="text-sm font-medium text-muted-foreground">メールアドレス</label>
-                      <p className="text-sm">{receipt.customerSnapshot.email}</p>
+                      <label className="text-sm font-medium text-muted-foreground">登録番号</label>
+                      <p className="text-sm font-mono">{receipt.issuerRegistrationNumber}</p>
+                    </div>
+                  )}
+                  {receipt.accountCategory && (
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">勘定科目</label>
+                      <Badge
+                        variant="outline"
+                        className={`text-xs ${receipt.accountCategoryConfidence && receipt.accountCategoryConfidence >= 0.8 ? 'border-green-500 text-green-700' : 'border-yellow-500 text-yellow-700'}`}
+                      >
+                        {receipt.accountCategory}
+                      </Badge>
+                    </div>
+                  )}
+                  {receipt.scanMetadata && (
+                    <div className="pt-2 border-t">
+                      <label className="text-sm font-medium text-muted-foreground">スキャン情報</label>
+                      <p className="text-xs text-muted-foreground">
+                        {receipt.scanMetadata.originalFileName}
+                        <br />
+                        処理: {safeFormatDate(receipt.scanMetadata.processedAt, 'yyyy/MM/dd HH:mm', ja)}
+                      </p>
                     </div>
                   )}
                 </>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* 発行者情報 */}
-          <Card>
-            <CardHeader>
-              <CardTitle>発行者情報</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div>
-                <label className="text-sm font-medium text-muted-foreground">会社名</label>
-                <p className="font-medium">{receipt.companySnapshot.companyName}</p>
-              </div>
-              {receipt.companySnapshot.address && (
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">住所</label>
-                  <p className="text-sm">{receipt.companySnapshot.address}</p>
-                </div>
-              )}
-              {receipt.companySnapshot.phone && (
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">電話番号</label>
-                  <p className="text-sm">{receipt.companySnapshot.phone}</p>
-                </div>
-              )}
-              {receipt.companySnapshot.email && (
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">メールアドレス</label>
-                  <p className="text-sm">{receipt.companySnapshot.email}</p>
-                </div>
-              )}
-              {receipt.companySnapshot.registrationNumber && (
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">登録番号</label>
-                  <p className="text-sm font-mono">{receipt.companySnapshot.registrationNumber}</p>
-                </div>
+              ) : (
+                // 手動作成：自社情報を表示
+                <>
+                  <div>
+                    <label className="text-sm font-medium text-muted-foreground">会社名</label>
+                    <p className="font-medium">{receipt.companySnapshot.companyName}</p>
+                  </div>
+                  {receipt.companySnapshot.address && (
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">住所</label>
+                      <p className="text-sm whitespace-pre-wrap">{receipt.companySnapshot.address}</p>
+                    </div>
+                  )}
+                  {receipt.companySnapshot.phone && (
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">電話番号</label>
+                      <p className="text-sm">{receipt.companySnapshot.phone}</p>
+                    </div>
+                  )}
+                  {receipt.companySnapshot.email && (
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">メールアドレス</label>
+                      <p className="text-sm">{receipt.companySnapshot.email}</p>
+                    </div>
+                  )}
+                  {receipt.companySnapshot.registrationNumber && (
+                    <div>
+                      <label className="text-sm font-medium text-muted-foreground">登録番号</label>
+                      <p className="text-sm font-mono">{receipt.companySnapshot.registrationNumber}</p>
+                    </div>
+                  )}
+                </>
               )}
             </CardContent>
           </Card>
@@ -593,6 +690,126 @@ export default function ReceiptDetailPage({ params }: { params: { id: string } }
                 <Download className="mr-2 h-4 w-4" />
                 ダウンロード
               </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 画像表示モーダル */}
+      {showImageModal && receipt?.imageUrl && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-4xl max-h-[90vh] flex flex-col">
+            <div className="flex justify-between items-center p-4 border-b">
+              <h2 className="text-lg font-semibold">領収書画像 - {receipt.receiptNumber}</h2>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowImageModal(false)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="flex-1 overflow-auto p-4">
+              <img
+                src={receipt.imageUrl}
+                alt={`領収書 ${receipt.receiptNumber}`}
+                className="w-full h-auto rounded-lg border"
+              />
+            </div>
+            <div className="p-4 border-t flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowImageModal(false)}
+              >
+                閉じる
+              </Button>
+              <Button
+                onClick={() => {
+                  window.open(receipt.imageUrl, '_blank');
+                }}
+              >
+                <Download className="mr-2 h-4 w-4" />
+                新しいタブで開く
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 元のPDF表示モーダル */}
+      {showOriginalPdf && receipt?.scanMetadata?.originalFileName && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-5xl h-[90vh] flex flex-col">
+            <div className="flex justify-between items-center p-4 border-b">
+              <h2 className="text-lg font-semibold">元の領収書 - {receipt.scanMetadata.originalFileName}</h2>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => { setShowOriginalPdf(false); setOriginalFileError(false); }}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="flex-1 overflow-hidden flex items-center justify-center">
+              {originalFileError ? (
+                <div className="text-center p-8">
+                  <AlertCircle className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                  <p className="text-lg font-medium text-gray-700">元のファイルが見つかりません</p>
+                  <p className="text-sm text-gray-500 mt-2">
+                    この領収書はR2アップロード機能実装前に作成されたため、<br />
+                    元の画像データが保存されていません。
+                  </p>
+                  <p className="text-sm text-gray-500 mt-4">
+                    新しくスキャンした領収書は自動的に画像が保存されます。
+                  </p>
+                </div>
+              ) : receipt.imageUrl ? (
+                // R2にアップロードされた画像を表示
+                <img
+                  src={receipt.imageUrl}
+                  alt={`元の領収書 ${receipt.receiptNumber}`}
+                  className="max-w-full max-h-full object-contain"
+                />
+              ) : (
+                // ローカルファイルAPIを使用（ローカル環境のみ動作）
+                <iframe
+                  src={`/api/scan-receipt/file?filename=${encodeURIComponent(receipt.scanMetadata.originalFileName)}`}
+                  className="w-full h-full"
+                  title="元の領収書"
+                  onLoad={(e) => {
+                    // iframeの読み込み完了後にエラーチェック
+                    try {
+                      const iframe = e.target as HTMLIFrameElement;
+                      const doc = iframe.contentDocument || iframe.contentWindow?.document;
+                      if (doc?.body?.textContent?.includes('"error"')) {
+                        setOriginalFileError(true);
+                      }
+                    } catch {
+                      // クロスオリジンエラーの場合は無視
+                    }
+                  }}
+                />
+              )}
+            </div>
+            <div className="p-4 border-t flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => { setShowOriginalPdf(false); setOriginalFileError(false); }}
+              >
+                閉じる
+              </Button>
+              {!originalFileError && (
+                <Button
+                  onClick={() => {
+                    // R2 URLがあればそれを使用、なければローカルファイルAPI
+                    const url = receipt.imageUrl || `/api/scan-receipt/file?filename=${encodeURIComponent(receipt.scanMetadata!.originalFileName)}`;
+                    window.open(url, '_blank');
+                  }}
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  新しいタブで開く
+                </Button>
+              )}
             </div>
           </div>
         </div>

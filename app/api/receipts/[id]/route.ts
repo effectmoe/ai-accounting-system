@@ -35,6 +35,7 @@ export async function GET(
     // 顧客情報とデータ構造を整形
     const formattedReceipt = {
       ...receipt,
+      items: receipt.items || [], // itemsが未定義の場合は空配列を設定
       customerSnapshot: (receipt as any).customer ? {
         companyName: (receipt as any).customer.companyName || (receipt as any).customer.name || '',
         address: [

@@ -1,10 +1,13 @@
 'use client';
 
+import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Receipt as ReceiptIcon, Building2, User, Calendar, FileText } from 'lucide-react';
+import { Receipt as ReceiptIcon, Building2, User, Calendar, FileText, ImageIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { safeFormatDate } from '@/lib/date-utils';
@@ -72,6 +75,9 @@ interface Receipt {
   emailSentTo?: string[];
   pdfUrl?: string;
   pdfGeneratedAt?: string;
+  imageUrl?: string; // R2にアップロードされたスキャン画像（WEBP）
+  imageUploadedAt?: string;
+  scannedFromPdf?: boolean; // スキャン取込フラグ
   invoice?: {
     _id: string;
     invoiceNumber: string;
@@ -86,21 +92,62 @@ interface ReceiptDetailProps {
 }
 
 export default function ReceiptDetail({ receipt, className = '' }: ReceiptDetailProps) {
+  const [imageDialogOpen, setImageDialogOpen] = useState(false);
+
   const getStatusBadge = (status: keyof typeof RECEIPT_STATUS_LABELS) => (
     <Badge className={`${RECEIPT_STATUS_COLORS[status]} border-0`}>
       {RECEIPT_STATUS_LABELS[status]}
     </Badge>
   );
 
+  // 画像URLを取得（imageUrl優先、なければpdfUrl）
+  const getReceiptImageUrl = (): string | null => {
+    // スキャン取込の場合はR2にアップロードされたWEBP画像を優先
+    if (receipt.imageUrl) {
+      return receipt.imageUrl;
+    }
+    // 生成されたPDFがある場合はそれを使用
+    if (receipt.pdfUrl) {
+      return receipt.pdfUrl;
+    }
+    return null;
+  };
+
+  const imageUrl = getReceiptImageUrl();
+
   return (
     <div className={`space-y-6 ${className}`}>
       {/* ヘッダー情報 */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <ReceiptIcon className="h-5 w-5" />
-            領収書情報
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <ReceiptIcon className="h-5 w-5" />
+              領収書情報
+            </CardTitle>
+            {imageUrl && (
+              <Dialog open={imageDialogOpen} onOpenChange={setImageDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <ImageIcon className="h-4 w-4" />
+                    画像を表示
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
+                  <DialogHeader>
+                    <DialogTitle>領収書画像 - {receipt.receiptNumber}</DialogTitle>
+                  </DialogHeader>
+                  <div className="mt-4">
+                    <img
+                      src={imageUrl}
+                      alt={`領収書 ${receipt.receiptNumber}`}
+                      className="w-full h-auto rounded-lg border"
+                    />
+                  </div>
+                </DialogContent>
+              </Dialog>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -271,7 +318,7 @@ export default function ReceiptDetail({ receipt, className = '' }: ReceiptDetail
               </TableRow>
             </TableHeader>
             <TableBody>
-              {receipt.items.map((item, index) => (
+              {(receipt.items || []).map((item, index) => (
                 <TableRow key={index}>
                   <TableCell>
                     <div>
