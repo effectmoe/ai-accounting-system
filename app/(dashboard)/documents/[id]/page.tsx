@@ -8,6 +8,7 @@ import { toast } from 'react-hot-toast';
 
 import { logger } from '@/lib/logger';
 import DocumentAIChat from '@/components/documents/DocumentAIChat';
+import ImagePreviewModal from '@/components/documents/ImagePreviewModal';
 interface Document {
   id: string;
   company_id: string;
@@ -97,6 +98,7 @@ export default function DocumentDetailPage() {
   const [items, setItems] = useState<DocumentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showImagePreview, setShowImagePreview] = useState(false);
 
   useEffect(() => {
     if (params.id) {
@@ -643,58 +645,39 @@ export default function DocumentDetailPage() {
                     )}
                   </dl>
                   <div className="space-y-2">
+                    {/* 元ファイルをプレビュー（モーダル表示） */}
+                    <button
+                      onClick={() => setShowImagePreview(true)}
+                      className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100 transition-colors text-sm"
+                    >
+                      <Eye className="w-4 h-4" />
+                      元ファイルをプレビュー
+                    </button>
                     {document.gridfs_file_id && (
-                      <>
-                        <a
-                          href={`/api/files/${document.gridfs_file_id}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100 transition-colors text-sm"
-                          onClick={async (e) => {
-                            console.log('Clicking file view with ID:', document.gridfs_file_id);
-                            // ファイルが存在するかチェック
-                            try {
-                              const response = await fetch(`/api/files/${document.gridfs_file_id}`, { method: 'HEAD' });
-                              if (!response.ok) {
-                                e.preventDefault();
-                                toast.error('元ファイルが見つかりません');
-                                console.error('File not found:', response.status);
-                              }
-                            } catch (error) {
+                      <a
+                        href={`/api/files/${document.gridfs_file_id}?download=true`}
+                        download
+                        className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 bg-gray-50 text-gray-700 rounded-md hover:bg-gray-100 transition-colors text-sm"
+                        onClick={async (e) => {
+                          console.log('Clicking file download with ID:', document.gridfs_file_id);
+                          // ファイルが存在するかチェック
+                          try {
+                            const response = await fetch(`/api/files/${document.gridfs_file_id}`, { method: 'HEAD' });
+                            if (!response.ok) {
                               e.preventDefault();
-                              toast.error('ファイルアクセスエラー');
-                              console.error('File check error:', error);
+                              toast.error('ダウンロードファイルが見つかりません');
+                              console.error('Download file not found:', response.status);
                             }
-                          }}
-                        >
-                          <Eye className="w-4 h-4" />
-                          元ファイルを表示
-                        </a>
-                        <a
-                          href={`/api/files/${document.gridfs_file_id}?download=true`}
-                          download
-                          className="w-full inline-flex items-center justify-center gap-2 px-3 py-2 bg-gray-50 text-gray-700 rounded-md hover:bg-gray-100 transition-colors text-sm"
-                          onClick={async (e) => {
-                            console.log('Clicking file download with ID:', document.gridfs_file_id);
-                            // ファイルが存在するかチェック
-                            try {
-                              const response = await fetch(`/api/files/${document.gridfs_file_id}`, { method: 'HEAD' });
-                              if (!response.ok) {
-                                e.preventDefault();
-                                toast.error('ダウンロードファイルが見つかりません');
-                                console.error('Download file not found:', response.status);
-                              }
-                            } catch (error) {
-                              e.preventDefault();
-                              toast.error('ダウンロードエラー');
-                              console.error('Download check error:', error);
-                            }
-                          }}
-                        >
-                          <Download className="w-4 h-4" />
-                          ダウンロード
-                        </a>
-                      </>
+                          } catch (error) {
+                            e.preventDefault();
+                            toast.error('ダウンロードエラー');
+                            console.error('Download check error:', error);
+                          }
+                        }}
+                      >
+                        <Download className="w-4 h-4" />
+                        ダウンロード
+                      </a>
                     )}
                     {document.ocr_result_id && (
                       <a
@@ -726,6 +709,14 @@ export default function DocumentDetailPage() {
         <div className="mt-6">
           <DocumentAIChat document={document} documentId={document.id} />
         </div>
+
+        {/* 画像プレビューモーダル */}
+        <ImagePreviewModal
+          isOpen={showImagePreview}
+          onClose={() => setShowImagePreview(false)}
+          fileId={document.gridfs_file_id || null}
+          fileName={document.file_name}
+        />
       </div>
     </div>
   );
