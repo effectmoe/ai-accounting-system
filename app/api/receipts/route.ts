@@ -15,6 +15,12 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status') as ReceiptStatus | undefined;
     const dateFrom = searchParams.get('dateFrom') ? new Date(searchParams.get('dateFrom')!) : undefined;
     const dateTo = searchParams.get('dateTo') ? new Date(searchParams.get('dateTo')!) : undefined;
+    const scannedFromPdfParam = searchParams.get('scannedFromPdf');
+    const scannedFromPdf = scannedFromPdfParam === 'true' ? true : scannedFromPdfParam === 'false' ? false : undefined;
+    const search = searchParams.get('search') || undefined;
+    const accountCategory = searchParams.get('accountCategory') || undefined;
+    const amountMin = searchParams.get('amountMin') ? parseFloat(searchParams.get('amountMin')!) : undefined;
+    const amountMax = searchParams.get('amountMax') ? parseFloat(searchParams.get('amountMax')!) : undefined;
     const limit = parseInt(searchParams.get('limit') || '20');
     const skip = parseInt(searchParams.get('skip') || '0');
     const sortBy = searchParams.get('sortBy') || 'issueDate';
@@ -26,6 +32,11 @@ export async function GET(request: NextRequest) {
       status,
       dateFrom,
       dateTo,
+      scannedFromPdf,
+      search,
+      accountCategory,
+      amountMin,
+      amountMax,
       limit,
       skip,
       sortBy,

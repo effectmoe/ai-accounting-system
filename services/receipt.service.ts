@@ -247,8 +247,12 @@ export class ReceiptService {
       const limit = params.limit || 20;
       const skip = params.skip || 0;
 
-      // ソート設定
-      const sortBy = params.sortBy || 'issueDate';
+      // ソート設定（processedAtはscanMetadata.processedAtにマッピング）
+      const sortFieldMapping: Record<string, string> = {
+        processedAt: 'scanMetadata.processedAt',
+      };
+      const sortByParam = params.sortBy || 'issueDate';
+      const sortBy = sortFieldMapping[sortByParam] || sortByParam;
       const sortOrder = params.sortOrder === 'asc' ? 1 : -1;
       const sortObj: any = {};
       sortObj[sortBy] = sortOrder;
