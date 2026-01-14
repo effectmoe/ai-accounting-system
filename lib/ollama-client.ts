@@ -1,55 +1,67 @@
 import { logger } from '@/lib/logger';
 
 /**
- * Ollama API クライアント
- * ローカルLLM（Qwen3-VL Thinking）との連携
+ * OpenAI互換 API クライアント
+ * LM Studio + Qwen3-VL-8B との連携
+ *
+ * 重要: このクライアントはOpenAI互換API形式を使用します
+ * - エンドポイント: /v1/models, /v1/chat/completions
+ * - 画像形式: image_url: { url: "data:image/jpeg;base64,..." }
  *
  * クラウド対応:
- * - ローカル開発: http://localhost:11434
+ * - ローカル開発: http://localhost:1234 (LM Studio)
  * - クラウド本番: https://local-ollama.otona-off.style (Cloudflare Tunnel経由)
  *
  * 環境変数:
- * - OLLAMA_URL: OllamaのベースURL
- * - OLLAMA_MODEL: デフォルトモデル（qwen3-vl - 2025-01 Command R廃止）
- * - OLLAMA_VISION_MODEL: Visionモデル（qwen3-vl）
+ * - OLLAMA_URL: LM StudioのベースURL
+ * - OLLAMA_MODEL: デフォルトモデル（qwen3-vl-8b-instruct-mlx）
+ * - OLLAMA_VISION_MODEL: Visionモデル（qwen3-vl-8b-instruct-mlx）
  * - OLLAMA_TIMEOUT: タイムアウト（ミリ秒、デフォルト: 120000）
  */
 
 interface OllamaMessage {
   role: 'system' | 'user' | 'assistant';
-  content: string;
-  images?: string[]; // Base64エンコードされた画像データ（Vision models用）
+  content: string | Array<{ type: string; text?: string; image_url?: { url: string } }>;
 }
 
+// OpenAI互換レスポンス形式
 interface OllamaResponse {
+  id?: string;
+  object?: string;
+  created?: number;
   model: string;
-  created_at: string;
+  choices?: Array<{
+    index: number;
+    message: {
+      role: string;
+      content: string;
+    };
+    finish_reason?: string;
+  }>;
+  // 内部処理用（OpenAIレスポンスから変換後）
   message: {
     role: string;
     content: string;
-    thinking?: string; // Qwen3-VLのthinkingモード用（/no_think未使用時）
   };
-  done: boolean;
-  total_duration?: number;
-  load_duration?: number;
-  prompt_eval_count?: number;
-  prompt_eval_duration?: number;
-  eval_count?: number;
-  eval_duration?: number;
+  usage?: {
+    prompt_tokens?: number;
+    completion_tokens?: number;
+    total_tokens?: number;
+  };
 }
 
 interface OllamaOptions {
   model?: string;
   temperature?: number;
-  num_predict?: number; // Ollamaでは max_tokens の代わりに num_predict
+  max_tokens?: number; // OpenAI互換形式
   top_p?: number;
   top_k?: number;
   repeat_penalty?: number;
   stream?: boolean;
 }
 
-// デフォルト設定
-const DEFAULT_LOCAL_URL = 'http://localhost:11434';
+// デフォルト設定（LM Studio互換）
+const DEFAULT_LOCAL_URL = 'http://localhost:1234';
 const DEFAULT_CLOUD_URL = 'https://local-ollama.otona-off.style';
 const DEFAULT_TIMEOUT_LOCAL = 60000;  // ローカル: 60秒
 const DEFAULT_TIMEOUT_CLOUD = 180000; // クラウド: 180秒（Tunnel経由のレイテンシを考慮）
@@ -100,7 +112,7 @@ export class OllamaClient {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000); // 5秒タイムアウト
 
-      const response = await fetch(`${this.baseURL}/api/tags`, {
+      const response = await fetch(`${this.baseURL}/v1/models`, {
         signal: controller.signal
       });
 
@@ -113,10 +125,14 @@ export class OllamaClient {
       }
 
       const data = await response.json();
-      const models = data.models || [];
-      const hasModel = models.some((m: any) => m.name.includes(this.defaultModel));
+      // OpenAI形式は data 配列、Ollama形式は models 配列
+      const models = data.data || data.models || [];
+      const hasModel = models.some((m: any) => {
+        const modelId = m.id || m.name || '';
+        return modelId.includes(this.defaultModel);
+      });
 
-      logger.debug('[OllamaClient] Available models:', models.map((m: any) => m.name));
+      logger.debug('[OllamaClient] Available models:', models.map((m: any) => m.id || m.name));
       logger.debug('[OllamaClient] Target model available:', hasModel);
 
       this.isAvailable = hasModel;
@@ -142,24 +158,19 @@ export class OllamaClient {
     const {
       model = this.defaultModel,
       temperature = 0,
-      num_predict = 4000,
+      max_tokens = 4000,
       top_p,
-      top_k,
-      repeat_penalty,
       stream = false,
     } = options;
 
+    // OpenAI互換形式のリクエストボディ
     const requestBody = {
       model,
       messages,
       stream,
-      options: {
-        temperature,
-        num_predict,
-        ...(top_p !== undefined && { top_p }),
-        ...(top_k !== undefined && { top_k }),
-        ...(repeat_penalty !== undefined && { repeat_penalty }),
-      }
+      temperature,
+      max_tokens,
+      ...(top_p !== undefined && { top_p }),
     };
 
     try {
@@ -172,7 +183,7 @@ export class OllamaClient {
         temperature
       });
 
-      const response = await fetch(`${this.baseURL}/api/chat`, {
+      const response = await fetch(`${this.baseURL}/v1/chat/completions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -192,7 +203,16 @@ export class OllamaClient {
       const data = await response.json();
       logger.debug('[OllamaClient] Response received successfully');
 
-      return data as OllamaResponse;
+      // OpenAI互換形式のレスポンスを内部形式に変換
+      const result: OllamaResponse = {
+        ...data,
+        message: {
+          role: data.choices?.[0]?.message?.role || 'assistant',
+          content: data.choices?.[0]?.message?.content || ''
+        }
+      };
+
+      return result;
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
         logger.error('[OllamaClient] Request timed out');
@@ -255,11 +275,14 @@ export class OllamaClient {
       promptLength: prompt.length
     });
 
-    const messages: OllamaMessage[] = [
+    // OpenAI互換形式のメッセージ（image_url形式）
+    const messages: any[] = [
       {
         role: 'user',
-        content: prompt,
-        images: [base64Image]
+        content: [
+          { type: 'text', text: prompt },
+          { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64Image}` } }
+        ]
       }
     ];
 
@@ -299,18 +322,19 @@ export class OllamaClient {
       imageSize: base64Image.length
     });
 
-    // Qwen3-VLはシステムプロンプトとの組み合わせで空レスポンスを返すことがあるため
-    // シングルメッセージ形式（userのみ）を使用
-    // システムプロンプトの内容はユーザープロンプトに統合
+    // システムプロンプトとユーザープロンプトを統合
     const combinedPrompt = systemPrompt
       ? `${systemPrompt}\n\n${userPrompt}`
       : userPrompt;
 
-    const messages: OllamaMessage[] = [
+    // OpenAI互換形式のメッセージ（image_url形式）
+    const messages: any[] = [
       {
         role: 'user',
-        content: combinedPrompt,
-        images: [base64Image]
+        content: [
+          { type: 'text', text: combinedPrompt },
+          { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64Image}` } }
+        ]
       }
     ];
 
@@ -320,15 +344,6 @@ export class OllamaClient {
       // temperatureはoptionsから渡された値を使用（デフォルトは0.3）
       temperature: options.temperature ?? 0.3
     });
-
-    // Qwen3-VLのthinkingモードが有効な場合、thinkingフィールドも返される
-    // /no_think フラグを使用している場合は thinking は空
-    if (response.message.thinking) {
-      logger.debug('[OllamaClient] Qwen3-VL thinking mode response:', {
-        thinkingLength: response.message.thinking.length,
-        contentLength: response.message.content?.length || 0
-      });
-    }
 
     return response.message.content || '';
   }
@@ -355,17 +370,13 @@ export class OllamaClient {
       historyLength: conversationHistory.length
     });
 
-    // Thinkingモードを有効化するため、プロンプトに /think を追加
-    // Qwen3-VLでは /think をプロンプト末尾に付けるとThinkingモードが有効になる
-    const thinkingUserPrompt = `${userPrompt}\n\n/think`;
-
     const messages: OllamaMessage[] = [
       { role: 'system', content: systemPrompt },
       ...conversationHistory.map(msg => ({
         role: msg.role as 'user' | 'assistant',
         content: msg.content
       })),
-      { role: 'user', content: thinkingUserPrompt }
+      { role: 'user', content: userPrompt }
     ];
 
     // Thinkingモードは推論に時間がかかるため、タイムアウトを延長
@@ -378,17 +389,15 @@ export class OllamaClient {
         ...options,
         model: options.model || this.defaultModel,
         temperature: options.temperature ?? 0.7, // 相談系はやや高めの温度
-        num_predict: options.num_predict ?? 2000, // 回答は長めに
+        max_tokens: options.max_tokens ?? 2000, // 回答は長めに
       });
 
       logger.debug('[OllamaClient] Thinking mode response received:', {
-        contentLength: response.message.content?.length || 0,
-        hasThinking: !!response.message.thinking
+        contentLength: response.message.content?.length || 0
       });
 
       return {
-        content: response.message.content || '',
-        thinking: response.message.thinking
+        content: response.message.content || ''
       };
     } finally {
       // タイムアウトを元に戻す

@@ -1,13 +1,16 @@
 import { logger } from '@/lib/logger';
+import { OllamaClient } from '@/lib/ollama-client';
 
 /**
  * OCR AIオーケストレータ
  * Azure Form RecognizerのOCR結果を日本のビジネス文書として正しく解釈する
- * DeepSeek APIを使用して高精度な日本語処理を実現
+ * Ollama（Qwen3-VL）を優先的に使用し、利用できない場合はDeepSeek APIにフォールバック
+ *
+ * 2025-01: Command R廃止 → Qwen3-VL Thinkingに統合
  */
 
-// DeepSeek API型定義
-interface DeepSeekResponse {
+// LLM API型定義（Ollama/DeepSeek共通）
+interface LLMResponse {
   choices: Array<{
     message: {
       content: string;
@@ -22,10 +25,14 @@ interface DeepSeekResponse {
   };
 }
 
+// DeepSeek API型定義（後方互換性のため残す）
+interface DeepSeekResponse extends LLMResponse {}
+
 export interface OCROrchestrationRequest {
   ocrResult: any; // Azure Form Recognizerの結果
   documentType: 'invoice' | 'supplier-quote' | 'receipt' | 'purchase-invoice' | 'parking-receipt';
   companyId: string;
+  imageData?: Buffer | string; // 画像データ（Vision model用、オプショナル）
 }
 
 export interface StructuredInvoiceData {
@@ -98,20 +105,36 @@ export interface StructuredInvoiceData {
 }
 
 export class OCRAIOrchestrator {
+  private ollamaClient: OllamaClient | null = null;
   private deepseekApiKey: string | null = null;
-  private isAvailable: boolean = false;
+  private isOllamaAvailable: boolean = false;
+  private isOllamaVisionAvailable: boolean = false; // Vision model専用フラグ
+  private isDeepSeekAvailable: boolean = false;
   private readonly deepseekEndpoint = 'https://api.deepseek.com/v1/chat/completions';
-  
+  private readonly visionModel: string; // Vision model名
+
   constructor() {
+    // Vision modelの設定
+    this.visionModel = process.env.OLLAMA_VISION_MODEL || 'qwen3-vl';
+
+    // Ollamaクライアントの初期化
+    try {
+      this.ollamaClient = new OllamaClient();
+      logger.debug('[OCRAIOrchestrator] Ollama client initialized');
+    } catch (error) {
+      logger.debug('[OCRAIOrchestrator] Ollama client initialization failed:', error);
+    }
+
+    // DeepSeek APIキーの確認
     const apiKey = process.env.DEEPSEEK_API_KEY;
-    logger.debug('[OCRAIOrchestrator] Initializing with DeepSeek API...');
-    logger.debug('[OCRAIOrchestrator] API Key from env:', apiKey ? `Present (${apiKey.substring(0, 10)}...)` : 'Not found');
-    logger.debug('[OCRAIOrchestrator] Contains test-key:', apiKey?.includes('test-key') || false);
-    
+    logger.debug('[OCRAIOrchestrator] Initializing LLM providers...');
+    logger.debug('[OCRAIOrchestrator] DeepSeek API Key:', apiKey ? `Present (${apiKey.substring(0, 10)}...)` : 'Not found');
+    logger.debug('[OCRAIOrchestrator] Vision Model:', this.visionModel);
+
     if (apiKey && !apiKey.includes('test-key')) {
       this.deepseekApiKey = apiKey;
-      this.isAvailable = true;
-      logger.debug('[OCRAIOrchestrator] DeepSeek API is available');
+      this.isDeepSeekAvailable = true;
+      logger.debug('[OCRAIOrchestrator] DeepSeek API is available (fallback)');
     } else {
       logger.debug('[OCRAIOrchestrator] DeepSeek API is NOT available');
     }
@@ -119,18 +142,78 @@ export class OCRAIOrchestrator {
   
   /**
    * OCR結果を構造化された請求書データに変換
+   * 2段階優先順位:
+   * 1. Qwen3-VL (Vision model) - 画像直接処理 + テキスト処理
+   * 2. DeepSeek API - クラウドフォールバック（緊急時のみ）
+   *
+   * 2025-01: Command R廃止 → Qwen3-VL Thinkingに統合
    */
   async orchestrateOCRResult(request: OCROrchestrationRequest): Promise<StructuredInvoiceData> {
-    if (!this.isAvailable || !this.deepseekApiKey) {
-      throw new Error('AI Orchestrator is not available (DeepSeek API key not configured)');
+    // Ollamaの利用可能性を確認
+    if (this.ollamaClient) {
+      try {
+        this.isOllamaAvailable = await this.ollamaClient.checkAvailability();
+        logger.debug('[OCRAIOrchestrator] Ollama Text model availability:', this.isOllamaAvailable);
+
+        // Vision modelの利用可能性を確認（OpenAI互換API形式）
+        if (this.isOllamaAvailable) {
+          try {
+            const response = await fetch(`${process.env.OLLAMA_URL || 'http://localhost:1234'}/v1/models`);
+            if (response.ok) {
+              const data = await response.json();
+              // OpenAI形式は data 配列、Ollama形式は models 配列
+              const models = data.data || data.models || [];
+              this.isOllamaVisionAvailable = models.some((m: any) => {
+                const modelId = m.id || m.name || '';
+                return modelId.includes(this.visionModel) ||
+                  modelId.includes('qwen') ||
+                  modelId.includes('llava');
+              });
+              logger.debug('[OCRAIOrchestrator] Vision model availability:', this.isOllamaVisionAvailable);
+              logger.debug('[OCRAIOrchestrator] Vision model name:', this.visionModel);
+            }
+          } catch (error) {
+            logger.debug('[OCRAIOrchestrator] Vision model check failed:', error);
+            this.isOllamaVisionAvailable = false;
+          }
+        }
+      } catch (error) {
+        logger.debug('[OCRAIOrchestrator] Ollama availability check failed:', error);
+        this.isOllamaAvailable = false;
+        this.isOllamaVisionAvailable = false;
+      }
     }
-    
+
+    // 🎯 優先順位1: Vision model（画像データがある場合）
+    if (request.imageData && this.isOllamaVisionAvailable && this.ollamaClient) {
+      logger.debug('[OCRAIOrchestrator] 🎯 Priority 1: Trying Vision model (Qwen3-VL) with image data...');
+      try {
+        const result = await this.processWithVisionModel(request);
+        logger.debug('[OCRAIOrchestrator] ✅ Vision model succeeded!');
+        return result;
+      } catch (error) {
+        logger.warn('[OCRAIOrchestrator] ⚠️  Vision model failed, falling back to text models:', error);
+        // フォールバックして次の優先順位に進む
+      }
+    }
+
+    // LLMが1つも利用できない場合はエラー
+    if (!this.isOllamaAvailable && !this.isDeepSeekAvailable) {
+      throw new Error('AI Orchestrator is not available (No LLM provider configured)');
+    }
+
+    // 🎯 優先順位2: Text models（Ollama Qwen3-VL → DeepSeek API）
+    // 2025-01: Command R廃止 → Qwen3-VL Thinkingに統合
+    const llmProvider = this.isOllamaAvailable ? 'Ollama (Qwen3-VL)' : 'DeepSeek API (fallback)';
+    logger.debug('[OCRAIOrchestrator] 🎯 Priority 2: Using text-based LLM:', llmProvider);
+
     try {
-      logger.debug('[OCRAIOrchestrator] Starting DeepSeek AI-driven OCR orchestration...');
+      logger.debug('[OCRAIOrchestrator] Starting AI-driven OCR orchestration...');
       logger.debug('[OCRAIOrchestrator] Request:', {
         documentType: request.documentType,
         companyId: request.companyId,
-        ocrResultKeys: Object.keys(request.ocrResult || {})
+        ocrResultKeys: Object.keys(request.ocrResult || {}),
+        llmProvider
       });
       
       // OCR結果を文字列化（コンパクトに）
@@ -155,32 +238,46 @@ export class OCRAIOrchestrator {
         });
       }
       
-      // DeepSeek APIを使用して解析（リトライ付き）
-      logger.debug('[OCRAIOrchestrator] Sending request to DeepSeek API...');
+      // LLM APIを使用して解析（Ollama優先、リトライ付き）
+      logger.debug('[OCRAIOrchestrator] Sending request to LLM API...');
       logger.debug('[OCRAIOrchestrator] Prompt length:', prompt.length, 'characters');
-      
-      let response: DeepSeekResponse | null = null;
+
+      let response: LLMResponse | null = null;
       let lastError: Error | null = null;
       const maxRetries = 2;
-      
+
       for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
-          logger.debug(`[OCRAIOrchestrator] Attempt ${attempt}/${maxRetries}...`);
+          logger.debug(`[OCRAIOrchestrator] Attempt ${attempt}/${maxRetries} with ${llmProvider}...`);
           const startTime = Date.now();
-          response = await this.callDeepSeekAPI(prompt);
+
+          // Ollama優先、DeepSeekフォールバック
+          if (this.isOllamaAvailable && this.ollamaClient) {
+            response = await this.callOllamaAPI(prompt);
+          } else if (this.isDeepSeekAvailable && this.deepseekApiKey) {
+            response = await this.callDeepSeekAPI(prompt);
+          }
+
           const elapsed = Date.now() - startTime;
-          logger.debug('[OCRAIOrchestrator] DeepSeek API response received in', elapsed, 'ms');
+          logger.debug('[OCRAIOrchestrator] LLM API response received in', elapsed, 'ms');
           break; // 成功したらループを抜ける
         } catch (error) {
           lastError = error as Error;
           logger.error(`[OCRAIOrchestrator] Attempt ${attempt} failed:`, error);
+
+          // Ollamaが失敗した場合、DeepSeekにフォールバック
+          if (this.isOllamaAvailable && this.isDeepSeekAvailable && attempt === 1) {
+            logger.debug('[OCRAIOrchestrator] Ollama failed, falling back to DeepSeek...');
+            this.isOllamaAvailable = false; // 次回からDeepSeekを使う
+          }
+
           if (attempt < maxRetries) {
             logger.debug(`[OCRAIOrchestrator] Retrying in 2 seconds...`);
             await new Promise(resolve => setTimeout(resolve, 2000));
           }
         }
       }
-      
+
       if (!response && lastError) {
         throw lastError;
       }
@@ -258,9 +355,49 @@ export class OCRAIOrchestrator {
   }
   
   /**
+   * Ollama APIを呼び出し
+   */
+  private async callOllamaAPI(prompt: string): Promise<LLMResponse> {
+    if (!this.ollamaClient) {
+      throw new Error('Ollama client is not initialized');
+    }
+
+    try {
+      logger.debug('[OCRAIOrchestrator] Calling Ollama API...');
+
+      const systemPrompt = 'You are a JSON extraction expert. Always return valid JSON in code blocks.';
+
+      const response = await this.ollamaClient.completeWithSystem(
+        systemPrompt,
+        prompt,
+        {
+          temperature: 0,
+          num_predict: 4000
+        }
+      );
+
+      logger.debug('[OCRAIOrchestrator] Ollama API response received');
+
+      // OllamaのレスポンスをDeepSeek互換形式に変換
+      return {
+        choices: [{
+          message: {
+            role: 'assistant',
+            content: response
+          },
+          finish_reason: 'stop'
+        }]
+      };
+    } catch (error) {
+      logger.error('[OCRAIOrchestrator] Ollama API error:', error);
+      throw error;
+    }
+  }
+
+  /**
    * DeepSeek APIを呼び出し
    */
-  private async callDeepSeekAPI(prompt: string): Promise<DeepSeekResponse> {
+  private async callDeepSeekAPI(prompt: string): Promise<LLMResponse> {
     // AbortControllerを使用してタイムアウトを実装
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 25000); // 25秒のタイムアウト
@@ -1024,6 +1161,144 @@ ${ocrData}
   }
   
   /**
+   * Vision modelで画像を直接処理（優先順位1）
+   */
+  private async processWithVisionModel(request: OCROrchestrationRequest): Promise<StructuredInvoiceData> {
+    if (!this.ollamaClient || !request.imageData) {
+      throw new Error('Vision model processing requires Ollama client and image data');
+    }
+
+    logger.debug('[OCRAIOrchestrator] Processing with Vision model:', this.visionModel);
+
+    // ドキュメントタイプに応じたプロンプト
+    const systemPrompt = `あなたは日本のビジネス文書処理の専門家です。画像から ${
+      {
+        'invoice': '請求書',
+        'supplier-quote': '見積書',
+        'receipt': '領収書',
+        'purchase-invoice': '購入請求書',
+        'parking-receipt': '駐車場領収書'
+      }[request.documentType] || '書類'
+    } の情報を正確に抽出し、JSON形式で返してください。
+
+## 重要な判別ルール
+1. **「御中」「様」**: 必ず顧客（宛先）を示す
+2. **「御中」「様」なし**: 発行元（仕入先）を示す
+3. **住所・電話番号**: 通常は発行元（仕入先）のもの
+4. **日付**: YYYY-MM-DD形式に統一
+5. **金額**: 数値のみ（カンマなし）
+
+## 期待されるJSON形式
+必ず \`\`\`json ブロックで囲んでください。`;
+
+    const userPrompt = `この画像から、以下のJSON形式でデータを抽出してください:
+
+\`\`\`json
+{
+  "documentNumber": "文書番号",
+  "issueDate": "YYYY-MM-DD",
+  "subject": "件名",
+  "vendor": {
+    "name": "仕入先名（御中がつかない方）",
+    "address": "仕入先住所",
+    "phone": "仕入先電話番号"
+  },
+  "customer": {
+    "name": "顧客名（御中がつく方）",
+    "address": "顧客住所"
+  },
+  "items": [
+    {
+      "itemName": "商品名",
+      "quantity": 1,
+      "unitPrice": 1000,
+      "amount": 1000
+    }
+  ],
+  "subtotal": 小計,
+  "taxAmount": 税額,
+  "totalAmount": 総額
+}
+\`\`\``;
+
+    // Vision modelで画像を処理
+    const responseText = await this.ollamaClient.extractJSONFromImage(
+      request.imageData,
+      systemPrompt,
+      userPrompt,
+      this.visionModel,
+      {
+        temperature: 0,
+        num_predict: 4000
+      }
+    );
+
+    logger.debug('[OCRAIOrchestrator] Vision model response length:', responseText.length);
+
+    // JSON抽出
+    const jsonMatch = responseText.match(/```json\n([\s\S]*?)\n```/);
+    if (!jsonMatch) {
+      throw new Error('Failed to extract JSON from Vision model response');
+    }
+
+    const extractedData = JSON.parse(jsonMatch[1]);
+    logger.debug('[OCRAIOrchestrator] Vision model extracted data:', extractedData);
+
+    // 必要なフィールドを補完
+    return this.normalizeExtractedData(extractedData, request.documentType);
+  }
+
+  /**
+   * 抽出されたデータを正規化
+   */
+  private normalizeExtractedData(data: any, documentType: string): StructuredInvoiceData {
+    return {
+      documentNumber: data.documentNumber || '',
+      issueDate: data.issueDate || new Date().toISOString().split('T')[0],
+      validityDate: data.validityDate,
+      subject: data.subject || '',
+      vendor: {
+        name: data.vendor?.name || '',
+        address: data.vendor?.address,
+        phone: data.vendor?.phone,
+        email: data.vendor?.email,
+        fax: data.vendor?.fax
+      },
+      customer: {
+        name: data.customer?.name || '',
+        address: data.customer?.address
+      },
+      items: (data.items || []).map((item: any) => ({
+        itemName: item.itemName || '',
+        description: item.description,
+        quantity: Number(item.quantity) || 0,
+        unitPrice: Number(item.unitPrice) || 0,
+        amount: Number(item.amount) || 0,
+        taxRate: item.taxRate,
+        taxAmount: item.taxAmount,
+        remarks: item.remarks
+      })),
+      subtotal: Number(data.subtotal) || 0,
+      taxAmount: Number(data.taxAmount) || 0,
+      totalAmount: Number(data.totalAmount) || 0,
+      deliveryLocation: data.deliveryLocation,
+      paymentTerms: data.paymentTerms,
+      quotationValidity: data.quotationValidity,
+      notes: data.notes,
+      bankTransferInfo: data.bankTransferInfo,
+      // 駐車場領収書専用フィールド
+      receiptType: data.receiptType,
+      companyName: data.companyName,
+      facilityName: data.facilityName,
+      entryTime: data.entryTime,
+      exitTime: data.exitTime,
+      parkingDuration: data.parkingDuration,
+      baseFee: data.baseFee,
+      additionalFee: data.additionalFee
+    };
+  }
+
+  /**
    * OCRデータから駐車場領収書かどうかを判定
    */
   private isParkingReceiptFromOCR(ocrData: string): boolean {
@@ -1042,7 +1317,7 @@ ${ocrData}
       'パーク24',
       'タイムズ24株式会社'
     ];
-    
+
     const lowerData = ocrData.toLowerCase();
     return parkingKeywords.some(keyword => lowerData.includes(keyword.toLowerCase()));
   }

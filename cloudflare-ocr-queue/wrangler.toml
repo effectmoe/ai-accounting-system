@@ -1,0 +1,31 @@
+name = "accounting-ocr-queue"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Durable Objects for queue management
+[[durable_objects.bindings]]
+name = "OCR_QUEUE"
+class_name = "OCRQueueDO"
+
+# Durable Objects migrations
+[[migrations]]
+tag = "v1"
+new_classes = ["OCRQueueDO"]
+
+# Environment variables
+[vars]
+OLLAMA_URL = "https://ollama.otona-off.style"
+OLLAMA_VISION_MODEL = "qwen3-vl-8b-instruct-mlx"
+CORS_ORIGIN = "https://accounting-automation.vercel.app"
+MAX_RETRIES = "3"
+RETRY_DELAY_MS = "2000"
+REQUEST_TIMEOUT_MS = "180000"
+
+# Development environment
+[env.dev]
+vars = { CORS_ORIGIN = "http://localhost:3000", OLLAMA_URL = "http://localhost:11434", OLLAMA_VISION_MODEL = "qwen3-vl-8b-instruct-mlx" }
+
+# Production environment
+[env.production]
+vars = { CORS_ORIGIN = "https://accounting-automation.vercel.app", OLLAMA_URL = "https://ollama.otona-off.style", OLLAMA_VISION_MODEL = "qwen3-vl-8b-instruct-mlx" }
