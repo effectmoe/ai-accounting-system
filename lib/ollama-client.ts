@@ -15,12 +15,43 @@ import { logger } from '@/lib/logger';
  * - OLLAMA_TIMEOUT: タイムアウト（ミリ秒、デフォルト: 120000）
  */
 
-interface OllamaMessage {
-  role: 'system' | 'user' | 'assistant';
-  content: string;
-  images?: string[]; // Base64エンコードされた画像データ（Vision models用）
+// OpenAI互換のメッセージ型（LM Studio対応）
+interface OpenAIMessageContent {
+  type: 'text' | 'image_url';
+  text?: string;
+  image_url?: {
+    url: string;
+  };
 }
 
+interface OllamaMessage {
+  role: 'system' | 'user' | 'assistant';
+  content: string | OpenAIMessageContent[];
+  images?: string[]; // 後方互換用（内部でOpenAI形式に変換）
+}
+
+// OpenAI互換のレスポンス型（LM Studio対応）
+interface OpenAIResponse {
+  id: string;
+  object: string;
+  created: number;
+  model: string;
+  choices: Array<{
+    index: number;
+    message: {
+      role: string;
+      content: string;
+    };
+    finish_reason: string;
+  }>;
+  usage?: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+  };
+}
+
+// 後方互換用のOllamaResponse型
 interface OllamaResponse {
   model: string;
   created_at: string;
@@ -41,7 +72,7 @@ interface OllamaResponse {
 interface OllamaOptions {
   model?: string;
   temperature?: number;
-  num_predict?: number; // Ollamaでは max_tokens の代わりに num_predict
+  num_predict?: number; // max_tokensとして使用
   top_p?: number;
   top_k?: number;
   repeat_penalty?: number;
@@ -93,34 +124,40 @@ export class OllamaClient {
   }
 
   /**
-   * Ollamaの利用可能性を確認
+   * LM Studioの利用可能性を確認（OpenAI互換 /v1/models エンドポイント使用）
    */
   async checkAvailability(): Promise<boolean> {
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000); // 5秒タイムアウト
 
-      const response = await fetch(`${this.baseURL}/api/tags`, {
+      // OpenAI互換エンドポイントを使用
+      const response = await fetch(`${this.baseURL}/v1/models`, {
         signal: controller.signal
       });
 
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        logger.debug('[OllamaClient] Ollama not available:', response.status);
+        logger.debug('[OllamaClient] LM Studio not available:', response.status);
         this.isAvailable = false;
         return false;
       }
 
       const data = await response.json();
-      const models = data.models || [];
-      const hasModel = models.some((m: any) => m.name.includes(this.defaultModel));
+      // OpenAI形式: { data: [{id: "model-name", ...}, ...] }
+      const models = data.data || [];
+      const hasModel = models.some((m: any) =>
+        m.id?.includes(this.defaultModel) || m.id?.includes('qwen')
+      );
 
-      logger.debug('[OllamaClient] Available models:', models.map((m: any) => m.name));
+      logger.debug('[OllamaClient] Available models:', models.map((m: any) => m.id));
       logger.debug('[OllamaClient] Target model available:', hasModel);
 
-      this.isAvailable = hasModel;
-      return hasModel;
+      // モデルが見つからなくても、サーバーが応答していればtrueを返す
+      // （LM Studioはロード済みモデルのみを返すため）
+      this.isAvailable = models.length > 0 || response.ok;
+      return this.isAvailable;
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
         logger.debug('[OllamaClient] Availability check timed out');
@@ -133,7 +170,7 @@ export class OllamaClient {
   }
 
   /**
-   * チャット補完APIを呼び出す
+   * チャット補完APIを呼び出す（OpenAI互換フォーマット - LM Studio対応）
    */
   async chat(
     messages: OllamaMessage[],
@@ -144,35 +181,63 @@ export class OllamaClient {
       temperature = 0,
       num_predict = 4000,
       top_p,
-      top_k,
-      repeat_penalty,
       stream = false,
     } = options;
 
+    // メッセージをOpenAI互換形式に変換
+    const openAIMessages = messages.map(msg => {
+      // imagesフィールドがある場合はOpenAI Vision形式に変換
+      if (msg.images && msg.images.length > 0) {
+        const content: OpenAIMessageContent[] = [
+          { type: 'text', text: typeof msg.content === 'string' ? msg.content : '' }
+        ];
+
+        // 画像をOpenAI形式で追加
+        for (const base64Image of msg.images) {
+          content.push({
+            type: 'image_url',
+            image_url: {
+              url: `data:image/jpeg;base64,${base64Image}`
+            }
+          });
+        }
+
+        return {
+          role: msg.role,
+          content
+        };
+      }
+
+      // 通常のテキストメッセージ
+      return {
+        role: msg.role,
+        content: typeof msg.content === 'string' ? msg.content : msg.content
+      };
+    });
+
+    // OpenAI互換のリクエストボディ
     const requestBody = {
       model,
-      messages,
+      messages: openAIMessages,
       stream,
-      options: {
-        temperature,
-        num_predict,
-        ...(top_p !== undefined && { top_p }),
-        ...(top_k !== undefined && { top_k }),
-        ...(repeat_penalty !== undefined && { repeat_penalty }),
-      }
+      temperature,
+      max_tokens: num_predict,
+      ...(top_p !== undefined && { top_p }),
     };
 
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), this.defaultTimeout);
 
-      logger.debug('[OllamaClient] Sending request to Ollama...', {
+      logger.debug('[OllamaClient] Sending request to LM Studio (OpenAI format)...', {
         model,
         messagesCount: messages.length,
-        temperature
+        temperature,
+        endpoint: '/v1/chat/completions'
       });
 
-      const response = await fetch(`${this.baseURL}/api/chat`, {
+      // OpenAI互換エンドポイントを使用
+      const response = await fetch(`${this.baseURL}/v1/chat/completions`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -185,18 +250,31 @@ export class OllamaClient {
 
       if (!response.ok) {
         const errorText = await response.text();
-        logger.error('[OllamaClient] Ollama API error:', errorText);
-        throw new Error(`Ollama API request failed: ${response.status} ${errorText}`);
+        logger.error('[OllamaClient] LM Studio API error:', errorText);
+        throw new Error(`LM Studio API request failed: ${response.status} ${errorText}`);
       }
 
-      const data = await response.json();
+      const data = await response.json() as OpenAIResponse;
       logger.debug('[OllamaClient] Response received successfully');
 
-      return data as OllamaResponse;
+      // OpenAIレスポンスをOllamaResponse形式に変換（後方互換性のため）
+      const ollamaResponse: OllamaResponse = {
+        model: data.model,
+        created_at: new Date(data.created * 1000).toISOString(),
+        message: {
+          role: data.choices[0]?.message?.role || 'assistant',
+          content: data.choices[0]?.message?.content || '',
+        },
+        done: true,
+        prompt_eval_count: data.usage?.prompt_tokens,
+        eval_count: data.usage?.completion_tokens,
+      };
+
+      return ollamaResponse;
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
         logger.error('[OllamaClient] Request timed out');
-        throw new Error('Ollama request timed out');
+        throw new Error('LM Studio request timed out');
       }
       throw error;
     }

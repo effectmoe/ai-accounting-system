@@ -419,11 +419,10 @@ async function createReceiptFromExtractedData(
     visionModelUsed: visionModel,
   };
 
-  // 勘定科目の判定（AI推定を使用）
-  // ※ルールベースは一旦無効化し、学習効果を検証
-  // const ruleBasedCategory = applyAccountCategoryRules(extractedData);
-  const finalAccountCategory = validateAccountCategory(extractedData.accountCategory);
-  const categoryConfidence = extractedData.accountCategory ? 0.8 : 0;
+  // 勘定科目の判定（ルールベース優先、次にAI推定）
+  const ruleBasedCategory = applyAccountCategoryRules(extractedData);
+  const finalAccountCategory = ruleBasedCategory || validateAccountCategory(extractedData.accountCategory);
+  const categoryConfidence = ruleBasedCategory ? 1.0 : (extractedData.accountCategory ? 0.8 : 0);
 
   // 領収書データを作成
   const receiptData: Omit<Receipt, '_id' | 'createdAt' | 'updatedAt'> = {
@@ -530,6 +529,30 @@ function applyAccountCategoryRules(
 
   // 検索対象テキスト（発行者名、件名、備考、明細品名）
   const searchText = `${issuerName} ${subject} ${notes} ${itemNames}`.toLowerCase();
+
+  // ========================================
+  // ルール0: 公的機関からの領収書 → 租税公課（最優先）
+  // ========================================
+  const publicInstitutionKeywords = [
+    // 福岡市・北九州市の区
+    '福岡市', '北九州市',
+    '早良区', '中央区', '博多区', '東区', '西区', '南区', '城南区',
+    '小倉北区', '小倉南区', '八幡東区', '八幡西区', '戸畑区', '若松区', '門司区',
+    // 一般的な市区町村パターン
+    '市役所', '区役所', '町役場', '村役場',
+    // 公的機関
+    '県庁', '税務署', '法務局', '年金事務所', '労働基準監督署',
+    '福祉事務所', '保健所', '消防署', '警察署',
+    // その他公的機関
+    '国税局', '都道府県', '市区町村',
+  ];
+
+  for (const keyword of publicInstitutionKeywords) {
+    if (issuerName.includes(keyword)) {
+      logger.info(`[DirectScan API] Rule applied: Public institution detected (keyword: "${keyword}") → 租税公課`);
+      return '租税公課';
+    }
+  }
 
   // ========================================
   // ルール1: 飲食店の判定
