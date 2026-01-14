@@ -25,6 +25,7 @@ import {
 } from '@/types/scan-receipt';
 import { convertToWebp } from '@/lib/image-converter';
 import { uploadToR2, generateReceiptImageKey } from '@/lib/r2-client';
+import { loadRulesFromSkillMd } from '@/lib/skill-rules-parser';
 
 const ollamaClient = new OllamaClient();
 const companyInfoService = new CompanyInfoService();
@@ -241,7 +242,8 @@ async function extractReceiptDataWithVision(imageBuffer: Buffer, maxRetries: num
   // ミニマルなプロンプトを使用
   const systemPrompt = ''; // システムプロンプトは使用しない
 
-  const userPrompt = `領収書のJSON：{"issuerName":"店舗名", "issuerAddress":"住所", "issuerPhone":"電話", "issueDate":"YYYY-MM-DD", "subtotal":税抜金額, "taxAmount":消費税, "totalAmount":合計, "accountCategory":"接待交際費/会議費/旅費交通費/車両費/消耗品費/通信費/福利厚生費/新聞図書費/雑費から選択"}`;
+  // 金額読み取り精度改善: 「納入金額」「合計」などのラベル横の数字を正確に読む
+  const userPrompt = `領収書から抽出。金額は「金額」「合計」「納入金額」ラベル横の数字を1桁ずつ確認。JSON：{"issuerName":"店舗名", "issuerAddress":"住所", "issuerPhone":"電話", "issueDate":"YYYY-MM-DD", "subtotal":税抜金額, "taxAmount":消費税, "totalAmount":合計金額の数値, "accountCategory":"接待交際費/会議費/旅費交通費/車両費/消耗品費/通信費/福利厚生費/新聞図書費/雑費/租税公課から選択"}`;
 
   let lastError: Error | null = null;
 
@@ -419,11 +421,17 @@ async function createReceiptFromExtractedData(
     visionModelUsed: visionModel,
   };
 
-  // 勘定科目の判定（AI推定を使用）
-  // ※ルールベースは一旦無効化し、学習効果を検証
-  // const ruleBasedCategory = applyAccountCategoryRules(extractedData);
-  const finalAccountCategory = validateAccountCategory(extractedData.accountCategory);
-  const categoryConfidence = extractedData.accountCategory ? 0.8 : 0;
+  // 勘定科目の判定（ルールベース優先）
+  // SKILL.mdのルールを最優先で適用し、該当しない場合のみAI判定を使用
+  const ruleBasedCategory = applyAccountCategoryRules(extractedData);
+  const finalAccountCategory = ruleBasedCategory || validateAccountCategory(extractedData.accountCategory);
+  const categoryConfidence = ruleBasedCategory ? 1.0 : (extractedData.accountCategory ? 0.8 : 0);
+
+  logger.info('[DirectScan API] Category determination:', {
+    ruleBasedCategory: ruleBasedCategory || '(no rule match)',
+    aiCategory: extractedData.accountCategory,
+    finalCategory: finalAccountCategory,
+  });
 
   // 領収書データを作成
   const receiptData: Omit<Receipt, '_id' | 'createdAt' | 'updatedAt'> = {
@@ -531,67 +539,28 @@ function applyAccountCategoryRules(
   // 検索対象テキスト（発行者名、件名、備考、明細品名）
   const searchText = `${issuerName} ${subject} ${notes} ${itemNames}`.toLowerCase();
 
+  // SKILL.mdからルールを読み込む
+  const rules = loadRulesFromSkillMd();
+
+  // ========================================
+  // ルール0: 公的機関 → 租税公課（最優先）
+  // ========================================
+  for (const keyword of rules.governmentKeywords) {
+    if (searchText.includes(keyword.toLowerCase())) {
+      logger.info(`[DirectScan API] Rule applied: Government institution detected (keyword: "${keyword}") → 租税公課`);
+      return '租税公課';
+    }
+  }
+
   // ========================================
   // ルール1: 飲食店の判定
   // - お酒あり → 接待交際費
   // - お酒なし → 会議費
   // - 判断不能 → 3,000円未満: 会議費、3,000円以上: 接待交際費
   // ========================================
-  const restaurantKeywords = [
-    // 一般的な飲食店
-    '飲食', 'レストラン', '食堂', 'カフェ', 'cafe', '喫茶',
-    '居酒屋', 'バー', 'bar', 'スナック', 'パブ',
-    // 料理ジャンル
-    'ラーメン', '拉麺', 'らーめん', 'そば', '蕎麦', 'うどん',
-    '焼肉', '焼き肉', 'やきにく', 'ステーキ', 'しゃぶしゃぶ',
-    '寿司', 'すし', '鮨', '回転寿司',
-    '鶏', '鳥', 'とり', 'チキン', '焼鳥', '焼き鳥', 'やきとり',
-    'ピザ', 'パスタ', 'イタリアン', 'フレンチ', '中華', '韓国',
-    'カレー', 'ハンバーグ', '定食', '弁当', '丼',
-    // 店舗形態
-    '料理', '厨房', 'キッチン', 'kitchen', 'ダイニング', 'dining',
-    '食事', 'グルメ', 'フード', 'food',
-    // 特定チェーン・業態
-    'マクドナルド', 'スタバ', 'スターバックス', 'ドトール',
-    'サイゼリヤ', 'ガスト', 'デニーズ', 'ジョイフル',
-    'ココイチ', '吉野家', '松屋', 'すき家', 'なか卯',
-    '串カツ', '天ぷら', 'てんぷら', '天麩羅',
-    'ビストロ', 'トラットリア', 'オステリア',
-  ];
-
-  // お酒を示すキーワード
-  const alcoholKeywords = [
-    // ビール
-    'ビール', 'beer', '生ビール', '瓶ビール', '缶ビール',
-    'アサヒ', 'キリン', 'サッポロ', 'サントリー', 'エビス',
-    // 日本酒・焼酎
-    '日本酒', '焼酎', '泡盛', '清酒', '純米', '大吟醸', '吟醸',
-    '芋焼酎', '麦焼酎', '米焼酎', '黒霧島', '白霧島',
-    // ワイン
-    'ワイン', 'wine', '赤ワイン', '白ワイン', 'スパークリング',
-    'シャンパン', 'シャンペン', 'ロゼ',
-    // ウイスキー・洋酒
-    'ウイスキー', 'ウィスキー', 'whisky', 'whiskey',
-    'ハイボール', 'ブランデー', 'ジン', 'ウォッカ', 'ラム', 'テキーラ',
-    // カクテル・サワー
-    'カクテル', 'サワー', '酎ハイ', 'チューハイ',
-    'レモンサワー', 'グレープフルーツサワー', '梅サワー',
-    'モヒート', 'ジントニック', 'カシス',
-    // その他
-    '酒', 'アルコール', '飲み放題', '乾杯', 'お通し',
-    'ドリンク飲み放題', '宴会', 'コース',
-  ];
-
-  // ノンアルコールを示すキーワード（お酒なしの判定に使用）
-  const nonAlcoholKeywords = [
-    'ノンアルコール', 'ノンアル', 'ソフトドリンク',
-    'コーヒー', '紅茶', 'ジュース', 'ウーロン茶', '緑茶',
-    'コーラ', 'オレンジジュース', 'お茶',
-  ];
-
   // 飲食店かどうかを判定
   let isRestaurant = false;
-  for (const keyword of restaurantKeywords) {
+  for (const keyword of rules.restaurantKeywords) {
     if (searchText.includes(keyword.toLowerCase())) {
       isRestaurant = true;
       break;
@@ -602,7 +571,7 @@ function applyAccountCategoryRules(
     // お酒キーワードをチェック
     let hasAlcohol = false;
     let alcoholKeywordFound = '';
-    for (const keyword of alcoholKeywords) {
+    for (const keyword of rules.alcoholKeywords) {
       if (searchText.includes(keyword.toLowerCase())) {
         hasAlcohol = true;
         alcoholKeywordFound = keyword;
@@ -613,7 +582,7 @@ function applyAccountCategoryRules(
     // ノンアルコールのみかチェック（お酒キーワードがない場合）
     let hasOnlyNonAlcohol = false;
     if (!hasAlcohol) {
-      for (const keyword of nonAlcoholKeywords) {
+      for (const keyword of rules.nonAlcoholKeywords) {
         if (searchText.includes(keyword.toLowerCase())) {
           hasOnlyNonAlcohol = true;
           break;
@@ -644,12 +613,7 @@ function applyAccountCategoryRules(
   // ========================================
   // ルール2: 駐車場 → 旅費交通費
   // ========================================
-  const parkingKeywords = [
-    '駐車', 'パーキング', 'parking', 'コインパーキング',
-    'タイムズ', 'リパーク', '三井のリパーク',
-  ];
-
-  for (const keyword of parkingKeywords) {
+  for (const keyword of rules.parkingKeywords) {
     if (searchText.includes(keyword.toLowerCase())) {
       logger.info(`[DirectScan API] Rule applied: Parking detected (keyword: "${keyword}") → 旅費交通費`);
       return '旅費交通費';
@@ -659,12 +623,7 @@ function applyAccountCategoryRules(
   // ========================================
   // ルール3: コンビニ → 消耗品費（デフォルト）
   // ========================================
-  const convenienceKeywords = [
-    'コンビニ', 'セブン', 'セブンイレブン', 'ファミリーマート', 'ファミマ',
-    'ローソン', 'ミニストップ', 'デイリーヤマザキ',
-  ];
-
-  for (const keyword of convenienceKeywords) {
+  for (const keyword of rules.convenienceKeywords) {
     if (searchText.includes(keyword.toLowerCase())) {
       logger.info(`[DirectScan API] Rule applied: Convenience store detected (keyword: "${keyword}") → 消耗品費`);
       return '消耗品費';
@@ -674,12 +633,7 @@ function applyAccountCategoryRules(
   // ========================================
   // ルール4: ガソリンスタンド → 車両費
   // ========================================
-  const gasStationKeywords = [
-    'ガソリン', 'ガソリンスタンド', 'gs', 'エネオス', 'eneos',
-    '出光', 'コスモ', '昭和シェル', 'シェル', '給油',
-  ];
-
-  for (const keyword of gasStationKeywords) {
+  for (const keyword of rules.gasStationKeywords) {
     if (searchText.includes(keyword.toLowerCase())) {
       logger.info(`[DirectScan API] Rule applied: Gas station detected (keyword: "${keyword}") → 車両費`);
       return '車両費';
