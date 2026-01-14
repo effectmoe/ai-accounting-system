@@ -62,7 +62,7 @@ interface OllamaOptions {
 
 // デフォルト設定（LM Studio互換）
 const DEFAULT_LOCAL_URL = 'http://localhost:1234';
-const DEFAULT_CLOUD_URL = 'https://local-ollama.otona-off.style';
+const DEFAULT_CLOUD_URL = 'https://local-lmstudio.otona-off.style';
 const DEFAULT_TIMEOUT_LOCAL = 60000;  // ローカル: 60秒
 const DEFAULT_TIMEOUT_CLOUD = 180000; // クラウド: 180秒（Tunnel経由のレイテンシを考慮）
 
