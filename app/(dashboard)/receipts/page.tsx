@@ -926,11 +926,12 @@ export default function ReceiptsPage() {
                       onCheckedChange={handleSelectAll}
                     />
                   </TableHead>
-                  <TableHead>領収書番号</TableHead>
                   <TableHead>発行元</TableHead>
+                  <TableHead>但し書き</TableHead>
+                  <TableHead>項目名</TableHead>
                   <TableHead>発行日</TableHead>
-                  <TableHead>スキャン日</TableHead>
-                  <TableHead>金額</TableHead>
+                  <TableHead>スキャン日時</TableHead>
+                  <TableHead className="text-right">金額</TableHead>
                   <TableHead>勘定科目</TableHead>
                   <TableHead>ステータス</TableHead>
                   <TableHead>操作</TableHead>
@@ -947,14 +948,13 @@ export default function ReceiptsPage() {
                         }
                       />
                     </TableCell>
-                    <TableCell
-                      className="font-medium"
-                      onClick={() => router.push(`/receipts/${receipt._id}`)}
-                    >
+                    <TableCell onClick={() => router.push(`/receipts/${receipt._id}`)}>
                       <div className="flex items-center gap-2">
-                        {receipt.receiptNumber}
+                        <div className="max-w-[180px] truncate" title={receipt.scannedFromPdf ? receipt.issuerName : receipt.customerName}>
+                          {receipt.scannedFromPdf ? receipt.issuerName || '（不明）' : receipt.customerName}
+                        </div>
                         {receipt.scannedFromPdf && (
-                          <Badge variant="secondary" className="h-5 px-1.5 text-xs">
+                          <Badge variant="secondary" className="h-5 px-1.5 text-xs shrink-0">
                             <Scan className="h-3 w-3 mr-0.5" />
                             スキャン
                           </Badge>
@@ -962,8 +962,13 @@ export default function ReceiptsPage() {
                       </div>
                     </TableCell>
                     <TableCell onClick={() => router.push(`/receipts/${receipt._id}`)}>
-                      <div className="max-w-[200px] truncate" title={receipt.scannedFromPdf ? receipt.issuerName : receipt.customerName}>
-                        {receipt.scannedFromPdf ? receipt.issuerName || '（不明）' : receipt.customerName}
+                      <div className="max-w-[150px] truncate text-sm" title={receipt.subject || ''}>
+                        {receipt.subject || <span className="text-muted-foreground">-</span>}
+                      </div>
+                    </TableCell>
+                    <TableCell onClick={() => router.push(`/receipts/${receipt._id}`)}>
+                      <div className="max-w-[150px] truncate text-sm" title={receipt.title || receipt.items?.[0]?.itemName || receipt.items?.[0]?.description || ''}>
+                        {receipt.title || receipt.items?.[0]?.itemName || receipt.items?.[0]?.description || <span className="text-muted-foreground">-</span>}
                       </div>
                     </TableCell>
                     <TableCell onClick={() => router.push(`/receipts/${receipt._id}`)}>
@@ -971,14 +976,14 @@ export default function ReceiptsPage() {
                     </TableCell>
                     <TableCell onClick={() => router.push(`/receipts/${receipt._id}`)}>
                       {receipt.scanMetadata?.processedAt ? (
-                        <span className="text-sm">
+                        <span className="text-sm text-muted-foreground">
                           {safeFormatDate(receipt.scanMetadata.processedAt, 'yyyy/MM/dd HH:mm', ja)}
                         </span>
                       ) : (
                         <span className="text-muted-foreground text-xs">-</span>
                       )}
                     </TableCell>
-                    <TableCell onClick={() => router.push(`/receipts/${receipt._id}`)}>
+                    <TableCell className="text-right" onClick={() => router.push(`/receipts/${receipt._id}`)}>
                       ¥{receipt.totalAmount.toLocaleString()}
                     </TableCell>
                     <TableCell onClick={() => router.push(`/receipts/${receipt._id}`)}>

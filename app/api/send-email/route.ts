@@ -184,23 +184,9 @@ async function sendEmail(options: {
   }
 }
 
-// 送信専用メールの注意書きHTML
+// 送信専用メールの注意書きHTML（Gmail OAuth2移行後は不要のため削除）
 function getReplyNoticeHtml(): string {
-  return `
-<div style="background-color: #FEF3C7; border: 2px solid #F59E0B; border-radius: 8px; padding: 16px; margin: 24px 0; text-align: center;">
-  <p style="margin: 0; color: #92400E; font-weight: bold; font-size: 14px;">
-    📧 このメールは送信専用です
-  </p>
-  <p style="margin: 8px 0 0 0; color: #78350F; font-size: 14px;">
-    ご返信・お問い合わせは下記メールアドレスまでお願いいたします
-  </p>
-  <p style="margin: 12px 0 0 0;">
-    <a href="mailto:info@effect.moe" style="background-color: #3B82F6; color: white; padding: 10px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold; font-size: 16px;">
-      ✉️ info@effect.moe
-    </a>
-  </p>
-</div>
-  `.trim();
+  return '';
 }
 
 // デフォルトのメールテンプレート

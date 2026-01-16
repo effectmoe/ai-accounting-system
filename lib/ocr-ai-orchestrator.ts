@@ -1011,13 +1011,41 @@ CRITICAL RULES:
    - If contains タイムズ, パーキング, 駐車場, 入庫/出庫 = parking receipt
    - Set receiptType = "parking" and extract parking-specific fields
    - Otherwise set receiptType = "general"
-8. For invoices (請求書), extract balance/carryover information:
+8. CRITICAL - Amount keyword recognition for receipts (領収書):
+
+   【subtotal（税抜金額）に該当するキーワード】→ subtotal フィールドに格納
+   - 「小計」「小計額」「税抜金額」「税抜合計」「本体価格」
+   - これは支払金額（totalAmount）ではない
+
+   【totalAmount（税込金額・支払金額）に該当するキーワード】→ totalAmount フィールドに格納
+   - 「合計」「合計額」「税込合計」「総合計」「お支払い」「お支払金額」「ご請求額」「領収金額」
+   - これが実際の支払金額である
+   - ⚠️ 絶対に taxAmount を追加してはいけない（既に税込）
+
+   【taxAmount（消費税額）に該当するキーワード】→ taxAmount フィールドに格納
+   - 「外税」「外税額」「10%外税」「8%外税」「10%外税額」「8%外税額」
+   - 「消費税」「消費税額」「税額」
+   - 「TAX」「税TAX計」「(税TAX 計)」
+   - 「内税」「内税額」（合計に含まれている税金の内訳）
+
+   【計算ルール】
+   - totalAmount = subtotal + taxAmount（この関係を確認）
+   - totalAmount には taxAmount を加算しない（二重課税防止）
+   - 「合計」の値をそのまま totalAmount として使用する
+
+   【例】
+   - 小計 ¥7,272 → subtotal: 7272
+   - 10%外税額 ¥727 → taxAmount: 727
+   - 合計 ¥7,999 → totalAmount: 7999
+   - ✅ 正解: totalAmount = 7999（合計をそのまま使用）
+   - ❌ 間違い: totalAmount = 7272 + 727 + 727 = 8726（税を二重追加）
+9. For invoices (請求書), extract balance/carryover information:
    - 前回請求額 = previousBalance
    - 今回入金額 = currentPayment  
    - 繰越金額 = carryoverAmount
    - 今回売上高 = currentSales
    - 今回請求額 = currentInvoiceAmount
-8. Extract bank transfer information (振込先) - IMPORTANT: Look for these patterns:
+10. Extract bank transfer information (振込先) - IMPORTANT: Look for these patterns:
    - "振込先", "お振込先", "振込先情報", "銀行口座"
    - Bank names often end with "銀行", "信用金庫", "信用組合"
    - Branch names often end with "支店", "本店"

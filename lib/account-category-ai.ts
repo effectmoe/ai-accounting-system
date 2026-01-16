@@ -3,6 +3,12 @@ import { getMcpClient } from './mcp-client';
 import { problemSolvingAgent } from '@/agents/problem-solving-agent';
 
 import { logger } from '@/lib/logger';
+import {
+  checkConfirmationNeeded,
+  ConfirmationQuestion,
+  ConfirmationStatus,
+} from './confirmation-config';
+
 export interface AccountCategoryPrediction {
   category: string;
   confidence: number;
@@ -13,6 +19,12 @@ export interface AccountCategoryPrediction {
   }>;
   taxNotes?: string;
   sources?: string[];
+  // 確認フロー関連フィールド
+  needsConfirmation?: boolean;
+  confirmationStatus?: ConfirmationStatus;
+  confirmationQuestions?: ConfirmationQuestion[];
+  confirmationReasons?: string[];
+  pendingCategory?: string;
 }
 
 /**
@@ -1028,7 +1040,105 @@ export class AccountCategoryAI {
     } catch (error) {
       logger.debug('Learning data not available, using AI prediction only');
     }
-    
+
     return prediction;
+  }
+
+  /**
+   * 確認フロー付きの勘定科目推論
+   * 税金関連や高額取引など、確認が必要なケースを検出し、質問を生成
+   * 但し書きや明細の曖昧さ、公的機関との矛盾も検出
+   */
+  async predictWithConfirmationFlow(
+    ocrResult: OCRResult,
+    companyId?: string
+  ): Promise<AccountCategoryPrediction> {
+    // まず通常の推論を実行
+    const basePrediction = await this.predictAccountCategory(ocrResult, companyId);
+
+    // 発行者名と金額を取得
+    const vendorName = ocrResult.vendor_name || ocrResult.vendor || '';
+    const amount = ocrResult.total_amount || ocrResult.amount || 0;
+
+    // 但し書き（notes）を取得
+    const notes = (ocrResult as any).notes || '';
+
+    // 明細項目の名前・説明を取得
+    const items = (ocrResult as any).items || [];
+    const itemDescriptions: string[] = items.map((item: any) => {
+      const name = item.itemName || item.name || '';
+      const desc = item.description || '';
+      return [name, desc].filter(Boolean).join(' ');
+    }).filter(Boolean);
+
+    logger.debug('[AccountCategoryAI] 確認フローチェック:', {
+      vendorName,
+      amount,
+      notes,
+      itemDescriptions,
+    });
+
+    // 確認が必要かどうかをチェック（但し書き・明細も考慮）
+    const confirmationCheck = checkConfirmationNeeded(
+      vendorName,
+      amount,
+      basePrediction.category,
+      basePrediction.confidence,
+      notes,
+      itemDescriptions
+    );
+
+    if (confirmationCheck.needsConfirmation) {
+      logger.info('[AccountCategoryAI] 確認フロートリガー:', {
+        vendorName,
+        amount,
+        notes,
+        itemDescriptions,
+        reasons: confirmationCheck.reasons,
+        questionsCount: confirmationCheck.suggestedQuestions.length,
+      });
+
+      return {
+        ...basePrediction,
+        needsConfirmation: true,
+        confirmationStatus: 'pending',
+        confirmationQuestions: confirmationCheck.suggestedQuestions,
+        confirmationReasons: confirmationCheck.reasons,
+        pendingCategory: confirmationCheck.pendingCategory,
+        reasoning: `${basePrediction.reasoning}\n\n【確認が必要】${confirmationCheck.reasons.join('、')}`,
+      };
+    }
+
+    // 確認不要の場合はそのまま返す
+    return {
+      ...basePrediction,
+      needsConfirmation: false,
+      confirmationStatus: 'confirmed',
+    };
+  }
+
+  /**
+   * 確認回答を処理して最終的な勘定科目を決定
+   */
+  processConfirmationAnswers(
+    answers: Array<{ questionId: string; answer: string; resultCategory?: string }>
+  ): { category: string; reasoning: string } {
+    let finalCategory = '未分類';
+    const reasoningParts: string[] = [];
+
+    for (const answer of answers) {
+      if (answer.resultCategory) {
+        finalCategory = answer.resultCategory;
+        reasoningParts.push(`質問「${answer.questionId}」への回答「${answer.answer}」に基づき、「${answer.resultCategory}」に分類`);
+        break; // 最初に決定したカテゴリを使用
+      }
+    }
+
+    return {
+      category: finalCategory,
+      reasoning: reasoningParts.length > 0
+        ? `【ユーザー確認済み】${reasoningParts.join('。')}`
+        : '確認回答から勘定科目を特定できませんでした',
+    };
   }
 }

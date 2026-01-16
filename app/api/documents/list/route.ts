@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
     const dateTo = searchParams.get('dateTo');
     const limit = parseInt(searchParams.get('limit') || '50');
     const skip = parseInt(searchParams.get('skip') || '0');
+    const confirmationStatus = searchParams.get('confirmationStatus'); // 確認フローフィルター
 
     // フィルター条件を構築
     const filter: any = {};
@@ -62,6 +63,21 @@ export async function GET(request: NextRequest) {
     // 重複表示防止：hiddenFromListがtrueのドキュメントを除外
     filter.hiddenFromList = { $ne: true };
 
+    // 確認フローフィルター
+    if (confirmationStatus && confirmationStatus !== 'all') {
+      if (confirmationStatus === 'pending') {
+        filter.needsConfirmation = true;
+        filter.confirmationStatus = 'pending';
+      } else if (confirmationStatus === 'confirmed') {
+        filter.$or = [
+          { needsConfirmation: { $ne: true } },
+          { confirmationStatus: 'confirmed' }
+        ];
+      } else if (confirmationStatus === 'skipped') {
+        filter.confirmationStatus = 'skipped';
+      }
+    }
+
     // ドキュメントを取得
     const documents = await db.find('documents', filter, {
       limit,
@@ -101,7 +117,7 @@ export async function GET(request: NextRequest) {
       notes: doc.notes || '',
       created_at: doc.createdAt,
       updated_at: doc.updatedAt,
-      
+
       // OCR関連フィールド
       file_name: doc.fileName,
       file_type: doc.fileType,
@@ -114,11 +130,19 @@ export async function GET(request: NextRequest) {
       ocr_status: doc.ocrStatus || 'completed',
       ocr_result_id: doc.ocrResultId?.toString(),
       gridfs_file_id: doc.gridfsFileId?.toString() || doc.gridfs_file_id?.toString() || doc.sourceFileId?.toString(),
-      
+
       // 仕訳関連フィールド
       journalId: doc.journalId?.toString(),
       sourceDocumentId: doc.sourceDocumentId?.toString(),
-      source_document_id: doc.sourceDocumentId?.toString() // 互換性のため両方の形式で提供
+      source_document_id: doc.sourceDocumentId?.toString(), // 互換性のため両方の形式で提供
+
+      // 確認フロー関連フィールド
+      needsConfirmation: doc.needsConfirmation || false,
+      confirmationStatus: doc.confirmationStatus || (doc.needsConfirmation ? 'pending' : 'confirmed'),
+      confirmationQuestions: doc.confirmationQuestions || [],
+      confirmationReasons: doc.confirmationReasons || [],
+      pendingCategory: doc.pendingCategory,
+      aiPrediction: doc.aiPrediction
     }));
 
     logger.debug('Formatted documents:', formattedDocuments.length);

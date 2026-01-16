@@ -149,13 +149,14 @@ TEL: 03-xxxx-xxxx FAX: 03-xxxx-xxxx
         language: 'ja',
         enhance_quality: true
       },
-      // フォールバック：既存のオーケストレーターを使用
+      // フォールバック：既存のオーケストレーターを使用（Qwen3-VL → Command R → DeepSeek）
       async () => {
         const orchestrator = new OCRAIOrchestrator();
         return await orchestrator.orchestrateOCRResult({
           ocrResult: azureOcrResult,
           documentType: documentType as 'invoice' | 'supplier-quote' | 'receipt',
-          companyId: companyId
+          companyId: companyId,
+          imageData: Buffer.from(uint8Array) // 🎯 Vision model用の画像データを追加
         });
       }
     );
@@ -419,9 +420,9 @@ TEL: 03-xxxx-xxxx FAX: 03-xxxx-xxxx
       fileId: gridfsFileId, // GridFSのファイルIDを返す
       mongoDbId: mongoDbId?.toString(), // MongoDBのドキュメントID
       mongoDbSaved: mongoDbSaved, // MongoDB保存の成否
-      message: 'DeepSeek AI駆動のOCR解析が完了しました',
-      processingMethod: 'DeepSeek-AI-driven',
-      model: 'deepseek-chat',
+      message: 'AI駆動のOCR解析が完了しました（Ollama Qwen3-VL優先、DeepSeekフォールバック）',
+      processingMethod: 'AI-driven (Ollama/DeepSeek)',
+      model: 'qwen3-vl / deepseek-chat',
       processingTime: {
         total: totalElapsed,
         azure: azureOcrResult ? (Date.now() - startTime) : 0
@@ -448,23 +449,25 @@ TEL: 03-xxxx-xxxx FAX: 03-xxxx-xxxx
       return NextResponse.json(
         {
           error: 'OCR処理がタイムアウトしました',
-          details: 'DeepSeek APIの応答が遅いため、処理時間制限を超過しました。しばらく待ってから再試行してください。',
-          processingMethod: 'DeepSeek-AI-driven (timeout)',
+          details: 'LLM APIの応答が遅いため、処理時間制限を超過しました。しばらく待ってから再試行してください。',
+          processingMethod: 'AI-driven (timeout)',
           processingTime: totalElapsed
         },
         { status: 504 }
       );
     }
-    
+
     // AI Orchestratorが利用できない場合
     if (error instanceof Error && error.message.includes('AI Orchestrator is not available')) {
       return NextResponse.json(
         {
           error: 'AI OCR処理が利用できません',
-          details: 'DeepSeek APIキーが設定されていないか、無効です。環境変数を確認してください。',
-          processingMethod: 'DeepSeek-AI-driven (unavailable)',
+          details: 'OllamaとDeepSeek APIのどちらも利用できません。Ollamaが起動しているか、またはDeepSeek APIキーが設定されているか確認してください。',
+          processingMethod: 'AI-driven (unavailable)',
           processingTime: totalElapsed,
           debugInfo: {
+            hasOllamaURL: !!process.env.OLLAMA_URL,
+            ollamaURL: process.env.OLLAMA_URL || 'not set',
             hasDeepSeekKey: !!process.env.DEEPSEEK_API_KEY,
             deepSeekKeyPrefix: process.env.DEEPSEEK_API_KEY?.substring(0, 10) || 'not set'
           }
@@ -472,16 +475,17 @@ TEL: 03-xxxx-xxxx FAX: 03-xxxx-xxxx
         { status: 503 }
       );
     }
-    
+
     // その他のエラー
     return NextResponse.json(
       {
-        error: 'DeepSeek OCR解析中にエラーが発生しました',
+        error: 'AI OCR解析中にエラーが発生しました',
         details: error instanceof Error ? error.message : 'Unknown error',
-        processingMethod: 'DeepSeek-AI-driven (failed)',
+        processingMethod: 'AI-driven (failed)',
         processingTime: totalElapsed,
         errorType: error?.constructor?.name || 'UnknownError',
         debugInfo: {
+          hasOllamaURL: !!process.env.OLLAMA_URL,
           hasDeepSeekKey: !!process.env.DEEPSEEK_API_KEY,
           hasAzureKey: !!process.env.AZURE_FORM_RECOGNIZER_KEY,
           nodeEnv: process.env.NODE_ENV
@@ -494,18 +498,22 @@ TEL: 03-xxxx-xxxx FAX: 03-xxxx-xxxx
 
 export async function GET(request: NextRequest) {
   return NextResponse.json({
-    endpoint: 'DeepSeek OCR Analyze',
+    endpoint: 'AI OCR Analyze',
     method: 'POST',
-    description: 'DeepSeek AI駆動のOCR解析エンドポイント',
+    description: 'AI駆動のOCR解析エンドポイント（Ollama Qwen3-VL優先、DeepSeek APIフォールバック）',
     supportedDocumentTypes: ['invoice', 'supplier-quote', 'receipt'],
-    model: 'deepseek-chat',
+    models: {
+      primary: 'qwen3-vl (Ollama) - 2025-01 Command R廃止',
+      fallback: 'deepseek-chat (API)'
+    },
     features: [
       '日本語ビジネス文書の高精度解析',
       '合同会社アソウタイセイプリンティング等の企業名正確認識',
       '御中・様による顧客・仕入先自動判別',
       '商品明細の構造化抽出',
       '金額計算の自動検証',
-      'DeepSeek Chat モデルによる高精度解析'
+      'ローカルLLM（Ollama）優先による高速・プライバシー保護',
+      'クラウドAPI（DeepSeek）フォールバックによる安定性確保'
     ],
     timestamp: new Date().toISOString()
   });

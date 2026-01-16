@@ -202,7 +202,63 @@ vercel
 
 ---
 
-**最終更新**: 2025-12-17
+**最終更新**: 2026-01-16
+
+---
+
+## RAG（領収書分類学習システム）
+
+### 概要
+領収書OCR処理時に過去の類似データから勘定科目・但し書きを自動判定するRAGシステム。
+
+### 仕組み
+1. 新しい領収書がスキャンされると、ChromaDBで類似の過去データを検索
+2. 類似度が0.85以上なら、その勘定科目と但し書きを再利用
+3. 類似度が低ければ、従来のルールベース → AI推定にフォールバック
+4. 処理後、領収書データをRAGに追加（将来の学習用）
+
+### 分類の優先順位
+```
+1. RAG（類似度 > 0.85）→ 過去の正解データを採用
+2. ルールベース → SKILL.mdのキーワードルール
+3. AI推定 → Qwen3-VLの出力
+```
+
+### 関連ファイル
+
+| ファイル | 役割 |
+|---------|------|
+| `lib/rag-service.ts` | TypeScriptからRAGを呼び出すラッパー |
+| `scripts/rag_search.py` | ChromaDBで類似検索・追加を実行 |
+| `scripts/init_rag.py` | ChromaDBコレクション初期化 |
+| `data/chroma_db/` | ChromaDBの永続化データ |
+| `rag_env/` | Python仮想環境（chromadb, sentence-transformers） |
+
+### コマンド
+
+```bash
+# RAG初期化（最初に1回実行）
+source rag_env/bin/activate
+python scripts/init_rag.py
+
+# コレクション確認
+python -c "import chromadb; c=chromadb.PersistentClient('data/chroma_db'); print(c.get_collection('receipts_master').count())"
+```
+
+### 技術詳細
+
+| 項目 | 値 |
+|------|-----|
+| ベクトルDB | ChromaDB（PersistentClient） |
+| 埋め込みモデル | all-MiniLM-L6-v2（384次元） |
+| 類似度計算 | コサイン類似度 |
+| 類似度閾値 | 0.85（distance < 0.15） |
+| コレクション名 | `receipts_master` |
+
+### 今後の改善（Phase 4以降）
+- [ ] ユーザーが領収書を修正したら `verified: true` で再登録
+- [ ] 十分なデータが溜まったら `applyAccountCategoryRules()` を削除
+- [ ] 但し書きの品質向上（RAG結果の活用強化）
 
 ---
 

@@ -50,6 +50,8 @@ interface Receipt {
   taxRate: number;
   status: 'draft' | 'issued' | 'sent' | 'cancelled';
   subject?: string;
+  accountCategory?: string;
+  issuerName?: string;
   notes?: string;
   issuerStamp?: string;
 }
@@ -60,6 +62,8 @@ interface ReceiptForm {
   issueDate: string;
   paidDate: string;
   subject: string;
+  accountCategory: string;
+  issuerName: string;
   title: string;
   notes: string;
   items: ReceiptItem[];
@@ -93,6 +97,8 @@ export default function EditReceiptPage({ params }: { params: { id: string } }) 
     issueDate: format(new Date(), 'yyyy-MM-dd'),
     paidDate: format(new Date(), 'yyyy-MM-dd'),
     subject: '',
+    accountCategory: '',
+    issuerName: '',
     title: '',
     notes: '',
     items: [],
@@ -127,6 +133,8 @@ export default function EditReceiptPage({ params }: { params: { id: string } }) 
         issueDate: format(new Date(data.issueDate), 'yyyy-MM-dd'),
         paidDate: data.paidDate ? format(new Date(data.paidDate), 'yyyy-MM-dd') : '',
         subject: data.subject || '',
+        accountCategory: data.accountCategory || '',
+        issuerName: data.issuerName || '',
         title: data.title || '',
         notes: data.notes || '',
         items: data.items || [
@@ -305,12 +313,13 @@ export default function EditReceiptPage({ params }: { params: { id: string } }) 
         </div>
       </div>
 
-      {/* 読み取り専用の警告 */}
+      {/* 読み取り専用の警告（店舗名・勘定科目・但し書きは編集可能） */}
       {isReadOnly && (
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            この領収書は{statusLabels[receipt.status]}のため、編集できません。編集するには下書き状態に戻してください。
+            この領収書は{statusLabels[receipt.status]}のため、基本情報は編集できません。
+            <strong className="ml-1">店舗名・勘定科目・但し書きのみ編集可能です</strong>（RAG学習用）
           </AlertDescription>
         </Alert>
       )}
@@ -366,13 +375,44 @@ export default function EditReceiptPage({ params }: { params: { id: string } }) 
               </div>
 
               <div>
+                <Label htmlFor="issuerName">店舗名（発行者）</Label>
+                <Input
+                  id="issuerName"
+                  value={form.issuerName}
+                  onChange={(e) => setForm(prev => ({ ...prev, issuerName: e.target.value }))}
+                  placeholder="店舗名を入力"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="accountCategory">勘定科目</Label>
+                <select
+                  id="accountCategory"
+                  value={form.accountCategory}
+                  onChange={(e) => setForm(prev => ({ ...prev, accountCategory: e.target.value }))}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                >
+                  <option value="">選択してください</option>
+                  <option value="接待交際費">接待交際費</option>
+                  <option value="会議費">会議費</option>
+                  <option value="旅費交通費">旅費交通費</option>
+                  <option value="車両費">車両費</option>
+                  <option value="消耗品費">消耗品費</option>
+                  <option value="通信費">通信費</option>
+                  <option value="福利厚生費">福利厚生費</option>
+                  <option value="新聞図書費">新聞図書費</option>
+                  <option value="雑費">雑費</option>
+                  <option value="租税公課">租税公課</option>
+                </select>
+              </div>
+
+              <div>
                 <Label htmlFor="subject">但し書き</Label>
                 <Input
                   id="subject"
                   value={form.subject}
                   onChange={(e) => setForm(prev => ({ ...prev, subject: e.target.value }))}
                   placeholder="〇〇代として"
-                  disabled={isReadOnly}
                 />
               </div>
 
@@ -559,20 +599,23 @@ export default function EditReceiptPage({ params }: { params: { id: string } }) 
           </Card>
 
           {/* アクション */}
-          {!isReadOnly && (
-            <Card>
-              <CardContent className="pt-6">
-                <Button
-                  onClick={handleSubmit}
-                  disabled={saving}
-                  className="w-full"
-                >
-                  {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
-                  保存
-                </Button>
-              </CardContent>
-            </Card>
-          )}
+          <Card>
+            <CardContent className="pt-6">
+              <Button
+                onClick={handleSubmit}
+                disabled={saving}
+                className="w-full"
+              >
+                {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+                {isReadOnly ? '店舗名・勘定科目・但し書きを保存' : '保存'}
+              </Button>
+              {isReadOnly && (
+                <p className="text-xs text-muted-foreground mt-2 text-center">
+                  ※ 保存時にRAGへ学習データとして登録されます
+                </p>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

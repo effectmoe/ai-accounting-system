@@ -4,6 +4,7 @@ import { CompanyInfoService } from '@/services/company-info.service';
 import { ActivityLogService } from '@/services/activity-log.service';
 import { ReceiptStatus } from '@/types/receipt';
 import { logger } from '@/lib/logger';
+import { addReceiptToRag } from '@/lib/rag-service';
 
 export async function GET(
   request: NextRequest,
@@ -163,6 +164,8 @@ export async function PUT(
     if (body.title !== undefined) updateData.title = body.title;
     if (body.items) updateData.items = body.items;
     if (body.issuerStamp !== undefined) updateData.issuerStamp = body.issuerStamp;
+    if (body.accountCategory !== undefined) updateData.accountCategory = body.accountCategory;
+    if (body.issuerName !== undefined) updateData.issuerName = body.issuerName;
 
     // 金額の再計算
     if (body.items) {
@@ -209,6 +212,36 @@ export async function PUT(
       });
     } catch (logError) {
       logger.error('Failed to log activity for receipt update:', logError);
+    }
+
+    // RAGに学習データとして追加（verified: true でユーザー確認済みとしてマーク）
+    // 勘定科目または但し書きが更新された場合のみRAGを更新
+    if (body.accountCategory !== undefined || body.subject !== undefined || body.issuerName !== undefined) {
+      try {
+        const ragResult = await addReceiptToRag({
+          id: receipt._id?.toString() || params.id,
+          store_name: receipt.issuerName || '',
+          item_description: (receipt.items || []).map((item: any) => item.description || '').join(' '),
+          description: receipt.subject || '',
+          issue_date: receipt.issueDate?.toISOString().split('T')[0] || new Date().toISOString().split('T')[0],
+          total_amount: receipt.totalAmount || 0,
+          category: receipt.accountCategory || '未分類',
+          verified: true, // ユーザーが修正 → 検証済み
+        });
+
+        if (ragResult.success) {
+          logger.info('[PUT /api/receipts/[id]] RAG updated with verified data:', {
+            receiptId: receipt._id?.toString(),
+            category: receipt.accountCategory,
+            subject: receipt.subject,
+          });
+        } else {
+          logger.warn('[PUT /api/receipts/[id]] RAG update failed:', ragResult.error);
+        }
+      } catch (ragError) {
+        // RAG更新失敗は領収書更新の成功に影響しない
+        logger.warn('[PUT /api/receipts/[id]] RAG update error (non-fatal):', ragError);
+      }
     }
 
     logger.debug('[PUT /api/receipts/[id]] Receipt updated successfully');

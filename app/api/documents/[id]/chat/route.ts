@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
-
-interface ConversationMessage {
-  role: 'user' | 'assistant';
-  content: string;
-}
+import { getOllamaClient } from '@/lib/ollama-client';
 
 export async function POST(
   request: NextRequest,
@@ -78,47 +74,51 @@ ${documentData.items.map(item => `- ${item.item_name}: ¥${item.amount.toLocaleS
 
 ${documentContext}`;
 
-    // 会話履歴を含めたメッセージ配列を構築
-    const messages: any[] = [
-      { role: 'system', content: systemPrompt }
-    ];
+    // 過去の会話履歴を整形（最新10件まで）
+    const recentHistory = conversationHistory?.slice(-10) || [];
 
-    // 過去の会話履歴を追加（最新10件まで）
-    if (conversationHistory && conversationHistory.length > 0) {
-      const recentHistory = conversationHistory.slice(-10);
-      messages.push(...recentHistory);
-    }
-
-    // 現在のユーザーメッセージを追加
-    messages.push({ role: 'user', content: message });
-
-    // OpenAI APIを使用して応答を生成
-    const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: messages,
-        temperature: 0.7,
-        max_tokens: 1000
-      })
+    logger.debug('[Document Chat API] Calling Ollama Qwen3-VL with Thinking mode:', {
+      documentId: params.id,
+      documentType: documentData.document_type,
+      historyLength: recentHistory.length
     });
 
-    if (!openaiResponse.ok) {
-      const errorData = await openaiResponse.json();
-      logger.error('OpenAI API error:', errorData);
-      throw new Error('AIの応答生成に失敗しました');
+    // Ollama (Qwen3-VL) + Thinkingモードを使用
+    // 2025-01: OpenAI廃止 → Qwen3-VL Thinkingモードに移行
+    const ollamaClient = getOllamaClient();
+
+    // Ollamaの利用可能性を確認
+    const isAvailable = await ollamaClient.checkAvailability();
+    if (!isAvailable) {
+      logger.error('[Document Chat API] Ollama is not available');
+      throw new Error('AI service (Ollama) is not available');
     }
 
-    const aiData = await openaiResponse.json();
-    const aiResponse = aiData.choices[0].message.content;
+    // Thinkingモード付きチャットを実行
+    const response = await ollamaClient.chatWithThinking(
+      systemPrompt,
+      message,
+      recentHistory.map((msg: { role: 'user' | 'assistant'; content: string }) => ({
+        role: msg.role,
+        content: msg.content
+      })),
+      {
+        temperature: 0.7,
+        num_predict: 1000
+      }
+    );
+
+    const aiResponse = response.content || 'すみません、回答を生成できませんでした。';
+
+    logger.debug('[Document Chat API] Ollama response received:', {
+      responseLength: aiResponse.length,
+      hasThinking: !!response.thinking
+    });
 
     return NextResponse.json({
       success: true,
-      response: aiResponse
+      response: aiResponse,
+      model: 'ollama-qwen3-vl-thinking'
     });
 
   } catch (error) {

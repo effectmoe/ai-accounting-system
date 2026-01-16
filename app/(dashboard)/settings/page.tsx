@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { toast } from 'react-hot-toast';
-import { Building, Upload, Stamp, Save, CreditCard, Plus, Edit2, Trash2, Check, X, Settings, Mic } from 'lucide-react';
+import { Building, Upload, Stamp, Save, CreditCard, Plus, Edit2, Trash2, Check, X, Settings, Mic, BookOpen } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 import { logger } from '@/lib/logger';
@@ -460,6 +460,15 @@ export default function SettingsPage() {
               <div className="flex items-center gap-2">
                 <CreditCard className="w-4 h-4" />
                 Square連携
+              </div>
+            </button>
+            <button
+              onClick={() => router.push('/settings/learning-rules')}
+              className="py-2 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium text-sm"
+            >
+              <div className="flex items-center gap-2">
+                <BookOpen className="w-4 h-4" />
+                学習ルール
               </div>
             </button>
           </nav>

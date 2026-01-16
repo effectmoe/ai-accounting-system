@@ -3,6 +3,10 @@
  *
  * SKILL.mdが唯一の情報源（Single Source of Truth）
  * コードはSKILL.mdを読み込んでルールを適用する
+ *
+ * 対応セクション:
+ * - 勘定科目ルールベース分類（AccountCategoryRules）
+ * - OCR設定（OcrSettings）
  */
 
 import * as fs from 'fs';
@@ -19,6 +23,11 @@ interface AccountCategoryRules {
   gasStationKeywords: string[];  // ガソリン → 車両費
 }
 
+interface OcrSettings {
+  systemPrompt: string;    // システムプロンプト
+  userPromptTemplate: string;  // ユーザープロンプトテンプレート
+}
+
 // SKILL.mdのパス
 const SKILL_MD_PATH = path.join(
   process.env.HOME || '/Users/tonychustudio',
@@ -27,6 +36,7 @@ const SKILL_MD_PATH = path.join(
 
 // キャッシュ（SKILL.mdを毎回読まないように）
 let cachedRules: AccountCategoryRules | null = null;
+let cachedOcrSettings: OcrSettings | null = null;
 let cacheTimestamp: number = 0;
 const CACHE_TTL = 60 * 1000; // 1分間キャッシュ
 
@@ -273,8 +283,82 @@ function getDefaultRules(): AccountCategoryRules {
  */
 export function clearRulesCache(): void {
   cachedRules = null;
+  cachedOcrSettings = null;
   cacheTimestamp = 0;
   logger.info('[SkillRulesParser] Cache cleared');
 }
 
-export type { AccountCategoryRules };
+/**
+ * SKILL.mdからOCR設定を読み込む
+ */
+export function loadOcrSettingsFromSkillMd(): OcrSettings {
+  const now = Date.now();
+
+  // キャッシュが有効ならキャッシュを返す
+  if (cachedOcrSettings && (now - cacheTimestamp) < CACHE_TTL) {
+    return cachedOcrSettings;
+  }
+
+  try {
+    const content = fs.readFileSync(SKILL_MD_PATH, 'utf-8');
+    cachedOcrSettings = parseOcrSettings(content);
+    cacheTimestamp = now;
+    logger.info('[SkillRulesParser] Loaded OCR settings from SKILL.md', {
+      systemPromptLength: cachedOcrSettings.systemPrompt.length,
+      userPromptLength: cachedOcrSettings.userPromptTemplate.length,
+    });
+    return cachedOcrSettings;
+  } catch (error) {
+    logger.error('[SkillRulesParser] Failed to load OCR settings from SKILL.md, using defaults:', error);
+    return getDefaultOcrSettings();
+  }
+}
+
+/**
+ * SKILL.mdからOCR設定をパース
+ */
+function parseOcrSettings(content: string): OcrSettings {
+  const settings: OcrSettings = {
+    systemPrompt: '',
+    userPromptTemplate: '',
+  };
+
+  // システムプロンプトを抽出（#### システムプロンプト セクション）
+  const systemPromptMatch = content.match(/#### システムプロンプト\s*\n```\n([\s\S]*?)\n```/);
+  if (systemPromptMatch) {
+    settings.systemPrompt = systemPromptMatch[1].trim();
+    logger.debug('[SkillRulesParser] System prompt:', settings.systemPrompt);
+  }
+
+  // ユーザープロンプトテンプレートを抽出（#### ユーザープロンプトテンプレート セクション）
+  const userPromptMatch = content.match(/#### ユーザープロンプトテンプレート\s*\n```\n([\s\S]*?)\n```/);
+  if (userPromptMatch) {
+    settings.userPromptTemplate = userPromptMatch[1].trim();
+    logger.debug('[SkillRulesParser] User prompt template:', settings.userPromptTemplate);
+  }
+
+  // フォールバック
+  const defaults = getDefaultOcrSettings();
+  if (!settings.systemPrompt) {
+    settings.systemPrompt = defaults.systemPrompt;
+    logger.warn('[SkillRulesParser] Using default system prompt');
+  }
+  if (!settings.userPromptTemplate) {
+    settings.userPromptTemplate = defaults.userPromptTemplate;
+    logger.warn('[SkillRulesParser] Using default user prompt template');
+  }
+
+  return settings;
+}
+
+/**
+ * デフォルトOCR設定（SKILL.md読み込み失敗時のフォールバック）
+ */
+function getDefaultOcrSettings(): OcrSettings {
+  return {
+    systemPrompt: 'あなたは領収書OCRの専門家です。画像から情報を正確に抽出してください。金額は1文字ずつ確認し、0と2を間違えないでください。「但し書き」欄と商品・サービス名を抽出してください。',
+    userPromptTemplate: '領収書OCR。重要：金額欄の数字を1文字ずつ読め。「5000」と「5200」を間違えるな。「0」と「2」は特に注意。納入金額・合計金額の数字を正確に。【但し書き(subject)の抽出ルール】1.レシートに「○○として」と明記されていればそれを使用。2.明記がない場合は、購入した商品/サービス名から推測して「○○代として」を生成。例：工具購入→「工具代として」、文房具→「文房具代として」、ガソリン→「ガソリン代として」、食品→「食料品代として」。【禁止】「商品代として」「品代として」「お買上げとして」などの汎用的な表現は絶対に使わない。必ず具体的な商品名を使う。【subjectに入れてはいけない語】一般、普通、大型、現金、クレジット、領収、入金、釣銭、税込、税抜、合計、小計。【items配列】購入した商品・サービス名のみ。支払い・集計情報は含めない。JSON：{"issuerName":"店舗名", "issuerAddress":"住所", "issuerPhone":"電話", "issueDate":"YYYY-MM-DD", "subject":"具体的な商品名+代として", "items":[{"itemName":"商品名", "quantity":1, "unitPrice":金額, "amount":金額}], "subtotal":0, "taxAmount":0, "totalAmount":金額の数値, "accountCategory":"接待交際費/会議費/旅費交通費/車両費/消耗品費/通信費/福利厚生費/新聞図書費/雑費/租税公課から選択"}',
+  };
+}
+
+export type { AccountCategoryRules, OcrSettings };

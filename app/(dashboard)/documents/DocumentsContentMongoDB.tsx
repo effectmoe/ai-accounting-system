@@ -3,11 +3,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { FileText, Download, Send, CheckCircle, Filter, Plus, Paperclip, Bell, Edit, FileCheck, Archive, Grid3X3, List, Trash2, Image, ExternalLink } from 'lucide-react';
+import { FileText, Download, Send, CheckCircle, Filter, Plus, Paperclip, Bell, Edit, FileCheck, Archive, Grid3X3, List, Trash2, Image, ExternalLink, AlertCircle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import AccountCategoryEditor from './components/AccountCategoryEditor';
 import { documentTypeLabels, statusLabels, statusColors, getDocumentTypeLabel, getStatusLabel, getStatusColor } from '@/components/common/constants';
 import StatusBadge from '@/components/common/StatusBadge';
+import { ConfirmationDialog, DocumentConfirmation } from '@/components/documents/ConfirmationDialog';
+import { PendingConfirmationBadge, ConfirmationCountBadge } from '@/components/documents/PendingConfirmationBadge';
+import { ConfirmationQuestion, ConfirmationStatus } from '@/lib/confirmation-config';
 
 import { logger } from '@/lib/logger';
 
@@ -39,6 +42,19 @@ interface Document {
   ocr_status?: string;
   ocr_result_id?: string;
   gridfs_file_id?: string;
+
+  // 確認フロー関連フィールド
+  needsConfirmation?: boolean;
+  confirmationStatus?: ConfirmationStatus;
+  confirmationQuestions?: ConfirmationQuestion[];
+  confirmationReasons?: string[];
+  pendingCategory?: string;
+
+  // 仕訳関連
+  journalId?: string;
+  sourceDocumentId?: string;
+  source_document_id?: string;
+  hiddenFromList?: boolean;
 }
 
 export default function DocumentsContentMongoDB() {
@@ -88,6 +104,81 @@ export default function DocumentsContentMongoDB() {
   // ソート状態
   const [sortField, setSortField] = useState<'createdAt' | 'issueDate' | 'fileName' | 'accountTitle'>('createdAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+  // 確認フローダイアログ状態
+  const [confirmationDialogOpen, setConfirmationDialogOpen] = useState(false);
+  const [selectedDocumentForConfirmation, setSelectedDocumentForConfirmation] = useState<DocumentConfirmation | null>(null);
+
+  // 確認待ちドキュメントを開く
+  const openConfirmationDialog = (doc: Document) => {
+    const confirmation: DocumentConfirmation = {
+      id: doc.id,
+      vendorName: doc.vendor_name || doc.partner_name || '不明',
+      totalAmount: doc.total_amount || 0,
+      documentDate: doc.receipt_date || doc.issue_date,
+      pendingCategory: doc.pendingCategory,
+      confirmationQuestions: doc.confirmationQuestions || [],
+      confirmationReasons: doc.confirmationReasons || [],
+    };
+    setSelectedDocumentForConfirmation(confirmation);
+    setConfirmationDialogOpen(true);
+  };
+
+  // 確認回答を送信
+  const handleConfirmation = async (
+    documentId: string,
+    answers: Array<{ questionId: string; answer: string; resultCategory?: string }>
+  ) => {
+    try {
+      const response = await fetch('/api/ocr/confirm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ documentId, answers }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || '確認処理に失敗しました');
+      }
+
+      const result = await response.json();
+      toast.success(result.message || `勘定科目を「${result.category}」に確定しました`);
+      fetchDocuments();
+    } catch (error) {
+      logger.error('Confirmation error:', error);
+      toast.error(error instanceof Error ? error.message : '確認処理に失敗しました');
+      throw error;
+    }
+  };
+
+  // 確認をスキップ
+  const handleSkipConfirmation = async (documentId: string) => {
+    try {
+      const response = await fetch('/api/ocr/confirm', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ documentId }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'スキップ処理に失敗しました');
+      }
+
+      const result = await response.json();
+      toast.success(result.message || 'AIの推測を採用しました');
+      fetchDocuments();
+    } catch (error) {
+      logger.error('Skip confirmation error:', error);
+      toast.error(error instanceof Error ? error.message : 'スキップ処理に失敗しました');
+      throw error;
+    }
+  };
+
+  // 確認待ち件数を計算
+  const pendingConfirmationCount = documents.filter(
+    doc => doc.needsConfirmation && doc.confirmationStatus === 'pending'
+  ).length;
 
   // MongoDB から書類を取得
   const fetchDocuments = useCallback(async () => {
@@ -471,7 +562,23 @@ export default function DocumentsContentMongoDB() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-6 flex justify-between items-center">
-        <h1 className="text-2xl font-bold">書類管理</h1>
+        <div className="flex items-center gap-4">
+          <h1 className="text-2xl font-bold">書類管理</h1>
+          {pendingConfirmationCount > 0 && (
+            <ConfirmationCountBadge
+              count={pendingConfirmationCount}
+              onClick={() => {
+                // 最初の確認待ちドキュメントのダイアログを開く
+                const pendingDoc = documents.find(
+                  doc => doc.needsConfirmation && doc.confirmationStatus === 'pending'
+                );
+                if (pendingDoc) {
+                  openConfirmationDialog(pendingDoc);
+                }
+              }}
+            />
+          )}
+        </div>
         <div className="flex gap-2">
           <Link href="/documents/new" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 flex items-center gap-2">
             <Plus className="w-4 h-4" />
@@ -633,9 +740,20 @@ export default function DocumentsContentMongoDB() {
                         return displayName;
                       })()}
                     </h3>
-                    <span className={`text-xs px-2 py-1 rounded ${statusColors[doc.status] || 'bg-gray-100 text-gray-800'}`}>
-                      {statusLabels[doc.status] || doc.status}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      {doc.needsConfirmation && (
+                        <PendingConfirmationBadge
+                          needsConfirmation={doc.needsConfirmation}
+                          confirmationStatus={doc.confirmationStatus}
+                          pendingCategory={doc.pendingCategory}
+                          size="sm"
+                          onClick={() => openConfirmationDialog(doc)}
+                        />
+                      )}
+                      <span className={`text-xs px-2 py-1 rounded ${statusColors[doc.status] || 'bg-gray-100 text-gray-800'}`}>
+                        {statusLabels[doc.status] || doc.status}
+                      </span>
+                    </div>
                   </div>
                   
                   <div className="flex items-center gap-2 mb-2">
@@ -869,13 +987,23 @@ export default function DocumentsContentMongoDB() {
                     <td className="p-2 text-sm">{new Date(doc.receipt_date || doc.issue_date).toLocaleDateString('ja-JP')} {new Date(doc.receipt_date || doc.issue_date).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}</td>
                     <td className="p-2 text-sm">¥{doc.total_amount?.toLocaleString()}</td>
                     <td className="p-2">
-                      <span className={`text-xs px-2 py-1 rounded ${statusColors[doc.status] || 'bg-gray-100 text-gray-800'}`}>
-                        {statusLabels[doc.status] || doc.status}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        {doc.needsConfirmation && (
+                          <PendingConfirmationBadge
+                            needsConfirmation={doc.needsConfirmation}
+                            confirmationStatus={doc.confirmationStatus}
+                            size="sm"
+                            onClick={() => openConfirmationDialog(doc)}
+                          />
+                        )}
+                        <span className={`text-xs px-2 py-1 rounded ${statusColors[doc.status] || 'bg-gray-100 text-gray-800'}`}>
+                          {statusLabels[doc.status] || doc.status}
+                        </span>
+                      </div>
                     </td>
                     <td className="p-2">
                       <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
-                        <button 
+                        <button
                           onClick={() => handleEditDocument(doc)}
                           className="text-green-600 hover:text-green-800 p-1"
                           title="編集"
@@ -1029,6 +1157,15 @@ export default function DocumentsContentMongoDB() {
           </div>
         )}
       </div>
+
+      {/* 確認フローダイアログ */}
+      <ConfirmationDialog
+        open={confirmationDialogOpen}
+        onOpenChange={setConfirmationDialogOpen}
+        document={selectedDocumentForConfirmation}
+        onConfirm={handleConfirmation}
+        onSkip={handleSkipConfirmation}
+      />
     </div>
   );
 }

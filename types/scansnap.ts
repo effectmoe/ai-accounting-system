@@ -151,6 +151,20 @@ declare global {
   }
 }
 
+// 確認質問の型（confirmation-configからインポートすると循環参照になるため再定義）
+export interface ScanConfirmationQuestion {
+  id: string;
+  type: 'single_choice' | 'yes_no' | 'text_input';
+  question: string;
+  options?: {
+    value: string;
+    label: string;
+    resultCategory?: string;
+  }[];
+  required: boolean;
+  context?: string;
+}
+
 // 直接スキャン処理の結果
 export interface DirectScanResult {
   success: boolean;
@@ -158,13 +172,27 @@ export interface DirectScanResult {
   receiptNumber?: string;
   extractedData?: {
     issuerName?: string;
+    issuerAddress?: string;
+    issuerPhone?: string;
     issueDate?: string;
     totalAmount?: number;
     taxAmount?: number;
     accountCategory?: string;
+    subject?: string;
+    items?: { itemName?: string; amount?: number }[];
   };
   processingTime: number;
   error?: string;
+  // 確認フロー関連
+  needsConfirmation?: boolean;
+  confirmationReasons?: string[];
+  confirmationQuestions?: ScanConfirmationQuestion[];
+  pendingCategory?: string;
+  // 確認待ち時の一時データ（確認後に領収書作成に使用）
+  pendingReceiptData?: {
+    imageBase64: string;
+    fileName: string;
+  };
 }
 
 // 直接スキャンリクエスト

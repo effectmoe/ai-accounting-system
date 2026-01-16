@@ -1,59 +1,55 @@
-import chromium from '@sparticuz/chromium';
-import puppeteer from 'puppeteer-core';
-import { generateInvoiceHTML } from './pdf-html-generator';
+import { renderToBuffer } from '@react-pdf/renderer';
+import { InvoicePDF, DeliveryNotePDF } from './pdf-generator';
+import { ReceiptPDF } from './pdf-receipt-generator';
+import { logger } from './logger';
 
-// Vercel環境用の設定
-chromium.setHeadlessMode = true;
-chromium.setGraphicsMode = false;
-
+/**
+ * 請求書PDF生成（@react-pdf/renderer使用）
+ */
 export async function generateInvoicePDFWithPuppeteer(invoice: any, companyInfo: any): Promise<Buffer> {
-  let browser = null;
-  
   try {
-    // 開発環境とVercel環境で異なる設定
-    if (process.env.NODE_ENV === 'development') {
-      // ローカル開発環境
-      const puppeteerLocal = await import('puppeteer');
-      browser = await puppeteerLocal.default.launch({
-        headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
-      });
-    } else {
-      // Vercel環境
-      browser = await puppeteer.launch({
-        args: chromium.args,
-        defaultViewport: chromium.defaultViewport,
-        executablePath: await chromium.executablePath(),
-        headless: chromium.headless,
-      });
-    }
-
-    const page = await browser.newPage();
-    
-    // HTMLコンテンツを生成
-    const htmlContent = generateInvoiceHTML(invoice, companyInfo);
-    
-    // HTMLを設定
-    await page.setContent(htmlContent, {
-      waitUntil: 'networkidle0'
-    });
-    
-    // PDFを生成（日本語も正しく表示される）
-    const pdfBuffer = await page.pdf({
-      format: 'A4',
-      printBackground: true,
-      margin: {
-        top: '20mm',
-        right: '20mm',
-        bottom: '20mm',
-        left: '20mm'
-      }
-    });
-    
+    logger.info('[PDF] Generating invoice PDF with @react-pdf/renderer:', invoice.invoiceNumber);
+    const pdfBuffer = await renderToBuffer(
+      InvoicePDF({ invoice, companyInfo })
+    );
+    logger.info('[PDF] Invoice PDF generated successfully, size:', pdfBuffer.length);
     return Buffer.from(pdfBuffer);
-  } finally {
-    if (browser) {
-      await browser.close();
-    }
+  } catch (error) {
+    logger.error('[PDF] Error generating invoice PDF:', error);
+    throw error;
+  }
+}
+
+/**
+ * 領収書PDF生成（@react-pdf/renderer使用）
+ */
+export async function generateReceiptPDFWithPuppeteer(receipt: any, companyInfo: any): Promise<Buffer> {
+  try {
+    logger.info('[PDF] Generating receipt PDF with @react-pdf/renderer:', receipt.receiptNumber);
+    const pdfBuffer = await renderToBuffer(
+      ReceiptPDF({ receipt, companyInfo })
+    );
+    logger.info('[PDF] Receipt PDF generated successfully, size:', pdfBuffer.length);
+    return Buffer.from(pdfBuffer);
+  } catch (error) {
+    logger.error('[PDF] Error generating receipt PDF:', error);
+    throw error;
+  }
+}
+
+/**
+ * 納品書PDF生成（@react-pdf/renderer使用）
+ */
+export async function generateDeliveryNotePDFWithPuppeteer(deliveryNote: any, companyInfo: any): Promise<Buffer> {
+  try {
+    logger.info('[PDF] Generating delivery note PDF with @react-pdf/renderer:', deliveryNote.deliveryNoteNumber);
+    const pdfBuffer = await renderToBuffer(
+      DeliveryNotePDF({ deliveryNote, customer: deliveryNote.customer })
+    );
+    logger.info('[PDF] Delivery note PDF generated successfully, size:', pdfBuffer.length);
+    return Buffer.from(pdfBuffer);
+  } catch (error) {
+    logger.error('[PDF] Error generating delivery note PDF:', error);
+    throw error;
   }
 }

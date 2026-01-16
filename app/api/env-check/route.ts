@@ -16,6 +16,10 @@ export async function GET() {
     ENABLE_OCR: !!process.env.ENABLE_OCR,
     GAS_OCR_URL: !!process.env.GAS_OCR_URL,
     GAS_WEBHOOK_URL: !!process.env.GAS_WEBHOOK_URL,
+    // OCR Queue (Cloudflare Workers)
+    OCR_QUEUE_URL: !!process.env.OCR_QUEUE_URL,
+    OCR_QUEUE_ENABLED: !!process.env.OCR_QUEUE_ENABLED,
+    OLLAMA_URL: !!process.env.OLLAMA_URL,
   };
 
   // MongoDB URI の一部を表示（デバッグ用）

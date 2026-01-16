@@ -179,6 +179,11 @@ const nextConfig = {
   },
   
   experimental: {
+    // Allow large body for scan images (default is 4MB)
+    serverActions: {
+      bodySizeLimit: '50mb',
+    },
+
     // Server Components configuration
     serverComponentsExternalPackages: [
       'mastra',

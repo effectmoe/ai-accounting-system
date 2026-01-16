@@ -1,53 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { KnowledgeService } from '@/services/knowledge.service';
+import { getOllamaClient } from '@/lib/ollama-client';
 
 import { logger } from '@/lib/logger';
 const knowledgeService = new KnowledgeService();
-
-// DeepSeek APIを直接呼び出す関数
-async function callDeepSeekAPI(messages: Array<{role: string, content: string}>, temperature: number = 0.7, maxTokens: number = 1000) {
-  const apiKey = process.env.DEEPSEEK_API_KEY;
-  
-  if (!apiKey) {
-    logger.error('[DeepSeek] API key is not configured');
-    throw new Error('DeepSeek API key is not configured');
-  }
-  
-  logger.debug('[DeepSeek] Calling API for knowledge chat');
-  
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 10000);
-  
-  try {
-    const response = await fetch('https://api.deepseek.com/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'deepseek-chat',
-        messages: messages,
-        temperature: temperature,
-        max_tokens: maxTokens
-      }),
-      signal: controller.signal
-    });
-    
-    clearTimeout(timeoutId);
-    
-    if (!response.ok) {
-      throw new Error(`DeepSeek API error: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    logger.debug('[DeepSeek] Knowledge chat API response received');
-    return data;
-  } catch (error) {
-    clearTimeout(timeoutId);
-    throw error;
-  }
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -164,14 +120,42 @@ ${knowledgeContext}
 
     logger.debug('[Knowledge Chat] Prepared', messages.length, 'messages for AI');
 
-    // DeepSeek APIを使用して回答生成
-    const aiResponse = await callDeepSeekAPI(messages, 0.7, 1500);
-    
-    if (!aiResponse.choices || aiResponse.choices.length === 0) {
+    // Ollama (Qwen3-VL) + Thinkingモードを使用して回答生成
+    // 2025-01: DeepSeek廃止 → Qwen3-VL Thinkingモードに移行
+    const ollamaClient = getOllamaClient();
+
+    // Ollamaの利用可能性を確認
+    const isAvailable = await ollamaClient.checkAvailability();
+    if (!isAvailable) {
+      logger.error('[Knowledge Chat] Ollama is not available');
+      throw new Error('AI service (Ollama) is not available');
+    }
+
+    logger.debug('[Knowledge Chat] Using Ollama Qwen3-VL with Thinking mode');
+
+    // Thinkingモード付きチャットを実行
+    const aiResponse = await ollamaClient.chatWithThinking(
+      systemPrompt,
+      conversation,
+      conversationHistory?.slice(-10) || [], // 最新10件のみ
+      {
+        temperature: 0.7,
+        num_predict: 1500
+      }
+    );
+
+    if (!aiResponse.content) {
       throw new Error('No response from AI service');
     }
 
-    const response = aiResponse.choices[0].message.content;
+    const response = aiResponse.content;
+
+    // Thinkingプロセスがあればログに記録
+    if (aiResponse.thinking) {
+      logger.debug('[Knowledge Chat] Thinking process:', {
+        thinkingLength: aiResponse.thinking.length
+      });
+    }
 
     // 会話履歴をMongoDBに保存
     const conversationData = {
@@ -202,12 +186,12 @@ ${knowledgeContext}
               sourceUrl: article.sourceUrl
             })),
             processingTime: Date.now() - Date.now(),
-            aiModel: 'deepseek'
+            aiModel: 'ollama-qwen3-vl-thinking'
           }
         }
       ],
       metadata: {
-        aiModel: 'deepseek',
+        aiModel: 'ollama-qwen3-vl-thinking',
         knowledgeVersion: '1.0'
       },
       createdAt: new Date(),
@@ -242,7 +226,7 @@ ${knowledgeContext}
         filters: knowledgeFilters
       },
       metadata: {
-        aiModel: 'deepseek',
+        aiModel: 'ollama-qwen3-vl-thinking',
         processingTime: Date.now(),
         sessionId,
         includeKnowledge

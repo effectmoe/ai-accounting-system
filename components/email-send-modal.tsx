@@ -516,11 +516,13 @@ ${formattedPaidDate ? `支払日：${formattedPaidDate}` : ''}
               <Label htmlFor="to">宛先 *</Label>
               <Input
                 id="to"
+                name="email-to-field"
                 type="email"
                 value={to}
                 onChange={(e) => setTo(e.target.value)}
                 placeholder="example@company.com"
                 disabled={isSending}
+                autoComplete="email"
               />
             </div>
 
@@ -528,11 +530,13 @@ ${formattedPaidDate ? `支払日：${formattedPaidDate}` : ''}
               <Label htmlFor="cc">CC</Label>
               <Input
                 id="cc"
+                name="email-cc-field"
                 type="email"
                 value={cc}
                 onChange={(e) => setCc(e.target.value)}
                 placeholder="cc@company.com"
                 disabled={isSending}
+                autoComplete="off"
               />
             </div>
 
@@ -540,11 +544,13 @@ ${formattedPaidDate ? `支払日：${formattedPaidDate}` : ''}
               <Label htmlFor="bcc">BCC</Label>
               <Input
                 id="bcc"
+                name="email-bcc-field"
                 type="email"
                 value={bcc}
                 onChange={(e) => setBcc(e.target.value)}
                 placeholder="bcc@company.com"
                 disabled={isSending}
+                autoComplete="off"
               />
             </div>
 

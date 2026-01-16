@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     // Use OCR document service to process
     const ocrService = new OCRDocumentService({
       useAIOrchestrator: false,
-      enableAccountPrediction: false, // Disabled for legacy compatibility
+      enableAccountPrediction: true, // 確認フロー有効化（税金関連・曖昧な取引を検出）
       defaultCompanyId: process.env.DEFAULT_COMPANY_ID
     });
 

@@ -11,6 +11,16 @@
 
 import { logger } from '@/lib/logger';
 
+// 抽出された明細項目（OCRResult用）
+export interface OCRResultItem {
+  itemName?: string;
+  description?: string;
+  quantity?: number;
+  unit?: string;
+  unitPrice?: number;
+  amount?: number;
+}
+
 // OCRジョブの結果型
 export interface OCRResult {
   issuerName?: string;
@@ -22,6 +32,10 @@ export interface OCRResult {
   totalAmount?: number;
   accountCategory?: string;
   confidence?: number;
+  // 但し書き（品名・サービス内容）
+  subject?: string;
+  // 明細（複数項目がある場合）
+  items?: OCRResultItem[];
 }
 
 // ジョブのステータス

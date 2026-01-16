@@ -38,6 +38,10 @@ export interface ScannedReceiptMetadata {
   imageWidth?: number;
   imageHeight?: number;
   imageFormat?: string; // 'webp'
+
+  // 学習ルール適用情報
+  learningRuleApplied?: boolean; // 学習ルールが適用されたか
+  appliedRuleName?: string; // 適用されたルール名
 }
 
 // Vision Model から抽出されるデータ構造

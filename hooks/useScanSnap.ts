@@ -343,6 +343,23 @@ export function useScanSnap(options: UseScanSnapOptions = {}): UseScanSnapReturn
     setStatus('disconnected');
   }, []);
 
+  // ScanSnap Homeを最前面に表示（許可ダイアログが見えるようにする）
+  const bringToFront = useCallback(async () => {
+    try {
+      console.log('[ScanSnap] Bringing ScanSnap Home to front...');
+      const response = await fetch('/api/scansnap/bring-to-front', {
+        method: 'POST',
+      });
+      const result = await response.json();
+      console.log('[ScanSnap] BringToFront result:', result);
+      return result.success;
+    } catch (error) {
+      // エラーでもスキャンは続行
+      console.warn('[ScanSnap] BringToFront failed (continuing anyway):', error);
+      return false;
+    }
+  }, []);
+
   // スキャン実行（Base64画像を返す）
   const scan = useCallback(async (): Promise<DirectScanResult | null> => {
     if (!window.scansnap?.websdk || !initializedRef.current) {
@@ -363,6 +380,9 @@ export function useScanSnap(options: UseScanSnapOptions = {}): UseScanSnapReturn
       setStatus('scanning');
       setLastError(null);
     }
+
+    // スキャン前にScanSnap Homeを最前面に（許可ダイアログが見えるように）
+    await bringToFront();
 
     const startTime = Date.now();
 
@@ -509,7 +529,7 @@ export function useScanSnap(options: UseScanSnapOptions = {}): UseScanSnapReturn
         setIsScanning(false);
       }
     }
-  }, [isScanning, onError]);
+  }, [isScanning, onError, bringToFront]);
 
   // スキャン → OCR処理 → 領収書登録
   const scanAndProcess = useCallback(async (): Promise<DirectScanResult | null> => {

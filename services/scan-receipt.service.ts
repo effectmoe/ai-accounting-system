@@ -22,6 +22,7 @@ import {
   ScanReceiptProcessRequest,
   ScanReceiptListParams,
 } from '@/types/scan-receipt';
+import { getLearningRuleService } from './learning-rule.service';
 
 // デフォルトのスキャンフォルダパス
 const DEFAULT_SCAN_DIR = path.join(process.cwd(), 'scan-receipt');
@@ -555,6 +556,57 @@ accountCategoryReasonに判定根拠を記載すること：
     const random = Math.random().toString(36).substring(2, 6).toUpperCase();
     const receiptNumber = `SCAN-${timestamp}-${random}`;
 
+    // ========================================
+    // 学習ルールの適用（最優先）
+    // ========================================
+    let learningRuleApplied = false;
+    let appliedRuleName: string | undefined;
+    try {
+      const learningRuleService = getLearningRuleService();
+
+      // 仮の領収書データを作成（ルールマッチング用）
+      const tempReceipt: Partial<Receipt> = {
+        issuerName: extractedData.issuerName,
+        subject: extractedData.subject,
+        title: extractedData.subject,
+        items: extractedData.items?.map(item => ({
+          itemName: item.itemName,
+          description: item.itemName || '',
+          quantity: item.quantity || 1,
+          unitPrice: item.unitPrice || item.amount || 0,
+          amount: item.amount || 0,
+        })) || [],
+      };
+
+      // マッチするルールを検索
+      const matchResult = await learningRuleService.findMatchingRule(tempReceipt);
+
+      if (matchResult.matched && matchResult.outputs) {
+        logger.info(`[ScanReceiptService] Learning rule matched: "${matchResult.rule?.name}"`, {
+          outputs: matchResult.outputs,
+        });
+
+        // ルールの出力を適用
+        if (matchResult.outputs.subject) {
+          extractedData.subject = matchResult.outputs.subject;
+        }
+        if (matchResult.outputs.accountCategory) {
+          extractedData.accountCategory = matchResult.outputs.accountCategory;
+        }
+        if (matchResult.outputs.title) {
+          // titleをitemsの最初のitemNameにも設定
+          if (extractedData.items && extractedData.items.length > 0) {
+            extractedData.items[0].itemName = matchResult.outputs.title;
+          }
+        }
+
+        learningRuleApplied = true;
+        appliedRuleName = matchResult.rule?.name;
+      }
+    } catch (error) {
+      logger.warn('[ScanReceiptService] Learning rule matching failed, continuing without:', error);
+    }
+
     // 会社情報を取得（issuer情報がない場合のフォールバック）
     let companyInfo = null;
     try {
@@ -597,13 +649,17 @@ accountCategoryReasonに判定根拠を記載すること：
         imageHeight: imageUploadResult.metadata.height,
         imageFormat: imageUploadResult.metadata.format,
       }),
+      // 学習ルール適用情報
+      ...(learningRuleApplied && {
+        learningRuleApplied: true,
+        appliedRuleName: appliedRuleName,
+      }),
     };
 
-    // 勘定科目の判定（AI推定を使用）
-    // ※ルールベースは一旦無効化し、学習効果を検証
-    // const ruleBasedCategory = this.applyAccountCategoryRules(extractedData);
+    // 勘定科目の判定
+    // 学習ルールが適用された場合は高い確信度を設定
     const finalAccountCategory = this.validateAccountCategory(extractedData.accountCategory);
-    const categoryConfidence = extractedData.accountCategory ? 0.8 : 0;
+    const categoryConfidence = learningRuleApplied ? 1.0 : (extractedData.accountCategory ? 0.8 : 0);
 
     // 領収書データを作成
     const receiptData: Omit<Receipt, '_id' | 'createdAt' | 'updatedAt'> = {

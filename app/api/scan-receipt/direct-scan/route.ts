@@ -26,6 +26,11 @@ import {
 import { convertToWebp } from '@/lib/image-converter';
 import { uploadToR2, generateReceiptImageKey } from '@/lib/r2-client';
 import { loadRulesFromSkillMd } from '@/lib/skill-rules-parser';
+import {
+  classifyReceipt,
+  addReceiptToRag,
+  ReceiptData as RagReceiptData,
+} from '@/lib/rag-service';
 
 const ollamaClient = new OllamaClient();
 const companyInfoService = new CompanyInfoService();
@@ -243,7 +248,8 @@ async function extractReceiptDataWithVision(imageBuffer: Buffer, maxRetries: num
   const systemPrompt = ''; // システムプロンプトは使用しない
 
   // 金額読み取り精度改善: 「納入金額」「合計」などのラベル横の数字を正確に読む
-  const userPrompt = `領収書から抽出。金額は「金額」「合計」「納入金額」ラベル横の数字を1桁ずつ確認。JSON：{"issuerName":"店舗名", "issuerAddress":"住所", "issuerPhone":"電話", "issueDate":"YYYY-MM-DD", "subtotal":税抜金額, "taxAmount":消費税, "totalAmount":合計金額の数値, "accountCategory":"接待交際費/会議費/旅費交通費/車両費/消耗品費/通信費/福利厚生費/新聞図書費/雑費/租税公課から選択"}`;
+  // items: 商品明細を抽出（商品名、数量、単価、金額）
+  const userPrompt = `領収書から抽出。金額は「金額」「合計」「納入金額」ラベル横の数字を1桁ずつ確認。JSON：{"issuerName":"店舗名", "issuerAddress":"住所", "issuerPhone":"電話", "issueDate":"YYYY-MM-DD", "subtotal":税抜金額, "taxAmount":消費税, "totalAmount":合計金額の数値, "items":[{"itemName":"商品名をそのまま記載","quantity":数量,"unitPrice":単価,"amount":金額}], "accountCategory":"接待交際費/会議費/旅費交通費/車両費/消耗品費/通信費/福利厚生費/新聞図書費/雑費/租税公課から選択"}`;
 
   let lastError: Error | null = null;
 
@@ -359,6 +365,10 @@ async function createReceiptFromExtractedData(
 
   // 画像をWEBPに変換してR2にアップロード
   let imageUrl: string | undefined;
+  let imageKey: string | undefined;
+  let imageWidth: number | undefined;
+  let imageHeight: number | undefined;
+  let imageSize: number | undefined;
   try {
     logger.info('[DirectScan API] Converting image to WEBP...');
     const webpResult = await convertToWebp(imageBuffer, {
@@ -374,9 +384,9 @@ async function createReceiptFromExtractedData(
     });
 
     // R2にアップロード
-    const r2Key = generateReceiptImageKey(receiptNumber);
-    logger.info('[DirectScan API] Uploading to R2:', { key: r2Key });
-    const uploadResult = await uploadToR2(webpResult.buffer, r2Key, {
+    imageKey = generateReceiptImageKey(receiptNumber);
+    logger.info('[DirectScan API] Uploading to R2:', { key: imageKey });
+    const uploadResult = await uploadToR2(webpResult.buffer, imageKey, {
       contentType: 'image/webp',
       metadata: {
         originalFileName,
@@ -384,8 +394,12 @@ async function createReceiptFromExtractedData(
       },
     });
     imageUrl = uploadResult.url;
+    imageWidth = webpResult.width;
+    imageHeight = webpResult.height;
+    imageSize = uploadResult.size;
     logger.info('[DirectScan API] R2 upload complete:', {
       url: imageUrl,
+      key: imageKey,
       size: uploadResult.size,
     });
   } catch (error) {
@@ -414,23 +428,84 @@ async function createReceiptFromExtractedData(
     });
   }
 
-  // スキャンメタデータ
+  // スキャンメタデータ（R2アップロード情報を含む）
   const scanMetadata: ScannedReceiptMetadata = {
     originalFileName,
     processedAt: new Date(),
     visionModelUsed: visionModel,
+    // R2画像情報
+    imageKey,
+    imageSize,
+    imageWidth,
+    imageHeight,
+    imageFormat: imageKey ? 'webp' : undefined,
   };
 
-  // 勘定科目の判定（ルールベース優先）
-  // SKILL.mdのルールを最優先で適用し、該当しない場合のみAI判定を使用
-  const ruleBasedCategory = applyAccountCategoryRules(extractedData);
-  const finalAccountCategory = ruleBasedCategory || validateAccountCategory(extractedData.accountCategory);
-  const categoryConfidence = ruleBasedCategory ? 1.0 : (extractedData.accountCategory ? 0.8 : 0);
+  // 勘定科目の判定（RAG優先 → ルールベース → AI）
+  // 1. RAGで類似領収書を検索し、高精度マッチがあれば採用
+  // 2. RAGでマッチしない場合はルールベースを試行
+  // 3. どちらも該当しない場合はAI判定を使用
+
+  // RAG検索用データを準備
+  const ragQueryData: RagReceiptData = {
+    store_name: extractedData.issuerName || '',
+    item_description: (extractedData.items || []).map(item => item.itemName || '').join(' '),
+    description: extractedData.subject || '',
+    issue_date: extractedData.issueDate || new Date().toISOString().split('T')[0],
+    total_amount: extractedData.totalAmount || 0,
+  };
+
+  // AI推定結果（フォールバック用）
+  const aiEstimate = {
+    category: validateAccountCategory(extractedData.accountCategory),
+    subject: extractedData.subject || '品代として',
+    confidence: extractedData.accountCategory ? 0.8 : 0,
+  };
+
+  // RAG分類を実行
+  const ragResult = await classifyReceipt(ragQueryData, aiEstimate);
+
+  // RAGで高精度マッチした場合はRAG結果を使用
+  // そうでない場合はルールベースを試行
+  let finalAccountCategory: AccountCategory;
+  let finalSubject: string;
+  let categoryConfidence: number;
+  let classificationSource: 'rag' | 'rule' | 'ai';
+
+  if (ragResult.source === 'rag' && ragResult.confidence > 0.85) {
+    // RAGで高精度マッチ
+    finalAccountCategory = ragResult.category as AccountCategory;
+    finalSubject = ragResult.subject;
+    categoryConfidence = ragResult.confidence;
+    classificationSource = 'rag';
+    logger.info('[DirectScan API] RAG classification result:', {
+      category: finalAccountCategory,
+      subject: finalSubject,
+      confidence: categoryConfidence,
+    });
+  } else {
+    // RAGでマッチしなかった場合、ルールベースを試行
+    // 注意: applyAccountCategoryRulesは将来的に削除予定（RAG学習が十分になったら）
+    const ruleBasedCategory = applyAccountCategoryRules(extractedData);
+    if (ruleBasedCategory) {
+      finalAccountCategory = ruleBasedCategory;
+      finalSubject = extractedData.subject || '品代として';
+      categoryConfidence = 1.0;
+      classificationSource = 'rule';
+    } else {
+      // AI推定を使用
+      finalAccountCategory = ragResult.category as AccountCategory;
+      finalSubject = ragResult.subject;
+      categoryConfidence = ragResult.confidence;
+      classificationSource = 'ai';
+    }
+  }
 
   logger.info('[DirectScan API] Category determination:', {
-    ruleBasedCategory: ruleBasedCategory || '(no rule match)',
-    aiCategory: extractedData.accountCategory,
+    ragSimilarity: ragResult.confidence.toFixed(2),
+    source: classificationSource,
     finalCategory: finalAccountCategory,
+    finalSubject: finalSubject,
   });
 
   // 領収書データを作成
@@ -461,8 +536,8 @@ async function createReceiptFromExtractedData(
       ? new Date(extractedData.issueDate)
       : new Date(),
 
-    // その他
-    subject: extractedData.subject || '品代として',
+    // その他（RAG結果またはAI推定を使用）
+    subject: finalSubject,
     notes: extractedData.notes,
     status: 'issued' as ReceiptStatus, // 自動的に発行済みに
 
@@ -487,6 +562,33 @@ async function createReceiptFromExtractedData(
     accountCategory: receipt.accountCategory,
     imageUrl: imageUrl || 'N/A',
   });
+
+  // RAGに追加（将来の類似検索のため）
+  // 注意: 新規スキャンは verified: false で追加（ユーザーが修正・確認後にtrueに更新される）
+  try {
+    const ragAddResult = await addReceiptToRag({
+      id: receipt._id?.toString() || receiptNumber,
+      store_name: receipt.issuerName || '',
+      item_description: (receipt.items || []).map(item => item.description || '').join(' '),
+      description: receipt.subject || '',
+      issue_date: receipt.issueDate?.toISOString().split('T')[0] || new Date().toISOString().split('T')[0],
+      total_amount: receipt.totalAmount || 0,
+      category: receipt.accountCategory || '未分類',
+      verified: false, // 新規スキャンは未確認
+    });
+
+    if (ragAddResult.success) {
+      logger.info('[DirectScan API] Receipt added to RAG for future learning:', {
+        receiptId: receipt._id?.toString(),
+        category: receipt.accountCategory,
+      });
+    } else {
+      logger.warn('[DirectScan API] Failed to add receipt to RAG:', ragAddResult.error);
+    }
+  } catch (ragError) {
+    // RAG追加に失敗しても領収書作成は成功とする
+    logger.warn('[DirectScan API] RAG add error (non-fatal):', ragError);
+  }
 
   return receipt;
 }

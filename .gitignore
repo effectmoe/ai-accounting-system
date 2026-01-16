@@ -100,3 +100,17 @@ add-env-vars.sh
 # Cloudflare Workers
 cloudflare-email-tracker/node_modules/
 cloudflare-email-tracker/.wrangler/
+rag_env/
+
+# Python virtual environments
+rag_env/
+venv/
+.venv/
+env/
+
+# Large binary files
+*.dylib
+*.so
+*.dll
+*.pth
+*.bin

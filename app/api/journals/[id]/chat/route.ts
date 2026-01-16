@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
-import { DeepSeekClient } from '@/lib/deepseek-client';
+import { getOllamaClient } from '@/lib/ollama-client';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -75,11 +75,8 @@ ${index + 1}. ${line.accountName} (${line.accountCode})
    ${line.taxAmount ? `税額: ¥${line.taxAmount.toLocaleString()}` : ''}
 `).join('')}`;
     
-    // DeepSeek APIのメッセージを構築
-    const messages = [
-      {
-        role: 'system' as const,
-        content: `あなたは日本の税務・会計に精通した専門的なアシスタントです。
+    // システムプロンプトを構築
+    const systemPrompt = `あなたは日本の税務・会計に精通した専門的なアシスタントです。
 ユーザーから表示されている特定の仕訳についての質問を受けます。
 
 重要な制約：
@@ -89,64 +86,68 @@ ${index + 1}. ${line.accountName} (${line.accountCode})
 4. 初心者にも分かりやすい説明を心がけてください
 5. 専門用語を使う場合は、必ず簡単な説明を添えてください
 
-${journalContext}`
-      },
-      ...conversationHistory.map(msg => ({
+${journalContext}`;
+
+    logger.debug('[Journal Chat API] Calling Ollama Qwen3-VL with Thinking mode:', {
+      journalNumber: journalData.journalNumber,
+      historyLength: conversationHistory.length
+    });
+
+    // Ollama (Qwen3-VL) + Thinkingモードを使用
+    // 2025-01: DeepSeek廃止 → Qwen3-VL Thinkingモードに移行
+    const ollamaClient = getOllamaClient();
+
+    // Ollamaの利用可能性を確認
+    const isAvailable = await ollamaClient.checkAvailability();
+    if (!isAvailable) {
+      logger.error('[Journal Chat API] Ollama is not available');
+      throw new Error('AI service (Ollama) is not available');
+    }
+
+    // Thinkingモード付きチャットを実行
+    const response = await ollamaClient.chatWithThinking(
+      systemPrompt,
+      message,
+      conversationHistory.map(msg => ({
         role: msg.role as 'user' | 'assistant',
         content: msg.content
       })),
       {
-        role: 'user' as const,
-        content: message
+        temperature: 0.7,
+        num_predict: 1000
       }
-    ];
-    
-    logger.debug('[Journal Chat API] Calling DeepSeek API with messages:', {
-      messageCount: messages.length,
-      journalNumber: journalData.journalNumber
-    });
-    
-    // DeepSeek APIを呼び出し
-    const deepseekClient = new DeepSeekClient();
-    const response = await deepseekClient.chat(messages, {
-      temperature: 0.7,
-      maxTokens: 1000,
-      model: 'deepseek-chat'
-    });
-    
-    const aiResponse = response.choices[0]?.message?.content || 'すみません、回答を生成できませんでした。';
-    
-    logger.debug('[Journal Chat API] DeepSeek response received:', {
+    );
+
+    const aiResponse = response.content || 'すみません、回答を生成できませんでした。';
+
+    logger.debug('[Journal Chat API] Ollama response received:', {
       responseLength: aiResponse.length,
-      usage: response.usage
+      hasThinking: !!response.thinking
     });
     
     return NextResponse.json({
       success: true,
       response: aiResponse,
-      usage: response.usage
+      model: 'ollama-qwen3-vl-thinking'
     });
     
   } catch (error) {
     logger.error('[Journal Chat API] Error:', error);
-    
+
     let errorMessage = '処理中にエラーが発生しました';
     let statusCode = 500;
-    
+
     if (error instanceof Error) {
-      if (error.message.includes('DEEPSEEK_API_KEY')) {
-        errorMessage = 'AIサービスの設定に問題があります';
+      if (error.message.includes('Ollama') || error.message.includes('AI service')) {
+        errorMessage = 'AIサービス（Ollama）に接続できません';
       } else if (error.message.includes('timeout')) {
         errorMessage = 'リクエストがタイムアウトしました';
         statusCode = 504;
-      } else if (error.message.includes('rate limit')) {
-        errorMessage = 'APIの利用制限に達しました';
-        statusCode = 429;
       } else {
         errorMessage = error.message;
       }
     }
-    
+
     return NextResponse.json(
       {
         success: false,

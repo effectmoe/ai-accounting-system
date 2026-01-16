@@ -365,11 +365,19 @@ export async function sendInvoiceEmail(
       replyTo,
     } = options;
 
+    // トラッキングID生成（inv_ プレフィックス）
+    const trackingId = `inv_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+    const trackingWorkerUrl = process.env.TRACKING_WORKER_URL;
+    const trackingPixelUrl = trackingWorkerUrl
+      ? `${trackingWorkerUrl}/pixel?id=${trackingId}`
+      : null;
+
     if (!isGmailConfigured) {
       logger.warn('Gmail not configured. Invoice email would be sent to:', { customerEmail });
       return {
         success: true,
         messageId: 'test-' + Date.now(),
+        trackingId,
         error: 'Gmail not configured - email logged only',
       };
     }
@@ -380,8 +388,12 @@ export async function sendInvoiceEmail(
     // 件名
     const subject = `【請求書】${invoiceNumber} - ${fromName}`;
 
-    // 本文
+    // 本文（トラッキングピクセル付き）
     const dueDateText = dueDate ? formatDate(dueDate) : '記載の期日';
+    const trackingPixelHtml = trackingPixelUrl
+      ? `<img src="${trackingPixelUrl}" width="1" height="1" style="display:none;width:1px;height:1px;border:0;" alt="" />`
+      : '';
+
     const html = `
       <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #333;">${customerName} 様</h2>
@@ -401,9 +413,9 @@ export async function sendInvoiceEmail(
         <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
         <p style="color: #666; font-size: 12px;">
           ${fromName}<br>
-          ${companyInfo.email || ''}<br>
-          ${companyInfo.phone || ''}
+          ${companyInfo.email || ''}
         </p>
+        ${trackingPixelHtml}
       </div>
     `;
 
@@ -428,6 +440,7 @@ export async function sendInvoiceEmail(
       headers: {
         'X-Entity-Ref-ID': invoiceId,
         'X-Invoice-Number': invoiceNumber,
+        'X-Tracking-ID': trackingId,
         'X-Mailer': 'AI Accounting System - Gmail OAuth2',
       },
     };
@@ -437,11 +450,23 @@ export async function sendInvoiceEmail(
     logger.info('📧 Invoice email sent successfully:', {
       messageId: info.messageId,
       invoiceNumber,
+      trackingId,
+    });
+
+    // イベント記録（Cloudflare Workers経由）
+    await recordEmailEvent({
+      messageId: info.messageId || '',
+      invoiceId,
+      recipientEmail: customerEmail,
+      subject,
+      trackingId,
+      sentAt: new Date().toISOString(),
     });
 
     return {
       success: true,
       messageId: info.messageId,
+      trackingId,
     };
   } catch (error) {
     logger.error('Error sending invoice email:', { error });
@@ -472,11 +497,19 @@ export async function sendDeliveryNoteEmail(
       replyTo,
     } = options;
 
+    // トラッキングID生成（dn_ プレフィックス）
+    const trackingId = `dn_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+    const trackingWorkerUrl = process.env.TRACKING_WORKER_URL;
+    const trackingPixelUrl = trackingWorkerUrl
+      ? `${trackingWorkerUrl}/pixel?id=${trackingId}`
+      : null;
+
     if (!isGmailConfigured) {
       logger.warn('Gmail not configured. Delivery note email would be sent to:', { customerEmail });
       return {
         success: true,
         messageId: 'test-' + Date.now(),
+        trackingId,
         error: 'Gmail not configured - email logged only',
       };
     }
@@ -485,6 +518,11 @@ export async function sendDeliveryNoteEmail(
     const fromName = companyInfo.companyName || '会計自動化システム';
 
     const subject = `【納品書】${deliveryNoteNumber} - ${fromName}`;
+
+    // トラッキングピクセル
+    const trackingPixelHtml = trackingPixelUrl
+      ? `<img src="${trackingPixelUrl}" width="1" height="1" style="display:none;width:1px;height:1px;border:0;" alt="" />`
+      : '';
 
     const html = `
       <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -503,9 +541,9 @@ export async function sendDeliveryNoteEmail(
         <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
         <p style="color: #666; font-size: 12px;">
           ${fromName}<br>
-          ${companyInfo.email || ''}<br>
-          ${companyInfo.phone || ''}
+          ${companyInfo.email || ''}
         </p>
+        ${trackingPixelHtml}
       </div>
     `;
 
@@ -530,6 +568,7 @@ export async function sendDeliveryNoteEmail(
       headers: {
         'X-Entity-Ref-ID': deliveryNoteId,
         'X-Delivery-Note-Number': deliveryNoteNumber,
+        'X-Tracking-ID': trackingId,
         'X-Mailer': 'AI Accounting System - Gmail OAuth2',
       },
     };
@@ -539,11 +578,23 @@ export async function sendDeliveryNoteEmail(
     logger.info('📧 Delivery note email sent successfully:', {
       messageId: info.messageId,
       deliveryNoteNumber,
+      trackingId,
+    });
+
+    // イベント記録（Cloudflare Workers経由）
+    await recordEmailEvent({
+      messageId: info.messageId || '',
+      deliveryNoteId,
+      recipientEmail: customerEmail,
+      subject,
+      trackingId,
+      sentAt: new Date().toISOString(),
     });
 
     return {
       success: true,
       messageId: info.messageId,
+      trackingId,
     };
   } catch (error) {
     logger.error('Error sending delivery note email:', { error });
@@ -575,11 +626,19 @@ export async function sendReceiptEmail(
       replyTo,
     } = options;
 
+    // トラッキングID生成（rc_ プレフィックス）
+    const trackingId = `rc_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+    const trackingWorkerUrl = process.env.TRACKING_WORKER_URL;
+    const trackingPixelUrl = trackingWorkerUrl
+      ? `${trackingWorkerUrl}/pixel?id=${trackingId}`
+      : null;
+
     if (!isGmailConfigured) {
       logger.warn('Gmail not configured. Receipt email would be sent to:', { customerEmail });
       return {
         success: true,
         messageId: 'test-' + Date.now(),
+        trackingId,
         error: 'Gmail not configured - email logged only',
       };
     }
@@ -588,6 +647,11 @@ export async function sendReceiptEmail(
     const fromName = companyInfo.companyName || '会計自動化システム';
 
     const subject = `【領収書】${receiptNumber} - ${fromName}`;
+
+    // トラッキングピクセル
+    const trackingPixelHtml = trackingPixelUrl
+      ? `<img src="${trackingPixelUrl}" width="1" height="1" style="display:none;width:1px;height:1px;border:0;" alt="" />`
+      : '';
 
     const html = `
       <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -607,9 +671,9 @@ export async function sendReceiptEmail(
         <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
         <p style="color: #666; font-size: 12px;">
           ${fromName}<br>
-          ${companyInfo.email || ''}<br>
-          ${companyInfo.phone || ''}
+          ${companyInfo.email || ''}
         </p>
+        ${trackingPixelHtml}
       </div>
     `;
 
@@ -634,6 +698,7 @@ export async function sendReceiptEmail(
       headers: {
         'X-Entity-Ref-ID': receiptId,
         'X-Receipt-Number': receiptNumber,
+        'X-Tracking-ID': trackingId,
         'X-Mailer': 'AI Accounting System - Gmail OAuth2',
       },
     };
@@ -643,11 +708,23 @@ export async function sendReceiptEmail(
     logger.info('📧 Receipt email sent successfully:', {
       messageId: info.messageId,
       receiptNumber,
+      trackingId,
+    });
+
+    // イベント記録（Cloudflare Workers経由）
+    await recordEmailEvent({
+      messageId: info.messageId || '',
+      receiptId,
+      recipientEmail: customerEmail,
+      subject,
+      trackingId,
+      sentAt: new Date().toISOString(),
     });
 
     return {
       success: true,
       messageId: info.messageId,
+      trackingId,
     };
   } catch (error) {
     logger.error('Error sending receipt email:', { error });

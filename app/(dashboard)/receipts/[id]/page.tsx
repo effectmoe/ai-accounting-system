@@ -23,8 +23,16 @@ import {
   FileText,
   CheckCircle2,
   X,
-  ImageIcon
+  ImageIcon,
+  BookOpen,
+  Plus
 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
+import type { MatchField, MatchOperator, CreateLearningRuleParams } from '@/types/learning-rule';
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { safeFormatDate } from '@/lib/date-utils';
@@ -123,6 +131,20 @@ export default function ReceiptDetailPage({ params }: { params: { id: string } }
   const [showImageModal, setShowImageModal] = useState(false);
   const [showOriginalPdf, setShowOriginalPdf] = useState(false);
   const [originalFileError, setOriginalFileError] = useState(false);
+  const [showLearningRuleModal, setShowLearningRuleModal] = useState(false);
+  const [creatingRule, setCreatingRule] = useState(false);
+  const [ruleForm, setRuleForm] = useState({
+    name: '',
+    description: '',
+    useIssuerName: true,
+    issuerNameOperator: 'contains' as MatchOperator,
+    useItemName: false,
+    itemNameValue: '',
+    itemNameOperator: 'contains' as MatchOperator,
+    outputAccountCategory: '',
+    outputSubject: '',
+    priority: 50,
+  });
 
   useEffect(() => {
     fetchReceipt();
@@ -177,6 +199,108 @@ export default function ReceiptDetailPage({ params }: { params: { id: string } }
       alert('ステータスの更新に失敗しました');
     } finally {
       setUpdating(false);
+    }
+  };
+
+  // 学習ルール作成モーダルを開く
+  const openLearningRuleModal = () => {
+    if (!receipt) return;
+
+    // 領収書のデータでフォームを初期化
+    setRuleForm({
+      name: receipt.issuerName ? `${receipt.issuerName}のルール` : '新規ルール',
+      description: `領収書 ${receipt.receiptNumber} から作成`,
+      useIssuerName: !!receipt.issuerName,
+      issuerNameOperator: 'contains',
+      useItemName: false,
+      itemNameValue: receipt.items?.[0]?.itemName || receipt.items?.[0]?.description || '',
+      itemNameOperator: 'contains',
+      outputAccountCategory: receipt.accountCategory || '',
+      outputSubject: receipt.subject || '',
+      priority: 50,
+    });
+    setShowLearningRuleModal(true);
+  };
+
+  // 学習ルールを作成
+  const handleCreateLearningRule = async () => {
+    if (!receipt) return;
+
+    // バリデーション
+    if (!ruleForm.name.trim()) {
+      alert('ルール名を入力してください');
+      return;
+    }
+
+    if (!ruleForm.useIssuerName && !ruleForm.useItemName) {
+      alert('少なくとも1つのマッチ条件を選択してください');
+      return;
+    }
+
+    if (!ruleForm.outputAccountCategory && !ruleForm.outputSubject) {
+      alert('少なくとも1つの出力設定を入力してください');
+      return;
+    }
+
+    setCreatingRule(true);
+
+    try {
+      // マッチ条件を構築
+      const conditions: CreateLearningRuleParams['conditions'] = [];
+
+      if (ruleForm.useIssuerName && receipt.issuerName) {
+        conditions.push({
+          field: 'issuerName',
+          operator: ruleForm.issuerNameOperator,
+          value: receipt.issuerName,
+        });
+      }
+
+      if (ruleForm.useItemName && ruleForm.itemNameValue) {
+        conditions.push({
+          field: 'itemName',
+          operator: ruleForm.itemNameOperator,
+          value: ruleForm.itemNameValue,
+        });
+      }
+
+      // 出力設定を構築
+      const outputs: CreateLearningRuleParams['outputs'] = {};
+      if (ruleForm.outputAccountCategory) {
+        outputs.accountCategory = ruleForm.outputAccountCategory;
+      }
+      if (ruleForm.outputSubject) {
+        outputs.subject = ruleForm.outputSubject;
+      }
+
+      const ruleData: CreateLearningRuleParams = {
+        name: ruleForm.name,
+        description: ruleForm.description,
+        conditions,
+        matchMode: 'all',
+        outputs,
+        priority: ruleForm.priority,
+        enabled: true,
+      };
+
+      const response = await fetch('/api/learning-rules', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(ruleData),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || '学習ルールの作成に失敗しました');
+      }
+
+      alert('学習ルールを作成しました');
+      setShowLearningRuleModal(false);
+    } catch (error) {
+      logger.error('Error creating learning rule:', error);
+      alert(error instanceof Error ? error.message : '学習ルールの作成に失敗しました');
+    } finally {
+      setCreatingRule(false);
     }
   };
 
@@ -355,6 +479,18 @@ export default function ReceiptDetailPage({ params }: { params: { id: string } }
           <Trash2 className="h-4 w-4 mr-2" />
           削除
         </Button>
+
+        {/* 学習ルール作成ボタン（スキャン領収書のみ） */}
+        {receipt.scannedFromPdf && (
+          <Button
+            variant="outline"
+            onClick={openLearningRuleModal}
+            className="text-purple-600 hover:text-purple-800"
+          >
+            <BookOpen className="h-4 w-4 mr-2" />
+            学習ルール作成
+          </Button>
+        )}
       </div>
 
       {/* 関連請求書 */}
@@ -832,6 +968,205 @@ export default function ReceiptDetailPage({ params }: { params: { id: string } }
           paidDate={receipt.paidDate}
           onSuccess={fetchReceipt}
         />
+      )}
+
+      {/* 学習ルール作成モーダル */}
+      {showLearningRuleModal && receipt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center p-4 border-b">
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                <BookOpen className="h-5 w-5" />
+                学習ルールを作成
+              </h2>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowLearningRuleModal(false)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* ルール基本情報 */}
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="ruleName">ルール名 *</Label>
+                  <Input
+                    id="ruleName"
+                    value={ruleForm.name}
+                    onChange={(e) => setRuleForm({ ...ruleForm, name: e.target.value })}
+                    placeholder="例: コンビニ購入のルール"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="ruleDescription">説明</Label>
+                  <Textarea
+                    id="ruleDescription"
+                    value={ruleForm.description}
+                    onChange={(e) => setRuleForm({ ...ruleForm, description: e.target.value })}
+                    placeholder="このルールの説明..."
+                    rows={2}
+                  />
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* マッチ条件 */}
+              <div className="space-y-4">
+                <h3 className="font-medium text-sm text-muted-foreground">マッチ条件（どの領収書に適用するか）</h3>
+
+                {/* 発行元 */}
+                <div className="border rounded-lg p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={ruleForm.useIssuerName}
+                        onCheckedChange={(checked) => setRuleForm({ ...ruleForm, useIssuerName: checked })}
+                      />
+                      <Label>発行元（店舗名）で判定</Label>
+                    </div>
+                  </div>
+                  {ruleForm.useIssuerName && (
+                    <div className="ml-6 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Select
+                          value={ruleForm.issuerNameOperator}
+                          onValueChange={(value) => setRuleForm({ ...ruleForm, issuerNameOperator: value as MatchOperator })}
+                        >
+                          <SelectTrigger className="w-32">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="contains">含む</SelectItem>
+                            <SelectItem value="equals">完全一致</SelectItem>
+                            <SelectItem value="startsWith">前方一致</SelectItem>
+                            <SelectItem value="endsWith">後方一致</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <span className="text-sm text-muted-foreground">
+                          "{receipt.issuerName || '（発行元なし）'}"
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* 項目名 */}
+                <div className="border rounded-lg p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Switch
+                        checked={ruleForm.useItemName}
+                        onCheckedChange={(checked) => setRuleForm({ ...ruleForm, useItemName: checked })}
+                      />
+                      <Label>項目名で判定</Label>
+                    </div>
+                  </div>
+                  {ruleForm.useItemName && (
+                    <div className="ml-6 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Select
+                          value={ruleForm.itemNameOperator}
+                          onValueChange={(value) => setRuleForm({ ...ruleForm, itemNameOperator: value as MatchOperator })}
+                        >
+                          <SelectTrigger className="w-32">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="contains">含む</SelectItem>
+                            <SelectItem value="equals">完全一致</SelectItem>
+                            <SelectItem value="startsWith">前方一致</SelectItem>
+                            <SelectItem value="endsWith">後方一致</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Input
+                          value={ruleForm.itemNameValue}
+                          onChange={(e) => setRuleForm({ ...ruleForm, itemNameValue: e.target.value })}
+                          placeholder="例: 駐車料金"
+                          className="flex-1"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* 出力設定 */}
+              <div className="space-y-4">
+                <h3 className="font-medium text-sm text-muted-foreground">出力設定（マッチ時に設定する値）</h3>
+
+                <div>
+                  <Label htmlFor="outputAccountCategory">勘定科目</Label>
+                  <Input
+                    id="outputAccountCategory"
+                    value={ruleForm.outputAccountCategory}
+                    onChange={(e) => setRuleForm({ ...ruleForm, outputAccountCategory: e.target.value })}
+                    placeholder="例: 旅費交通費"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="outputSubject">但し書き</Label>
+                  <Input
+                    id="outputSubject"
+                    value={ruleForm.outputSubject}
+                    onChange={(e) => setRuleForm({ ...ruleForm, outputSubject: e.target.value })}
+                    placeholder="例: 駐車場代"
+                  />
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* 優先度 */}
+              <div>
+                <Label htmlFor="priority">優先度</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="priority"
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={ruleForm.priority}
+                    onChange={(e) => setRuleForm({ ...ruleForm, priority: parseInt(e.target.value) || 50 })}
+                    className="w-24"
+                  />
+                  <span className="text-sm text-muted-foreground">（数値が大きいほど優先）</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 border-t flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowLearningRuleModal(false)}
+              >
+                キャンセル
+              </Button>
+              <Button
+                onClick={handleCreateLearningRule}
+                disabled={creatingRule}
+              >
+                {creatingRule ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    作成中...
+                  </>
+                ) : (
+                  <>
+                    <Plus className="h-4 w-4 mr-2" />
+                    ルールを作成
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

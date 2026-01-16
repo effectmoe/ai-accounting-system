@@ -110,16 +110,28 @@ export class OllamaClient {
   async checkAvailability(): Promise<boolean> {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5秒タイムアウト
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15秒タイムアウト（Vercel→Tunnel経由のレイテンシ考慮）
+
+      logger.info('[OllamaClient] Checking availability at:', this.baseURL);
 
       const response = await fetch(`${this.baseURL}/v1/models`, {
-        signal: controller.signal
+        signal: controller.signal,
+        headers: {
+          'User-Agent': 'AccountingAutomation/1.0',
+          'Accept': 'application/json',
+        },
       });
 
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        logger.debug('[OllamaClient] Ollama not available:', response.status);
+        const errorBody = await response.text().catch(() => 'Unable to read body');
+        logger.error('[OllamaClient] Ollama not available:', {
+          status: response.status,
+          statusText: response.statusText,
+          headers: Object.fromEntries(response.headers.entries()),
+          body: errorBody.substring(0, 500)
+        });
         this.isAvailable = false;
         return false;
       }
@@ -139,9 +151,14 @@ export class OllamaClient {
       return hasModel;
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
-        logger.debug('[OllamaClient] Availability check timed out');
+        logger.error('[OllamaClient] Availability check timed out after 15s');
       } else {
-        logger.debug('[OllamaClient] Availability check failed:', error);
+        logger.error('[OllamaClient] Availability check failed:', {
+          name: error instanceof Error ? error.name : 'Unknown',
+          message: error instanceof Error ? error.message : String(error),
+          cause: error instanceof Error ? (error as any).cause : undefined,
+          stack: error instanceof Error ? error.stack?.substring(0, 300) : undefined
+        });
       }
       this.isAvailable = false;
       return false;

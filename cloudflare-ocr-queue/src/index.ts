@@ -34,6 +34,16 @@ interface OCRJob {
   completedAt?: number;
 }
 
+// OCR結果の明細項目
+interface OCRResultItem {
+  itemName?: string;
+  description?: string;
+  quantity?: number;
+  unit?: string;
+  unitPrice?: number;
+  amount?: number;
+}
+
 // OCR結果の型定義
 interface OCRResult {
   issuerName?: string;
@@ -45,6 +55,10 @@ interface OCRResult {
   totalAmount?: number;
   accountCategory?: string;
   confidence?: number;
+  // 但し書き（品名・サービス内容）
+  subject?: string;
+  // 明細（複数項目がある場合）
+  items?: OCRResultItem[];
 }
 
 // APIレスポンスの型定義
@@ -471,9 +485,14 @@ export class OCRQueueDO implements DurableObject {
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
-      const systemPrompt = `あなたは領収書・レシートのOCR専門AIです。画像から情報を正確に読み取り、JSON形式で出力してください。`;
+      const systemPrompt = `あなたは領収書・レシートのOCR専門AIです。画像から情報を正確に読み取り、JSON形式で出力してください。金額は1文字ずつ確認し、0と2を間違えないでください。「但し書き」欄と明細項目も必ず抽出してください。`;
 
       const userPrompt = `この領収書/レシート画像を分析し、以下のJSON形式で情報を抽出してください。
+
+【重要】
+- 金額欄の数字を1文字ずつ読んでください。「5000」と「5200」を間違えないでください。
+- 「但し書き」欄（○○として）の内容を必ず抽出してください。
+- 明細項目があれば全て抽出してください。
 
 必ず以下の形式でJSONのみを出力してください（説明文は不要）：
 {
@@ -481,6 +500,10 @@ export class OCRQueueDO implements DurableObject {
   "issuerAddress": "住所（わかる場合）",
   "issuerPhone": "電話番号（わかる場合）",
   "issueDate": "YYYY-MM-DD形式の日付",
+  "subject": "但し書きの内容（例：シャンプー洗車代として、コーヒー代として）",
+  "items": [
+    {"itemName": "商品・サービス名", "quantity": 数量, "unitPrice": 単価, "amount": 金額}
+  ],
   "subtotal": 税抜金額（数値のみ）,
   "taxAmount": 消費税額（数値のみ）,
   "totalAmount": 合計金額（数値のみ）,
@@ -492,6 +515,8 @@ export class OCRQueueDO implements DurableObject {
 - 飲食でアルコールなし → "会議費"
 - 交通費 → "旅費交通費"
 - 駐車場代 → "車両費"
+- ガソリン・燃料 → "車両費"
+- 洗車 → "車両費"
 - 文房具・消耗品 → "消耗品費"
 - 通信関連 → "通信費"
 - その他 → "雑費"

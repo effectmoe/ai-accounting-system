@@ -1,0 +1,45 @@
+{
+  "success": true,
+  "records": [
+    {
+      "id": "69696314cca5d0c7c229bd30",
+      "document": "GooDay プチd37 1.2M×42M 品代として",
+      "metadata": {
+        "total_amount": 2508,
+        "store_name": "GooDay",
+        "description": "品代として",
+        "category": "消耗品費",
+        "item_description": "プチd37 1.2M×42M",
+        "verified": true,
+        "issue_date": "2025-01-14"
+      }
+    },
+    {
+      "id": "696976894b2a165f36592317",
+      "document": "株式会社プラムパーク 駐車料金 品代として",
+      "metadata": {
+        "total_amount": 220,
+        "description": "品代として",
+        "verified": false,
+        "store_name": "株式会社プラムパーク",
+        "item_description": "駐車料金",
+        "category": "旅費交通費",
+        "issue_date": "2024-10-05"
+      }
+    },
+    {
+      "id": "696977b05acabbfbc186c1da",
+      "document": "南天神パーキング 駐車料金 品代として",
+      "metadata": {
+        "category": "旅費交通費",
+        "store_name": "南天神パーキング",
+        "total_amount": 800,
+        "description": "品代として",
+        "item_description": "駐車料金",
+        "issue_date": "2024-05-19",
+        "verified": false
+      }
+    }
+  ],
+  "total": 3
+}

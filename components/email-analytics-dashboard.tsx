@@ -56,6 +56,18 @@ import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
 import { logger } from '@/lib/logger';
 
+interface TimelineDataPoint {
+  time: string;
+  opens: number;
+  clicks: number;
+}
+
+interface DailyStatsPoint {
+  date: string;
+  openRate: number;
+  clickRate: number;
+}
+
 interface EmailStats {
   sent: number;
   delivered: number;
@@ -66,6 +78,8 @@ interface EmailStats {
   openRate: number;
   clickRate: number;
   totalEmails: number;
+  timelineData?: TimelineDataPoint[];
+  dailyStats?: DailyStatsPoint[];
 }
 
 interface EmailEvent {
@@ -95,7 +109,7 @@ export default function EmailAnalyticsDashboard({
   const [stats, setStats] = useState<EmailStats | null>(null);
   const [events, setEvents] = useState<EmailEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedDateRange, setSelectedDateRange] = useState(dateRange);
+  const [selectedDateRange, setSelectedDateRange] = useState<'day' | 'week' | 'month' | 'year'>(dateRange);
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
 
   useEffect(() => {
@@ -105,69 +119,63 @@ export default function EmailAnalyticsDashboard({
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      // 統計データを取得
+      // APIパラメータを構築
+      const params = new URLSearchParams();
+      params.set('dateRange', selectedDateRange);
       if (quoteId) {
-        const statsResponse = await fetch(`/api/email-events/stats?quoteId=${quoteId}`);
-        if (statsResponse.ok) {
-          const statsData = await statsResponse.json();
-          setStats(statsData);
-        }
+        params.set('quoteId', quoteId);
+      }
 
-        // イベント履歴を取得
+      // 統計データを取得（常にAPIから取得）
+      const statsResponse = await fetch(`/api/email-events/stats?${params.toString()}`);
+      if (statsResponse.ok) {
+        const statsData = await statsResponse.json();
+        setStats(statsData);
+      } else {
+        // APIエラー時はゼロデータを設定
+        setStats({
+          sent: 0,
+          delivered: 0,
+          opened: 0,
+          clicked: 0,
+          bounced: 0,
+          complained: 0,
+          openRate: 0,
+          clickRate: 0,
+          totalEmails: 0,
+          timelineData: [],
+          dailyStats: [],
+        });
+      }
+
+      // イベント履歴を取得（quoteIdがある場合のみ）
+      if (quoteId) {
         const eventsResponse = await fetch(`/api/email-events?quoteId=${quoteId}`);
         if (eventsResponse.ok) {
           const eventsData = await eventsResponse.json();
           setEvents(eventsData);
         }
       } else {
-        // 全体の統計を取得（実装が必要な場合）
-        setStats({
-          sent: 124,
-          delivered: 120,
-          opened: 89,
-          clicked: 45,
-          bounced: 3,
-          complained: 1,
-          openRate: 71.8,
-          clickRate: 36.3,
-          totalEmails: 124,
-        });
-
-        // サンプルデータ
-        setEvents([
-          {
-            _id: '1',
-            messageId: 'msg-001',
-            quoteId: 'quote-001',
-            recipientEmail: 'customer1@example.com',
-            trackingId: 'track-001',
-            sentAt: new Date('2024-12-01T10:00:00'),
-            status: 'opened',
-            events: [
-              { type: 'sent', timestamp: new Date('2024-12-01T10:00:00') },
-              { type: 'delivered', timestamp: new Date('2024-12-01T10:00:05') },
-              { type: 'opened', timestamp: new Date('2024-12-01T10:30:00') },
-            ],
-          },
-          {
-            _id: '2',
-            messageId: 'msg-002',
-            quoteId: 'quote-002',
-            recipientEmail: 'customer2@example.com',
-            trackingId: 'track-002',
-            sentAt: new Date('2024-12-01T11:00:00'),
-            status: 'clicked',
-            events: [
-              { type: 'sent', timestamp: new Date('2024-12-01T11:00:00') },
-              { type: 'delivered', timestamp: new Date('2024-12-01T11:00:03') },
-              { type: 'opened', timestamp: new Date('2024-12-01T11:15:00') },
-              { type: 'clicked', timestamp: new Date('2024-12-01T11:16:00') },
-            ],
-          },
-        ]);
+        // 全体統計の場合、イベント履歴はAPIから取得（将来実装）
+        setEvents([]);
       }
     } catch (error) {
-      logger.error('Error fetching email analytics:', error);
+      logger.error('Error fetching email analytics:', error as Record<string, any>);
+      // エラー時はゼロデータを設定
+      setStats({
+        sent: 0,
+        delivered: 0,
+        opened: 0,
+        clicked: 0,
+        bounced: 0,
+        complained: 0,
+        openRate: 0,
+        clickRate: 0,
+        totalEmails: 0,
+        timelineData: [],
+        dailyStats: [],
+      });
+      setEvents([]);
     } finally {
       setIsLoading(false);
     }
@@ -219,13 +227,21 @@ export default function EmailAnalyticsDashboard({
     { name: 'クリック', value: stats?.clicked || 0, color: '#8B5CF6' },
   ];
 
-  const timelineData = [
-    { time: '0-1時間', opens: 12, clicks: 5 },
-    { time: '1-6時間', opens: 35, clicks: 18 },
-    { time: '6-24時間', opens: 28, clicks: 15 },
-    { time: '1-3日', opens: 10, clicks: 5 },
-    { time: '3-7日', opens: 4, clicks: 2 },
-  ];
+  // タイムラインデータ（APIから取得、なければデフォルト）
+  const timelineData = stats?.timelineData?.length
+    ? stats.timelineData
+    : [
+        { time: '0-1時間', opens: 0, clicks: 0 },
+        { time: '1-6時間', opens: 0, clicks: 0 },
+        { time: '6-24時間', opens: 0, clicks: 0 },
+        { time: '1-3日', opens: 0, clicks: 0 },
+        { time: '3-7日', opens: 0, clicks: 0 },
+      ];
+
+  // 日別統計データ（APIから取得、なければデフォルト）
+  const dailyStatsData = stats?.dailyStats?.length
+    ? stats.dailyStats
+    : [];
 
   const filteredEvents = events.filter(
     event => selectedStatus === 'all' || event.status === selectedStatus
@@ -250,7 +266,7 @@ export default function EmailAnalyticsDashboard({
           </p>
         </div>
         <div className="flex gap-2">
-          <Select value={selectedDateRange} onValueChange={setSelectedDateRange}>
+          <Select value={selectedDateRange} onValueChange={(value) => setSelectedDateRange(value as 'day' | 'week' | 'month' | 'year')}>
             <SelectTrigger className="w-32">
               <SelectValue />
             </SelectTrigger>
@@ -401,18 +417,9 @@ export default function EmailAnalyticsDashboard({
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {dailyStatsData.length > 0 ? (
               <ResponsiveContainer width="100%" height={400}>
-                <LineChart
-                  data={[
-                    { date: '12/1', openRate: 65, clickRate: 30 },
-                    { date: '12/2', openRate: 68, clickRate: 32 },
-                    { date: '12/3', openRate: 70, clickRate: 35 },
-                    { date: '12/4', openRate: 72, clickRate: 36 },
-                    { date: '12/5', openRate: 71, clickRate: 38 },
-                    { date: '12/6', openRate: 73, clickRate: 37 },
-                    { date: '12/7', openRate: 72, clickRate: 36 },
-                  ]}
-                >
+                <LineChart data={dailyStatsData}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="date" />
                   <YAxis />
@@ -422,6 +429,11 @@ export default function EmailAnalyticsDashboard({
                   <Line type="monotone" dataKey="clickRate" stroke="#8B5CF6" name="クリック率 (%)" />
                 </LineChart>
               </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-64 text-muted-foreground">
+                  <p>選択された期間にデータがありません</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

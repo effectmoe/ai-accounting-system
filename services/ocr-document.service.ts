@@ -422,7 +422,8 @@ export class OCRDocumentService {
   }
 
   /**
-   * Predicts account category asynchronously
+   * Predicts account category asynchronously with confirmation flow
+   * 確認フロー付きの勘定科目推論（税金関連や高額取引を検出）
    */
   private async predictAccountCategoryAsync(
     documentId: ObjectId,
@@ -434,22 +435,47 @@ export class OCRDocumentService {
         this.accountCategoryAI = new AccountCategoryAI();
       }
 
-      const prediction = await this.accountCategoryAI.predictAccountCategory(
+      // 確認フロー付きの推論を実行
+      const prediction = await this.accountCategoryAI.predictWithConfirmationFlow(
         ocrData,
         companyId
       );
 
-      if (prediction && prediction.confidence >= this.config.confidenceThreshold) {
-        await this.db.updateById(Collections.DOCUMENTS, documentId.toString(), {
-          category: prediction.category,
-          subcategory: prediction.alternativeCategories?.[0]?.category || '',
+      if (prediction) {
+        const updateData: Record<string, any> = {
           aiPrediction: {
             ...prediction,
             predictedAt: new Date()
           },
           updatedAt: new Date()
-        });
-        logger.debug(`Account category predicted for document ${documentId}`);
+        };
+
+        // 確認が必要な場合
+        if (prediction.needsConfirmation) {
+          updateData.needsConfirmation = true;
+          updateData.confirmationStatus = 'pending';
+          updateData.confirmationQuestions = prediction.confirmationQuestions;
+          updateData.confirmationReasons = prediction.confirmationReasons;
+          updateData.pendingCategory = prediction.pendingCategory;
+          // 確認待ちの場合はカテゴリを仮の値に設定
+          updateData.category = prediction.pendingCategory || '確認待ち';
+          updateData.subcategory = '';
+
+          logger.info(`[OCRDocumentService] 確認フロー開始: document ${documentId}`, {
+            reasons: prediction.confirmationReasons,
+            questionsCount: prediction.confirmationQuestions?.length || 0
+          });
+        } else if (prediction.confidence >= this.config.confidenceThreshold) {
+          // 確認不要で信頼度が十分な場合
+          updateData.category = prediction.category;
+          updateData.subcategory = prediction.alternativeCategories?.[0]?.category || '';
+          updateData.needsConfirmation = false;
+          updateData.confirmationStatus = 'confirmed';
+
+          logger.debug(`[OCRDocumentService] Account category predicted for document ${documentId}`);
+        }
+
+        await this.db.updateById(Collections.DOCUMENTS, documentId.toString(), updateData);
       }
     } catch (error) {
       logger.error(`Account category prediction failed for document ${documentId}:`, error);

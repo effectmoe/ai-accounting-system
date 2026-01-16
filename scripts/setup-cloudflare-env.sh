@@ -11,7 +11,7 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 echo -e "${GREEN}=== Cloudflare Pages 環境変数設定 ===${NC}"
-echo -e "${YELLOW}プロジェクト名: ai-accounting-system${NC}"
+echo -e "${YELLOW}プロジェクト名: ai-accounting-prod${NC}"
 echo ""
 echo -e "${BLUE}注意: 各環境変数について、値を入力するプロンプトが表示されます${NC}"
 echo -e "${BLUE}値は .env.local からコピーしてください${NC}"
@@ -94,7 +94,7 @@ for VAR_NAME in "${ENV_VARS[@]}"; do
   fi
 
   # Cloudflare Pages環境変数設定
-  echo "$CURRENT_VALUE" | wrangler pages secret put "$VAR_NAME" --project-name=ai-accounting-system
+  echo "$CURRENT_VALUE" | wrangler pages secret put "$VAR_NAME" --project-name=ai-accounting-prod
 
   if [ $? -eq 0 ]; then
     echo -e "${GREEN}✓ ${VAR_NAME} 設定完了${NC}"
@@ -108,4 +108,4 @@ done
 echo ""
 echo -e "${GREEN}=== 環境変数設定完了 ===${NC}"
 echo -e "${BLUE}設定内容を確認するには:${NC}"
-echo "  wrangler pages secret list --project-name=ai-accounting-system"
+echo "  wrangler pages secret list --project-name=ai-accounting-prod"
