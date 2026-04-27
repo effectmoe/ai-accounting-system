@@ -97,7 +97,6 @@
       "Bash(tsx scripts/test-structured-data.ts:*)",
       "Bash(tsx scripts/check-mongodb-vector.ts:*)",
       "Bash(MONGODB_URI=\"mongodb+srv://accounting-user:Monchan5454%40@accounting-cluster.nld0j20.mongodb.net/accounting?retryWrites=true&w=majority&appName=accounting-cluster\" npx tsx scripts/check-mongodb-vector.ts)",
-      "Bash(MONGODB_URI=\"mongodb+srv://accounting-user:Monchan5454%40@accounting-cluster.nld0j20.mongodb.net/accounting?retryWrites=true&w=majority&appName=accounting-cluster\" npx tsx -e \"\nimport { MongoClient } from ''mongodb'';\nconst client = new MongoClient(process.env.MONGODB_URI);\nawait client.connect();\nconst db = client.db(''accounting'');\n\n// FAQコレクションの構造確認\nconst faq = await db.collection(''faq_articles'').findOne();\nconsole.log(''FAQ サンプル構造:'', Object.keys(faq || {}));\n\n// ナレッジコレクション確認\nconst knowledgeExists = await db.collection(''knowledgeArticles'').findOne();\nconsole.log(''knowledgeArticles サンプル:'', Object.keys(knowledgeExists || {}));\n\nawait client.close();\n\")",
       "Bash(MONGODB_URI=\"mongodb+srv://accounting-user:Monchan5454%40@accounting-cluster.nld0j20.mongodb.net/accounting?retryWrites=true&w=majority&appName=accounting-cluster\" npx tsx scripts/setup-vector-search.ts)",
       "Bash(./scripts/setup-nlweb-env.sh:*)",
       "Bash(npx shadcn-ui@latest add:*)",
@@ -137,8 +136,70 @@
       "WebFetch(domain:accounting-automation-effectmoes-projects.vercel.app)",
       "Bash(git restore:*)",
       "WebFetch(domain:accounting-automation-ecrmxyrdd-effectmoes-projects.vercel.app)",
-      "WebFetch(domain:accounting-automation-jk8r8jfc1-effectmoes-projects.vercel.app)"
+      "WebFetch(domain:accounting-automation-jk8r8jfc1-effectmoes-projects.vercel.app)",
+      "Bash(claude:*)",
+      "mcp__notion-high-res__update_notion_markdown",
+      "Bash(xxd)",
+      "Bash(cp /tmp/package/files/noto-sans-jp-japanese-400-normal.woff /Users/tonychustudio/ai-accounting-system/public/fonts/NotoSansJP-Regular.woff)",
+      "Bash(cp /tmp/package/files/noto-sans-jp-japanese-700-normal.woff /Users/tonychustudio/ai-accounting-system/public/fonts/NotoSansJP-Bold.woff)",
+      "Bash(cp /tmp/package/files/noto-sans-jp-latin-400-normal.woff /Users/tonychustudio/ai-accounting-system/public/fonts/NotoSansJP-Latin-Regular.woff)",
+      "Bash(cp /tmp/package/files/noto-sans-jp-latin-700-normal.woff /Users/tonychustudio/ai-accounting-system/public/fonts/NotoSansJP-Latin-Bold.woff)"
     ],
     "deny": []
-  }
+  },
+  "enabledMcpjsonServers": [
+    "notion",
+    "playwright",
+    "excalidraw",
+    "pencil",
+    "canva-dev",
+    "obsidian_fs",
+    "memory-search",
+    "notebooklm-mcp",
+    "notion-high-res",
+    "gws",
+    "openclaw-monitor",
+    "n8n-openclaw"
+  ],
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd /Users/tonychustudio/ai-accounting-system && git diff --quiet HEAD && exit 0; git add -u && git diff --cached --quiet && exit 0; git commit -m \"auto: $(date '+%Y-%m-%d %H:%M') session changes\" && git push"
+          }
+        ]
+      }
+    ]
+  },
+  "disabledMcpjsonServers": [
+    "BetterBugs",
+    "ClaudeTalkToFigma",
+    "Jam",
+    "Taskmagic",
+    "assemblyai",
+    "brave-search",
+    "browser-tools",
+    "chrome-devtools",
+    "claude-ops-mcp",
+    "coderabbitai",
+    "crawl4ai",
+    "filesystem",
+    "firecrawl",
+    "ghostty",
+    "google-tasks",
+    "manga-translator",
+    "midscene",
+    "napkin-ai",
+    "obsidian",
+    "ollama",
+    "perplexity-mcp",
+    "prompt-gateway",
+    "qwen3-vl",
+    "raycast",
+    "sentry",
+    "serena",
+    "tavily"
+  ]
 }
