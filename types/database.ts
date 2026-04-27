@@ -1,4 +1,4 @@
-import { ObjectId } from 'mongodb';
+import type { ObjectId } from 'mongodb';
 
 // 基本的なドキュメント型
 export interface BaseDocument {

@@ -4,7 +4,7 @@
  * Comprehensive type definitions for OCR processing throughout the application
  */
 
-import { ObjectId } from 'mongodb';
+import type { ObjectId } from 'mongodb';
 
 /**
  * Document types supported by the system

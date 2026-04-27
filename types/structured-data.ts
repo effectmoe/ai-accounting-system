@@ -1,4 +1,4 @@
-import { ObjectId } from 'mongodb';
+import type { ObjectId } from 'mongodb';
 import { Invoice, Quote, DeliveryNote, FaqArticle, CompanyInfo, Customer } from './collections';
 
 // JSON Schema検証用の型定義

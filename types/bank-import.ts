@@ -2,7 +2,7 @@
  * 銀行インポート関連の型定義
  */
 
-import { ObjectId } from 'mongodb';
+import type { ObjectId } from 'mongodb';
 
 /**
  * インポート済み銀行取引

@@ -1,4 +1,4 @@
-import { ObjectId } from 'mongodb';
+import type { ObjectId } from 'mongodb';
 import type { AccountCategory } from './receipt';
 
 // マッチ対象のフィールド

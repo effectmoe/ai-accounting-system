@@ -1,4 +1,4 @@
-import { ObjectId } from 'mongodb';
+import type { ObjectId } from 'mongodb';
 import { Invoice, InvoiceItem, InvoiceStatus, PaymentMethod } from './collections';
 
 // 定期請求書の頻度

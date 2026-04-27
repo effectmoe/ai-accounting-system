@@ -2,7 +2,7 @@
  * 定期インポート設定の型定義
  */
 
-import { ObjectId } from 'mongodb';
+import type { ObjectId } from 'mongodb';
 
 /**
  * 定期インポート設定

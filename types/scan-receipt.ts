@@ -3,7 +3,7 @@
  * scan-receipt/ フォルダのPDFをOCR処理して領収書登録
  */
 
-import { ObjectId } from 'mongodb';
+import type { ObjectId } from 'mongodb';
 
 // スキャン処理の個別結果
 export interface ScanReceiptItemResult {

@@ -1,4 +1,4 @@
-import { ObjectId } from 'mongodb';
+import type { ObjectId } from 'mongodb';
 import type { ScannedReceiptMetadata } from './scan-receipt';
 
 // 領収書ステータス

@@ -1,4 +1,4 @@
-import { ObjectId } from 'mongodb';
+import type { ObjectId } from 'mongodb';
 import { 
   BaseDocument, 
   TimestampedDocument, 
@@ -518,6 +518,8 @@ export interface Account {
   isActive?: boolean;
   taxRate?: number;
   description?: string;
+  subcategory?: string;    // B/S・P/Lでのサブカテゴリ（例: '流動資産', '販売費及び一般管理費'）
+  shinkokuCode?: string;   // shinkoku互換の4桁勘定科目コード
   createdAt?: Date;
   updatedAt?: Date;
 }
