@@ -67,7 +67,7 @@ export class ReceiptService {
 
         // 顧客情報
         customerId: customer._id!,
-        customerName: `${customer.companyName} 御中`,
+        customerName: customer.companyName,
         customerAddress: this.formatAddress(customer),
 
         // 発行者情報

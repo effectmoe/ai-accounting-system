@@ -115,6 +115,7 @@ export default function EmailSendModal({
   const [error, setError] = useState<string | null>(null);
   const [companyInfo, setCompanyInfo] = useState<any>(null);
   const [emailTemplates, setEmailTemplates] = useState<any[]>([]);
+  const [hasUserClearedCc, setHasUserClearedCc] = useState(false);
 
   // テンプレートに変数を適用する関数
   const applyTemplateVariables = (template: string) => {
@@ -465,7 +466,7 @@ ${formattedPaidDate ? `支払日：${formattedPaidDate}` : ''}
       // 顧客のメール設定に基づいて初期メールアドレスを設定
       const initialEmail = getInitialEmailAddress();
       const initialCc = getInitialCcAddress();
-      
+
       logger.debug('Setting initial email addresses on modal open:', {
         customer: customer ? customer.companyName : 'No customer',
         preference: customer?.emailRecipientPreference || 'not set',
@@ -475,12 +476,26 @@ ${formattedPaidDate ? `支払日：${formattedPaidDate}` : ''}
         hasContacts: customer?.contacts?.length > 0,
         primaryContact: customer?.contacts?.[customer.primaryContactIndex || 0]?.email
       });
-      
+
       setTo(initialEmail);
-      setCc(initialCc);
+
+      // ユーザーがCCを明示的にクリアした場合は初期値を設定しない
+      if (!hasUserClearedCc) {
+        setCc(initialCc);
+      } else {
+        // ユーザーがクリア済みの場合でも、顧客設定が変わった場合は再設定
+        if (customer?.emailRecipientPreference !== 'both' || initialCc === '') {
+          setCc(initialCc);
+          setHasUserClearedCc(false); // リセット
+        }
+      }
+
       setBcc('');
       setAttachPdf(true);
       setError(null);
+    } else {
+      // モーダルが閉じられたときに状態をリセット
+      setHasUserClearedCc(false);
     }
   }, [isOpen, customer, customerEmail]);
 
@@ -533,10 +548,15 @@ ${formattedPaidDate ? `支払日：${formattedPaidDate}` : ''}
                 name="email-cc-field"
                 type="email"
                 value={cc}
-                onChange={(e) => setCc(e.target.value)}
+                onChange={(e) => {
+                  setCc(e.target.value);
+                  if (e.target.value === '') {
+                    setHasUserClearedCc(true);
+                  }
+                }}
                 placeholder="cc@company.com"
                 disabled={isSending}
-                autoComplete="off"
+                autoComplete="new-email"
               />
             </div>
 
@@ -550,7 +570,7 @@ ${formattedPaidDate ? `支払日：${formattedPaidDate}` : ''}
                 onChange={(e) => setBcc(e.target.value)}
                 placeholder="bcc@company.com"
                 disabled={isSending}
-                autoComplete="off"
+                autoComplete="new-email"
               />
             </div>
 

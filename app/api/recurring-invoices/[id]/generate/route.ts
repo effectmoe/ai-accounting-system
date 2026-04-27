@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import clientPromise from '@/lib/mongodb';
+import { getClientPromise } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 import { RecurringInvoice, RecurringInvoiceRelation } from '@/types/recurring-invoice';
 import { Invoice } from '@/types/collections';
@@ -19,7 +19,7 @@ export async function POST(
       throw new ValidationError('Invalid recurring invoice ID');
     }
 
-    const client = await clientPromise;
+    const client = await getClientPromise();
     const db = client.db('accounting-automation');
     const recurringCollection = db.collection<RecurringInvoice>('recurringInvoices');
     const invoiceCollection = db.collection<Invoice>('invoices');

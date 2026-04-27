@@ -2,27 +2,19 @@ import { MongoClient, Db } from 'mongodb';
 import { logger } from '@/lib/logger';
 import { DatabaseError } from '@/lib/standardized-error-handler';
 
-const uri = process.env.MONGODB_URI;
-
-// ビルド時または本番環境でのURI不足時はスキップ
-if (!uri && typeof window === 'undefined' && !process.env.NEXT_PHASE) {
-  // 開発環境でのみエラーを投げる
-  if (process.env.NODE_ENV === 'development') {
-    throw new Error('Please add your MongoDB URI to .env.local');
-  }
+// 遅延評価でURIを取得（ビルド時のエラーを回避）
+function getMongoUri(): string | undefined {
+  return process.env.MONGODB_URI;
 }
 
 let client: MongoClient | null = null;
 let clientPromise: Promise<MongoClient> | null = null;
 
-// ビルド時用のダミープロミス
-if (!uri) {
-  clientPromise = Promise.reject(new DatabaseError('Database connection skipped during build', 'BUILD_SKIP', 503));
-}
-
 export async function connectToDatabase(): Promise<{ client: MongoClient; db: Db }> {
+  const uri = getMongoUri();
+
   if (!uri) {
-    throw new DatabaseError('Database connection skipped during build', 'BUILD_SKIP', 503);
+    throw new DatabaseError('Database connection skipped - MONGODB_URI not configured', 'BUILD_SKIP', 503);
   }
 
   if (!clientPromise) {
@@ -51,5 +43,10 @@ export async function getDatabase(): Promise<Db> {
   return db;
 }
 
-// デフォルトエクスポート（clientPromise）
-export default clientPromise || Promise.reject(new DatabaseError('Database connection skipped during build', 'BUILD_SKIP', 503));
+// デフォルトエクスポート（遅延初期化のため非推奨、connectToDatabase()を使用してください）
+export async function getClientPromise(): Promise<MongoClient> {
+  const { client } = await connectToDatabase();
+  return client;
+}
+
+export default getClientPromise;

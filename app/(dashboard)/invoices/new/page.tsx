@@ -140,7 +140,8 @@ function NewInvoiceContent() {
   const fetchCustomers = async () => {
     try {
       logger.debug('Fetching customers...');
-      const response = await fetch('/api/customers');
+      // 全顧客を取得するためlimitを大きく設定
+      const response = await fetch('/api/customers?limit=1000');
       logger.debug('Response status:', response.status);
       
       if (response.ok) {

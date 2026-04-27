@@ -43,17 +43,28 @@ function getContactPerson(receipt: any): string {
   return contactPerson;
 }
 
-// 顧客名を取得するヘルパー関数
+// 既存の敬称を除去するヘルパー関数
+function stripHonorific(name: string): string {
+  return name.replace(/\s*(御中|様)\s*$/, '').trim();
+}
+
+// 会社名かどうかを判定（株式会社等を含む場合は御中）
+function isCompany(name: string): boolean {
+  const corporateKeywords = ['株式会社', '有限会社', '合同会社', '合資会社', '合名会社', '一般社団法人', '公益社団法人', '一般財団法人', '公益財団法人', 'NPO法人', '社会福祉法人'];
+  return corporateKeywords.some(k => name.includes(k));
+}
+
+// 顧客名を取得するヘルパー関数（敬称なしの純粋な名称を返す）
 function getCustomerName(receipt: any): string {
   const customerSnapshot = receipt.customerSnapshot || {};
 
   // パターン1: customerSnapshot.companyName
   if (customerSnapshot.companyName) {
-    return customerSnapshot.companyName;
+    return stripHonorific(customerSnapshot.companyName);
   }
   // パターン2: customerName (レガシー)
   else if (receipt.customerName) {
-    return receipt.customerName;
+    return stripHonorific(receipt.customerName);
   }
 
   return '顧客名未設定';
@@ -65,8 +76,9 @@ function generatePurpose(receipt: any): string {
   if (receipt.purpose) {
     return receipt.purpose;
   }
-  if (receipt.notes) {
-    return receipt.notes;
+  // subjectフィールド（「XXXの代金として」）を優先
+  if (receipt.subject) {
+    return receipt.subject;
   }
 
   // 商品名から自動生成
@@ -125,6 +137,13 @@ export function generateCompactReceiptHTML(receipt: any, companyInfo: any, showD
   const customerName = getCustomerName(receipt);
   const customerAddress = buildCustomerAddress(receipt);
   const contactPerson = getContactPerson(receipt);
+
+  // 敬称を決定: 担当者名あり → 担当者名に「様」、会社のみ → 「御中」、個人 → 「様」
+  const honorificDisplay = contactPerson
+    ? `${customerName}<br>${contactPerson} 様`
+    : isCompany(customerName)
+      ? `${customerName} 御中`
+      : `${customerName} 様`;
 
   const formatCurrency = (amount: number) => {
     if (amount === null || amount === undefined) return '¥0';
@@ -340,7 +359,7 @@ export function generateCompactReceiptHTML(receipt: any, companyInfo: any, showD
             <div class="bill-to-title">宛先</div>
             <div class="customer-info">
                 <div style="font-size: 16px; font-weight: bold; margin-bottom: 5px;">
-                    ${customerName}${contactPerson ? ' ' + contactPerson : ''} 様
+                    ${honorificDisplay}
                 </div>
                 ${customerAddress ? `<div style="margin-bottom: 5px;">${customerAddress}</div>` : ''}
             </div>

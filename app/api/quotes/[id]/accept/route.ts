@@ -3,7 +3,7 @@ import { connectToDatabase } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 import { logger } from '@/lib/logger';
 import { generateQuotePDF } from '@/lib/pdf-quote-generator-simple';
-import { sendQuoteEmail } from '@/lib/resend-service';
+import { sendQuoteEmail } from '@/lib/gmail-service';
 
 export async function POST(
   request: NextRequest,
@@ -65,7 +65,7 @@ export async function POST(
       }
     });
 
-    // Resendでメール通知を送信
+    // Gmailでメール通知を送信
     try {
       // 会社情報を取得
       const companyInfo = await db.collection('company_info').findOne({});
@@ -170,7 +170,7 @@ ${quote.customer?.email && quote.customer.email.trim() !== '' ? '✓ 顧客に�
         }
       }
     } catch (emailError) {
-      logger.error('Error sending acceptance emails via Resend:', emailError);
+      logger.error('Error sending acceptance emails via Gmail:', emailError);
       // メール送信エラーは承認処理を失敗させない
     }
 

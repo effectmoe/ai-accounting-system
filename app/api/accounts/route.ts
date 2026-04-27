@@ -27,16 +27,17 @@ export async function GET(request: NextRequest) {
       .toArray();
 
     // MongoDBの_idをidに変換し、必要なフィールドをマッピング
+    // 新旧両方のフィールド名に対応（accountCode or code）
     const formattedAccounts: Account[] = accounts.map(account => ({
       id: account._id.toString(),
-      code: account.code || '',
-      name: account.name || '',
-      name_kana: account.name_kana || null,
-      account_type: account.account_type || 'asset',
+      code: account.accountCode || account.code || '',
+      name: account.accountName || account.name || '',
+      name_kana: account.accountNameKana || account.name_kana || null,
+      account_type: account.accountType || account.account_type || 'asset',
       display_name: account.display_name || null,
-      tax_category: account.tax_category || null,
+      tax_category: account.taxCategory || account.tax_category || null,
       balance: account.balance || 0,
-      is_active: account.is_active !== false, // デフォルトはtrue
+      is_active: account.isActive !== undefined ? account.isActive : (account.is_active !== false),
     }));
 
     return NextResponse.json({

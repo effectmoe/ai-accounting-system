@@ -123,3 +123,7 @@ env/
 *.dll
 *.pth
 *.bin
+# macOS system files
+.DS_Store
+Thumbs.db
+__MACOSX/

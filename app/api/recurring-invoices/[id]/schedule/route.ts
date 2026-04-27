@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import clientPromise from '@/lib/mongodb';
+import { getClientPromise } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
 import { RecurringInvoice, RecurringInvoiceSchedule } from '@/types/recurring-invoice';
 import { sanitizeLog } from '@/lib/log-sanitizer';
@@ -17,7 +17,7 @@ export async function GET(
       throw new ValidationError('Invalid recurring invoice ID');
     }
 
-    const client = await clientPromise;
+    const client = await getClientPromise();
     const db = client.db('accounting-automation');
     const collection = db.collection<RecurringInvoice>('recurringInvoices');
 
@@ -135,7 +135,7 @@ export async function PUT(
       throw new ValidationError('Installment number is required');
     }
 
-    const client = await clientPromise;
+    const client = await getClientPromise();
     const db = client.db('accounting-automation');
     
     // 定期請求書の確認

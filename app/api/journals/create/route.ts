@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/mongodb-client';
 import { ObjectId } from 'mongodb';
+import { getCodeByAccountName } from '@/lib/shinkoku-account-map';
 
 import { logger } from '@/lib/logger';
 export async function POST(request: NextRequest) {
@@ -105,6 +106,10 @@ export async function POST(request: NextRequest) {
     const journalCount = await db.count('journals', { companyId });
     const journalNumber = `J${new Date().getFullYear()}${String(journalCount + 1).padStart(5, '0')}`;
 
+    // 勘定科目名から4桁コードを解決
+    const debitCode = getCodeByAccountName(finalDebitAccount) || '5222'; // デフォルト: 雑費
+    const creditCode = getCodeByAccountName(finalCreditAccount) || '1110'; // デフォルト: 現金
+
     // 仕訳データを作成
     const journalEntry = {
       companyId,
@@ -116,7 +121,7 @@ export async function POST(request: NextRequest) {
       sourceDocumentId: documentId ? new ObjectId(documentId) : null,
       lines: [
         {
-          accountCode: '605', // 仮の勘定科目コード
+          accountCode: debitCode,
           accountName: finalDebitAccount,
           debitAmount: amount,
           creditAmount: 0,
@@ -125,7 +130,7 @@ export async function POST(request: NextRequest) {
           isTaxIncluded: isTaxIncluded !== false
         },
         {
-          accountCode: '100', // 仮の勘定科目コード（現金）
+          accountCode: creditCode,
           accountName: finalCreditAccount,
           debitAmount: 0,
           creditAmount: amount,

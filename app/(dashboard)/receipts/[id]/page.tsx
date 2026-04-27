@@ -730,30 +730,30 @@ export default function ReceiptDetailPage({ params }: { params: { id: string } }
                 <>
                   <div>
                     <label className="text-sm font-medium text-muted-foreground">会社名</label>
-                    <p className="font-medium">{receipt.companySnapshot.companyName}</p>
+                    <p className="font-medium">{receipt.companySnapshot?.companyName || receipt.issuerName || '（未設定）'}</p>
                   </div>
-                  {receipt.companySnapshot.address && (
+                  {(receipt.companySnapshot?.address || receipt.issuerAddress) && (
                     <div>
                       <label className="text-sm font-medium text-muted-foreground">住所</label>
-                      <p className="text-sm whitespace-pre-wrap">{receipt.companySnapshot.address}</p>
+                      <p className="text-sm whitespace-pre-wrap">{receipt.companySnapshot?.address || receipt.issuerAddress}</p>
                     </div>
                   )}
-                  {receipt.companySnapshot.phone && (
+                  {(receipt.companySnapshot?.phone || receipt.issuerPhone) && (
                     <div>
                       <label className="text-sm font-medium text-muted-foreground">電話番号</label>
-                      <p className="text-sm">{receipt.companySnapshot.phone}</p>
+                      <p className="text-sm">{receipt.companySnapshot?.phone || receipt.issuerPhone}</p>
                     </div>
                   )}
-                  {receipt.companySnapshot.email && (
+                  {(receipt.companySnapshot?.email || receipt.issuerEmail) && (
                     <div>
                       <label className="text-sm font-medium text-muted-foreground">メールアドレス</label>
-                      <p className="text-sm">{receipt.companySnapshot.email}</p>
+                      <p className="text-sm">{receipt.companySnapshot?.email || receipt.issuerEmail}</p>
                     </div>
                   )}
-                  {receipt.companySnapshot.registrationNumber && (
+                  {(receipt.companySnapshot?.registrationNumber || receipt.issuerRegistrationNumber) && (
                     <div>
                       <label className="text-sm font-medium text-muted-foreground">登録番号</label>
-                      <p className="text-sm font-mono">{receipt.companySnapshot.registrationNumber}</p>
+                      <p className="text-sm font-mono">{receipt.companySnapshot?.registrationNumber || receipt.issuerRegistrationNumber}</p>
                     </div>
                   )}
                 </>

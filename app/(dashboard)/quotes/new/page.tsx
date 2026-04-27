@@ -157,7 +157,8 @@ function NewQuoteContent() {
 
   const fetchCustomers = async () => {
     try {
-      const response = await fetch('/api/customers');
+      // 全顧客を取得するためlimitを大きく設定
+      const response = await fetch('/api/customers?limit=1000');
       if (response.ok) {
         const data = await response.json();
         setCustomers(data.customers || []);

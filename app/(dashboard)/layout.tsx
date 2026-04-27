@@ -5,6 +5,7 @@ import Navigation from '@/components/navigation'
 import { Toaster } from 'react-hot-toast'
 import EnhancedMastraChat from '@/components/EnhancedMastraChat'
 import { AuthProvider } from '@/components/auth-provider'
+import { StartupHealthCheck } from '@/components/startup-health-check'
 // import ChatbotEmbed from '@/components/ChatbotEmbed' // Intercom設定が不完全なため一時的に無効化
 // import { AppInitializer } from './app'
 
@@ -55,6 +56,7 @@ export default function DashboardLayout({
         {children}
       </main>
       <Toaster position="top-right" />
+      <StartupHealthCheck />
       <EnhancedMastraChat />
       {/* <ChatbotEmbed /> */} {/* Intercom設定が不完全なため一時的に無効化 */}
     </AuthProvider>

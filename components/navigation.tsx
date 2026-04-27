@@ -72,6 +72,17 @@ const Navigation = () => {
       ]
     },
     {
+      title: '会計・財務',
+      items: [
+        { href: '/financial-statements', label: '財務諸表' },
+        { href: '/financial-statements/balance-sheet', label: '貸借対照表（B/S）' },
+        { href: '/financial-statements/profit-loss', label: '損益計算書（P/L）' },
+        { href: '/financial-statements/export', label: 'shinkokuエクスポート' },
+        { href: '/journal', label: '仕訳帳' },
+        { href: '/accounts', label: '勘定科目' },
+      ]
+    },
+    {
       title: 'その他',
       items: [
         { href: '/import', label: 'インポート' },
@@ -98,6 +109,18 @@ const Navigation = () => {
         { href: '/recurring-invoices', label: '定期請求書' },
         { href: '/delivery-notes', label: '納品書' },
         { href: '/bank-import', label: '銀行取引インポート' },
+      ]
+    },
+    {
+      label: '会計・財務',
+      dropdown: true,
+      items: [
+        { href: '/financial-statements', label: '財務諸表' },
+        { href: '/financial-statements/balance-sheet', label: '貸借対照表（B/S）' },
+        { href: '/financial-statements/profit-loss', label: '損益計算書（P/L）' },
+        { href: '/financial-statements/export', label: 'shinkokuエクスポート' },
+        { href: '/journal', label: '仕訳帳' },
+        { href: '/accounts', label: '勘定科目' },
       ]
     },
     { href: '/customers', label: '顧客管理' },
