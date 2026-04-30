@@ -248,13 +248,11 @@ function NewQuoteContent() {
 
   const calculateItemAmount = (item: QuoteItem) => {
     if (item.taxRate === -1) {
-      // 内税の場合：税込価格から税額を逆算
-      const taxIncludedAmount = item.quantity * item.unitPrice;
-      const taxAmount = taxIncludedAmount - (taxIncludedAmount / 1.1); // デフォルト10%で計算
-      const amount = taxIncludedAmount - taxAmount;
+      // 内税の場合：税込価格がそのまま小計、税額は0（追加請求なし）
+      const amount = item.quantity * item.unitPrice;
       return {
         amount,
-        taxAmount,
+        taxAmount: 0,
       };
     } else {
       // 通常の外税計算
