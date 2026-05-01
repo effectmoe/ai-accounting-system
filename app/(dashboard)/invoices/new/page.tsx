@@ -695,8 +695,16 @@ function NewInvoiceContent() {
     // 金額と税額を再計算
     if (field === 'quantity' || field === 'unitPrice' || field === 'taxRate') {
       const item = newItems[index];
-      item.amount = item.quantity * item.unitPrice;
-      item.taxAmount = Math.floor(item.amount * item.taxRate);
+      if (item.taxRate === -1) {
+        // 内税：税込価格から税額を逆算
+        const taxIncluded = item.quantity * item.unitPrice;
+        const taxAmount = taxIncluded - Math.floor(taxIncluded / 1.1);
+        item.amount = taxIncluded - taxAmount;
+        item.taxAmount = taxAmount;
+      } else {
+        item.amount = item.quantity * item.unitPrice;
+        item.taxAmount = Math.floor(item.amount * item.taxRate);
+      }
     }
     
     setItems(newItems);
@@ -1388,13 +1396,14 @@ function NewInvoiceContent() {
                       <div className="col-span-5 flex items-center gap-2 text-sm text-gray-600">
                         <span>消費税率:</span>
                         <select
-                          value={item.taxRate}
+                          value={String(item.taxRate)}
                           onChange={(e) => updateItem(index, 'taxRate', parseFloat(e.target.value))}
                           className="rounded-md border border-gray-200 bg-white px-2 py-1 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                         >
-                          <option value={0.10}>10%</option>
-                          <option value={0.08}>8%（軽減税率）</option>
-                          <option value={0.00}>0%（非課税）</option>
+                          <option value="0.1">10%（標準税率）</option>
+                          <option value="0.08">8%（軽減税率）</option>
+                          <option value="0">0%（非課税）</option>
+                          <option value="-1">内税（税込価格から逆算）</option>
                         </select>
                       </div>
                       <div className="col-span-7 flex justify-end items-center gap-6 text-sm">

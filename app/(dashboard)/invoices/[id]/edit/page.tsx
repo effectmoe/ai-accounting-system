@@ -325,13 +325,19 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
     if (field === 'quantity' || field === 'unitPrice' || field === 'taxRate') {
       const quantity = field === 'quantity' ? Number(value) || 0 : newItems[index].quantity || 0;
       const unitPrice = field === 'unitPrice' ? Number(value) || 0 : newItems[index].unitPrice || 0;
-      const taxRate = field === 'taxRate' ? Number(value) || 0 : newItems[index].taxRate || 0;
+      const taxRate = field === 'taxRate' ? Number(value) : newItems[index].taxRate;
 
-      const amount = Math.floor(quantity * unitPrice);
-      const taxAmount = Math.floor(amount * taxRate);
-
-      newItems[index].amount = amount;
-      newItems[index].taxAmount = taxAmount;
+      if (taxRate === -1) {
+        // 内税：税込価格から税額を逆算
+        const taxIncluded = Math.floor(quantity * unitPrice);
+        const taxAmount = taxIncluded - Math.floor(taxIncluded / 1.1);
+        newItems[index].amount = taxIncluded - taxAmount;
+        newItems[index].taxAmount = taxAmount;
+      } else {
+        const amount = Math.floor(quantity * unitPrice);
+        newItems[index].amount = amount;
+        newItems[index].taxAmount = Math.floor(amount * (taxRate || 0));
+      }
     }
 
     setItems(newItems);
@@ -902,13 +908,14 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
                       <div>
                         <label className="block text-xs font-medium text-gray-700 mb-1">税率</label>
                         <select
-                          value={item.taxRate}
+                          value={String(item.taxRate)}
                           onChange={(e) => updateItem(index, 'taxRate', parseFloat(e.target.value))}
                           className="w-full px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-center"
                         >
-                          <option value="0">0%</option>
-                          <option value="0.08">8%</option>
-                          <option value="0.1">10%</option>
+                          <option value="0.1">10%（標準税率）</option>
+                          <option value="0.08">8%（軽減税率）</option>
+                          <option value="0">0%（非課税）</option>
+                          <option value="-1">内税（税込価格から逆算）</option>
                         </select>
                       </div>
                       

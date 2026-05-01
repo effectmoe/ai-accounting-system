@@ -2,7 +2,7 @@ import jsPDF from 'jspdf';
 
 // 日本語フォントのBase64データ（NotoSansJP-Regular）
 // 実際のプロダクションでは、外部ファイルから読み込むか、CDNから取得することを推奨
-const JAPANESE_FONT_URL = 'https://fonts.gstatic.com/ea/notosansjp/v5/NotoSansJP-Regular.otf';
+const JAPANESE_FONT_URL = 'https://fonts.gstatic.com/s/notosansjp/v56/-F6jfjtqLzI2JPCgQBnw7HFyzSD-AsregP8VFBEj75s.ttf';
 
 export async function generateInvoicePDF(invoice: any, companyInfo: any): Promise<Buffer> {
   const doc = new jsPDF({
