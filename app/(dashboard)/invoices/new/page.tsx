@@ -696,11 +696,9 @@ function NewInvoiceContent() {
     if (field === 'quantity' || field === 'unitPrice' || field === 'taxRate') {
       const item = newItems[index];
       if (item.taxRate === -1) {
-        // 内税：税込価格から税額を逆算
-        const taxIncluded = item.quantity * item.unitPrice;
-        const taxAmount = taxIncluded - Math.floor(taxIncluded / 1.1);
-        item.amount = taxIncluded - taxAmount;
-        item.taxAmount = taxAmount;
+        // 内税：税込価格がそのまま小計、税額は0（追加請求なし）
+        item.amount = item.quantity * item.unitPrice;
+        item.taxAmount = 0;
       } else {
         item.amount = item.quantity * item.unitPrice;
         item.taxAmount = Math.floor(item.amount * item.taxRate);

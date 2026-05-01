@@ -328,11 +328,9 @@ function EditInvoiceContent({ params }: { params: { id: string } }) {
       const taxRate = field === 'taxRate' ? Number(value) : newItems[index].taxRate;
 
       if (taxRate === -1) {
-        // 内税：税込価格から税額を逆算
-        const taxIncluded = Math.floor(quantity * unitPrice);
-        const taxAmount = taxIncluded - Math.floor(taxIncluded / 1.1);
-        newItems[index].amount = taxIncluded - taxAmount;
-        newItems[index].taxAmount = taxAmount;
+        // 内税：税込価格がそのまま小計、税額は0（追加請求なし）
+        newItems[index].amount = Math.floor(quantity * unitPrice);
+        newItems[index].taxAmount = 0;
       } else {
         const amount = Math.floor(quantity * unitPrice);
         newItems[index].amount = amount;
