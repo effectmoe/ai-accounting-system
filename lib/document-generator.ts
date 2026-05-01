@@ -5,7 +5,9 @@ export interface DocumentItem {
   quantity: number;
   unitPrice: number;
   taxRate?: number;
+  taxAmount?: number;
   amount: number;
+  unit?: string;
 }
 
 export interface DocumentData {

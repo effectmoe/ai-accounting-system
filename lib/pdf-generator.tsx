@@ -7,11 +7,11 @@ Font.register({
   family: 'NotoSansJP',
   fonts: [
     {
-      src: 'https://fonts.gstatic.com/ea/notosansjp/v5/NotoSansJP-Regular.otf',
+      src: 'https://fonts.gstatic.com/s/notosansjp/v56/-F6jfjtqLzI2JPCgQBnw7HFyzSD-AsregP8VFBEj75s.ttf',
       fontWeight: 400,
     },
     {
-      src: 'https://fonts.gstatic.com/ea/notosansjp/v5/NotoSansJP-Bold.otf',
+      src: 'https://fonts.gstatic.com/s/notosansjp/v56/-F6jfjtqLzI2JPCgQBnw7HFyzSD-AsregP8VFPYk75s.ttf',
       fontWeight: 700,
     },
   ],
@@ -102,6 +102,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 5,
   },
   col4: {
+    flex: 2,
+    textAlign: 'right',
+    paddingHorizontal: 5,
+  },
+  col5: {
+    flex: 2,
+    textAlign: 'right',
+    paddingHorizontal: 5,
+  },
+  col6: {
     flex: 2,
     textAlign: 'right',
     paddingHorizontal: 5,
@@ -204,7 +214,9 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, companyInfo }) 
             <Text style={styles.col1}>品目・仕様</Text>
             <Text style={styles.col2}>数量</Text>
             <Text style={styles.col3}>単価</Text>
-            <Text style={styles.col4}>金額</Text>
+            <Text style={styles.col4}>小計</Text>
+            <Text style={styles.col5}>消費税</Text>
+            <Text style={styles.col6}>金額（税込）</Text>
           </View>
 
           {invoice.items.map((item: any, index: number) => (
@@ -213,6 +225,8 @@ export const InvoicePDF: React.FC<InvoicePDFProps> = ({ invoice, companyInfo }) 
               <Text style={styles.col2}>{item.quantity}</Text>
               <Text style={styles.col3}>¥{(item.unitPrice || 0).toLocaleString()}</Text>
               <Text style={styles.col4}>¥{(item.amount || 0).toLocaleString()}</Text>
+              <Text style={styles.col5}>¥{(item.taxAmount || 0).toLocaleString()}</Text>
+              <Text style={styles.col6}>¥{((item.amount || 0) + (item.taxAmount || 0)).toLocaleString()}</Text>
             </View>
           ))}
         </View>
