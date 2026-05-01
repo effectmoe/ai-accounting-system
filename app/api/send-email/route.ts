@@ -23,6 +23,8 @@ interface EmailRequest {
   body?: string;
   attachPdf?: boolean;
   pdfBase64?: string; // クライアントで生成されたPDFのBase64データ
+  pdfContentType?: string; // 添付ファイルのContent-Type（デフォルト: application/pdf）
+  pdfFilename?: string; // 添付ファイル名（デフォルト: documentNumber.pdf）
 }
 
 // Gmail設定状態のログ出力
@@ -278,7 +280,7 @@ export async function POST(request: NextRequest) {
   try {
     const body: EmailRequest = await request.json();
     logger.debug('Request body:', body);
-    const { documentType, documentId, to, cc, bcc, subject, body: customBody, attachPdf = true, pdfBase64 } = body;
+    const { documentType, documentId, to, cc, bcc, subject, body: customBody, attachPdf = true, pdfBase64, pdfContentType, pdfFilename } = body;
 
     // ドキュメントを取得
     logger.debug('Fetching document...', { documentType, documentId });
@@ -500,9 +502,9 @@ export async function POST(request: NextRequest) {
       if (pdfBase64) {
         logger.debug('Using client-generated PDF, size:', pdfBase64.length);
         const attachment = {
-          filename: `${documentData.documentNumber}.pdf`,
+          filename: pdfFilename || `${documentData.documentNumber}.pdf`,
           content: pdfBase64,
-          contentType: 'application/pdf',
+          contentType: pdfContentType || 'application/pdf',
         };
         attachments.push(attachment);
         logger.debug('Client PDF attachment added to array');
