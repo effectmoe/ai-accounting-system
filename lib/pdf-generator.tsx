@@ -380,9 +380,11 @@ export const DocumentPDF: React.FC<{ data: any }> = ({ data }) => {
         <View style={styles.table}>
           <View style={styles.tableHeader}>
             <Text style={[styles.tableCell, { flex: 3 }]}>品目・仕様</Text>
-            <Text style={[styles.tableCell, { flex: 1, textAlign: 'center' }]}>数量</Text>
+            <Text style={[styles.tableCell, { flex: 0.7, textAlign: 'center' }]}>数量</Text>
             <Text style={[styles.tableCell, { flex: 1, textAlign: 'right' }]}>単価</Text>
-            <Text style={[styles.tableCell, { flex: 1, textAlign: 'right' }]}>金額</Text>
+            <Text style={[styles.tableCell, { flex: 1, textAlign: 'right' }]}>小計</Text>
+            <Text style={[styles.tableCell, { flex: 1, textAlign: 'right' }]}>消費税</Text>
+            <Text style={[styles.tableCell, { flex: 1.3, textAlign: 'right' }]}>金額（税込）</Text>
           </View>
 
           {data.items?.map((item: any, index: number) => (
@@ -396,9 +398,11 @@ export const DocumentPDF: React.FC<{ data: any }> = ({ data }) => {
                   <Text style={{ fontSize: 7, color: '#888', marginTop: 2 }}>※ {item.notes}</Text>
                 )}
               </View>
-              <Text style={[styles.tableCell, { flex: 1, textAlign: 'right' }]}>{item.quantity}</Text>
-              <Text style={[styles.tableCell, { flex: 1, textAlign: 'right' }]}>¥{item.unitPrice.toLocaleString()}</Text>
-              <Text style={[styles.tableCell, { flex: 1, textAlign: 'right' }]}>¥{item.amount.toLocaleString()}</Text>
+              <Text style={[styles.tableCell, { flex: 0.7, textAlign: 'right' }]}>{item.quantity}</Text>
+              <Text style={[styles.tableCell, { flex: 1, textAlign: 'right' }]}>¥{(item.unitPrice || 0).toLocaleString()}</Text>
+              <Text style={[styles.tableCell, { flex: 1, textAlign: 'right' }]}>¥{(item.amount || 0).toLocaleString()}</Text>
+              <Text style={[styles.tableCell, { flex: 1, textAlign: 'right' }]}>¥{(item.taxAmount || 0).toLocaleString()}</Text>
+              <Text style={[styles.tableCell, { flex: 1.3, textAlign: 'right' }]}>¥{((item.amount || 0) + (item.taxAmount || 0)).toLocaleString()}</Text>
             </View>
           ))}
         </View>
@@ -550,9 +554,11 @@ export const DeliveryNotePDF = ({ deliveryNote, customer }: { deliveryNote: any,
         <View style={styles.table}>
           <View style={styles.tableHeader}>
             <Text style={[styles.tableCell, { flex: 3 }]}>品目・仕様</Text>
-            <Text style={[styles.tableCell, { flex: 1, textAlign: 'center' }]}>数量</Text>
+            <Text style={[styles.tableCell, { flex: 0.7, textAlign: 'center' }]}>数量</Text>
             <Text style={[styles.tableCell, { flex: 1, textAlign: 'right' }]}>単価</Text>
-            <Text style={[styles.tableCell, { flex: 1, textAlign: 'right' }]}>金額</Text>
+            <Text style={[styles.tableCell, { flex: 1, textAlign: 'right' }]}>小計</Text>
+            <Text style={[styles.tableCell, { flex: 1, textAlign: 'right' }]}>消費税</Text>
+            <Text style={[styles.tableCell, { flex: 1.3, textAlign: 'right' }]}>金額（税込）</Text>
           </View>
 
           {data.items?.map((item: any, index: number) => (
@@ -566,9 +572,11 @@ export const DeliveryNotePDF = ({ deliveryNote, customer }: { deliveryNote: any,
                   <Text style={{ fontSize: 7, color: '#888', marginTop: 2 }}>※ {item.notes}</Text>
                 )}
               </View>
-              <Text style={[styles.tableCell, { flex: 1, textAlign: 'right' }]}>{item.quantity}</Text>
-              <Text style={[styles.tableCell, { flex: 1, textAlign: 'right' }]}>¥{item.unitPrice.toLocaleString()}</Text>
-              <Text style={[styles.tableCell, { flex: 1, textAlign: 'right' }]}>¥{item.amount.toLocaleString()}</Text>
+              <Text style={[styles.tableCell, { flex: 0.7, textAlign: 'right' }]}>{item.quantity}</Text>
+              <Text style={[styles.tableCell, { flex: 1, textAlign: 'right' }]}>¥{(item.unitPrice || 0).toLocaleString()}</Text>
+              <Text style={[styles.tableCell, { flex: 1, textAlign: 'right' }]}>¥{(item.amount || 0).toLocaleString()}</Text>
+              <Text style={[styles.tableCell, { flex: 1, textAlign: 'right' }]}>¥{(item.taxAmount || 0).toLocaleString()}</Text>
+              <Text style={[styles.tableCell, { flex: 1.3, textAlign: 'right' }]}>¥{((item.amount || 0) + (item.taxAmount || 0)).toLocaleString()}</Text>
             </View>
           ))}
         </View>
