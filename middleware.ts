@@ -25,17 +25,32 @@ export function middleware(request: NextRequest) {
         headers: {
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-LLM-Wiki-Key',
           'Access-Control-Max-Age': '86400',
         },
       });
+    }
+
+    // 書き込み操作はAPIキー認証が必要
+    const writeMethods = ['POST', 'PUT', 'PATCH', 'DELETE'];
+    if (writeMethods.includes(request.method)) {
+      const apiKey = process.env.LLM_WIKI_API_KEY;
+      if (apiKey) {
+        const providedKey = request.headers.get('X-LLM-Wiki-Key');
+        if (providedKey !== apiKey) {
+          return NextResponse.json(
+            { error: 'Unauthorized: Invalid or missing X-LLM-Wiki-Key header' },
+            { status: 401 }
+          );
+        }
+      }
     }
 
     // 通常のAPIリクエストにCORSヘッダーを追加
     const response = NextResponse.next();
     response.headers.set('Access-Control-Allow-Origin', '*');
     response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-LLM-Wiki-Key');
     return response;
   }
 
