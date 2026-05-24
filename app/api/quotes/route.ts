@@ -50,45 +50,60 @@ export async function POST(request: NextRequest) {
     
     const quoteService = new QuoteService();
     
-    // データの前処理：フロントエンドのdescriptionをitemNameに変換
-    const processedItems = body.items.map((item: any) => ({
-      ...item,
-      itemName: item.itemName || '',
-      description: item.description || '',
-      totalAmount: item.amount + item.taxAmount,
-      sortOrder: 0
-    }));
-    
+    // データの前処理：amount/taxAmountが未指定の場合はquantity*unitPriceから計算
+    const processedItems = body.items.map((item: any) => {
+      const quantity = Number(item.quantity) || 0;
+      const unitPrice = Number(item.unitPrice) || 0;
+      const taxRate = item.taxRate !== undefined ? Number(item.taxRate) : 10;
+      const amount = item.amount !== undefined ? Number(item.amount) : Math.round(quantity * unitPrice);
+      const taxAmount = item.taxAmount !== undefined ? Number(item.taxAmount) : Math.round(amount * taxRate / 100);
+      return {
+        ...item,
+        itemName: item.itemName || '',
+        description: item.description || '',
+        amount,
+        taxAmount,
+        totalAmount: amount + taxAmount,
+        sortOrder: item.sortOrder ?? 0,
+      };
+    });
+
     // 見積書番号を生成（body.quoteNumberが指定されていない場合）
     const quoteNumber = body.quoteNumber || await quoteService.generateQuoteNumber();
-    
+
     // quoteDateを除外してquoteDataを作成
     const { quoteDate, ...restBody } = body;
-    
-    const quoteData = {
-      ...restBody,
-      quoteNumber,
-      items: processedItems,
-      issueDate: new Date(quoteDate), // フロントエンドのquoteDateをissueDateに変換
-      validityDate: new Date(body.validityDate),
-      status: body.status || 'draft', // デフォルトステータスを設定
-      subtotal: 0, // 後で計算
-      taxAmount: 0, // 後で計算
-      totalAmount: 0, // 後で計算
-    };
-    
+
+    // issueDate: quoteDate（フロントエンド）→ issueDate（MCP）→ 今日の日付 の優先順で決定
+    const issueDate = quoteDate
+      ? new Date(quoteDate)
+      : (body.issueDate ? new Date(body.issueDate) : new Date());
+
+    // validityDate: validityDate → validUntil → 30日後 の優先順で決定
+    const validityDate = body.validityDate
+      ? new Date(body.validityDate)
+      : (body.validUntil ? new Date(body.validUntil) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000));
+
     // 合計金額を計算
     let subtotal = 0;
     let taxAmount = 0;
-    
+
     processedItems.forEach((item: any) => {
       subtotal += item.amount || 0;
       taxAmount += item.taxAmount || 0;
     });
-    
-    quoteData.subtotal = subtotal;
-    quoteData.taxAmount = taxAmount;
-    quoteData.totalAmount = subtotal + taxAmount;
+
+    const quoteData = {
+      ...restBody,
+      quoteNumber,
+      items: processedItems,
+      issueDate,
+      validityDate,
+      status: body.status || 'draft',
+      subtotal,
+      taxAmount,
+      totalAmount: subtotal + taxAmount,
+    };
     
     logger.debug('Processed quote data:', JSON.stringify(quoteData, null, 2));
     

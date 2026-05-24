@@ -137,7 +137,34 @@ export async function PATCH(
     logger.debug('[PATCH /api/quotes/[id]] Partial update data:', JSON.stringify(body, null, 2));
     
     const quoteService = new QuoteService();
-    
+
+    // itemsが含まれる場合は集計を再計算
+    if (body.items) {
+      body.items = body.items.map((item: any) => {
+        const quantity = Number(item.quantity) || 0;
+        const unitPrice = Number(item.unitPrice) || 0;
+        const taxRate = item.taxRate !== undefined ? Number(item.taxRate) : 10;
+        const amount = item.amount !== undefined ? Number(item.amount) : Math.round(quantity * unitPrice);
+        const taxAmount = item.taxAmount !== undefined ? Number(item.taxAmount) : Math.round(amount * taxRate / 100);
+        return { ...item, amount, taxAmount, totalAmount: amount + taxAmount };
+      });
+
+      let subtotal = 0;
+      let patchTaxAmount = 0;
+      body.items.forEach((item: any) => {
+        subtotal += item.amount || 0;
+        patchTaxAmount += item.taxAmount || 0;
+      });
+      body.subtotal = subtotal;
+      body.taxAmount = patchTaxAmount;
+      body.totalAmount = subtotal + patchTaxAmount;
+    }
+
+    // issueDateが指定されている場合はDateオブジェクトに変換
+    if (body.issueDate) {
+      body.issueDate = new Date(body.issueDate);
+    }
+
     // HTMLコンテンツやカスタムメッセージなどの部分更新
     const updatedQuote = await quoteService.updateQuote(id, body);
     
