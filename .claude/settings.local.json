@@ -145,10 +145,25 @@
       "Bash(cp /tmp/package/files/noto-sans-jp-latin-400-normal.woff /Users/tonychustudio/ai-accounting-system/public/fonts/NotoSansJP-Latin-Regular.woff)",
       "Bash(cp /tmp/package/files/noto-sans-jp-latin-700-normal.woff /Users/tonychustudio/ai-accounting-system/public/fonts/NotoSansJP-Latin-Bold.woff)",
       "mcp__notion-high-res__get_notion_database_high_res",
-      "Bash(kill -HUP 14657)"
+      "Bash(kill -HUP 14657)",
+      "mcp__notion-high-res__get_notion_high_res"
     ],
     "deny": []
   },
+  "enabledMcpjsonServers": [
+    "openclaw-monitor",
+    "n8n-openclaw",
+    "gws",
+    "notion-high-res",
+    "notebooklm-mcp",
+    "memory-search",
+    "obsidian_fs",
+    "canva-dev",
+    "pencil",
+    "notion",
+    "excalidraw",
+    "playwright"
+  ],
   "disabledMcpjsonServers": [
     "BetterBugs",
     "ClaudeTalkToFigma",
@@ -189,19 +204,5 @@
         ]
       }
     ]
-  },
-  "enabledMcpjsonServers": [
-    "openclaw-monitor",
-    "n8n-openclaw",
-    "gws",
-    "notion-high-res",
-    "notebooklm-mcp",
-    "memory-search",
-    "obsidian_fs",
-    "canva-dev",
-    "pencil",
-    "notion",
-    "excalidraw",
-    "playwright"
-  ]
+  }
 }
