@@ -10,11 +10,14 @@ interface QuoteOcrFilesProps {
 
 export default function SimpleQuoteOcrFiles({ quoteId, files: initialFiles, onUpdate }: QuoteOcrFilesProps) {
   const [files, setFiles] = useState(initialFiles || []);
-  
+
+  // ocrFilesが空の場合はセクション自体を非表示
+  if (!files.length) return null;
+
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
       <h2 className="text-lg font-semibold text-gray-900 mb-4">OCR元ファイル</h2>
-      
+
       <div className="text-sm text-gray-600 mb-4">
         この見積書はOCRによって自動生成されました。
       </div>

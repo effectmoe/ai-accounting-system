@@ -816,14 +816,16 @@ export default function QuoteDetailPage({ params }: QuoteDetailPageProps) {
         </CardContent>
       </Card>
 
-      {/* OCRファイル */}
-      <div className="mb-6">
-        <SimpleQuoteOcrFiles 
-          quoteId={quote._id || ''} 
-          files={quote.ocrFiles || []}
-          onUpdate={fetchQuote}
-        />
-      </div>
+      {/* OCRファイル: ocrFilesが存在する場合のみ表示 */}
+      {quote.ocrFiles && quote.ocrFiles.length > 0 && (
+        <div className="mb-6">
+          <SimpleQuoteOcrFiles
+            quoteId={quote._id || ''}
+            files={quote.ocrFiles}
+            onUpdate={fetchQuote}
+          />
+        </div>
+      )}
 
       {/* その他情報 */}
       <Card className="mb-6">
