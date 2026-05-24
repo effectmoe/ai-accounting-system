@@ -301,19 +301,19 @@ export const DocumentPDF: React.FC<{ data: any }> = ({ data }) => {
         <View style={styles.infoSection}>
           <View style={styles.customerInfo}>
             {(() => {
-              // 顧客情報と敬称を生成
+              // 顧客情報と敬称を生成（customerNameフォールバック対応）
               const { displayName, hasContactName } = formatCustomerNameWithHonorific(
                 data.customer,
-                data.customerSnapshot
+                data.customerSnapshot ?? (data.customerName ? { companyName: data.customerName } : null)
               );
-              
+
               return displayName.split('\n').map((line: string, i: number) => (
-                <Text 
-                  key={i} 
-                  style={{ 
-                    fontSize: hasContactName && i === 0 ? 12 : 14, 
-                    fontWeight: 700, 
-                    marginBottom: i === 0 && hasContactName ? 2 : 5 
+                <Text
+                  key={i}
+                  style={{
+                    fontSize: hasContactName && i === 0 ? 12 : 14,
+                    fontWeight: 700,
+                    marginBottom: i === 0 && hasContactName ? 2 : 5
                   }}
                 >
                   {line}
@@ -428,7 +428,9 @@ export const DocumentPDF: React.FC<{ data: any }> = ({ data }) => {
           {data.notes && (
             <View>
               <Text style={{ fontWeight: 700, marginBottom: 3, fontSize: 8 }}>備考</Text>
-              <Text style={{ fontSize: 8 }}>{data.notes}</Text>
+              {data.notes.split('\n').map((line: string, i: number) => (
+                <Text key={i} style={{ fontSize: 8 }}>{line}</Text>
+              ))}
             </View>
           )}
         </View>
@@ -482,19 +484,19 @@ export const DeliveryNotePDF = ({ deliveryNote, customer }: { deliveryNote: any,
         <View style={styles.infoSection}>
           <View style={styles.customerInfo}>
             {(() => {
-              // 顧客情報と敬称を生成
+              // 顧客情報と敬称を生成（customerNameフォールバック対応）
               const { displayName, hasContactName } = formatCustomerNameWithHonorific(
                 data.customer,
-                data.customerSnapshot
+                data.customerSnapshot ?? (data.customerName ? { companyName: data.customerName } : null)
               );
-              
+
               return displayName.split('\n').map((line: string, i: number) => (
-                <Text 
-                  key={i} 
-                  style={{ 
-                    fontSize: hasContactName && i === 0 ? 12 : 14, 
-                    fontWeight: 700, 
-                    marginBottom: i === 0 && hasContactName ? 2 : 5 
+                <Text
+                  key={i}
+                  style={{
+                    fontSize: hasContactName && i === 0 ? 12 : 14,
+                    fontWeight: 700,
+                    marginBottom: i === 0 && hasContactName ? 2 : 5
                   }}
                 >
                   {line}
@@ -588,7 +590,9 @@ export const DeliveryNotePDF = ({ deliveryNote, customer }: { deliveryNote: any,
         {data.notes && (
           <View style={{ marginTop: 10 }}>
             <Text style={{ fontWeight: 700, marginBottom: 3, fontSize: 8 }}>備考</Text>
-            <Text style={{ fontSize: 8 }}>{data.notes}</Text>
+            {data.notes.split('\n').map((line: string, i: number) => (
+              <Text key={i} style={{ fontSize: 8 }}>{line}</Text>
+            ))}
           </View>
         )}
       </Page>
