@@ -1,24 +1,3 @@
-## ⚠️ 既知の再発バグ（必ず確認）
-
-### PDF生成フォントURL（要注意）
-
-`lib/pdf-generator.tsx` と `lib/pdf-receipt-generator.tsx` のフォントURLは**必ずGoogle Fonts v56 TTFを使用**すること。
-
-```js
-// ✅ 正しい（2026-04-27 確認済み）
-src: 'https://fonts.gstatic.com/s/notosansjp/v56/-F6jfjtqLzI2JPCgQBnw7HFyzSD-AsregP8VFBEj75s.ttf' // Regular
-src: 'https://fonts.gstatic.com/s/notosansjp/v56/-F6jfjtqLzI2JPCgQBnw7HFyzSD-AsregP8VFPYk75s.ttf' // Bold
-
-// ❌ 禁止（廃止済みパス）
-src: 'https://fonts.gstatic.com/ea/notosansjp/v5/NotoSansJP-Regular.otf'
-// ❌ 禁止（ローカルファイルは破損）
-src: '/fonts/NotoSansJP-Regular.ttf'
-```
-
-**2回再発した原因：修正後にコミット＆デプロイを忘れた。現在は Stop hook で自動コミット済み。**
-
----
-
 ### ファイル構成
 
 ```plain text

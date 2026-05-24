@@ -278,7 +278,7 @@ export async function POST(request: NextRequest) {
   try {
     const body: EmailRequest = await request.json();
     logger.debug('Request body:', body);
-    const { documentType, documentId, to, cc, bcc, subject, body: customBody, attachPdf = true, pdfBase64 } = body;
+    const { documentType, documentId, to, cc, bcc, subject, body: customBody, attachPdf = true, pdfBase64, pdfContentType, pdfFilename } = body as any;
 
     // ドキュメントを取得
     logger.debug('Fetching document...', { documentType, documentId });
@@ -496,16 +496,16 @@ export async function POST(request: NextRequest) {
     if (attachPdf) {
       logger.debug('PDF attachment requested');
       
-      // クライアントから送られたPDFデータがある場合は使用
+      // クライアントから送られた添付データがある場合は使用
       if (pdfBase64) {
-        logger.debug('Using client-generated PDF, size:', pdfBase64.length);
+        logger.debug('Using client-generated attachment, size:', pdfBase64.length);
         const attachment = {
-          filename: `${documentData.documentNumber}.pdf`,
+          filename: pdfFilename || `${documentData.documentNumber}.html`,
           content: pdfBase64,
-          contentType: 'application/pdf',
+          contentType: pdfContentType || 'text/html',
         };
         attachments.push(attachment);
-        logger.debug('Client PDF attachment added to array');
+        logger.debug('Client attachment added to array');
       } else {
         // クライアントからPDFが送られていない場合はサーバー側で生成を試みる
         try {

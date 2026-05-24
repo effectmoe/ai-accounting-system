@@ -228,17 +228,21 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
     .quote-table td:last-child {
       text-align: right;
     }
-    
+
     .quote-table th:nth-child(2),
     .quote-table td:nth-child(2) {
       text-align: center;
-      width: 80px;
+      width: 50px;
     }
-    
+
     .quote-table th:nth-child(3),
-    .quote-table td:nth-child(3) {
+    .quote-table td:nth-child(3),
+    .quote-table th:nth-child(4),
+    .quote-table td:nth-child(4),
+    .quote-table th:nth-child(5),
+    .quote-table td:nth-child(5) {
       text-align: right;
-      width: 120px;
+      width: 100px;
     }
     
     .quote-table td {
@@ -487,27 +491,21 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
           <th>品目・仕様</th>
           <th>数量</th>
           <th>単価</th>
-          <th>金額</th>
+          <th>小計</th>
+          <th>消費税</th>
+          <th>金額（税込）</th>
         </tr>
       </thead>
       <tbody>
-        ${quote.items.map((item: any, index: number) => {
-          // コンソールログで各商品の詳細を確認（一時的）
-          console.log(`Item ${index}:`, {
-            itemName: item.itemName,
-            description: item.description,
-            notes: item.notes,
-            allFields: Object.keys(item).join(', '),
-            descriptionType: typeof item.description,
-            descriptionValue: JSON.stringify(item.description),
-            notesType: typeof item.notes,
-            notesValue: JSON.stringify(item.notes)
-          });
-          
+        ${quote.items.map((item: any) => {
           const description = getItemDescription(item);
           const hasDescription = description && description.toString().trim() !== '';
           const hasNotes = item.notes && item.notes.toString().trim() !== '';
-          
+          const itemSubtotal = item.amount || 0;
+          const itemTax = itemSubtotal * 0.1;
+          const itemTotal = (item.unitPrice || 0) * (item.quantity || 1);
+          const fmt = (v: number) => v.toLocaleString('ja-JP', { maximumFractionDigits: 1 });
+
           return `
             <tr>
               <td>
@@ -520,8 +518,10 @@ export function generateCompactQuoteHTML(quote: any, companyInfo: any, showDescr
                 ` : ''}
               </td>
               <td>${item.quantity || 0}${item.unit || ''}</td>
-              <td>¥${(item.unitPrice || 0).toLocaleString()}</td>
-              <td>¥${(item.amount || 0).toLocaleString()}</td>
+              <td>¥${fmt(item.unitPrice || 0)}</td>
+              <td>¥${fmt(itemSubtotal)}</td>
+              <td>¥${fmt(itemTax)}</td>
+              <td>¥${fmt(itemTotal)}</td>
             </tr>
           `;
         }).join('')}

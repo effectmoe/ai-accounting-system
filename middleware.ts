@@ -31,9 +31,9 @@ export function middleware(request: NextRequest) {
       });
     }
 
-    // 書き込み操作はAPIキー認証が必要
+    // 書き込み操作はAPIキー認証が必要（パブリックパスは除外）
     const writeMethods = ['POST', 'PUT', 'PATCH', 'DELETE'];
-    if (writeMethods.includes(request.method)) {
+    if (!isPublicPath && writeMethods.includes(request.method)) {
       const apiKey = process.env.LLM_WIKI_API_KEY;
       if (apiKey) {
         const providedKey = request.headers.get('X-LLM-Wiki-Key');

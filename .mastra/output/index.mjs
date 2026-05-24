@@ -3,8 +3,8 @@ import { registerHook, AvailableHooks } from '@mastra/core/hooks';
 import { TABLE_EVALS } from '@mastra/core/storage';
 import { checkEvalStorageFields } from '@mastra/core/utils';
 import { Agent, createWorkflow, Workflow, Mastra, generateEmptyFromSchema, Telemetry } from '@mastra/core';
-import { accountingTools } from './tools/16e0a8e8-d7c7-43a1-a232-95af8b775996.mjs';
-import { customerTools } from './tools/5fbb7b3c-e510-443e-98c1-5cdddd562c52.mjs';
+import { accountingTools } from './tools/a4d6b56f-7af8-49ba-87a3-9572351f5a98.mjs';
+import { customerTools } from './tools/51bc5a99-4050-452e-b134-1201d2e49d4e.mjs';
 import { z, ZodFirstPartyTypeKind } from 'zod';
 import { l as logger$1 } from './mongodb-client.mjs';
 import crypto, { randomUUID } from 'crypto';
@@ -14,6 +14,7 @@ import { createServer } from 'http';
 import { Http2ServerRequest } from 'http2';
 import { Readable, Writable } from 'stream';
 import { createReadStream, lstatSync } from 'fs';
+import { join as join$1 } from 'path';
 import { RuntimeContext } from '@mastra/core/runtime-context';
 import { isVercelTool, Tool } from '@mastra/core/tools';
 import { Agent as Agent$1 } from '@mastra/core/agent';
@@ -22,14 +23,30 @@ import { Buffer as Buffer$1 } from 'buffer';
 import { A2AError } from '@mastra/core/a2a';
 import { ReadableStream as ReadableStream$1 } from 'stream/web';
 import { tools } from './tools.mjs';
-import '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/index.js';
-import '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/@sentry/nextjs/build/cjs/index.server.js';
+import '/Users/tonychustudio/ai-accounting-system/node_modules/mongodb/lib/index.js';
+
+const deepseekProvider = {
+  name: "deepseek",
+  apiKey: process.env.DEEPSEEK_API_KEY || "",
+  baseURL: "https://api.deepseek.com/v1",
+  headers: {
+    "Authorization": `Bearer ${process.env.DEEPSEEK_API_KEY}`,
+    "Content-Type": "application/json"
+  },
+  models: {
+    "deepseek-chat": {
+      id: "deepseek-chat",
+      contextWindow: 32768,
+      maxCompletionTokens: 4096
+    }
+  }
+};
 
 const mastraAccountingAgent = new Agent({
   name: "mastra-accounting-agent",
   description: "\u4F1A\u8A08\u51E6\u7406\u30FB\u4ED5\u8A33\u4F5C\u6210\u30FB\u8ACB\u6C42\u66F8\u51E6\u7406\u30FB\u8CA1\u52D9\u30EC\u30DD\u30FC\u30C8\u751F\u6210\u3092\u884C\u3046\u65E5\u672C\u7A0E\u5236\u5BFE\u5FDC\u30A8\u30FC\u30B8\u30A7\u30F3\u30C8",
   model: {
-    provider: "deepseek",
+    provider: deepseekProvider,
     name: "deepseek-chat"
   },
   instructions: `
@@ -52,14 +69,14 @@ const mastraAccountingAgent = new Agent({
 
 \u5E38\u306B\u6B63\u78BA\u3067\u8FC5\u901F\u306A\u4F1A\u8A08\u51E6\u7406\u3092\u63D0\u4F9B\u3057\u3001\u65E5\u672C\u306E\u7A0E\u5236\u306B\u5B8C\u5168\u6E96\u62E0\u3057\u305F\u51E6\u7406\u3092\u884C\u3044\u307E\u3059\u3002
 `,
-  tools: accountingTools
+  getTools: () => accountingTools
 });
 
 const mastraCustomerAgent = new Agent({
   name: "mastra-customer-agent",
   description: "\u9867\u5BA2\u60C5\u5831\u306E\u7BA1\u7406\u30FB\u5206\u6790\u30FB\u30EC\u30DD\u30FC\u30C8\u751F\u6210\u3092\u884C\u3046\u30A8\u30FC\u30B8\u30A7\u30F3\u30C8",
   model: {
-    provider: "deepseek",
+    provider: deepseekProvider,
     name: "deepseek-chat"
   },
   instructions: `
@@ -82,14 +99,14 @@ const mastraCustomerAgent = new Agent({
 
 \u65E5\u672C\u306E\u30D3\u30B8\u30CD\u30B9\u6163\u7FD2\u3092\u7406\u89E3\u3057\u3001\u9069\u5207\u306A\u656C\u8A9E\u3068\u5BFE\u5FDC\u3092\u5FC3\u304C\u3051\u307E\u3059\u3002
 `,
-  tools: customerTools
+  getTools: () => customerTools
 });
 
 const mastraDatabaseAgent = new Agent({
   name: "mastra-database-agent",
   description: "MongoDB\u30C7\u30FC\u30BF\u30D9\u30FC\u30B9\u64CD\u4F5C\u3068\u30C7\u30FC\u30BF\u7BA1\u7406\u3092\u884C\u3046\u30A8\u30FC\u30B8\u30A7\u30F3\u30C8",
   model: {
-    provider: "deepseek",
+    provider: deepseekProvider,
     name: "deepseek-chat"
   },
   instructions: `
@@ -113,7 +130,7 @@ const mastraDatabaseAgent = new Agent({
 
 MongoDB\u306E\u30D9\u30B9\u30C8\u30D7\u30E9\u30AF\u30C6\u30A3\u30B9\u306B\u5F93\u3044\u3001\u52B9\u7387\u7684\u3067\u5B89\u5168\u306A\u30C7\u30FC\u30BF\u64CD\u4F5C\u3092\u63D0\u4F9B\u3057\u307E\u3059\u3002
 `,
-  tools: [
+  getTools: () => [
     {
       name: "execute_query",
       description: "MongoDB\u30AF\u30A8\u30EA\u3092\u5B9F\u884C\u3057\u307E\u3059",
@@ -233,7 +250,7 @@ const mastraDeploymentAgent = new Agent({
   name: "mastra-deployment-agent",
   description: "\u30C7\u30D7\u30ED\u30A4\u30E1\u30F3\u30C8\u3068CI/CD\u7BA1\u7406\u3092\u884C\u3046\u30A8\u30FC\u30B8\u30A7\u30F3\u30C8",
   model: {
-    provider: "deepseek",
+    provider: deepseekProvider,
     name: "deepseek-chat"
   },
   instructions: `
@@ -257,7 +274,7 @@ const mastraDeploymentAgent = new Agent({
 
 \u5B89\u5168\u3067\u4FE1\u983C\u6027\u306E\u9AD8\u3044\u30C7\u30D7\u30ED\u30A4\u30E1\u30F3\u30C8\u30D7\u30ED\u30BB\u30B9\u3092\u63D0\u4F9B\u3057\u307E\u3059\u3002
 `,
-  tools: [
+  getTools: () => [
     {
       name: "create_deployment_pipeline",
       description: "\u30C7\u30D7\u30ED\u30A4\u30E1\u30F3\u30C8\u30D1\u30A4\u30D7\u30E9\u30A4\u30F3\u3092\u4F5C\u6210\u3057\u307E\u3059",
@@ -420,7 +437,7 @@ const mastraJapanTaxAgent = new Agent({
   name: "mastra-japan-tax-agent",
   description: "\u65E5\u672C\u306E\u7A0E\u5236\u306B\u5B8C\u5168\u5BFE\u5FDC\u3057\u305F\u7A0E\u52D9\u8A08\u7B97\u30FB\u7533\u544A\u652F\u63F4\u30A8\u30FC\u30B8\u30A7\u30F3\u30C8",
   model: {
-    provider: "deepseek",
+    provider: deepseekProvider,
     name: "deepseek-chat"
   },
   instructions: `
@@ -445,7 +462,7 @@ const mastraJapanTaxAgent = new Agent({
 \u6700\u65B0\u306E\u7A0E\u5236\u6539\u6B63\u306B\u5BFE\u5FDC\u3057\u3001\u6B63\u78BA\u306A\u7A0E\u52D9\u51E6\u7406\u3092\u63D0\u4F9B\u3057\u307E\u3059\u3002
 \u4EE4\u548C6\u5E74\uFF082024\u5E74\uFF09\u306E\u7A0E\u5236\u306B\u5B8C\u5168\u6E96\u62E0\u3057\u3066\u3044\u307E\u3059\u3002
 `,
-  tools: [
+  getTools: () => [
     {
       name: "calculate_consumption_tax",
       description: "\u6D88\u8CBB\u7A0E\u3092\u8A08\u7B97\u3057\u307E\u3059\uFF08\u8EFD\u6E1B\u7A0E\u7387\u5BFE\u5FDC\uFF09",
@@ -607,7 +624,7 @@ const mastraOcrAgent = new Agent({
   name: "mastra-ocr-agent",
   description: "OCR\u51E6\u7406\u3068\u6587\u66F8\u89E3\u6790\u3092\u884C\u3046\u753B\u50CF\u8A8D\u8B58\u30A8\u30FC\u30B8\u30A7\u30F3\u30C8",
   model: {
-    provider: "deepseek",
+    provider: deepseekProvider,
     name: "deepseek-chat"
   },
   instructions: `
@@ -637,7 +654,7 @@ const mastraOcrAgent = new Agent({
 
 \u9AD8\u7CBE\u5EA6\u306AOCR\u51E6\u7406\u3068\u3001\u6587\u8108\u3092\u7406\u89E3\u3057\u305F\u60C5\u5831\u62BD\u51FA\u3092\u63D0\u4F9B\u3057\u307E\u3059\u3002
 `,
-  tools: [
+  getTools: () => [
     {
       name: "process_document_image",
       description: "\u6587\u66F8\u753B\u50CF\u3092OCR\u51E6\u7406\u3057\u3066\u30C6\u30AD\u30B9\u30C8\u3092\u62BD\u51FA\u3057\u307E\u3059",
@@ -751,7 +768,7 @@ const mastraProblemSolvingAgent = new Agent({
   name: "mastra-problem-solving-agent",
   description: "\u554F\u984C\u89E3\u6C7A\u3068\u30C8\u30E9\u30D6\u30EB\u30B7\u30E5\u30FC\u30C6\u30A3\u30F3\u30B0\u3092\u884C\u3046\u30A8\u30FC\u30B8\u30A7\u30F3\u30C8",
   model: {
-    provider: "deepseek",
+    provider: deepseekProvider,
     name: "deepseek-chat"
   },
   instructions: `
@@ -774,7 +791,7 @@ const mastraProblemSolvingAgent = new Agent({
 
 \u8FC5\u901F\u304B\u3064\u6B63\u78BA\u306A\u554F\u984C\u89E3\u6C7A\u3092\u63D0\u4F9B\u3057\u3001\u5C06\u6765\u306E\u554F\u984C\u3092\u4E88\u9632\u3059\u308B\u63D0\u6848\u3092\u884C\u3044\u307E\u3059\u3002
 `,
-  tools: [
+  getTools: () => [
     {
       name: "diagnose_error",
       description: "\u30A8\u30E9\u30FC\u3092\u8A3A\u65AD\u3057\u307E\u3059",
@@ -942,7 +959,7 @@ const mastraProductAgent = new Agent({
   name: "mastra-product-agent",
   description: "\u5546\u54C1\u30FB\u30B5\u30FC\u30D3\u30B9\u7BA1\u7406\u3068\u5728\u5EAB\u7BA1\u7406\u3092\u884C\u3046\u30A8\u30FC\u30B8\u30A7\u30F3\u30C8",
   model: {
-    provider: "deepseek",
+    provider: deepseekProvider,
     name: "deepseek-chat"
   },
   instructions: `
@@ -966,7 +983,7 @@ const mastraProductAgent = new Agent({
 
 \u65E5\u672C\u306E\u5546\u7FD2\u6163\u306B\u5BFE\u5FDC\u3057\u3001JAN/EAN\u30B3\u30FC\u30C9\u3001\u54C1\u756A\u7BA1\u7406\u3092\u30B5\u30DD\u30FC\u30C8\u3057\u307E\u3059\u3002
 `,
-  tools: [
+  getTools: () => [
     {
       name: "create_product",
       description: "\u65B0\u5546\u54C1\u3092\u767B\u9332\u3057\u307E\u3059",
@@ -1092,7 +1109,7 @@ const mastraRefactorAgent = new Agent({
   name: "mastra-refactor-agent",
   description: "\u30B3\u30FC\u30C9\u30EA\u30D5\u30A1\u30AF\u30BF\u30EA\u30F3\u30B0\u3068\u6700\u9069\u5316\u3092\u884C\u3046\u30A8\u30FC\u30B8\u30A7\u30F3\u30C8",
   model: {
-    provider: "deepseek",
+    provider: deepseekProvider,
     name: "deepseek-chat"
   },
   instructions: `
@@ -1115,7 +1132,7 @@ const mastraRefactorAgent = new Agent({
 
 \u30B3\u30FC\u30C9\u306E\u4FDD\u5B88\u6027\u3001\u53EF\u8AAD\u6027\u3001\u30D1\u30D5\u30A9\u30FC\u30DE\u30F3\u30B9\u3092\u5411\u4E0A\u3055\u305B\u308B\u63D0\u6848\u3092\u884C\u3044\u307E\u3059\u3002
 `,
-  tools: [
+  getTools: () => [
     {
       name: "analyze_code_quality",
       description: "\u30B3\u30FC\u30C9\u54C1\u8CEA\u3092\u5206\u6790\u3057\u307E\u3059",
@@ -1274,7 +1291,7 @@ const mastraUiAgent = new Agent({
   name: "mastra-ui-agent",
   description: "UI\u30B3\u30F3\u30DD\u30FC\u30CD\u30F3\u30C8\u751F\u6210\u3068\u30E6\u30FC\u30B6\u30FC\u30A4\u30F3\u30BF\u30FC\u30D5\u30A7\u30FC\u30B9\u7BA1\u7406\u30A8\u30FC\u30B8\u30A7\u30F3\u30C8",
   model: {
-    provider: "deepseek",
+    provider: deepseekProvider,
     name: "deepseek-chat"
   },
   instructions: `
@@ -1298,7 +1315,7 @@ const mastraUiAgent = new Agent({
 
 \u65E5\u672C\u8A9EUI\u306B\u5B8C\u5168\u5BFE\u5FDC\u3057\u3001\u4F7F\u3044\u3084\u3059\u3055\u3068\u30A2\u30AF\u30BB\u30B7\u30D3\u30EA\u30C6\u30A3\u3092\u91CD\u8996\u3057\u305F\u5B9F\u88C5\u3092\u63D0\u4F9B\u3057\u307E\u3059\u3002
 `,
-  tools: [
+  getTools: () => [
     {
       name: "create_component",
       description: "React\u30B3\u30F3\u30DD\u30FC\u30CD\u30F3\u30C8\u3092\u751F\u6210\u3057\u307E\u3059",
@@ -1457,7 +1474,7 @@ const mastraConstructionAgent = new Agent({
   name: "mastra-construction-agent",
   description: "\u30B7\u30B9\u30C6\u30E0\u69CB\u7BC9\u3068\u30A2\u30FC\u30AD\u30C6\u30AF\u30C1\u30E3\u8A2D\u8A08\u3092\u884C\u3046\u30A8\u30FC\u30B8\u30A7\u30F3\u30C8",
   model: {
-    provider: "deepseek",
+    provider: deepseekProvider,
     name: "deepseek-chat"
   },
   instructions: `
@@ -1481,7 +1498,7 @@ const mastraConstructionAgent = new Agent({
 
 \u30D9\u30B9\u30C8\u30D7\u30E9\u30AF\u30C6\u30A3\u30B9\u306B\u5F93\u3063\u305F\u3001\u30B9\u30B1\u30FC\u30E9\u30D6\u30EB\u3067\u4FDD\u5B88\u3057\u3084\u3059\u3044\u30B7\u30B9\u30C6\u30E0\u3092\u8A2D\u8A08\u3057\u307E\u3059\u3002
 `,
-  tools: [
+  getTools: () => [
     {
       name: "design_architecture",
       description: "\u30B7\u30B9\u30C6\u30E0\u30A2\u30FC\u30AD\u30C6\u30AF\u30C1\u30E3\u3092\u8A2D\u8A08\u3057\u307E\u3059",
@@ -1651,6 +1668,19 @@ const mastraConstructionAgent = new Agent({
       }
     }
   ]
+});
+
+const mastraWebScraperAgent = new Agent({
+  name: "Web Scraper Agent",
+  description: "\u30A6\u30A7\u30D6\u30B5\u30A4\u30C8\u304B\u3089\u4F01\u696D\u60C5\u5831\u3092\u62BD\u51FA\u3059\u308B\u30A8\u30FC\u30B8\u30A7\u30F3\u30C8",
+  model: {
+    provider: deepseekProvider,
+    name: "deepseek-chat"
+  },
+  instructions: "\u30A6\u30A7\u30D6\u30B5\u30A4\u30C8\u306EHTML\u304B\u3089\u4F01\u696D\u60C5\u5831\u3092\u6B63\u78BA\u306B\u62BD\u51FA\u3057\u3001\u69CB\u9020\u5316\u3055\u308C\u305F\u30C7\u30FC\u30BF\u3068\u3057\u3066\u8FD4\u3057\u307E\u3059\u3002\u4F4F\u6240\u306E\u5206\u5272\u30EB\u30FC\u30EB\u306B\u5F93\u3044\u3001\u90FD\u9053\u5E9C\u770C\u3001\u5E02\u533A\u753A\u6751\u3001\u756A\u5730\u3092\u9069\u5207\u306B\u5206\u5272\u3057\u3066\u304F\u3060\u3055\u3044\u3002",
+  metadata: {
+    capabilities: ["web_scraping", "information_extraction", "address_parsing"]
+  }
 });
 
 const accountingWorkflowInputSchema = z.object({
@@ -2592,6 +2622,7 @@ const mastra = new Mastra({
     port: 4111,
     timeout: 3e4
   },
+  providers: [deepseekProvider],
   agents: {
     accountingAgent: mastraAccountingAgent,
     customerAgent: mastraCustomerAgent,
@@ -2603,7 +2634,8 @@ const mastra = new Mastra({
     productAgent: mastraProductAgent,
     refactorAgent: mastraRefactorAgent,
     uiAgent: mastraUiAgent,
-    constructionAgent: mastraConstructionAgent
+    constructionAgent: mastraConstructionAgent,
+    webScraper: mastraWebScraperAgent
   },
   workflows: {
     accountingWorkflow,
@@ -2612,38 +2644,6 @@ const mastra = new Mastra({
     deploymentWorkflow
   }
 });
-
-// src/utils/filepath.ts
-var getFilePath = (options) => {
-  let filename = options.filename;
-  const defaultDocument = options.defaultDocument || "index.html";
-  if (filename.endsWith("/")) {
-    filename = filename.concat(defaultDocument);
-  } else if (!filename.match(/\.[a-zA-Z0-9_-]+$/)) {
-    filename = filename.concat("/" + defaultDocument);
-  }
-  const path = getFilePathWithoutDefaultDocument({
-    root: options.root,
-    filename
-  });
-  return path;
-};
-var getFilePathWithoutDefaultDocument = (options) => {
-  let root = options.root || "";
-  let filename = options.filename;
-  if (/(?:^|[\/\\])\.\.(?:$|[\/\\])/.test(filename)) {
-    return;
-  }
-  filename = filename.replace(/^\.?[\/\\]/, "");
-  filename = filename.replace(/\\/, "/");
-  root = root.replace(/\/$/, "");
-  let path = root ? root + "/" + filename : filename;
-  path = path.replace(/^\.?\//, "");
-  if (root[0] !== "/" && path[0] === "/") {
-    return;
-  }
-  return path;
-};
 
 // src/utils/mime.ts
 var getMimeType = (filename, mimes = baseMimes) => {
@@ -3456,7 +3456,11 @@ var Context = class {
     return typeof html === "object" ? resolveCallback(html, HtmlEscapedCallbackPhase.Stringify, false, {}).then(res) : res(html);
   };
   redirect = (location, status) => {
-    this.header("Location", String(location));
+    const locationString = String(location);
+    this.header(
+      "Location",
+      !/[^\x00-\xFF]/.test(locationString) ? locationString : encodeURI(locationString)
+    );
     return this.newResponse(null, status ?? 302);
   };
   notFound = () => {
@@ -5931,7 +5935,7 @@ SuperJSON.registerCustom = SuperJSON.defaultInstance.registerCustom.bind(SuperJS
 SuperJSON.allowErrorProps = SuperJSON.defaultInstance.allowErrorProps.bind(SuperJSON.defaultInstance);
 var stringify = SuperJSON.stringify;
 
-// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.67/node_modules/zod-to-json-schema/dist/esm/Options.js
+// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.76/node_modules/zod-to-json-schema/dist/esm/Options.js
 var ignoreOverride = Symbol("Let zodToJsonSchema decide on which parser to use");
 var defaultOptions = {
   name: void 0,
@@ -5965,7 +5969,7 @@ var getDefaultOptions = (options) => typeof options === "string" ? {
   ...options
 };
 
-// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.67/node_modules/zod-to-json-schema/dist/esm/Refs.js
+// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.76/node_modules/zod-to-json-schema/dist/esm/Refs.js
 var getRefs = (options) => {
   const _options = getDefaultOptions(options);
   const currentPath = _options.name !== void 0 ? [..._options.basePath, _options.definitionPath, _options.name] : _options.basePath;
@@ -5986,7 +5990,7 @@ var getRefs = (options) => {
   };
 };
 
-// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.67/node_modules/zod-to-json-schema/dist/esm/errorMessages.js
+// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.76/node_modules/zod-to-json-schema/dist/esm/errorMessages.js
 function addErrorMessage(res, key, errorMessage, refs) {
   if (!refs?.errorMessages)
     return;
@@ -6002,7 +6006,7 @@ function setResponseValueAndErrors(res, key, value, errorMessage, refs) {
   addErrorMessage(res, key, errorMessage, refs);
 }
 
-// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.67/node_modules/zod-to-json-schema/dist/esm/getRelativePath.js
+// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.76/node_modules/zod-to-json-schema/dist/esm/getRelativePath.js
 var getRelativePath = (pathA, pathB) => {
   let i = 0;
   for (; i < pathA.length && i < pathB.length; i++) {
@@ -6012,7 +6016,7 @@ var getRelativePath = (pathA, pathB) => {
   return [(pathA.length - i).toString(), ...pathB.slice(i)].join("/");
 };
 
-// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.67/node_modules/zod-to-json-schema/dist/esm/parsers/any.js
+// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.76/node_modules/zod-to-json-schema/dist/esm/parsers/any.js
 function parseAnyDef(refs) {
   if (refs.target !== "openAi") {
     return {};
@@ -6050,7 +6054,7 @@ function parseArrayDef(def, refs) {
   return res;
 }
 
-// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.67/node_modules/zod-to-json-schema/dist/esm/parsers/bigint.js
+// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.76/node_modules/zod-to-json-schema/dist/esm/parsers/bigint.js
 function parseBigintDef(def, refs) {
   const res = {
     type: "integer",
@@ -6096,24 +6100,24 @@ function parseBigintDef(def, refs) {
   return res;
 }
 
-// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.67/node_modules/zod-to-json-schema/dist/esm/parsers/boolean.js
+// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.76/node_modules/zod-to-json-schema/dist/esm/parsers/boolean.js
 function parseBooleanDef() {
   return {
     type: "boolean"
   };
 }
 
-// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.67/node_modules/zod-to-json-schema/dist/esm/parsers/branded.js
+// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.76/node_modules/zod-to-json-schema/dist/esm/parsers/branded.js
 function parseBrandedDef(_def, refs) {
   return parseDef(_def.type._def, refs);
 }
 
-// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.67/node_modules/zod-to-json-schema/dist/esm/parsers/catch.js
+// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.76/node_modules/zod-to-json-schema/dist/esm/parsers/catch.js
 var parseCatchDef = (def, refs) => {
   return parseDef(def.innerType._def, refs);
 };
 
-// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.67/node_modules/zod-to-json-schema/dist/esm/parsers/date.js
+// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.76/node_modules/zod-to-json-schema/dist/esm/parsers/date.js
 function parseDateDef(def, refs, overrideDateStrategy) {
   const strategy = overrideDateStrategy ?? refs.dateStrategy;
   if (Array.isArray(strategy)) {
@@ -6172,7 +6176,7 @@ var integerDateParser = (def, refs) => {
   return res;
 };
 
-// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.67/node_modules/zod-to-json-schema/dist/esm/parsers/default.js
+// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.76/node_modules/zod-to-json-schema/dist/esm/parsers/default.js
 function parseDefaultDef(_def, refs) {
   return {
     ...parseDef(_def.innerType._def, refs),
@@ -6180,12 +6184,12 @@ function parseDefaultDef(_def, refs) {
   };
 }
 
-// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.67/node_modules/zod-to-json-schema/dist/esm/parsers/effects.js
+// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.76/node_modules/zod-to-json-schema/dist/esm/parsers/effects.js
 function parseEffectsDef(_def, refs) {
   return refs.effectStrategy === "input" ? parseDef(_def.schema._def, refs) : parseAnyDef(refs);
 }
 
-// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.67/node_modules/zod-to-json-schema/dist/esm/parsers/enum.js
+// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.76/node_modules/zod-to-json-schema/dist/esm/parsers/enum.js
 function parseEnumDef(def) {
   return {
     type: "string",
@@ -6193,7 +6197,7 @@ function parseEnumDef(def) {
   };
 }
 
-// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.67/node_modules/zod-to-json-schema/dist/esm/parsers/intersection.js
+// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.76/node_modules/zod-to-json-schema/dist/esm/parsers/intersection.js
 var isJsonSchema7AllOfType = (type) => {
   if ("type" in type && type.type === "string")
     return false;
@@ -6235,7 +6239,7 @@ function parseIntersectionDef(def, refs) {
   } : void 0;
 }
 
-// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.67/node_modules/zod-to-json-schema/dist/esm/parsers/literal.js
+// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.76/node_modules/zod-to-json-schema/dist/esm/parsers/literal.js
 function parseLiteralDef(def, refs) {
   const parsedType = typeof def.value;
   if (parsedType !== "bigint" && parsedType !== "number" && parsedType !== "boolean" && parsedType !== "string") {
@@ -6255,7 +6259,7 @@ function parseLiteralDef(def, refs) {
   };
 }
 
-// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.67/node_modules/zod-to-json-schema/dist/esm/parsers/string.js
+// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.76/node_modules/zod-to-json-schema/dist/esm/parsers/string.js
 var emojiRegex = void 0;
 var zodPatterns = {
   /**
@@ -6567,7 +6571,7 @@ function stringifyRegExpWithFlags(regex, refs) {
   return pattern;
 }
 
-// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.67/node_modules/zod-to-json-schema/dist/esm/parsers/record.js
+// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.76/node_modules/zod-to-json-schema/dist/esm/parsers/record.js
 function parseRecordDef(def, refs) {
   if (refs.target === "openAi") {
     console.warn("Warning: OpenAI may not support records in schemas! Try an array of key-value pairs instead.");
@@ -6619,7 +6623,7 @@ function parseRecordDef(def, refs) {
   return schema;
 }
 
-// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.67/node_modules/zod-to-json-schema/dist/esm/parsers/map.js
+// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.76/node_modules/zod-to-json-schema/dist/esm/parsers/map.js
 function parseMapDef(def, refs) {
   if (refs.mapStrategy === "record") {
     return parseRecordDef(def, refs);
@@ -6644,7 +6648,7 @@ function parseMapDef(def, refs) {
   };
 }
 
-// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.67/node_modules/zod-to-json-schema/dist/esm/parsers/nativeEnum.js
+// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.76/node_modules/zod-to-json-schema/dist/esm/parsers/nativeEnum.js
 function parseNativeEnumDef(def) {
   const object = def.values;
   const actualKeys = Object.keys(def.values).filter((key) => {
@@ -6658,7 +6662,7 @@ function parseNativeEnumDef(def) {
   };
 }
 
-// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.67/node_modules/zod-to-json-schema/dist/esm/parsers/never.js
+// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.76/node_modules/zod-to-json-schema/dist/esm/parsers/never.js
 function parseNeverDef(refs) {
   return refs.target === "openAi" ? void 0 : {
     not: parseAnyDef({
@@ -6668,7 +6672,7 @@ function parseNeverDef(refs) {
   };
 }
 
-// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.67/node_modules/zod-to-json-schema/dist/esm/parsers/null.js
+// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.76/node_modules/zod-to-json-schema/dist/esm/parsers/null.js
 function parseNullDef(refs) {
   return refs.target === "openApi3" ? {
     enum: ["null"],
@@ -6678,7 +6682,7 @@ function parseNullDef(refs) {
   };
 }
 
-// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.67/node_modules/zod-to-json-schema/dist/esm/parsers/union.js
+// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.76/node_modules/zod-to-json-schema/dist/esm/parsers/union.js
 var primitiveMappings = {
   ZodString: "string",
   ZodNumber: "number",
@@ -6746,7 +6750,7 @@ var asAnyOf = (def, refs) => {
   return anyOf.length ? { anyOf } : void 0;
 };
 
-// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.67/node_modules/zod-to-json-schema/dist/esm/parsers/nullable.js
+// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.76/node_modules/zod-to-json-schema/dist/esm/parsers/nullable.js
 function parseNullableDef(def, refs) {
   if (["ZodString", "ZodNumber", "ZodBigInt", "ZodBoolean", "ZodNull"].includes(def.innerType._def.typeName) && (!def.innerType._def.checks || !def.innerType._def.checks.length)) {
     if (refs.target === "openApi3") {
@@ -6778,7 +6782,7 @@ function parseNullableDef(def, refs) {
   return base && { anyOf: [base, { type: "null" }] };
 }
 
-// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.67/node_modules/zod-to-json-schema/dist/esm/parsers/number.js
+// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.76/node_modules/zod-to-json-schema/dist/esm/parsers/number.js
 function parseNumberDef(def, refs) {
   const res = {
     type: "number"
@@ -6827,7 +6831,7 @@ function parseNumberDef(def, refs) {
   return res;
 }
 
-// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.67/node_modules/zod-to-json-schema/dist/esm/parsers/object.js
+// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.76/node_modules/zod-to-json-schema/dist/esm/parsers/object.js
 function parseObjectDef(def, refs) {
   const forceOptionalIntoNullable = refs.target === "openAi";
   const result = {
@@ -6897,7 +6901,7 @@ function safeIsOptional(schema) {
   }
 }
 
-// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.67/node_modules/zod-to-json-schema/dist/esm/parsers/optional.js
+// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.76/node_modules/zod-to-json-schema/dist/esm/parsers/optional.js
 var parseOptionalDef = (def, refs) => {
   if (refs.currentPath.toString() === refs.propertyPath?.toString()) {
     return parseDef(def.innerType._def, refs);
@@ -6916,7 +6920,7 @@ var parseOptionalDef = (def, refs) => {
   } : parseAnyDef(refs);
 };
 
-// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.67/node_modules/zod-to-json-schema/dist/esm/parsers/pipeline.js
+// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.76/node_modules/zod-to-json-schema/dist/esm/parsers/pipeline.js
 var parsePipelineDef = (def, refs) => {
   if (refs.pipeStrategy === "input") {
     return parseDef(def.in._def, refs);
@@ -6936,12 +6940,12 @@ var parsePipelineDef = (def, refs) => {
   };
 };
 
-// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.67/node_modules/zod-to-json-schema/dist/esm/parsers/promise.js
+// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.76/node_modules/zod-to-json-schema/dist/esm/parsers/promise.js
 function parsePromiseDef(def, refs) {
   return parseDef(def.type._def, refs);
 }
 
-// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.67/node_modules/zod-to-json-schema/dist/esm/parsers/set.js
+// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.76/node_modules/zod-to-json-schema/dist/esm/parsers/set.js
 function parseSetDef(def, refs) {
   const items = parseDef(def.valueType._def, {
     ...refs,
@@ -6961,7 +6965,7 @@ function parseSetDef(def, refs) {
   return schema;
 }
 
-// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.67/node_modules/zod-to-json-schema/dist/esm/parsers/tuple.js
+// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.76/node_modules/zod-to-json-schema/dist/esm/parsers/tuple.js
 function parseTupleDef(def, refs) {
   if (def.rest) {
     return {
@@ -6989,24 +6993,24 @@ function parseTupleDef(def, refs) {
   }
 }
 
-// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.67/node_modules/zod-to-json-schema/dist/esm/parsers/undefined.js
+// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.76/node_modules/zod-to-json-schema/dist/esm/parsers/undefined.js
 function parseUndefinedDef(refs) {
   return {
     not: parseAnyDef(refs)
   };
 }
 
-// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.67/node_modules/zod-to-json-schema/dist/esm/parsers/unknown.js
+// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.76/node_modules/zod-to-json-schema/dist/esm/parsers/unknown.js
 function parseUnknownDef(refs) {
   return parseAnyDef(refs);
 }
 
-// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.67/node_modules/zod-to-json-schema/dist/esm/parsers/readonly.js
+// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.76/node_modules/zod-to-json-schema/dist/esm/parsers/readonly.js
 var parseReadonlyDef = (def, refs) => {
   return parseDef(def.innerType._def, refs);
 };
 
-// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.67/node_modules/zod-to-json-schema/dist/esm/selectParser.js
+// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.76/node_modules/zod-to-json-schema/dist/esm/selectParser.js
 var selectParser = (def, typeName, refs) => {
   switch (typeName) {
     case ZodFirstPartyTypeKind.ZodString:
@@ -7082,7 +7086,7 @@ var selectParser = (def, typeName, refs) => {
   }
 };
 
-// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.67/node_modules/zod-to-json-schema/dist/esm/parseDef.js
+// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.76/node_modules/zod-to-json-schema/dist/esm/parseDef.js
 function parseDef(def, refs, forceResolution = false) {
   const seenItem = refs.seen.get(def);
   if (refs.override) {
@@ -7138,7 +7142,7 @@ var addMeta = (def, refs, jsonSchema) => {
   return jsonSchema;
 };
 
-// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.67/node_modules/zod-to-json-schema/dist/esm/zodToJsonSchema.js
+// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.76/node_modules/zod-to-json-schema/dist/esm/zodToJsonSchema.js
 var zodToJsonSchema = (schema, options) => {
   const refs = getRefs(options);
   let definitions = typeof options === "object" && options.definitions ? Object.entries(options.definitions).reduce((acc, [name2, schema2]) => ({
@@ -7200,7 +7204,7 @@ var zodToJsonSchema = (schema, options) => {
   return combined;
 };
 
-// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.67/node_modules/zod-to-json-schema/dist/esm/index.js
+// ../../node_modules/.pnpm/zod-to-json-schema@3.24.6_zod@3.25.76/node_modules/zod-to-json-schema/dist/esm/index.js
 var esm_default = zodToJsonSchema;
 
 // src/server/http-exception.ts
@@ -7851,6 +7855,7 @@ async function getLogTransports$1({ mastra }) {
 var memory_exports = {};
 __export(memory_exports, {
   createThreadHandler: () => createThreadHandler$1,
+  deleteMessagesHandler: () => deleteMessagesHandler$1,
   deleteThreadHandler: () => deleteThreadHandler$1,
   getMemoryConfigHandler: () => getMemoryConfigHandler$1,
   getMemoryStatusHandler: () => getMemoryStatusHandler$1,
@@ -7924,7 +7929,9 @@ async function getThreadsHandler$1({
   agentId,
   resourceId,
   networkId,
-  runtimeContext
+  runtimeContext,
+  orderBy,
+  sortDirection
 }) {
   try {
     const memory = await getMemoryFromContext({ mastra, agentId, networkId, runtimeContext });
@@ -7932,7 +7939,11 @@ async function getThreadsHandler$1({
       throw new HTTPException(400, { message: "Memory is not initialized" });
     }
     validateBody({ resourceId });
-    const threads = await memory.getThreadsByResourceId({ resourceId });
+    const threads = await memory.getThreadsByResourceId({
+      resourceId,
+      orderBy,
+      sortDirection
+    });
     return threads;
   } catch (error) {
     return handleError$1(error, "Error getting threads");
@@ -8182,6 +8193,31 @@ async function updateWorkingMemoryHandler$1({
     return { success: true };
   } catch (error) {
     return handleError$1(error, "Error updating working memory");
+  }
+}
+async function deleteMessagesHandler$1({
+  mastra,
+  agentId,
+  messageIds,
+  networkId,
+  runtimeContext
+}) {
+  try {
+    if (messageIds === void 0 || messageIds === null) {
+      throw new HTTPException(400, { message: "messageIds is required" });
+    }
+    const memory = await getMemoryFromContext({ mastra, agentId, networkId, runtimeContext });
+    if (!memory) {
+      throw new HTTPException(400, { message: "Memory is not initialized" });
+    }
+    await memory.deleteMessages(messageIds);
+    let count = 1;
+    if (Array.isArray(messageIds)) {
+      count = messageIds.length;
+    }
+    return { success: true, message: `${count} message${count === 1 ? "" : "s"} deleted successfully` };
+  } catch (error) {
+    return handleError$1(error, "Error deleting messages");
   }
 }
 async function searchMemoryHandler$1({
@@ -9943,6 +9979,7 @@ var Request$1 = class Request extends GlobalRequest {
     super(input, options);
   }
 };
+var wrapBodyStream = Symbol("wrapBodyStream");
 var newRequestFromIncoming = (method, url, incoming, abortController) => {
   const headerRecord = [];
   const rawHeaders = incoming.rawHeaders;
@@ -9974,6 +10011,23 @@ var newRequestFromIncoming = (method, url, incoming, abortController) => {
         start(controller) {
           controller.enqueue(incoming.rawBody);
           controller.close();
+        }
+      });
+    } else if (incoming[wrapBodyStream]) {
+      let reader;
+      init.body = new ReadableStream({
+        async pull(controller) {
+          try {
+            reader ||= Readable.toWeb(incoming).getReader();
+            const { done, value } = await reader.read();
+            if (done) {
+              controller.close();
+            } else {
+              controller.enqueue(value);
+            }
+          } catch (error) {
+            controller.error(error);
+          }
         }
       });
     } else {
@@ -10145,26 +10199,23 @@ function writeFromReadableStream(stream6, writable) {
   if (stream6.locked) {
     throw new TypeError("ReadableStream is locked.");
   } else if (writable.destroyed) {
-    stream6.cancel();
     return;
   }
   const reader = stream6.getReader();
-  writable.on("close", cancel);
-  writable.on("error", cancel);
-  reader.read().then(flow, cancel);
+  const handleError2 = () => {
+  };
+  writable.on("error", handleError2);
+  reader.read().then(flow, handleStreamError);
   return reader.closed.finally(() => {
-    writable.off("close", cancel);
-    writable.off("error", cancel);
+    writable.off("error", handleError2);
   });
-  function cancel(error) {
-    reader.cancel(error).catch(() => {
-    });
+  function handleStreamError(error) {
     if (error) {
       writable.destroy(error);
     }
   }
   function onDrain() {
-    reader.read().then(flow, cancel);
+    reader.read().then(flow, handleStreamError);
   }
   function flow({ done, value }) {
     try {
@@ -10173,10 +10224,10 @@ function writeFromReadableStream(stream6, writable) {
       } else if (!writable.write(value)) {
         writable.once("drain", onDrain);
       } else {
-        return reader.read().then(flow, cancel);
+        return reader.read().then(flow, handleStreamError);
       }
     } catch (e2) {
-      cancel(e2);
+      handleStreamError(e2);
     }
   }
 }
@@ -10213,6 +10264,7 @@ global.fetch = (info, init) => {
   };
   return webFetch(info, init);
 };
+var outgoingEnded = Symbol("outgoingEnded");
 var regBuffer = /^no$/i;
 var regContentType = /^(application\/json\b|text\/(?!event-stream\b))/i;
 var handleRequestError = () => new Response(null, {
@@ -10258,10 +10310,11 @@ var responseViaCache = async (res, outgoing) => {
     outgoing.end(new Uint8Array(await body.arrayBuffer()));
   } else {
     flushHeaders(outgoing);
-    return writeFromReadableStream(body, outgoing)?.catch(
+    await writeFromReadableStream(body, outgoing)?.catch(
       (e2) => handleResponseError(e2, outgoing)
     );
   }
+  outgoing[outgoingEnded]?.();
 };
 var responseViaResponseObject = async (res, outgoing, options = {}) => {
   if (res instanceof Promise) {
@@ -10306,8 +10359,10 @@ var responseViaResponseObject = async (res, outgoing, options = {}) => {
     outgoing.writeHead(res.status, resHeaderRecord);
     outgoing.end();
   }
+  outgoing[outgoingEnded]?.();
 };
 var getRequestListener = (fetchCallback, options = {}) => {
+  const autoCleanupIncoming = options.autoCleanupIncoming ?? true;
   if (options.overrideGlobalObjects !== false && global.Request !== Request$1) {
     Object.defineProperty(global, "Request", {
       value: Request$1
@@ -10320,15 +10375,44 @@ var getRequestListener = (fetchCallback, options = {}) => {
     let res, req;
     try {
       req = newRequest(incoming, options.hostname);
+      let incomingEnded = !autoCleanupIncoming || incoming.method === "GET" || incoming.method === "HEAD";
+      if (!incomingEnded) {
+        incoming[wrapBodyStream] = true;
+        incoming.on("end", () => {
+          incomingEnded = true;
+        });
+        if (incoming instanceof Http2ServerRequest) {
+          outgoing[outgoingEnded] = () => {
+            if (!incomingEnded) {
+              setTimeout(() => {
+                if (!incomingEnded) {
+                  setTimeout(() => {
+                    incoming.destroy();
+                    outgoing.destroy();
+                  });
+                }
+              });
+            }
+          };
+        }
+      }
       outgoing.on("close", () => {
         const abortController = req[abortControllerKey];
-        if (!abortController) {
-          return;
+        if (abortController) {
+          if (incoming.errored) {
+            req[abortControllerKey].abort(incoming.errored.toString());
+          } else if (!outgoing.writableFinished) {
+            req[abortControllerKey].abort("Client connection prematurely closed.");
+          }
         }
-        if (incoming.errored) {
-          req[abortControllerKey].abort(incoming.errored.toString());
-        } else if (!outgoing.writableFinished) {
-          req[abortControllerKey].abort("Client connection prematurely closed.");
+        if (!incomingEnded) {
+          setTimeout(() => {
+            if (!incomingEnded) {
+              setTimeout(() => {
+                incoming.destroy();
+              });
+            }
+          });
         }
       });
       res = fetchCallback(req, { incoming, outgoing });
@@ -10362,7 +10446,8 @@ var createAdaptorServer = (options) => {
   const fetchCallback = options.fetch;
   const requestListener = getRequestListener(fetchCallback, {
     hostname: options.hostname,
-    overrideGlobalObjects: options.overrideGlobalObjects
+    overrideGlobalObjects: options.overrideGlobalObjects,
+    autoCleanupIncoming: options.autoCleanupIncoming
   });
   const createServer$1 = options.createServer || createServer;
   const server = createServer$1(options.serverOptions || {}, requestListener);
@@ -10399,9 +10484,6 @@ var createStreamBody = (stream6) => {
   });
   return body;
 };
-var addCurrentDirPrefix = (path) => {
-  return `./${path}`;
-};
 var getStats = (path) => {
   let stats;
   try {
@@ -10411,38 +10493,34 @@ var getStats = (path) => {
   return stats;
 };
 var serveStatic = (options = { root: "" }) => {
+  const root = options.root || "";
+  const optionPath = options.path;
   return async (c2, next) => {
     if (c2.finalized) {
       return next();
     }
     let filename;
-    try {
-      filename = options.path ?? decodeURIComponent(c2.req.path);
-    } catch {
-      await options.onNotFound?.(c2.req.path, c2);
-      return next();
-    }
-    let path = getFilePathWithoutDefaultDocument({
-      filename: options.rewriteRequestPath ? options.rewriteRequestPath(filename) : filename,
-      root: options.root
-    });
-    if (path) {
-      path = addCurrentDirPrefix(path);
+    if (optionPath) {
+      filename = optionPath;
     } else {
-      return next();
-    }
-    let stats = getStats(path);
-    if (stats && stats.isDirectory()) {
-      path = getFilePath({
-        filename: options.rewriteRequestPath ? options.rewriteRequestPath(filename) : filename,
-        root: options.root,
-        defaultDocument: options.index ?? "index.html"
-      });
-      if (path) {
-        path = addCurrentDirPrefix(path);
-      } else {
+      try {
+        filename = decodeURIComponent(c2.req.path);
+        if (/(?:^|[\/\\])\.\.(?:$|[\/\\])/.test(filename)) {
+          throw new Error();
+        }
+      } catch {
+        await options.onNotFound?.(c2.req.path, c2);
         return next();
       }
+    }
+    let path = join$1(
+      root,
+      !optionPath && options.rewriteRequestPath ? options.rewriteRequestPath(filename, c2) : filename
+    );
+    let stats = getStats(path);
+    if (stats && stats.isDirectory()) {
+      const indexFile = options.index ?? "index.html";
+      path = join$1(path, indexFile);
       stats = getStats(path);
     }
     if (!stats) {
@@ -10614,7 +10692,7 @@ var middleware = (options) => async (c2) => {
   );
 };
 
-// ../../node_modules/.pnpm/hono-openapi@0.4.8_hono@4.8.4_openapi-types@12.1.3_zod@3.25.67/node_modules/hono-openapi/utils.js
+// ../../node_modules/.pnpm/hono-openapi@0.4.8_hono@4.8.9_openapi-types@12.1.3_zod@3.25.76/node_modules/hono-openapi/utils.js
 var e = Symbol("openapi");
 var n = ["GET", "PUT", "POST", "DELETE", "OPTIONS", "HEAD", "PATCH", "TRACE"];
 var s2 = (e2) => e2.charAt(0).toUpperCase() + e2.slice(1);
@@ -15005,11 +15083,15 @@ async function getThreadsHandler(c2) {
     const agentId = c2.req.query("agentId");
     const resourceId = c2.req.query("resourceid");
     const networkId = c2.req.query("networkId");
+    const orderBy = c2.req.query("orderBy");
+    const sortDirection = c2.req.query("sortDirection");
     const result = await getThreadsHandler$1({
       mastra,
       agentId,
       resourceId,
-      networkId
+      networkId,
+      orderBy,
+      sortDirection
     });
     return c2.json(result);
   } catch (error) {
@@ -15213,6 +15295,26 @@ async function searchMemoryHandler(c2) {
     return handleError(error, "Error searching memory");
   }
 }
+async function deleteMessagesHandler(c2) {
+  try {
+    const mastra = c2.get("mastra");
+    const agentId = c2.req.query("agentId");
+    const networkId = c2.req.query("networkId");
+    const runtimeContext = c2.get("runtimeContext");
+    const body = await c2.req.json();
+    const messageIds = body?.messageIds;
+    const result = await deleteMessagesHandler$1({
+      mastra,
+      agentId,
+      messageIds,
+      networkId,
+      runtimeContext
+    });
+    return c2.json(result);
+  } catch (error) {
+    return handleError(error, "Error deleting messages");
+  }
+}
 
 // src/server/handlers/routes/memory/router.ts
 function memoryRoutes(bodyLimitOptions) {
@@ -15255,6 +15357,28 @@ function memoryRoutes(bodyLimitOptions) {
           in: "query",
           required: true,
           schema: { type: "string" }
+        },
+        {
+          name: "orderBy",
+          in: "query",
+          required: false,
+          schema: {
+            type: "string",
+            enum: ["createdAt", "updatedAt"],
+            default: "createdAt"
+          },
+          description: "Field to sort by"
+        },
+        {
+          name: "sortDirection",
+          in: "query",
+          required: false,
+          schema: {
+            type: "string",
+            enum: ["ASC", "DESC"],
+            default: "DESC"
+          },
+          description: "Sort direction"
         }
       ],
       responses: {
@@ -15458,7 +15582,57 @@ function memoryRoutes(bodyLimitOptions) {
               properties: {
                 messages: {
                   type: "array",
-                  items: { type: "object" }
+                  description: "Array of messages in either v1 or v2 format",
+                  items: {
+                    oneOf: [
+                      {
+                        type: "object",
+                        description: "Mastra Message v1 format",
+                        properties: {
+                          id: { type: "string" },
+                          content: { type: "string" },
+                          role: { type: "string", enum: ["user", "assistant", "system", "tool"] },
+                          type: { type: "string", enum: ["text", "tool-call", "tool-result"] },
+                          createdAt: { type: "string", format: "date-time" },
+                          threadId: { type: "string" },
+                          resourceId: { type: "string" }
+                        },
+                        required: ["content", "role", "type", "threadId", "resourceId"]
+                      },
+                      {
+                        type: "object",
+                        description: "Mastra Message v2 format",
+                        properties: {
+                          id: { type: "string" },
+                          role: { type: "string", enum: ["user", "assistant"] },
+                          createdAt: { type: "string", format: "date-time" },
+                          threadId: { type: "string" },
+                          resourceId: { type: "string" },
+                          content: {
+                            type: "object",
+                            properties: {
+                              format: { type: "number", enum: [2] },
+                              parts: {
+                                type: "array",
+                                items: { type: "object" }
+                              },
+                              content: { type: "string" },
+                              toolInvocations: {
+                                type: "array",
+                                items: { type: "object" }
+                              },
+                              experimental_attachments: {
+                                type: "array",
+                                items: { type: "object" }
+                              }
+                            },
+                            required: ["format", "parts"]
+                          }
+                        },
+                        required: ["role", "content", "threadId", "resourceId"]
+                      }
+                    ]
+                  }
                 }
               },
               required: ["messages"]
@@ -15473,6 +15647,74 @@ function memoryRoutes(bodyLimitOptions) {
       }
     }),
     saveMessagesHandler
+  );
+  router.post(
+    "/network/messages/delete",
+    bodyLimit(bodyLimitOptions),
+    w({
+      description: "Delete one or more messages",
+      tags: ["networkMemory"],
+      parameters: [
+        {
+          name: "networkId",
+          in: "query",
+          required: true,
+          schema: { type: "string" }
+        }
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          "application/json": {
+            schema: {
+              type: "object",
+              properties: {
+                messageIds: {
+                  oneOf: [
+                    { type: "string" },
+                    {
+                      type: "array",
+                      items: { type: "string" }
+                    },
+                    {
+                      type: "object",
+                      properties: { id: { type: "string" } },
+                      required: ["id"]
+                    },
+                    {
+                      type: "array",
+                      items: {
+                        type: "object",
+                        properties: { id: { type: "string" } },
+                        required: ["id"]
+                      }
+                    }
+                  ]
+                }
+              },
+              required: ["messageIds"]
+            }
+          }
+        }
+      },
+      responses: {
+        200: {
+          description: "Messages deleted successfully",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  success: { type: "boolean" },
+                  message: { type: "string" }
+                }
+              }
+            }
+          }
+        }
+      }
+    }),
+    deleteMessagesHandler
   );
   router.get(
     "/status",
@@ -15590,6 +15832,28 @@ function memoryRoutes(bodyLimitOptions) {
           in: "query",
           required: true,
           schema: { type: "string" }
+        },
+        {
+          name: "orderBy",
+          in: "query",
+          required: false,
+          schema: {
+            type: "string",
+            enum: ["createdAt", "updatedAt"],
+            default: "createdAt"
+          },
+          description: "Field to sort by"
+        },
+        {
+          name: "sortDirection",
+          in: "query",
+          required: false,
+          schema: {
+            type: "string",
+            enum: ["ASC", "DESC"],
+            default: "DESC"
+          },
+          description: "Sort direction"
         }
       ],
       responses: {
@@ -16027,7 +16291,57 @@ function memoryRoutes(bodyLimitOptions) {
               properties: {
                 messages: {
                   type: "array",
-                  items: { type: "object" }
+                  description: "Array of messages in either v1 or v2 format",
+                  items: {
+                    oneOf: [
+                      {
+                        type: "object",
+                        description: "Mastra Message v1 format",
+                        properties: {
+                          id: { type: "string" },
+                          content: { type: "string" },
+                          role: { type: "string", enum: ["user", "assistant", "system", "tool"] },
+                          type: { type: "string", enum: ["text", "tool-call", "tool-result"] },
+                          createdAt: { type: "string", format: "date-time" },
+                          threadId: { type: "string" },
+                          resourceId: { type: "string" }
+                        },
+                        required: ["content", "role", "type", "threadId", "resourceId"]
+                      },
+                      {
+                        type: "object",
+                        description: "Mastra Message v2 format",
+                        properties: {
+                          id: { type: "string" },
+                          role: { type: "string", enum: ["user", "assistant"] },
+                          createdAt: { type: "string", format: "date-time" },
+                          threadId: { type: "string" },
+                          resourceId: { type: "string" },
+                          content: {
+                            type: "object",
+                            properties: {
+                              format: { type: "number", enum: [2] },
+                              parts: {
+                                type: "array",
+                                items: { type: "object" }
+                              },
+                              content: { type: "string" },
+                              toolInvocations: {
+                                type: "array",
+                                items: { type: "object" }
+                              },
+                              experimental_attachments: {
+                                type: "array",
+                                items: { type: "object" }
+                              }
+                            },
+                            required: ["format", "parts"]
+                          }
+                        },
+                        required: ["role", "content", "threadId", "resourceId"]
+                      }
+                    ]
+                  }
                 }
               },
               required: ["messages"]
@@ -16042,6 +16356,74 @@ function memoryRoutes(bodyLimitOptions) {
       }
     }),
     saveMessagesHandler
+  );
+  router.post(
+    "/messages/delete",
+    bodyLimit(bodyLimitOptions),
+    w({
+      description: "Delete one or more messages",
+      tags: ["memory"],
+      parameters: [
+        {
+          name: "agentId",
+          in: "query",
+          required: true,
+          schema: { type: "string" }
+        }
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          "application/json": {
+            schema: {
+              type: "object",
+              properties: {
+                messageIds: {
+                  oneOf: [
+                    { type: "string" },
+                    {
+                      type: "array",
+                      items: { type: "string" }
+                    },
+                    {
+                      type: "object",
+                      properties: { id: { type: "string" } },
+                      required: ["id"]
+                    },
+                    {
+                      type: "array",
+                      items: {
+                        type: "object",
+                        properties: { id: { type: "string" } },
+                        required: ["id"]
+                      }
+                    }
+                  ]
+                }
+              },
+              required: ["messageIds"]
+            }
+          }
+        }
+      },
+      responses: {
+        200: {
+          description: "Messages deleted successfully",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  success: { type: "boolean" },
+                  message: { type: "string" }
+                }
+              }
+            }
+          }
+        }
+      }
+    }),
+    deleteMessagesHandler
   );
   return router;
 }
@@ -18858,7 +19240,7 @@ async function createHonoServer(mastra, options = {
   } else {
     const corsConfig = {
       origin: "*",
-      allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+      allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
       credentials: false,
       maxAge: 3600,
       ...server?.cors,
@@ -19228,4 +19610,3 @@ registerHook(AvailableHooks.ON_EVALUATION, async traceObject => {
     });
   }
 });
-//# sourceMappingURL=index.mjs.map

@@ -609,7 +609,7 @@ function QuoteEditPageContent({ params }: QuoteEditPageProps) {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
                   <div>
                     <Label>数量</Label>
                     <Input
@@ -619,6 +619,32 @@ function QuoteEditPageContent({ params }: QuoteEditPageProps) {
                       value={item.quantity.toString()}
                       onChange={(e) => updateItem(index, 'quantity', parseFloat(e.target.value) || 0)}
                     />
+                  </div>
+                  <div>
+                    <Label>単位</Label>
+                    <select
+                      value={item.unit || '個'}
+                      onChange={(e) => updateItem(index, 'unit', e.target.value)}
+                      className="w-full px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    >
+                      <option value="個">個</option>
+                      <option value="人">人</option>
+                      <option value="式">式</option>
+                      <option value="時間">時間</option>
+                      <option value="日">日</option>
+                      <option value="月">月</option>
+                      <option value="年">年</option>
+                      <option value="本">本</option>
+                      <option value="台">台</option>
+                      <option value="枚">枚</option>
+                      <option value="件">件</option>
+                      <option value="回">回</option>
+                      <option value="冊">冊</option>
+                      <option value="kg">kg</option>
+                      <option value="m">m</option>
+                      <option value="L">L</option>
+                      <option value="">（なし）</option>
+                    </select>
                   </div>
                   <div>
                     <Label>{item.itemType === 'discount' ? '値引き額' : '単価'}</Label>

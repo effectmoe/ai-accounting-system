@@ -333,69 +333,30 @@ ${formattedPaidDate ? `支払日：${formattedPaidDate}` : ''}
 
     try {
       let pdfBase64 = null;
-      
-      // PDFを添付する場合は、クライアントサイドで生成
+      let pdfContentType = 'text/html';
+      let pdfFilename = `${documentNumber}.html`;
+
+      // PDFを添付する場合は、HTMLジェネレーターAPIから取得
       if (attachPdf) {
         try {
-          // まず見積書/請求書/納品書/領収書のデータを取得
-          const apiPath = documentType === 'delivery-note' ? 'delivery-notes' : `${documentType}s`;
-          const docResponse = await fetch(`/api/${apiPath}/${documentId}`);
-          if (!docResponse.ok) {
-            throw new Error(`${
-              documentType === 'quote' ? '見積書' :
-              documentType === 'invoice' ? '請求書' :
-              documentType === 'delivery-note' ? '納品書' :
-              '領収書'
-            }の取得に失敗しました`);
+          logger.debug('Fetching HTML document from API...');
+          const htmlApiPath = documentType === 'quote' ? 'quotes'
+            : documentType === 'invoice' ? 'invoices'
+            : documentType === 'delivery-note' ? 'delivery-notes'
+            : null;
+
+          if (htmlApiPath) {
+            const htmlResponse = await fetch(`/api/${htmlApiPath}/${documentId}/pdf`);
+            if (!htmlResponse.ok) throw new Error('帳票HTMLの取得に失敗しました');
+            const htmlText = await htmlResponse.text();
+            pdfBase64 = btoa(unescape(encodeURIComponent(htmlText)));
+            pdfContentType = 'text/html';
+            pdfFilename = `${documentNumber}.html`;
+            logger.debug('HTML document fetched and encoded successfully');
           }
-          
-          const docData = await docResponse.json();
-          
-          // DocumentData形式に変換
-          const documentData: DocumentData = {
-            documentType,
-            documentNumber: docData.quoteNumber || docData.invoiceNumber || docData.deliveryNoteNumber || docData.receiptNumber,
-            issueDate: new Date(docData.issueDate || docData.invoiceDate),
-            validUntilDate: documentType === 'quote' ? new Date(docData.validityDate) : undefined,
-            dueDate: documentType === 'invoice' ? new Date(docData.dueDate) : undefined,
-            deliveryDate: documentType === 'delivery-note' ? new Date(docData.deliveryDate) : undefined,
-            paidDate: documentType === 'receipt' ? new Date(docData.paidDate || docData.issueDate) : undefined,
-            customerName: docData.customer?.companyName || docData.customerSnapshot?.companyName || docData.customerName || '',
-            customerAddress: docData.customer ?
-              `${docData.customer.postalCode ? `〒${docData.customer.postalCode} ` : ''}${docData.customer.prefecture || ''}${docData.customer.city || ''}${docData.customer.address1 || ''}${docData.customer.address2 || ''}` :
-              docData.customerSnapshot?.address || docData.customerAddress || '',
-            customer: docData.customer, // 顧客情報全体を渡す
-            customerSnapshot: docData.customerSnapshot, // スナップショットも渡す
-            items: docData.items ? docData.items.map((item: any) => ({
-              itemName: item.itemName || '',
-              description: item.description || '',
-              notes: item.notes || '',
-              quantity: item.quantity,
-              unitPrice: item.unitPrice,
-              amount: item.amount,
-            })) : [],
-            subtotal: docData.subtotal,
-            tax: docData.taxAmount,
-            total: docData.totalAmount,
-            notes: docData.notes || docData.purpose,
-            companyInfo: {
-              name: docData.companySnapshot?.companyName || docData.issuerName || '',
-              address: docData.companySnapshot?.address || docData.issuerAddress || '',
-              phone: docData.companySnapshot?.phone || docData.issuerPhone,
-              email: docData.companySnapshot?.email || docData.issuerEmail,
-              registrationNumber: docData.companySnapshot?.invoiceRegistrationNumber || docData.issuerRegistrationNumber,
-              stampImage: docData.companySnapshot?.stampImage || docData.issuerStamp,
-            },
-            bankAccount: docData.companySnapshot?.bankAccount || docData.bankAccount,
-          };
-          
-          // クライアントサイドでPDF生成
-          logger.debug('Generating PDF on client side...');
-          pdfBase64 = await generatePDFBase64(documentData);
-          logger.debug('PDF generated successfully');
         } catch (pdfError) {
           logger.error('PDF generation error:', pdfError);
-          setError('PDF生成に失敗しました。PDFなしで送信しますか？');
+          setError('帳票の取得に失敗しました。添付なしで送信しますか？');
           setIsSending(false);
           return;
         }
@@ -413,9 +374,11 @@ ${formattedPaidDate ? `支払日：${formattedPaidDate}` : ''}
         attachPdf,
       };
       
-      // クライアントで生成したPDFがある場合は追加
+      // クライアントで生成した添付ファイルがある場合は追加
       if (pdfBase64) {
         emailData.pdfBase64 = pdfBase64;
+        emailData.pdfContentType = pdfContentType;
+        emailData.pdfFilename = pdfFilename;
       }
 
       const response = await fetch('/api/send-email', {

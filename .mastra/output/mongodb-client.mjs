@@ -1,9 +1,10 @@
-import { MongoClient, ObjectId } from '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/mongodb/lib/index.js';
-import * as Sentry from '/Users/tonychustudio/Documents/aam-orchestration/accounting-automation/node_modules/@sentry/nextjs/build/cjs/index.server.js';
+import { MongoClient, ObjectId } from '/Users/tonychustudio/ai-accounting-system/node_modules/mongodb/lib/index.js';
 
 class Logger {
-  isDevelopment = true;
-  isProduction = false;
+  constructor() {
+    this.isDevelopment = true;
+    this.isProduction = false;
+  }
   shouldLog(level) {
     const levels = ["trace", "debug", "info", "warn", "error", "fatal"];
     const currentLevel = this.isDevelopment ? "debug" : "info";
@@ -52,21 +53,6 @@ class Logger {
     if (!this.shouldLog(level)) return;
     const sanitizedContext = context ? this.sanitizeData(context) : void 0;
     const timestamp = (/* @__PURE__ */ new Date()).toISOString();
-    if (typeof window !== "undefined" && window.Sentry) {
-      const sentryLogger = window.Sentry.logger;
-      if (sentryLogger && sentryLogger[level]) {
-        sentryLogger[level](message, sanitizedContext);
-      }
-    } else if (Sentry) {
-      const breadcrumb = {
-        message,
-        level,
-        category: "custom",
-        data: sanitizedContext,
-        timestamp: Date.now() / 1e3
-      };
-      Sentry.addBreadcrumb(breadcrumb);
-    }
     if (this.isDevelopment) {
       const logMethod = level === "trace" || level === "debug" ? "debug" : level;
       const consoleMethod = console[logMethod] || console.log;
@@ -91,15 +77,9 @@ class Logger {
   }
   error(message, context) {
     this.log("error", message, context);
-    if (context?.error) {
-      Sentry.captureException(context.error, {
-        extra: this.sanitizeData(context)
-      });
-    }
   }
   fatal(message, context) {
     this.log("fatal", message, context);
-    Sentry.captureMessage(message, "fatal");
   }
   // 既存のconsole.logをこのロガーに置き換えるためのヘルパー
   replaceConsole() {
@@ -148,6 +128,7 @@ function getDBName() {
   logger.debug(`[MongoDB] Using default database name: "${defaultDb}"`);
   return defaultDb;
 }
+const SKIP_DB_DURING_BUILD = process.env.SKIP_DB_DURING_BUILD === "true" || process.env.NEXT_PHASE === "phase-production-build";
 let cached = global._mongoClientPromise;
 function getMongoDBUri() {
   const uri = process.env.MONGODB_URI;
@@ -177,6 +158,9 @@ function sanitizeMongoUri(uri) {
   }
 }
 async function connectToDatabase() {
+  if (SKIP_DB_DURING_BUILD) {
+    throw new DatabaseError("Database connection skipped during build", "BUILD_SKIP");
+  }
   if (cached) {
     try {
       const client = await cached;
@@ -194,15 +178,22 @@ async function connectToDatabase() {
     const uri = getMongoDBUri();
     logger.debug("Creating new MongoDB connection...");
     logger.debug("MongoDB URI configured:", sanitizeMongoUri(uri));
+    const isBuilding = process.env.NEXT_PHASE === "phase-production-build";
+    const isVercel = process.env.VERCEL === "1";
     const options = {
-      maxPoolSize: 10,
-      serverSelectionTimeoutMS: 1e4,
-      // 10秒に増やす
-      socketTimeoutMS: 45e3,
-      connectTimeoutMS: 1e4,
-      // 接続タイムアウトを追加
+      maxPoolSize: isBuilding ? 1 : isVercel ? 5 : 10,
+      serverSelectionTimeoutMS: isBuilding ? 5e3 : isVercel ? 2e4 : 1e4,
+      // Vercelは20秒
+      socketTimeoutMS: isBuilding ? 5e3 : 45e3,
+      connectTimeoutMS: isBuilding ? 5e3 : isVercel ? 2e4 : 1e4,
+      // Vercelは20秒
       retryWrites: true,
-      w: "majority"
+      w: "majority",
+      // Vercel環境での追加オプション
+      ...isVercel && {
+        tls: true,
+        authSource: "admin"
+      }
     };
     const client = new MongoClient(uri, options);
     const clientPromise2 = client.connect();
@@ -228,6 +219,9 @@ async function connectToDatabase() {
   }
 }
 async function getDatabase() {
+  if (SKIP_DB_DURING_BUILD) {
+    throw new DatabaseError("Database connection skipped during build", "BUILD_SKIP");
+  }
   try {
     const { db: db2 } = await connectToDatabase();
     return db2;
@@ -281,7 +275,6 @@ async function getClientPromise() {
 }
 getClientPromise();
 class DatabaseService {
-  static instance;
   constructor() {
   }
   static getInstance() {
@@ -544,10 +537,10 @@ const Collections = {
   // 新規追加
   CUSTOMERS: "customers",
   COMPANY_INFO: "companyInfo",
-  BANK_ACCOUNTS: "bankAccounts"};
+  BANK_ACCOUNTS: "bankAccounts",
+  SUPPLIER_QUOTES: "supplierQuotes"};
 const db = DatabaseService.getInstance();
 class VercelDatabaseService extends DatabaseService {
-  static instance;
   constructor() {
     super();
   }
@@ -610,4 +603,3 @@ VercelDatabaseService.getInstance();
 })();
 
 export { Collections as C, db as d, getDatabase as g, logger as l };
-//# sourceMappingURL=mongodb-client.mjs.map
