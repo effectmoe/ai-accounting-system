@@ -336,6 +336,7 @@ export async function POST(request: NextRequest) {
         documentNumber: document.quoteNumber,
         issueDate: new Date(document.issueDate),
         validUntilDate: new Date(document.validityDate),
+        customer: document.customer,
         customerName: document.customer?.companyName || '',
         customerAddress: `${document.customer?.prefecture || ''}${document.customer?.city || ''}${document.customer?.address1 || ''}`,
         items: document.items.map((item: any) => ({
