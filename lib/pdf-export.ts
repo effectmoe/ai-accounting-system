@@ -44,10 +44,13 @@ export async function generatePDFBase64(data: DocumentData): Promise<string> {
 
   // サーバーサイドで実行される場合
   if (typeof window === 'undefined') {
-    logger.debug('Running on server side, attempting PDF generation...');
-    // jsPDFを使用したサーバーサイドPDF生成
-    const { generateJsPDFDocument } = await import('./jspdf-server-generator');
-    return await generateJsPDFDocument(data);
+    logger.debug('Running on server side, generating PDF with @react-pdf/renderer...');
+    const { renderToBuffer } = await import('@react-pdf/renderer');
+    const { DocumentPDF } = await import('./pdf-generator');
+    const React = await import('react');
+    const pdfElement = React.default.createElement(DocumentPDF, { data });
+    const pdfBuffer = await renderToBuffer(pdfElement as any);
+    return Buffer.from(pdfBuffer).toString('base64');
   }
 
   // クライアントサイドで実行される場合
