@@ -1,22 +1,18 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
+const WRITE_METHODS = new Set(['POST', 'PUT', 'DELETE', 'PATCH']);
+
+// Paths that don't require API key authentication
+const API_KEY_EXEMPT_PATHS = [
+  '/api/auth',
+  '/api/webhook/',
+];
+
 export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
-  
-  // 認証が不要なパス
-  const publicPaths = [
-    '/api/auth',
-    '/api/auth/check',
-    '/api/auth/logout',
-    '/api/webhook/',
-    '/_next/',
-    '/favicon.ico',
-  ];
-  
-  const isPublicPath = publicPaths.some(path => pathname.startsWith(path));
-  
-  // APIリクエストの場合はCORSヘッダーを追加
+
+  // APIリクエストの場合
   if (pathname.startsWith('/api/')) {
     // プリフライトリクエストへの対応
     if (request.method === 'OPTIONS') {
@@ -31,44 +27,36 @@ export function middleware(request: NextRequest) {
       });
     }
 
-    // 書き込み操作はAPIキー認証が必要
-    const writeMethods = ['POST', 'PUT', 'PATCH', 'DELETE'];
-    if (writeMethods.includes(request.method)) {
-      const apiKey = process.env.LLM_WIKI_API_KEY;
-      if (apiKey) {
-        const providedKey = request.headers.get('X-LLM-Wiki-Key');
-        if (providedKey !== apiKey) {
-          return NextResponse.json(
-            { error: 'Unauthorized: Invalid or missing X-LLM-Wiki-Key header' },
-            { status: 401 }
-          );
+    // 書き込みメソッド (POST/PUT/DELETE/PATCH) に対してAPI Keyチェック
+    if (WRITE_METHODS.has(request.method)) {
+      const isExempt = API_KEY_EXEMPT_PATHS.some(p => pathname.startsWith(p));
+
+      if (!isExempt) {
+        // ブラウザからの同一オリジンリクエストはスキップ（Sec-Fetch-Site はJS改ざん不可）
+        const secFetchSite = request.headers.get('sec-fetch-site');
+        const isBrowserSameOrigin = secFetchSite === 'same-origin' || secFetchSite === 'same-site';
+
+        if (!isBrowserSameOrigin) {
+          const apiKey = request.headers.get('X-LLM-Wiki-Key');
+          const expectedKey = process.env.LLM_WIKI_API_KEY;
+
+          if (!expectedKey || !apiKey || apiKey !== expectedKey) {
+            return NextResponse.json(
+              { error: 'Unauthorized: Invalid or missing X-LLM-Wiki-Key header' },
+              { status: 401 }
+            );
+          }
         }
       }
     }
 
-    // 通常のAPIリクエストにCORSヘッダーを追加
+    // CORSヘッダーを追加して通過
     const response = NextResponse.next();
     response.headers.set('Access-Control-Allow-Origin', '*');
     response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-LLM-Wiki-Key');
     return response;
   }
-
-  // パスワード認証を無効化
-  // if (process.env.SITE_PASSWORD && !isPublicPath) {
-  //   const authToken = request.cookies.get('auth-token');
-  //
-  //   if (!authToken || authToken.value !== 'authenticated') {
-  //     // 認証されていない場合、APIリクエストには401を返す
-  //     if (pathname.startsWith('/api/')) {
-  //       return NextResponse.json(
-  //         { error: 'Unauthorized' },
-  //         { status: 401 }
-  //       );
-  //     }
-  //     // ページリクエストの場合は、クライアントサイドで処理
-  //   }
-  // }
 
   return NextResponse.next();
 }
